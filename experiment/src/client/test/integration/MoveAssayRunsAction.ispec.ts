@@ -206,7 +206,7 @@ describe(CONTROLLER_NAME, () => {
 
         it('error, run ID not in current project', async () => {
             // Arrange
-            const runId = await importRun(server, assayAId, 'sub1-notmoved-1', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
+            const { runId } = await importRun(server, assayAId, 'sub1-notmoved-1', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
@@ -227,7 +227,7 @@ describe(CONTROLLER_NAME, () => {
 
         it('success, move run from parent project to subfolder, no audit logging', async () => {
             // Arrange
-            const runId = await importRun(server, assayAId, 'top-movetosub1-1', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+            const { runId } = await importRun(server, assayAId, 'top-movetosub1-1', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
 
             // Act
             const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
@@ -259,7 +259,7 @@ describe(CONTROLLER_NAME, () => {
 
         it('success, move run from parent project to subfolder, detailed audit logging with comment', async () => {
             // Arrange
-            const runId = await importRun(server, assayAId, 'top-movetosub1-3', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+            const { runId } = await importRun(server, assayAId, 'top-movetosub1-3', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
@@ -294,7 +294,7 @@ describe(CONTROLLER_NAME, () => {
 
         it('success, move run from sub project to parent project, summary audit logging with comment', async () => {
             // Arrange
-            const runId = await importRun(server, assayAId, 'sub1-movetotop-31', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
+            const { runId } = await importRun(server, assayAId, 'sub1-movetotop-31', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
             const userComment = "Oops! Wrong child project.";
             // Act
             const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
@@ -329,7 +329,7 @@ describe(CONTROLLER_NAME, () => {
 
         it('success, move run from child to sibling, detailed audit logging with comment', async () => {
             // Arrange
-            const runId = await importRun(server, assayAId, 'sub2-movetosub1-1', [{"Prop":"ABC"}], subfolder2Options, editorUserOptions);
+            const { runId } = await importRun(server, assayAId, 'sub2-movetosub1-1', [{"Prop":"ABC"}], subfolder2Options, editorUserOptions);
             const userComment = "Oops! Wrong sub project.";
             // Act
             const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
@@ -362,6 +362,124 @@ describe(CONTROLLER_NAME, () => {
 
         });
 
+        it('success, move a re-run that replaced an existing run from parent project to subfolder', async () => {
+            // Arrange
+            // first run
+            const { runId } = await importRun(server, assayAId, 'top-movetosub1-4-original', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+            // re-import run
+            const rerun = await importRun(server, assayAId, 'top-movetosub1-4-rerun', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions, runId);
+            const rerunId = rerun.runId;
+
+            const userComment = "Oops! Wrong project.";
+            // Act
+            const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [rerunId],
+                auditBehavior: "DETAILED",
+                userComment
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {updateCounts, success} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.experiments).toBe(2);
+            expect(updateCounts.experimentRuns).toBe(2);
+            expect(updateCounts.expObject).toBe(4);
+            expect(updateCounts.expData).toBe(2);
+            // expect(updateCounts.movedFiles).toBe(1);
+            expect(updateCounts.auditEvents).toBe(5); // 2 for run loaded, 2 for adding run to batch, 1 for replace
+
+            const movedOriginalEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-4-original', userComment, topFolderOptions);
+            expect(movedOriginalEventInTop.length).toBe(0);
+            const movedRerunEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-4-rerun', userComment, topFolderOptions);
+            expect(movedRerunEventInTop.length).toBe(0);
+
+            const movedOriginalEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-4-original', userComment, subfolder1Options);
+            expect(movedOriginalEventInSub1.length).toBe(1);
+            const movedRerunEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-4-rerun', userComment, subfolder1Options);
+            expect(movedRerunEventInSub1.length).toBe(1);
+
+            const runExistsInTop = await runExists(server, runId, topFolderOptions);
+            expect(runExistsInTop).toBe(false);
+            const rerunExistsInTop = await runExists(server, rerunId, topFolderOptions);
+            expect(rerunExistsInTop).toBe(false);
+            const runExistsInSub1 = await runExists(server, runId, subfolder1Options);
+            expect(runExistsInSub1).toBe(true);
+            const rerunExistsInSub1 = await runExists(server, rerunId, subfolder1Options);
+            expect(rerunExistsInSub1).toBe(true);
+
+        });
+
+        it('error, move one run in a batch that contains multiple runs', async () => {
+            // Arrange
+            // first run
+            const { runId, batchId } = await importRun(server, assayAId, 'top-movetosub1-7-1', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+            // add another run to the batch
+            const run2 = await importRun(server, assayAId, 'top-movetosub1-7-2', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions, undefined, batchId);
+            const run2Id = run2.runId;
+
+            const userComment = "Oops! Wrong project.";
+            // Act
+            const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [runId],
+                auditBehavior: "DETAILED",
+                userComment
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {error, success} = response.body;
+            expect(success).toBe(false);
+            expect(error).toEqual('All runs from the same batch must be selected for move operation.');
+        });
+
+        it('success, move all runs in a batch from parent project to subfolder', async () => {
+            // Arrange
+            // first run
+            const { runId, batchId } = await importRun(server, assayAId, 'top-movetosub1-5-1', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+            // add another run to the batch
+            const run2 = await importRun(server, assayAId, 'top-movetosub1-5-2', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions, undefined, batchId);
+            const run2Id = run2.runId;
+
+            const userComment = "Oops! Wrong project.";
+            // Act
+            const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
+                targetContainer: subfolder1Options.containerPath,
+                rowIds: [runId, run2Id],
+                auditBehavior: "DETAILED",
+                userComment
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {updateCounts, success} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.experiments).toBe(1);
+            expect(updateCounts.experimentRuns).toBe(2);
+            expect(updateCounts.expObject).toBe(4);
+            expect(updateCounts.expData).toBe(2);
+            // expect(updateCounts.movedFiles).toBe(1);
+            expect(updateCounts.auditEvents).toBe(4); // 2 for run loaded, 2 for adding run to batch
+
+            const movedOriginalEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-5-1', userComment, topFolderOptions);
+            expect(movedOriginalEventInTop.length).toBe(0);
+            const movedRerunEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-5-2', userComment, topFolderOptions);
+            expect(movedRerunEventInTop.length).toBe(0);
+
+            const movedOriginalEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-5-1', userComment, subfolder1Options);
+            expect(movedOriginalEventInSub1.length).toBe(1);
+            const movedRerunEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-5-2', userComment, subfolder1Options);
+            expect(movedRerunEventInSub1.length).toBe(1);
+
+            const runExistsInTop = await runExists(server, runId, topFolderOptions);
+            expect(runExistsInTop).toBe(false);
+            const run2ExistsInTop = await runExists(server, run2Id, topFolderOptions);
+            expect(run2ExistsInTop).toBe(false);
+            const runExistsInSub1 = await runExists(server, runId, subfolder1Options);
+            expect(runExistsInSub1).toBe(true);
+            const run2ExistsInSub1 = await runExists(server, run2Id, subfolder1Options);
+            expect(run2ExistsInSub1).toBe(true);
+
+        });
 
     });
 

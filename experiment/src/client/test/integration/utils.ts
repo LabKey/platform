@@ -116,15 +116,20 @@ export async function getExperimentRun(server: IntegrationTestServer, runId: num
     return response.body.rows;
 }
 
-export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: [], folderOptions: RequestOptions, userOptions: RequestOptions) {
+export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: [], folderOptions: RequestOptions, userOptions: RequestOptions, reRunId?: number, batchId?: number) {
     const runResponse = await server.post('assay', 'importRun', {
         assayId: assayId,
         name: runName,
         saveDataAsFile: true,
         jobDescription: "desc - " + runName,
         dataRows,
+        reRunId,
+        batchId,
     }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
-    return caseInsensitive(runResponse.body, 'runId');
+    return {
+        runId: caseInsensitive(runResponse.body, 'runId'),
+        batchId: caseInsensitive(runResponse.body, 'batchId'),
+    }
 }
 
 
