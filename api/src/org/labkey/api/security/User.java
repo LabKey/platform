@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.json.JSONString;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.compliance.ComplianceFolderSettings;
@@ -63,7 +64,7 @@ import java.util.Set;
  * Represents a user in the LabKey system, typically tied to a specific individual, but see {@link GuestUser} for a
  * catch-all implementation representing anonymous users.
  */
-public class User extends UserPrincipal implements Serializable, Cloneable
+public class User extends UserPrincipal implements Serializable, Cloneable, JSONString
 {
     private String _firstName = null;
     private String _lastName = null;
@@ -675,5 +676,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setExpirationDate(Date expirationDate)
     {
         _expirationDate = expirationDate;
+    }
+
+    @Override
+    public String toJSONString()
+    {
+        return String.valueOf(getUserId());
     }
 }
