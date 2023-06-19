@@ -261,6 +261,7 @@ public interface Issue
             private String _related;
 
             // for ObjectFactory
+            @SuppressWarnings("unused")
             public IssueImpl()
             {
             }

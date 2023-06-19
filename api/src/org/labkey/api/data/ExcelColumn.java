@@ -354,6 +354,12 @@ public class ExcelColumn extends RenderColumn
                         cell.setCellValue(((java.lang.Number) o).doubleValue());
                         cell.setCellStyle(_style);
                     }
+                    //Issue 47268: Export Does Not Include Failed Lookup Values
+                    //Set Integer broken lookup values as String
+                    else if (columnInfo.isLookup() && o.toString().startsWith("<") && o.toString().endsWith(">"))
+                    {
+                        cell.setCellValue(o.toString());
+                    }
                     break;
 
                 case TYPE_FILE:

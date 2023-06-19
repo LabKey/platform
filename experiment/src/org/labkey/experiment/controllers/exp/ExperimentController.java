@@ -4244,6 +4244,7 @@ public class ExperimentController extends SpringActionController
         public boolean handlePost(ExperimentForm form, BindException errors) throws Exception
         {
             form.doUpdate();
+            form.refreshFromDb();
             _exp = form.getBean();
             return true;
         }
