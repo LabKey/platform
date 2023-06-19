@@ -16,7 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
@@ -27,85 +26,81 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.api.writer.Writer;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import org.labkey.folder.xml.ExportDirType;
 
 /*
 * User: adam
 * Date: Aug 25, 2009
 * Time: 10:11:16 AM
 */
-public class FolderListWriter extends BaseFolderWriter
+public abstract class FolderListWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "lists";
-    private static List<Writer> CHILD_WRITERS = Arrays.asList(new ListDataWriter());
-    public static final String LIST_DATA = "List Data";
-
-    @Override
-    public String getDataType()
-    {
-        return FolderArchiveDataTypes.LISTS;
-    }
 
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
         if (ListService.get().hasLists(c, false))
         {
-            VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
+            ExportDirType listDir = ctx.getXml().getLists();
+            if (listDir == null || listDir.getDir() == null)
+            {
+                VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
 
-            ListWriter listWriter = new ListWriter();
+                ListWriter listWriter = new ListWriter();
 
-            if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
-                ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+                if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
+                    ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+            }
         }
     }
 
     @Override
-    public boolean selectedByDefault(ExportType type)
+    public boolean selectedByDefault(ExportType type, boolean forTemplate)
     {
         return ExportType.ALL == type || ExportType.STUDY == type;
     }
 
-    public static class Factory implements FolderWriterFactory
-    {
-        @Override
-        public FolderWriter create()
-        {
-            return new FolderListWriter();
-        }
-    }
-
-    @Override
-    public @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
-    {
-        List<Writer<?,?>> children = new ArrayList<>();
-
-        for (Writer writer : CHILD_WRITERS)
-        {
-            if (!forTemplate || (forTemplate && writer.includeWithTemplate()))
-                children.add(writer);
-        }
-        return children;
-    }
-
-    public static class ListDataWriter implements Writer<Container, FolderExportContext>
+    public static class ListDataWriter extends FolderListWriter
     {
         @Override
         public @Nullable String getDataType()
         {
-            return LIST_DATA;
+            return FolderArchiveDataTypes.LIST_DATA;
         }
 
         @Override
-        public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
+        public boolean selectedByDefault(ExportType type, boolean forTemplate)
         {
-            // noop, serialization occurs in the ListWriter and checks the context data types to determine
-            // if the list data needs to be written.
+            return super.selectedByDefault(type, forTemplate) && !forTemplate;
+        }
+
+        public static class Factory implements FolderWriterFactory
+        {
+            @Override
+            public FolderWriter create()
+            {
+                return new ListDataWriter();
+            }
+        }
+    }
+
+    public static class ListDesignWriter extends FolderListWriter
+    {
+        @Override
+        public String getDataType()
+        {
+            return FolderArchiveDataTypes.LIST_DESIGN;
+        }
+
+
+        public static class Factory implements FolderWriterFactory
+        {
+            @Override
+            public FolderWriter create()
+            {
+                return new ListDesignWriter();
+            }
         }
     }
 }

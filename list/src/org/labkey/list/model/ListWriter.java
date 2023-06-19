@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -203,7 +204,7 @@ public class ListWriter
 
     private boolean includeListData(FolderExportContext ctx)
     {
-        return ctx.getDataTypes().contains(FolderListWriter.LIST_DATA);
+        return ctx.getDataTypes().contains(FolderArchiveDataTypes.LIST_DATA);
     }
 
     public boolean write(User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception

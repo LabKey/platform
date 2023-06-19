@@ -32,9 +32,9 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(ExportType type)
+    public boolean selectedByDefault(ExportType type, boolean forTemplate)
     {
-        return ExportType.ALL == type;
+        return ExportType.STUDY != type;
     }
 
     @Override

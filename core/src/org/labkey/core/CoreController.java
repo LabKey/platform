@@ -1818,7 +1818,7 @@ public class CoreController extends SpringActionController
                 if (dataType != null && writer.show(getContainer()) && !excludeForDataspace && !excludeForTemplate)
                 {
                     writerMap.put("name", dataType);
-                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
+                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType(), form.isForTemplate()));
 
                     Collection<Writer<?, ?>> childWriters = writer.getChildren(true, form.isForTemplate());
                     if (!childWriters.isEmpty())

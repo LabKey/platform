@@ -111,7 +111,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
-import org.labkey.list.model.FolderListWriter;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDefinitionImpl;
@@ -973,7 +972,7 @@ public class ListController extends SpringActionController
                 selectedLists.add(pair);
             }
 
-            Set<String> dataTypes = PageFlowUtil.set(FolderArchiveDataTypes.LISTS, FolderListWriter.LIST_DATA);
+            Set<String> dataTypes = PageFlowUtil.set(FolderArchiveDataTypes.LIST_DESIGN, FolderArchiveDataTypes.LIST_DATA);
             FolderExportContext ctx = new FolderExportContext(getUser(), c, dataTypes, "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
             ctx.setLists(selectedLists);
             ListWriter writer = new ListWriter();
