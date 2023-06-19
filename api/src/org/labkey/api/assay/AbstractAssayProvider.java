@@ -1764,23 +1764,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         Map<String, Integer> updateCounts = assayMoveData.counts;
 
-        // update Experiment
-        TableInfo experimentTable = experimentService.getTinfoExperiment();
-        List<Integer> runBatchIds = runs.stream().map(ExpRun::getBatch).filter(Objects::nonNull).map(ExpExperiment::getRowId).toList();
-        SQLFragment updateSql = new SQLFragment("UPDATE ").append(experimentTable)
-                .append(" SET container = ").appendValue(targetContainer.getEntityId())
-                .append(", modified = ").appendValue(new Date())
-                .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE rowid ");
-        experimentTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runBatchIds);
-        int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateSql);
-        updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
+        // update Experiment and batch properties
+        moveRunsBatch(runs, sourceContainer, targetContainer, user, assayMoveData);
 
         // update ExperimentRun container, filepathroot, modified/modifiedby
         String filePathRoot = AssayRunUploadForm.getAssayDirectory(targetContainer, null).getAbsolutePath();
         TableInfo runsTable = experimentService.getTinfoExperimentRun();
         List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
-        updateSql = new SQLFragment("UPDATE ").append(runsTable)
+        SQLFragment updateSql = new SQLFragment("UPDATE ").append(runsTable)
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(", modified = ").appendValue(new Date())
                 .append(", modifiedby = ").appendValue(user.getUserId())
@@ -1833,6 +1824,103 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         // handle results level data
         moveAssayResults(runs, assayProtocol, sourceContainer, targetContainer, user, assayMoveData);
+    }
+
+    private void moveRunsBatch(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
+    {
+        Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();
+
+        Map<String, Integer> updateCounts = assayMoveData.counts;
+
+        TableInfo experimentTable = ExperimentService.get().getTinfoExperiment();
+        TableInfo runsTable = ExperimentService.get().getTinfoExperimentRun();
+        List<Integer> runBatchIds = runs.stream().map(ExpRun::getBatch).filter(Objects::nonNull).map(ExpExperiment::getRowId).toList();
+
+        Map<Integer, ExpExperiment> batches = new HashMap<>();
+        Map<Integer, ExpRun> batchRun = new HashMap<>();
+        for (ExpRun expRun : runs)
+        {
+            ExpExperiment batch = expRun.getBatch();
+            if (batch == null)
+                continue;
+            Integer batchId = batch.getRowId();
+            if (!batches.containsKey(batchId))
+            {
+                batches.put(batchId, batch);
+                batchRun.put(batchId, expRun);
+            }
+        }
+
+        Set<Integer> batchRowIds = batches.keySet();
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("batchid"), batchRowIds, IN);
+        TableSelector ts = new TableSelector(runsTable, runsTable.getColumns("rowid"), filter, null);
+        List<Integer> allBatchRuns = ts.getArrayList(Integer.class);
+        List<Integer> runRowIds = runs.stream().map(ExpRun::getRowId).toList();
+        if (allBatchRuns.size() > runRowIds.size())
+            throw new IllegalArgumentException("All runs from the same batch must be selected for move operation.");
+        for (Integer runId : allBatchRuns)
+        {
+            if (!runRowIds.contains(runId))
+                throw new IllegalArgumentException("All runs from the same batch must be selected for move operation.");
+        }
+
+        SQLFragment updateExperimentSql = new SQLFragment("UPDATE ").append(experimentTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(", modified = ").appendValue(new Date())
+                .append(", modifiedby = ").appendValue(user.getUserId())
+                .append(" WHERE rowid ");
+        experimentTable.getSchema().getSqlDialect().appendInClauseSql(updateExperimentSql, runBatchIds);
+        int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateExperimentSql);
+        updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
+
+        ExpProtocol assayProtocol = runs.get(0).getProtocol();
+
+        List<? extends DomainProperty> fileDomainProps = getBatchDomain(assayProtocol)
+                .getProperties().stream()
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
+
+        if (fileDomainProps.isEmpty())
+            return;
+
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+            return;
+
+        for (ExpExperiment experiment : batches.values())
+        {
+
+            for (DomainProperty fileProp : fileDomainProps )
+            {
+                String sourceFileName;
+                File sourceFile;
+                Object fileValue = experiment.getProperty(fileProp);
+                if (fileValue == null)
+                    continue;
+
+                if (fileValue instanceof String)
+                {
+                    sourceFileName = (String) fileValue;
+                    sourceFile = new File(sourceFileName);
+                }
+                else
+                {
+                    sourceFile = (File) fileValue;
+                    sourceFileName = sourceFile.getAbsolutePath();
+                }
+
+                File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
+                if (updatedFile != null)
+                {
+                    ExpRun run = batchRun.get(experiment.getRowId());
+                    Integer runId = run.getRowId();
+                    movedFiles.putIfAbsent(runId, new ArrayList<>());
+                    movedFiles.get(runId).add(new AssayFileMoveData(run, fileProp.getName(), sourceFile, updatedFile));
+                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                }
+            }
+        }
+
     }
 
     private void updateRunFiles(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)

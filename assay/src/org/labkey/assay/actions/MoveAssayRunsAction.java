@@ -10,6 +10,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.springframework.validation.Errors;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +37,15 @@ public class MoveAssayRunsAction extends AbstractMoveEntitiesAction
         return ExperimentService.get().moveAssayRuns(_expRuns, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
     }
 
+    private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+    {
+        for (ExpRun replacedRun : run.getReplacesRuns())
+        {
+            runIds.add(replacedRun.getRowId());
+            addReplacesRuns(replacedRun, runIds);
+        }
+    }
+
     private void validateRuns(MoveEntitiesForm form, Errors errors)
     {
         Set<Integer> runIds = form.getIds(false); // handle clear of selectionKey after move complete
@@ -44,6 +54,16 @@ public class MoveAssayRunsAction extends AbstractMoveEntitiesAction
             errors.reject(ERROR_GENERIC, "Run IDs must be specified for the move operation.");
             return;
         }
+
+        Set<Integer> runIdsCascadeMove = new HashSet<>();
+        for (int runId : runIds)
+        {
+            ExpRun run = ExperimentService.get().getExpRun(runId);
+            if (run != null)
+                addReplacesRuns(run, runIdsCascadeMove);
+        }
+        if (runIdsCascadeMove.size() > 0)
+            runIds.addAll(runIdsCascadeMove);
 
         _expRuns = ExperimentService.get().getExpRuns(runIds);
         if (_expRuns.size() != runIds.size())
