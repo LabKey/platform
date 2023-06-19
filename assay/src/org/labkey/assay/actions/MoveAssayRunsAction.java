@@ -27,7 +27,7 @@ public class MoveAssayRunsAction extends AbstractMoveEntitiesAction
     {
         _entityType = "assayRuns";
         super.validateForm(form, errors);
-        validateRUns(form, errors);
+        validateRuns(form, errors);
     }
 
     @Override
@@ -36,7 +36,7 @@ public class MoveAssayRunsAction extends AbstractMoveEntitiesAction
         return ExperimentService.get().moveAssayRuns(_expRuns, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
     }
 
-    private void validateRUns(MoveEntitiesForm form, Errors errors)
+    private void validateRuns(MoveEntitiesForm form, Errors errors)
     {
         Set<Integer> runIds = form.getIds(false); // handle clear of selectionKey after move complete
         if (runIds == null || runIds.isEmpty())

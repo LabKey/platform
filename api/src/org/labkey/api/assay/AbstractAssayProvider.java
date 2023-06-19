@@ -1771,7 +1771,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(", modified = ").appendValue(new Date())
                 .append(", modifiedby = ").appendValue(user.getUserId())
-                .append(" WHERE batchprotocolid ");
+                .append(" WHERE rowid ");
         experimentTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runBatchIds);
         int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateSql);
         updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
@@ -1849,6 +1849,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
             return;
 
         FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+            return;
+
         for (ExpRun run : runs)
         {
             for (DomainProperty fileProp : fileDomainProps )
@@ -1940,7 +1943,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     private void updateResultFiles(FilteredTable assayResultTable, List<ExpRun> runs, ExpProtocol assayProtocol, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
     {
-        if (FileContentService.get().getFileRoot(sourceContainer) == null)
+        FileContentService fileContentService = FileContentService.get();
+        if (fileContentService == null)
+            return;
+
+        if (fileContentService.getFileRoot(sourceContainer) == null)
             return;
 
         Domain resultsDomain = getResultsDomain(assayProtocol);
@@ -1954,10 +1961,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 .toList();
 
         if (fileFields.isEmpty())
-            return;
-
-        FileContentService fileContentService = FileContentService.get();
-        if (fileContentService == null)
             return;
 
         Map<Integer, List<AssayFileMoveData>> movedFiles = assayMoveData.fileMovesByRunId();

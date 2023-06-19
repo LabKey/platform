@@ -8618,11 +8618,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();
 
-        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
-        if ("data".equalsIgnoreCase(dataType))
+        TableInfo tableInfo;
+        if ("sample".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoMaterial();
+        else if ("data".equalsIgnoreCase(dataType))
             tableInfo = ExperimentService.get().getTinfoData();
         else if ("assayrun".equalsIgnoreCase(dataType))
             tableInfo = ExperimentService.get().getTinfoExperimentRun();
+        else
+            return null;
 
         SQLFragment currentFolderCountSql = new SQLFragment()
                 .append(" SELECT COUNT(*) FROM ")
@@ -8956,7 +8960,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            if (AuditBehaviorType.NONE != auditBehavior)
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
                 auditEvent.setRowCount(assayRuns.size());
@@ -8974,7 +8978,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     Map<String, Integer> counts = assayMoveData.counts();
                     int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
                     counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
-                    if (auditBehavior == AuditBehaviorType.DETAILED)
+                    if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
                     {
                         for (ExpRun run : runs)
                         {

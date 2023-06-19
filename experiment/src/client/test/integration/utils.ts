@@ -115,3 +115,33 @@ export async function getExperimentRun(server: IntegrationTestServer, runId: num
     }, { ...folderOptions }).expect(successfulResponse);
     return response.body.rows;
 }
+
+export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: [], folderOptions: RequestOptions, userOptions: RequestOptions) {
+    const runResponse = await server.post('assay', 'importRun', {
+        assayId: assayId,
+        name: runName,
+        saveDataAsFile: true,
+        jobDescription: "desc - " + runName,
+        dataRows,
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+    return caseInsensitive(runResponse.body, 'runId');
+}
+
+
+export async function runExists(server: IntegrationTestServer, runId: number, folderOptions: RequestOptions) {
+    const response = await getExperimentRun(server, runId, folderOptions);
+    return response.length === 1;
+}
+
+export async function getAssayRunMovedAuditLogs(server: IntegrationTestServer, assayDesignName: string, runName: string, userComment: string, folderOptions: RequestOptions) {
+    const payload = {
+        schemaName: 'auditlog',
+        queryName: 'ExperimentAuditEvent',
+        'query.protocolrun~eq': assayDesignName + '~~KEYSEP~~' + runName,
+        'query.comment~eq': 'Assay run was moved.'
+    }
+    if (userComment)
+        payload['query.usercomment~eq'] = userComment;
+    const response = await server.post('query', 'selectRows', payload, { ...folderOptions  }).expect(successfulResponse);
+    return response.body.rows;
+}

@@ -1574,13 +1574,6 @@ public class FileContentServiceImpl implements FileContentService
         if (absoluteFilePath == null)
             return null;
 
-        FileContentService fileService = FileContentService.get();
-        if (fileService == null)
-        {
-            _log.warn("No file service available. File '" + absoluteFilePath + "' cannot be moved");
-            return null;
-        }
-
         File file = new File(absoluteFilePath);
         if (!file.exists())
         {
@@ -1588,7 +1581,7 @@ public class FileContentServiceImpl implements FileContentService
             return null;
         }
 
-        File sourceFileRoot = fileService.getFileRoot(sourceContainer);
+        File sourceFileRoot = getFileRoot(sourceContainer);
         if (sourceFileRoot == null)
             return null;
 
@@ -1598,7 +1591,7 @@ public class FileContentServiceImpl implements FileContentService
             _log.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
             return null;
         }
-        File targetFileRoot = fileService.getFileRoot(targetContainer);
+        File targetFileRoot = getFileRoot(targetContainer);
         if (targetFileRoot == null)
             return null;
 
