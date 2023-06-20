@@ -1781,6 +1781,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         int updateRunsCount = new SqlExecutor(runsTable.getSchema()).execute(updateSql);
         updateCounts.put("experimentRuns", updateCounts.getOrDefault("experimentRuns", 0) + updateRunsCount);
 
+        FileContentService fileContentService = FileContentService.get();
+        boolean canMoveFile = fileContentService != null && fileContentService.getFileRoot(sourceContainer) != null;
+        // run property files need to be moved before exp.object
+        // this is because view.objectproperiesview that's used to find run property is queried over exp.object.
+        // the old container is needed to find the property correctly
+        if (canMoveFile)
+            updateRunFiles(runs, sourceContainer, targetContainer, user, assayMoveData);
+
         // update Exp.Object where object.objecturi IN experimentrun.lsid
         TableInfo expObjectTable = OntologyManager.getTinfoObject();
         updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
@@ -1815,12 +1823,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
         updateCounts.put("expData", updateCounts.getOrDefault("expData", 0) + expDataCount);
 
         // update exp.data.datafileurl
-        FileContentService fileContentService = FileContentService.get();
-        if (fileContentService != null && fileContentService.getFileRoot(sourceContainer) != null)
-        {
+        if (canMoveFile)
             updateDataFileUrl(runs, sourceContainer, targetContainer, user, assayMoveData);
-            updateRunFiles(runs, sourceContainer, targetContainer, user, assayMoveData);
-        }
 
         // handle results level data
         moveAssayResults(runs, assayProtocol, sourceContainer, targetContainer, user, assayMoveData);
@@ -1838,6 +1842,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         Map<Integer, ExpExperiment> batches = new HashMap<>();
         Map<Integer, ExpRun> batchRun = new HashMap<>();
+        Set<String> batchLsids = new HashSet<>();
         for (ExpRun expRun : runs)
         {
             ExpExperiment batch = expRun.getBatch();
@@ -1848,6 +1853,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             {
                 batches.put(batchId, batch);
                 batchRun.put(batchId, expRun);
+                batchLsids.add(batch.getLSID());
             }
         }
 
@@ -1865,6 +1871,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 throw new IllegalArgumentException("All runs from the same batch must be selected for move operation.");
         }
 
+        // update exp.experiment
         SQLFragment updateExperimentSql = new SQLFragment("UPDATE ").append(experimentTable)
                 .append(" SET container = ").appendValue(targetContainer.getEntityId())
                 .append(", modified = ").appendValue(new Date())
@@ -1874,53 +1881,60 @@ public abstract class AbstractAssayProvider implements AssayProvider
         int updateExpCount = new SqlExecutor(experimentTable.getSchema()).execute(updateExperimentSql);
         updateCounts.put("experiments", updateCounts.getOrDefault("experiments", 0) + updateExpCount);
 
+        // move batch files
+        // batch property files needs to be moved before updating exp.object for the batch
+        // objectpropertiesview joins exp.object for finding properties with matched container, so the old container needs to be used for finding file props
         ExpProtocol assayProtocol = runs.get(0).getProtocol();
-
         List<? extends DomainProperty> fileDomainProps = getBatchDomain(assayProtocol)
                 .getProperties().stream()
                 .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
 
-        if (fileDomainProps.isEmpty())
-            return;
-
         FileContentService fileContentService = FileContentService.get();
-        if (fileContentService == null)
-            return;
-
-        for (ExpExperiment experiment : batches.values())
+        if (fileContentService != null && !fileDomainProps.isEmpty())
         {
-
-            for (DomainProperty fileProp : fileDomainProps )
+            for (ExpExperiment experiment : batches.values())
             {
-                String sourceFileName;
-                File sourceFile;
-                Object fileValue = experiment.getProperty(fileProp);
-                if (fileValue == null)
-                    continue;
+                for (DomainProperty fileProp : fileDomainProps )
+                {
+                    String sourceFileName;
+                    File sourceFile;
+                    Object fileValue = experiment.getProperty(fileProp);
+                    if (fileValue == null)
+                        continue;
 
-                if (fileValue instanceof String)
-                {
-                    sourceFileName = (String) fileValue;
-                    sourceFile = new File(sourceFileName);
-                }
-                else
-                {
-                    sourceFile = (File) fileValue;
-                    sourceFileName = sourceFile.getAbsolutePath();
-                }
+                    if (fileValue instanceof String)
+                    {
+                        sourceFileName = (String) fileValue;
+                        sourceFile = new File(sourceFileName);
+                    }
+                    else
+                    {
+                        sourceFile = (File) fileValue;
+                        sourceFileName = sourceFile.getAbsolutePath();
+                    }
 
-                File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
-                if (updatedFile != null)
-                {
-                    ExpRun run = batchRun.get(experiment.getRowId());
-                    Integer runId = run.getRowId();
-                    movedFiles.putIfAbsent(runId, new ArrayList<>());
-                    movedFiles.get(runId).add(new AssayFileMoveData(run, fileProp.getName(), sourceFile, updatedFile));
-                    fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                    File updatedFile = fileContentService.getMoveTargetFile(sourceFileName, sourceContainer, targetContainer);
+                    if (updatedFile != null)
+                    {
+                        ExpRun run = batchRun.get(experiment.getRowId());
+                        Integer runId = run.getRowId();
+                        movedFiles.putIfAbsent(runId, new ArrayList<>());
+                        movedFiles.get(runId).add(new AssayFileMoveData(run, fileProp.getName(), sourceFile, updatedFile));
+                        fileContentService.fireFileMoveEvent(sourceFile, updatedFile, user, targetContainer);
+                    }
                 }
             }
+
         }
 
+        // update Exp.Object where object.objecturi IN batchLsids
+        TableInfo expObjectTable = OntologyManager.getTinfoObject();
+        SQLFragment updateSql = new SQLFragment("UPDATE ").append(expObjectTable)
+                .append(" SET container = ").appendValue(targetContainer.getEntityId())
+                .append(" WHERE objecturi ");
+        runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, batchLsids);
+        int expObjectCount = new SqlExecutor(expObjectTable.getSchema()).execute(updateSql);
+        updateCounts.put("expObject", updateCounts.getOrDefault("expObject", 0) + expObjectCount);
     }
 
     private void updateRunFiles(List<ExpRun> runs, Container sourceContainer, Container targetContainer, User user, AssayMoveData assayMoveData)
