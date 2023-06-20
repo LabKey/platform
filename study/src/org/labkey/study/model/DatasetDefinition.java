@@ -1790,7 +1790,8 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
          * @param requiredAuditType The expected audit behavior type. If this does not match the type set on the
          *                          dataset, then the event will not be logged.
          */
-        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment, UploadLog ul /*optional*/)
+        public void addAuditEvent(User user, Container c, AuditBehaviorType requiredAuditType, String comment, @Nullable UploadLog ul)
+
         {
             TableInfo table = _dataset.getTableInfo(user);
             if (table.getAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
