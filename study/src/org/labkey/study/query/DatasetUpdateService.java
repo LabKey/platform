@@ -257,7 +257,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         if (_skipAuditLogging)
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, NONE);
         else if (!isBulkLoad())
-            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
+        {
+            // default to DETAILED unless there is a metadata XML override
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior,
+                    getQueryTable().getXmlAuditBehaviorType() != null ? getQueryTable().getXmlAuditBehaviorType() : DETAILED);
+        }
 
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
 
@@ -611,7 +615,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             resetCreatedColumnsSQL.add(newLsid);
             new SqlExecutor(_dataset.getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
 
-            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, target, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
                     List.of(mergeData), List.of(oldData));
 
             // Successfully updated

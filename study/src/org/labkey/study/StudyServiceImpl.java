@@ -81,13 +81,11 @@ import org.labkey.api.view.DataView;
 import org.labkey.study.assay.StudyPublishManager;
 import org.labkey.study.audit.StudyAuditProvider;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.AdditiveTypeTable;
 import org.labkey.study.query.BaseStudyTable;
@@ -281,21 +279,6 @@ public class StudyServiceImpl implements StudyService
         AuditTypeEvent event = new AuditTypeEvent(StudyAuditProvider.STUDY_AUDIT_EVENT, container, comment);
         AuditLogService.get().addEvent(user, event);
     }
-
-    public static void addDatasetAuditEvent(User u, Container c, Dataset def, String comment, UploadLog ul /*optional*/)
-    {
-        DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), comment);
-
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
-        event.setDatasetId(def.getDatasetId());
-        if (ul != null)
-        {
-            event.setLsid(ul.getFilePath());
-        }
-        AuditLogService.get().addEvent(u,event);
-    }
-
 
     @Override
     public void applyDefaultQCStateFilter(DataView view)
