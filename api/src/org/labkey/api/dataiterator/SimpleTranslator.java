@@ -417,7 +417,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol, SimpleFilter filter)
         {
-            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(10_000);
+            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(100_000);
         }
 
 
