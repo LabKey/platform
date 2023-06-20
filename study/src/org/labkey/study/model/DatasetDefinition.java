@@ -1794,7 +1794,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
         {
             TableInfo table = _dataset.getTableInfo(user);
-            if (table.getAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
+            if (table != null && table.getAuditBehavior((AuditBehaviorType)null) != requiredAuditType)
                 return;
 
             DatasetAuditProvider.DatasetAuditEvent event = new DatasetAuditProvider.DatasetAuditEvent(c.getId(), comment);
