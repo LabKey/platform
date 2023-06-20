@@ -1,12 +1,13 @@
 import mock from 'mock-fs';
-import {hookServer, IntegrationTestServer, RequestOptions, SecurityRole, successfulResponse} from '@labkey/test';
+import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
 import {
-    FILE_FIELD_1_NAME,
-    FILE_FIELD_2_NAME,
+    getAssayResults,
     getAssayRunMovedAuditLogs,
     importRun,
     runExists,
+    uploadAssayFile,
 } from "./utils";
+import { caseInsensitive } from "@labkey/components";
 
 
 const server = hookServer(process.env);
@@ -29,6 +30,8 @@ let assayAId, assayWithRunFileId, assayWithResultFileId;
 const getAssayDesignPayload = (name: string, runFields: [], resultFields: []) => {
     return {
         "allowEditableResults": true,
+        "editableResults": true,
+        "editableRuns": true,
         "domains": [
             {
                 "name": "Batch Fields",
@@ -66,7 +69,7 @@ const getAssayDesignPayload = (name: string, runFields: [], resultFields: []) =>
 
 beforeAll(async () => {
     await server.init(PROJECT_NAME, {
-        ensureModules: ['experiment', 'assay'],
+        ensureModules: ['experiment', 'assay', "filecontent"],
     });
     topFolderOptions = { containerPath: PROJECT_NAME };
 
@@ -137,7 +140,7 @@ beforeAll(async () => {
 
     // create a third assay design with result file property at project container for use in tests
     const assayWithResultFile = await server.post('assay', 'saveProtocol.api', getAssayDesignPayload('assayWithResultFile', [runFileField], [resultPropField, resultFileField]), topFolderOptions).expect(successfulResponse);
-    assayWithResultFileId = assayWithRunFile.body['data']['protocolId'];
+    assayWithResultFileId = assayWithResultFile.body['data']['protocolId'];
 });
 
 afterAll(async () => {
@@ -242,7 +245,6 @@ describe(CONTROLLER_NAME, () => {
             expect(updateCounts.experimentRuns).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
-            // expect(updateCounts.movedFiles).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
 
             const movedEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-1', null, topFolderOptions);
@@ -276,7 +278,6 @@ describe(CONTROLLER_NAME, () => {
             expect(updateCounts.experimentRuns).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
-            // expect(updateCounts.movedFiles).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
 
             const movedEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-3', userComment, topFolderOptions);
@@ -311,7 +312,6 @@ describe(CONTROLLER_NAME, () => {
             expect(updateCounts.experimentRuns).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
-            // expect(updateCounts.movedFiles).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
 
             const movedEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'sub1-movetotop-31', userComment, topFolderOptions);
@@ -346,7 +346,6 @@ describe(CONTROLLER_NAME, () => {
             expect(updateCounts.experimentRuns).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
-            // expect(updateCounts.movedFiles).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
 
             const movedEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayA', 'sub2-movetosub1-1', userComment, subfolder1Options);
@@ -386,7 +385,6 @@ describe(CONTROLLER_NAME, () => {
             expect(updateCounts.experimentRuns).toBe(2);
             expect(updateCounts.expObject).toBe(4);
             expect(updateCounts.expData).toBe(2);
-            // expect(updateCounts.movedFiles).toBe(1);
             expect(updateCounts.auditEvents).toBe(5); // 2 for run loaded, 2 for adding run to batch, 1 for replace
 
             const movedOriginalEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-4-original', userComment, topFolderOptions);
@@ -457,7 +455,6 @@ describe(CONTROLLER_NAME, () => {
             expect(updateCounts.experimentRuns).toBe(2);
             expect(updateCounts.expObject).toBe(4);
             expect(updateCounts.expData).toBe(2);
-            // expect(updateCounts.movedFiles).toBe(1);
             expect(updateCounts.auditEvents).toBe(4); // 2 for run loaded, 2 for adding run to batch
 
             const movedOriginalEventInTop = await getAssayRunMovedAuditLogs(server, 'assayA', 'top-movetosub1-5-1', userComment, topFolderOptions);
@@ -482,5 +479,88 @@ describe(CONTROLLER_NAME, () => {
         });
 
     });
+
+    it('success, move run with run file field', async () => {
+        // Arrange
+        const { runId } = await importRun(server, assayWithRunFileId, 'top-movetosub1-8', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+        mock({
+            'runFileA.txt': 'fileA contents',
+        });
+        await uploadAssayFile(server, 'assayWithRunFile', runId, true, 'RunFileField', 'runFileA.txt', topFolderOptions, editorUserOptions)
+
+        const userComment = "Oops! Wrong project.";
+        // Act
+        const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
+            targetContainer: subfolder1Options.containerPath,
+            rowIds: [runId],
+            auditBehavior: "DETAILED",
+            userComment
+        }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+        // Assert
+        const {updateCounts, success} = response.body;
+        expect(success).toBe(true);
+        expect(updateCounts.experiments).toBe(1);
+        expect(updateCounts.experimentRuns).toBe(1);
+        expect(updateCounts.expObject).toBe(2);
+        expect(updateCounts.expData).toBe(1);
+        expect(updateCounts.movedFiles).toBe(1);
+        expect(updateCounts.auditEvents).toBe(3); // one for run loaded, one for updateRows for file, one for adding run to batch
+
+        const movedEventInTop = await getAssayRunMovedAuditLogs(server, 'assayWithRunFile', 'top-movetosub1-8', userComment, topFolderOptions);
+        expect(movedEventInTop.length).toBe(0);
+
+        const movedEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayWithRunFile', 'top-movetosub1-8', userComment, subfolder1Options);
+        expect(movedEventInSub1.length).toBe(1);
+
+        const runExistsInTop = await runExists(server, runId, topFolderOptions);
+        expect(runExistsInTop).toBe(false);
+        const runExistsInSub1 = await runExists(server, runId, subfolder1Options);
+        expect(runExistsInSub1).toBe(true);
+
+    });
+
+    it('success, move run with result file field', async () => {
+        // Arrange
+        const { runId } = await importRun(server, assayWithResultFileId, 'top-movetosub1-9', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+        const assayResults = await getAssayResults(server, 'assayWithResultFile', 'ResultFileField', runId, topFolderOptions);
+        const resultRowId = caseInsensitive(assayResults[0], 'rowid');
+        mock({
+            'resultFileA.txt': 'fileA contents',
+        });
+        await uploadAssayFile(server, 'assayWithResultFile', resultRowId, false, 'ResultFileField', 'resultFileA.txt', topFolderOptions, editorUserOptions)
+
+        const userComment = "Oops! Wrong project.";
+        // Act
+        const response = await server.post(CONTROLLER_NAME, ACTION_NAME, {
+            targetContainer: subfolder1Options.containerPath,
+            rowIds: [runId],
+            auditBehavior: "DETAILED",
+            userComment
+        }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+        // Assert
+        const {updateCounts, success} = response.body;
+        expect(success).toBe(true);
+        expect(updateCounts.experiments).toBe(1);
+        expect(updateCounts.experimentRuns).toBe(1);
+        expect(updateCounts.expObject).toBe(2);
+        expect(updateCounts.expData).toBe(1);
+        expect(updateCounts.movedFiles).toBe(1);
+        expect(updateCounts.auditEvents).toBe(3);
+
+        const movedEventInTop = await getAssayRunMovedAuditLogs(server, 'assayWithResultFile', 'top-movetosub1-9', userComment, topFolderOptions);
+        expect(movedEventInTop.length).toBe(0);
+
+        const movedEventInSub1 = await getAssayRunMovedAuditLogs(server, 'assayWithResultFile', 'top-movetosub1-9', userComment, subfolder1Options);
+        expect(movedEventInSub1.length).toBe(1);
+
+        const runExistsInTop = await runExists(server, runId, topFolderOptions);
+        expect(runExistsInTop).toBe(false);
+        const runExistsInSub1 = await runExists(server, runId, subfolder1Options);
+        expect(runExistsInSub1).toBe(true);
+
+    });
+
 
 });

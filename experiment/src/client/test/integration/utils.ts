@@ -132,6 +132,27 @@ export async function importRun(server: IntegrationTestServer, assayId: number, 
     }
 }
 
+export async function uploadAssayFile(server: IntegrationTestServer, assayDesignName: string, rowId: number, isRun: boolean, fieldName: string, fileName: string, folderOptions: RequestOptions, userOptions: RequestOptions) {
+
+    const uploadResponse = await server.request('query', 'updateRows', (agent, url) => {
+        let request = agent.post(url);
+
+        request = request.field('json', JSON.stringify({
+            schemaName:"assay.General." + assayDesignName,
+            queryName: isRun ? "Runs" : "Data",
+            rows:[{RowId:rowId}],
+            skipReselectRows:true,
+        }));
+
+        request = request.attach(fieldName + "::0", fileName);
+
+        return request;
+
+    }, { ...folderOptions, ...userOptions }).expect(successfulResponse);
+
+    return caseInsensitive(uploadResponse.body, 'rowsAffected')
+}
+
 
 export async function runExists(server: IntegrationTestServer, runId: number, folderOptions: RequestOptions) {
     const response = await getExperimentRun(server, runId, folderOptions);
@@ -148,5 +169,15 @@ export async function getAssayRunMovedAuditLogs(server: IntegrationTestServer, a
     if (userComment)
         payload['query.usercomment~eq'] = userComment;
     const response = await server.post('query', 'selectRows', payload, { ...folderOptions  }).expect(successfulResponse);
+    return response.body.rows;
+}
+
+export async function getAssayResults(server: IntegrationTestServer, assayDesignName: string, fileField: string, runId: number, folderOptions: RequestOptions) {
+    const response = await server.post('query', 'selectRows', {
+        schemaName: "assay.General." + assayDesignName,
+        queryName: 'Data',
+        'query.run~eq': runId,
+        'query.columns': 'rowId,' + fileField,
+    }, { ...folderOptions }).expect(successfulResponse);
     return response.body.rows;
 }
