@@ -37,7 +37,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.experiment.DataURLRelativizer;
-import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 
 import java.io.BufferedOutputStream;

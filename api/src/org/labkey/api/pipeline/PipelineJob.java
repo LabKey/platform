@@ -879,7 +879,8 @@ abstract public class PipelineJob extends Job implements Serializable
             getLogger().info("Skipping already completed task '" + factory.getId() + "' at location '" + factory.getExecutionLocation() + "'");
         }
 
-        setActiveTaskStatus(TaskStatus.complete);
+        if (getActiveTaskStatus() != TaskStatus.complete)
+            setActiveTaskStatus(TaskStatus.complete);
     }
 
     public static void logStartStopInfo(String message)

@@ -126,6 +126,7 @@ import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
 public class DatasetQueryView extends StudyQueryView
 {
     public static final String EXPERIMENTAL_LINKED_DATASET_CHECK = "LinkedDatasetCheck";
+    public static final String EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS = "MergeWithManagedDatasetKeys";
 
     private final DatasetDefinition _dataset;
     private final boolean _showSourceLinks;

@@ -113,6 +113,14 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     }
 
     @Override
+    public Supplier<Object> getSupplier(int i)
+    {
+        if (i == _nameCol)
+            return () -> get(_nameCol);
+        return _delegate.getSupplier(i);
+    }
+
+    @Override
     public Object get(int i)
     {
         if (i == _nameCol)
