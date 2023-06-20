@@ -334,7 +334,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     bulkLoaded = map.get(k);
                 }
 
-                if (bulkLoaded == null)
+                if (bulkLoaded == null || bulkLoaded.isEmpty())
                 {
                     TableSelector ts = createSelector(pkCol, altKeyCol, k);
                     ts.fillMultiValuedMap(map);
@@ -417,7 +417,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol, SimpleFilter filter)
         {
-            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(1_000_000);
+            return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(10_000);
         }
 
 
