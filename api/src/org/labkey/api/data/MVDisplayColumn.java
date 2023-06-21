@@ -127,6 +127,15 @@ public class MVDisplayColumn extends DataColumn
         }
     }
 
+    @Override
+    public Object getExportCompatibleValue(RenderContext ctx)
+    {
+        if (getMvIndicator(ctx) != null)
+            return getDisplayValue(ctx);
+        else
+            return super.getExportCompatibleValue(ctx);
+    }
+
     @Override @NotNull
     public HtmlString getFormattedHtml(RenderContext ctx)
     {

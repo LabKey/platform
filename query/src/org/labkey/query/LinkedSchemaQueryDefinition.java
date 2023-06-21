@@ -376,6 +376,8 @@ public class LinkedSchemaQueryDefinition extends QueryDefinitionImpl
                 action == QueryAction.exportRowsExcel ||
                 action == QueryAction.exportRowsXLSX ||
                 action == QueryAction.exportRowsTsv ||
+                action == QueryAction.excelWebQueryDefinition ||
+                action == QueryAction.exportScript ||
                 action == QueryAction.printRows)
             return QueryService.get().urlDefault(container, action, getSchemaName(), getName());
 

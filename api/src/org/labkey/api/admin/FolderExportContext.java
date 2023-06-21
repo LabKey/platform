@@ -17,6 +17,7 @@ package org.labkey.api.admin;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PHI;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -44,6 +45,8 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
     private Set<String> _queryKeys;
+
+    private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
     {
@@ -169,5 +172,10 @@ public class FolderExportContext extends AbstractFolderContext
     public void setListIds(Integer[] listIds)
     {
         _listIds = new HashSet<>(Arrays.asList(listIds));
+    }
+
+    public LSIDRelativizer.RelativizedLSIDs getRelativizedLSIDs()
+    {
+        return _relativizedLSIDs;
     }
 }

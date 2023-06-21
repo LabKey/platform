@@ -163,6 +163,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
+import org.labkey.study.query.DatasetQueryView;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
@@ -415,6 +416,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
+
+        AdminConsole.addExperimentalFeatureFlag(DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS,
+                "Allow merge of study dataset that uses server-managed additional key fields",
+                "Merging of dataset that uses server-managed third key (such as GUID or auto RowId) is not officially supported. Unexpected outcome might be experienced when merge is performed.",
+                false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 

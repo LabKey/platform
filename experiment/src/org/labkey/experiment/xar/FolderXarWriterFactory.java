@@ -30,7 +30,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 
 import java.io.OutputStream;
@@ -160,7 +159,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
 
-            XarExporter exporter = new XarExporter(LSIDRelativizer.FOLDER_RELATIVE, selection, ctx.getUser(), XAR_XML_FILE_NAME, ctx.getLogger());
+            XarExporter exporter = new XarExporter(ctx.getRelativizedLSIDs(), selection, ctx.getUser(), XAR_XML_FILE_NAME, ctx.getLogger());
 
             try (OutputStream fOut = xarDir.getOutputStream(XAR_FILE_NAME))
             {
