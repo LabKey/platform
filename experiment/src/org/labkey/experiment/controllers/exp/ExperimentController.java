@@ -3989,12 +3989,15 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
+        boolean _allowCreateStorage = false;
+
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
             _insertOption = queryForm.getInsertOption();
             _crossTypeImport = Boolean.valueOf(getParam(Params.crossTypeImport));
+            _allowCreateStorage = Boolean.valueOf(getParam(Params.allowCreateStorage));
             _form.setSchemaName(getTargetSchemaName());
             if (_crossTypeImport)
             {
@@ -4037,7 +4040,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
-            DataIteratorContext context = createDataIteratorContext(_insertOption, _importLookupByAlternateKey, _importIdentity,  _crossTypeImport, auditBehaviorType, errors);
+            DataIteratorContext context = createDataIteratorContext(_insertOption, _importLookupByAlternateKey, _importIdentity,  _crossTypeImport, _allowCreateStorage, auditBehaviorType, errors);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;

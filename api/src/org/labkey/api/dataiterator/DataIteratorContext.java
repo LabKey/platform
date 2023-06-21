@@ -49,6 +49,7 @@ public class DataIteratorContext
     boolean _supportAutoIncrementKey = false;
     boolean _allowImportLookupByAlternateKey = false;
     boolean _crossTypeImport = false;
+    boolean _allowCreateStorage = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
@@ -172,6 +173,16 @@ public class DataIteratorContext
     public void setCrossTypeImport(boolean crossTypeImport)
     {
         _crossTypeImport = crossTypeImport;
+    }
+
+    public boolean isAllowCreateStorage()
+    {
+        return _allowCreateStorage;
+    }
+
+    public void setAllowCreateStorage(boolean allowCreateStorage)
+    {
+        _allowCreateStorage = allowCreateStorage;
     }
 
     /** Normally all built in columns (created, createdBy, etc) are populated with newly calculated values on writing to target.

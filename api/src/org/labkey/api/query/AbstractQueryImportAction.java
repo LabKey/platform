@@ -304,7 +304,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         importLookupByAlternateKey,
         format,
         insertOption,
-        crossTypeImport
+        crossTypeImport,
+        allowCreateStorage
     }
 
     @Nullable
@@ -764,7 +765,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, false, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
     }
 
-    protected static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors)
+    protected static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, boolean allowCreateStorage, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
@@ -779,12 +780,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             context.setSupportAutoIncrementKey(true);
         }
         context.setCrossTypeImport(crossTypeImport);
+        context.setAllowCreateStorage(allowCreateStorage);
         return context;
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
     {
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, auditBehaviorType, errors), auditEvent, user, container);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, false, auditBehaviorType, errors), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
