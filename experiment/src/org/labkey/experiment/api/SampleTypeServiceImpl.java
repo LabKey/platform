@@ -1678,7 +1678,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
 
                 // update for exp.material.container
-                updateCounts.put("samples", updateCounts.get("samples") + expService.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
+                updateCounts.put("samples", updateCounts.get("samples") + ContainerManager.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
 
                 // update for exp.object.container
                 expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);

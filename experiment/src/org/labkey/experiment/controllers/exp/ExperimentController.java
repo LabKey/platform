@@ -7886,7 +7886,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public void validateForm(MoveEntitiesForm form, Errors errors)
         {
-            validateTargetContainer(form, errors);
+            _targetContainer = ContainerManager.getMoveTargetContainer(_entityType, getContainer(), getUser(), form.getTargetContainer(), errors);
         }
 
         abstract Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException;
@@ -7930,57 +7930,6 @@ public class ExperimentController extends SpringActionController
                 resp.put("error", e.getMessage());
             }
             return resp;
-        }
-
-        private void validateTargetContainer(MoveEntitiesForm form, Errors errors)
-        {
-            if (form.getTargetContainer() == null)
-            {
-                errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
-                return;
-            }
-
-            _targetContainer = getTargetContainer(form);
-            if (_targetContainer == null)
-            {
-                errors.reject(ERROR_GENERIC, "The target container was not found: " + form.getTargetContainer() + ".");
-                return;
-            }
-
-            if (!_targetContainer.hasPermission(getUser(), InsertPermission.class))
-            {
-                errors.reject(ERROR_GENERIC, "You do not have permission to move " + _entityType + " to the target container: " + form.getTargetContainer() + ".");
-                return;
-            }
-
-            if (!isValidTargetContainer(getContainer(), _targetContainer))
-                errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + form.getTargetContainer() + ".");
-        }
-
-        private Container getTargetContainer(MoveEntitiesForm form)
-        {
-            Container c = ContainerManager.getForId(form.getTargetContainer());
-            if (c == null)
-                c = ContainerManager.getForPath(form.getTargetContainer());
-
-            return c;
-        }
-
-        // targetContainer must be in the same app project at this time
-        // i.e. child of current project, project of current child, sibling within project
-        private boolean isValidTargetContainer(Container current, Container target)
-        {
-            if (current.isRoot() || target.isRoot())
-                return false;
-
-            if (current.equals(target))
-                return false;
-
-            boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
-            boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
-            boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
-
-            return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
         }
     }
 
