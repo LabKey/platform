@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
@@ -1890,7 +1889,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 for (DomainProperty fileProp : fileDomainProps )
                 {
                     String sourceFileName = (String) sample.getProperty(fileProp);
-                    File updatedFile = getTargetFile(sourceFileName, sample.getContainer(), targetContainer);
+                    File updatedFile = FileContentService.get().getMoveTargetFile(sourceFileName, sample.getContainer(), targetContainer);
                     if (updatedFile != null)
                     {
                         FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
@@ -1903,44 +1902,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return sampleFileRenames;
-    }
-
-    private File getTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer)
-    {
-        if (absoluteFilePath == null)
-            return null;
-
-        FileContentService fileService = FileContentService.get();
-        if (fileService == null)
-        {
-            LOG.warn("No file service available. File '" + absoluteFilePath + "' cannot be moved");
-            return null;
-        }
-
-        File file = new File(absoluteFilePath);
-        if (!file.exists())
-        {
-            LOG.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
-            return null;
-        }
-
-        File sourceFileRoot = fileService.getFileRoot(sourceContainer);
-        if (sourceFileRoot == null)
-            return null;
-
-        String sourceRootPath = sourceFileRoot.getAbsolutePath();
-        if (!absoluteFilePath.startsWith(sourceRootPath))
-        {
-            LOG.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
-            return null;
-        }
-        File targetFileRoot = fileService.getFileRoot(targetContainer);
-        if (targetFileRoot == null)
-            return null;
-
-        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
-        File targetFile = new File(targetPath);
-        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
     }
 
     private boolean moveFile(FileFieldRenameData renameData)
