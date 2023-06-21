@@ -4,7 +4,8 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -12,11 +13,11 @@ import org.labkey.experiment.XarReader;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.DataClassFolderWriter.EXCLUDED_TYPES;
 import static org.labkey.experiment.samples.DataClassFolderWriter.XAR_TYPES_NAME;
@@ -75,7 +76,7 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
     }
 
     @Override
-    protected void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader) throws IOException, SQLException
+    protected void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader, XarContext xarContext) throws IOException, SQLException
     {
         Map<String, String> dataClassDataFiles = new HashMap<>();
         VirtualFile xarDir = getXarDir(root);
@@ -90,8 +91,10 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
 
         if (!dataClassDataFiles.isEmpty())
         {
-            importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
-                    dataClassDataFiles, xarDir, true, false);
+            ArrayList<ExpObject> sortedDataClasses = new ArrayList<>(typesReader.getDataClasses());
+            sortedDataClasses.sort(Comparator.comparingInt(dc -> REGISTRY_CLASS_ORDER.indexOf(dc.getName())));
+
+            importTsvData(ctx, xarContext, ExpSchema.SCHEMA_EXP_DATA.toString(), sortedDataClasses, dataClassDataFiles, xarDir, true, false);
         }
     }
 

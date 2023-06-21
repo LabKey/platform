@@ -20,7 +20,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.xar.XarExportSelection;
 
@@ -95,7 +94,7 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         }
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
-        _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
+        _relativizedLSIDs = ctx.getRelativizedLSIDs();
         // create the XAR which contains the sample type and data class definitions
         if (exportTypes)
         {

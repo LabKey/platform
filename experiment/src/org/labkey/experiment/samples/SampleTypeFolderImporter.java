@@ -4,7 +4,7 @@ import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
-import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.SampleTypeFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeFolderWriter.XAR_TYPES_NAME;
@@ -57,10 +56,10 @@ public class SampleTypeFolderImporter extends AbstractExpFolderImporter
     }
 
     @Override
-    protected void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader) throws IOException, SQLException
+    protected void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader, XarContext xarContext) throws IOException, SQLException
     {
         // the legacy sample type folder export also included data classes, check for any data class tsv exports
-        DataClassFolderImporter.get().importDataFiles(ctx, root, typesReader);
+        DataClassFolderImporter.get().importDataFiles(ctx, root, typesReader, xarContext);
 
         Map<String, String> sampleTypeDataFiles = new HashMap<>();
         VirtualFile xarDir = getXarDir(root);
@@ -75,8 +74,7 @@ public class SampleTypeFolderImporter extends AbstractExpFolderImporter
 
         if (!sampleTypeDataFiles.isEmpty())
         {
-            importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                    sampleTypeDataFiles, xarDir, true, false);
+            importTsvData(ctx, xarContext, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes(), sampleTypeDataFiles, xarDir, true, false);
         }
     }
 

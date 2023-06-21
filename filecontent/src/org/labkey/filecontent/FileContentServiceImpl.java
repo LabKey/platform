@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -1565,6 +1566,38 @@ public class FileContentServiceImpl implements FileContentService
                 return true;
         }
         return false;
+    }
+
+    @Override
+    public File getMoveTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer)
+    {
+        if (absoluteFilePath == null)
+            return null;
+
+        File file = new File(absoluteFilePath);
+        if (!file.exists())
+        {
+            _log.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
+            return null;
+        }
+
+        File sourceFileRoot = getFileRoot(sourceContainer);
+        if (sourceFileRoot == null)
+            return null;
+
+        String sourceRootPath = sourceFileRoot.getAbsolutePath();
+        if (!absoluteFilePath.startsWith(sourceRootPath))
+        {
+            _log.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
+            return null;
+        }
+        File targetFileRoot = getFileRoot(targetContainer);
+        if (targetFileRoot == null)
+            return null;
+
+        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
+        File targetFile = new File(targetPath);
+        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
     }
 
     // Cache with short-lived entries so that exp.files can perform reasonably

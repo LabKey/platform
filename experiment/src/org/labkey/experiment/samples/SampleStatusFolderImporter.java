@@ -6,7 +6,10 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.FileUtil;
@@ -15,7 +18,9 @@ import org.labkey.experiment.XarReader;
 
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.labkey.experiment.samples.SampleTypeFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeFolderWriter.XAR_TYPES_NAME;
@@ -79,9 +84,13 @@ public class SampleStatusFolderImporter extends SampleTypeFolderImporter
                 if (typesXarFile != null)
                 {
                     XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
+                    XarContext xarContext = typesReader.getXarSource().getXarContext();
+                    List<String> sampleTypeNames = typesReader.getSampleTypeNames();
+                    List<ExpSampleType> sampleTypes = SampleTypeService.get().getSampleTypes(ctx.getContainer(), ctx.getUser(), false)
+                            .stream().filter(sampleType -> sampleTypeNames.contains(sampleType.getName())).collect(Collectors.toList());
 
                     // process any sample status data files
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypeNames(), sampleStatusDataFiles, xarDir, false, true);
+                    importTsvData(ctx, xarContext, SamplesSchema.SCHEMA_NAME, sampleTypes, sampleStatusDataFiles, xarDir, false, true);
                 }
                 else
                     log.info("No sample types XAR file to process.");

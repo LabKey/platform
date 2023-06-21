@@ -36,6 +36,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -137,7 +138,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
-import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -8670,12 +8671,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
-    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, boolean isSample, Container container)
+    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, String dataType, Container container)
     {
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();
 
-        TableInfo tableInfo = isSample ? ExperimentService.get().getTinfoMaterial() : ExperimentService.get().getTinfoData();
+        TableInfo tableInfo;
+        if ("sample".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoMaterial();
+        else if ("data".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoData();
+        else if ("assayrun".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoExperimentRun();
+        else
+            return null;
+
         SQLFragment currentFolderCountSql = new SQLFragment()
                 .append(" SELECT COUNT(*) FROM ")
                 .append(tableInfo, "t")
@@ -8769,7 +8779,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8836,20 +8846,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         QueryService queryService = QueryService.get();
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
-    }
-
-    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
-    {
-        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-            .append(" SET container = ").appendValue(targetContainer.getEntityId());
-        if (withModified)
-        {
-            dataUpdate.append(", modified = ").appendValue(new Date());
-            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
-        }
-        dataUpdate.append(" WHERE ").append(idField);
-        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
-        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
@@ -8989,6 +8985,113 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             runCount++;
         }
         return runCount;
+    }
+
+    @Override
+    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
+    {
+        if (assayRuns.isEmpty())
+            throw new IllegalArgumentException("No assayRuns provided to move operation.");
+
+        Map<ExpProtocol, List<ExpRun>> protocolMap = new HashMap<>();
+        assayRuns.forEach(run ->
+                protocolMap.computeIfAbsent(run.getProtocol(), t -> new ArrayList<>()).add(run));
+
+        List<String> runLsids = assayRuns.stream().map(ExpRun::getLSID).toList();
+
+        ExperimentService expService = ExperimentService.get();
+
+        AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.setRowCount(assayRuns.size());
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
+
+            for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
+            {
+                ExpProtocol protocol = entry.getKey();
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                List<ExpRun> runs = entry.getValue();
+                if (provider != null)
+                {
+                    provider.moveRuns(runs, targetContainer, user, assayMoveData);
+                    Map<String, Integer> counts = assayMoveData.counts();
+                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
+                    counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
+                    if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+                    {
+                        for (ExpRun run : runs)
+                        {
+                            run.setContainer(targetContainer);
+                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment);
+                        }
+                    }
+                }
+            }
+
+            transaction.addCommitTask(() -> {
+                int fileMoveCount = 0;
+                for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
+                {
+                    for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
+                    {
+                        if (moveFile(renameData))
+                            fileMoveCount++;
+                    }
+                }
+                Map<String, Integer> counts = assayMoveData.counts();
+                counts.put("movedFiles", fileMoveCount);
+            }, POSTCOMMIT);
+
+            transaction.commit();
+        }
+
+        return assayMoveData.counts();
+    }
+
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData)
+    {
+        String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
+        File targetFile = renameData.targetFile();
+        File sourceFile = renameData.sourceFile();
+        String assayName = renameData.run().getProtocol().getName();
+        String runName = renameData.run().getName();
+        if (!targetFile.getParentFile().exists())
+        {
+            if (!targetFile.getParentFile().mkdirs())
+            {
+                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' assay run '%s' (field: '%s') failed.",
+                        targetFile.getParent(),
+                        sourceFile.getAbsolutePath(),
+                        assayName,
+                        runName,
+                        fieldName));
+                return false;
+            }
+        }
+        if (!sourceFile.renameTo(targetFile))
+        {
+            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' assay run '%s' (field: '%s') failed.",
+                    sourceFile.getAbsolutePath(),
+                    targetFile.getAbsolutePath(),
+                    assayName,
+                    runName,
+                    fieldName));
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int moveAuditEvents(Container targetContainer, List<String> runLsids)
+    {
+        ExperimentAuditProvider auditProvider = new ExperimentAuditProvider();
+        return auditProvider.moveEvents(targetContainer, runLsids);
     }
 
     public static class TestCase extends Assert
