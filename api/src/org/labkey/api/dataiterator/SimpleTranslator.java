@@ -334,6 +334,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     bulkLoaded = map.get(k);
                 }
 
+                // ArrayListValuedHashMap returns an empty collection if 'k' is not in the map.
                 if (bulkLoaded == null || bulkLoaded.isEmpty())
                 {
                     TableSelector ts = createSelector(pkCol, altKeyCol, k);
@@ -417,6 +418,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         private TableSelector createSelector(ColumnInfo pkCol, ColumnInfo altKeyCol, SimpleFilter filter)
         {
+            // Load a bunch of rows in the hopes of not needing to fetch for every value we encounter,
+            // but if we have a miss, we'll do per-value fetches as needed
             return new TableSelector(_targetTable, Arrays.asList(altKeyCol, pkCol), filter, null).setMaxRows(100_000);
         }
 
