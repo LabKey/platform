@@ -17,11 +17,11 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
-import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_NAME;
-import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_TYPES_XML_NAME;
+import static org.labkey.experiment.samples.SampleTypeFolderWriter.DEFAULT_DIRECTORY;
+import static org.labkey.experiment.samples.SampleTypeFolderWriter.XAR_TYPES_NAME;
+import static org.labkey.experiment.samples.SampleTypeFolderWriter.XAR_TYPES_XML_NAME;
 
-public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImporter
+public class SampleStatusFolderImporter extends SampleTypeFolderImporter
 {
     private SampleStatusFolderImporter()
     {
@@ -67,9 +67,9 @@ public class SampleStatusFolderImporter extends SampleTypeAndDataClassFolderImpo
                 }
                 else if (file.toLowerCase().endsWith(".tsv"))
                 {
-                    if (file.startsWith(SampleTypeAndDataClassFolderWriter.SAMPLE_STATUS_PREFIX))
+                    if (file.startsWith(SampleTypeFolderWriter.SAMPLE_STATUS_PREFIX))
                     {
-                        sampleStatusDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeAndDataClassFolderWriter.SAMPLE_STATUS_PREFIX.length())), file);
+                        sampleStatusDataFiles.put(FileUtil.getBaseName(file.substring(SampleTypeFolderWriter.SAMPLE_STATUS_PREFIX.length())), file);
                     }
                 }
             }
