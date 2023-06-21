@@ -9,7 +9,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.MoveEntitiesForm;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.springframework.validation.BindException;
@@ -17,8 +16,6 @@ import org.springframework.validation.Errors;
 
 import java.util.Collection;
 import java.util.Map;
-
-import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 @RequiresPermission(UpdatePermission.class)
 public abstract class AbstractMoveEntitiesAction extends MutatingApiAction<MoveEntitiesForm>
