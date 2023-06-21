@@ -97,6 +97,12 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
     @Override
     public Path getFileSystemDirectoryPath()
     {
+        return getFileSystemDirectoryPath(c);
+    }
+
+    @Override
+    public Path getFileSystemDirectoryPath(Container container)
+    {
         FileContentService svc = FileContentService.get();
         if (null == svc)
             throw new IllegalStateException("FileContentService not found.");
@@ -106,11 +112,11 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
             Path dir;
             if (null == path)
             {
-                dir = ((FileContentServiceImpl) svc).getMappedDirectory(c, false);
+                dir = ((FileContentServiceImpl) svc).getMappedDirectory(container, false);
             }
             else if (isRelative())
             {
-                Path mappedDir = ((FileContentServiceImpl) svc).getMappedDirectory(c, false);
+                Path mappedDir = ((FileContentServiceImpl) svc).getMappedDirectory(container, false);
                 dir = mappedDir.resolve(path);
             }
             else
@@ -118,7 +124,7 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                 dir = FileUtil.stringToPath(getContainer(), path, false);       // path not encoded
             }
 
-            if (_contentType != null && !svc.isCloudRoot(c))    // don't need @files in cloud
+            if (_contentType != null && !svc.isCloudRoot(container))    // don't need @files in cloud
             {
                 Path root = dir.resolve(svc.getFolderName(_contentType));
                 if (!Files.exists(root))

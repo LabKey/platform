@@ -38,12 +38,12 @@
     <table style="width: 60em;">
         <tr>
             <td style="vertical-align: top;">
-                <labkey:checkbox onChange="disableCheckboxes()" name="ff_trackingStatus" checked="<%= settingsForm.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.ga4FullUrl)%>" value="<%= AnalyticsServiceImpl.TrackingStatus.ga4FullUrl.toString() %>" id="ga4fullURL" />
+                <labkey:checkbox name="ff_trackingStatus" checked="<%= settingsForm.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.ga4FullUrl)%>" value="<%= AnalyticsServiceImpl.TrackingStatus.ga4FullUrl.toString() %>" id="ga4fullURL" />
             </td>
             <td style="padding-left: 1em;"><strong><label for="ga4fullURL">Google Analytics 4</label></strong>
                 <p>
                     This is the most recent version of Google Analytics directly supported by LabKey Server.
-                    It always reports the full page URL, regardless of the folder's permissions.
+                    It reports using the full page URL.
                 </p>
             </td>
         </tr>
@@ -55,57 +55,8 @@
                     Create your own Measurement ID by signing up with Google Analytics.
                 </p>
                 <p>
-                    <label for="ff_accountId">Measurement ID</label>:
+                    <label for="ff_measurementId">Measurement ID</label>:
                     <input <%=unsafe(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> type="text" id="ff_measurementId" name="ff_measurementId" value="<%=h(settingsForm.ff_measurementId)%>"/>
-                </p>
-            </td>
-        </tr>
-
-        <tr><td>&nbsp;</td></tr>
-
-        <tr>
-            <td style="vertical-align: top;">
-                <labkey:checkbox onChange="disableCheckboxes()" name="ff_trackingStatus" checked="<%= settingsForm.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.enabled)%>" value="<%= AnalyticsServiceImpl.TrackingStatus.enabled.toString() %>" id="modifiedURL" />
-            </td>
-
-            <td style="padding-left: 1em;">
-                <strong><label for="modifiedURL">Universal Google Analytics, with redacted URL</label></strong>
-                <p >
-                    Google has deprecated this version of Google Analytics. It stops accepting new data on July 1, 2023.
-                </p>
-                <p>
-                    The full page URL will only be reported when it is accessible to Guest users.
-                    When a project/folder is secured, LabKey Server will report a unique identifier
-                    (the folder's EntityId, available through Admin->Folder->Management->Information)
-                    instead of the folder path. Additionally, HTTP GET parameters will
-                    be stripped. Both are efforts to ensure that sensitive data is not included.
-                </p>
-            </td>
-        </tr>
-        <tr>
-            <td style="vertical-align: top">
-                <strong><label><labkey:checkbox onChange="disableCheckboxes()" name="ff_trackingStatus" checked="<%= settingsForm.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.enabledFullURL)%>" value="<%= AnalyticsServiceImpl.TrackingStatus.enabledFullURL.toString() %>" id="fullURL" />
-            </td>
-
-            <td style="padding-left: 1em;">
-                <strong><label for="fullURL">Universal Google Analytics, with full URL</label></strong>
-                <p>
-                    Google has deprecated this version of Google Analytics. It stops accepting new data on July 1, 2023.
-                </p>
-                <p>Always report the full page URL, regardless of the folder's permissions.</p></td>
-        </tr>
-        <tr>
-            <td></td>
-            <td style="padding-left: 1em;">
-                <p>
-                    Universal Google Analytics reporting is based on an Account
-                    ID. LabKey monitors the Account ID
-                    <code><%=h(AnalyticsServiceImpl.DEFAULT_ACCOUNT_ID)%></code> to understand usage and prioritize
-                    development efforts. You can get own Account ID by signing up with Google Analytics.
-                </p>
-                <p>
-                    <label for="ff_accountId">Account ID</label>:
-                    <input <%=unsafe(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> type="text" id="ff_accountId" name="ff_accountId" value="<%=h(settingsForm.ff_accountId)%>"/>
                 </p>
             </td>
         </tr>
@@ -149,12 +100,3 @@
     </table>
 
 </labkey:form>
-
-<script>
-    function disableCheckboxes() {
-        document.getElementById('fullURL').disabled = document.getElementById('modifiedURL').checked;
-        document.getElementById('modifiedURL').disabled = document.getElementById('fullURL').checked;
-    }
-
-    disableCheckboxes();
-</script>

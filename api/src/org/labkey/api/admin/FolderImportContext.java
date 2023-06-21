@@ -157,6 +157,12 @@ public class FolderImportContext extends AbstractFolderContext
         {
             DbSequence newSequence = DbSequenceManager.get(getContainer(), FOLDER_IMPORT_DB_SEQUENCE_PREFIX);
             _xarJobId = "Xar-" + newSequence.next();
+            /* NOTE: I think this does create non-unique values for the DB_SEQUENCE parts of the LSID
+             * e.g.
+             *  "Xar-1" + "23" -> Xar-123
+             *  "Xar-12" + "3" -> Xar-123
+             * Maybe this is not a problem in practice because of other unique parts of the LSID, however, we might consider doing this differently.
+             */
         }
 
         return new HashMap<>()

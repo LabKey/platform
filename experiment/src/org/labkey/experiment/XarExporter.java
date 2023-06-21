@@ -61,6 +61,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.ontology.OntologyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;

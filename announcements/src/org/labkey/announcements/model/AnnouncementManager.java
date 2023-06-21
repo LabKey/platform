@@ -699,6 +699,11 @@ public class AnnouncementManager
         return result;
     }
 
+    public static int updateContainer(List<String> discussionSrcIds, Container targetContainer, User user)
+    {
+        return ContainerManager.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false);
+    }
+
 
     private static void deleteAnnouncement(AnnouncementModel ann)
     {

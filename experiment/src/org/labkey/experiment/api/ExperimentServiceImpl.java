@@ -138,7 +138,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
-import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -8779,7 +8779,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8846,20 +8846,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         QueryService queryService = QueryService.get();
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
-    }
-
-    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
-    {
-        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-            .append(" SET container = ").appendValue(targetContainer.getEntityId());
-        if (withModified)
-        {
-            dataUpdate.append(", modified = ").appendValue(new Date());
-            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
-        }
-        dataUpdate.append(" WHERE ").append(idField);
-        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
-        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
