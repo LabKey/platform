@@ -7740,27 +7740,36 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /**
+     * There are subtle differences between File.toURI() and Path.toUri() so ensure you pick the correct getExpDatasUnderPath method.
+     */
     @Override
     @NotNull
     public List<ExpDataImpl> getExpDatasUnderPath(@NotNull File path, @Nullable Container c)
     {
-        return getExpDatasUnderPath(path, c, false);
+        return getExpDatasUnderPath(path.toURI().toString(), c, false);
     }
-    
+
     @Override
     @NotNull
-    public List<ExpDataImpl> getExpDatasUnderPath(@NotNull File path, @Nullable Container c, boolean includeExactPath)
+    public List<ExpDataImpl> getExpDatasUnderPath(@NotNull Path path, @Nullable Container c, boolean includeExactPath)
+    {
+        return getExpDatasUnderPath(path.toUri().toString(), c, includeExactPath);
+    }
+
+    @NotNull
+    public List<ExpDataImpl> getExpDatasUnderPath(@NotNull String path, @Nullable Container c, boolean includeExactPath)
     {
         SimpleFilter filter = new SimpleFilter();
         if (c != null)
             filter.addCondition(FieldKey.fromParts("Container"), c);
 
-        String prefix = path.toURI().toString();
+        String prefix = path;
         if (!prefix.endsWith("/"))
             prefix = prefix + "/";
 
         filter.addCondition(FieldKey.fromParts("datafileurl"), prefix, CompareType.STARTS_WITH);
-        filter.addCondition(FieldKey.fromParts("datafileurl"), path.toURI().toString(), CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("datafileurl"), path, CompareType.NEQ);
         List<ExpDataImpl> childDatas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
 
         if (includeExactPath)

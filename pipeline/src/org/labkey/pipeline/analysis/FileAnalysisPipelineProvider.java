@@ -155,7 +155,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             if (unused)
             {
                 // Check for any datas used by an run under the analysis directory
-                children = ExperimentService.get().getExpDatasUnderPath(analysisDir, null, false);
+                children = ExperimentService.get().getExpDatasUnderPath(analysisDir, null);
                 if (!children.isEmpty())
                 {
                     for (ExpData data : children)
