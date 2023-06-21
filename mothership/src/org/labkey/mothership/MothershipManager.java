@@ -173,6 +173,7 @@ public class MothershipManager
     {
         synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
+            // Filter on the columns that are part of the unique constraint
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             addFilter(filter,"VcsRevision", revision);
             addFilter(filter,"VcsUrl", url);
@@ -180,15 +181,14 @@ public class MothershipManager
             addFilter(filter,"VcsTag", tag);
             addFilter(filter,"BuildTime", buildTime);
 
-            if (buildNumber == null)
-            {
-                buildNumber = fabricateDescription(container, revision, url, branch, tag, buildTime);
-            }
-            filter.addCondition(FieldKey.fromString("BuildNumber"), buildNumber);
-
             SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
             if (result == null)
             {
+                if (buildNumber == null)
+                {
+                    buildNumber = fabricateDescription(container, revision, url, branch, tag, buildTime);
+                }
+
                 result = new SoftwareRelease();
                 result.setVcsUrl(url);
                 result.setVcsRevision(revision);
