@@ -968,7 +968,10 @@ d,seven,twelve,day,month,date,duration,guid
                         new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, 1, \"new_value\", 2]}'", 1, 1),
 
                         // TEST CTE handling with undocumented test-only methods
-                        new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1)
+                        new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1),
+
+                        // JDBC escape sequences
+                        new SqlTest("SELECT * FROM (SELECT CAST({ts '2023-06-02 00:00:00'} AS DATE) AS d) x WHERE d = {d '2023-06-02'}", 1, 1)
                 ));
 
         if (majorVersion >= 12)
