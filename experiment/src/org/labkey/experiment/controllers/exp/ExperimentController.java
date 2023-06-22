@@ -3989,17 +3989,14 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
-        boolean _allowCreateStorage = false;
-
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
             _insertOption = queryForm.getInsertOption();
-            _crossTypeImport = Boolean.valueOf(getParam(Params.crossTypeImport));
-            _allowCreateStorage = Boolean.valueOf(getParam(Params.allowCreateStorage));
+            boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
             _form.setSchemaName(getTargetSchemaName());
-            if (_crossTypeImport)
+            if (crossTypeImport)
             {
                 _form.setQueryName(getPipelineTargetQueryName());
             }
@@ -4008,7 +4005,7 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Sample type name is required");
             else
             {
-                if (!_crossTypeImport)
+                if (!crossTypeImport)
                 {
                     ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
                     if (sampleType == null)
@@ -4021,30 +4018,33 @@ public class ExperimentController extends SpringActionController
 
         private String getTargetSchemaName()
         {
-            return _crossTypeImport ? ExpSchema.SCHEMA_NAME : "samples";
+            return getOptionParamValue(Params.crossTypeImport) ? ExpSchema.SCHEMA_NAME : "samples";
         }
 
         @Override
         protected UserSchema getTargetSchema()
         {
-            return _crossTypeImport ? QueryService.get().getUserSchema(getUser(), getContainer(), getTargetSchemaName()) : super.getTargetSchema();
+            return getOptionParamValue(Params.crossTypeImport) ? QueryService.get().getUserSchema(getUser(), getContainer(), getTargetSchemaName()) : super.getTargetSchema();
         }
 
         @Override
         protected String getPipelineTargetQueryName()
         {
-            return _crossTypeImport ? "materials" : super.getPipelineTargetQueryName();
+            return getOptionParamValue(Params.crossTypeImport) ? "materials" : super.getPipelineTargetQueryName();
         }
-
 
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
-            DataIteratorContext context = createDataIteratorContext(_insertOption, _importLookupByAlternateKey, _importIdentity,  _crossTypeImport, _allowCreateStorage, auditBehaviorType, errors);
+            boolean importLookupByAlternateKey = getOptionParamValue(Params.importLookupByAlternateKey);
+            boolean importIdentity = getOptionParamValue(Params.importIdentity);
+            boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
+            boolean allowCreateStorage = getOptionParamValue(Params.allowCreateStorage);
+            DataIteratorContext context = createDataIteratorContext(_insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
-            if (_crossTypeImport)
+            if (crossTypeImport)
             {
                 tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
                 updateService = tInfo.getUpdateService();
@@ -4099,7 +4099,7 @@ public class ExperimentController extends SpringActionController
 
             if (!qpe.isEmpty())
                 throw qpe.get(0);
-            if (!_crossTypeImport && null != t)
+            if (!getOptionParamValue(Params.crossTypeImport) && null != t)
             {
                 setTarget(t);
                 setShowMergeOption(t.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));

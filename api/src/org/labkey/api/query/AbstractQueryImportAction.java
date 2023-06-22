@@ -122,12 +122,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _hasColumnHeaders = true;
     protected String _importMessage = null;
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
-    protected boolean _importIdentity = false;
-    protected boolean _importLookupByAlternateKey = false;
-    protected boolean _crossTypeImport = false;
     protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
     protected AuditBehaviorType _auditBehaviorType = null;
     public boolean _useAsync = false; // if true, do import using a background thread
+
+    Map<Params, Boolean> _optionParamsMap; // map of the boolean option parameters (importIdentity, importLookupByAlternateKey, crossTypeImport, allowCreateStorage)
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -314,6 +313,24 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return getViewContext().getRequest().getParameter(p.name());
     }
 
+    protected Map<Params, Boolean> getOptionParamsMap()
+    {
+        if (_optionParamsMap == null)
+        {
+            _optionParamsMap = new HashMap<>();
+            _optionParamsMap.put(Params.importIdentity, Boolean.valueOf(getParam(Params.importIdentity)));
+            _optionParamsMap.put(Params.importLookupByAlternateKey, Boolean.valueOf(getParam(Params.importLookupByAlternateKey)));
+            _optionParamsMap.put(Params.crossTypeImport, Boolean.valueOf(getParam(Params.crossTypeImport)));
+            _optionParamsMap.put(Params.allowCreateStorage, Boolean.valueOf(getParam(Params.allowCreateStorage)));
+        }
+        return _optionParamsMap;
+    }
+
+    protected boolean getOptionParamValue(Params p)
+    {
+        return getOptionParamsMap().getOrDefault(p, false);
+    }
+
     protected boolean skipInsertOptionValidation()
     {
         return false;
@@ -389,12 +406,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         String saveToPipeline = getParam(Params.saveToPipeline); // saveToPipeline saves import file to pipeline root, but doesn't necessarily do import in a background job
 
         _useAsync = Boolean.valueOf(getParam(Params.useAsync)); // useAsync will save import file to pipeline root as well as run import in a background job
-
-        // TODO: once importData() is refactored to accept DataIteratorContext, change importIdentity into local variable
-        _importIdentity = Boolean.valueOf(getParam(Params.importIdentity));
-
-        _importLookupByAlternateKey = Boolean.valueOf(getParam(Params.importLookupByAlternateKey));
-        _crossTypeImport = Boolean.valueOf(getParam(Params.crossTypeImport));
 
         // Check first if the audit behavior has been defined for the table either in code or through XML.
         // If not defined there, check for the audit behavior defined in the action form (getAuditBehaviorType()).
@@ -553,9 +564,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setRenamedColumns(getRenamedColumns())
                                 .setInsertOption(_insertOption)
                                 .setAuditBehaviorType(behaviorType)
-                                .setImportLookupByAlternateKey(_importLookupByAlternateKey)
-                                .setCrossTypeImport(_crossTypeImport)
-                                .setImportIdentity(_importIdentity)
+                                .setOptionParamsMap(getOptionParamsMap())
                                 .setHasLineageColumns(hasLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
                                 .setJobNotificationProvider(getQueryImportJobNotificationProviderName());
@@ -716,7 +725,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         else if (null == _target)
         {
-            if (!_crossTypeImport)
+            if (!getOptionParamValue(Params.crossTypeImport))
                 errors.reject(ERROR_GENERIC, "Table not specified");
         }
         else if (!_target.hasPermission(user, InsertPermission.class))
@@ -762,7 +771,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, _importLookupByAlternateKey, _importIdentity, false, errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, getUser(), getContainer());
     }
 
     protected static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, boolean allowCreateStorage, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors)
@@ -784,9 +793,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return context;
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
     {
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, false, auditBehaviorType, errors), auditEvent, user, container);
+        boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(Params.importLookupByAlternateKey, false);
+        boolean importIdentity = optionParamsMap.getOrDefault(Params.importIdentity, false);
+        boolean crossTypeImport = optionParamsMap.getOrDefault(Params.crossTypeImport, false);
+        boolean allowCreateStorage = optionParamsMap.getOrDefault(Params.allowCreateStorage, false);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException

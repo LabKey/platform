@@ -53,11 +53,8 @@ public class QueryImportPipelineJob extends PipelineJob
 
         QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
         AuditBehaviorType _auditBehaviorType = null;
-
-        boolean _importLookupByAlternateKey = false;
-        boolean _importIdentity = false;
         boolean _hasLineageColumns = false;
-        boolean _crossTypeImport = false;
+        Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
 
         String _jobDescription;
 
@@ -108,24 +105,14 @@ public class QueryImportPipelineJob extends PipelineJob
             return _auditBehaviorType;
         }
 
-        public boolean isImportLookupByAlternateKey()
+        public Map<AbstractQueryImportAction.Params, Boolean> getOptionParamsMap()
         {
-            return _importLookupByAlternateKey;
-        }
-
-        public boolean isImportIdentity()
-        {
-            return _importIdentity;
+            return _optionParamsMap;
         }
 
         public boolean isHasLineageColumns()
         {
             return _hasLineageColumns;
-        }
-
-        public boolean isCrossTypeImport()
-        {
-            return _crossTypeImport;
         }
 
         public String getJobDescription()
@@ -191,21 +178,9 @@ public class QueryImportPipelineJob extends PipelineJob
             return this;
         }
 
-        public QueryImportAsyncContextBuilder setImportLookupByAlternateKey(boolean importLookupByAlternateKey)
+        public QueryImportAsyncContextBuilder setOptionParamsMap(Map<AbstractQueryImportAction.Params, Boolean> optionParamsMap)
         {
-            _importLookupByAlternateKey = importLookupByAlternateKey;
-            return this;
-        }
-
-        public QueryImportAsyncContextBuilder setCrossTypeImport(boolean crossTypeImport)
-        {
-            _crossTypeImport = crossTypeImport;
-            return this;
-        }
-
-        public QueryImportAsyncContextBuilder setImportIdentity(boolean importIdentity)
-        {
-            _importIdentity = importIdentity;
+            _optionParamsMap = optionParamsMap;
             return this;
         }
 
@@ -289,8 +264,8 @@ public class QueryImportPipelineJob extends PipelineJob
             if (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE)
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
 
-            int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, _importContextBuilder.getInsertOption(), _importContextBuilder.isImportLookupByAlternateKey(),
-                _importContextBuilder.isImportIdentity(), _importContextBuilder.isCrossTypeImport(), ve, _importContextBuilder.getAuditBehaviorType(), auditEvent, getInfo().getUser(), getInfo().getContainer());
+            int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, _importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(),
+                    ve, _importContextBuilder.getAuditBehaviorType(), auditEvent, getInfo().getUser(), getInfo().getContainer());
 
             if (ve.hasErrors())
                 throw ve;
