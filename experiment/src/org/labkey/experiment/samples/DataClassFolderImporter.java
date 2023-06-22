@@ -76,10 +76,9 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
     }
 
     @Override
-    protected void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader, XarContext xarContext) throws IOException, SQLException
+    protected void importDataFiles(FolderImportContext ctx, VirtualFile xarDir, XarReader typesReader, XarContext xarContext) throws IOException, SQLException
     {
         Map<String, String> dataClassDataFiles = new HashMap<>();
-        VirtualFile xarDir = getXarDir(root);
 
         for (String file: xarDir.list())
         {

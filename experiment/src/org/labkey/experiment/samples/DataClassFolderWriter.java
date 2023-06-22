@@ -1,6 +1,7 @@
 package org.labkey.experiment.samples;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
@@ -10,7 +11,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
@@ -54,25 +54,28 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
-        _xarCtx = ctx.getContext(XarExportContext.class);
         boolean exportDataClassData = ctx.getDataTypes().contains(FolderArchiveDataTypes.DATA_CLASS_DATA);
         VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
 
-        if (exportComplete(xarDir))
+        ExpExportContext exportContext = ctx.getContext(ExpExportContext.class);
+        if (exportContext == null)
+            throw new IllegalStateException("An instance of ExpExportContext is expected to be available from the FolderExportContext");
+
+        // The design and data folder writers share the same write method. We need to determine
+        // if the xar has previously been written to avoid potentially creating the xar twice
+        // during the same export pass
+        if (exportContext.isDataClassXarCreated())
             return;
 
         for (ExpDataClass dataClass : ExperimentService.get().getDataClasses(c, ctx.getUser(), false))
         {
             // ignore data classes that are filtered out
-            if ((_xarCtx != null && !_xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId())) || EXCLUDED_TYPES.contains(dataClass.getName()))
+            if (EXCLUDED_TYPES.contains(dataClass.getName()))
                 continue;
 
-            Set<Integer> includedDatas = _xarCtx != null ? _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()) : null;
             dataClasses.add(dataClass);
             typesSelection.addDataClass(dataClass);
-            datasToExport.addAll(dataClass.getDatas().stream()
-                    .filter(d -> includedDatas == null || includedDatas.contains(d.getRowId()))
-                    .toList());
+            datasToExport.addAll(dataClass.getDatas());
             exportTypes = true;
         }
 
@@ -118,16 +121,8 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         // write the data class data as .tsv files
         if (exportDataClassData)
             writeDataClassDataFiles(dataClasses, ctx, xarDir);
-    }
 
-    /**
-     * The design and data folder writers share the same write method. We need to determine
-     * if the xar has previously been written to avoid potentially creating the xar twice
-     * during the same export pass
-     */
-    private boolean exportComplete(VirtualFile xarDir)
-    {
-        return xarDir.list().contains(XAR_TYPES_NAME);
+        exportContext.setDataClassXarCreated(true);
     }
 
     private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir) throws Exception
@@ -146,10 +141,6 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
                     if (!columns.isEmpty())
                     {
                         SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
-
-                        // filter only to the specific data
-                        if (_xarCtx != null && _xarCtx.getIncludedDataClasses().containsKey(dataClass.getRowId()))
-                            filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedDataClasses().get(dataClass.getRowId()));
 
                         // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
                         writeTsv(tinfo, columns, filter, new Sort(FieldKey.fromParts("RowId")), dir, DATA_CLASS_PREFIX + dataClass.getName());
@@ -185,6 +176,12 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         public @Nullable String getDataType()
         {
             return FolderArchiveDataTypes.DATA_CLASS_DATA;
+        }
+
+        @Override
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+        {
+            return super.selectedByDefault(type, forTemplate) && !forTemplate;
         }
 
         public static class Factory implements FolderWriterFactory

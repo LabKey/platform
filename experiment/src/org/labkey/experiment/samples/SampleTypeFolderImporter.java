@@ -56,13 +56,12 @@ public class SampleTypeFolderImporter extends AbstractExpFolderImporter
     }
 
     @Override
-    protected void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader, XarContext xarContext) throws IOException, SQLException
+    protected void importDataFiles(FolderImportContext ctx, VirtualFile xarDir, XarReader typesReader, XarContext xarContext) throws IOException, SQLException
     {
         // the legacy sample type folder export also included data classes, check for any data class tsv exports
-        DataClassFolderImporter.get().importDataFiles(ctx, root, typesReader, xarContext);
+        DataClassFolderImporter.get().importDataFiles(ctx, xarDir, typesReader, xarContext);
 
         Map<String, String> sampleTypeDataFiles = new HashMap<>();
-        VirtualFile xarDir = getXarDir(root);
 
         for (String file: xarDir.list())
         {

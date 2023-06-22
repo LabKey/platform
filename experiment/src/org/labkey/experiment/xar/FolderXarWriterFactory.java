@@ -24,7 +24,6 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -100,21 +99,15 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
         private List<ExpRun> getRuns(@Nullable FolderExportContext ctx, Container c)
         {
-            XarExportContext xarCtx = null;
-            if (ctx != null)
-                xarCtx = ctx.getContext(XarExportContext.class);
-
             // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
             // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
-            final XarExportContext fxarCtx = xarCtx;
             List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, null, null).stream()
                     .filter(
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
                                 && !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName())
                                 && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix())
-                            && (fxarCtx == null || fxarCtx.getIncludedAssayRuns().contains(run.getRowId()))
                     )
                     .collect(Collectors.toList());
             // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure

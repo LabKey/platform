@@ -1,6 +1,7 @@
 package org.labkey.experiment.samples;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
@@ -13,7 +14,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
@@ -65,8 +65,18 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
         _exportPhiLevel = ctx.getPhiLevel();
         boolean exportTypes = false;
         boolean exportRuns = false;
-        _xarCtx = ctx.getContext(XarExportContext.class);
         boolean exportSampleTypeData = ctx.getDataTypes().contains(FolderArchiveDataTypes.SAMPLE_TYPE_DATA);
+        VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
+
+        ExpExportContext exportContext = ctx.getContext(ExpExportContext.class);
+        if (exportContext == null)
+            throw new IllegalStateException("An instance of ExpExportContext is expected to be available from the FolderExportContext");
+
+        // The design and data folder writers share the same write method. We need to determine
+        // if the xar has previously been written to avoid potentially creating the xar twice
+        // during the same export pass
+        if (exportContext.isSampleXarCreated())
+            return;
 
         Lsid sampleTypeLsid = new Lsid(ExperimentService.get().generateLSID(c, ExpSampleType.class, "export"));
         for (ExpSampleType sampleType : SampleTypeService.get().getSampleTypes(c, ctx.getUser(), true))
@@ -77,7 +87,7 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
                 continue;
 
             // ignore sample types that are filtered out
-            if ((_xarCtx != null && !_xarCtx.getIncludedSamples().containsKey(sampleType.getRowId())) || EXCLUDED_TYPES.contains(sampleType.getName()))
+            if (EXCLUDED_TYPES.contains(sampleType.getName()))
                 continue;
 
             // filter out non-sample type material sources
@@ -85,12 +95,9 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
 
             if (sampleTypeLsid.getNamespacePrefix().equals(lsid.getNamespacePrefix()))
             {
-                Set<Integer> includedSamples = _xarCtx != null ? _xarCtx.getIncludedSamples().get(sampleType.getRowId()) : null;
                 sampleTypes.add(sampleType);
                 typesSelection.addSampleType(sampleType);
-                materialsToExport.addAll(sampleType.getSamples(c).stream()
-                    .filter(m -> includedSamples == null || includedSamples.contains(m.getRowId()))
-                    .toList());
+                materialsToExport.addAll(sampleType.getSamples(c));
                 exportTypes = true;
             }
         }
@@ -113,7 +120,6 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
             runsSelection.addRuns(exportedRuns);
             exportRuns = true;
         }
-        VirtualFile xarDir = vf.getDir(DEFAULT_DIRECTORY);
 
         // UNDONE: The other exporters use FOLDER_RELATIVE, but it wants to use ${AutoFileLSID} replacements for DataClass LSIDs when exporting the TSV data.. see comment in ExportLsidDataColumn
         _relativizedLSIDs = ctx.getRelativizedLSIDs();
@@ -140,6 +146,8 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
         // write the sample type data as .tsv files
         if (exportSampleTypeData)
             writeSampleTypeDataFiles(sampleTypes, ctx, xarDir);
+
+        exportContext.setSampleXarCreated(true);
     }
 
     private void writeSampleTypeDataFiles(Set<ExpSampleType> sampleTypes, FolderExportContext ctx, VirtualFile dir) throws Exception
@@ -154,10 +162,6 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
                 if (tinfo != null)
                 {
                     SimpleFilter filter = SimpleFilter.createContainerFilter(ctx.getContainer());
-
-                    // filter only to the specific samples
-                    if (_xarCtx != null && _xarCtx.getIncludedSamples().containsKey(sampleType.getRowId()))
-                        filter.addInClause(FieldKey.fromParts("RowId"), _xarCtx.getIncludedSamples().get(sampleType.getRowId()));
 
                     // Sort by RowId so data get exported (and then imported) in the same order as created (default is the reverse order)
                     Sort sort = new Sort(FieldKey.fromParts("RowId"));
@@ -246,12 +250,18 @@ public abstract class SampleTypeFolderWriter extends AbstractExpFolderWriter
             return FolderArchiveDataTypes.SAMPLE_TYPE_DATA;
         }
 
+        @Override
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+        {
+            return super.selectedByDefault(type, forTemplate) && !forTemplate;
+        }
+
         public static class Factory implements FolderWriterFactory
         {
             @Override
             public FolderWriter create()
             {
-                return new SampleTypeDesignWriter();
+                return new SampleTypeDataWriter();
             }
         }
     }

@@ -2,6 +2,7 @@ package org.labkey.experiment.samples;
 
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.admin.LoggerGetter;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -26,7 +27,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ColumnExporter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
@@ -37,6 +37,7 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
@@ -69,13 +70,23 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
 
     protected PHI _exportPhiLevel = PHI.NotPHI;
     protected LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
-    protected XarExportContext _xarCtx;
 
     @Override
     public boolean show(Container c)
     {
         // need to always return true, so it can be used in a folder template
         return true;
+    }
+
+    @Override
+    public void initialize(FolderExportContext ctx)
+    {
+        super.initialize(ctx);
+
+        if (ctx.getContext(ExpExportContext.class) == null)
+        {
+            ctx.addContext(ExpExportContext.class, new ExpExportContext(ctx.getUser(), ctx.getContainer(), ctx.getDataTypes(), null, ctx.getLoggerGetter()));
+        }
     }
 
     protected void writeTsv(TableInfo tinfo, Collection<ColumnInfo> columns, SimpleFilter filter, Sort sort, VirtualFile dir, String baseName) throws IOException
@@ -394,6 +405,40 @@ public abstract class AbstractExpFolderWriter extends BaseFolderWriter implement
             }
 
             return o;
+        }
+    }
+
+    /**
+     * Export context to help manage both sample type and data class exports.
+     */
+    public static class ExpExportContext extends FolderExportContext
+    {
+        private boolean _sampleXarCreated;
+        private boolean _dataClassXarCreated;
+
+        public ExpExportContext(User user, Container c, Set<String> dataTypes, String format, LoggerGetter logger)
+        {
+            super(user, c, dataTypes, format, logger);
+        }
+
+        public boolean isSampleXarCreated()
+        {
+            return _sampleXarCreated;
+        }
+
+        public void setSampleXarCreated(boolean sampleXarCreated)
+        {
+            _sampleXarCreated = sampleXarCreated;
+        }
+
+        public boolean isDataClassXarCreated()
+        {
+            return _dataClassXarCreated;
+        }
+
+        public void setDataClassXarCreated(boolean dataClassXarCreated)
+        {
+            _dataClassXarCreated = dataClassXarCreated;
         }
     }
 }

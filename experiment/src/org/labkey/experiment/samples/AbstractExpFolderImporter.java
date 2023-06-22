@@ -57,7 +57,7 @@ import static org.labkey.experiment.samples.AbstractExpFolderWriter.XAR_RUNS_XML
 public abstract class AbstractExpFolderImporter implements FolderImporter
 {
     protected abstract VirtualFile getXarDir(VirtualFile root);
-    protected abstract void importDataFiles(FolderImportContext ctx, VirtualFile root, XarReader typesReader, XarContext xarContext) throws IOException, SQLException;
+    protected abstract void importDataFiles(FolderImportContext ctx, VirtualFile xarDir, XarReader typesReader, XarContext xarContext) throws IOException, SQLException;
     protected abstract boolean isXarTypesFile(String fileName);
     protected abstract boolean excludeTable(String tableName);
 
