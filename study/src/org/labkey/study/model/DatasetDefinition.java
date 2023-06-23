@@ -2301,14 +2301,11 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         DataIteratorBuilder persist = null;
 
         persist = ((UpdateableTableInfo)table).persistRows(existing, context);
-
-        if (context.getInsertOption() != QueryUpdateService.InsertOption.UPDATE)
+        if (persist instanceof TableInsertDataIteratorBuilder tiDib)
         {
             // TODO this feels like a hack, shouldn't this be handled by table.persistRows()???
-            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet("Created", "CreatedBy");
-            ((TableInsertDataIteratorBuilder) persist).setDontUpdate(dontUpdate);
+            tiDib.setDontUpdate(new CaseInsensitiveHashSet("Created", "CreatedBy"));
         }
-
         DataIteratorBuilder audit = DetailedAuditLogDataIterator.getDataIteratorBuilder(table, persist, context.getInsertOption(), user, target);
         return LoggingDataIterator.wrap(audit);
     }
