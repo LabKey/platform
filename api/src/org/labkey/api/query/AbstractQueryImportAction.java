@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -771,10 +772,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, getUser(), getContainer());
+        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, getUser(), getContainer(), null);
     }
 
-    protected static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, boolean allowCreateStorage, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, boolean allowCreateStorage, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors, @Nullable Logger logger)
     {
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
@@ -790,16 +791,17 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         context.setCrossTypeImport(crossTypeImport);
         context.setAllowCreateStorage(allowCreateStorage);
+        context.setLogger(logger);
         return context;
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container, @Nullable Logger logger) throws IOException
     {
         boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(Params.importLookupByAlternateKey, false);
         boolean importIdentity = optionParamsMap.getOrDefault(Params.importIdentity, false);
         boolean crossTypeImport = optionParamsMap.getOrDefault(Params.crossTypeImport, false);
         boolean allowCreateStorage = optionParamsMap.getOrDefault(Params.allowCreateStorage, false);
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors), auditEvent, user, container);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors, logger), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException

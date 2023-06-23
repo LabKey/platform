@@ -15,6 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -54,7 +55,9 @@ public class DataIteratorContext
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
-    private Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
+
+    private final Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
+    private Logger _logger;
 
     int _maxRowErrors = 1;
 
@@ -254,5 +257,15 @@ public class DataIteratorContext
     public void putResponseInfo(String key, Object value)
     {
         _responseInfo.put(key, value);
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
+    public void setLogger(Logger logger)
+    {
+        _logger = logger;
     }
 }

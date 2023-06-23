@@ -4042,7 +4042,7 @@ public class ExperimentController extends SpringActionController
             boolean importIdentity = getOptionParamValue(Params.importIdentity);
             boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
             boolean allowCreateStorage = getOptionParamValue(Params.allowCreateStorage);
-            _context = createDataIteratorContext(_insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors);
+            _context = createDataIteratorContext(_insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors, null);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
@@ -4078,8 +4078,11 @@ public class ExperimentController extends SpringActionController
         protected JSONObject createSuccessResponse(int rowCount)
         {
             JSONObject json = super.createSuccessResponse(rowCount);
-            if (_context.getResponseInfo().containsKey("terminalStorageCreated"))
-                json.put("terminalStorageCreated", _context.getResponseInfo().get("terminalStorageCreated"));
+            if (!_context.getResponseInfo().isEmpty())
+            {
+                for (String key : _context.getResponseInfo().keySet())
+                    json.put(key, _context.getResponseInfo().get(key));
+            }
             return json;
         }
     }

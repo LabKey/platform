@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -264,8 +265,8 @@ public class QueryImportPipelineJob extends PipelineJob
             if (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE)
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
 
-            int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, _importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(),
-                    ve, _importContextBuilder.getAuditBehaviorType(), auditEvent, getInfo().getUser(), getInfo().getContainer());
+            DataIteratorContext diContext = createDataIteratorContext(ve);
+            int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
 
             if (ve.hasErrors())
                 throw ve;
@@ -282,7 +283,8 @@ public class QueryImportPipelineJob extends PipelineJob
                 results.put("rowCount", importedCount);
                 if (_transactionAuditId > 0)
                     results.put("transactionAuditId", _transactionAuditId);
-
+                if (!diContext.getResponseInfo().isEmpty())
+                    results.putAll(diContext.getResponseInfo());
                 notificationProvider.onJobSuccess(this, results);
             }
         }
@@ -301,7 +303,15 @@ public class QueryImportPipelineJob extends PipelineJob
                 loader.close();
             }
         }
+    }
 
+    private DataIteratorContext createDataIteratorContext(BatchValidationException errors)
+    {
+        boolean importLookupByAlternateKey = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
+        boolean importIdentity = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
+        boolean crossTypeImport = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
+        boolean allowCreateStorage = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, _importContextBuilder.getAuditBehaviorType(), errors, getLogger());
     }
 
     @Override
