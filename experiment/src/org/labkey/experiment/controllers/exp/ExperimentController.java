@@ -3989,6 +3989,8 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
+        DataIteratorContext _context;
+
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
@@ -4040,7 +4042,7 @@ public class ExperimentController extends SpringActionController
             boolean importIdentity = getOptionParamValue(Params.importIdentity);
             boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
             boolean allowCreateStorage = getOptionParamValue(Params.allowCreateStorage);
-            DataIteratorContext context = createDataIteratorContext(_insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors);
+            _context = createDataIteratorContext(_insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
@@ -4049,7 +4051,7 @@ public class ExperimentController extends SpringActionController
                 tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
                 updateService = tInfo.getUpdateService();
             }
-            return importData(dl, tInfo, updateService, context, auditEvent, getUser(), getContainer());
+            return importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
         }
 
         @Override
@@ -4072,6 +4074,14 @@ public class ExperimentController extends SpringActionController
             root.addChild("Import Data");
         }
 
+        @Override
+        protected JSONObject createSuccessResponse(int rowCount)
+        {
+            JSONObject json = super.createSuccessResponse(rowCount);
+            if (_context.getResponseInfo().containsKey("terminalStorageCreated"))
+                json.put("terminalStorageCreated", _context.getResponseInfo().get("terminalStorageCreated"));
+            return json;
+        }
     }
 
     public abstract class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>

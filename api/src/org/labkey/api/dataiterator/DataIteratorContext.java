@@ -54,6 +54,7 @@ public class DataIteratorContext
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
+    private Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
 
     int _maxRowErrors = 1;
 
@@ -243,5 +244,15 @@ public class DataIteratorContext
     public boolean getConfigParameterBoolean(Enum key)
     {
         return Boolean.TRUE == getConfigParameter(key);
+    }
+
+    public Map<String, Object> getResponseInfo()
+    {
+        return _responseInfo;
+    }
+
+    public void putResponseInfo(String key, Object value)
+    {
+        _responseInfo.put(key, value);
     }
 }
