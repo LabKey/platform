@@ -1397,7 +1397,7 @@ public class NameGenerator
                 if (exprHasSampleRootCounter || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
                 {
                     _rootCounterSequence = rootCountSeq;
-                    if (exprHasSampleRootCounter && rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a server
+                    if (rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a server
                         _rootCounterSequence.ensureMinimum(SampleTypeService.get().getRootSampleCount());
                 }
                 else
