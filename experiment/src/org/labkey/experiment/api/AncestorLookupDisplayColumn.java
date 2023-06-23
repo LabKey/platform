@@ -89,10 +89,12 @@ public class AncestorLookupDisplayColumn extends DataColumn
         if (lookupKey != null && lookupKey < 0)
             return lookupKey;
 
-        Object value = super.getValue(ctx);
+        Object value = null;
+        if (_dc != null)
+            value = _dc.getValue(ctx);
 
         if (value == null)
-            value = ctx.get(getBoundColumn().getFieldKey().getParent());
+            value = super.getValue(ctx);
 
         return value;
     }
@@ -103,6 +105,9 @@ public class AncestorLookupDisplayColumn extends DataColumn
         Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return null;
+
+        if (_dc != null)
+            return _dc.renderURL(ctx);
 
         return super.renderURL(ctx);
     }
