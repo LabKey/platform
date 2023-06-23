@@ -4,8 +4,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.HtmlString;
+
+import java.util.Set;
 
 /**
  * Display column for fields that go through an Ancestor (Lineage) lookup via the ClosureQuery.
@@ -21,16 +26,20 @@ import org.labkey.api.util.HtmlString;
 public class AncestorLookupDisplayColumn extends DataColumn
 {
     private final ColumnInfo _lookupCol;
+    private final FieldKey _lookupFK;
+    private final DisplayColumn _dc;
 
     public AncestorLookupDisplayColumn(ColumnInfo currentCol)
     {
-        this(null, currentCol);
+        this(null, currentCol, null);
     }
 
-    public AncestorLookupDisplayColumn(@Nullable ColumnInfo lookupCol, ColumnInfo currentCol)
+    public AncestorLookupDisplayColumn(@Nullable ColumnInfo lookupCol, ColumnInfo currentCol, @Nullable DisplayColumnFactory displayColumnFactory)
     {
         super(currentCol);
         _lookupCol = lookupCol == null ? currentCol : lookupCol;
+        _lookupFK = lookupCol == null ? null : lookupCol.getFieldKey();
+        _dc = displayColumnFactory != null ? displayColumnFactory.createRenderer(currentCol) : null;
     }
 
     @Override
@@ -39,6 +48,10 @@ public class AncestorLookupDisplayColumn extends DataColumn
         Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return HtmlString.unsafe("<span style=\"color: gray;\"><"+ (-lookupKey) + " values></span>");
+
+        if (_dc != null)
+            return _dc.getFormattedHtml(ctx);
+
         return super.getFormattedHtml(ctx);
     }
 
@@ -48,6 +61,10 @@ public class AncestorLookupDisplayColumn extends DataColumn
         Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return  (-lookupKey) + " values";
+
+        if (_dc != null)
+            return _dc.getDisplayValue(ctx);
+
         return super.getDisplayValue(ctx);
     }
 
@@ -59,6 +76,9 @@ public class AncestorLookupDisplayColumn extends DataColumn
         if (lookupKey != null && lookupKey < 0)
             return  (-lookupKey) + " values";
 
+        if (_dc != null)
+            return _dc.getFormattedText(ctx);
+
         return super.getFormattedText(ctx);
     }
 
@@ -68,6 +88,10 @@ public class AncestorLookupDisplayColumn extends DataColumn
         Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return lookupKey;
+
+        if (_dc != null)
+            return _dc.getValue(ctx);
+
         return super.getValue(ctx);
     }
 
@@ -77,7 +101,19 @@ public class AncestorLookupDisplayColumn extends DataColumn
         Integer lookupKey = getLookupId(ctx);
         if (lookupKey != null && lookupKey < 0)
             return null;
+
+        if (_dc != null)
+            return _dc.renderURL(ctx);
+
         return super.renderURL(ctx);
+    }
+
+    @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
+    {
+        super.addQueryFieldKeys(keys);
+        if (_lookupFK != null)
+            keys.add(_lookupFK);
     }
 
     private Integer getLookupId(RenderContext ctx)
