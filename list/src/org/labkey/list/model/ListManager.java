@@ -85,6 +85,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -299,7 +300,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             ListDef old = getList(c, def.getListId());
             ret = Table.update(user, getListMetadataTable(), def, new Object[]{c, def.getListId()});
-            handleIndexSettingChanges(scope, def, old.getEachItemIndex(), ret.getEachItemIndex(), old.getEntireListIndex(), ret.getEachItemIndex(), old.getFileAttachmentIndex(), ret.getFileAttachmentIndex());
+            handleIndexSettingChanges(scope, def, old, ret);
 
             String oldName = old.getName();
             String updatedName = ret.getName();
@@ -324,8 +325,7 @@ public class ListManager implements SearchService.DocumentProvider
             ListDomainKindProperties old = getListDomainKindProperties(c, listProps.getListId());
             updated = Table.update(user, getListMetadataTable(), listProps, new Object[]{c, listProps.getListId()});
             ListDef listDef = getList(c, listProps.getListId());
-            handleIndexSettingChanges(scope, listDef, old.isEachItemIndex(), listProps.isEachItemIndex(), old.isEntireListIndex(), listProps.isEntireListIndex(), old.isFileAttachmentIndex(), listProps.isFileAttachmentIndex());
-
+            handleIndexSettingChanges(scope, listDef, old, listProps);
             String oldName = old.getName();
             String updatedName = updated.getName();
             queryChangeUpdate(user, c, oldName, updatedName);
@@ -337,9 +337,99 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     // Queue up one-time operations related to turning indexing on or off
-    // TODO: This is close, but not quite precise enough. We should detect changes to document titles, templates,
+    // TODO: This is close, but not quite precise enough.
+    //  We should detect changes to document titles, templates,
     // sub-settings like metadata vs. data, etc. and take appropriate action (or inaction).
-    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, boolean oldEachItemIndex, boolean newEachItemIndex, boolean oldEntireListIndex, boolean newEntireListIndex, boolean oldFileAttachmentIndex, boolean newFileAttachmentIndex)
+    //// entire list
+    //            entireListIndex: model.entireListIndex,
+    //            // document title
+    //            entireListTitleTemplate: model.entireListTitleTemplate,
+    //            // metadata/data
+    //            entireListIndexSetting: model.entireListIndexSetting,
+    //            // index
+    //            entireListBodySetting: model.entireListBodySetting,
+    //            entireListBodyTemplate: model.entireListBodyTemplate,
+    //
+    //            // each item
+    //            eachItemIndex: model.eachItemIndex,
+    //            // document title
+    //            eachItemTitleTemplate: model.eachItemTitleTemplate,
+    //            // index
+    //            eachItemBodySetting: model.entireListBodySetting,
+    //            eachItemBodyTemplate: model.eachItemBodyTemplate,
+    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, ListDomainKindProperties old, ListDomainKindProperties updated)
+    {
+        boolean oldEachItemIndex = old.isEachItemIndex();
+        boolean newEachItemIndex = updated.isEachItemIndex();
+
+        boolean oldEntireListIndex = old.isEntireListIndex();
+        boolean newEntireListIndex = updated.isEntireListIndex();
+
+        boolean oldFileAttachmentIndex = old.isFileAttachmentIndex();
+        boolean newFileAttachmentIndex = updated.isFileAttachmentIndex();
+
+        String oldEntireListTitleSetting = old.getEntireListTitleTemplate();
+        String newEntireListTitleSetting = updated.getEntireListTitleTemplate();
+
+        int oldEntireListIndexSetting = old.getEntireListIndexSetting();
+        int newEntireListIndexSetting = updated.getEntireListIndexSetting();
+
+        int oldEntireListBodySetting = old.getEntireListBodySetting();
+        int newEntireListBodySetting = updated.getEntireListBodySetting();
+
+        String oldEntireListBodyTemplate = old.getEntireListBodyTemplate();
+        String newEntireListBodyTemplate = updated.getEntireListBodyTemplate();
+
+        handleIndexSettingChanges(scope, listDef,
+                oldEachItemIndex, newEachItemIndex,
+                oldEntireListIndex, newEntireListIndex,
+                oldFileAttachmentIndex, newFileAttachmentIndex,
+                oldEntireListTitleSetting, newEntireListTitleSetting,
+                oldEntireListIndexSetting, newEntireListIndexSetting,
+                oldEntireListBodySetting, newEntireListBodySetting,
+                oldEntireListBodyTemplate, newEntireListBodyTemplate);
+
+    }
+    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, ListDef old, ListDef updated)
+    {
+        boolean oldEachItemIndex = old.getEachItemIndex();
+        boolean newEachItemIndex = updated.getEachItemIndex();
+
+        boolean oldEntireListIndex = old.getEntireListIndex();
+        boolean newEntireListIndex = updated.getEntireListIndex();
+
+        boolean oldFileAttachmentIndex = old.getFileAttachmentIndex();
+        boolean newFileAttachmentIndex = updated.getFileAttachmentIndex();
+
+        String oldEntireListTitleSetting = old.getEntireListTitleTemplate();
+        String newEntireListTitleSetting = updated.getEntireListTitleTemplate();
+
+        int oldEntireListIndexSetting = old.getEntireListIndexSetting();
+        int newEntireListIndexSetting = updated.getEntireListIndexSetting();
+
+        int oldEntireListBodySetting = old.getEntireListBodySetting();
+        int newEntireListBodySetting = updated.getEntireListBodySetting();
+
+        String oldEntireListBodyTemplate = old.getEntireListBodyTemplate();
+        String newEntireListBodyTemplate = updated.getEntireListBodyTemplate();
+
+        handleIndexSettingChanges(scope, listDef,
+                oldEachItemIndex, newEachItemIndex,
+                oldEntireListIndex, newEntireListIndex,
+                oldFileAttachmentIndex, newFileAttachmentIndex,
+                oldEntireListTitleSetting, newEntireListTitleSetting,
+                oldEntireListIndexSetting, newEntireListIndexSetting,
+                oldEntireListBodySetting, newEntireListBodySetting,
+                oldEntireListBodyTemplate, newEntireListBodyTemplate);
+    }
+    private void handleIndexSettingChanges(DbScope scope, ListDef listDef,
+                                           boolean oldEachItemIndex, boolean newEachItemIndex,
+                                           boolean oldEntireListIndex, boolean newEntireListIndex,
+                                           boolean oldFileAttachmentIndex, boolean newFileAttachmentIndex,
+                                           String oldEntireListTitleSetting, String newEntireListTitleSetting,
+                                           int oldEntireListIndexSetting, int newEntireListIndexSetting,
+                                           int oldEntireListBodySetting, int newEntireListBodySetting,
+                                           String oldEntireListBodyTemplate, String newEntireListBodyTemplate)
     {
         scope.addCommitTask(() -> {
             ListDefinition list = ListDefinitionImpl.of(listDef);
@@ -357,7 +447,12 @@ public class ListManager implements SearchService.DocumentProvider
                 deleteIndexedAttachments(list);
 
             // Turning on entire-list indexing -> clear that list's last indexed column
-            if (!oldEntireListIndex && newEntireListIndex)
+            // Also, document title, template, and sub-settings like metadata vs. data and
+            if ((!oldEntireListIndex && newEntireListIndex) ||
+                    (newEntireListTitleSetting != null && !newEntireListTitleSetting.equals(oldEntireListTitleSetting)) ||
+                    (newEntireListBodyTemplate != null && !newEntireListBodyTemplate.equals(oldEntireListBodyTemplate)) ||
+                    (newEntireListIndexSetting != oldEntireListIndexSetting) ||
+                    (newEntireListBodySetting != oldEntireListBodySetting))
             {
                 SQLFragment sql = new SQLFragment("UPDATE ")
                     .append(getListMetadataTable().getSelectName())
@@ -491,10 +586,10 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         indexEntireList(task, list, reindex);
-        indexModifiedItems(task, list, reindex);
+        indexModifiedItems(task, list, reindex, designChange);
 
         //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-        indexAttachments(task, list, designChange, reindex);
+//        indexAttachments(task, list, designChange, reindex);
     }
 
     // Delete a single list item from the index after item delete
@@ -540,30 +635,40 @@ public class ListManager implements SearchService.DocumentProvider
 
 
     // Index all modified items in this list
-    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex)
+    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex, boolean designChange)
     {
-        if (!list.getEachItemIndex())
-        {
-            return;
-        }
+        TableInfo listTable = list.getTable(User.getSearchUser());
 
-        String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
+        listTable.getSchema().getScope().addCommitTask(() -> {
 
-        // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
-        lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
+            if (!list.getEachItemIndex())
+            {
+                return;
+            }
 
-        indexItems(task, list, filter);
+            String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
+
+            // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
+            lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
+
+            boolean indexFileAttachment = (!designChange && Objects.requireNonNull(listTable).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
+                    || (!list.getFileAttachmentIndex());
+
+            indexItems(task, list, filter, indexFileAttachment);
+
+        }, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
 
     // Reindex items specified by filter
-    private int indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
+    private void indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter, boolean indexFileAttachment)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
+        AttachmentService as = AttachmentService.get();
 
         if (null == listTable)
-            return 0;
+            return;
 
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
         FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, "\"each item as a separate document\" custom indexing template", list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
@@ -575,8 +680,6 @@ public class ListManager implements SearchService.DocumentProvider
         FieldKey createdByKey = new FieldKey(null, "createdBy");
         FieldKey modifiedKey = new FieldKey(null, "modified");
         FieldKey modifiedByKey = new FieldKey(null, "modifiedBy");
-
-        MutableInt count = new MutableInt(0);
 
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
         StringExpression se = listTable.getDetailsURL(null, list.getContainer());
@@ -641,10 +744,33 @@ public class ListManager implements SearchService.DocumentProvider
 
             task.addResource(r, SearchService.PRIORITY.item);
 
-            count.increment();
-        });
+            if (indexFileAttachment)
+            {
+                AttachmentParent listItemParent = new ListItemAttachmentParent(entityId, list.getContainer());
+                for (Attachment attachment : as.getAttachments(listItemParent))
+                {
+                    //Get documentName and downloadUrl
+                    String documentName = attachment.getName();
+                    ActionURL downloadUrl = ListController.getDownloadURL(list, entityId, documentName);
 
-        return count.getValue();
+                    //Generate searchable resource
+                    String title = displayTitle + " attachment file \"" + documentName + "\"";
+                    WebdavResource attachmentRes = as.getDocumentResource(
+                            new Path(entityId, documentName),
+                            downloadUrl,
+                            title,
+                            listItemParent,
+                            documentName,
+                            SearchService.fileCategory
+                    );
+
+                    //Add breadcrumb link to list
+                    nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
+                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                }
+            }
+        });
     }
 
     /**
@@ -816,7 +942,9 @@ public class ListManager implements SearchService.DocumentProvider
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                ListManager.get().setLastIndexed(list, ms);
+                list.getTable(User.getSearchUser()).getSchema().getScope().addCommitTask(() -> {
+                    ListManager.get().setLastIndexed(list, ms);
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
             }
         };
 
