@@ -336,31 +336,19 @@ public class ListManager implements SearchService.DocumentProvider
         return updated;
     }
 
-    // Queue up one-time operations related to turning indexing on or off
-    // TODO: This is close, but not quite precise enough.
-    //  We should detect changes to document titles, templates,
-    // sub-settings like metadata vs. data, etc. and take appropriate action (or inaction).
-    //// entire list
-    //            entireListIndex: model.entireListIndex,
-    //            // document title
-    //            entireListTitleTemplate: model.entireListTitleTemplate,
-    //            // metadata/data
-    //            entireListIndexSetting: model.entireListIndexSetting,
-    //            // index
-    //            entireListBodySetting: model.entireListBodySetting,
-    //            entireListBodyTemplate: model.entireListBodyTemplate,
-    //
-    //            // each item
-    //            eachItemIndex: model.eachItemIndex,
-    //            // document title
-    //            eachItemTitleTemplate: model.eachItemTitleTemplate,
-    //            // index
-    //            eachItemBodySetting: model.entireListBodySetting,
-    //            eachItemBodyTemplate: model.eachItemBodyTemplate,
     private void handleIndexSettingChanges(DbScope scope, ListDef listDef, ListDomainKindProperties old, ListDomainKindProperties updated)
     {
         boolean oldEachItemIndex = old.isEachItemIndex();
         boolean newEachItemIndex = updated.isEachItemIndex();
+
+        String oldEachItemTitleTemplate = old.getEachItemTitleTemplate();
+        String newEachItemTitleTemplate = updated.getEachItemTitleTemplate();
+
+        int oldEachItemBodySetting = old.getEachItemBodySetting();
+        int newEachItemBodySetting = updated.getEachItemBodySetting();
+
+        String oldEachItemBodyTemplate = old.getEachItemBodyTemplate();
+        String newEachItemBodyTemplate = updated.getEachItemBodyTemplate();
 
         boolean oldEntireListIndex = old.isEntireListIndex();
         boolean newEntireListIndex = updated.isEntireListIndex();
@@ -382,6 +370,9 @@ public class ListManager implements SearchService.DocumentProvider
 
         handleIndexSettingChanges(scope, listDef,
                 oldEachItemIndex, newEachItemIndex,
+                oldEachItemTitleTemplate, newEachItemTitleTemplate,
+                oldEachItemBodySetting, newEachItemBodySetting,
+                oldEachItemBodyTemplate, newEachItemBodyTemplate,
                 oldEntireListIndex, newEntireListIndex,
                 oldFileAttachmentIndex, newFileAttachmentIndex,
                 oldEntireListTitleSetting, newEntireListTitleSetting,
@@ -394,6 +385,15 @@ public class ListManager implements SearchService.DocumentProvider
     {
         boolean oldEachItemIndex = old.getEachItemIndex();
         boolean newEachItemIndex = updated.getEachItemIndex();
+
+        String oldEachItemTitleTemplate = old.getEachItemTitleTemplate();
+        String newEachItemTitleTemplate = updated.getEachItemTitleTemplate();
+
+        int oldEachItemBodySetting = old.getEachItemBodySetting();
+        int newEachItemBodySetting = updated.getEachItemBodySetting();
+
+        String oldEachItemBodyTemplate = old.getEachItemBodyTemplate();
+        String newEachItemBodyTemplate = updated.getEachItemBodyTemplate();
 
         boolean oldEntireListIndex = old.getEntireListIndex();
         boolean newEntireListIndex = updated.getEntireListIndex();
@@ -415,6 +415,9 @@ public class ListManager implements SearchService.DocumentProvider
 
         handleIndexSettingChanges(scope, listDef,
                 oldEachItemIndex, newEachItemIndex,
+                oldEachItemTitleTemplate, newEachItemTitleTemplate,
+                oldEachItemBodySetting, newEachItemBodySetting,
+                oldEachItemBodyTemplate, newEachItemBodyTemplate,
                 oldEntireListIndex, newEntireListIndex,
                 oldFileAttachmentIndex, newFileAttachmentIndex,
                 oldEntireListTitleSetting, newEntireListTitleSetting,
@@ -422,8 +425,13 @@ public class ListManager implements SearchService.DocumentProvider
                 oldEntireListBodySetting, newEntireListBodySetting,
                 oldEntireListBodyTemplate, newEntireListBodyTemplate);
     }
+
+    // Queue up one-time operations related to turning indexing on or off
     private void handleIndexSettingChanges(DbScope scope, ListDef listDef,
                                            boolean oldEachItemIndex, boolean newEachItemIndex,
+                                           String oldEachItemTitleTemplate, String newEachItemTitleTemplate,
+                                           int oldEachItemBodySetting, int newEachItemBodySetting,
+                                           String oldEachItemBodyTemplate, String newEachItemBodyTemplate,
                                            boolean oldEntireListIndex, boolean newEntireListIndex,
                                            boolean oldFileAttachmentIndex, boolean newFileAttachmentIndex,
                                            String oldEntireListTitleSetting, String newEntireListTitleSetting,
@@ -435,8 +443,15 @@ public class ListManager implements SearchService.DocumentProvider
             ListDefinition list = ListDefinitionImpl.of(listDef);
 
             // Turning on each-item indexing or attachment indexing -> clear last indexed column
-            if ((!oldEachItemIndex && newEachItemIndex) || (!oldFileAttachmentIndex && newFileAttachmentIndex))
+            // Also, document title, template, and sub-settings
+            if ((!oldEachItemIndex && newEachItemIndex) ||
+                    (!oldFileAttachmentIndex && newFileAttachmentIndex) ||
+                    (newEachItemTitleTemplate != null && !newEachItemTitleTemplate.equals(oldEachItemTitleTemplate)) ||
+                    (newEachItemBodyTemplate != null && !newEachItemBodyTemplate.equals(oldEachItemBodyTemplate)) ||
+                    (newEachItemBodySetting != oldEachItemBodySetting))
+            {
                 clearLastIndexed(scope, ListSchema.getInstance().getSchemaName(), listDef);
+            }
 
             // Turning off each-item indexing -> clear item docs from the index
             if (oldEachItemIndex && !newEachItemIndex)
@@ -447,7 +462,7 @@ public class ListManager implements SearchService.DocumentProvider
                 deleteIndexedAttachments(list);
 
             // Turning on entire-list indexing -> clear that list's last indexed column
-            // Also, document title, template, and sub-settings like metadata vs. data and
+            // Also, document title, template, and sub-settings like metadata vs. data
             if ((!oldEntireListIndex && newEntireListIndex) ||
                     (newEntireListTitleSetting != null && !newEntireListTitleSetting.equals(oldEntireListTitleSetting)) ||
                     (newEntireListBodyTemplate != null && !newEntireListBodyTemplate.equals(oldEntireListBodyTemplate)) ||
