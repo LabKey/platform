@@ -1823,12 +1823,15 @@ public class CoreController extends SpringActionController
                     Collection<Writer<?, ?>> childWriters = writer.getChildren(true, form.isForTemplate());
                     if (!childWriters.isEmpty())
                     {
-                        List<String> children = new ArrayList<>();
+                        List<Map<String, Object>> children = new ArrayList<>();
                         for (Writer<?, ?> child : childWriters)
                         {
                             dataType = child.getDataType();
                             if (dataType != null)
-                                children.add(dataType);
+                            {
+                                children.add(Map.of("name", dataType,
+                                        "selectedByDefault", child.selectedByDefault(form.getExportType(), form.isForTemplate())));
+                            }
                         }
 
                         if (children.size() > 0)

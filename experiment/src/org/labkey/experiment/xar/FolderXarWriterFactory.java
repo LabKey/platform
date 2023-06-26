@@ -17,6 +17,7 @@ package org.labkey.experiment.xar;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
@@ -201,6 +202,12 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         {
             // noop, serialization occurs in the parent writer and checks the context data types to determine
             // if the assay runs are serialized.
+        }
+
+        @Override
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+        {
+            return AbstractFolderContext.ExportType.STUDY != type;
         }
     }
 }

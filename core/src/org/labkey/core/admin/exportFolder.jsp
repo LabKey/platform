@@ -100,8 +100,8 @@ Ext4.onReady(function(){
             });
 
             if (Ext4.isArray(children)) {
-                Ext4.each(children, function(childName) {
-                    childName = Ext4.util.Format.htmlEncode(childName);
+                Ext4.each(children, function(child) {
+                    childName = Ext4.util.Format.htmlEncode(child.name);
 
                     formItemsCol1.push({
                         xtype: "checkbox",
@@ -111,7 +111,7 @@ Ext4.onReady(function(){
                         name: "types",
                         itemId: childName.replaceAll(',', ''),
                         inputValue: childName,
-                        checked: checked,
+                        checked: child.selectedByDefault,
                         objectType: "child",
                         parentId: parentName.replaceAll(',', '')
                     });

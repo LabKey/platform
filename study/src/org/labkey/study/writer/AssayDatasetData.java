@@ -1,6 +1,7 @@
 package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
@@ -17,5 +18,11 @@ public class AssayDatasetData implements InternalStudyWriter
     @Override
     public void write(StudyImpl object, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
+    }
+
+    @Override
+    public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+    {
+        return !forTemplate;
     }
 }
