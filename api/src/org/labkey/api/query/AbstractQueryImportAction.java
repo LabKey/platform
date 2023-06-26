@@ -775,8 +775,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, getUser(), getContainer(), null);
     }
 
-    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, boolean importLookupByAlternateKey, boolean importIdentity, boolean crossTypeImport, boolean allowCreateStorage, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors, @Nullable Logger logger)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors, @Nullable Logger logger)
     {
+        boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
+        boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
+        boolean crossTypeImport = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
+        boolean allowCreateStorage = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
+
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(insertOption);
         context.setAllowImportLookupByAlternateKey(importLookupByAlternateKey);
@@ -797,11 +802,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container, @Nullable Logger logger) throws IOException
     {
-        boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(Params.importLookupByAlternateKey, false);
-        boolean importIdentity = optionParamsMap.getOrDefault(Params.importIdentity, false);
-        boolean crossTypeImport = optionParamsMap.getOrDefault(Params.crossTypeImport, false);
-        boolean allowCreateStorage = optionParamsMap.getOrDefault(Params.allowCreateStorage, false);
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors, logger), auditEvent, user, container);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, errors, logger), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException

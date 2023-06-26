@@ -4038,15 +4038,11 @@ public class ExperimentController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
-            boolean importLookupByAlternateKey = getOptionParamValue(Params.importLookupByAlternateKey);
-            boolean importIdentity = getOptionParamValue(Params.importIdentity);
-            boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
-            boolean allowCreateStorage = getOptionParamValue(Params.allowCreateStorage);
-            _context = createDataIteratorContext(_insertOption, importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, auditBehaviorType, errors, null);
+            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
-            if (crossTypeImport)
+            if (getOptionParamValue(Params.crossTypeImport))
             {
                 tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
                 updateService = tInfo.getUpdateService();

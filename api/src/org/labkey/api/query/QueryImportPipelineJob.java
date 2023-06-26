@@ -307,11 +307,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
     private DataIteratorContext createDataIteratorContext(BatchValidationException errors)
     {
-        boolean importLookupByAlternateKey = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
-        boolean importIdentity = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
-        boolean crossTypeImport = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
-        boolean allowCreateStorage = _importContextBuilder.getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.allowCreateStorage, false);
-        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), importLookupByAlternateKey, importIdentity,  crossTypeImport, allowCreateStorage, _importContextBuilder.getAuditBehaviorType(), errors, getLogger());
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), errors, getLogger());
     }
 
     @Override
