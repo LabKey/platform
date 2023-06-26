@@ -87,7 +87,7 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
         // only want the sample derivation runs; other runs will get included in the experiment xar.
         exportedRuns = exportedRuns.stream().filter(run -> {
             String lsid = run.getProtocol().getLSID();
-            return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID);
+            return lsid.equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID) && isValidRunType(ctx, run);
         }).collect(Collectors.toSet());
 
         if (!exportedRuns.isEmpty())
@@ -123,6 +123,16 @@ public abstract class DataClassFolderWriter extends AbstractExpFolderWriter
             writeDataClassDataFiles(dataClasses, ctx, xarDir);
 
         exportContext.setDataClassXarCreated(true);
+    }
+
+    /**
+     * Sample derivation protocols involving data classes can be either to/from another data
+     * class or also to/from a sample type. If it's the latter, we will let the sample writer handle it
+     * since on import, data classes run before sample types.
+     */
+    private boolean isValidRunType(FolderExportContext ctx, ExpRun run)
+    {
+        return run.getMaterialOutputs().isEmpty() && run.getMaterialInputs().isEmpty();
     }
 
     private void writeDataClassDataFiles(Set<ExpDataClass> dataClasses, FolderExportContext ctx, VirtualFile dir) throws Exception
