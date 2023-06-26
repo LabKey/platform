@@ -173,7 +173,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     {
                         XarSource runsXarSource;
                         if (runsXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
-                            runsXarSource = new FileXarSource(runsXarFile, job, ctx.getContainer());
+                            runsXarSource = new FileXarSource(runsXarFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
                         else
                             runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
                         try
@@ -222,7 +222,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         XarSource typesXarSource;
 
         if (typesXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
-            typesXarSource = new FileXarSource(typesXarFile, job, ctx.getContainer());
+            typesXarSource = new FileXarSource(typesXarFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
         else
             typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
         try
