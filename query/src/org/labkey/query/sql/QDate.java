@@ -47,7 +47,7 @@ public class QDate extends QExpr implements IConstant
     @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
-        builder.append("{d '").append(DateUtil.toISO(_value).substring(0, 10)).append("'}");
+        builder.append("{d '" + DateUtil.toISO(_value).substring(0, 10) + "'}");
     }
 
     @Override
