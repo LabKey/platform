@@ -667,7 +667,7 @@ public class ListManager implements SearchService.DocumentProvider
             lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
             SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
 
-            boolean indexFileAttachment = (!designChange && Objects.requireNonNull(listTable).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
+            boolean indexFileAttachment = !(!designChange && Objects.requireNonNull(listTable).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
                     || (!list.getFileAttachmentIndex());
 
             indexItems(task, list, filter, indexFileAttachment);
