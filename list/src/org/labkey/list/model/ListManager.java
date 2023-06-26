@@ -890,8 +890,12 @@ public class ListManager implements SearchService.DocumentProvider
 
     void deleteIndexedList(ListDefinition list)
     {
-        deleteIndexedEntireListDoc(list);
-        deleteIndexedItems(list);
+        if (list.getEntireListIndex())
+            deleteIndexedEntireListDoc(list);
+
+        if (list.getEachItemIndex())
+            deleteIndexedItems(list);
+
         deleteIndexedAttachments(list);
     }
 
@@ -907,20 +911,25 @@ public class ListManager implements SearchService.DocumentProvider
         if (null == listTable)
             return;
 
-        List<String> parentIds = new ArrayList<>();
-        new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachMap(row -> {
-            parentIds.add((String)row.get("EntityId"));
+        boolean hasAttachmentCols = Objects.requireNonNull(listTable).getColumns().stream().anyMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT);
 
-            // Delete in batches to minimize db queries
-            if (parentIds.size() > 10000)
-            {
-                as.deleteAttachmentIndexes(parentIds);
-                parentIds.clear();
-            }
-        });
+        if (hasAttachmentCols)
+        {
+            List<String> parentIds = new ArrayList<>();
+            new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachMap(row -> {
+                parentIds.add((String) row.get("EntityId"));
 
-        // Finish last batch
-        as.deleteAttachmentIndexes(parentIds);
+                // Delete in batches to minimize db queries
+                if (parentIds.size() > 10000)
+                {
+                    as.deleteAttachmentIndexes(parentIds);
+                    parentIds.clear();
+                }
+            });
+
+            // Finish last batch
+            as.deleteAttachmentIndexes(parentIds);
+        }
     }
 
     // Un-index the entire list doc alone, but leave the list items alone
