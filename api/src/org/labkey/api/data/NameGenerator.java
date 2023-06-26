@@ -1515,12 +1515,16 @@ public class NameGenerator
                     sampleCounts = getSampleCountsFunction.apply(null);
                 }
 
-                boolean skipRootSampleCount = altExpression != null; // so far altExpression is not null only when generating aliquots
-                if (!skipRootSampleCount && _rootCounterSequence != null)
+                if (_rootCounterSequence != null)
                 {
                     if (sampleCounts == null)
                         sampleCounts = new HashMap<>();
-                    sampleCounts.put("rootSampleCount", _rootCounterSequence.next());
+
+                    boolean skipRootSampleCount = altExpression != null; // so far altExpression is not null only when generating aliquots
+                    if (!skipRootSampleCount)
+                        sampleCounts.put("rootSampleCount", _rootCounterSequence.next());
+                    else
+                        sampleCounts.put("rootSampleCount", _rootCounterSequence.current());
                 }
             }
 
@@ -2839,6 +2843,8 @@ public class NameGenerator
             validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","The 'MaterialInputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
 
             validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
+
+            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "The 'rootSampleCount' substitution pattern starting at position 2 should be preceded by the string '${'."));
         }
 
         @Test
