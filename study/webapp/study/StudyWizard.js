@@ -253,8 +253,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
                         if (writer.name == 'Study' && Ext.isDefined(writer.children)) {
                             Ext.each(writer.children, function(child){
-                                if (studyWritersToExclude.indexOf(child) == -1) {
-                                    this.studyWriters.push([child]);
+                                if (studyWritersToExclude.indexOf(child.name) == -1) {
+                                    this.studyWriters.push([child.name]);
                                 }
                             }, this);
                         }

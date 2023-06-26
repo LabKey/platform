@@ -44,7 +44,6 @@ public class FolderArchiveDataTypes
     public static final String FILES = "Files";
     public static final String FILE_BROWSER_SETTINGS = "File browser admin configurations";
     public static final String ETLS = "ETL Definitions";
-    public static final String SAMPLE_TYPES_AND_DATA_CLASSES = "Sample Types and Data Classes";
     public static final String SAMPLE_TYPE_DESIGNS = "Sample Type Designs";
     public static final String SAMPLE_TYPE_DATA = "Sample Type Data";
     public static final String DATA_CLASS_DESIGNS = "Data Class Designs";
