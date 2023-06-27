@@ -76,38 +76,9 @@ public interface FileStream
         {
             throw new IOException("Destination file [" + dest.getAbsolutePath() + "] already exists and could not be deleted");
         }
-
-        boolean success = false;
-        long expected = s.getSize();
-        long actual = 0;
-        long bytesCopied;
-        try (ReadableByteChannel cIn = s.getInputChannel();
-             FileOutputStream fOut = new FileOutputStream(dest);
-             FileChannel cOut = fOut.getChannel())
+        try (ReadableByteChannel in = s.getInputChannel())
         {
-            LOG.debug("Starting to transfer to " + dest + ", expecting " + (expected == -1 ? "an unknown number" : Long.toString(expected)) + " bytes");
-            do
-            {
-                bytesCopied = cOut.transferFrom(cIn, actual, Long.MAX_VALUE);
-                actual += bytesCopied;
-                if (actual != expected && bytesCopied != 0)
-                {
-                    LOG.debug("Still transferring to " + dest + ", " + actual + " bytes transferred so far");
-                }
-            }
-            while (bytesCopied != 0);
-            success = true;
-        }
-        finally
-        {
-            if (success)
-            {
-                LOG.debug("Finished transferring " + actual + " bytes to " + dest);
-            }
-            else
-            {
-                LOG.debug("Failed during transfer, but successfully copied at least " + actual + " bytes to " + dest);
-            }
+            FileUtil.copyFile(in, s.getSize(), dest);
         }
     }
 

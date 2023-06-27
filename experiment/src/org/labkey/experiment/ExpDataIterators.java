@@ -1995,7 +1995,7 @@ public class ExpDataIterators
                  }
                 else
                 {
-                    String lsid = (String) get(_lsidCol);
+                    String lsid = _lsidCol == null ? null : (String) get(_lsidCol);
                     if (null != lsid)
                         _lsids.add(lsid);
                 }
@@ -2023,7 +2023,7 @@ public class ExpDataIterators
     // see SimpleQueryUpdateService.convertTypes() for similar handling of FILE_LINK columns
     public static class FileLinkDataIterator extends WrapperDataIterator
     {
-        Supplier<?>[] suppliers;
+        Supplier<Object>[] suppliers;
         String[] savedFileName;
 
         FileLinkDataIterator(final DataIterator in, final DataIteratorContext context, Container c, String file_link_dir_name)
@@ -2076,6 +2076,12 @@ public class ExpDataIterators
         public Object get(int i)
         {
             return suppliers[i].get();
+        }
+
+        @Override
+        public Supplier<Object> getSupplier(int i)
+        {
+            return suppliers[i];
         }
 
         @Override

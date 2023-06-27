@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -242,6 +243,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
     public abstract static class RelationColumn
     {
         boolean _suggestedColumn = false;
+        String _uniqueName = null;
 
         public abstract FieldKey getFieldKey();     // field key does NOT include table name/alias
         abstract String getAlias();
@@ -332,7 +334,7 @@ public abstract class AbstractQueryRelation implements QueryRelation
 
 
         /**
-         * Withing a query, column names can be slippery.  We give each column a unique internal name.
+         * Within a query, column names can be slippery.  We give each column a unique internal name.
          * This facilitates correctly reconnecting related columns after a query is parsed.
          *
          * Given "FROM TableA as X, TableB as Y", column X.value and Y.value are considered different columns
@@ -340,7 +342,13 @@ public abstract class AbstractQueryRelation implements QueryRelation
          *
          * @return query wide unique identifier for this column.
          */
-        abstract public String getUniqueName();
+        public String getUniqueName()
+        {
+            // Don't recompute uniquename on the fly. QueryUnion.getAlias() can change, and we use getAlias() for some readability.
+            if (null == _uniqueName)
+                _uniqueName = _defaultUniqueName(getTable());
+            return _uniqueName;
+        }
 
         public static final String UNIQUE_NAME_PREFIX = ".--UN--";
         public static final String UNIQUE_NAME_SUFFIX = ".-- ";
@@ -348,7 +356,9 @@ public abstract class AbstractQueryRelation implements QueryRelation
         protected String _defaultUniqueName(AbstractQueryRelation r)
         {
             // all unique names should start with some recognizable prefix/suffix so that we can assert that these names don't escape from Query somehow
-            return UNIQUE_NAME_PREFIX + r._guid + "." + r.getAlias() + System.identityHashCode(this) + "." + getAlias() + ".. ";
+            // r_guid + identityHashCode(column/this) should be unique, the other stuff is for readability
+            Objects.requireNonNull(r.getAlias());
+            return UNIQUE_NAME_PREFIX + r._guid + "." + System.identityHashCode(this) + "." + this.getClass().getSimpleName() + "." + r.getAlias() + "." + getAlias() + UNIQUE_NAME_SUFFIX;
         }
 
         public static boolean isUniqueName(String s)

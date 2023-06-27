@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.experiment.LSIDRelativizer" %>
+<%@ page import="org.labkey.api.exp.xar.LSIDRelativizer" %>
 <%@ page import="org.labkey.experiment.XarExportType" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

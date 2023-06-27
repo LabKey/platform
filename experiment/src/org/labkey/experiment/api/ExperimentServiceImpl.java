@@ -36,6 +36,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -137,7 +138,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
-import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -4798,33 +4799,61 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Integer> dataIds = dataItems == null || dataItems.isEmpty() ? Collections.emptyList() : dataItems.stream().map(RunItem::getRowId).toList();
         Set<Integer> sampleIds = materialItems == null || materialItems.isEmpty() ? Collections.emptySet() : materialItems.stream().map(RunItem::getRowId).collect(Collectors.toSet());
 
-        if (!dataIds.isEmpty())
-            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
-
         if (!sampleIds.isEmpty())
-            // get all the runs that use these samples as inputs
-            runsUsingItems.addAll(getDeletableRunsFromMaterials(ExpMaterialImpl.fromMaterials(materialItems)));
-
-        if (!runsUsingItems.isEmpty())
         {
-            Set<ExpRun> runsToKeep = new HashSet<>();
-            // determine if there are any outputs of this run that are not being deleted. If so, remove the run from the runs to be deleted.
-            runsUsingItems.forEach(run -> {
-                run.getMaterialOutputs().forEach(
-                    sample -> {
-                        if (!sampleIds.contains(sample.getRowId()))
-                            runsToKeep.add(sample.getRun());
-                    }
-                );
-                run.getDataOutputs().forEach(
-                    dataObject -> {
-                        if (!dataIds.contains(dataObject.getRowId()))
-                            runsToKeep.add(dataObject.getRun());
-                    }
-                );
-            });
-            runsUsingItems.removeAll(runsToKeep);
+            // get runs where these samples are used as inputs
+            runsUsingItems.addAll(getDerivedRunsFromMaterial(sampleIds));
+            // retain runs if there are other inputs that are not being deleted
+            if (!runsUsingItems.isEmpty())
+            {
+                Set<ExpRun> runsToKeep = new HashSet<>();
+                runsUsingItems.forEach(run -> {
+                    run.getMaterialInputs().keySet().forEach(
+                            sample -> {
+                                if (!sampleIds.contains(sample.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                    run.getDataInputs().keySet().forEach(
+                            dataObject -> {
+                                if (!dataIds.contains(dataObject.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                });
+                runsUsingItems.removeAll(runsToKeep);
+            }
+            // add runs that will no longer have any outputs
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(sampleIds, getTinfoMaterial(), Collections.emptySet(), getTinfoData()));
+        }
 
+        if (!dataIds.isEmpty())
+        {
+            // get runs where these data objects are used as inputs
+            var dataInputRuns = new ArrayList<ExpRun>(getDerivedRunsFromData(dataIds));
+            // retain runs if there are other inputs that are not being deleted
+            if (!dataInputRuns.isEmpty())
+            {
+                Set<ExpRun> runsToKeep = new HashSet<>();
+                dataInputRuns.forEach(run -> {
+                    run.getMaterialInputs().keySet().forEach(
+                            sample -> {
+                                if (!sampleIds.contains(sample.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                    run.getDataInputs().keySet().forEach(
+                            dataObject -> {
+                                if (!dataIds.contains(dataObject.getRowId()))
+                                    runsToKeep.add(run);
+                            }
+                    );
+                });
+                dataInputRuns.removeAll(runsToKeep);
+            }
+            runsUsingItems.addAll(dataInputRuns);
+            // get runs that will no longer have any outputs
+            runsUsingItems.addAll(getDeletableSourceRunsFromInputRowId(dataIds, getTinfoData(), sampleIds, getTinfoMaterial()));
         }
 
         List<? extends ExpRun> runsToDelete = runsDeletedWithInput(runsUsingItems);
@@ -4863,6 +4892,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
+    /* Finds the runs where all outputs are also being deleted */
     private Collection<? extends ExpRun> getDeletableSourceRunsFromInputRowId(Collection<Integer> rowIds, TableInfo primaryTableInfo, Collection<Integer> siblingRowIds, TableInfo siblingTableInfo)
     {
         if (rowIds == null || rowIds.isEmpty())
@@ -4945,6 +4975,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return Collections.emptyList();
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
+    }
+
+
+    private Collection<? extends ExpRun> getDerivedRunsFromData(Collection<Integer> rowIds)
+    {
+        if (rowIds == null || rowIds.isEmpty())
+            return Collections.emptyList();
+
+        return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromDataIds(getAppendInClause(rowIds))));
     }
 
     /**
@@ -5637,6 +5676,26 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      */
     private SQLFragment getTargetRunIdsFromMaterialIds(SQLFragment materialRowIdSQL)
     {
+        return getTargetRunIdsFromInputRowIds(materialRowIdSQL, getTinfoMaterialInput(), "MaterialID");
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
+     * @param rowIdSQL -- SQL clause generating material rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromDataIds(SQLFragment rowIdSQL)
+    {
+        return getTargetRunIdsFromInputRowIds(rowIdSQL, getTinfoDataInput(), "DataID");
+    }
+
+    /**
+     * Generate a query to get the runIds where the supplied set of material rowIds were used as inputs
+     * @param rowIdSQL -- SQL clause generating rowIds used to limit results
+     * @return Query to retrieve set of runIds from supplied input material ids
+     */
+    private SQLFragment getTargetRunIdsFromInputRowIds(SQLFragment rowIdSQL, TableInfo inputTable, String idColumn)
+    {
         // ex SQL:
         /*
             SELECT pa.RunId
@@ -5651,10 +5710,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         sql.append("SELECT pa.RunId\n");
         sql.append("FROM ").append(getTinfoProtocolApplication(), "pa").append(",\n\t");
-        sql.append(getTinfoMaterialInput(), "mi").append("\n");
-        sql.append("WHERE mi.TargetApplicationId = pa.RowId ")
-            .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
-            .append("AND mi.MaterialID ").append(materialRowIdSQL);
+        sql.append(inputTable, "i").append("\n");
+        sql.append("WHERE i.TargetApplicationId = pa.RowId ")
+                .append("AND pa.cpastype = ?\n").add(ExperimentRun.name())
+                .append("AND i.").append(idColumn).append(" ").append(rowIdSQL);
 
         return sql;
     }
@@ -8612,12 +8671,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
-    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, boolean isSample, Container container)
+    public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, String dataType, Container container)
     {
         DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
         SqlDialect dialect = expSchema.getSqlDialect();
 
-        TableInfo tableInfo = isSample ? ExperimentService.get().getTinfoMaterial() : ExperimentService.get().getTinfoData();
+        TableInfo tableInfo;
+        if ("sample".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoMaterial();
+        else if ("data".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoData();
+        else if ("assayrun".equalsIgnoreCase(dataType))
+            tableInfo = ExperimentService.get().getTinfoExperimentRun();
+        else
+            return null;
+
         SQLFragment currentFolderCountSql = new SQLFragment()
                 .append(" SELECT COUNT(*) FROM ")
                 .append(tableInfo, "t")
@@ -8711,7 +8779,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 TableInfo dataClassTable = schema.getTable(dataClass.getName());
 
                 // update exp.data.container
-                int updateCount = updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
+                int updateCount = ContainerManager.updateContainer(getTinfoData(), "rowId", dataIds, targetContainer, user, true);
                 updateCounts.put("sources", updateCounts.get("sources") + updateCount);
 
                 // update for exp.object.container
@@ -8778,20 +8846,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         QueryService queryService = QueryService.get();
         queryService.getDefaultAuditHandler().addSummaryAuditEvent(user, container, dataClassTable, QueryService.AuditAction.UPDATE, rowCount, AuditBehaviorType.SUMMARY, auditUserComment);
-    }
-
-    public int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
-    {
-        SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
-            .append(" SET container = ").appendValue(targetContainer.getEntityId());
-        if (withModified)
-        {
-            dataUpdate.append(", modified = ").appendValue(new Date());
-            dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
-        }
-        dataUpdate.append(" WHERE ").append(idField);
-        dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
-        return new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
     }
 
     private void moveDataClassObjectAttachments(ExpDataClass dataClass, Collection<ExpData> classObjects, Container targetContainer, User user)
@@ -8931,6 +8985,113 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             runCount++;
         }
         return runCount;
+    }
+
+    @Override
+    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
+    {
+        if (assayRuns.isEmpty())
+            throw new IllegalArgumentException("No assayRuns provided to move operation.");
+
+        Map<ExpProtocol, List<ExpRun>> protocolMap = new HashMap<>();
+        assayRuns.forEach(run ->
+                protocolMap.computeIfAbsent(run.getProtocol(), t -> new ArrayList<>()).add(run));
+
+        List<String> runLsids = assayRuns.stream().map(ExpRun::getLSID).toList();
+
+        ExperimentService expService = ExperimentService.get();
+
+        AbstractAssayProvider.AssayMoveData assayMoveData = new AbstractAssayProvider.AssayMoveData(new HashMap<>(), new HashMap<>());
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.setRowCount(assayRuns.size());
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
+
+            for (Map.Entry<ExpProtocol, List<ExpRun>> entry: protocolMap.entrySet())
+            {
+                ExpProtocol protocol = entry.getKey();
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                List<ExpRun> runs = entry.getValue();
+                if (provider != null)
+                {
+                    provider.moveRuns(runs, targetContainer, user, assayMoveData);
+                    Map<String, Integer> counts = assayMoveData.counts();
+                    int auditEventCount = expService.moveAuditEvents(targetContainer, runLsids);
+                    counts.put("auditEvents", counts.getOrDefault("auditEvents", 0) + auditEventCount);
+                    if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
+                    {
+                        for (ExpRun run : runs)
+                        {
+                            run.setContainer(targetContainer);
+                            auditRunEvent(user, protocol, run, null, "Assay run was moved.", userComment);
+                        }
+                    }
+                }
+            }
+
+            transaction.addCommitTask(() -> {
+                int fileMoveCount = 0;
+                for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
+                {
+                    for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
+                    {
+                        if (moveFile(renameData))
+                            fileMoveCount++;
+                    }
+                }
+                Map<String, Integer> counts = assayMoveData.counts();
+                counts.put("movedFiles", fileMoveCount);
+            }, POSTCOMMIT);
+
+            transaction.commit();
+        }
+
+        return assayMoveData.counts();
+    }
+
+    private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData)
+    {
+        String fieldName = renameData.fieldName() == null ? "datafileurl" : renameData.fieldName();
+        File targetFile = renameData.targetFile();
+        File sourceFile = renameData.sourceFile();
+        String assayName = renameData.run().getProtocol().getName();
+        String runName = renameData.run().getName();
+        if (!targetFile.getParentFile().exists())
+        {
+            if (!targetFile.getParentFile().mkdirs())
+            {
+                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' assay run '%s' (field: '%s') failed.",
+                        targetFile.getParent(),
+                        sourceFile.getAbsolutePath(),
+                        assayName,
+                        runName,
+                        fieldName));
+                return false;
+            }
+        }
+        if (!sourceFile.renameTo(targetFile))
+        {
+            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' assay run '%s' (field: '%s') failed.",
+                    sourceFile.getAbsolutePath(),
+                    targetFile.getAbsolutePath(),
+                    assayName,
+                    runName,
+                    fieldName));
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int moveAuditEvents(Container targetContainer, List<String> runLsids)
+    {
+        ExperimentAuditProvider auditProvider = new ExperimentAuditProvider();
+        return auditProvider.moveEvents(targetContainer, runLsids);
     }
 
     public static class TestCase extends Assert

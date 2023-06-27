@@ -9,32 +9,38 @@ import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
-import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
@@ -44,11 +50,12 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
@@ -149,17 +156,17 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     if (Files.exists(typesXarFile))
                         logFile = CompressedInputStreamXarSource.getLogFileFor(typesXarFile);
                     XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
+                    XarContext xarContext = typesReader.getXarSource().getXarContext();
 
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
 
                     // Import data classes first because the media sample type (RawMaterials) has a lookup to the ingredient data class.
                     // Registry files need to imported in a particular order because some files rely on data from other files.
-                    importTsvData(ctx, ExpSchema.SCHEMA_EXP_DATA.toString(), typesReader.getDataClasses().stream().map(Identifiable::getName).sorted(Comparator.comparing(REGISTRY_CLASS_ORDER::indexOf)).collect(Collectors.toList()),
-                            dataClassDataFiles, xarDir, true, false);
-
-                    importTsvData(ctx, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes().stream().map(Identifiable::getName).collect(Collectors.toList()),
-                            sampleTypeDataFiles, xarDir, true, false);
+                    ArrayList<ExpObject> sortedDataClasses = new ArrayList<>(typesReader.getDataClasses());
+                    sortedDataClasses.sort(Comparator.comparingInt(dc -> REGISTRY_CLASS_ORDER.indexOf(dc.getName())));
+                    importTsvData(ctx, xarContext, ExpSchema.SCHEMA_EXP_DATA.toString(), sortedDataClasses, dataClassDataFiles, xarDir, true, false);
+                    importTsvData(ctx, xarContext, SamplesSchema.SCHEMA_NAME, typesReader.getSampleTypes(), sampleTypeDataFiles, xarDir, true, false);
 
                     // handle wiring up any derivation runs
                     if (runsXarFile != null)
@@ -266,14 +273,15 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         };
     }
 
-    protected void importTsvData(FolderImportContext ctx, String schemaName, List<String> tableNames, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException, BatchValidationException, QueryUpdateServiceException, InvalidKeyException
+    protected void importTsvData(FolderImportContext ctx, XarContext xarContext, String schemaName, List<? extends ExpObject> expObjects, Map<String, String> dataFileMap, VirtualFile dir, boolean fileRequired, boolean isUpdate) throws IOException, SQLException
     {
         Logger log = ctx.getLogger();
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
         if (userSchema != null)
         {
-            for (String tableName : tableNames)
+            for (ExpObject expObject : expObjects)
             {
+                String tableName = expObject.getName();
                 // tsv file name will have been generated from a sanitized table name
                 String fileName = FileUtil.makeLegalName(tableName);
                 if (dataFileMap.containsKey(fileName))
@@ -310,7 +318,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                     options.put(SampleTypeService.ConfigParameters.DeferAliquotRuns, true);
                                     if (isUpdate)
                                         options.put(QueryUpdateService.ConfigParameters.SkipRequiredFieldValidation, true);
-
+                                    options.put(ExperimentService.QueryOptions.UseLsidForUpdate, !isUpdate);
                                     context.setConfigParameters(options);
 
                                     Map<String, Object> extraContext = null;
@@ -320,8 +328,8 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                                         extraContext.put(IS_NEW_FOLDER_IMPORT_KEY, true);
                                     }
 
-                                    new HashMap<>();
-                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), loader, context, extraContext);
+                                    DataIterator data = new ResolveLsidDataIterator(loader.getDataIterator(context), xarContext, expObject instanceof ExpDataClass ? "DataClass" : "Material");
+                                    int count = qus.loadRows(ctx.getUser(), ctx.getContainer(), data, context, extraContext);
                                     log.info("Imported a total of " + count + " rows into : " + tableName);
 
                                     if (context.getErrors().hasErrors())
@@ -351,6 +359,56 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
             log.error("Could not find " + schemaName + " schema.");
         }
     }
+
+
+    private class ResolveLsidDataIterator extends WrapperDataIterator
+    {
+        final XarContext _xarContext;
+        final String _baseType;
+        int _lsidColumnIndex = -1;
+        Supplier<Object> _lsidTemplateSupplier = null;
+        Supplier<Object> _lsidResolvedSupplier = null;
+
+        ResolveLsidDataIterator(DataIterator delegate, XarContext xarContext, String baseType)
+        {
+            super(delegate);
+            _xarContext = xarContext;
+            _baseType = baseType;
+
+            for (int i=1 ; i<=delegate.getColumnCount() ; i++)
+            {
+                if ("lsid".equalsIgnoreCase(delegate.getColumnInfo(i).getName()))
+                {
+                    _lsidColumnIndex = i;
+                    _lsidTemplateSupplier = delegate.getSupplier(i);
+                    _lsidResolvedSupplier = () -> {
+                        try
+                        {
+                            return LsidUtils.resolveLsidFromTemplate((String)_lsidTemplateSupplier.get(), _xarContext, _baseType);
+                        }
+                        catch (XarFormatException xfe)
+                        {
+                            throw UnexpectedException.wrap(xfe);
+                        }
+                    };
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public Supplier<Object> getSupplier(int i)
+        {
+            return i==_lsidColumnIndex ? _lsidResolvedSupplier : _delegate.getSupplier(i);
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            return i==_lsidColumnIndex ? _lsidResolvedSupplier.get() : _delegate.get(i);
+        }
+    }
+
 
     public static class Factory implements FolderImporterFactory
     {

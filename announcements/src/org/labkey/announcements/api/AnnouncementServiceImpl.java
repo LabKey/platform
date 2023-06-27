@@ -215,7 +215,13 @@ public class AnnouncementServiceImpl implements AnnouncementService
         }
         return new AnnouncementImpl(model);
     }
-    
+
+    @Override
+    public int updateContainer(List<String> discussionSrcIds, Container targetContainer, User u)
+    {
+        return AnnouncementManager.updateContainer(discussionSrcIds, targetContainer, u);
+    }
+
     @Override
     public void deleteAnnouncement(Announcement announcement)
     {

@@ -34,7 +34,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.experiment.DataURLRelativizer;
-import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
 import org.labkey.experiment.api.ExpRunImpl;

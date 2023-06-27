@@ -56,6 +56,6 @@ public class DropColumnsDataIterator extends WrapperDataIterator
     @Override
     public Supplier<Object> getSupplier(int i)
     {
-        return super.getSupplier(indexMap[i]);
+        return _delegate.getSupplier(indexMap[i]);
     }
 }
