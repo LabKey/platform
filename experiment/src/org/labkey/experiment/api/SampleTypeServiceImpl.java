@@ -976,7 +976,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
             return DbSequenceManager.getReclaimable(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0);
 
-        // Reclaimable preallocates must call sync as part of the transaction they are in
         return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0, 100);
     }
 
