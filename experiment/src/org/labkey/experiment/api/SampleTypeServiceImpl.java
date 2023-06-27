@@ -977,7 +977,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return DbSequenceManager.getReclaimable(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0);
 
         // Reclaimable preallocates must call sync as part of the transaction they are in
-        return DbSequenceManager.getReclaimablePreallocateSequence(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0, 100);
+        return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0, 100);
     }
 
     @Override
