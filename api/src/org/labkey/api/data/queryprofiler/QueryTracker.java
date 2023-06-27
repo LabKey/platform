@@ -141,7 +141,7 @@ class QueryTracker
 
     public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && Table.isSelect(_sql);
+        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && Table.isSelect(_sql);
     }
 
     public long getCount()
