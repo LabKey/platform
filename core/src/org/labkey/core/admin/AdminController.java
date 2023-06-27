@@ -2500,7 +2500,7 @@ public class AdminController extends SpringActionController
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
-                    sql -> getQueryStackTracesURL(sql.hashCode()));
+                    AdminController::getQueryStackTracesURL);
         }
 
         @Override
@@ -2528,10 +2528,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getQueryStackTracesURL(int hashCode)
+    private static ActionURL getQueryStackTracesURL(String sqlHash)
     {
         ActionURL url = new ActionURL(QueryStackTracesAction.class, ContainerManager.getRoot());
-        url.addParameter("sqlHashCode", hashCode);
+        url.addParameter("sqlHash", sqlHash);
         return url;
     }
 
@@ -2542,7 +2542,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), AdminController::getExecutionPlanURL);
+            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHash(), AdminController::getExecutionPlanURL);
         }
 
         @Override
@@ -2554,10 +2554,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getExecutionPlanURL(String sql)
+    private static ActionURL getExecutionPlanURL(String sqlHash)
     {
         ActionURL url = new ActionURL(ExecutionPlanAction.class, ContainerManager.getRoot());
-        url.addParameter("sqlHashCode", sql.hashCode());
+        url.addParameter("sqlHash", sqlHash);
         return url;
     }
 
@@ -2565,25 +2565,25 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ExecutionPlanAction extends SimpleViewAction<QueryForm>
     {
-        private int _hashCode;
+        private String _sqlHash;
         private ExecutionPlanType _type;
 
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            _hashCode = form.getSqlHashCode();
+            _sqlHash = form.getSqlHash();
             _type = EnumUtils.getEnum(ExecutionPlanType.class, form.getType());
             if (null == _type)
                 throw new NotFoundException("Unknown execution plan type");
 
-            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode(), _type);
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHash(), _type);
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Queries", QueriesAction.class);
-            root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
+            root.addChild("Query Stack Traces", getQueryStackTracesURL(_sqlHash));
             root.addChild(_type.getDescription());
         }
     }
@@ -2591,18 +2591,18 @@ public class AdminController extends SpringActionController
 
     public static class QueryForm
     {
-        private int _sqlHashCode;
+        private String _sqlHash;
         private String _type = "Estimated"; // All dialects support Estimated
 
-        public int getSqlHashCode()
+        public String getSqlHash()
         {
-            return _sqlHashCode;
+            return _sqlHash;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setSqlHashCode(int sqlHashCode)
+        public void setSqlHash(String sqlHash)
         {
-            _sqlHashCode = sqlHashCode;
+            _sqlHash = sqlHash;
         }
 
         public String getType()
