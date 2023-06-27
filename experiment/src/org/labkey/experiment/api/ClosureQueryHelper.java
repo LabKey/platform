@@ -11,6 +11,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MutableColumnInfo;
@@ -213,7 +214,8 @@ public class ClosureQueryHelper
                 {
                     if (ret.getConceptURI() == null)
                         ret.setConceptURI(CONCEPT_URI);
-                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
+                    DisplayColumnFactory originalDisplayColumnFactory = ret.getDisplayColumnFactory();
+                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo, originalDisplayColumnFactory));
                 }
                 return ret;
             }
