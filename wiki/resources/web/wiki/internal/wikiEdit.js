@@ -65,14 +65,7 @@ function tinyMceHandleEvent(evt) {
         const items = (evt.clipboardData || evt.originalEvent.clipboardData).items;
         const item = items[0];
         if (item.kind === 'file') {
-            const blob = item.getAsFile();
-            const reader = new FileReader();
-            reader.onload = function(event){
-                const img = `<img src="${event.target.result}" alt="" />`;
-                tinyMCE.execCommand('mceInsertContent', false, img, {skip_undo : false});
-            };
-
-            reader.readAsDataURL(blob);
+            LABKEY.Utils.alert("Error", "Pasting files on Safari is not supported.");
 
             // Must exit early to avoid double-pasting
             evt.preventDefault();
