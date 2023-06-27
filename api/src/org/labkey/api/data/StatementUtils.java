@@ -592,8 +592,11 @@ public class StatementUtils
         if (hasObjectURIColumn)
             _dontUpdateColumnNames.add(objectURIColumnName);
 // TODO Should we add created and createdby? Or make the caller decide?
-//        _dontUpdateColumnNames.add("Created");
-//        _dontUpdateColumnNames.add("CreatedBy");
+        if (Operation.update == _operation)
+        {
+            _dontUpdateColumnNames.add("Created");
+            _dontUpdateColumnNames.add("CreatedBy");
+        }
 
         boolean objectUriPreselectSet = false;
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());

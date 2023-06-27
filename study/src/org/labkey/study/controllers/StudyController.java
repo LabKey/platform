@@ -2525,7 +2525,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getOptionParamValue(Params.importLookupByAlternateKey), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
