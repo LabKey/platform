@@ -66,10 +66,7 @@ function tinyMceHandleEvent(evt) {
         const item = items[0];
         if (item.kind === 'file') {
             LABKEY.Utils.alert("Error", "Pasting files on Safari is not supported.");
-
-            // Must exit early to avoid double-pasting
-            evt.preventDefault();
-            return false;
+            handled = true;
         }
     }
 
