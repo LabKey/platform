@@ -101,7 +101,7 @@ Ext4.onReady(function(){
 
             if (Ext4.isArray(children)) {
                 Ext4.each(children, function(child) {
-                    childName = Ext4.util.Format.htmlEncode(child.name);
+                    var childName = Ext4.util.Format.htmlEncode(child.name);
 
                     formItemsCol1.push({
                         xtype: "checkbox",
