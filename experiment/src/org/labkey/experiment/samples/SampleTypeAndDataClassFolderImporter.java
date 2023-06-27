@@ -387,14 +387,15 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     _lsidColumnIndex = i;
                     _lsidTemplateSupplier = delegate.getSupplier(i);
                     _lsidResolvedSupplier = () -> {
-                        try
-                        {
-                            return LsidUtils.resolveLsidFromTemplate((String)_lsidTemplateSupplier.get(), _xarContext, _baseType);
-                        }
-                        catch (XarFormatException xfe)
-                        {
-                            throw UnexpectedException.wrap(xfe);
-                        }
+//                        try
+//                        {
+                            return "broken";
+//                            return LsidUtils.resolveLsidFromTemplate((String)_lsidTemplateSupplier.get(), _xarContext, _baseType);
+//                        }
+//                        catch (XarFormatException xfe)
+//                        {
+//                            throw UnexpectedException.wrap(xfe);
+//                        }
                     };
                     break;
                 }
