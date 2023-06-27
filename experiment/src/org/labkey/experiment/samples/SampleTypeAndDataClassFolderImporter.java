@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
+import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.EXCLUDED_TYPES;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
@@ -157,6 +158,9 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                         logFile = CompressedInputStreamXarSource.getLogFileFor(typesXarFile);
                     XarReader typesReader = getXarReader(job, ctx, root, typesXarFile);
                     XarContext xarContext = typesReader.getXarSource().getXarContext();
+                    Map<String, String> xarJobIdContext = ctx.getXarJobIdContext();
+                    if (xarJobIdContext != null)
+                        xarContext.addSubstitution(XAR_JOB_ID_NAME, xarJobIdContext.get(XAR_JOB_ID_NAME));
 
                     typesReader.setStrictValidateExistingSampleType(xarCtx.isStrictValidateExistingSampleType());
                     typesReader.parseAndLoad(false, ctx.getAuditBehaviorType());
