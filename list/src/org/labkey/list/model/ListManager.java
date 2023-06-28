@@ -375,8 +375,8 @@ public class ListManager implements SearchService.DocumentProvider
             // Also, document title, template, and sub-settings
             if ((!oldEachItemIndex && newEachItemIndex) ||
                     (!oldFileAttachmentIndex && newFileAttachmentIndex) ||
-                    (newEachItemTitleTemplate != null && !newEachItemTitleTemplate.equals(oldEachItemTitleTemplate)) ||
-                    (newEachItemBodyTemplate != null && !newEachItemBodyTemplate.equals(oldEachItemBodyTemplate)) ||
+                    (!Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate)) ||
+                    (!Objects.equals(newEachItemBodyTemplate, oldEachItemBodyTemplate)) ||
                     (newEachItemBodySetting != oldEachItemBodySetting))
             {
                 clearLastIndexed(scope, ListSchema.getInstance().getSchemaName(), listDef);
@@ -393,8 +393,8 @@ public class ListManager implements SearchService.DocumentProvider
             // Turning on entire-list indexing -> clear that list's last indexed column
             // Also, changing document title, template, and sub-settings like metadata vs. data
             if ((!oldEntireListIndex && newEntireListIndex) ||
-                    (newEntireListTitleTemplate != null && !newEntireListTitleTemplate.equals(oldEntireListTitleTemplate)) ||
-                    (newEntireListBodyTemplate != null && !newEntireListBodyTemplate.equals(oldEntireListBodyTemplate)) ||
+                    (!Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate)) ||
+                    (!Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate)) ||
                     (newEntireListIndexSetting != oldEntireListIndexSetting) ||
                     (newEntireListBodySetting != oldEntireListBodySetting))
             {
