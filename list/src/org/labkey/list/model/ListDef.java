@@ -31,7 +31,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.util.Date;
 
-public class ListDef extends Entity implements Cloneable
+public class ListDef extends Entity implements Cloneable, ListIndexingSettings
 {
     protected int _listId; // Unique within this container
     protected String _name;
@@ -133,11 +133,13 @@ public class ListDef extends Entity implements Cloneable
         return _allowExport;
     }
 
-    public boolean getEntireListIndex()
+    @Override
+    public boolean isEntireListIndex()
     {
         return _entireListIndex;
     }
 
+    @Override
     public int getEntireListIndexSetting()
     {
         return _entireListIndexSetting.getValue();
@@ -158,11 +160,13 @@ public class ListDef extends Entity implements Cloneable
         return _entireListTitleSetting;
     }
 
+    @Override
     public String getEntireListTitleTemplate()
     {
         return _entireListTitleTemplate;
     }
 
+    @Override
     public int getEntireListBodySetting()
     {
         return _entireListBodySetting.getValue();
@@ -173,12 +177,14 @@ public class ListDef extends Entity implements Cloneable
         return _entireListBodySetting;
     }
 
+    @Override
     public String getEntireListBodyTemplate()
     {
         return _entireListBodyTemplate;
     }
 
-    public boolean getEachItemIndex()
+    @Override
+    public boolean isEachItemIndex()
     {
         return _eachItemIndex;
     }
@@ -193,11 +199,13 @@ public class ListDef extends Entity implements Cloneable
         return _eachItemTitleSetting;
     }
 
+    @Override
     public String getEachItemTitleTemplate()
     {
         return _eachItemTitleTemplate;
     }
 
+    @Override
     public int getEachItemBodySetting()
     {
         return _eachItemBodySetting.getValue();
@@ -208,12 +216,14 @@ public class ListDef extends Entity implements Cloneable
         return _eachItemBodySetting;
     }
 
+    @Override
     public String getEachItemBodyTemplate()
     {
         return _eachItemBodyTemplate;
     }
 
-    public boolean getFileAttachmentIndex()
+    @Override
+    public boolean isFileAttachmentIndex()
     {
         return _fileAttachmentIndex;
     }
