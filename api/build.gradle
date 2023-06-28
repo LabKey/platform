@@ -593,6 +593,19 @@ dependencies {
         )
     )
 
+    BuildUtils.addExternalDependency(
+            project,
+            new ExternalDependency(
+                    "org.jsoup:jsoup:${jsoupVersion}",
+                    "JSoup",
+                    "Jonathan Hedley",
+                    "https://jsoup.org",
+                    ExternalDependency.MIT_LICENSE_NAME,
+                    ExternalDependency.MIT_LICENSE_URL,
+                    "Validating HTML content",
+            )
+    )
+
 // These are required for running unit tests through the server junit controller
     BuildUtils.addExternalDependency(
         project,
