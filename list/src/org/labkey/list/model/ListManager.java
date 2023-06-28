@@ -566,7 +566,6 @@ public class ListManager implements SearchService.DocumentProvider
         return "list:" + ((ListDefinitionImpl)list).getEntityId();
     }
 
-
     // Use each item's EntityId since PKs are mutable. ObjectIds maybe be the better choice (they're shorter) but
     // that would require adding this column to the query definition. Consider: a private TableInfo just for indexing.
     private String getDocumentId(ListDefinition list, @Nullable String entityId)
@@ -574,31 +573,26 @@ public class ListManager implements SearchService.DocumentProvider
         return getDocumentId(list) + ":" + (null != entityId ? entityId : "");
     }
 
-
     // Index all modified items in this list
     private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex, boolean designChange)
     {
-        DbScope.getLabKeyScope().addCommitTask(() -> {
+        if (list.getEachItemIndex())
+        {
+            DbScope.getLabKeyScope().addCommitTask(() -> {
+                String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
 
-            if (!list.getEachItemIndex())
-            {
-                return;
-            }
+                // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
+                lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+                SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
 
-            String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
+                boolean indexFileAttachment = !(!designChange && Objects.requireNonNull(list.getTable(User.getSearchUser())).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
+                        || (!list.getFileAttachmentIndex());
 
-            // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
-            lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
+                indexItems(task, list, filter, indexFileAttachment);
 
-            boolean indexFileAttachment = !(!designChange && Objects.requireNonNull(list.getTable(User.getSearchUser())).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
-                    || (!list.getFileAttachmentIndex());
-
-            indexItems(task, list, filter, indexFileAttachment);
-
-        }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
+        }
     }
-
 
     // Reindex items specified by filter
     private void indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter, boolean indexFileAttachment)
@@ -811,7 +805,6 @@ public class ListManager implements SearchService.DocumentProvider
 
         task.addResource(r, SearchService.PRIORITY.item);
     }
-
 
     void deleteIndexedList(ListDefinition list)
     {
