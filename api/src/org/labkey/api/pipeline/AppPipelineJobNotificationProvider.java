@@ -162,22 +162,21 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
     private String getJobSuccessMsg(PipelineJob job, @NotNull ImportType importType, @Nullable Map<String, Object> info)
     {
-        if (job instanceof QueryImportPipelineJob)
+        if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
-            QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
-
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            StringBuilder successMsg = new StringBuilder("Successfully imported ");
+            StringBuilder successMsg = new StringBuilder("Successfully");
+            Integer count = null;
             if (info != null)
             {
-                Integer count =  (Integer) info.get("rowCount");
-                if (count != null)
-                {
-                    successMsg.append(count).append(" ");
-                }
+                count = (Integer) info.get("rowCount");
+                if (info.containsKey("terminalStorageCreated"))
+                    successMsg.append(" created ").append(info.get("terminalStorageCreated")).append(" terminal storage unit(s) and");
             }
 
             successMsg
+                    .append(" imported ")
+                    .append(count != null ? count + " " : "")
                     .append(type)
                     .append(" ")
                     .append(importType.name())

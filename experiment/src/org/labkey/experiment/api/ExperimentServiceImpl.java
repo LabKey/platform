@@ -7307,6 +7307,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (parent == null)
             throw new IllegalArgumentException("You must create aliquot from a parent material or aliquot");
 
+        if (aliquots.contains(parent))
+            throw new ExperimentException("The material " + parent.getName() + " cannot be its own aliquot.");
+
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
         ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
         run.setProtocol(protocol);
