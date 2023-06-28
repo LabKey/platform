@@ -18,7 +18,6 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -336,7 +335,8 @@ public class ListManager implements SearchService.DocumentProvider
         return updated;
     }
 
-    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, ListDomainKindProperties old, ListDomainKindProperties updated)
+    // Queue up one-time operations related to turning indexing on or off
+    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, ListIndexingSettings old, ListIndexingSettings updated)
     {
         boolean oldEachItemIndex = old.isEachItemIndex();
         boolean newEachItemIndex = updated.isEachItemIndex();
@@ -356,8 +356,8 @@ public class ListManager implements SearchService.DocumentProvider
         boolean oldFileAttachmentIndex = old.isFileAttachmentIndex();
         boolean newFileAttachmentIndex = updated.isFileAttachmentIndex();
 
-        String oldEntireListTitleSetting = old.getEntireListTitleTemplate();
-        String newEntireListTitleSetting = updated.getEntireListTitleTemplate();
+        String oldEntireListTitleTemplate = old.getEntireListTitleTemplate();
+        String newEntireListTitleTemplate = updated.getEntireListTitleTemplate();
 
         int oldEntireListIndexSetting = old.getEntireListIndexSetting();
         int newEntireListIndexSetting = updated.getEntireListIndexSetting();
@@ -368,77 +368,6 @@ public class ListManager implements SearchService.DocumentProvider
         String oldEntireListBodyTemplate = old.getEntireListBodyTemplate();
         String newEntireListBodyTemplate = updated.getEntireListBodyTemplate();
 
-        handleIndexSettingChanges(scope, listDef,
-                oldEachItemIndex, newEachItemIndex,
-                oldEachItemTitleTemplate, newEachItemTitleTemplate,
-                oldEachItemBodySetting, newEachItemBodySetting,
-                oldEachItemBodyTemplate, newEachItemBodyTemplate,
-                oldEntireListIndex, newEntireListIndex,
-                oldFileAttachmentIndex, newFileAttachmentIndex,
-                oldEntireListTitleSetting, newEntireListTitleSetting,
-                oldEntireListIndexSetting, newEntireListIndexSetting,
-                oldEntireListBodySetting, newEntireListBodySetting,
-                oldEntireListBodyTemplate, newEntireListBodyTemplate);
-
-    }
-    private void handleIndexSettingChanges(DbScope scope, ListDef listDef, ListDef old, ListDef updated)
-    {
-        boolean oldEachItemIndex = old.getEachItemIndex();
-        boolean newEachItemIndex = updated.getEachItemIndex();
-
-        String oldEachItemTitleTemplate = old.getEachItemTitleTemplate();
-        String newEachItemTitleTemplate = updated.getEachItemTitleTemplate();
-
-        int oldEachItemBodySetting = old.getEachItemBodySetting();
-        int newEachItemBodySetting = updated.getEachItemBodySetting();
-
-        String oldEachItemBodyTemplate = old.getEachItemBodyTemplate();
-        String newEachItemBodyTemplate = updated.getEachItemBodyTemplate();
-
-        boolean oldEntireListIndex = old.getEntireListIndex();
-        boolean newEntireListIndex = updated.getEntireListIndex();
-
-        boolean oldFileAttachmentIndex = old.getFileAttachmentIndex();
-        boolean newFileAttachmentIndex = updated.getFileAttachmentIndex();
-
-        String oldEntireListTitleSetting = old.getEntireListTitleTemplate();
-        String newEntireListTitleSetting = updated.getEntireListTitleTemplate();
-
-        int oldEntireListIndexSetting = old.getEntireListIndexSetting();
-        int newEntireListIndexSetting = updated.getEntireListIndexSetting();
-
-        int oldEntireListBodySetting = old.getEntireListBodySetting();
-        int newEntireListBodySetting = updated.getEntireListBodySetting();
-
-        String oldEntireListBodyTemplate = old.getEntireListBodyTemplate();
-        String newEntireListBodyTemplate = updated.getEntireListBodyTemplate();
-
-        handleIndexSettingChanges(scope, listDef,
-                oldEachItemIndex, newEachItemIndex,
-                oldEachItemTitleTemplate, newEachItemTitleTemplate,
-                oldEachItemBodySetting, newEachItemBodySetting,
-                oldEachItemBodyTemplate, newEachItemBodyTemplate,
-                oldEntireListIndex, newEntireListIndex,
-                oldFileAttachmentIndex, newFileAttachmentIndex,
-                oldEntireListTitleSetting, newEntireListTitleSetting,
-                oldEntireListIndexSetting, newEntireListIndexSetting,
-                oldEntireListBodySetting, newEntireListBodySetting,
-                oldEntireListBodyTemplate, newEntireListBodyTemplate);
-    }
-
-    // Queue up one-time operations related to turning indexing on or off
-    private void handleIndexSettingChanges(DbScope scope, ListDef listDef,
-                                           boolean oldEachItemIndex, boolean newEachItemIndex,
-                                           String oldEachItemTitleTemplate, String newEachItemTitleTemplate,
-                                           int oldEachItemBodySetting, int newEachItemBodySetting,
-                                           String oldEachItemBodyTemplate, String newEachItemBodyTemplate,
-                                           boolean oldEntireListIndex, boolean newEntireListIndex,
-                                           boolean oldFileAttachmentIndex, boolean newFileAttachmentIndex,
-                                           String oldEntireListTitleSetting, String newEntireListTitleSetting,
-                                           int oldEntireListIndexSetting, int newEntireListIndexSetting,
-                                           int oldEntireListBodySetting, int newEntireListBodySetting,
-                                           String oldEntireListBodyTemplate, String newEntireListBodyTemplate)
-    {
         scope.addCommitTask(() -> {
             ListDefinition list = ListDefinitionImpl.of(listDef);
 
@@ -462,9 +391,9 @@ public class ListManager implements SearchService.DocumentProvider
                 deleteIndexedAttachments(list);
 
             // Turning on entire-list indexing -> clear that list's last indexed column
-            // Also, document title, template, and sub-settings like metadata vs. data
+            // Also, changing document title, template, and sub-settings like metadata vs. data
             if ((!oldEntireListIndex && newEntireListIndex) ||
-                    (newEntireListTitleSetting != null && !newEntireListTitleSetting.equals(oldEntireListTitleSetting)) ||
+                    (newEntireListTitleTemplate != null && !newEntireListTitleTemplate.equals(oldEntireListTitleTemplate)) ||
                     (newEntireListBodyTemplate != null && !newEntireListBodyTemplate.equals(oldEntireListBodyTemplate)) ||
                     (newEntireListIndexSetting != oldEntireListIndexSetting) ||
                     (newEntireListBodySetting != oldEntireListBodySetting))
@@ -912,20 +841,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (hasAttachmentCols)
         {
-            List<String> parentIds = new ArrayList<>();
-            new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachMap(row -> {
-                parentIds.add((String) row.get("EntityId"));
-
-                // Delete in batches to minimize db queries
-                if (parentIds.size() > 10000)
-                {
-                    as.deleteAttachmentIndexes(parentIds);
-                    parentIds.clear();
-                }
-            });
-
-            // Finish last batch
-            as.deleteAttachmentIndexes(parentIds);
+            new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10_000, as::deleteAttachmentIndexes);
         }
     }
 
@@ -1115,7 +1031,7 @@ public class ListManager implements SearchService.DocumentProvider
     private void clearLastIndexed(DbScope scope, String listSchemaName, ListDef listDef)
     {
         // Clear LastIndexed column only for lists that are set to index each item, Issue 47998
-        if (listDef.getEachItemIndex())
+        if (listDef.isEachItemIndex())
         {
             ListDefinition list = new ListDefinitionImpl(listDef);
             Domain domain = list.getDomain();
