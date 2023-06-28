@@ -649,9 +649,7 @@ public class ListManager implements SearchService.DocumentProvider
     // Index all modified items in this list
     private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex, boolean designChange)
     {
-        TableInfo listTable = list.getTable(User.getSearchUser());
-
-        listTable.getSchema().getScope().addCommitTask(() -> {
+        DbScope.getLabKeyScope().addCommitTask(() -> {
 
             if (!list.getEachItemIndex())
             {
@@ -664,7 +662,7 @@ public class ListManager implements SearchService.DocumentProvider
             lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
             SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
 
-            boolean indexFileAttachment = !(!designChange && Objects.requireNonNull(listTable).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
+            boolean indexFileAttachment = !(!designChange && Objects.requireNonNull(list.getTable(User.getSearchUser())).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
                     || (!list.getFileAttachmentIndex());
 
             indexItems(task, list, filter, indexFileAttachment);
@@ -878,9 +876,7 @@ public class ListManager implements SearchService.DocumentProvider
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                list.getTable(User.getSearchUser()).getSchema().getScope().addCommitTask(() -> {
-                    ListManager.get().setLastIndexed(list, ms);
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
+                ListManager.get().setLastIndexed(list, ms);
             }
         };
 
@@ -896,7 +892,8 @@ public class ListManager implements SearchService.DocumentProvider
         if (list.getEachItemIndex())
             deleteIndexedItems(list);
 
-        deleteIndexedAttachments(list);
+        if (list.getFileAttachmentIndex())
+            deleteIndexedAttachments(list);
     }
 
     private void deleteIndexedAttachments(@NotNull ListDefinition list)
