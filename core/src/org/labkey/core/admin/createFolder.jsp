@@ -491,16 +491,16 @@
 
                         if (hasChildren)
                         {
-                            Ext4.each(writer.children, function(childWriterName)
+                            Ext4.each(writer.children, function(child)
                             {
                                 folderWriterConfigs.push({
                                     xtype: "checkbox",
                                     fieldCls : 'child-checkbox',
                                     name: "templateWriterTypes",
                                     hideLabel: true,
-                                    boxLabel: childWriterName,
-                                    inputValue: childWriterName,
-                                    checked: writerConfig.checked,
+                                    boxLabel: child.name,
+                                    inputValue: child.name,
+                                    checked: writerConfig.checked && child.selectedByDefault,
                                     parentId: writer.name
                                 });
                             });

@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderContext.ExportType;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -25,48 +26,81 @@ import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.folder.xml.ExportDirType;
 
 /*
 * User: adam
 * Date: Aug 25, 2009
 * Time: 10:11:16 AM
 */
-public class FolderListWriter extends BaseFolderWriter
+public abstract class FolderListWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "lists";
-
-    @Override
-    public String getDataType()
-    {
-        return FolderArchiveDataTypes.LISTS;
-    }
 
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile root) throws Exception
     {
         if (ListService.get().hasLists(c, false))
         {
-            VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
+            ExportDirType listDir = ctx.getXml().getLists();
+            if (listDir == null || listDir.getDir() == null)
+            {
+                VirtualFile listsDir = root.getDir(DEFAULT_DIRECTORY);
 
-            ListWriter listWriter = new ListWriter();
+                ListWriter listWriter = new ListWriter();
 
-            if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
-                ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+                if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
+                    ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
+            }
         }
     }
 
     @Override
-    public boolean selectedByDefault(ExportType type)
+    public boolean selectedByDefault(ExportType type, boolean forTemplate)
     {
         return ExportType.ALL == type || ExportType.STUDY == type;
     }
 
-    public static class Factory implements FolderWriterFactory
+    public static class ListDataWriter extends FolderListWriter
     {
         @Override
-        public FolderWriter create()
+        public @Nullable String getDataType()
         {
-            return new FolderListWriter();
+            return FolderArchiveDataTypes.LIST_DATA;
+        }
+
+        @Override
+        public boolean selectedByDefault(ExportType type, boolean forTemplate)
+        {
+            return super.selectedByDefault(type, forTemplate) && !forTemplate;
+        }
+
+        public static class Factory implements FolderWriterFactory
+        {
+            @Override
+            public FolderWriter create()
+            {
+                return new ListDataWriter();
+            }
+        }
+    }
+
+    public static class ListDesignWriter extends FolderListWriter
+    {
+        @Override
+        public String getDataType()
+        {
+            return FolderArchiveDataTypes.LIST_DESIGN;
+        }
+
+
+        public static class Factory implements FolderWriterFactory
+        {
+            @Override
+            public FolderWriter create()
+            {
+                return new ListDesignWriter();
+            }
         }
     }
 }

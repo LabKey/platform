@@ -924,7 +924,10 @@ public class StudyPublishTest extends StudyPHIExportTest
                 "File Browser Settings",
                 "Files",
                 "QC State Settings",
-                "Sample Types and Data Classes");
+                "Sample Type Designs",
+                "Sample Type Data",
+                "Data Class Designs",
+                "Data Class Data");
         clickButton("Next", 0);
 
         // Publish Options

@@ -397,7 +397,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
         if (form.getLists() != null)
         {
-            dataTypes.add(FolderArchiveDataTypes.LISTS);
+            dataTypes.add(FolderArchiveDataTypes.LIST_DATA);
         }
 
         if (form.isIncludeSpecimens())
