@@ -292,7 +292,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
     }
 
-    protected enum Params
+    public enum Params
     {
         text,
         path,

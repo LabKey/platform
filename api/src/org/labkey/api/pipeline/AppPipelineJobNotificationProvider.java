@@ -8,6 +8,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.security.SecurityManager;
 
@@ -164,6 +165,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
     {
         if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
+            boolean crossTypeImport = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
             StringBuilder successMsg = new StringBuilder("Successfully");
             Integer count = null;
@@ -177,8 +179,7 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             successMsg
                     .append(" imported ")
                     .append(count != null ? count + " " : "")
-                    .append(type)
-                    .append(" ")
+                    .append(!crossTypeImport ? type + " " : "")
                     .append(importType.name())
                     .append(" from ")
                     .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
