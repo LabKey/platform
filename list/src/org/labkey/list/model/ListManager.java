@@ -371,8 +371,8 @@ public class ListManager implements SearchService.DocumentProvider
         scope.addCommitTask(() -> {
             ListDefinition list = ListDefinitionImpl.of(listDef);
 
-            // Turning on each-item indexing or attachment indexing -> clear last indexed column
-            // Also, document title, template, and sub-settings
+            // Turning on each-item indexing or attachment indexing, or changing document title template, body template,
+            // or body setting means reindexing all items, so clear last indexed column
             if ((!oldEachItemIndex && newEachItemIndex) ||
                     (!oldFileAttachmentIndex && newFileAttachmentIndex) ||
                     (!Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate)) ||
@@ -390,8 +390,8 @@ public class ListManager implements SearchService.DocumentProvider
             if (oldFileAttachmentIndex && !newFileAttachmentIndex)
                 deleteIndexedAttachments(list);
 
-            // Turning on entire-list indexing -> clear that list's last indexed column
-            // Also, changing document title, template, and sub-settings like metadata vs. data
+            // Turning on entire-list indexing, or changing the title template, body template, indexing settings, or
+            // body settings means reindexing the entire-list document, so clear that list's last indexed column
             if ((!oldEntireListIndex && newEntireListIndex) ||
                     (!Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate)) ||
                     (!Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate)) ||
