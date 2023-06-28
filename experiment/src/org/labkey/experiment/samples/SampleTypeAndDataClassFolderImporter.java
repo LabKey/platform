@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import static org.labkey.api.admin.FolderImportContext.IS_NEW_FOLDER_IMPORT_KEY;
+import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.DEFAULT_DIRECTORY;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.EXCLUDED_TYPES;
 import static org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter.XAR_RUNS_NAME;
@@ -173,7 +174,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
                     {
                         XarSource runsXarSource;
                         if (runsXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
-                            runsXarSource = new FileXarSource(runsXarFile, job, ctx.getContainer());
+                            runsXarSource = new FileXarSource(runsXarFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
                         else
                             runsXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(runsXarFile.getFileName().toString()), runsXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
                         try
@@ -222,7 +223,7 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         XarSource typesXarSource;
 
         if (typesXarFile.getFileName().toString().toLowerCase().endsWith(".xar.xml"))
-            typesXarSource = new FileXarSource(typesXarFile, job, ctx.getContainer());
+            typesXarSource = new FileXarSource(typesXarFile, job, ctx.getContainer(), ctx.getXarJobIdContext());
         else
             typesXarSource = new CompressedInputStreamXarSource(xarDir.getInputStream(typesXarFile.getFileName().toString()), typesXarFile, logFile, job, ctx.getUser(), ctx.getContainer(), ctx.getXarJobIdContext());
         try
@@ -279,6 +280,10 @@ public class SampleTypeAndDataClassFolderImporter implements FolderImporter
         UserSchema userSchema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), schemaName);
         if (userSchema != null)
         {
+            Map<String, String> xarJobIdContext = ctx.getXarJobIdContext();
+            if (xarJobIdContext != null)
+                xarContext.addSubstitution(XAR_JOB_ID_NAME, xarJobIdContext.get(XAR_JOB_ID_NAME));
+
             for (ExpObject expObject : expObjects)
             {
                 String tableName = expObject.getName();
