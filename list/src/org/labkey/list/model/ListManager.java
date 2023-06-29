@@ -709,6 +709,12 @@ public class ListManager implements SearchService.DocumentProvider
         AttachmentService as = AttachmentService.get();
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
 
+        // Breadcrumb link to list is the same for all attachments on all items
+        ActionURL gridURL = list.urlShowData();
+        gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+        NavTree t = new NavTree("list", gridURL);
+        String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
+
         // Index all items that have never been indexed
         //   OR where either the list definition
         //   OR list item itself has changed since last indexed
@@ -740,11 +746,6 @@ public class ListManager implements SearchService.DocumentProvider
                         SearchService.fileCategory
                 );
 
-                //Add breadcrumb link to list
-                ActionURL gridURL = list.urlShowData();
-                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-                NavTree t = new NavTree("list", gridURL);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
                 attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                 task.addResource(attachmentRes, SearchService.PRIORITY.item);
 
