@@ -18,7 +18,6 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -372,8 +371,8 @@ public class ListManager implements SearchService.DocumentProvider
         scope.addCommitTask(() -> {
             ListDefinition list = ListDefinitionImpl.of(listDef);
 
-            // Turning on each-item indexing or attachment indexing -> clear last indexed column
-            // Also, document title, template, and sub-settings
+            // Turning on each-item indexing or attachment indexing, or changing document title template, body template,
+            // or body setting means reindexing all items, so clear last indexed column
             if ((!oldEachItemIndex && newEachItemIndex) ||
                     (!oldFileAttachmentIndex && newFileAttachmentIndex) ||
                     (!Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate)) ||
@@ -391,8 +390,8 @@ public class ListManager implements SearchService.DocumentProvider
             if (oldFileAttachmentIndex && !newFileAttachmentIndex)
                 deleteIndexedAttachments(list);
 
-            // Turning on entire-list indexing -> clear that list's last indexed column
-            // Also, changing document title, template, and sub-settings like metadata vs. data
+            // Turning on entire-list indexing, or changing the title template, body template, indexing settings, or
+            // body settings means reindexing the entire-list document, so clear that list's last indexed column
             if ((!oldEntireListIndex && newEntireListIndex) ||
                     (!Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate)) ||
                     (!Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate)) ||
@@ -531,18 +530,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         indexEntireList(task, list, reindex);
-
-        // Index all items that have never been indexed
-        //   OR where either the list definition
-        //   OR list item itself has changed since last indexed
-        String lastIndexedClause = reindex ? "(1=1) OR " : "";
-        lastIndexedClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
-
-        indexModifiedItems(task, list, filter);
-
-        //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-        indexAttachments(task, list, designChange, filter);
+        indexModifiedItems(task, list, reindex, designChange);
     }
 
     // Delete a single list item from the index after item delete
@@ -578,7 +566,6 @@ public class ListManager implements SearchService.DocumentProvider
         return "list:" + ((ListDefinitionImpl)list).getEntityId();
     }
 
-
     // Use each item's EntityId since PKs are mutable. ObjectIds maybe be the better choice (they're shorter) but
     // that would require adding this column to the query definition. Consider: a private TableInfo just for indexing.
     private String getDocumentId(ListDefinition list, @Nullable String entityId)
@@ -586,22 +573,32 @@ public class ListManager implements SearchService.DocumentProvider
         return getDocumentId(list) + ":" + (null != entityId ? entityId : "");
     }
 
-
     // Index all modified items in this list
-    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
+    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex, boolean designChange)
     {
-        if (!list.getEachItemIndex())
+        if (list.getEachItemIndex())
         {
-            return;
-        }
+            DbScope.getLabKeyScope().addCommitTask(() -> {
+                String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
 
-        indexItems(task, list, filter);
+                // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
+                lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+                SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
+
+                boolean indexFileAttachment = !(!designChange && Objects.requireNonNull(list.getTable(User.getSearchUser())).getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
+                        || (!list.getFileAttachmentIndex());
+
+                indexItems(task, list, filter, indexFileAttachment);
+
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
+        }
     }
 
     // Reindex items specified by filter
-    private void indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
+    private void indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter, boolean indexFileAttachment)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
+        AttachmentService as = AttachmentService.get();
 
         if (null == listTable)
             return;
@@ -679,76 +676,34 @@ public class ListManager implements SearchService.DocumentProvider
             r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
             task.addResource(r, SearchService.PRIORITY.item);
-        });
-    }
 
-    /**
-     * Add searchable resources to Indexing task for file attachments
-     * @param task indexing task
-     * @param list containing file attachments
-     * @param designChange flag indicating change in design
-     */
-    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange, SimpleFilter filter)
-    {
-        TableInfo listTable = list.getTable(User.getSearchUser());
-        if (null == listTable)
-            return 0;
-
-        //If the index call was not due to a list design change and there are no attachment columns than don't try to index
-        if (!designChange && listTable.getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
-            return 0;
-
-        //If FileAttachmentIndexing is disabled, remove any existing resources from the Index
-        if (!list.getFileAttachmentIndex())
-        {
-            return 0;
-        }
-
-        //Instantiate a counter
-        MutableInt count = new MutableInt(0);
-
-        //Get common objects & properties
-        FieldKey entityIdKey = new FieldKey(null, "EntityId");
-        AttachmentService as = AttachmentService.get();
-        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
-
-        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results ->
-        {
-            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-            String title = titleTemplate.eval(map);
-            String rowEntityId = (String)map.get(entityIdKey);
-            AttachmentParent listItemParent = new ListItemAttachmentParent(rowEntityId, list.getContainer());
-
-            for (Attachment attachment : as.getAttachments(listItemParent))
+            if (indexFileAttachment)
             {
-                //Get documentName and downloadUrl
-                String documentName = attachment.getName();
-                ActionURL downloadUrl = ListController.getDownloadURL(list, rowEntityId, documentName);
+                AttachmentParent listItemParent = new ListItemAttachmentParent(entityId, list.getContainer());
+                for (Attachment attachment : as.getAttachments(listItemParent))
+                {
+                    //Get documentName and downloadUrl
+                    String documentName = attachment.getName();
+                    ActionURL downloadUrl = ListController.getDownloadURL(list, entityId, documentName);
 
-                //Generate searchable resource
-                String displayTitle = title + " attachment file \"" + documentName + "\"";
-                WebdavResource attachmentRes = as.getDocumentResource(
-                        new Path(rowEntityId, documentName),
-                        downloadUrl,
-                        displayTitle,
-                        listItemParent,
-                        documentName,
-                        SearchService.fileCategory
-                );
+                    //Generate searchable resource
+                    String title = displayTitle + " attachment file \"" + documentName + "\"";
+                    WebdavResource attachmentRes = as.getDocumentResource(
+                            new Path(entityId, documentName),
+                            downloadUrl,
+                            title,
+                            listItemParent,
+                            documentName,
+                            SearchService.fileCategory
+                    );
 
-                //Add breadcrumb link to list
-                ActionURL gridURL = list.urlShowData();
-                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-                NavTree t = new NavTree("list", gridURL);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
-                attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.item);
-
-                count.increment();
+                    //Add breadcrumb link to list
+                    nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
+                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                }
             }
         });
-
-        return count.getValue();
     }
 
     private void indexEntireList(@NotNull IndexTask task, final ListDefinition list, boolean reindex)
@@ -850,7 +805,6 @@ public class ListManager implements SearchService.DocumentProvider
 
         task.addResource(r, SearchService.PRIORITY.item);
     }
-
 
     void deleteIndexedList(ListDefinition list)
     {
