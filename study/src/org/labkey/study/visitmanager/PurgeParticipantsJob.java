@@ -141,7 +141,7 @@ public class PurgeParticipantsJob extends PipelineJob
                 }
                 catch (Exception e)
                 {
-                    if (ContainerManager.exists(_container))
+                    if (ContainerManager.exists(_container) && !ContainerManager.isDeleting(_container))
                     {
                         if (SqlDialect.isObjectNotFoundException(e))
                         {
