@@ -41,7 +41,8 @@ public class TidyUtil
     @Nullable
     public static Document convertHtmlToDocument(final String html, final boolean asXML, final Collection<String> errors)
     {
-        return W3CDom.convert(asXML ? parseXmlDOM(html, errors) : parseHtmlDOM(html, errors));
+        org.jsoup.nodes.Document doc = asXML ? parseXmlDOM(html, errors) : parseHtmlDOM(html, errors);
+        return doc == null || doc.getAllElements().isEmpty() ? null : W3CDom.convert(doc);
     }
 
     // helper for script validation
@@ -52,12 +53,13 @@ public class TidyUtil
 
     public static String tidyHTML(final String html, boolean asXML, final Collection<String> errors)
     {
-        return asXML ? parseXmlDOM(html, errors).toString() : parseHtmlDOM(html, errors).toString();
+        org.jsoup.nodes.Document doc = asXML ? parseXmlDOM(html, errors) : parseHtmlDOM(html, errors);
+        return doc == null ? null : doc.toString();
     }
 
     public static String tidyXML(final String xml, final Collection<String> errors)
     {
-        return parseXmlDOM(xml, errors).toString();
+        return tidyHTML(xml, true, errors);
     }
 
 //
@@ -228,42 +230,12 @@ public class TidyUtil
             convertHtmlToDocument("", true, errors);
             convertHtmlToDocument("", false, errors);
 
-            // TODO: Fix these cases
-//            tidyHTML("", true, errors);
-//            tidyHTML("", false, errors);
-//            tidyXML("", errors);
+            tidyHTML("", true, errors);
+            tidyHTML("", false, errors);
+            tidyXML("", errors);
 
-            // TODO: I don't think these are fixable until we ditch jtidy, see #18725
-//            tidyHTML("<!-- -->", true, errors);
-//            tidyHTML("<!-- -->", false, errors);
+            tidyHTML("<!-- -->", true, errors);
+            tidyHTML("<!-- -->", false, errors);
         }
-
-        /*
-
-    public void test2(String[] args) throws Exception
-    {
-        String html = "<html><body>\n<form><br><input name=A value=1><input name=B value=2><input type=hidden name=C value=3><img src=fred.png>\n</form></body></html>";
-        ArrayList<String> errors = new ArrayList<>();
-        String tidy = TidyUtil.convertHtmlToXml(html, errors);
-        System.out.println(tidy);
-        Document doc = tidyAsDocument(html);
-
-        Element rootElem = doc.getDocumentElement();
-        XPathFactory xFactory = XPathFactory.newInstance();
-        XPath xpath = xFactory.newXPath();
-        NodeList list = (NodeList) xpath.evaluate("/html/body/form/input", rootElem, XPathConstants.NODESET);
-        int len = list.getLength();
-        for (int i = 0; i < len; i++)
-        {
-            Node n = list.item(i);
-            String name = getAttributeValue(n, "name");
-            String value = getAttributeValue(n, "value");
-            System.err.println(n.getNodeName() + " " + name + "=" + value);
-        }
-    }
-
-         */
-
-
     }
 }

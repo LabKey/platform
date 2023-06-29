@@ -2124,7 +2124,7 @@ public class PageFlowUtil
     /** validate an html fragment */
     public static String validateHtml(String html, Collection<String> errors, Collection<String> scriptWarnings)
     {
-        if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
+        if (!errors.isEmpty() || (null != scriptWarnings && !scriptWarnings.isEmpty()))
             throw new IllegalArgumentException("empty errors collection expected");
 
         // NOTE: tidy is unhappy if there is nothing but comments and whitespace
@@ -2144,7 +2144,7 @@ public class PageFlowUtil
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
         String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
-        if (errors.size() > 0)
+        if (!errors.isEmpty())
         {
             if (scriptWarnings != null)
             {
@@ -2660,8 +2660,8 @@ public class PageFlowUtil
             assertHtmlParsing("<p><script>alert('script');</script></p>", 0, 1);
 
             // Bogus tag trips error reporting, so assume there might be script
-            assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 1, 1);
-            assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 1, 1);
+            assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 0, 1);
+            assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 0, 0);
 
             // Unclosed tags - not considered an error
             assertHtmlParsing("<b><script>alert('script');</script>", 0, 1);
