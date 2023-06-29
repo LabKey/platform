@@ -171,7 +171,7 @@ Ext4.define('LABKEY.query.browser.view.SchemaDetails', {
 
         if (LABKEY.devMode || LABKEY.Security.currentUser.isDeveloper) {
             children.push(LABKEY.Utils.textLink({
-                href: LABKEY.ActionURL.buildURL('query', 'rawSchemaMetaData', undefined, {schemaName: schema.schemaName}),
+                href: LABKEY.ActionURL.buildURL('query', 'rawSchemaMetaData', undefined, {schemaName: schema.fullyQualifiedName}),
                 text: 'view raw schema metadata'
             }));
         }
