@@ -141,7 +141,7 @@ public class PurgeParticipantsJob extends PipelineJob
                 }
                 catch (Exception e)
                 {
-                    if (!ContainerManager.isDeleting(_container) && ContainerManager.exists(_container))
+                    if (ContainerManager.exists(_container))
                     {
                         if (SqlDialect.isObjectNotFoundException(e))
                         {
@@ -151,6 +151,11 @@ public class PurgeParticipantsJob extends PipelineJob
                         else if (SqlDialect.isTransactionException(e))
                         {
                             _info.accept("Transaction or deadlock exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
+                            retry = true;
+                        }
+                        else if (ContainerManager.getAllChildren(_container).stream().anyMatch(ContainerManager::isDeleting))
+                        {
+                            _info.accept("Child container is being deleted. Requeuing another participant purge attempt.");
                             retry = true;
                         }
                         else
