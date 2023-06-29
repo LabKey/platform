@@ -532,17 +532,10 @@ public class ListManager implements SearchService.DocumentProvider
 
         indexEntireList(task, list, reindex);
 
-        // Index items that have never been indexed
-        //   OR where either the list definition
-        //   OR list item itself has changed since last indexed
-        String lastIndexedClause = reindex ? "(1=1) OR " : "";
-        lastIndexedClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
-
-        indexModifiedItems(task, list, filter);
+        indexModifiedItems(task, list, reindex);
 
         //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-        indexAttachments(task, list, designChange, filter);
+        indexAttachments(task, list, designChange, reindex);
     }
 
     // Delete a single list item from the index after item delete
@@ -586,11 +579,17 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     // Index all modified items in this list
-    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
+    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex)
     {
         if (list.getEachItemIndex())
         {
-           indexItems(task, list, filter);
+            String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
+
+            // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
+            lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+            SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
+
+            indexItems(task, list, filter);
         }
     }
 
@@ -598,7 +597,6 @@ public class ListManager implements SearchService.DocumentProvider
     private void indexItems(@NotNull final IndexTask task, final ListDefinition list, SimpleFilter filter)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
-        AttachmentService as = AttachmentService.get();
 
         if (null == listTable)
             return;
@@ -685,7 +683,7 @@ public class ListManager implements SearchService.DocumentProvider
      * @param list containing file attachments
      * @param designChange flag indicating change in design
      */
-    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange, SimpleFilter filter)
+    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange, boolean reindex)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
         if (null == listTable)
@@ -708,6 +706,13 @@ public class ListManager implements SearchService.DocumentProvider
         FieldKey entityIdKey = new FieldKey(null, "EntityId");
         AttachmentService as = AttachmentService.get();
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
+
+        // Index all items that have never been indexed
+        //   OR where either the list definition
+        //   OR list item itself has changed since last indexed
+        String lastIndexedClause = reindex ? "(1=1) OR " : "";
+        lastIndexedClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
 
         new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results ->
         {
