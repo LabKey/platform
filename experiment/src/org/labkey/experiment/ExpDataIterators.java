@@ -2487,6 +2487,8 @@ public class ExpDataIterators
             Map<String, String> aliasMap = sampleType.getImportAliasMap();
             validFields.addAll(aliasMap.keySet());
             validFields.add(ALIQUOTED_FROM_INPUT);
+            validFields.add("StorageUnit");
+            validFields.add("Storage Unit");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
             List<Integer> fieldIndexes = new ArrayList<>();
