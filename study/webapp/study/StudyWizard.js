@@ -236,7 +236,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 success : function(response) {
                     var allWriters = Ext.decode(response.responseText).writers;
 
-                    var folderWritersToExclude = ['Grid Views', 'Lists', 'Notification Settings', 'Queries', 'Reports and Charts', 'Study', 'Experiments, Protocols, and Runs'];
+                    var folderWritersToExclude = ['Grid Views', 'List Designs', 'List Data', 'Notification Settings', 'Queries', 'Reports and Charts', 'Study', 'Experiments, Protocols, and Runs'];
                     var studyWritersToExclude = ['Datasets: Assay Dataset Data', 'Datasets: Assay Dataset Definitions', 'Categories', 'Datasets: Study Dataset Data', 'Datasets: Study Dataset Definitions', 'Datasets: Sample Dataset Data', 'Datasets: Sample Dataset Definitions', 'Participant Groups', 'QC State Settings', 'Specimens', 'Specimen Settings', 'Visit Map'];
                     this.studyWriters = [];
                     this.folderWriters = [];
@@ -253,8 +253,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
                         if (writer.name == 'Study' && Ext.isDefined(writer.children)) {
                             Ext.each(writer.children, function(child){
-                                if (studyWritersToExclude.indexOf(child) == -1) {
-                                    this.studyWriters.push([child]);
+                                if (studyWritersToExclude.indexOf(child.name) == -1) {
+                                    this.studyWriters.push([child.name]);
                                 }
                             }, this);
                         }

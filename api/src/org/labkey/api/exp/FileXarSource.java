@@ -16,11 +16,13 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -34,10 +36,15 @@ public class FileXarSource extends AbstractFileXarSource
         _xmlFile = file.normalize();
     }
 
+    public FileXarSource(Path file, PipelineJob job, Container targetContainer, @Nullable Map<String, String> substitutions)
+    {
+        super(job.getDescription(), targetContainer, job.getUser(), job, substitutions);
+        _xmlFile = file;
+    }
+
     public FileXarSource(Path file, PipelineJob job, Container targetContainer)
     {
-        super(job.getDescription(), targetContainer, job.getUser(), job);
-        _xmlFile = file;
+        this(file, job, targetContainer, null);
     }
 
     @Override
