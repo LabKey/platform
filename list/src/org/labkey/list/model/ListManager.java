@@ -895,7 +895,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (hasAttachmentCols)
         {
             // TODO: Also need to clear core.Documents.LastIndexed for these parents
-            new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10_000, as::deleteAttachmentIndexes);
+            new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10000, as::deleteAttachmentIndexes);
         }
     }
 
