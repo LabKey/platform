@@ -720,47 +720,42 @@ public class ListManager implements SearchService.DocumentProvider
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause("(1=1)", null));
 
         // Need to pass non-null modifiedSince for incremental indexing, otherwise all attachments will be returned
-        // TODO: Pass in modifiedSince?
+        // TODO: Pass modifiedSince into this method?
         Date modifiedSince = reindex ? null : new Date();
 
-        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachMapBatch(10_000, new Selector.ForEachBatchBlock<Map<String, Object>>()
-        {
-            @Override
-            public void exec(List<Map<String, Object>> batch)
-            {
-                // RowEntityId -> List item RowMap
-                Map<String, Map<String, Object>> lookupMap = batch.stream()
-                    .collect(Collectors.toMap(map -> (String) map.get("EntityId"), map -> map));
+        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachMapBatch(10_000, batch -> {
+            // RowEntityId -> List item RowMap
+            Map<String, Map<String, Object>> lookupMap = batch.stream()
+                .collect(Collectors.toMap(map -> (String) map.get("EntityId"), map -> map));
 
-                // RowEntityId -> Document names that need to be indexed
-                MultiValuedMap<String, String> documentMultiMap = as.listAttachmentsForIndexing(lookupMap.keySet(), modifiedSince).stream()
-                    .collect(LabKeyCollectors.toMultiValuedMap(stringStringPair -> stringStringPair.first, stringStringPair -> stringStringPair.second));
+            // RowEntityId -> Document names that need to be indexed
+            MultiValuedMap<String, String> documentMultiMap = as.listAttachmentsForIndexing(lookupMap.keySet(), modifiedSince).stream()
+                .collect(LabKeyCollectors.toMultiValuedMap(stringStringPair -> stringStringPair.first, stringStringPair -> stringStringPair.second));
 
-                documentMultiMap.asMap().forEach((rowEntityId, documentNames) -> {
-                    Map<String, Object> map = lookupMap.get(rowEntityId);
-                    String title = titleTemplate.eval(map);
+            documentMultiMap.asMap().forEach((rowEntityId, documentNames) -> {
+                Map<String, Object> map = lookupMap.get(rowEntityId);
+                String title = titleTemplate.eval(map);
 
-                    documentNames.forEach(documentName -> {
-                        ActionURL downloadUrl = ListController.getDownloadURL(list, rowEntityId, documentName);
+                documentNames.forEach(documentName -> {
+                    ActionURL downloadUrl = ListController.getDownloadURL(list, rowEntityId, documentName);
 
-                        //Generate searchable resource
-                        String displayTitle = title + " attachment file \"" + documentName + "\"";
-                        WebdavResource attachmentRes = as.getDocumentResource(
-                            new Path(rowEntityId, documentName),
-                            downloadUrl,
-                            displayTitle,
-                            new ListItemAttachmentParent(rowEntityId, list.getContainer()),
-                            documentName,
-                            SearchService.fileCategory
-                        );
+                    //Generate searchable resource
+                    String displayTitle = title + " attachment file \"" + documentName + "\"";
+                    WebdavResource attachmentRes = as.getDocumentResource(
+                        new Path(rowEntityId, documentName),
+                        downloadUrl,
+                        displayTitle,
+                        new ListItemAttachmentParent(rowEntityId, list.getContainer()),
+                        documentName,
+                        SearchService.fileCategory
+                    );
 
-                        attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                        task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
 
-                        count.increment();
-                    });
+                    count.increment();
                 });
-            }
+            });
         });
 
         return count.getValue();
@@ -895,7 +890,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (hasAttachmentCols)
         {
             // TODO: Also need to clear core.Documents.LastIndexed for these parents
-            new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10000, as::deleteAttachmentIndexes);
+            new TableSelector(listTable, Collections.singleton("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10_000, as::deleteAttachmentIndexes);
         }
     }
 
