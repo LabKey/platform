@@ -2320,7 +2320,7 @@ public class ExpDataIterators
                 }
             });
             if (_fileNameColIndex == null)
-                _context.getErrors().addRowError(new ValidationException("Sample type cannot be determined. Provide either a '" + StringUtils.join(SAMPLE_TYPE_FIELD_NAMES, "' or '") + "' column in the data."));
+                _context.getErrors().addRowError(new ValidationException("Could not determine sample type. Please provide a 'Sample Type' column in the data."));
         }
 
         @Override
