@@ -24,7 +24,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -40,10 +39,13 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.HashHelpers;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -54,13 +56,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -72,10 +76,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 */
 public class QueryProfiler
 {
-    private static final Logger LOG = LogManager.getLogger(QueryProfiler.class);
+    private static final Logger LOG = LogHelper.getLogger(QueryProfiler.class, "Tracks SQL query execution and duration");
     private static final QueryProfiler INSTANCE = new QueryProfiler();
 
+    /** Limit to the size of queries that we keep in memory */
+    private static final int LONG_SQL_LIMIT = 100_000;
+    /** How many queries longer than our threshold above to keep around at a time */
+    private static final int MAX_LONG_SQL_QUERIES = 5;
+    private final List<WeakReference<QueryTracker>> _longSqlTextQueries = new ArrayList<>();
+
     private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
+    /** Hash of SQL -> query tracking info */
     private final Map<String, QueryTracker> _queries = new ReferenceMap<>(ReferenceStrength.HARD, ReferenceStrength.WEAK);
     private final Object _lock = new Object();
     private final Collection<QueryTrackerSet> _trackerSets = new ArrayList<>();
@@ -229,6 +240,7 @@ public class QueryProfiler
                 set.clear();
 
             _queries.clear();
+            _longSqlTextQueries.clear();
 
             initializeCounters();
 
@@ -350,68 +362,58 @@ public class QueryProfiler
         return new ReportView(statName, buttonHTML, captionURLFactory, stackTraceURLFactory);
     }
 
-    public HttpView<?> getStackTraceView(final int hashCode, final ActionURLFactory executeFactory)
+    public HttpView<?> getStackTraceView(final String sqlHash, final ActionURLFactory executeFactory)
     {
-        return new HttpView<>()
+        // Don't update anything while we're rendering the report or vice versa
+        synchronized (_lock)
         {
-            @Override
-            public @NotNull LinkedHashSet<ClientDependency> getClientDependencies()
+            QueryTracker tracker = _queries.get(sqlHash);
+
+            if (null == tracker)
             {
-                LinkedHashSet<ClientDependency> result = super.getClientDependencies();
-                result.add(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js"));
-                return result;
+                return new HtmlView(DOM.DIV(DOM.cl("labkey-error"), "Error: That query no longer exists"));
             }
 
-            @Override
-            protected void renderInternal(Object model, PrintWriter out)
-            {
-                // Don't update anything while we're rendering the report or vice versa
-                synchronized (_lock)
-                {
-                    QueryTracker tracker = findTracker(hashCode);
+            HttpView<?> result = new HtmlView(DOM.DIV(
+                    DOM.TABLE(
+                        DOM.at(DOM.Attribute.style, "width: 100%"),
+                        DOM.TR(
+                                DOM.TD(DOM.at(DOM.Attribute.style, "white-space: nowrap; width: 50%;"), DOM.STRONG("SQL" + (tracker.isTruncated() ? " (truncated)" : ""))),
+                                DOM.TD(DOM.at(DOM.Attribute.style, "white-space: nowrap; width: 50%;"), DOM.STRONG("SQL With Parameters" + (tracker.isTruncated() ? " (truncated)" : "")))
+                        ),
+                        DOM.TR(
+                                DOM.TD(copyToClipboardLink("copyToClipboardNoParams", "sqlNoParams")),
+                                DOM.TD(copyToClipboardLink("copyToClipboardWithParams", "sqlWithParams"))
+                        ),
+                        DOM.TR(
+                                DOM.TD(DOM.at(DOM.Attribute.id, "sqlNoParams"),HtmlString.of(tracker.getSql(), true)),
+                                DOM.TD(DOM.at(DOM.Attribute.id, "sqlWithParams"), HtmlString.of(tracker.getSqlAndParameters(), true))
+                        )),
 
-                    if (null == tracker)
-                    {
-                        out.print("<font class=\"labkey-error\">Error: That query no longer exists</font>");
-                        return;
-                    }
-
-                    out.println("<table>\n");
-                    out.println("  <tr>\n    <td><strong>SQL</strong></td>\n    <td style=\"padding-left: 1em;\"><strong>SQL&nbsp;With&nbsp;Parameters</strong></td>\n  </tr>\n");
-
-                    out.println("  <tr>\n    <td align=\"right\">");
-                    out.println(new Link.LinkBuilder("copy to clipboard").onClick("return false;").id("copyToClipboardNoParams").attributes(Collections.singletonMap("data-clipboard-target", "#sqlNoParams")).build().getHtmlString());
-                    out.println("</td>\n    <td align=\"right\">");
-                    out.println(new Link.LinkBuilder("copy to clipboard").onClick("return false;").id("copyToClipboardWithParams").attributes(Collections.singletonMap("data-clipboard-target", "#sqlWithParams")).build().getHtmlString());
-                    out.println("</td>\n  </tr>\n");
-                    out.println("  <tr>\n");
-                    out.println("    <td id=\"sqlNoParams\">" + PageFlowUtil.filter(tracker.getSql(), true) + "</td>\n");
-                    out.println("    <td style=\"padding-left: 20px;\" id=\"sqlWithParams\">" + PageFlowUtil.filter(tracker.getSqlAndParameters(), true) + "</td>\n");
-                    out.println("  </tr>\n");
-                    out.println("</table>\n<br>\n");
-
-                    out.println("\n<script>new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');</script>\n");
-
-                    for (ExecutionPlanType type : ExecutionPlanType.values())
-                    {
-                        if (tracker.canShowExecutionPlan(type))
-                        {
-                            out.println("<table>\n  <tr><td>");
-                            ActionURL url = executeFactory.getActionURL(tracker.getSql());
-                            out.println(PageFlowUtil.link("Show " + type.getDescription()).href(url.addParameter("type", type.name())).build());
-                            out.println("  </td></tr></table>\n<br>\n");
-                        }
-                    }
-
-                    out.println("<table>\n");
-                    tracker.renderStackTraces(out);
-                    out.println("</table>\n");
-                }
-            }
-        };
+                    DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');")),
+                    DOM.BR(),
+                    Arrays.stream(ExecutionPlanType.values()).
+                            filter(tracker::canShowExecutionPlan).
+                            map(type -> DOM.DIV(new Link.LinkBuilder("Show " + type.getDescription()).
+                                    href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build())),
+                    DOM.BR(),
+                    tracker.renderStackTraces()
+            ));
+            result.addClientDependencies(Set.of(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js")));
+            return result;
+        }
     }
 
-    public HttpView<?> getExecutionPlanView(int hashCode, ExecutionPlanType type)
+    private Link copyToClipboardLink(String linkId, String targetId)
+    {
+        return new Link.LinkBuilder("copy to clipboard").
+                onClick("return false;").
+                id(linkId).
+                attributes(Collections.singletonMap("data-clipboard-target", "#" + targetId)).
+                build();
+    }
+
+    public HttpView<?> getExecutionPlanView(String sqlHash, ExecutionPlanType type)
     {
         SQLFragment sql;
         DbScope scope;
@@ -419,7 +421,7 @@ public class QueryProfiler
         // Don't update anything while we're gathering the SQL and parameters
         synchronized (_lock)
         {
-            QueryTracker tracker = findTracker(hashCode);
+            QueryTracker tracker = _queries.get(sqlHash);
 
             if (null == tracker)
                 return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
@@ -439,24 +441,13 @@ public class QueryProfiler
 
         String fullPlan = StringUtils.join(executionPlan, "\n");
 
-        return new HtmlView(DOM.PRE(fullPlan));
-    }
-
-
-    private @Nullable QueryTracker findTracker(int hashCode)
-    {
-        QueryTracker tracker = null;
-
-        for (QueryTracker candidate : _queries.values())
-        {
-            if (candidate.hashCode() == hashCode)
-            {
-                tracker = candidate;
-                break;
-            }
-        }
-
-        return tracker;
+        HttpView<?> view = new HtmlView(
+                DOM.DIV(
+                        DOM.DIV(copyToClipboardLink("copyToClipboard", "executionPlan")),
+                        DOM.PRE(DOM.at(DOM.Attribute.id, "executionPlan"), fullPlan),
+                        DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboard');"))));
+        view.addClientDependencies(Set.of(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js")));
+        return view;
     }
 
     public Collection<QueryTrackerSet> getTrackerSets()
@@ -540,11 +531,18 @@ public class QueryProfiler
                             _backgroundQueryTime += query.getElapsed();
                         }
 
-                        QueryTracker tracker = _queries.get(query.getSql());
+                        String sql = query.getSql();
+                        String hash = HashHelpers.hash(sql);
+
+                        QueryTracker tracker = _queries.get(hash);
 
                         if (null == tracker)
                         {
-                            tracker = new QueryTracker(query.getScope(), query.getSql(), query.getElapsed(), query.getStackTrace(), query.isValidSql());
+                            tracker = new QueryTracker(query.getScope(), sql, hash, query.getElapsed(), query.getStackTrace(), query.isValidSql(), query.isTruncated());
+                            if (sql.length() > LONG_SQL_LIMIT)
+                            {
+                                manageLongSql(tracker);
+                            }
 
                             // First instance of this query, so always save its parameters
                             tracker.setParameters(query.getParameters());
@@ -554,7 +552,7 @@ public class QueryProfiler
                             for (QueryTrackerSet set : getTrackerSets())
                                 set.add(tracker);
 
-                            _queries.put(query.getSql(), tracker);
+                            _queries.put(hash, tracker);
                         }
                         else
                         {
@@ -576,6 +574,23 @@ public class QueryProfiler
             catch (InterruptedException e)
             {
                 LOG.debug(getClass().getSimpleName() + " is terminating due to interruption");
+            }
+        }
+
+        private void manageLongSql(QueryTracker tracker)
+        {
+            synchronized (_lock)
+            {
+                while (_longSqlTextQueries.size() >= MAX_LONG_SQL_QUERIES)
+                {
+                    WeakReference<QueryTracker> ref = _longSqlTextQueries.remove(0);
+                    QueryTracker oldTracker = ref.get();
+                    if (oldTracker != null)
+                    {
+                        oldTracker.truncate(LONG_SQL_LIMIT);
+                    }
+                }
+                _longSqlTextQueries.add(new WeakReference<>(tracker));
             }
         }
 

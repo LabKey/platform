@@ -1436,10 +1436,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
             nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
             aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
-            if (nameGen != null)
-                nameState = nameGen.createState(true);
-            else
-                nameState = null;
+            nameState = nameGen != null ? nameGen.createState(true) : null;
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
             _batchSize = batchSize;

@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TabContainerType;
 import org.labkey.api.data.WorkbookContainerType;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.SubfolderType;
 import org.labkey.folder.xml.SubfoldersDocument;
@@ -72,11 +71,6 @@ public class SubfolderWriter extends BaseFolderWriter
                 FolderExportContext childCtx = new FolderExportContext(ctx.getUser(), child, ctx.getDataTypes(), ctx.getFormat(),
                         ctx.isIncludeSubfolders(), ctx.getPhiLevel(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.isMaskClinic(), ctx.getLoggerGetter());
                 childCtx.setAddExportComment(ctx.isAddExportComment());
-
-                // pass the export context to each subfolder
-                var parentXarCtx = ctx.getContext(XarExportContext.class);
-                if (parentXarCtx != null)
-                    childCtx.addContext(XarExportContext.class, parentXarCtx);
 
                 FolderWriterImpl childFolderWriter = new FolderWriterImpl();
                 childFolderWriter.write(child, childCtx, childDir);

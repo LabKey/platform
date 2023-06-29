@@ -48,7 +48,7 @@ public class ViewCategoryWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(ExportType type)
+    public boolean selectedByDefault(ExportType type, boolean forTemplate)
     {
         return ExportType.ALL == type || ExportType.STUDY == type;
     }
