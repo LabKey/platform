@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -26,8 +27,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.BlockingCache;
@@ -35,6 +34,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exceptions.OptimisticConflictException;
@@ -691,6 +691,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (null == listTable)
             return 0;
 
+        // TODO: Why are we checking designChange here?
         //If the index call was not due to a list design change and there are no attachment columns than don't try to index
         if (!designChange && listTable.getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
             return 0;
@@ -705,7 +706,6 @@ public class ListManager implements SearchService.DocumentProvider
         MutableInt count = new MutableInt(0);
 
         //Get common objects & properties
-        FieldKey entityIdKey = new FieldKey(null, "EntityId");
         AttachmentService as = AttachmentService.get();
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
 
@@ -715,41 +715,51 @@ public class ListManager implements SearchService.DocumentProvider
         NavTree t = new NavTree("list", gridURL);
         String nav = NavTree.toJS(Collections.singleton(t), null, false, true).toString();
 
-        // Index all items that have never been indexed
-        //   OR where either the list definition
-        //   OR list item itself has changed since last indexed
-        String lastIndexedClause = reindex ? "(1=1) OR " : "";
-        lastIndexedClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
+        // Enumerate all list rows in batches and re-index based on the value of reindex parameter
+        // For now, enumerate all rows. In the future, pass in a PK filter for the single item change case?
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause("(1=1)", null));
 
-        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results ->
+        // Need to pass non-null modifiedSince for incremental indexing, otherwise all attachments will be returned
+        // TODO: Pass in modifiedSince?
+        Date modifiedSince = reindex ? null : new Date();
+
+        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachMapBatch(10_000, new Selector.ForEachBatchBlock<Map<String, Object>>()
         {
-            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-            String title = titleTemplate.eval(map);
-            String rowEntityId = (String)map.get(entityIdKey);
-            AttachmentParent listItemParent = new ListItemAttachmentParent(rowEntityId, list.getContainer());
-
-            for (Attachment attachment : as.getAttachments(listItemParent))
+            @Override
+            public void exec(List<Map<String, Object>> batch)
             {
-                //Get documentName and downloadUrl
-                String documentName = attachment.getName();
-                ActionURL downloadUrl = ListController.getDownloadURL(list, rowEntityId, documentName);
+                // RowEntityId -> List item RowMap
+                Map<String, Map<String, Object>> lookupMap = batch.stream()
+                    .collect(Collectors.toMap(map -> (String) map.get("EntityId"), map -> map));
 
-                //Generate searchable resource
-                String displayTitle = title + " attachment file \"" + documentName + "\"";
-                WebdavResource attachmentRes = as.getDocumentResource(
-                        new Path(rowEntityId, documentName),
-                        downloadUrl,
-                        displayTitle,
-                        listItemParent,
-                        documentName,
-                        SearchService.fileCategory
-                );
+                // RowEntityId -> Document names that need to be indexed
+                MultiValuedMap<String, String> documentMultiMap = as.listAttachmentsForIndexing(lookupMap.keySet(), modifiedSince).stream()
+                    .collect(LabKeyCollectors.toMultiValuedMap(stringStringPair -> stringStringPair.first, stringStringPair -> stringStringPair.second));
 
-                attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                task.addResource(attachmentRes, SearchService.PRIORITY.item);
+                documentMultiMap.asMap().forEach((rowEntityId, documentNames) -> {
+                    Map<String, Object> map = lookupMap.get(rowEntityId);
+                    String title = titleTemplate.eval(map);
 
-                count.increment();
+                    documentNames.forEach(documentName -> {
+                        ActionURL downloadUrl = ListController.getDownloadURL(list, rowEntityId, documentName);
+
+                        //Generate searchable resource
+                        String displayTitle = title + " attachment file \"" + documentName + "\"";
+                        WebdavResource attachmentRes = as.getDocumentResource(
+                            new Path(rowEntityId, documentName),
+                            downloadUrl,
+                            displayTitle,
+                            new ListItemAttachmentParent(rowEntityId, list.getContainer()),
+                            documentName,
+                            SearchService.fileCategory
+                        );
+
+                        attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                        task.addResource(attachmentRes, SearchService.PRIORITY.item);
+
+                        count.increment();
+                    });
+                });
             }
         });
 
@@ -884,11 +894,12 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (hasAttachmentCols)
         {
+            // TODO: Also need to clear core.Documents.LastIndexed for these parents
             new TableSelector(listTable, Set.of("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10_000, as::deleteAttachmentIndexes);
         }
     }
 
-    // Un-index the entire list doc alone, but leave the list items alone
+    // Un-index the entire list doc, but leave the list items alone
     private void deleteIndexedEntireListDoc(ListDefinition list)
     {
         SearchService ss = SearchService.get();
