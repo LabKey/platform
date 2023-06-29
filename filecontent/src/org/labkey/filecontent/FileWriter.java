@@ -61,7 +61,7 @@ public class FileWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(ExportType type)
+    public boolean selectedByDefault(ExportType type, boolean forTemplate)
     {
         // Files could be very large, so make them opt-in
         return false;

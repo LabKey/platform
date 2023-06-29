@@ -132,7 +132,9 @@ public class ListModule extends SpringModule
         FolderSerializationRegistry folderRegistry = FolderSerializationRegistry.get();
         if (null != folderRegistry)
         {
-            folderRegistry.addFactories(new FolderListWriter.Factory(), new FolderListImporter.Factory());
+            folderRegistry.addWriterFactory(new FolderListWriter.ListDesignWriter.Factory());
+            folderRegistry.addWriterFactory(new FolderListWriter.ListDataWriter.Factory());
+            folderRegistry.addImportFactory(new FolderListImporter.Factory());
         }
 
         SearchService ss = SearchService.get();
