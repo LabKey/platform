@@ -530,11 +530,13 @@ public class ListManager implements SearchService.DocumentProvider
             return;
         }
 
+        // indexing methods turn off JDBC driver caching and use a side connection, so we must not be in a transaction
+        assert !DbScope.getLabKeyScope().isTransactionActive() : "Should not be in a transaction since this code path disables JDBC driver caching";
+
         indexEntireList(task, list, reindex);
 
         indexModifiedItems(task, list, reindex);
 
-        //If attachmentIndexing (checked within method) is enabled index attachment file(s)
         indexAttachments(task, list, designChange, reindex);
     }
 
