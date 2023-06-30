@@ -1023,6 +1023,7 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="AvailableAliquotVolume"/>
       <column columnName="StoredAmount">
           <displayColumnFactory>
               <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>

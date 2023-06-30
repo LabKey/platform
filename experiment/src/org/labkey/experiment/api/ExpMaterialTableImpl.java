@@ -919,7 +919,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         availableAliquotsColumnInfo.setDescription("The number of aliquots with 'Available' status");
         availableAliquotsColumnInfo.setUserEditable(false);
         availableAliquotsColumnInfo.setReadOnly(true);
-        availableAliquotsColumnInfo.setHidden(true);
         availableAliquotsColumnInfo.setShownInDetailsView(false);
         availableAliquotsColumnInfo.setShownInInsertView(false);
         availableAliquotsColumnInfo.setShownInUpdateView(false);
