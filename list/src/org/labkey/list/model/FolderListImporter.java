@@ -38,7 +38,7 @@ public class FolderListImporter implements FolderImporter
     @Override
     public String getDataType()
     {
-        return FolderArchiveDataTypes.LIST_DATA;
+        return "Lists";
     }
 
     @Override

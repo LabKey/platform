@@ -1,9 +1,9 @@
 package org.labkey.experiment.samples;
 
-import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.query.ExpSchema;
@@ -48,7 +48,7 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
 
     public String getDataType()
     {
-        return FolderArchiveDataTypes.DATA_CLASS_DATA;
+        return "Data Classes";
     }
 
     @Override
@@ -95,6 +95,12 @@ public class DataClassFolderImporter extends AbstractExpFolderImporter
 
             importTsvData(ctx, xarContext, ExpSchema.SCHEMA_EXP_DATA.toString(), sortedDataClasses, dataClassDataFiles, xarDir, true, false);
         }
+    }
+
+    @Override
+    public boolean isValidForImportArchive(FolderImportContext ctx) throws ImportException
+    {
+        return ctx.getDir(DataClassFolderWriter.DEFAULT_DIRECTORY) != null;
     }
 
     public static class Factory implements FolderImporterFactory
