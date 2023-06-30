@@ -1415,30 +1415,21 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public int recomputeSampleTypeVolumeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
-        Set<Integer> rootSamplesWithAliquotVolume = getRootSampleIdsWithAliquotVolume(sampleType.getLSID(), container);
+        List<Integer> rootSamplesWithAliquotVolume = getRootSampleIdsWithAliquotVolume(sampleType.getLSID(), container);
         return recomputeSamplesRollup(Collections.emptyList(), rootSamplesWithAliquotVolume, sampleType.getMetricUnit(), container);
     }
 
-    private Set<Integer> getRootSampleIdsWithAliquotVolume(String sampleTypeLsid, Container container) throws SQLException
+    private List<Integer> getRootSampleIdsWithAliquotVolume(String sampleTypeLsid, Container container) throws SQLException
     {
-        Set<Integer> rootIds = new HashSet<>();
-        DbSchema exp = getExpSchema();
-
         SQLFragment sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
-        sql.append(" WHERE root.cpastype = ?")
+        sql.append(" WHERE root.cpastype = ")
                 .appendValue(sampleTypeLsid)
                 .append(" AND aliquotedfromlsid IS NULL ")
                 .append(" AND aliquotVolume > 0 ")
                 .append(" AND root.container = ")
                 .appendValue(container);
 
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
-        {
-            while (rs.next())
-                rootIds.add(rs.getInt(1));
-        }
-
-        return rootIds;
+        return new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getArrayList(Integer.class);
     }
 
     private Set<Integer> getRootSampleIdsFromParents(String sampleTypeLsid, Set<String> parentLsids, Set<String> parentNames) throws SQLException
