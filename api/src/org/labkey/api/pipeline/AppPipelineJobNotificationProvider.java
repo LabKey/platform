@@ -8,6 +8,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.security.SecurityManager;
 
@@ -239,9 +240,14 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         if (job instanceof QueryImportPipelineJob)
         {
             QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
-
-            String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            urlFragment += "/" + type + "?";
+            Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
+            if (isCrossType)
+                urlFragment = "/crossType/" + importType.name() + "?";
+            else
+            {
+                String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
+                urlFragment += "/" + type + "?";
+            }
 
             String and = "";
             if (info != null)
