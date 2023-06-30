@@ -2345,7 +2345,7 @@ public class ExpDataIterators
                 }
             });
             if (_fileNameColIndex == null)
-                _context.getErrors().addRowError(new ValidationException("Sample type cannot be determined. Provide either a '" + StringUtils.join(SAMPLE_TYPE_FIELD_NAMES, "' or '") + "' column in the data."));
+                _context.getErrors().addRowError(new ValidationException("Could not determine sample type. Please provide a 'Sample Type' column in the data."));
         }
 
         @Override
@@ -2512,6 +2512,8 @@ public class ExpDataIterators
             Map<String, String> aliasMap = sampleType.getImportAliasMap();
             validFields.addAll(aliasMap.keySet());
             validFields.add(ALIQUOTED_FROM_INPUT);
+            validFields.add("StorageUnit");
+            validFields.add("Storage Unit");
             // For consistency with other storage fields that are imported without spaces in the names
             validFields.add("EnteredStorage");
             List<Integer> fieldIndexes = new ArrayList<>();
