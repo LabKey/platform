@@ -42,7 +42,7 @@ public class TidyUtil
     public static Document convertHtmlToDocument(final String html, final boolean asXML, final Collection<String> errors)
     {
         org.jsoup.nodes.Document doc = asXML ? parseXmlDOM(html, errors) : parseHtmlDOM(html, errors);
-        return doc == null || doc.childNodeSize() == 0 ? null : W3CDom.convert(doc);
+        return doc == null || doc.childrenSize() == 0 ? null : W3CDom.convert(doc);
     }
 
     // helper for script validation
