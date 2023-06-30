@@ -503,7 +503,7 @@ public class ListManager implements SearchService.DocumentProvider
                 Container c = def.lookupContainer();
                 if (c == null || ContainerManager.isDeleting(c))
                 {
-                    LOG.info("List container has been deleted or is being deleted; not indexing list '" + def.getName());
+                    LOG.info("List container has been deleted or is being deleted; not indexing list \"" + def.getName() + "\"");
                 }
                 else
                 {
