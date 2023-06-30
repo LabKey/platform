@@ -387,7 +387,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             throw new RuntimeSQLException(e);
         }
-
     }
 
     private void deleteAttachmentIndex(String parent, String name)
