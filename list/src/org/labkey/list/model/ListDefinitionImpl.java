@@ -249,7 +249,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public boolean getEntireListIndex()
     {
-        return _def.getEntireListIndex();
+        return _def.isEntireListIndex();
     }
 
     @Override
@@ -321,7 +321,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public boolean getEachItemIndex()
     {
-        return _def.getEachItemIndex();
+        return _def.isEachItemIndex();
     }
 
     @Override
@@ -381,7 +381,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public boolean getFileAttachmentIndex()
     {
-        return _def.getFileAttachmentIndex();
+        return _def.isFileAttachmentIndex();
     }
 
     @Override

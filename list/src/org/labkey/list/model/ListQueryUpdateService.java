@@ -522,7 +522,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
         // Delete Discussions
-        if (DiscussionService.get() != null)
+        if (_list.getDiscussionSetting() != ListDefinition.DiscussionSetting.None && DiscussionService.get() != null)
             DiscussionService.get().deleteDiscussions(container, user, entityIds);
 
         // Delete Attachments

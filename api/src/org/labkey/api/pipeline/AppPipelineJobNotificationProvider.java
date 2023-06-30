@@ -240,9 +240,14 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         if (job instanceof QueryImportPipelineJob)
         {
             QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
-
-            String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            urlFragment += "/" + type + "?";
+            Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
+            if (isCrossType)
+                urlFragment = "/crossType/" + importType.name() + "?";
+            else
+            {
+                String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
+                urlFragment += "/" + type + "?";
+            }
 
             String and = "";
             if (info != null)

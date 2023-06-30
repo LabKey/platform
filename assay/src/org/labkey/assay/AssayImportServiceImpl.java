@@ -42,6 +42,7 @@ import org.labkey.api.gwt.client.ui.domain.InferencedColumn;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -161,6 +162,8 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
     @Override
     public ImportStatus importData(GWTDomain gwtDomain, Map<String, String> mappedColumnNames) throws GWTImportException
     {
+        SimpleMetricsService.get().increment(AssayModule.NAME, "AssayImportServiceAction", "DataImportAttempted");
+
         ImportStatus status = new ImportStatus();
 
         Domain domain = PropertyService.get().getDomain(gwtDomain.getDomainId());
@@ -233,6 +236,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
 
             gwtProtocol.setName(assayName);
             gwtProtocol = svc.saveChanges(gwtProtocol, true);
+            SimpleMetricsService.get().increment(AssayModule.NAME, "AssayImportServiceAction", "ProtocolSaved");
 
             return gwtProtocol;
         }
