@@ -471,6 +471,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setLabel("Aliquot Total Amount");
                 return ret;
             }
+            case AvailableAliquotVolume ->
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AvailableAliquotVolume"));
+                ret.setLabel("Available Aliquot Amount");
+                return ret;
+            }
             case AliquotUnit ->
             {
                 var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
@@ -762,6 +768,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.AliquotVolume);
         addColumn(Column.AliquotUnit);
         addAvailableAliquotCountColumn();
+        addColumn(Column.AvailableAliquotVolume);
 
         addColumn(Column.StoredAmount);
         defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
@@ -909,7 +916,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         };
         availableAliquotsColumnInfo.setLabel("Available Aliquot Count");
-        availableAliquotsColumnInfo.setDescription("The number of aliquots with amount > 0");
+        availableAliquotsColumnInfo.setDescription("The number of aliquots with 'Available' status");
         availableAliquotsColumnInfo.setUserEditable(false);
         availableAliquotsColumnInfo.setReadOnly(true);
         availableAliquotsColumnInfo.setHidden(true);

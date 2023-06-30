@@ -5,8 +5,9 @@ FROM
      exp.materials ma LEFT JOIN
 (
     SELECT m.RootMaterialLSID as lsid, COUNT(*) AS AliquotsCount
-    FROM exp.materials m
-    WHERE m.RootMaterialLSID IS NOT NULL AND m.StoredAmount > 0
+    FROM exp.materials m JOIN core.datastates[ContainerFilter='CurrentPlusProjectAndShared'] s
+    ON m.SampleState = s.rowid
+    WHERE m.RootMaterialLSID IS NOT NULL AND s.StateType = 'Available'
     GROUP BY RootMaterialLSID
 ) c
 ON

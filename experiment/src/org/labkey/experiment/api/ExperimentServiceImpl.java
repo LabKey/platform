@@ -4768,7 +4768,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         List<ExpMaterialImpl> rootSamples = getExpMaterialsByLsid(rootLsids);
                         Set<Integer> rootSampleIds = new HashSet<>();
                         rootSamples.forEach(p -> rootSampleIds.add(p.getRowId()));
-                        SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit());
+                        SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
                     }
                 }
                 catch (SQLException e)

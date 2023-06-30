@@ -331,6 +331,13 @@
           <shownInInsertView>false</shownInInsertView>
           <shownInUpdateView>false</shownInUpdateView>
       </column>
+      <column columnName="AvailableAliquotVolume">
+          <columnTitle>Available Aliquot Amount</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
       <column columnName="AliquotUnit">
           <isUserEditable>false</isUserEditable>
           <shownInDetailsView>false</shownInDetailsView>

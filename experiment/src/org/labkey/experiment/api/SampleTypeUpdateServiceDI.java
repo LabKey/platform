@@ -127,6 +127,7 @@ import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxS
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 
@@ -220,7 +221,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, outputRows, getDataIteratorContext(errors, InsertOption.INSERT, finalConfigParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(outputRows, configParameters);
+            onSamplesChanged(outputRows, configParameters, container);
             audit(QueryService.AuditAction.INSERT);
         }
         return ret;
@@ -396,7 +397,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
             boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
-            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters());
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container);
             audit(context.getInsertOption().auditAction);
         }
         return ret;
@@ -409,7 +410,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(null, configParameters); // mergeRows not really used, skip wiring recalc
+            onSamplesChanged(null, configParameters, container); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -427,7 +428,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(results, configParameters);
+            onSamplesChanged(results, configParameters, container);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -465,7 +466,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters);
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container);
             audit(QueryService.AuditAction.UPDATE);
         }
 
@@ -509,6 +510,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new CaseInsensitiveHashSet(fields);
     }
 
+    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Integer> availableStatus, Integer oldStatus, Integer newStatus)
+    {
+        if (availableStatus == null || availableStatus.isEmpty())
+            return false;
+
+        if (oldStatus == newStatus)
+            return false;
+
+        if (availableStatus.contains(oldStatus) && !availableStatus.contains(newStatus))
+            return true;
+
+        if (availableStatus.contains(newStatus) && !availableStatus.contains(oldStatus))
+            return true;
+
+        return false;
+    }
+
     @Override
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
@@ -534,13 +552,39 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (!_sampleType.isMedia() && isAliquot)
         {
-            Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
-            Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
-            if (!oldAmount.equals(newAmount))
+            String aliquotRoot = (String) oldRow.get(RootMaterialLSID.name());
+
+            if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
-                String aliquotRoot = (String) oldRow.get(RootMaterialLSID.name());
-                if (StringUtils.isNotEmpty(aliquotRoot))
-                    aliquotRollupRoot = aliquotRoot;
+                Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
+                Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
+
+                if (!oldAmount.equals(newAmount))
+                {
+                    if (StringUtils.isNotEmpty(aliquotRoot))
+                        aliquotRollupRoot = aliquotRoot;
+                }
+            }
+
+            if (StringUtils.isEmpty(aliquotRollupRoot) && row.containsKey(SampleState.name()))
+            {
+                List<Integer> availableSampleStatuses = new ArrayList<>();
+                if (SampleStatusService.get().supportsSampleStatus())
+                {
+                    for (DataState state: SampleStatusService.get().getAllProjectStates(c))
+                    {
+                        if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                            availableSampleStatuses.add(state.getRowId());
+                    }
+                }
+
+                if (!availableSampleStatuses.isEmpty())
+                {
+                    Integer oldState = (Integer) oldRow.get(SampleState.name());
+                    Integer newState = (Integer) row.get(SampleState.name());
+                    if (isAliquotStatusChangeNeedRecalc(availableSampleStatuses, oldState, newState))
+                        aliquotRollupRoot = aliquotRoot;
+                }
             }
         }
 
@@ -561,9 +605,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
-        DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
+        DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) oldRow.get(SampleState.name()));
         boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
-        DataState newStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
+        DataState newStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) rowCopy.get(SampleState.name()));
         boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
@@ -706,7 +750,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                Integer sampleStateId = (Integer) map.get(ExpMaterialTable.Column.SampleState.name());
+                Integer sampleStateId = (Integer) map.get(SampleState.name());
                 if (!SampleStatusService.get().isOperationPermitted(getContainer(), sampleStateId, SampleTypeService.SampleOperations.Delete))
                 {
                     DataState dataState = SampleStatusService.get().getStateForRowId(container, sampleStateId);
@@ -1122,7 +1166,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
-    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params)
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
         Pair<Set<String>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
@@ -1138,7 +1182,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             skipRecalc = Boolean.TRUE == params.get(SkipAliquotRollup);
 
         if (!useBackgroundRecalc && parentKeys != null && !skipRecalc)
-            handleRecalc(parentKeys.first, parentKeys.second, false);
+            handleRecalc(parentKeys.first, parentKeys.second, false, container);
 
         if (tx != null)
         {
@@ -1149,7 +1193,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 tx.addCommitTask(() -> {
                     fireSamplesChanged();
                     if (finalUseBackgroundRecalc && !finalSkipRecalc)
-                        handleRecalc(parentKeys.first, parentKeys.second, true);
+                        handleRecalc(parentKeys.first, parentKeys.second, true, container);
                 }, DbScope.CommitTaskOption.POSTCOMMIT);
             }
             else
@@ -1161,14 +1205,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread)
+    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
         if (useBackgroundThread)
         {
             JobRunner.getDefault().execute(() -> {
                 try
                 {
-                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames);
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
                 }
                 catch (SQLException e)
                 {
@@ -1180,7 +1224,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             try
             {
-                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames);
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
             }
             catch (SQLException e)
             {
@@ -1368,7 +1412,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isSampleStateHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.SampleState, name);
+            return isExpMaterialColumn(SampleState, name);
         }
 
         private static boolean isCommentHeader(String name)

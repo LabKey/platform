@@ -252,4 +252,79 @@ public class ExperimentUpgradeCode implements UpgradeCode
         // exp.material.recomputerollup dropped in exp-23.004-23.005.sql
     }
 
+    private static Map<String, List<String>> findContainersWithAliquotVolume()
+    {
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT distinct cpastype, container\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoMaterial(), "m").append("\n")
+                .append("WHERE m.AliquotVolume IS NOT NULL AND m.AliquotVolume <> 0");
+
+        @NotNull Map<String, Object>[] results = new SqlSelector(ExperimentService.get().getSchema(), sql).getMapArray();
+        if (results.length > 0)
+        {
+            Map<String, List<String>> containerSampleTypes = new HashMap<>();
+            for (Map<String, Object> result : results)
+            {
+                String container = (String) result.get("container");
+                String cpastype = (String) result.get("cpastype");
+                containerSampleTypes.putIfAbsent(container, new ArrayList<>());
+                containerSampleTypes.get(container).add(cpastype);
+            }
+            return containerSampleTypes;
+        }
+
+        return Collections.emptyMap();
+    }
+    /**
+     * Called from exp-?.sql
+     */
+    public static void recomputeAliquotAvailableAmount(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            // find sample types
+            SampleTypeService sampleTypeService = SampleTypeService.get();
+            Map<String, List<String>> containerSampleTypes = findContainersWithAliquotVolume();
+            for (String containerId : containerSampleTypes.keySet())
+            {
+                Container container = ContainerManager.getForId(containerId);
+                if (container == null)
+                    continue;
+
+                List<String> sampleTypes = containerSampleTypes.get(containerId);
+                LOG.info("** starting recalculating exp.material.aliquotAvailableVolume in folder: " + container.getPath());
+
+                try
+                {
+                    for (String sampleTypeLsid : sampleTypes)
+                    {
+                        ExpSampleType sampleType = sampleTypeService.getSampleType(sampleTypeLsid);
+                        if (sampleType == null)
+                            continue;
+
+                        int syncedCount = sampleTypeService.recomputeSampleTypeVolumeRollup(sampleType, container);
+                        if (syncedCount > 0)
+                            LOG.info("*** recalculated aliquotAvailableVolume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                LOG.info("** finished cleaning up exp.material.aliquotAvailableVolume in folder: " + container.getPath());
+            }
+
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
