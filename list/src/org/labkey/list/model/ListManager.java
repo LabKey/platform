@@ -19,7 +19,6 @@ package org.labkey.list.model;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -504,7 +503,7 @@ public class ListManager implements SearchService.DocumentProvider
                 Container c = def.lookupContainer();
                 if (c == null || ContainerManager.isDeleting(c))
                 {
-                    LOG.info("List container has been deleted or is being deleted; not indexing list '" + def.getName() + "");
+                    LOG.info("List container has been deleted or is being deleted; not indexing list '" + def.getName());
                 }
                 else
                 {
@@ -600,83 +599,85 @@ public class ListManager implements SearchService.DocumentProvider
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
 
-        if (null == listTable)
-            return;
+        if (null != listTable)
+        {
+            FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
+            FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, "\"each item as a separate document\" custom indexing template", list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
 
-        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
-        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, "\"each item as a separate document\" custom indexing template", list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
+            FieldKey keyKey = new FieldKey(null, list.getKeyName());
+            FieldKey entityIdKey = new FieldKey(null, "EntityId");
 
-        FieldKey keyKey = new FieldKey(null, list.getKeyName());
-        FieldKey entityIdKey = new FieldKey(null, "EntityId");
+            FieldKey createdKey = new FieldKey(null, "created");
+            FieldKey createdByKey = new FieldKey(null, "createdBy");
+            FieldKey modifiedKey = new FieldKey(null, "modified");
+            FieldKey modifiedByKey = new FieldKey(null, "modifiedBy");
 
-        FieldKey createdKey = new FieldKey(null, "created");
-        FieldKey createdByKey = new FieldKey(null, "createdBy");
-        FieldKey modifiedKey = new FieldKey(null, "modified");
-        FieldKey modifiedByKey = new FieldKey(null, "modifiedBy");
+            // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
+            StringExpression se = listTable.getDetailsURL(null, list.getContainer());
 
-        // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
-        StringExpression se = listTable.getDetailsURL(null, list.getContainer());
+            new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results -> {
+                Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                final Object pk = map.get(keyKey);
+                String entityId = (String) map.get(entityIdKey);
 
-        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results -> {
-            Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-            final Object pk = map.get(keyKey);
-            String entityId = (String)map.get(entityIdKey);
+                String documentId = getDocumentId(list, entityId);
+                Map<String, Object> props = new HashMap<>();
+                props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+                String displayTitle = titleTemplate.eval(map);
+                props.put(SearchService.PROPERTY.title.toString(), displayTitle);
 
-            String documentId = getDocumentId(list, entityId);
-            Map<String, Object> props = new HashMap<>();
-            props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-            String displayTitle = titleTemplate.eval(map);
-            props.put(SearchService.PROPERTY.title.toString(), displayTitle);
+                Date created = null;
+                if (map.get(createdKey) instanceof Date)
+                    created = (Date) map.get(createdKey);
 
-            Date created = null;
-            if (map.get(createdKey) instanceof Date)
-                created = (Date)map.get(createdKey);
+                Date modified = null;
+                if (map.get(modifiedKey) instanceof Date)
+                    modified = (Date) map.get(modifiedKey);
 
-            Date modified = null;
-            if (map.get(modifiedKey) instanceof Date)
-                modified = (Date)map.get(modifiedKey);
+                String body = bodyTemplate.eval(map);
 
-            String body = bodyTemplate.eval(map);
+                ActionURL itemURL;
 
-            ActionURL itemURL;
+                try
+                {
+                    itemURL = new ActionURL(se.eval(map));
+                }
+                catch (Exception e)
+                {
+                    itemURL = list.urlDetails(pk);
+                }
 
-            try
-            {
-                itemURL = new ActionURL(se.eval(map));
-            }
-            catch (Exception e)
-            {
-                itemURL = list.urlDetails(pk);
-            }
+                itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
 
-            itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-
-            SimpleDocumentResource r = new SimpleDocumentResource(
+                SimpleDocumentResource r = new SimpleDocumentResource(
                     new Path(documentId),
                     documentId,
                     list.getContainer().getId(),
                     "text/plain",
                     body,
                     itemURL,
-                    UserManager.getUser((Integer)map.get(createdByKey)), created,
-                    UserManager.getUser((Integer)map.get(modifiedByKey)), modified,
-                    props) {
-                @Override
-                public void setLastIndexed(long ms, long modified)
+                    UserManager.getUser((Integer) map.get(createdByKey)), created,
+                    UserManager.getUser((Integer) map.get(modifiedByKey)), modified,
+                    props)
                 {
-                    ListManager.get().setItemLastIndexed(list, pk, listTable, ms);
-                }
-            };
+                    @Override
+                    public void setLastIndexed(long ms, long modified)
+                    {
+                        ListManager.get().setItemLastIndexed(list, pk, listTable, ms);
+                    }
+                };
 
-            // Add navtrail that includes link to full list grid
-            ActionURL gridURL = list.urlShowData();
-            gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-            NavTree t = new NavTree("list", gridURL);
-            String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-            r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                // Add navtrail that includes link to full list grid
+                ActionURL gridURL = list.urlShowData();
+                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+                NavTree t = new NavTree("list", gridURL);
+                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
-            task.addResource(r, SearchService.PRIORITY.item);
-        });
+                task.addResource(r, SearchService.PRIORITY.item);
+                LOG.debug("List \"" + list + "\": Queued indexing of item with PK = " + pk);
+            });
+        }
     }
 
     /**
@@ -685,25 +686,22 @@ public class ListManager implements SearchService.DocumentProvider
      * @param list containing file attachments
      * @param designChange flag indicating change in design
      */
-    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange, boolean reindex)
+    private void indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange, boolean reindex)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
         if (null == listTable)
-            return 0;
+            return;
 
         // TODO: Why are we checking designChange here?
         //If the index call was not due to a list design change and there are no attachment columns than don't try to index
         if (!designChange && listTable.getColumns().stream().noneMatch(ci -> ci.getPropertyType() == PropertyType.ATTACHMENT))
-            return 0;
+            return;
 
         //If FileAttachmentIndexing is disabled, remove any existing resources from the Index
         if (!list.getFileAttachmentIndex())
         {
-            return 0;
+            return;
         }
-
-        //Instantiate a counter
-        MutableInt count = new MutableInt(0);
 
         //Get common objects & properties
         AttachmentService as = AttachmentService.get();
@@ -752,13 +750,10 @@ public class ListManager implements SearchService.DocumentProvider
 
                     attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
                     task.addResource(attachmentRes, SearchService.PRIORITY.item);
-
-                    count.increment();
+                    LOG.debug("List \"" + list + "\": Queued indexing of attachment \"" + documentName + "\" for item with PK = " + map.get(list.getKeyName()));
                 });
             });
         });
-
-        return count.getValue();
     }
 
     private void indexEntireList(@NotNull IndexTask task, final ListDefinition list, boolean reindex)
@@ -786,8 +781,9 @@ public class ListManager implements SearchService.DocumentProvider
         StringBuilder body = new StringBuilder();
         Map<String, Object> props = new HashMap<>();
 
-        // Use standard title if that setting is chosen or template is null/whitespace
-        String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
+        // Use standard title if template is null/whitespace
+        String templateString = StringUtils.trimToNull(list.getEntireListTitleTemplate());
+        String title = null == templateString ? "List " + list.getName() : templateString;
 
         props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), title);
@@ -859,6 +855,7 @@ public class ListManager implements SearchService.DocumentProvider
         };
 
         task.addResource(r, SearchService.PRIORITY.item);
+        LOG.debug("List \"" + list + "\": Queued indexing of entire list document");
     }
 
     void deleteIndexedList(ListDefinition list)
@@ -918,10 +915,11 @@ public class ListManager implements SearchService.DocumentProvider
     {
         FieldKeyStringExpression template;
         StringBuilder error = new StringBuilder();
+        String templateString = StringUtils.trimToNull(list.getEachItemTitleTemplate());
 
-        if (list.getEachItemTitleSetting() != ListDefinition.TitleSetting.Standard && !StringUtils.isBlank(list.getEachItemTitleTemplate()))
+        if (null != templateString)
         {
-            template = createValidStringExpression(list.getEachItemTitleTemplate(), error);
+            template = createValidStringExpression(templateString, error);
 
             if (null != template)
                 return template;
@@ -1039,6 +1037,7 @@ public class ListManager implements SearchService.DocumentProvider
         SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
                 .append(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
         new SqlExecutor(getListMetadataSchema()).execute(update);
+        LOG.debug("List \"" + list + "\": Set LastIndexed for entire list document");
     }
 
 
@@ -1056,6 +1055,7 @@ public class ListManager implements SearchService.DocumentProvider
                 new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
                         keySelectName + " = ?", new Timestamp(ms), pk);
             }
+            LOG.debug("List \"" + list + "\": Set LastIndexed for item with PK = " + pk);
         }
     }
 

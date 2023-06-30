@@ -399,7 +399,7 @@ public class ListImporter
         }
     }
 
-    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, Collection<ValidatorImporter> validatorImporters, List<String> errors) throws Exception
+    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, Collection<ValidatorImporter> validatorImporters, List<String> errors, Logger log) throws Exception
     {
         final String keyName = listXml.getPkColumnName();
 
@@ -429,14 +429,12 @@ public class ListImporter
             list.setAllowExport(listSettingsXml.getAllowExport());
 
             list.setEachItemIndex(listSettingsXml.getEachItemIndex());
-            list.setEachItemTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEachItemTitleSetting()));
             list.setEachItemTitleTemplate(listSettingsXml.getEachItemTitleTemplate());
             list.setEachItemBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEachItemBodySetting()));
             list.setEachItemBodyTemplate(listSettingsXml.getEachItemBodyTemplate());
 
             list.setEntireListIndex(listSettingsXml.getEntireListIndex());
             list.setEntireListIndexSetting(ListDefinition.IndexSetting.getForValue(listSettingsXml.getEntireListIndexSetting()));
-            list.setEntireListTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEntireListTitleSetting()));
             list.setEntireListTitleTemplate(listSettingsXml.getEntireListTitleTemplate());
             list.setEntireListBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEntireListBodySetting()));
             list.setEntireListBodyTemplate(listSettingsXml.getEntireListBodyTemplate());
@@ -444,6 +442,14 @@ public class ListImporter
             list.setFileAttachmentIndex(listSettingsXml.getFileAttachmentIndex());
             if (listSettingsXml.getCategory() != null)
                 list.setCategory(ListDefinition.Category.valueOf(listSettingsXml.getCategory()));
+
+            // These have been unused for years. Code remnants removed for 23.7, Issue 48182.
+            // TODO: Remove these XSD elements and warnings in 28.7 or before.
+            if (listSettingsXml.isSetEntireListTitleSetting())
+                log.warn("\"entireListTitleSetting\" is no longer supported; remove references to it in lists/settings.xml");
+
+            if (listSettingsXml.isSetEachItemTitleSetting())
+                log.warn("\"eachItemTitleSetting\" is no longer supported; remove references to it in lists/settings.xml");
         }
 
         list.setPreferredListIds(preferredListIds);
@@ -581,7 +587,7 @@ public class ListImporter
                 try
                 {
                     log.info("Recreating list: " + name);
-                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), validatorImporters, errors);
+                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), validatorImporters, errors, log);
                     assert success;
                 }
                 catch (ImportException e)
