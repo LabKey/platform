@@ -18,7 +18,6 @@ package org.labkey.list.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -36,6 +35,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
@@ -972,7 +972,8 @@ public class ListController extends SpringActionController
                 selectedLists.add(pair);
             }
 
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
+            Set<String> dataTypes = PageFlowUtil.set(FolderArchiveDataTypes.LIST_DESIGN, FolderArchiveDataTypes.LIST_DATA);
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, dataTypes, "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
             ctx.setLists(selectedLists);
             ListWriter writer = new ListWriter();
 

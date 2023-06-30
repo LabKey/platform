@@ -68,7 +68,7 @@ public class RoleAssignmentsWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean selectedByDefault(ExportType type)
+        public boolean selectedByDefault(ExportType type, boolean forTemplate)
         {
             return false;
         }

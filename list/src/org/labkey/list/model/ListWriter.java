@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -163,39 +164,47 @@ public class ListWriter
             writeSettings(settings, def);
 
             // Write data
-            Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
-
-            if (null != ctx && ctx.isAlternateIds())
+            if (includeListData(ctx))
             {
-                createAlternateIdColumns(ti, columns, ctx.getContainer());
-            }
+                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
 
-            if (!columns.isEmpty())
-            {
-                List<DisplayColumn> displayColumns = columns
-                        .stream()
-                        .filter(Objects::nonNull)
-                        .map(ListExportDataColumn::new)
-                        .collect(Collectors.toCollection(LinkedList::new));
-
-                // Sort the data rows by PK, #11261
-                Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
-
-                // NOTE: TSVGridWriter generates and closes Results
-                try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
+                if (null != ctx && ctx.isAlternateIds())
                 {
-                    tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                    PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
-                    tsvWriter.write(out);
+                    createAlternateIdColumns(ti, columns, ctx.getContainer());
                 }
 
-                writeAttachments(ti, def, c, listsDir, exportPhiLevel);
+                if (!columns.isEmpty())
+                {
+                    List<DisplayColumn> displayColumns = columns
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .map(ListExportDataColumn::new)
+                            .collect(Collectors.toCollection(LinkedList::new));
+
+                    // Sort the data rows by PK, #11261
+                    Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
+
+                    // NOTE: TSVGridWriter generates and closes Results
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
+                    {
+                        tsvWriter.setApplyFormats(false);
+                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                        PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
+                        tsvWriter.write(out);
+                    }
+
+                    writeAttachments(ti, def, c, listsDir, exportPhiLevel);
+                }
             }
         }
 
         listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
         listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+    }
+
+    private boolean includeListData(FolderExportContext ctx)
+    {
+        return ctx.getDataTypes().contains(FolderArchiveDataTypes.LIST_DATA);
     }
 
     public boolean write(User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception

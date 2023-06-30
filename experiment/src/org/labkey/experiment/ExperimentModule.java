@@ -129,10 +129,12 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.samples.DataClassFolderImporter;
+import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
-import org.labkey.experiment.samples.SampleTypeAndDataClassFolderImporter;
-import org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter;
+import org.labkey.experiment.samples.SampleTypeFolderImporter;
+import org.labkey.experiment.samples.SampleTypeFolderWriter;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
@@ -534,10 +536,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
-            folderRegistry.addFactories(
-                    new SampleTypeAndDataClassFolderWriter.Factory(),
-                    new SampleTypeAndDataClassFolderImporter.Factory()
-            );
+            folderRegistry.addWriterFactory(new SampleTypeFolderWriter.SampleTypeDesignWriter.Factory());
+            folderRegistry.addWriterFactory(new SampleTypeFolderWriter.SampleTypeDataWriter.Factory());
+            folderRegistry.addWriterFactory(new DataClassFolderWriter.DataClassDesignWriter.Factory());
+            folderRegistry.addWriterFactory(new DataClassFolderWriter.DataClassDataWriter.Factory());
+            folderRegistry.addImportFactory(new SampleTypeFolderImporter.Factory());
+            folderRegistry.addImportFactory(new DataClassFolderImporter.Factory());
             folderRegistry.addImportFactory(new SampleStatusFolderImporter.Factory());
         }
 

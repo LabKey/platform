@@ -15,7 +15,9 @@
  */
 package org.labkey.experiment.xar;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
@@ -23,16 +25,19 @@ import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.XarExportContext;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.api.writer.Writer;
 import org.labkey.experiment.XarExporter;
 
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,6 +52,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
     public static final String XAR_DIRECTORY = "xar";
     private static final String XAR_FILE_NAME = "experiments_and_runs.xar";
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
+    private static final String EXPERIMENT_RUNS = "Experiment Runs";
+    private static List<Writer> CHILD_WRITERS = Arrays.asList(new ExperimentRunsWriter());
 
     @Override
     public FolderWriter create()
@@ -78,23 +85,30 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             return false;
         }
 
+        @Override
+        public @NotNull Collection<Writer<?, ?>> getChildren(boolean sort, boolean forTemplate)
+        {
+            List<Writer<?,?>> children = new ArrayList<>();
+
+            for (Writer writer : CHILD_WRITERS)
+            {
+                if (!forTemplate || (forTemplate && writer.includeWithTemplate()))
+                    children.add(writer);
+            }
+            return children;
+        }
+
         private List<ExpRun> getRuns(@Nullable FolderExportContext ctx, Container c)
         {
-            XarExportContext xarCtx = null;
-            if (ctx != null)
-                xarCtx = ctx.getContext(XarExportContext.class);
-
             // Don't include the sample derivation runs; we now have a separate exporter explicitly for sample types.
             // Also don't include recipe protocols; there's a separate folder writer and importer for the recipe module.
             // if an additional context has been furnished, filter out runs not included in this export
-            final XarExportContext fxarCtx = xarCtx;
             List<ExpRun> allRuns = ExperimentService.get().getExpRuns(c, null, null).stream()
                     .filter(
                         run -> !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID)
                                 && !run.getProtocol().getLSID().equals(ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID)
                                 && !"recipe".equalsIgnoreCase(run.getProtocol().getImplementationName())
                                 && !"recipe".equalsIgnoreCase(run.getProtocol().getLSIDNamespacePrefix())
-                            && (fxarCtx == null || fxarCtx.getIncludedAssayRuns().contains(run.getRowId()))
                     )
                     .collect(Collectors.toList());
             // the smJobRuns can make reference to assay designs, so we will put all the SM Task and Protocols at the end to assure
@@ -154,7 +168,8 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
             selection.addProtocolIds(getProtocols(c));
 
-            selection.addRuns(getRuns(ctx, c));
+            if (ctx.getDataTypes().contains(EXPERIMENT_RUNS))
+                selection.addRuns(getRuns(ctx, c));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
@@ -171,6 +186,28 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         public boolean includeWithTemplate()
         {
             return false;
+        }
+    }
+
+    public static class ExperimentRunsWriter implements Writer<Container, FolderExportContext>
+    {
+        @Override
+        public @Nullable String getDataType()
+        {
+            return EXPERIMENT_RUNS;
+        }
+
+        @Override
+        public void write(Container object, FolderExportContext ctx, VirtualFile vf) throws Exception
+        {
+            // noop, serialization occurs in the parent writer and checks the context data types to determine
+            // if the assay runs are serialized.
+        }
+
+        @Override
+        public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+        {
+            return AbstractFolderContext.ExportType.STUDY != type;
         }
     }
 }

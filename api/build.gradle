@@ -583,12 +583,12 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "net.sf.jtidy:jtidy:${jtidyVersion}",
+            "com.github.jtidy:jtidy:${jtidyVersion}",
             "Java Tidy",
-            "SourceForge",
-            "http://jtidy.sourceforge.net/",
+            "JTidy team",
+            "https://github.com/jtidy/jtidy",
             "Custom",
-            "http://www.labkey.org/download/jtidy-LICENSE.txt",
+            "https://github.com/jtidy/jtidy/blob/master/LICENSE.txt",
             "Validating HTML content",
         )
     )
