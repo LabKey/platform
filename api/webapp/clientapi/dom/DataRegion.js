@@ -1529,6 +1529,9 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
+        // no need to re-query for totalRowCount, if async
+        this.skipTotalRowCount = true;
+
         this._userSort = _alterSortString(this, this._userSort, fieldKey, sortDir);
         _setParameter(this, SORT_PREFIX, this._userSort, [SORT_PREFIX, OFFSET_PREFIX]);
     };
@@ -1552,6 +1555,9 @@ if (!LABKEY.DataRegions) {
         if (event.isDefaultPrevented()) {
             return;
         }
+
+        // no need to re-query for totalRowCount, if async
+        this.skipTotalRowCount = true;
 
         this._userSort = _alterSortString(this, this._userSort, fieldKey);
         if (this._userSort.length > 0) {
