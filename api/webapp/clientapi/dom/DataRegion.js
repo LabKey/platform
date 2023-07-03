@@ -1826,6 +1826,9 @@ if (!LABKEY.DataRegions) {
             return;
         }
 
+        // no need to re-query for totalRowCount, if async
+        this.skipTotalRowCount = true;
+
         // clear sibling parameters
         this.showRows = undefined;
 
@@ -1853,6 +1856,9 @@ if (!LABKEY.DataRegions) {
         if (event.isDefaultPrevented()) {
             return;
         }
+
+        // no need to re-query for totalRowCount, if async
+        this.skipTotalRowCount = true;
 
         // clear sibling parameters
         this.showRows = undefined;
@@ -3484,6 +3490,9 @@ if (!LABKEY.DataRegions) {
     };
 
     var _showRows = function(region, showRowsEnum) {
+        // no need to re-query for totalRowCount, if async
+        this.skipTotalRowCount = true;
+
         // clear sibling parameters, could we do this with events?
         this.maxRows = undefined;
         this.offset = 0;
@@ -3660,9 +3669,10 @@ if (!LABKEY.DataRegions) {
             scope: region
         });
 
-        if (region.async && region.showPaginationCountAsync) {
+        if (region.async && region.showPaginationCountAsync && !region.skipTotalRowCount) {
             _loadAsyncTotalRowCount(region, params, jsonData);
         }
+        region.skipTotalRowCount = false;
     };
 
     var _loadAsyncTotalRowCount = function(region, params, jsonData) {
@@ -3685,22 +3695,21 @@ if (!LABKEY.DataRegions) {
                         region.totalRows = json.rowCount;
                         region.loadingTotalRows = false;
 
-                        // update the pagination button disabled state for 'Show Last' and 'Show All' since they include the totalRows count in their calc
-                        var showLast = _showLastEnabled(region);
-                        if (showLast) {
-                            $('#' + region.showLastID).parent('li').removeClass('disabled');
-                            $('#' + region.showAllID).parent('li').removeClass('disabled');
-                        }
+                    // update the pagination button disabled state for 'Show Last' and 'Show All' since they include the totalRows count in their calc
+                    var showLast = _showLastEnabled(region);
+                    if (showLast) {
+                        $('#' + region.showLastID).parent('li').removeClass('disabled');
+                        $('#' + region.showAllID).parent('li').removeClass('disabled');
                     }
-                    _getBarSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
-                },
-                failure: function(error) {
-                    console.error(error);
-                    region.loadingTotalRows = false;
-                    _getBarSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
                 }
-            });
-        // }, 2_000);
+                _getBarSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
+            },
+            failure: function(error) {
+                console.error(error);
+                region.loadingTotalRows = false;
+                _getBarSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
+            }
+        });
     };
 
     var _getAsyncBody = function(region, params) {
