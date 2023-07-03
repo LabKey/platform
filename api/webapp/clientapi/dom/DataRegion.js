@@ -3675,25 +3675,30 @@ if (!LABKEY.DataRegions) {
         region.skipTotalRowCount = false;
     };
 
+    var totalRowCountRequest;
     var _loadAsyncTotalRowCount = function(region, params, jsonData) {
+        // if there is a previous request pending, abort it before starting a new one
+        if (totalRowCountRequest !== undefined) {
+            totalRowCountRequest.abort();
+        }
+
         region.totalRows = undefined;
         region.loadingTotalRows = true;
 
-        // setTimeout(() => {
-            LABKEY.Query.selectRows({
-                ...region.getQueryConfig(),
-                containerPath: region.containerPath,
-                filterArray: LABKEY.Filter.getFiltersFromParameters({ ...params, ...jsonData.filters }, params.dataRegionName),
-                sort: undefined,
-                maxRows: 1,
-                offset: 0,
-                includeDetailsColumn: false,
-                includeUpdateColumn: false,
-                includeTotalCount: true,
-                success: function(json) {
-                    if (json !== undefined && json.rowCount !== undefined) {
-                        region.totalRows = json.rowCount;
-                        region.loadingTotalRows = false;
+        totalRowCountRequest = LABKEY.Query.selectRows({
+            ...region.getQueryConfig(),
+            containerPath: region.containerPath,
+            filterArray: LABKEY.Filter.getFiltersFromParameters({ ...params, ...jsonData.filters }, params.dataRegionName),
+            sort: undefined,
+            maxRows: 1,
+            offset: 0,
+            includeDetailsColumn: false,
+            includeUpdateColumn: false,
+            includeTotalCount: true,
+            success: function(json) {
+                if (json !== undefined && json.rowCount !== undefined) {
+                    region.totalRows = json.rowCount;
+                    region.loadingTotalRows = false;
 
                     // update the pagination button disabled state for 'Show Last' and 'Show All' since they include the totalRows count in their calc
                     var showLast = _showLastEnabled(region);
