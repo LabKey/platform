@@ -62,9 +62,10 @@ public class LinkReport extends BaseRedirectReport
         {
             return ImageUtil.webThumbnail(url);
         }
-        catch (UnknownHostException uhe)
+        catch (UnknownHostException | ClassCastException e)
         {
-            LogManager.getLogger(LinkReport.class).warn("Error rendering link report thumbnail: " + uhe.getMessage());
+            // ClassCastException is most likely a rendering error in flying saucer
+            LogManager.getLogger(LinkReport.class).warn("Error rendering link report thumbnail: " + e.getMessage());
         }
         catch (Exception e)
         {
