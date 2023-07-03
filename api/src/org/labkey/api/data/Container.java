@@ -93,6 +93,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 /**
@@ -1694,7 +1695,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     /**
-     * Returns the subfolder count of the project container, if product projects feature is enabled in project
+     * Returns true if produt projects feature is enabled and the subfolder count of the project container is > 0
      */
     public boolean hasProductProjects()
     {
@@ -1708,6 +1709,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         // need to exclude the notebook folders in particular here
         return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
+    }
+
+    public List<Container> getProductProjects()
+    {
+        if (!isProductProjectsEnabled())
+            return Collections.singletonList(this);
+
+        Container project = getProject();
+        if (project == null)
+            return Collections.emptyList();
+
+        return project.getChildren().stream().filter(c -> c.getContainerType().isInFolderNav()).collect(Collectors.toList());
     }
 
     public ContainerFilter getProductProjectsDataContainerFilter(User user)
