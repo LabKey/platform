@@ -3693,6 +3693,7 @@ if (!LABKEY.DataRegions) {
 
         totalRowCountRequest = LABKEY.Query.selectRows({
             ...region.getQueryConfig(),
+            method: 'POST',
             containerPath: region.containerPath,
             filterArray: LABKEY.Filter.getFiltersFromParameters({ ...params, ...jsonData.filters }, params.dataRegionName),
             sort: undefined,
