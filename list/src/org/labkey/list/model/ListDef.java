@@ -25,11 +25,11 @@ import org.labkey.api.exp.list.ListDefinition.BodySetting;
 import org.labkey.api.exp.list.ListDefinition.Category;
 import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
 import org.labkey.api.exp.list.ListDefinition.IndexSetting;
-import org.labkey.api.exp.list.ListDefinition.TitleSetting;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class ListDef extends Entity implements Cloneable, ListIndexingSettings
 {
@@ -50,13 +50,11 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
 
     protected boolean _entireListIndex = false;
     protected IndexSetting _entireListIndexSetting = IndexSetting.MetaData;
-    protected TitleSetting _entireListTitleSetting = TitleSetting.Standard;
     protected String _entireListTitleTemplate = null;
     protected BodySetting _entireListBodySetting = BodySetting.TextOnly;
     protected String _entireListBodyTemplate = null;
 
     protected boolean _eachItemIndex = false;
-    protected TitleSetting _eachItemTitleSetting = TitleSetting.Standard;
     protected String _eachItemTitleTemplate = null;
     protected BodySetting _eachItemBodySetting = BodySetting.TextOnly;
     protected String _eachItemBodyTemplate = null;
@@ -150,18 +148,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _entireListIndexSetting;
     }
 
-    public int getEntireListTitleSetting()
-    {
-        return _entireListTitleSetting.getValue();
-    }
-
-    public TitleSetting getEntireListTitleSettingEnum()
-    {
-        return _entireListTitleSetting;
-    }
-
-    @Override
-    public String getEntireListTitleTemplate()
+    public @Nullable String getEntireListTitleTemplate()
     {
         return _entireListTitleTemplate;
     }
@@ -189,18 +176,7 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         return _eachItemIndex;
     }
 
-    public int getEachItemTitleSetting()
-    {
-        return _eachItemTitleSetting.getValue();
-    }
-
-    public TitleSetting getEachItemTitleSettingEnum()
-    {
-        return _eachItemTitleSetting;
-    }
-
-    @Override
-    public String getEachItemTitleTemplate()
+    public @Nullable String getEachItemTitleTemplate()
     {
         return _eachItemTitleTemplate;
     }
@@ -260,12 +236,10 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         to._allowExport = _allowExport;
         to._entireListIndex = _entireListIndex;
         to._entireListIndexSetting = _entireListIndexSetting;
-        to._entireListTitleSetting = _entireListTitleSetting;
         to._entireListTitleTemplate = _entireListTitleTemplate;
         to._entireListBodySetting = _entireListBodySetting;
         to._entireListBodyTemplate = _entireListBodyTemplate;
         to._eachItemIndex = _eachItemIndex;
-        to._eachItemTitleSetting = _eachItemTitleSetting;
         to._eachItemTitleTemplate = _eachItemTitleTemplate;
         to._eachItemBodySetting = _eachItemBodySetting;
         to._eachItemBodyTemplate = _eachItemBodyTemplate;
@@ -288,29 +262,21 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         if (_entireListIndex != listDef._entireListIndex) return false;
         if (_eachItemIndex != listDef._eachItemIndex) return false;
         if (_fileAttachmentIndex != listDef._fileAttachmentIndex) return false;
-        if (_name != null ? !_name.equals(listDef._name) : listDef._name != null) return false;
-        if (_keyName != null ? !_keyName.equals(listDef._keyName) : listDef._keyName != null) return false;
-        if (_keyType != null ? !_keyType.equals(listDef._keyType) : listDef._keyType != null) return false;
-        if (_titleColumn != null ? !_titleColumn.equals(listDef._titleColumn) : listDef._titleColumn != null)
-            return false;
-        if (_description != null ? !_description.equals(listDef._description) : listDef._description != null)
-            return false;
-        if (_lastIndexed != null ? !_lastIndexed.equals(listDef._lastIndexed) : listDef._lastIndexed != null)
-            return false;
+        if (!Objects.equals(_name, listDef._name)) return false;
+        if (!Objects.equals(_keyName, listDef._keyName)) return false;
+        if (!Objects.equals(_keyType, listDef._keyType)) return false;
+        if (!Objects.equals(_titleColumn, listDef._titleColumn)) return false;
+        if (!Objects.equals(_description, listDef._description)) return false;
+        if (!Objects.equals(_lastIndexed, listDef._lastIndexed)) return false;
         if (_category != listDef._category) return false;
         if (_discussionSetting != listDef._discussionSetting) return false;
         if (_entireListIndexSetting != listDef._entireListIndexSetting) return false;
-        if (_entireListTitleSetting != listDef._entireListTitleSetting) return false;
-        if (_entireListTitleTemplate != null ? !_entireListTitleTemplate.equals(listDef._entireListTitleTemplate) : listDef._entireListTitleTemplate != null)
-            return false;
+        if (!Objects.equals(_entireListTitleTemplate, listDef._entireListTitleTemplate)) return false;
         if (_entireListBodySetting != listDef._entireListBodySetting) return false;
-        if (_entireListBodyTemplate != null ? !_entireListBodyTemplate.equals(listDef._entireListBodyTemplate) : listDef._entireListBodyTemplate != null)
-            return false;
-        if (_eachItemTitleSetting != listDef._eachItemTitleSetting) return false;
-        if (_eachItemTitleTemplate != null ? !_eachItemTitleTemplate.equals(listDef._eachItemTitleTemplate) : listDef._eachItemTitleTemplate != null)
-            return false;
+        if (!Objects.equals(_entireListBodyTemplate, listDef._entireListBodyTemplate)) return false;
+        if (!Objects.equals(_eachItemTitleTemplate, listDef._eachItemTitleTemplate)) return false;
         if (_eachItemBodySetting != listDef._eachItemBodySetting) return false;
-        return _eachItemBodyTemplate != null ? _eachItemBodyTemplate.equals(listDef._eachItemBodyTemplate) : listDef._eachItemBodyTemplate == null;
+        return Objects.equals(_eachItemBodyTemplate, listDef._eachItemBodyTemplate);
     }
 
 
@@ -332,12 +298,10 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         result = 31 * result + (_allowExport ? 1 : 0);
         result = 31 * result + (_entireListIndex ? 1 : 0);
         result = 31 * result + (_entireListIndexSetting != null ? _entireListIndexSetting.hashCode() : 0);
-        result = 31 * result + (_entireListTitleSetting != null ? _entireListTitleSetting.hashCode() : 0);
         result = 31 * result + (_entireListTitleTemplate != null ? _entireListTitleTemplate.hashCode() : 0);
         result = 31 * result + (_entireListBodySetting != null ? _entireListBodySetting.hashCode() : 0);
         result = 31 * result + (_entireListBodyTemplate != null ? _entireListBodyTemplate.hashCode() : 0);
         result = 31 * result + (_eachItemIndex ? 1 : 0);
-        result = 31 * result + (_eachItemTitleSetting != null ? _eachItemTitleSetting.hashCode() : 0);
         result = 31 * result + (_eachItemTitleTemplate != null ? _eachItemTitleTemplate.hashCode() : 0);
         result = 31 * result + (_eachItemBodySetting != null ? _eachItemBodySetting.hashCode() : 0);
         result = 31 * result + (_eachItemBodyTemplate != null ? _eachItemBodyTemplate.hashCode() : 0);
@@ -448,14 +412,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         {
             _entireListIndexSetting = setting;
         }
-        public void setEntireListTitleSetting(int settingInt)
-        {
-            _entireListTitleSetting = TitleSetting.getForValue(settingInt);
-        }
-        public void setEntireListTitleSettingEnum(TitleSetting setting)
-        {
-            _entireListTitleSetting = setting;
-        }
         public void setEntireListTitleTemplate(String template)
         {
             _entireListTitleTemplate = template;
@@ -475,14 +431,6 @@ public class ListDef extends Entity implements Cloneable, ListIndexingSettings
         public void setEachItemIndex(boolean index)
         {
             _eachItemIndex = index;
-        }
-        public void setEachItemTitleSetting(int settingInt)
-        {
-            _eachItemTitleSetting = TitleSetting.getForValue(settingInt);
-        }
-        public void setEachItemTitleSettingEnum(TitleSetting setting)
-        {
-            _eachItemTitleSetting = setting;
         }
         public void setEachItemTitleTemplate(String template)
         {

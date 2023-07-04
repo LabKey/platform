@@ -271,25 +271,13 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public TitleSetting getEntireListTitleSetting()
-    {
-        return _def.getEntireListTitleSettingEnum();
-    }
-
-    @Override
-    public void setEntireListTitleSetting(TitleSetting setting)
-    {
-        edit().setEntireListTitleSettingEnum(setting);
-    }
-
-    @Override
-    public String getEntireListTitleTemplate()
+    public @Nullable String getEntireListTitleTemplate()
     {
         return _def.getEntireListTitleTemplate();
     }
 
     @Override
-    public void setEntireListTitleTemplate(String template)
+    public void setEntireListTitleTemplate(@Nullable String template)
     {
         edit().setEntireListTitleTemplate(template);
     }
@@ -331,25 +319,13 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public TitleSetting getEachItemTitleSetting()
-    {
-        return _def.getEachItemTitleSettingEnum();
-    }
-
-    @Override
-    public void setEachItemTitleSetting(TitleSetting setting)
-    {
-        edit().setEachItemTitleSettingEnum(setting);
-    }
-
-    @Override
-    public String getEachItemTitleTemplate()
+    public @Nullable String getEachItemTitleTemplate()
     {
         return _def.getEachItemTitleTemplate();
     }
 
     @Override
-    public void setEachItemTitleTemplate(String template)
+    public void setEachItemTitleTemplate(@Nullable String template)
     {
         edit().setEachItemTitleTemplate(template);
     }

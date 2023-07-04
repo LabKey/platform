@@ -21,6 +21,12 @@ public class SampleTypeDatasetData implements InternalStudyWriter
     }
 
     @Override
+    public boolean includeWithTemplate()
+    {
+        return false;
+    }
+
+    @Override
     public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
     {
         return !forTemplate;
