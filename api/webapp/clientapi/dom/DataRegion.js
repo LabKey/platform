@@ -438,6 +438,11 @@ if (!LABKEY.DataRegions) {
             settings = $.extend({}, config);
         }
 
+        // if showPaginationCountAsync is set to true, make sure that showPaginationCount is false
+        if (settings.showPaginationCountAsync && settings.showPaginationCount) {
+            settings.showPaginationCount = false;
+        }
+
         // if 'filters' is not specified and 'filterArray' is, use 'filterArray'
         if (!LABKEY.Utils.isArray(settings.filters) && LABKEY.Utils.isArray(config.filterArray)) {
             settings.filters = config.filterArray;
@@ -1652,9 +1657,9 @@ if (!LABKEY.DataRegions) {
                     ct.append(elems.join(''));
 
                     //bind functions to menu items
-                    $('#' + this.showFirstID).click(_firstPage.bind(this));
-                    $('#' + this.showLastID).click(_lastPage.bind(this));
-                    $('#' + this.showAllID).click(_showRows.bind(this, this, 'all'));
+                    _getShowFirstSelector(this).click(_firstPage.bind(this));
+                    _getShowLastSelector(this).click(_lastPage.bind(this));
+                    _getShowAllSelector(this).click(_showRows.bind(this, this, 'all'));
 
                     for (var key in offsetIds) {
                         if (offsetIds.hasOwnProperty(key)) {
@@ -3162,6 +3167,18 @@ if (!LABKEY.DataRegions) {
         return $('#' + region.domId + '-section-' + dir);
     };
 
+    var _getShowFirstSelector = function(region) {
+        return $('#' + region.showFirstID);
+    };
+
+    var _getShowLastSelector = function(region) {
+        return $('#' + region.showLastID);
+    };
+
+    var _getShowAllSelector = function(region) {
+        return $('#' + region.showAllID);
+    };
+
     // Formerly, LABKEY.DataRegion.getParamValPairsFromString / LABKEY.DataRegion.getParamValPairs
     var _getParameters = function(region, skipPrefixSet /* optional */) {
 
@@ -3710,16 +3727,17 @@ if (!LABKEY.DataRegions) {
                     // update the pagination button disabled state for 'Show Last' and 'Show All' since they include the totalRows count in their calc
                     var showLast = _showLastEnabled(region);
                     if (showLast) {
-                        $('#' + region.showLastID).parent('li').removeClass('disabled');
-                        $('#' + region.showAllID).parent('li').removeClass('disabled');
+                        _getShowLastSelector(region).parent('li').removeClass('disabled');
+                        _getShowAllSelector(region).parent('li').removeClass('disabled');
                     }
                 }
-                _getBarSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
+                // note: use _getFormSelector instead of _getBarSelector so that we get the floating header as well
+                _getFormSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
             },
             failure: function(error) {
                 console.error(error);
                 region.loadingTotalRows = false;
-                _getBarSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
+                _getFormSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
             }
         });
     };
@@ -4691,6 +4709,7 @@ if (!LABKEY.DataRegions) {
      *  Both 'showDeleteButton' and 'showExportButtons' must be set to false for the 'showRecordSelectors = false' setting to hide the checkboxes.
      * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
      * @param {boolean} [config.showPaginationCount] Show the total count of rows in the pagination information text (default true).
+     * @param {boolean} [config.showPaginationCountAsync] Show the total count of rows in the pagination information text, but query for it asynchronously so that the grid data can load initially without it (default false).
      * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
      * @param {boolean} [config.suppressRenderErrors] If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
      * @param {Object} [config.buttonBar] Button bar configuration. This object may contain any of the following properties:
