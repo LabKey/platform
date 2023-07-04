@@ -376,7 +376,7 @@ if (!LABKEY.DataRegions) {
 
                 showPagination: undefined,
 
-                showPaginationCount: true,
+                showPaginationCount: undefined,
 
                 showPaginationCountAsync: false,
 
