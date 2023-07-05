@@ -269,33 +269,6 @@ public interface ListDefinition extends Comparable<ListDefinition>
         abstract public boolean accept(ColumnInfo column);
     }
 
-    enum TitleSetting
-    {
-        Standard(0),
-        Custom(1);
-
-        private final int _value;
-
-        TitleSetting(int value)
-        {
-            _value = value;
-        }
-
-        public int getValue()
-        {
-            return _value;
-        }
-
-        public static TitleSetting getForValue(int value)
-        {
-            for (TitleSetting s : TitleSetting.values())
-                if (s.getValue() == value)
-                    return s;
-
-            return null;
-        }
-    }
-
     int getListId();
     void setPreferredListIds(Collection<Integer> preferredListIds); // Attempts to use this list IDs when inserting
     Container getContainer();
@@ -382,11 +355,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     IndexSetting getEntireListIndexSetting();
     void setEntireListIndexSetting(IndexSetting setting);
 
-    TitleSetting getEntireListTitleSetting();
-    void setEntireListTitleSetting(TitleSetting setting);
-
-    String getEntireListTitleTemplate();
-    void setEntireListTitleTemplate(String template);
+    @Nullable String getEntireListTitleTemplate();
+    void setEntireListTitleTemplate(@Nullable String template);
 
     BodySetting getEntireListBodySetting();
     void setEntireListBodySetting(BodySetting setting);
@@ -397,11 +367,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     boolean getEachItemIndex();
     void setEachItemIndex(boolean index);
 
-    TitleSetting getEachItemTitleSetting();
-    void setEachItemTitleSetting(TitleSetting setting);
-
-    String getEachItemTitleTemplate();
-    void setEachItemTitleTemplate(String template);
+    @Nullable String getEachItemTitleTemplate();
+    void setEachItemTitleTemplate(@Nullable String template);
 
     BodySetting getEachItemBodySetting();
     void setEachItemBodySetting(BodySetting setting);

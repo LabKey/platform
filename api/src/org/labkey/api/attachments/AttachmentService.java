@@ -127,9 +127,9 @@ public interface AttachmentService
 
     void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
 
-    void deleteAttachmentIndexes(List<String> parentIds);
+    void deleteIndexedAttachments(List<String> parentIds);
 
-    void deleteAttachmentIndex(AttachmentParent parent);
+    void deleteIndexedAttachments(AttachmentParent parent);
 
     void registerAttachmentType(AttachmentType type);
 
@@ -139,7 +139,7 @@ public interface AttachmentService
 
     class DuplicateFilenameException extends IOException
     {
-        private List<String> _errors = new ArrayList<>();
+        private final List<String> _errors = new ArrayList<>();
 
         public DuplicateFilenameException(Collection<String> filenames)
         {
