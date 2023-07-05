@@ -18,18 +18,18 @@ package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
 import org.labkey.assay.query.AssayDbSchema;
 
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,10 +37,16 @@ import java.util.Set;
  * Date: Nov 1, 2006
  * Time: 4:33:11 PM
  */
-public class PlateSchema extends UserSchema
+public class PlateSchema extends SimpleUserSchema
 {
     public static final String SCHEMA_NAME = "plate";
     public static final String SCHEMA_DESCR = "Contains data about defined plates";
+
+    private static final Set<String> AVAILABLE_TABLES = new CaseInsensitiveTreeSet(List.of(
+            PlateTable.NAME,
+            WellGroupTable.NAME,
+            WellTable.NAME
+    ));
 
     static public class Provider extends DefaultSchema.SchemaProvider
     {
@@ -64,33 +70,38 @@ public class PlateSchema extends UserSchema
 
     public PlateSchema(User user, Container container)
     {
-        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AssayDbSchema.getInstance().getSchema());
+        super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AssayDbSchema.getInstance().getSchema(),
+                null, AVAILABLE_TABLES, null);
     }
 
     @Override
     public Set<String> getTableNames()
     {
-        Set<String> tableSet = new HashSet<>();
-        tableSet.add("Plate");
-        tableSet.add("WellGroup");
-        for (WellGroup.Type type : WellGroup.Type.values())
-            tableSet.add("WellGroup_" + type.name());
-        return tableSet;
+        return AVAILABLE_TABLES;
     }
 
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        if (name.equals("Plate"))
-            return new PlateTable(this, cf);
-        else if (name.equals("WellGroup"))
-            return new WellGroupTable(this, cf, null);
-        else if (name.startsWith("WellGroup_"))
-        {
-            String typeName = name.substring("WellGroup_".length());
-            return new WellGroupTable(this, cf, WellGroup.Type.valueOf(typeName));
-        }
+        if (name.equalsIgnoreCase(PlateTable.NAME))
+            return new PlateTable(this, cf).init();
+        if (name.equalsIgnoreCase(WellGroupTable.NAME))
+            return new WellGroupTable(this, cf).init();
+        if (name.equalsIgnoreCase(WellTable.NAME))
+            return new WellTable(this, cf).init();
 
         return null;
+    }
+
+    static public void register(Module module)
+    {
+        DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
+        {
+            @Override
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
+            {
+                return new PlateSchema(schema.getUser(), schema.getContainer());
+            }
+        });
     }
 }
