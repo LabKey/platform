@@ -477,6 +477,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setLabel("Available Aliquot Amount");
                 return ret;
             }
+            case AvailableAliquotCount ->
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AvailableAliquotCount"));
+                ret.setLabel("Available Aliquot Count");
+                return ret;
+            }
             case AliquotUnit ->
             {
                 var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
