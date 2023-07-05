@@ -3716,13 +3716,16 @@ if (!LABKEY.DataRegions) {
             sort: undefined,
             maxRows: 1,
             offset: 0,
+            includeMetadata: false,
             includeDetailsColumn: false,
             includeUpdateColumn: false,
             includeTotalCount: true,
             success: function(json) {
+                totalRowCountRequest = undefined;
+                region.loadingTotalRows = false;
+
                 if (json !== undefined && json.rowCount !== undefined) {
                     region.totalRows = json.rowCount;
-                    region.loadingTotalRows = false;
 
                     // update the pagination button disabled state for 'Show Last' and 'Show All' since they include the totalRows count in their calc
                     var showLast = _showLastEnabled(region);
@@ -3734,10 +3737,14 @@ if (!LABKEY.DataRegions) {
                 // note: use _getFormSelector instead of _getBarSelector so that we get the floating header as well
                 _getFormSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
             },
-            failure: function(error) {
-                console.error(error);
-                region.loadingTotalRows = false;
-                _getFormSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
+            failure: function(error, request) {
+                var aborted = request.status === 0;
+                if (!aborted) {
+                    console.error(error);
+                    totalRowCountRequest = undefined;
+                    region.loadingTotalRows = false;
+                    _getFormSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
+                }
             }
         });
     };
