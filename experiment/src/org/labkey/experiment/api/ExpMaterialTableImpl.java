@@ -767,7 +767,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.AliquotCount);
         addColumn(Column.AliquotVolume);
         addColumn(Column.AliquotUnit);
-        addAvailableAliquotCountColumn();
+        addColumn(Column.AvailableAliquotCount);
         addColumn(Column.AvailableAliquotVolume);
 
         addColumn(Column.StoredAmount);
@@ -877,52 +877,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
         type = type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
         return type.create(getUserSchema());
-    }
-
-    private void addAvailableAliquotCountColumn()
-    {
-        // SampleAvailableAliquotCount query is defined in experiment module, needs experiment enabled to add this column
-        Module expModule = ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME);
-        if (!getContainer().getActiveModules().contains(expModule))
-            return;
-
-        FieldKey availableAliquotsKey = FieldKey.fromParts("AvailableAliquotCount");
-        SQLFragment availableAliquots = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$AvailableAliquotCountJoin$.AvailableAliquotsCount");
-        ExprColumn availableAliquotsColumnInfo = new ExprColumn(this, availableAliquotsKey, availableAliquots, JdbcType.INTEGER) {
-
-            @Override
-            public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-            {
-                String tableAlias = parentAlias + "$AvailableAliquotCountJoin$";
-                if (map.containsKey(tableAlias))
-                    return;
-
-                UserSchema schema = getUserSchema();
-                TableInfo tableInfo = schema.getCachedLookupTableInfo(ExpMaterialTableImpl.class.getName() + "# $AvailableAliquotCountJoin$", () ->
-                {
-                    QuerySchema expSchema = schema.getDefaultSchema().getSchema("exp");
-                    return expSchema.getTable("SampleAvailableAliquotCount");
-                });
-
-                if (tableInfo == null)
-                    return;
-
-                SQLFragment joinSql = new SQLFragment();
-                joinSql.append(" LEFT OUTER JOIN ").append(tableInfo.getFromSQL(tableAlias)
-                        .append(" ON ").append(tableAlias).append(".lsid = ").append(parentAlias).append(".lsid"));
-                map.put(tableAlias, joinSql);
-
-                super.declareJoins(parentAlias, map);
-            }
-        };
-        availableAliquotsColumnInfo.setLabel("Available Aliquot Count");
-        availableAliquotsColumnInfo.setDescription("The number of aliquots with 'Available' status");
-        availableAliquotsColumnInfo.setUserEditable(false);
-        availableAliquotsColumnInfo.setReadOnly(true);
-        availableAliquotsColumnInfo.setShownInDetailsView(false);
-        availableAliquotsColumnInfo.setShownInInsertView(false);
-        availableAliquotsColumnInfo.setShownInUpdateView(false);
-        addColumn(availableAliquotsColumnInfo);
     }
 
     @Override

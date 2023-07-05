@@ -510,18 +510,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new CaseInsensitiveHashSet(fields);
     }
 
-    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Integer> availableStatus, Integer oldStatus, Integer newStatus)
+    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Integer> availableStatuses, Integer oldStatus, Integer newStatus)
     {
-        if (availableStatus == null || availableStatus.isEmpty())
+        if (availableStatuses == null || availableStatuses.isEmpty())
             return false;
 
         if (oldStatus == newStatus)
             return false;
 
-        if (availableStatus.contains(oldStatus) && !availableStatus.contains(newStatus))
+        if (availableStatuses.contains(oldStatus) && !availableStatuses.contains(newStatus))
             return true;
 
-        if (availableStatus.contains(newStatus) && !availableStatus.contains(oldStatus))
+        if (availableStatuses.contains(newStatus) && !availableStatuses.contains(oldStatus))
             return true;
 
         return false;

@@ -228,7 +228,7 @@ public interface SampleTypeService
 
     int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
 
-    int recomputeSampleTypeVolumeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
+    int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
 
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 }
