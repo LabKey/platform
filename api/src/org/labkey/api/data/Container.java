@@ -1695,7 +1695,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     /**
-     * Returns true if produt projects feature is enabled and the subfolder count of the project container is > 0
+     * Returns true if product projects feature is enabled and the subfolder count of the project container is > 0
      */
     public boolean hasProductProjects()
     {
@@ -1714,7 +1714,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public List<Container> getProductProjects()
     {
         if (!isProductProjectsEnabled())
-            return Collections.singletonList(this);
+            return Collections.emptyList();
 
         Container project = getProject();
         if (project == null)
