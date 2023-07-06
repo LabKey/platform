@@ -193,7 +193,7 @@ public class ListImporter
                 {
                     // four cases to handle
                     // delete rows that are not in import (true/false == !useMerge)
-                    // use data-diffing import strategery (true/false == DataIntegrationService is available)
+                    // use data-diffing import strategy (true/false == DataIntegrationService is available)
 
                     boolean deleteFromTarget = !_importContext.useMerge();
                     boolean tryDataDiffing = !supportAI && null != DataIntegrationService.get();
@@ -443,13 +443,13 @@ public class ListImporter
             if (listSettingsXml.getCategory() != null)
                 list.setCategory(ListDefinition.Category.valueOf(listSettingsXml.getCategory()));
 
-            // These have been unused for years. Code remnants removed for 23.7, Issue 48182.
-            // TODO: Remove these XSD elements and warnings in 28.7 or before.
+            // These settings have been ignored for years. Code remnants were removed for 23.7, Issue 48182.
+            // TODO: Remove these XSD elements and warnings in 25.7 or before.
             if (listSettingsXml.isSetEntireListTitleSetting())
-                log.warn("\"entireListTitleSetting\" is no longer supported; remove references to it in lists/settings.xml");
+                log.warn("List setting \"entireListTitleSetting\" is no longer supported; remove references to it in lists/settings.xml.");
 
             if (listSettingsXml.isSetEachItemTitleSetting())
-                log.warn("\"eachItemTitleSetting\" is no longer supported; remove references to it in lists/settings.xml");
+                log.warn("List setting \"eachItemTitleSetting\" is no longer supported; remove references to it in lists/settings.xml.");
         }
 
         list.setPreferredListIds(preferredListIds);
@@ -519,11 +519,9 @@ public class ListImporter
             XmlObject listSettingsXml = listsDir.getXmlBean(ListWriter.SETTINGS_FILENAME);
 
             // Settings file is optional
-            if (listSettingsXml instanceof ListsDocument)
+            if (listSettingsXml instanceof ListsDocument listSettingsDoc)
             {
-                ListsDocument listSettingsDoc = (ListsDocument)listSettingsXml;
                 XmlBeansUtil.validateXmlDocument(listSettingsDoc, ListWriter.SETTINGS_FILENAME);
-
                 ListsDocument.Lists.List[] listArray = listSettingsDoc.getLists().getListArray();
 
                 // Create a name->list setting map
