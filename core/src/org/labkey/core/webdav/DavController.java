@@ -5225,6 +5225,7 @@ public class DavController extends SpringActionController
         return WebdavStatus.SC_OK;
     }
 
+    private static final int BUFFER_SIZE = 8 * 1024 * 1024;
 
     protected void copy(InputStream istream, OutputStream ostream) throws IOException
     {
@@ -5242,7 +5243,16 @@ public class DavController extends SpringActionController
                 inChannel = Channels.newChannel(istream);
             }
 
-            ByteBuffer buffer = ByteBuffer.allocateDirect(64 * 1024);
+            ByteBuffer buffer;
+            if (inChannel instanceof FileChannel fileInChannel)
+            {
+                buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, 0, BUFFER_SIZE);
+            }
+            else
+            {
+                buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+            }
+
             while (inChannel.read(buffer) != -1)
             {
                 buffer.flip();
