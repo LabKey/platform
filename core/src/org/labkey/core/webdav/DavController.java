@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.fileupload.InvalidFileNameException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Level;
@@ -67,7 +68,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.*;
@@ -144,8 +147,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
@@ -192,6 +199,7 @@ import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
  */
 public class DavController extends SpringActionController
 {
+    public static final String EXPERIMENTAL_STAGE_GETS_AS_TEMP_FILE = "StageGetsAsTempFile";
     private static final Logger _log = LogHelper.getLogger(DavController.class, "WebDAV request handling");
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
 
@@ -873,7 +881,7 @@ public class DavController extends SpringActionController
                 WebdavResource welcome = welcomePage(getResourcePath());
                 if (null == welcome)
                     return notFound(resource.getPath());
-                if (null != welcome && welcome.isFile())
+                if (welcome.isFile())
                     resource = welcome;
                 else
                     return notFound(resource.getPath());
@@ -5030,7 +5038,7 @@ public class DavController extends SpringActionController
             return notFound(resource.getPath());
 
         // Parse range specifier
-        List ranges = parseRange(resource);
+        List<DavController.Range> ranges = parseRange(resource);
 
         // ETag header
         // NOTE it is better to use an older etag and newer content, than vice-versa
@@ -5141,11 +5149,9 @@ public class DavController extends SpringActionController
                 }
 
                 HttpServletRequest request = getRequest();
-                if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+                if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support") && false)
                 {
                     String absolutePath = file.toFile().getAbsolutePath();     // TODO: can this code be used for cloud?
-                    if (null == absolutePath)
-                        _log.warn("Failed to get absolute path for '" + FileUtil.getFileName(file));
                     long length  = Files.size(file);
                     request.setAttribute("org.apache.tomcat.sendfile.filename", absolutePath);
                     request.setAttribute("org.apache.tomcat.sendfile.start", Long.valueOf(0L));
@@ -5175,7 +5181,9 @@ public class DavController extends SpringActionController
 
                     InputStream is = getResourceInputStream(gz==null?resource:gz,getUser());
                     if (ostream != null)
+                    {
                         copy(is, ostream);
+                    }
                     else if (writer != null)
                         copy(is, writer);
                 }
@@ -5220,17 +5228,42 @@ public class DavController extends SpringActionController
 
     protected void copy(InputStream istream, OutputStream ostream) throws IOException
     {
-        try
+        ReadableByteChannel inChannel = Channels.newChannel(istream);
+        File tempFile = null;
+        try (WritableByteChannel outChannel = Channels.newChannel(ostream))
         {
-            // Copy the input stream to the output stream
-            byte buffer[] = new byte[16*1024];
-            int len;
-            while (-1 < (len = istream.read(buffer)))
-                ostream.write(buffer,0,len);
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_STAGE_GETS_AS_TEMP_FILE))
+            {
+                tempFile = FileUtil.createTempFile("getRequest", "tmp");
+                FileUtil.copyFile(inChannel, -1, tempFile);
+                istream.close();
+                inChannel.close();
+                istream = new FileInputStream(tempFile);
+                inChannel = Channels.newChannel(istream);
+            }
+
+            ByteBuffer buffer = ByteBuffer.allocateDirect(64 * 1024);
+            while (inChannel.read(buffer) != -1)
+            {
+                buffer.flip();
+                while (buffer.hasRemaining())
+                {
+                    outChannel.write(buffer);
+                }
+                buffer.clear();
+            }
         }
         finally
         {
             close(istream, "copy InputStream");
+            close(inChannel, "copy channel");
+            if (tempFile != null)
+            {
+                if (!tempFile.delete())
+                {
+                    _log.warn("Unable to delete temp file " + tempFile);
+                }
+            }
         }
     }
 

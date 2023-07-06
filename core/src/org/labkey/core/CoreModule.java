@@ -420,6 +420,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
 
+        AdminConsole.addExperimentalFeatureFlag(DavController.EXPERIMENTAL_STAGE_GETS_AS_TEMP_FILE,
+                "Copy to temp file before downloading via GET requests",
+                "Stage a file in the temp directory before streaming it back to clients as a GET request",
+                false);
+
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
         {
