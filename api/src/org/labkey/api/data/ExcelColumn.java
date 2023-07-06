@@ -632,8 +632,13 @@ public class ExcelColumn extends RenderColumn
 
     protected Row getRow(Sheet sheet, int rowNumber)
     {
+        return getRow(sheet, rowNumber, false);
+    }
+
+    protected Row getRow(Sheet sheet, int rowNumber, boolean skipCreate)
+    {
         Row row = sheet.getRow(rowNumber);
-        if (row == null)
+        if (row == null && !skipCreate)
         {
             row = sheet.createRow(rowNumber);
         }
@@ -685,6 +690,9 @@ public class ExcelColumn extends RenderColumn
         for (int row = endRow; row >= startRow; row--)
         {
             Row sheetRow = sheet.getRow(row);
+            if (sheetRow == null)
+                continue;
+
             float rowHeight = sheetRow.getHeightInPoints();
             Picture pict = getImagePicture(ctx, row, column);
             Pair<Integer, Integer> sizes = getImageSize(ctx, row, column);
@@ -771,7 +779,11 @@ public class ExcelColumn extends RenderColumn
         // Assumes column has same cell type from startRow to endRow, and that cell type matches the Excel column type (which it should, since we just wrote it)
         for (int row = startRow; row <= endRow; row++)
         {
-            Cell cell = getRow(sheet, row).getCell(column);
+            Row sheetRow = getRow(sheet, row, true);
+            if (sheetRow == null)
+                continue;
+
+            Cell cell = sheetRow.getCell(column);
             if (cell != null)
             {
                 String formatted = null;
