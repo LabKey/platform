@@ -3426,6 +3426,10 @@ public class DavController extends SpringActionController
         Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
         clearWebfilesFileCache(srcContainer);
 
+        java.nio.file.Path file = resource.getNioPath();
+        if (null != file)
+            FileContentService.get().fireFileReplacedEvent(file, getUser(), srcContainer);
+
         _log.debug("fireFileReplaceEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
@@ -3495,6 +3499,12 @@ public class DavController extends SpringActionController
         resource.notify(getViewContext(), "deleted");
         removeFromIndex(resource);
         removeFromDataObject(resource);
+
+        Container srcContainer = resource.getContainerId() == null ? null : ContainerManager.getForId(resource.getContainerId());
+        java.nio.file.Path file = resource.getNioPath();
+        if (null != file)
+            FileContentService.get().fireFileDeletedEvent(file, getUser(), srcContainer);
+
         _log.debug("fireFileDeletedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
