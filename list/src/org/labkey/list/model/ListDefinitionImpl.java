@@ -249,7 +249,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public boolean getEntireListIndex()
     {
-        return _def.getEntireListIndex();
+        return _def.isEntireListIndex();
     }
 
     @Override
@@ -271,25 +271,13 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public TitleSetting getEntireListTitleSetting()
-    {
-        return _def.getEntireListTitleSettingEnum();
-    }
-
-    @Override
-    public void setEntireListTitleSetting(TitleSetting setting)
-    {
-        edit().setEntireListTitleSettingEnum(setting);
-    }
-
-    @Override
-    public String getEntireListTitleTemplate()
+    public @Nullable String getEntireListTitleTemplate()
     {
         return _def.getEntireListTitleTemplate();
     }
 
     @Override
-    public void setEntireListTitleTemplate(String template)
+    public void setEntireListTitleTemplate(@Nullable String template)
     {
         edit().setEntireListTitleTemplate(template);
     }
@@ -321,7 +309,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public boolean getEachItemIndex()
     {
-        return _def.getEachItemIndex();
+        return _def.isEachItemIndex();
     }
 
     @Override
@@ -331,25 +319,13 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public TitleSetting getEachItemTitleSetting()
-    {
-        return _def.getEachItemTitleSettingEnum();
-    }
-
-    @Override
-    public void setEachItemTitleSetting(TitleSetting setting)
-    {
-        edit().setEachItemTitleSettingEnum(setting);
-    }
-
-    @Override
-    public String getEachItemTitleTemplate()
+    public @Nullable String getEachItemTitleTemplate()
     {
         return _def.getEachItemTitleTemplate();
     }
 
     @Override
-    public void setEachItemTitleTemplate(String template)
+    public void setEachItemTitleTemplate(@Nullable String template)
     {
         edit().setEachItemTitleTemplate(template);
     }
@@ -381,7 +357,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public boolean getFileAttachmentIndex()
     {
-        return _def.getFileAttachmentIndex();
+        return _def.isFileAttachmentIndex();
     }
 
     @Override

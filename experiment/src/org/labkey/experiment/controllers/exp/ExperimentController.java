@@ -4047,7 +4047,13 @@ public class ExperimentController extends SpringActionController
                 tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
                 updateService = tInfo.getUpdateService();
             }
-            return importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
+
+            int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
+
+            if (getOptionParamValue(Params.crossTypeImport))
+                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeImport");
+
+            return count;
         }
 
         @Override
