@@ -137,6 +137,7 @@ import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
@@ -393,6 +394,8 @@ public class ExpDataIterators
                         return null;
 
                     String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
+                    String aliquotParent = (String) existingMap.get(AliquotedFromLSID.name());
+                    String recalcLsid = rootAliquot != null ? rootAliquot : aliquotParent;
                     Double existingAmount = (Double) existingMap.get("StoredAmount");
                     String existingUnits = (String) existingMap.get("Units");
                     Integer existingState = (Integer) existingMap.get("SampleState");
@@ -401,7 +404,7 @@ public class ExpDataIterators
                     {
                         Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
                         if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
-                            return rootAliquot;
+                            return recalcLsid;
                     }
 
                     Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
@@ -416,7 +419,7 @@ public class ExpDataIterators
                             amountChanged = true;
                     }
 
-                    return amountChanged ? rootAliquot : null;
+                    return amountChanged ? recalcLsid : null;
                 }
 
                 // without existing record, we have to be conservative and assume this is a new aliquot, or a amount/status update
@@ -2121,7 +2124,7 @@ public class ExpDataIterators
             ExpDataTable.Column.LSID.toString(),
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),
-            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
+            AliquotedFromLSID.toString(),
             "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
@@ -2233,7 +2236,7 @@ public class ExpDataIterators
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                 dontUpdate.add(RootMaterialLSID.toString());
-                dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
+                dontUpdate.add(AliquotedFromLSID.toString());
             }
             else if (isMergeOrUpdate)
             {
