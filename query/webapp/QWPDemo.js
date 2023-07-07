@@ -26,6 +26,7 @@
             testMultiClausesFilter: testMultiClausesFilter,
             testCaseInsensitiveFilterField: testCaseInsensitiveFilterField,
             testHidePagingCount: testHidePagingCount,
+            testAsyncTotalRowsCount: testAsyncTotalRowsCount,
             testShowAllTotalRows: testShowAllTotalRows,
             testGetBaseFilters: testGetBaseFilters,
             testFilterOnSortColumn: testFilterOnSortColumn,
@@ -719,6 +720,41 @@
                                             LABKEY.Utils.signalWebDriverTest('testHidePagingCount');
                                         }
                                     }
+                                }, 100);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function testAsyncTotalRowsCount() {
+            var schema = 'Samples';
+            var query = 'sampleDataTest1';
+
+            LABKEY.Query.selectRows({
+                schemaName: schema,
+                queryName: query,
+                success: function(ssr) {
+                    var TOTAL_EXPECTED_ROWS = ssr.rowCount;
+
+                    new LABKEY.QueryWebPart({
+                        title: 'Async Total Rows Count',
+                        schemaName: schema,
+                        queryName: query,
+                        maxRows: 5,
+                        showPaginationCountAsync: true,
+                        renderTo: RENDERTO,
+                        failure: function() {
+                            alert('Failed test: Async Total Rows Count.');
+                        },
+                        listeners: {
+                            render: function(dr) {
+                                // timeout is used here to defer displaying error until after region is rendered.
+                                // Less confusing when comparing error against current region state.
+                                setTimeout(function() {
+                                    assertPagingCount(dr, 1, 5, TOTAL_EXPECTED_ROWS)
+                                    LABKEY.Utils.signalWebDriverTest('testAsyncTotalRowsCount');
                                 }, 100);
                             }
                         }

@@ -39,7 +39,7 @@ public class ColumnLogging
     protected final UnauthorizedException _exception;
     protected final boolean _shouldLogName;
     protected final Set<FieldKey> _dataLoggingColumns;
-    protected final String _loggingComment;
+    protected final Set<String> _loggingComments;
     protected final SelectQueryAuditProvider _selectQueryAuditProvider;
 
 
@@ -83,7 +83,7 @@ public class ColumnLogging
             dataLoggingColumns.add(mapped);
         }
         return new ColumnLogging(_originalSchemaName, _originalTableName, _originalColumnFieldKey,
-                _shouldLogName, dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
+                _shouldLogName, dataLoggingColumns, _loggingComments, _selectQueryAuditProvider);
     }
 
 
@@ -91,19 +91,26 @@ public class ColumnLogging
     public ColumnLogging reparent(TableInfo table)
     {
         return new ColumnLogging(table.getUserSchema().getSchemaName(), table.getName(), _originalColumnFieldKey,
-                _shouldLogName, _dataLoggingColumns, _loggingComment, _selectQueryAuditProvider);
+                _shouldLogName, _dataLoggingColumns, _loggingComments, _selectQueryAuditProvider);
     }
 
 
     public ColumnLogging(String schemaName, String tableName, FieldKey originalColumnFieldKey,
                          boolean shouldLogName, Set<FieldKey> dataLoggingColumns, String loggingComment, SelectQueryAuditProvider selectQueryAuditProvider)
     {
+        this(schemaName, tableName, originalColumnFieldKey, shouldLogName, dataLoggingColumns, Set.of(loggingComment), selectQueryAuditProvider);
+    }
+
+
+    public ColumnLogging(String schemaName, String tableName, FieldKey originalColumnFieldKey,
+                         boolean shouldLogName, Set<FieldKey> dataLoggingColumns, Set<String> loggingComments, SelectQueryAuditProvider selectQueryAuditProvider)
+    {
         _originalSchemaName = schemaName;
         _originalTableName = tableName;
         _originalColumnFieldKey = originalColumnFieldKey;
         _shouldLogName = shouldLogName;
         _dataLoggingColumns = Collections.unmodifiableSet(dataLoggingColumns);
-        _loggingComment = loggingComment;
+        _loggingComments = loggingComments;
         _selectQueryAuditProvider = selectQueryAuditProvider;
         _exception = null;
     }
@@ -124,7 +131,7 @@ public class ColumnLogging
         _originalColumnFieldKey = null;
         _shouldLogName = true;
         _dataLoggingColumns = Set.of();
-        _loggingComment = null;
+        _loggingComments = Set.of();
         _selectQueryAuditProvider = selectQueryAuditProvider;
         _exception = exception;
     }
@@ -144,10 +151,10 @@ public class ColumnLogging
         return _dataLoggingColumns;
     }
 
-    /** Returns comment to be added to the audit event (typically only the first logged column is asked for this) */
-    public String getLoggingComment()
+    /** Returns comments to be added to the audit event */
+    public Set<String> getLoggingComments()
     {
-        return _loggingComment;
+        return _loggingComments;
     }
 
     public FieldKey getOriginalColumnFieldKey()
