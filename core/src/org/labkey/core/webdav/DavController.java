@@ -5243,24 +5243,30 @@ public class DavController extends SpringActionController
                 inChannel = Channels.newChannel(istream);
             }
 
-            ByteBuffer buffer;
-            if (inChannel instanceof FileChannel fileInChannel)
+            if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > BUFFER_SIZE)
             {
-                buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, 0, BUFFER_SIZE);
+                // Use memory-mapped I/O for large files for best perf
+                long position = 0;
+                long totalSize = fileInChannel.size();
+                while (position < totalSize)
+                {
+                    ByteBuffer buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, position, Math.min(totalSize - position, BUFFER_SIZE));
+                    outChannel.write(buffer);
+                    position += buffer.position();
+                }
             }
             else
             {
-                buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
-            }
-
-            while (inChannel.read(buffer) != -1)
-            {
-                buffer.flip();
-                while (buffer.hasRemaining())
+                ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+                while (inChannel.read(buffer) != -1)
                 {
-                    outChannel.write(buffer);
+                    buffer.flip();
+                    while (buffer.hasRemaining())
+                    {
+                        outChannel.write(buffer);
+                    }
+                    buffer.clear();
                 }
-                buffer.clear();
             }
         }
         finally
