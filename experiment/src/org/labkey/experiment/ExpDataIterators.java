@@ -73,6 +73,8 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -135,6 +137,7 @@ import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
 import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
@@ -301,18 +304,20 @@ public class ExpDataIterators
     {
         private final DataIteratorBuilder _in;
         private final ExpSampleType _sampleType;
+        private final Container _container;
 
-        public AliquotRollupDataIteratorBuilder(@NotNull DataIteratorBuilder in, ExpSampleType sampleType)
+        public AliquotRollupDataIteratorBuilder(@NotNull DataIteratorBuilder in, ExpSampleType sampleType, Container container)
         {
             _in = in;
             _sampleType = sampleType;
+            _container = container;
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType));
+            return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType, _container));
         }
     }
 
@@ -322,6 +327,7 @@ public class ExpDataIterators
 
         private final Integer _storedAmountCol;
         private final Integer _unitsCol;
+        private final Integer _sampleStateCol;
         private final ExpSampleType _sampleType;
         private final Integer _aliquotedFromCol;
         private final Integer _aliquotedFromLsidCol;
@@ -330,7 +336,9 @@ public class ExpDataIterators
         private final boolean _isInsert;
         private final boolean _isUpdate;
 
-        protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType)
+        private List<Integer> availableSampleStatuses = new ArrayList<>();
+
+        protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType, Container container)
         {
             super(di);
             _context = context;
@@ -340,10 +348,20 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
             _storedAmountCol = map.get("StoredAmount");
             _unitsCol = map.get("Units");
+            _sampleStateCol = map.get("SampleState");
             _aliquotedFromCol = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
             _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
             _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
+
+            if (SampleStatusService.get().supportsSampleStatus())
+            {
+                for (DataState state: SampleStatusService.get().getAllProjectStates(container))
+                {
+                    if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                        availableSampleStatuses.add(state.getRowId());
+                }
+            }
 
         }
 
@@ -362,22 +380,32 @@ public class ExpDataIterators
 
                 if (_isUpdate)
                 {
-                    if (_storedAmountCol == null && _unitsCol == null)
-                        return null; // update will only trigger recompute if stored amount or unit is updated)
+                    if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
+                        return null; // update will only trigger recompute if stored amount or unit or status is updated)
                 }
 
                 Map<String, Object> existingMap = getExistingRecord();
                 if (existingMap != null)
                 {
-                    if (_storedAmountCol == null && _unitsCol == null)
-                        return null; // update/merge existing will only trigger recompute if stored amount or unit is updated)
+                    if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
+                        return null; // update/merge existing will only trigger recompute if stored amount or unit or status is updated)
 
                     if (i == _parentNameToRecomputeCol) // only return lsid if existing map not null
                         return null;
 
                     String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
+                    String aliquotParent = (String) existingMap.get(AliquotedFromLSID.name());
+                    String recalcLsid = rootAliquot != null ? rootAliquot : aliquotParent;
                     Double existingAmount = (Double) existingMap.get("StoredAmount");
                     String existingUnits = (String) existingMap.get("Units");
+                    Integer existingState = (Integer) existingMap.get("SampleState");
+
+                    if (!availableSampleStatuses.isEmpty())
+                    {
+                        Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
+                        if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
+                            return recalcLsid;
+                    }
 
                     Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
                     String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
@@ -391,10 +419,10 @@ public class ExpDataIterators
                             amountChanged = true;
                     }
 
-                    return amountChanged ? rootAliquot : null;
+                    return amountChanged ? recalcLsid : null;
                 }
 
-                // without existing record, we have to be conservative and assume this is a new aliquot, or a amount update
+                // without existing record, we have to be conservative and assume this is a new aliquot, or a amount/status update
                 // merge: either a new record, or detailed audit disabled
                 if (!_isUpdate)
                 {
@@ -2096,7 +2124,7 @@ public class ExpDataIterators
             ExpDataTable.Column.LSID.toString(),
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),
-            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
+            AliquotedFromLSID.toString(),
             "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
@@ -2208,7 +2236,7 @@ public class ExpDataIterators
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
                 dontUpdate.add(RootMaterialLSID.toString());
-                dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
+                dontUpdate.add(AliquotedFromLSID.toString());
             }
             else if (isMergeOrUpdate)
             {
@@ -2262,7 +2290,7 @@ public class ExpDataIterators
             DataIteratorBuilder step7 = step6;
             boolean hasRollUpColumns = colNameMap.containsKey(PARENT_RECOMPUTE_LSID_COL);
             if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns) && hasRollUpColumns)
-                step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType()));
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType(), _container));
 
             // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator
             DataIteratorBuilder step8 = step7;

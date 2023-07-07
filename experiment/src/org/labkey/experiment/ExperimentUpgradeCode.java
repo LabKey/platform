@@ -41,14 +41,12 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
-import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -250,6 +248,81 @@ public class ExperimentUpgradeCode implements UpgradeCode
     {
         // do nothing.
         // exp.material.recomputerollup dropped in exp-23.004-23.005.sql
+    }
+
+    private static Map<String, List<String>> findContainersWithAliquot()
+    {
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT DISTINCT cpastype, container\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoMaterial(), "m").append("\n")
+                .append("WHERE m.AliquotCount IS NOT NULL AND m.AliquotCount <> 0");
+
+        @NotNull Map<String, Object>[] results = new SqlSelector(ExperimentService.get().getSchema(), sql).getMapArray();
+        if (results.length > 0)
+        {
+            Map<String, List<String>> containerSampleTypes = new HashMap<>();
+            for (Map<String, Object> result : results)
+            {
+                String container = (String) result.get("container");
+                String cpastype = (String) result.get("cpastype");
+                containerSampleTypes.putIfAbsent(container, new ArrayList<>());
+                containerSampleTypes.get(container).add(cpastype);
+            }
+            return containerSampleTypes;
+        }
+
+        return Collections.emptyMap();
+    }
+    /**
+     * Called from exp-23.007-23.008.sql
+     */
+    public static void recomputeAliquotAvailableAmount(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            // find sample types
+            SampleTypeService sampleTypeService = SampleTypeService.get();
+            Map<String, List<String>> containerSampleTypes = findContainersWithAliquot();
+            for (String containerId : containerSampleTypes.keySet())
+            {
+                Container container = ContainerManager.getForId(containerId);
+                if (container == null)
+                    continue;
+
+                List<String> sampleTypes = containerSampleTypes.get(containerId);
+                LOG.info("** starting recalculating exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
+
+                try
+                {
+                    for (String sampleTypeLsid : sampleTypes)
+                    {
+                        ExpSampleType sampleType = sampleTypeService.getSampleType(sampleTypeLsid);
+                        if (sampleType == null)
+                            continue;
+
+                        int syncedCount = sampleTypeService.recomputeSampleTypeAvailableAliquotRollup(sampleType, container);
+                        if (syncedCount > 0)
+                            LOG.info("*** recalculated aliquotAvailableCount/Volume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                LOG.info("** finished cleaning up exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
+            }
+
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 }
