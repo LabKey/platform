@@ -38,7 +38,7 @@ import java.util.List;
  */
 public class SubfolderWriter extends BaseFolderWriter
 {
-    private static final String DIRECTORY_NAME = "subfolders";
+    public static final String DIRECTORY_NAME = "subfolders";
     public static final String SUBFOLDERS_FILENAME = "subfolders.xml";
 
     @Override
