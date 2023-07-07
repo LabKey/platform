@@ -59,6 +59,8 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWellGroup(), cf);
         setTitleColumn("Name");
+        // set as readonly for now
+        _readOnly = true;
     }
 
     @Override

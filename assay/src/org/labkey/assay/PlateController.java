@@ -246,7 +246,7 @@ public class PlateController extends SpringActionController
         {
             PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getPlateId());
             if (template != null)
-                PlateService.get().deletePlate(getContainer(), template.getRowId());
+                PlateService.get().deletePlate(getContainer(), getUser(), template.getRowId());
             return true;
         }
 

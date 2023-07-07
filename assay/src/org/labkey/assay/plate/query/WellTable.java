@@ -25,6 +25,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public WellTable(PlateSchema schema, @Nullable ContainerFilter cf)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWell(), cf);
+        // set as readonly for now
+        _readOnly = true;
     }
 
     @Override
