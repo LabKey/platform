@@ -29,6 +29,7 @@ public class FolderArchiveDataTypes
     public static final String WEBPART_PROPERTIES_AND_LAYOUT = "Webpart properties and layout";
     public static final String CONTAINER_SPECIFIC_MODULE_PROPERTIES = "Container specific module properties";
     public static final String EXPERIMENTS_AND_RUNS = "Experiments, Protocols, and Runs";
+    public static final String EXPERIMENT_RUNS = "Experiment Runs";
     public static final String LIST_DESIGN = "List Designs";
     public static final String LIST_DATA = "List Data";
     public static final String QUERIES = "Queries";
