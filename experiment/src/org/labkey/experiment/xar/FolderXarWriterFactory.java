@@ -52,7 +52,6 @@ public class FolderXarWriterFactory implements FolderWriterFactory
     public static final String XAR_DIRECTORY = "xar";
     private static final String XAR_FILE_NAME = "experiments_and_runs.xar";
     private static final String XAR_XML_FILE_NAME = XAR_FILE_NAME + ".xml";
-    private static final String EXPERIMENT_RUNS = "Experiment Runs";
     private static List<Writer> CHILD_WRITERS = Arrays.asList(new ExperimentRunsWriter());
 
     @Override
@@ -168,7 +167,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
 
             selection.addProtocolIds(getProtocols(c));
 
-            if (ctx.getDataTypes().contains(EXPERIMENT_RUNS))
+            if (ctx.getDataTypes().contains(FolderArchiveDataTypes.EXPERIMENT_RUNS))
                 selection.addRuns(getRuns(ctx, c));
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
@@ -194,7 +193,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
         @Override
         public @Nullable String getDataType()
         {
-            return EXPERIMENT_RUNS;
+            return FolderArchiveDataTypes.EXPERIMENT_RUNS;
         }
 
         @Override
