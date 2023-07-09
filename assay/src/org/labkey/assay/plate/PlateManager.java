@@ -186,49 +186,36 @@ public class PlateManager implements PlateService
         return new PositionImpl(container, row, column);
     }
 
-    @Override
-    public PlateTemplateImpl getPlateTemplate(Container container, String name)
+    private @Nullable PlateTemplateImpl getPlateTemplate(Container container, SimpleFilter filter)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
-        filter.addCondition(FieldKey.fromParts("Name"), name);
         filter.addCondition(FieldKey.fromParts("Container"), container);
-        PlateTemplateImpl template = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
-        if (template != null)
+        filter.addCondition(FieldKey.fromParts("Template"), Boolean.TRUE);
+
+        PlateTemplateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
+        if (plate != null)
         {
-            populatePlate(template);
-            cache(template);
+            populatePlate(plate);
+            cache(plate);
         }
-        return template;
+        return plate;
     }
 
     @Override
-    public PlateTemplate getPlateTemplateFromLsid(Container container, String lsid)
+    public @Nullable PlateTemplateImpl getPlateTemplate(Container container, String name)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
-        filter.addCondition(FieldKey.fromParts("Lsid"), lsid);
-        filter.addCondition(FieldKey.fromParts("Container"), container);
-        PlateTemplateImpl template = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
-        if (template != null)
-        {
-            populatePlate(template);
-            cache(template);
-        }
-        return template;
+        return getPlateTemplate(container, new SimpleFilter(FieldKey.fromParts("Name"), name));
     }
 
     @Override
-    public PlateTemplateImpl getPlateTemplate(Container container, int plateId)
+    public @Nullable PlateTemplate getPlateTemplateFromLsid(Container container, String lsid)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
-        filter.addCondition(FieldKey.fromParts("RowId"), plateId);
-        filter.addCondition(FieldKey.fromParts("Container"), container);
-        PlateTemplateImpl template = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
-        if (template != null)
-        {
-            populatePlate(template);
-            cache(template);
-        }
-        return template;
+        return getPlateTemplate(container, new SimpleFilter(FieldKey.fromParts("Lsid"), lsid));
+    }
+
+    @Override
+    public @Nullable PlateTemplateImpl getPlateTemplate(Container container, int plateId)
+    {
+        return getPlateTemplate(container, new SimpleFilter(FieldKey.fromParts("RowId"), plateId));
     }
 
     @Override
@@ -332,12 +319,12 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public PlateImpl getPlate(Container container, int rowid)
+    public @Nullable PlateImpl getPlate(Container container, int rowId)
     {
-        PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, rowid);
+        PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, rowId);
         if (plate != null)
             return plate;
-        plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getObject(rowid, PlateImpl.class);
+        plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getObject(rowId, PlateImpl.class);
         if (plate == null)
             return null;
         populatePlate(plate);
@@ -346,7 +333,7 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public PlateImpl getPlate(Container container, String entityId)
+    public @Nullable PlateImpl getPlate(Container container, String entityId)
     {
         PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, entityId);
         if (plate != null)
@@ -360,7 +347,7 @@ public class PlateManager implements PlateService
         return plate;
     }
 
-    public PlateImpl getPlate(String lsid)
+    public @Nullable PlateImpl getPlate(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
         PlateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);

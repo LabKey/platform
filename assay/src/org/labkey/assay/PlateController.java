@@ -40,6 +40,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerTree;
@@ -47,6 +48,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -60,6 +62,8 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -236,7 +240,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    @RequiresAnyOf({DeletePermission.class, DesignAssayPermission.class})
     public class DeleteAction extends FormHandlerAction<NameForm>
     {
         @Override
@@ -613,6 +617,42 @@ public class PlateController extends SpringActionController
         public Object execute(Object o, BindException errors) throws Exception
         {
             return PlateManager.get().getPlateTypes();
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetPlateOperationConfirmationDataAction extends ReadOnlyApiAction<DataViewSnapshotSelectionForm>
+    {
+        @Override
+        public void validateForm(DataViewSnapshotSelectionForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+        }
+
+        @Override
+        public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
+        {
+            List<Map<String, Object>> allowedRows = new ArrayList<>();
+            List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+
+            // TODO: This is really expensive. Find a way to consolidate this check into a single query.
+            form.getIds(false).forEach(plateRowId -> {
+                Map<String, Object> rowMap = Map.of("RowId", plateRowId);
+                PlateTemplate plate = PlateManager.get().getPlate(getContainer(), plateRowId);
+                if (plate == null)
+                    notAllowedRows.add(rowMap);
+                else if (PlateManager.get().getRunCountUsingPlateTemplate(getContainer(), plate) > 0)
+                    notAllowedRows.add(rowMap);
+                else
+                    allowedRows.add(rowMap);
+            });
+
+            Map<String, Collection<Map<String, Object>>> results = new HashMap<>();
+            results.put("allowed", allowedRows);
+            results.put("notAllowed", notAllowedRows);
+
+            return success(results);
         }
     }
 }

@@ -220,7 +220,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
                 Integer plateId = (Integer)oldRowMap.get("RowId");
-                PlateTemplate plate = PlateManager.get().getPlateTemplate(container, plateId);
+                PlateTemplate plate = PlateManager.get().getPlate(container, plateId);
                 if (plate != null)
                 {
                     int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);

@@ -26,6 +26,7 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Transient;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
@@ -88,6 +89,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     }
 
     @JsonIgnore
+    @Transient
     @Override
     public String getLSIDNamespacePrefix()
     {

@@ -93,7 +93,7 @@ public interface PlateService
      * @param templateName The template's name.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
-    PlateTemplate getPlateTemplate(Container container, String templateName);
+    @Nullable PlateTemplate getPlateTemplate(Container container, String templateName);
 
     /**
      * Gets an existing plate template.
@@ -101,7 +101,7 @@ public interface PlateService
      * @param lsid The template's lsid.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
-    PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
+    @Nullable PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
 
     /**
      * Gets an existing plate template.
@@ -109,7 +109,7 @@ public interface PlateService
      * @param plateId The template's id.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
-    PlateTemplate getPlateTemplate(Container container, int plateId);
+    @Nullable PlateTemplate getPlateTemplate(Container container, int plateId);
 
     /**
      * Gets all plate templates for the specified container.
@@ -149,10 +149,10 @@ public interface PlateService
     /**
      * Gets a plate instance object by row id.
      * @param container The plate's container.
-     * @param rowid The row id of the plate.
+     * @param rowId The row id of the plate.
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
-    Plate getPlate(Container container, int rowid);
+    @Nullable Plate getPlate(Container container, int rowId);
 
     /**
      * Gets a plate instance by entity id.
@@ -160,7 +160,7 @@ public interface PlateService
      * @param entityId The plate's entity id.
      * @return The requested plate, or null if no plate exists with the specified entity id.
      */
-    Plate getPlate(Container container, String entityId);
+    @Nullable Plate getPlate(Container container, String entityId);
 
     /**
      * Gets a well group by row id.
