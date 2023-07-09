@@ -81,7 +81,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (handler == null)
                     throw new Exception("Plate template type " + assayTypeName + " does not exist.");
 
-                template = handler.createPlate(templateTypeName, getContainer(), rowCount, columnCount);
+                template = handler.createTemplate(templateTypeName, getContainer(), rowCount, columnCount);
             }
 
             // Translate PlateTemplate to GWTPlate
@@ -231,7 +231,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 group.setProperties(gwtGroup.getProperties());
             }
 
-            PlateManager.get().getPlateTypeHandler(template.getType()).validate(getContainer(), getUser(), template);
+            PlateManager.get().getPlateTypeHandler(template.getType()).validateTemplate(getContainer(), getUser(), template);
             return PlateService.get().save(getContainer(), getUser(), template);
         }
         catch (BatchValidationException | ValidationException e)

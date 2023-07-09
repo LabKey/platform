@@ -66,7 +66,7 @@ public interface PlateService
      * @param plateNumber Plate number (1-based)
      * @return A plate instance object.
      */
-    Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excludedWells, int runId, int plateNumber);
+    @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells, int runId, int plateNumber);
 
     /**
      * Creates a new plate instance based on the specified plate template and well data.
@@ -75,7 +75,7 @@ public interface PlateService
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
      * @return A plate instance object.
      */
-    Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excludedWells);
+    @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells);
 
     /**
      * Adds a new well group to the plate

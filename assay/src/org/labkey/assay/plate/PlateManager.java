@@ -75,6 +75,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.query.AssayDbSchema;
@@ -92,10 +93,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -111,9 +110,9 @@ public class PlateManager implements PlateService
     private static final Logger LOG = LogManager.getLogger(PlateManager.class);
     private static final String LSID_CLASS_OBJECT_ID = "objectType";
 
-    private List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
+    private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
-    private Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
+    private final Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
 
     public static PlateManager get()
     {
@@ -125,7 +124,7 @@ public class PlateManager implements PlateService
         registerPlateTypeHandler(new AbstractPlateTypeHandler()
         {
             @Override
-            public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount)
+            public PlateTemplate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount)
             {
                 return PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
             }
@@ -158,19 +157,21 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excluded)
+    public @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excluded)
     {
         return createPlate(template, wellValues, excluded, PlateService.NO_RUNID, 1);
     }
 
     @Override
-    public Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excluded, int runId, int plateNumber)
+    public @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
         if (template == null)
             return null;
-        if (!(template instanceof PlateTemplateImpl))
-            throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
-        return new PlateImpl((PlateTemplateImpl) template, wellValues, excluded, runId, plateNumber);
+
+        if (template instanceof PlateTemplateImpl plateTemplate)
+            return new PlateImpl(plateTemplate, wellValues, excluded, runId, plateNumber);
+
+        throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
     }
 
     @Override
@@ -298,18 +299,18 @@ public class PlateManager implements PlateService
         // next, for the plate metadata enabled assays,
         // get the set of "PlateTemplate" PropertyDescriptors from the RunDomains of those assays
         List<PropertyDescriptor> plateTemplateProps = protocols.stream()
-                .filter(p -> gpat.isPlateMetadataEnabled(p))
-                .map(p -> gpat.getRunDomain(p))
+                .filter(gpat::isPlateMetadataEnabled)
+                .map(gpat::getRunDomain)
                 .filter(Objects::nonNull)
                 .map(r -> r.getPropertyByName(TsvAssayProvider.PLATE_TEMPLATE_PROPERTY_NAME))
                 .filter(Objects::nonNull)
                 .map(DomainProperty::getPropertyDescriptor)
-                .collect(toUnmodifiableList());
+                .toList();
 
         if (plateTemplateProps.isEmpty())
             return null;
 
-        List<Integer> plateTemplatePropIds = plateTemplateProps.stream().map(PropertyDescriptor::getPropertyId).collect(Collectors.toUnmodifiableList());
+        List<Integer> plateTemplatePropIds = plateTemplateProps.stream().map(PropertyDescriptor::getPropertyId).toList();
 
         // query for runs with that property that point to the plate by LSID
         SQLFragment sql = new SQLFragment()
@@ -410,12 +411,11 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public int save(Container container, User user, PlateTemplate plateObj) throws Exception
+    public int save(Container container, User user, PlateTemplate plate) throws Exception
     {
-        if (!(plateObj instanceof PlateTemplateImpl))
-            throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
-        PlateTemplateImpl plate = (PlateTemplateImpl) plateObj;
-        return savePlateImpl(container, user, plate);
+        if (plate instanceof PlateTemplateImpl plateTemplate)
+            return savePlateImpl(container, user, plateTemplate);
+        throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
     }
 
     private void populatePlate(PlateTemplateImpl plate)
@@ -1034,6 +1034,40 @@ public class PlateManager implements PlateService
         return CurveFitFactory.getCurveImpl(wellGroups, assumeDecreasing, percentCalculator, type);
     }
 
+    public List<PlateType> getPlateTypes()
+    {
+        List<PlateType> plateTypes = new ArrayList<>();
+
+        for (PlateTypeHandler handler : getPlateTypeHandlers())
+        {
+            for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
+            {
+                int rows = size.first;
+                int cols = size.second;
+
+                int wellCount = rows * cols;
+                String sizeDescription = wellCount + " well (" + rows + "x" + cols + ") ";
+
+                List<String> types = handler.getTemplateTypes(size);
+                if (types == null || types.isEmpty())
+                {
+                    String description = sizeDescription + handler.getAssayType();
+                    plateTypes.add(new PlateType(handler.getAssayType(), null, description, rows, cols));
+                }
+                else
+                {
+                    for (String type : types)
+                    {
+                        String description = sizeDescription + handler.getAssayType() + " " + type;
+                        plateTypes.add(new PlateType(handler.getAssayType(), type, description, rows, cols));
+                    }
+                }
+            }
+        }
+
+        return plateTypes;
+    }
+
     public static final class TestCase
     {
         @Test
@@ -1048,7 +1082,7 @@ public class PlateManager implements PlateService
             //
 
             PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(TsvPlateTypeHandler.TYPE);
-            PlateTemplate template = handler.createPlate("UNUSED", c, 8, 12);
+            PlateTemplate template = handler.createTemplate("UNUSED", c, 8, 12);
             template.setName("bob");
             template.setProperty("friendly", "yes");
             assertNull(template.getRowId());
@@ -1139,7 +1173,7 @@ public class PlateManager implements PlateService
             List<? extends WellGroupTemplate> updatedControlWellGroups = updatedTemplate.getWellGroups(WellGroup.Type.CONTROL);
             assertEquals(1, updatedControlWellGroups.size());
 
-            // veriy added positions
+            // verify added positions
             assertEquals(2, updatedControlWellGroups.get(0).getPositions().size());
 
             //

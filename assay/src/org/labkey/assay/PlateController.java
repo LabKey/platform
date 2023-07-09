@@ -16,17 +16,23 @@
 
 package org.labkey.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.plate.PlateTypeHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -48,6 +54,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -59,11 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Jan 29, 2007
- * Time: 3:53:57 PM
- */
+@Marshal(Marshaller.Jackson)
 public class PlateController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
@@ -484,6 +487,7 @@ public class PlateController extends SpringActionController
         {
             _templateType = templateType;
         }
+
         public boolean isCopy()
         {
             return _copy;
@@ -538,6 +542,77 @@ public class PlateController extends SpringActionController
         public void setTemplateName(String templateName)
         {
             _templateName = templateName;
+        }
+    }
+
+    public static class CreatePlateForm
+    {
+        private String _name;
+        private PlateType _plateType;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public PlateType getPlateType()
+        {
+            return _plateType;
+        }
+
+        public void setPlateType(PlateType plateType)
+        {
+            _plateType = plateType;
+        }
+    }
+
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
+    {
+        @Override
+        public void validateForm(CreatePlateForm form, Errors errors)
+        {
+            if (StringUtils.trimToNull(form.getName()) == null)
+                errors.reject(ERROR_GENERIC, "Plate \"name\" is required.");
+        }
+
+        @Override
+        public Object execute(CreatePlateForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateType plateType = form.getPlateType();
+                PlateTypeHandler plateTypeHandler = PlateManager.get().getPlateTypeHandler(plateType.getAssayType());
+                PlateTemplate plateTemplate = plateTypeHandler.createTemplate(plateType.getType(), getContainer(), plateType.getRows(), plateType.getCols());
+
+                Plate plate = PlateManager.get().createPlate(plateTemplate, null, null);
+                plate.setName(form.getName());
+
+                int plateRowId = PlateManager.get().save(getContainer(), getUser(), plate);
+
+                return success(PlateManager.get().getPlate(getContainer(), plateRowId));
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create plate. An error has occurred.");
+            }
+
+            return null;
+        }
+    }
+
+    @RequiresAnyOf({ReadPermission.class, DesignAssayPermission.class})
+    public static class GetPlateTypesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return PlateManager.get().getPlateTypes();
         }
     }
 }
