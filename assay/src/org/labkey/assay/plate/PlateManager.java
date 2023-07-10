@@ -333,12 +333,13 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public @Nullable PlateImpl getPlate(Container container, String entityId)
+    public @Nullable PlateImpl getPlate(Container container, String lsid)
     {
-        PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, entityId);
+        PlateImpl plate = (PlateImpl) getCachedPlateTemplate(container, lsid);
         if (plate != null)
             return plate;
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container).addCondition(FieldKey.fromParts("DataFileId"), entityId);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container)
+                .addCondition(FieldKey.fromParts("lsid"), lsid);
         plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
         if (plate == null)
             return null;
@@ -997,7 +998,7 @@ public class PlateManager implements PlateService
         if (template.getRowId() == null)
             return;
         PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getRowId().intValue()), template);
-        PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getEntityId()), template);
+        PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getLSID()), template);
     }
 
     public void clearCache()
@@ -1010,9 +1011,9 @@ public class PlateManager implements PlateService
         return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, rowId));
     }
 
-    private PlateTemplateImpl getCachedPlateTemplate(Container container, String idString)
+    private PlateTemplateImpl getCachedPlateTemplate(Container container, String lsid)
     {
-        return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, idString));
+        return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, lsid));
     }
 
     @Override

@@ -155,12 +155,12 @@ public interface PlateService
     @Nullable Plate getPlate(Container container, int rowId);
 
     /**
-     * Gets a plate instance by entity id.
+     * Gets a plate instance by lsid.
      * @param container The plate's container.
-     * @param entityId The plate's entity id.
-     * @return The requested plate, or null if no plate exists with the specified entity id.
+     * @param lsid The plate's lsid.
+     * @return The requested plate, or null if no plate exists with the specified lsid.
      */
-    @Nullable Plate getPlate(Container container, String entityId);
+    @Nullable Plate getPlate(Container container, String lsid);
 
     /**
      * Gets a well group by row id.
