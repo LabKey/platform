@@ -199,7 +199,6 @@ import static org.labkey.api.files.FileContentService.UPLOADED_FILE;
  */
 public class DavController extends SpringActionController
 {
-    public static final String EXPERIMENTAL_STAGE_GETS_AS_TEMP_FILE = "StageGetsAsTempFile";
     private static final Logger _log = LogHelper.getLogger(DavController.class, "WebDAV request handling");
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(DavController.class);
 
@@ -5149,7 +5148,7 @@ public class DavController extends SpringActionController
                 }
 
                 HttpServletRequest request = getRequest();
-                if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support") && false)
+                if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
                     String absolutePath = file.toFile().getAbsolutePath();     // TODO: can this code be used for cloud?
                     long length  = Files.size(file);
@@ -5202,7 +5201,7 @@ public class DavController extends SpringActionController
             if (ranges.size() == 1)
             {
 
-                Range range = (Range) ranges.get(0);
+                Range range = ranges.get(0);
                 getResponse().addContentRange(range);
                 long length = range.end - range.start + 1;
                 getResponse().setContentLength(length);
@@ -5225,27 +5224,17 @@ public class DavController extends SpringActionController
         return WebdavStatus.SC_OK;
     }
 
-    private static final int BUFFER_SIZE = 8 * 1024 * 1024;
+    private static final int BUFFER_SIZE = 8 * 1024 * 1024;  // 8MB
+    private static final int SMALL_BUFFER_SIZE = 1024 * 1024;  // 1MB
 
     protected void copy(InputStream istream, OutputStream ostream) throws IOException
     {
         ReadableByteChannel inChannel = Channels.newChannel(istream);
-        File tempFile = null;
         try (WritableByteChannel outChannel = Channels.newChannel(ostream))
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_STAGE_GETS_AS_TEMP_FILE))
-            {
-                tempFile = FileUtil.createTempFile("getRequest", "tmp");
-                FileUtil.copyFile(inChannel, -1, tempFile);
-                istream.close();
-                inChannel.close();
-                istream = new FileInputStream(tempFile);
-                inChannel = Channels.newChannel(istream);
-            }
-
             if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > BUFFER_SIZE)
             {
-                // Use memory-mapped I/O for large files for best perf
+                // Issue 48174 - Use memory-mapped I/O for large files for best perf
                 long position = 0;
                 long totalSize = fileInChannel.size();
                 while (position < totalSize)
@@ -5273,13 +5262,6 @@ public class DavController extends SpringActionController
         {
             close(istream, "copy InputStream");
             close(inChannel, "copy channel");
-            if (tempFile != null)
-            {
-                if (!tempFile.delete())
-                {
-                    _log.warn("Unable to delete temp file " + tempFile);
-                }
-            }
         }
     }
 
@@ -5292,7 +5274,7 @@ public class DavController extends SpringActionController
             if (skip < start)
                 throw new IOException();
             long remaining = end - start + 1;
-            byte buffer[] = new byte[16*1024];
+            byte[] buffer = new byte[SMALL_BUFFER_SIZE];
             int len;
             while (remaining > 0 && -1 < (len = istream.read(buffer)))
             {
