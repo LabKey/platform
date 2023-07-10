@@ -363,6 +363,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /* this is called if new archive is exploded (for existing or new modules) */
     public void updateModuleDirectory(File dir, File archive)
     {
+        Module moduleCreated;
+        boolean fireModuleChanged = false;
         // TODO move call to ContextListener.fireModuleChangeEvent() into this method
         synchronized (_modulesLock)
         {
@@ -371,7 +373,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             {
                 throw new IllegalStateException("Not a valid module: " + archive.getName());
             }
-            var moduleCreated = moduleList.get(0);
+            moduleCreated = moduleList.get(0);
             if (null != archive)
                 moduleCreated.setZippedPath(archive);
 
@@ -431,8 +433,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     ctx.setModuleState(ModuleState.Starting);
                     moduleCreated.startup(ctx);
                     ctx.setModuleState(ModuleState.Started);
-
-                    ContextListener.fireModuleChangeEvent(moduleCreated);
+                    fireModuleChanged = true;
                 }
             }
             catch (Throwable x)
@@ -441,10 +442,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 throw UnexpectedException.wrap(x);
             }
         }
+
+        // Issue 48225 - fire event outside the synchronized block to avoid deadlocks
+        if (fireModuleChanged)
+        {
+            ContextListener.fireModuleChangeEvent(moduleCreated);
+        }
     }
 
     /** Full web-server initialization */
-    private void doInit(ServletContext servletCtx, Execution execution) throws Exception
+    private void doInit(ServletContext servletCtx, Execution execution) throws ServletException
     {
         _log.info(BANNER);
         ErrorLogRotator.init();
@@ -1738,8 +1745,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             _modules.remove(m);
         }
 
-        if (m instanceof DefaultModule)
-            ((DefaultModule)m).unregister();
+        if (m instanceof DefaultModule defaultModule)
+            defaultModule.unregister();
 
         ContextListener.fireModuleChangeEvent(m);
         clearUnknownModuleCount();
@@ -1918,16 +1925,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public List<Module> getModules(boolean userHasEnableRestrictedModulesPermission)
     {
-        synchronized (_modulesLock)
-        {
-            if (userHasEnableRestrictedModulesPermission)
-                return getModules();
+        if (userHasEnableRestrictedModulesPermission)
+            return getModules();
 
-            return _modules
-                .stream()
-                .filter(module -> !module.getRequireSitePermission())
-                .collect(Collectors.toList());
-        }
+        return getModules()
+            .stream()
+            .filter(module -> !module.getRequireSitePermission())
+            .toList();
     }
 
     /**
@@ -1950,16 +1954,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // valid. Be sure to null check after attempting to resolve each to a DbScope.
     public Set<String> getAllModuleDataSourceNames()
     {
-        synchronized (_modulesLock)
-        {
-            // Find all the external data sources that modules require
-            Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
+        // Find all the external data sources that modules require
+        Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
 
-            for (Module module : _modules)
-                allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
+        for (Module module : getModules())
+            allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
 
-            return allModuleDataSourceNames;
-        }
+        return allModuleDataSourceNames;
     }
 
     public Set<String> getModuleDataSourceNames(Module module)
@@ -1989,15 +1990,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // CONSIDER: ModuleUtil.java
     public Collection<String> getModuleSummaries(Container c)
     {
-        synchronized (_modulesLock)
-        {
-            LinkedList<String> list = new LinkedList<>();
+        List<String> list = new LinkedList<>();
 
-            for (Module m : _modules)
-                list.addAll(m.getSummary(c));
+        for (Module m : getModules())
+            list.addAll(m.getSummary(c));
 
-            return list;
-        }
+        return list;
     }
 
     public void initControllerToModule()
