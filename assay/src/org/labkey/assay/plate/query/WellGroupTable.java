@@ -16,11 +16,11 @@
 
 package org.labkey.assay.plate.query;
 
-import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -28,8 +28,9 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
@@ -42,43 +43,52 @@ import java.util.TreeMap;
  * Date: Nov 1, 2006
  * Time: 4:37:02 PM
  */
-public class WellGroupTable extends BasePlateTable
+public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
-    public WellGroupTable(PlateSchema schema, ContainerFilter cf, WellGroup.Type groupType)
+    public static final String NAME = "WellGroup";
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static
+    {
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateId"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Name"));
+        defaultVisibleColumns.add(FieldKey.fromParts("TypeName"));
+    }
+
+    public WellGroupTable(PlateSchema schema, ContainerFilter cf)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoWellGroup(), cf);
-        final FieldKey keyProp = new FieldKey(null, "Property");
-        final List<FieldKey> visibleColumns = new ArrayList<>();
-        addWrapColumn(_rootTable.getColumn("RowId"));
-        addWrapColumn(_rootTable.getColumn("Name"));
-        visibleColumns.add(FieldKey.fromParts("Name"));
         setTitleColumn("Name");
-        var typeCol = _rootTable.getColumn("TypeName");
-        addWrapColumn(typeCol);
-        if (groupType != null)
-            addCondition(typeCol, groupType.name());
-        var templateCol = _rootTable.getColumn("Template");
-        addWrapColumn(templateCol);
-        visibleColumns.add(FieldKey.fromParts(templateCol.getName()));
-        addCondition(templateCol, "0");
-        var plateIdColumn = new AliasedColumn(this, "Plate", _rootTable.getColumn("PlateId"));
-        plateIdColumn.setFk(new LookupForeignKey(null, (String) null, "RowId", null)
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return new PlateTable(_userSchema, cf);
-            }
-        });
-        addColumn(plateIdColumn);
-        visibleColumns.add(FieldKey.fromParts(plateIdColumn.getName()));
+        // set as readonly for now
+        _readOnly = true;
+    }
 
-        //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
+    @Override
+    public void addColumns()
+    {
+        super.addColumns();
+        addColumn(createPropertiesColumn());
+    }
 
-        //var colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-        var colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
-        String propPrefix = new Lsid("WellGroupInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
-        SimpleFilter filter = SimpleFilter.createContainerFilter(schema.getContainer());
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
+    private MutableColumnInfo createPropertiesColumn()
+    {
+        ColumnInfo lsidCol = getColumn("LSID", false);
+        var col = new AliasedColumn(this, "Properties", lsidCol);
+        col.setDescription("Properties associated with this WellGroup");
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
+        col.setIsUnselectable(true);
+
+        String propPrefix = new Lsid("WellGroupTemplate", "Folder-" + getContainer().getRowId(), "objectType#").toString();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
         filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);
         final Map<String, PropertyDescriptor> map = new TreeMap<>();
 
@@ -86,19 +96,9 @@ public class WellGroupTable extends BasePlateTable
             if (pd.getPropertyType() == PropertyType.DOUBLE)
                 pd.setFormat("0.##");
             map.put(pd.getName(), pd);
-            visibleColumns.add(new FieldKey(keyProp, pd.getName()));
-
         });
+        col.setFk(new PropertyForeignKey(getUserSchema(), getContainerFilter(), map));
 
-        colProperty.setFk(new PropertyForeignKey(schema, null, map));
-        colProperty.setIsUnselectable(true);
-        addColumn(colProperty);
-        setDefaultVisibleColumns(visibleColumns);
-    }
-
-    @Override
-    protected String getPlateIdColumnName()
-    {
-        return "Plate";
+        return col;
     }
 }
