@@ -1,5 +1,6 @@
 package org.labkey.api.dataiterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -108,6 +109,8 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         {
             lastPrefetchRowNumber = (Integer) _delegate.get(0);
             String key = (String) pkSupplier.get();
+            if (StringUtils.isEmpty(key))
+                throw new IllegalArgumentException("Key value not provided on row " + lastPrefetchRowNumber);
             rowKeyMap.put(lastPrefetchRowNumber, key);
             keyRowMap.put(key, lastPrefetchRowNumber);
             aliquotParents.put(lastPrefetchRowNumber, null);
