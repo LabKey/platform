@@ -235,7 +235,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         String controller = url.getController();
         String action = url.getAction();
         Boolean sendPageView = true;
-        Boolean isAppController = controller.equalsIgnoreCase("biologics") || controller.equalsIgnoreCase("sampleManagement") || controller.equalsIgnoreCase("freezermanager");
+        Boolean isAppController = controller.equalsIgnoreCase("biologics") || controller.equalsIgnoreCase("sampleManager") || controller.equalsIgnoreCase("freezermanager");
         Boolean isAppAction = action.equalsIgnoreCase("app") || action.equalsIgnoreCase("appDev");
 
         if (isAppController && isAppAction)
