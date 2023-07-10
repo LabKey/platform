@@ -15,7 +15,7 @@ public class PlateType
     {
     }
 
-    public PlateType(String assayType, String type, String description, Integer cols, Integer rows)
+    public PlateType(String assayType, String type, String description, Integer rows, Integer cols)
     {
         _assayType = assayType;
         _type = type;
