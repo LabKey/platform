@@ -1741,25 +1741,56 @@ public class ContainerManager
         return deletingContainers.containsKey(c.getId());
     }
 
-    // Delete a container from the database
-    public static boolean delete(final Container c, User user, @Nullable String comment)
+    // Delete containers from the database
+    private static boolean delete(final Collection<Container> containers, User user, @Nullable String comment)
     {
-        if (!isDeletable(c))
-        {
-            throw new IllegalArgumentException("Cannot delete container: " + c.getPath());
-        }
+        List<String> containerIds = containers.stream().map(Container::getId).toList();
 
-        if (deletingContainers.containsKey(c.getId()))
+        try
         {
-            throw new IllegalArgumentException("Container is already being deleted: " + c.getPath());
+            synchronized (deletingContainers)
+            {
+                for (Container container : containers)
+                {
+                    if (!isDeletable(container))
+                    {
+                        throw new IllegalArgumentException("Cannot delete container: " + container.getPath());
+                    }
+
+                    if (deletingContainers.containsKey(container.getId()))
+                    {
+                        throw new IllegalArgumentException("Container is already being deleted: " + container.getPath());
+                    }
+                }
+                containerIds.forEach(id -> deletingContainers.put(id, user.getUserId()));
+            }
+            List<Boolean> deleted = new ArrayList<>();
+            for (Container c : containers)
+            {
+                Boolean delete = delete(c, user, comment);
+                deleted.add(delete);
+            }
+            return deleted.stream().allMatch(Boolean::booleanValue);
+        }
+        finally
+        {
+            containerIds.forEach(deletingContainers::remove);
+        }
+    }
+
+    // Delete a container from the database
+    private static boolean delete(final Container c, User user, @Nullable String comment)
+    {
+        // Verify method isn't called inappropriately
+        if (!deletingContainers.containsKey(c.getId()))
+        {
+            throw new IllegalStateException("Container not flagged as being deleted: " + c.getPath());
         }
 
         LOG.debug("Starting container delete for " + c.getContainerNoun(true) + " " + c.getPath());
 
         DbScope.RetryFn<Boolean> tryDeleteContainer = (tx) ->
         {
-            deletingContainers.put(c.getId(), user.getUserId());
-
             // Verify that no children exist
             Selector sel = new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("Parent"), c), null);
 
@@ -1817,24 +1848,20 @@ public class ContainerManager
             return true;
         };
 
-        try
+        boolean success = CORE.getSchema().getScope().executeWithRetry(tryDeleteContainer);
+        if (success)
         {
-            boolean success = CORE.getSchema().getScope().executeWithRetry(tryDeleteContainer);
-            if (success)
-            {
-                LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
-            }
-            return success;
+            LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
         }
-        finally
-        {
-            deletingContainers.remove(c.getId());
-        }
+        return success;
     }
 
+    /**
+     * Delete a single container. Primarily for use by tests.
+     */
     public static boolean delete(final Container c, User user)
     {
-        return delete(c, user, null);
+        return delete(List.of(c), user, null);
     }
 
     public static boolean isDeletable(Container c)
@@ -1867,8 +1894,7 @@ public class ContainerManager
         Set<Container> depthFirst = getAllChildrenDepthFirst(root);
         depthFirst.add(root);
 
-        for (Container c : depthFirst)
-            delete(c, user, comment);
+        delete(depthFirst, user, comment);
 
         LOG.debug("Completed container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
     }
