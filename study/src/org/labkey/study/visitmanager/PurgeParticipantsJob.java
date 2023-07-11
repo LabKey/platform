@@ -153,6 +153,11 @@ public class PurgeParticipantsJob extends PipelineJob
                             _info.accept("Transaction or deadlock exception (" + e.getMessage() + "). Requeuing another participant purge attempt.");
                             retry = true;
                         }
+                        else if (ContainerManager.getAllChildren(_container).stream().anyMatch(ContainerManager::isDeleting))
+                        {
+                            _info.accept("Child container is being deleted. Requeuing another participant purge attempt.");
+                            retry = true;
+                        }
                         else
                         {
                             // Unexpected problem... log it and continue on
