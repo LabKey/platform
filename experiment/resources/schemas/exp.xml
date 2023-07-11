@@ -331,6 +331,20 @@
           <shownInInsertView>false</shownInInsertView>
           <shownInUpdateView>false</shownInUpdateView>
       </column>
+      <column columnName="AvailableAliquotCount">
+          <columnTitle>Available Aliquot Count</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AvailableAliquotVolume">
+          <columnTitle>Available Aliquot Amount</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
       <column columnName="AliquotUnit">
           <isUserEditable>false</isUserEditable>
           <shownInDetailsView>false</shownInDetailsView>
@@ -1016,6 +1030,8 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="AvailableAliquotCount"/>
+      <column columnName="AvailableAliquotVolume"/>
       <column columnName="StoredAmount">
           <displayColumnFactory>
               <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>

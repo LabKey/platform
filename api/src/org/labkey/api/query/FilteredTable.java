@@ -662,7 +662,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return dataLoggingColumns
                 .stream()
                 .map(FieldKey::getName)
-                .collect(Collectors.joining(", ", "PHI accessed in " + getPublicSchemaName() + "." + getPublicName() + ". Data shows ", "."));
+                .collect(Collectors.joining(", ", "PHI accessed in table '" + getPublicSchemaName() + "." + getPublicName() + "'. Data shows ", "."));
     }
 
     /**

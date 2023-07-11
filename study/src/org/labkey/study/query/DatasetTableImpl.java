@@ -555,7 +555,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
-        return "PHI accessed in dataset. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
+        return "PHI accessed in dataset '" + getName() + "'. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
     }
 
     @Override

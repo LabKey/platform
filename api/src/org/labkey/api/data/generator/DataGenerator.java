@@ -27,6 +27,8 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
@@ -364,6 +366,15 @@ public class DataGenerator<T extends DataGenerator.Config>
             return 0;
         }
 
+        List<Integer> sampleStatuses = new ArrayList<>();
+        for (DataState state: SampleStatusService.get().getAllProjectStates(getContainer()))
+        {
+            // skip locked/consumed to avoid operation error
+            if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                sampleStatuses.add(state.getRowId());
+
+        }
+
         _log.info(String.format("Generating %d aliquots for sample type '%s' ...", quantity, sampleType.getName()));
         CPUTimer timer = addTimer(String.format("%d '%s' aliquots", quantity, sampleType.getName()));
         timer.start();
@@ -374,7 +385,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         {
             checkAlive(_job);
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity / 100)));
-            numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()));
+            numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()), sampleStatuses);
             totalAliquots += numGenerated;
             iterations++;
         }
@@ -386,7 +397,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return totalAliquots;
     }
 
-    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    private int generateAliquotsForParents(List<Map<String, Object>> parents, QueryUpdateService svc, int quantity, int numGenerated, int generation, int maxGenerations, List<Integer> sampleStatuses) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         int generatedCount = 0;
         List<Map<String, Object>> aliquots = new ArrayList<>();
@@ -410,6 +421,12 @@ public class DataGenerator<T extends DataGenerator.Config>
             {
                 Map<String, Object> row = new CaseInsensitiveHashMap<>();
                 row.put(ExpMaterial.ALIQUOTED_FROM_INPUT, parent.get("Name"));
+                if (randomInt(0, 1) == 0)
+                    row.put("SampleState", randomIndex(sampleStatuses));
+                if (randomInt(0, 10) == 5) // set amount for 10%
+                {
+                    row.put("StoredAmount", p + (i % 15) * (1.2));
+                }
                 rows.add(row);
             }
             generatedCount += numAliquots;
@@ -426,7 +443,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
-            generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size() / 2), randomInt(aliquots.size() / 2, aliquots.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations);
+            generatedCount += generateAliquotsForParents(aliquots.subList(randomInt(0, aliquots.size() / 2), randomInt(aliquots.size() / 2, aliquots.size())), svc, quantity - generatedCount, numGenerated + generatedCount, generation + 1, maxGenerations, sampleStatuses);
         }
         return generatedCount;
     }
