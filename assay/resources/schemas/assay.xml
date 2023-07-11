@@ -90,7 +90,9 @@
     <description>Contains one row per well in a plate.</description>
     <columns>
       <column columnName="RowId"/>
-      <column columnName="LSID"/>
+      <column columnName="LSID">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="Container"/>
       <column columnName="Value">
         <description>The data value associated with each well.</description>
