@@ -144,8 +144,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
@@ -873,7 +876,7 @@ public class DavController extends SpringActionController
                 WebdavResource welcome = welcomePage(getResourcePath());
                 if (null == welcome)
                     return notFound(resource.getPath());
-                if (null != welcome && welcome.isFile())
+                if (welcome.isFile())
                     resource = welcome;
                 else
                     return notFound(resource.getPath());
@@ -5030,7 +5033,7 @@ public class DavController extends SpringActionController
             return notFound(resource.getPath());
 
         // Parse range specifier
-        List ranges = parseRange(resource);
+        List<DavController.Range> ranges = parseRange(resource);
 
         // ETag header
         // NOTE it is better to use an older etag and newer content, than vice-versa
@@ -5144,8 +5147,6 @@ public class DavController extends SpringActionController
                 if (null != file && !FileUtil.hasCloudScheme(file) && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
                     String absolutePath = file.toFile().getAbsolutePath();     // TODO: can this code be used for cloud?
-                    if (null == absolutePath)
-                        _log.warn("Failed to get absolute path for '" + FileUtil.getFileName(file));
                     long length  = Files.size(file);
                     request.setAttribute("org.apache.tomcat.sendfile.filename", absolutePath);
                     request.setAttribute("org.apache.tomcat.sendfile.start", Long.valueOf(0L));
@@ -5175,7 +5176,9 @@ public class DavController extends SpringActionController
 
                     InputStream is = getResourceInputStream(gz==null?resource:gz,getUser());
                     if (ostream != null)
+                    {
                         copy(is, ostream);
+                    }
                     else if (writer != null)
                         copy(is, writer);
                 }
@@ -5194,7 +5197,7 @@ public class DavController extends SpringActionController
             if (ranges.size() == 1)
             {
 
-                Range range = (Range) ranges.get(0);
+                Range range = ranges.get(0);
                 getResponse().addContentRange(range);
                 long length = range.end - range.start + 1;
                 getResponse().setContentLength(length);
@@ -5217,20 +5220,44 @@ public class DavController extends SpringActionController
         return WebdavStatus.SC_OK;
     }
 
+    private static final int BUFFER_SIZE = 8 * 1024 * 1024;  // 8MB
+    private static final int SMALL_BUFFER_SIZE = 1024 * 1024;  // 1MB
 
     protected void copy(InputStream istream, OutputStream ostream) throws IOException
     {
-        try
+        ReadableByteChannel inChannel = Channels.newChannel(istream);
+        try (WritableByteChannel outChannel = Channels.newChannel(ostream))
         {
-            // Copy the input stream to the output stream
-            byte buffer[] = new byte[16*1024];
-            int len;
-            while (-1 < (len = istream.read(buffer)))
-                ostream.write(buffer,0,len);
+            if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > BUFFER_SIZE)
+            {
+                // Issue 48174 - Use memory-mapped I/O for large files for best perf
+                long position = 0;
+                long totalSize = fileInChannel.size();
+                while (position < totalSize)
+                {
+                    ByteBuffer buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, position, Math.min(totalSize - position, BUFFER_SIZE));
+                    outChannel.write(buffer);
+                    position += buffer.position();
+                }
+            }
+            else
+            {
+                ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+                while (inChannel.read(buffer) != -1)
+                {
+                    buffer.flip();
+                    while (buffer.hasRemaining())
+                    {
+                        outChannel.write(buffer);
+                    }
+                    buffer.clear();
+                }
+            }
         }
         finally
         {
             close(istream, "copy InputStream");
+            close(inChannel, "copy channel");
         }
     }
 
@@ -5243,7 +5270,7 @@ public class DavController extends SpringActionController
             if (skip < start)
                 throw new IOException();
             long remaining = end - start + 1;
-            byte buffer[] = new byte[16*1024];
+            byte[] buffer = new byte[SMALL_BUFFER_SIZE];
             int len;
             while (remaining > 0 && -1 < (len = istream.read(buffer)))
             {
