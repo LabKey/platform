@@ -235,12 +235,10 @@
           <column columnName="LastIndexed"/>
           <column columnName="EntireListIndex"/>
           <column columnName="EntireListIndexSetting"/>
-          <column columnName="EntireListTitleSetting" />
           <column columnName="EntireListTitleTemplate"/>
           <column columnName="EntireListBodySetting" />
           <column columnName="EntireListBodyTemplate"/>
           <column columnName="EachItemIndex"/>
-          <column columnName="EachItemTitleSetting" />
           <column columnName="EachItemTitleTemplate"/>
           <column columnName="EachItemBodySetting" />
           <column columnName="EachItemBodyTemplate"/>
