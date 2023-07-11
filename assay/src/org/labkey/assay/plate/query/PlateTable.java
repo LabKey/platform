@@ -151,7 +151,15 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             final TableInfo plateTable = getQueryTable();
 
-            SimpleTranslator lsidGenerator = new SimpleTranslator(data.getDataIterator(context), context);
+            SimpleTranslator lsidRemover = new SimpleTranslator(data.getDataIterator(context), context);
+            lsidRemover.selectAll();
+            if (lsidRemover.getColumnNameMap().containsKey("lsid"))
+            {
+                // remove any furnished lsid since we will be computing one
+                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get("lsid"));
+            }
+
+            SimpleTranslator lsidGenerator = new SimpleTranslator(lsidRemover, context);
             lsidGenerator.setDebugName("lsidGenerator");
             lsidGenerator.selectAll();
             final Map<String, Integer> nameMap = lsidGenerator.getColumnNameMap();
@@ -161,10 +169,6 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 context.getErrors().addRowError(new ValidationException("Template is a required field"));
                 return data;
             }
-
-            // remove any furnished lsid since we will be computing one
-            if (nameMap.containsKey("lsid"))
-                lsidGenerator.removeColumn(nameMap.get("lsid"));
 
             // generate a value for the lsid
             lsidGenerator.addColumn(plateTable.getColumn("lsid"),
