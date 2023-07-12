@@ -416,6 +416,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                 DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, cf, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
                 ColumnInfo datasetColumn = table.getColumn(displayField);
+                if (null == datasetColumn)
+                    return null;
                 MutableColumnInfo lookup = WrappedColumnInfo.wrap(datasetColumn);
                 lookup.setFieldKey(new FieldKey(parent.getFieldKey(), lookup.getName()));
                 return lookup;
