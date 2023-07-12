@@ -529,7 +529,7 @@ public class SimpleFilter implements Filter
 
     public static class NotClause extends FilterClause
     {
-        private FilterClause _clause;
+        private final FilterClause _clause;
 
         public NotClause(FilterClause clause)
         {
@@ -576,7 +576,7 @@ public class SimpleFilter implements Filter
         public static final String SEPARATOR = ";";
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
-        private CompareType _comparison;
+        private final CompareType _comparison;
 
         public MultiValuedFilterClause(@NotNull FieldKey fieldKey, CompareType comparison, Collection<?> params, boolean negated)
         {

@@ -373,13 +373,14 @@ public class ListManager implements SearchService.DocumentProvider
         scope.addCommitTask(() -> {
             ListDefinition list = ListDefinitionImpl.of(listDef);
 
-            // Turning on each-item indexing or attachment indexing, or changing document title template, body template,
-            // or body setting means reindexing all items, so clear last indexed column
-            if ((!oldEachItemIndex && newEachItemIndex) ||
-                    (!oldFileAttachmentIndex && newFileAttachmentIndex) ||
-                    (!Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate)) ||
-                    (!Objects.equals(newEachItemBodyTemplate, oldEachItemBodyTemplate)) ||
-                    (newEachItemBodySetting != oldEachItemBodySetting))
+            // Turning on each-item indexing, or changing document title template, body template,
+            // or body setting with each-item turned on means reindexing all items, so clear last indexed column
+            if (newEachItemIndex && (
+                !oldEachItemIndex ||
+                !Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate) ||
+                !Objects.equals(newEachItemBodyTemplate, oldEachItemBodyTemplate) ||
+                newEachItemBodySetting != oldEachItemBodySetting
+            ))
             {
                 clearLastIndexed(scope, ListSchema.getInstance().getSchemaName(), listDef);
             }
@@ -388,17 +389,27 @@ public class ListManager implements SearchService.DocumentProvider
             if (oldEachItemIndex && !newEachItemIndex)
                 deleteIndexedItems(list);
 
+            // Turning on attachment indexing or changing title template -> clear attachment last indexed
+            if (newFileAttachmentIndex && (
+                !oldFileAttachmentIndex ||
+                !Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate) // Attachment indexing uses the each-item title template
+            ))
+                clearAttachmentLastIndexed(list);
+
             // Turning off attachment indexing -> clear attachment docs from the index
             if (oldFileAttachmentIndex && !newFileAttachmentIndex)
                 deleteIndexedAttachments(list);
 
             // Turning on entire-list indexing, or changing the title template, body template, indexing settings, or
-            // body settings means reindexing the entire-list document, so clear that list's last indexed column
-            if ((!oldEntireListIndex && newEntireListIndex) ||
-                    (!Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate)) ||
-                    (!Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate)) ||
-                    (newEntireListIndexSetting != oldEntireListIndexSetting) ||
-                    (newEntireListBodySetting != oldEntireListBodySetting))
+            // body settings with entire-list indexing on means reindexing the entire-list document, so clear that
+            // list's last indexed column
+            if (newEntireListIndex && (
+                !oldEntireListIndex ||
+                !Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate) ||
+                !Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate) ||
+                newEntireListIndexSetting != oldEntireListIndexSetting ||
+                newEntireListBodySetting != oldEntireListBodySetting
+            ))
             {
                 SQLFragment sql = new SQLFragment("UPDATE ")
                     .append(getListMetadataTable().getSelectName())
@@ -437,7 +448,6 @@ public class ListManager implements SearchService.DocumentProvider
         _listDefCache.remove(c.getId());
     }
 
-
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
     // Index all lists in this container
@@ -468,8 +478,8 @@ public class ListManager implements SearchService.DocumentProvider
                 {
                     try
                     {
-                        boolean reindex = since == null || list.getLastIndexed() == null || list.getLastIndexed().compareTo(since) > 0;
-                        indexList(task, list, false, reindex);
+                        boolean reindex = since == null;
+                        indexList(task, list, reindex);
                     }
                     catch (Exception ex)
                     {
@@ -486,13 +496,13 @@ public class ListManager implements SearchService.DocumentProvider
         task.addRunnable(r, SearchService.PRIORITY.group);
     }
 
-    public void indexList(final ListDefinition def, boolean designChange)
+    public void indexList(final ListDefinition def)
     {
-        indexList(((ListDefinitionImpl) def)._def, designChange);
+        indexList(((ListDefinitionImpl) def)._def);
     }
 
     // Index a single list
-    public void indexList(final ListDef def, boolean designChange)
+    public void indexList(final ListDef def)
     {
         SearchService ss = SearchService.get();
 
@@ -512,7 +522,7 @@ public class ListManager implements SearchService.DocumentProvider
                     //Refresh list definition -- Issue #42207 - MSSQL server returns entityId as uppercase string
                     ListDefinition list = ListService.get().getList(c, def.getListId());
                     if (null != list) // Could have just been deleted
-                        indexList(task, list, designChange, false);
+                        indexList(task, list, false);
                 }
             };
 
@@ -520,8 +530,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
     }
 
-
-    private void indexList(@NotNull IndexTask task, ListDefinition list, boolean designChange, final boolean reindex)
+    private void indexList(@NotNull IndexTask task, ListDefinition list, final boolean reindex)
     {
         Domain domain = list.getDomain();
 
@@ -862,6 +871,22 @@ public class ListManager implements SearchService.DocumentProvider
 
     private void deleteIndexedAttachments(@NotNull ListDefinition list)
     {
+        handleAttachmentParents(list, AttachmentService::deleteIndexedAttachments);
+    }
+
+    private void clearAttachmentLastIndexed(@NotNull ListDefinition list)
+    {
+        handleAttachmentParents(list, AttachmentService::clearLastIndexed);
+    }
+
+    private interface AttachmentParentHandler
+    {
+        void handle(AttachmentService as, List<String> parentIds);
+    }
+
+    // If the list has any attachment columns, select all parent IDs and invoke the passed in handler in batches of 10,000
+    private void handleAttachmentParents(@NotNull ListDefinition list, AttachmentParentHandler handler)
+    {
         // make sure container still exists (race condition on container delete)
         Container listContainer = list.getContainer();
         if (null == listContainer)
@@ -874,7 +899,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (hasAttachmentColumns(listTable))
         {
-            new TableSelector(listTable, Collections.singleton("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10_000, as::deleteIndexedAttachments);
+            new TableSelector(listTable, Collections.singleton("EntityId")).setJdbcCaching(false).forEachBatch(String.class, 10_000, parentIds -> handler.handle(as, parentIds));
         }
     }
 
@@ -1024,6 +1049,8 @@ public class ListManager implements SearchService.DocumentProvider
         SQLFragment update = new SQLFragment("UPDATE ").append(getListMetadataTable())
                 .append(" SET LastIndexed = ? WHERE Container = ? AND ListId = ?").addAll(new Timestamp(ms), list.getContainer(), list.getListId());
         new SqlExecutor(getListMetadataSchema()).execute(update);
+        _listDefCache.remove(list.getContainer().getId());
+        list = ListDefinitionImpl.of(getList(list.getContainer(), list.getListId()));
         long modified = list.getModified().getTime();
         String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
         LOG.debug("List \"" + list + "\": Set LastIndexed for entire list document" + warning);

@@ -4296,7 +4296,7 @@ public class StudyManager
 
     private void unindexDataset(DatasetDefinition ds)
     {
-        String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId())).toString();
+        String docid = "dataset:" + new Path(ds.getContainer().getId(), String.valueOf(ds.getDatasetId()));
         SearchService ss = SearchService.get();
         if (null != ss)
             ss.deleteResource(docid);
@@ -4309,12 +4309,11 @@ public class StudyManager
         if (null == ss)
             return;
 
-        SQLFragment f = new SQLFragment("SELECT Container, DatasetId FROM " + StudySchema.getInstance().getTableInfoDataset());
-        if (null != c)
-        {
-            f.append(" WHERE Container = ?");
-            f.add(c);
-        }
+        SimpleFilter filter = (null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter());
+        if (null != modifiedSince)
+            filter.addCondition(FieldKey.fromParts("Modified"), modifiedSince, CompareType.DATE_GT);
+        SQLFragment f = new SQLFragment("SELECT Container, DatasetId FROM " + StudySchema.getInstance().getTableInfoDataset() + " ")
+            .append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(rs ->
         {
@@ -4455,7 +4454,7 @@ public class StudyManager
                     StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + ptid;
             ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(ptid));
             Path p = new Path(c.getId(), ptid);
-            String docid = "participant:" + p.toString();
+            String docid = "participant:" + p;
 
             String uniqueIds = ptid;
 
