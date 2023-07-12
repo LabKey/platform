@@ -63,6 +63,7 @@ public class TsvProviderSchema extends AssayProviderSchema
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ModifiedBy")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Rows")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Columns")));
+            addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Template")));
 
             addCondition(new SimpleFilter(FieldKey.fromParts("Type"), TsvPlateTypeHandler.TYPE));
 
