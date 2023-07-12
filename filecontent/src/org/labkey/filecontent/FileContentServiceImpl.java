@@ -165,12 +165,20 @@ public class FileContentServiceImpl implements FileContentService
                     // check if there exists a child container that matches the next path segment
                     java.nio.file.Path top = rel.subpath(0, 1);
                     assert top != null;
-                    Container child = root.getChild(top.getFileName().toString());
+                    Container child = next.getChild(top.getFileName().toString());
                     if (child == null)
                         break;
 
                     next = child;
-                    rel = rel.subpath(1, rel.getNameCount() - 1);
+
+                    if(rel.getNameCount() > 1)
+                    {
+                        rel = rel.subpath(1, rel.getNameCount());
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
 
                 if (next != null && !next.equals(root))
