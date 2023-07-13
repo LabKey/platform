@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.labkey.api.assay.plate.PlateService" %>
 <%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
-<%@ page import="org.labkey.api.assay.plate.PlateTypeHandler" %>
 <%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.Link" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Option" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
