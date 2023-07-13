@@ -865,7 +865,10 @@
             }
 
             if (c.lookup) {
-                let storeId = c.lookup.storeId || [c.lookup.schemaName || c.lookup.schema,
+                if (c.lookup.storeId) {
+                    return c.lookup.storeId;
+                }
+                let storeId = [c.lookup.schemaName || c.lookup.schema,
                     c.lookup.queryName || c.lookup.table,
                     c.lookup.keyColumn,
                     c.lookup.displayColumn];
