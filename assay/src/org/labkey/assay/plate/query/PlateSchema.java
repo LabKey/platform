@@ -48,26 +48,6 @@ public class PlateSchema extends SimpleUserSchema
             WellTable.NAME
     ));
 
-    static public class Provider extends DefaultSchema.SchemaProvider
-    {
-        public Provider(@NotNull Module module)
-        {
-            super(module);
-        }
-
-        @Override
-        public boolean isAvailable(DefaultSchema schema, Module module)
-        {
-            return !PlateService.get().getPlateTemplates(schema.getContainer()).isEmpty();
-        }
-
-        @Override
-        public QuerySchema createSchema(DefaultSchema schema, Module module)
-        {
-            return new PlateSchema(schema.getUser(), schema.getContainer());
-        }
-    }
-
     public PlateSchema(User user, Container container)
     {
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AssayDbSchema.getInstance().getSchema(),
@@ -101,6 +81,13 @@ public class PlateSchema extends SimpleUserSchema
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new PlateSchema(schema.getUser(), schema.getContainer());
+            }
+
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                // because assays are always available
+                return true;
             }
         });
     }
