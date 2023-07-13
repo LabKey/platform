@@ -16,55 +16,110 @@
 
 package org.labkey.assay.plate.query;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorBuilder;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /**
  * User: brittp
  * Date: Nov 1, 2006
  * Time: 4:37:02 PM
  */
-public class PlateTable extends BasePlateTable
+public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
-    public PlateTable(PlateSchema schema, ContainerFilter cf)
+    public static final String NAME = "Plate";
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+
+    static
+    {
+        defaultVisibleColumns.add(FieldKey.fromParts("Name"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Created"));
+        defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
+        defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Template"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Rows"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
+    }
+
+    public PlateTable(PlateSchema schema, @Nullable ContainerFilter cf)
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoPlate(), cf);
-        setPublicSchemaName(PlateSchema.SCHEMA_NAME);
-        final FieldKey keyProp = new FieldKey(null, "Property");
-        final List<FieldKey> visibleColumns = new ArrayList<>();
-        addWrapColumn(_rootTable.getColumn("RowId"));
-        addWrapColumn(_rootTable.getColumn("Name"));
         setTitleColumn("Name");
-        ColumnInfo templateCol =_rootTable.getColumn("Template");
-        addWrapColumn(templateCol);
-        addCondition(templateCol, "0");
-        addWrapColumn(_rootTable.getColumn("Created"));
-        visibleColumns.add(FieldKey.fromParts("Created"));
-        addWrapColumn(_rootTable.getColumn("CreatedBy"));
-        addWrapColumn(_rootTable.getColumn("Type"));
-        visibleColumns.add(FieldKey.fromParts("CreatedBy"));
+    }
 
-        //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";
+    @Override
+    public void addColumns()
+    {
+        super.addColumns();
+        addColumn(createPropertiesColumn());
+    }
 
-        //ColumnInfo colProperty = new ExprColumn(this, "property", new SQLFragment(sqlObjectId), Types.INTEGER);
-        var colProperty = wrapColumn("property", _rootTable.getColumn("lsid"));
-        String propPrefix = new Lsid("PlateInstance", "Folder-" + schema.getContainer().getRowId(), "").toString();
-        SimpleFilter filter = new SimpleFilter();
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return defaultVisibleColumns;
+    }
+
+    private MutableColumnInfo createPropertiesColumn()
+    {
+        ColumnInfo lsidCol = getColumn("LSID", false);
+        var col = new AliasedColumn(this, "Properties", lsidCol);
+        col.setDescription("Properties associated with this Plate");
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
+        col.setIsUnselectable(true);
+
+        String propPrefix = new Lsid("PlateTemplate", "Folder-" + getContainer().getRowId(), "objectType#").toString();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(getContainer());
         filter.addCondition(FieldKey.fromParts("PropertyURI"), propPrefix, CompareType.STARTS_WITH);
         final Map<String, PropertyDescriptor> map = new TreeMap<>();
 
@@ -72,19 +127,120 @@ public class PlateTable extends BasePlateTable
             if (pd.getPropertyType() == PropertyType.DOUBLE)
                 pd.setFormat("0.##");
             map.put(pd.getName(), pd);
-            visibleColumns.add(new FieldKey(keyProp, pd.getName()));
-
         });
+        col.setFk(new PropertyForeignKey(getUserSchema(), getContainerFilter(), map));
 
-        colProperty.setFk(new PropertyForeignKey(schema, null, map));
-        colProperty.setIsUnselectable(true);
-        addColumn(colProperty);
-        setDefaultVisibleColumns(visibleColumns);
+        return col;
     }
 
     @Override
-    protected String getPlateIdColumnName()
+    public QueryUpdateService getUpdateService()
     {
-        return "RowId";
+        return new PlateUpdateService(this, AssayDbSchema.getInstance().getTableInfoPlate());
+    }
+
+    protected static class PlateUpdateService extends DefaultQueryUpdateService
+    {
+        public PlateUpdateService(TableInfo queryTable, TableInfo dbTable)
+        {
+            super(queryTable, dbTable);
+        }
+
+        @Override
+        public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
+        {
+            final TableInfo plateTable = getQueryTable();
+
+            SimpleTranslator lsidRemover = new SimpleTranslator(data.getDataIterator(context), context);
+            lsidRemover.selectAll();
+            if (lsidRemover.getColumnNameMap().containsKey("lsid"))
+            {
+                // remove any furnished lsid since we will be computing one
+                lsidRemover.removeColumn(lsidRemover.getColumnNameMap().get("lsid"));
+            }
+
+            SimpleTranslator lsidGenerator = new SimpleTranslator(lsidRemover, context);
+            lsidGenerator.setDebugName("lsidGenerator");
+            lsidGenerator.selectAll();
+            final Map<String, Integer> nameMap = lsidGenerator.getColumnNameMap();
+
+            if (!nameMap.containsKey("template"))
+            {
+                context.getErrors().addRowError(new ValidationException("Template is a required field"));
+                return data;
+            }
+
+            // generate a value for the lsid
+            lsidGenerator.addColumn(plateTable.getColumn("lsid"),
+                    (Supplier) () -> {
+                        Object isTemplate = lsidGenerator.get(nameMap.get("template"));
+                        if (isTemplate instanceof String template)
+                            isTemplate = Boolean.valueOf(template);
+
+                        return PlateManager.get().getLsid(Plate.class, container, (Boolean)isTemplate, true);
+                    });
+
+            // generate the data file id if not provided
+            if (!nameMap.containsKey("dataFileId"))
+            {
+                lsidGenerator.addColumn(plateTable.getColumn("dataFileId"),
+                        (Supplier) () -> GUID.makeGUID());
+            }
+
+            DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, lsidGenerator, container, user, context);
+            dib = new TableInsertDataIteratorBuilder(dib, plateTable, container)
+                    .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
+            dib = LoggingDataIterator.wrap(dib);
+            dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
+
+            return dib;
+        }
+
+        @Override
+        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+        {
+            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+        }
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Integer plateId = (Integer) oldRow.get("RowId");
+            PlateTemplate plate = PlateManager.get().getPlateTemplate(container, plateId);
+            if (plate != null)
+            {
+                int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+                if (runsInUse > 0)
+                    throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be updated", runsInUse));
+
+                return super.updateRow(user, container, row, oldRow);
+            }
+            return Collections.emptyMap();
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        {
+            Integer plateId = (Integer)oldRowMap.get("RowId");
+            PlateTemplate plate = PlateManager.get().getPlateTemplate(container, plateId);
+            if (plate != null)
+            {
+                int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+                if (runsInUse > 0)
+                    throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be deleted", runsInUse));
+
+                try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
+                {
+                    PlateManager.get().beforePlateDelete(container, plateId);
+                    Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
+
+                    transaction.addCommitTask(() -> PlateManager.get().clearCache(), DbScope.CommitTaskOption.POSTCOMMIT);
+                    transaction.commit();
+
+                    return returnMap;
+                }
+            }
+            return Collections.emptyMap();
+        }
     }
 }
