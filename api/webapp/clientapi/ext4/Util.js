@@ -865,12 +865,14 @@
             }
 
             if (c.lookup) {
-                return c.lookup.storeId || [
-                    c.lookup.schemaName || c.lookup.schema,
+                let storeId = c.lookup.storeId || [c.lookup.schemaName || c.lookup.schema,
                     c.lookup.queryName || c.lookup.table,
                     c.lookup.keyColumn,
-                    c.lookup.displayColumn
-                ].join('||');
+                    c.lookup.displayColumn];
+                if (c.lookup.viewName) {
+                    storeId.push(c.lookup.viewName);
+                }
+                return storeId.join('||');
             }
 
             return c.name;
