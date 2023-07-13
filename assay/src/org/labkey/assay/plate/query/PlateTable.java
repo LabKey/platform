@@ -221,16 +221,16 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
-            try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
+            Integer plateId = (Integer)oldRowMap.get("RowId");
+            PlateTemplate plate = PlateManager.get().getPlateTemplate(container, plateId);
+            if (plate != null)
             {
-                Integer plateId = (Integer)oldRowMap.get("RowId");
-                PlateTemplate plate = PlateManager.get().getPlate(container, plateId);
-                if (plate != null)
-                {
-                    int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
-                    if (runsInUse > 0)
-                        throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be deleted", runsInUse));
+                int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+                if (runsInUse > 0)
+                    throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be deleted", runsInUse));
 
+                try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
+                {
                     PlateManager.get().beforePlateDelete(container, plateId);
                     Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
@@ -239,8 +239,8 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
                     return returnMap;
                 }
-                return Collections.emptyMap();
             }
+            return Collections.emptyMap();
         }
     }
 }
