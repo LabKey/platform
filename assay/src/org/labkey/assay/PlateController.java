@@ -16,11 +16,16 @@
 
 package org.labkey.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -34,6 +39,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerTree;
@@ -41,6 +47,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -48,6 +55,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -59,11 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Jan 29, 2007
- * Time: 3:53:57 PM
- */
+@Marshal(Marshaller.Jackson)
 public class PlateController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
@@ -233,7 +237,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    @RequiresAnyOf({DeletePermission.class, DesignAssayPermission.class})
     public class DeleteAction extends FormHandlerAction<NameForm>
     {
         @Override
@@ -484,6 +488,7 @@ public class PlateController extends SpringActionController
         {
             _templateType = templateType;
         }
+
         public boolean isCopy()
         {
             return _copy;
@@ -538,6 +543,87 @@ public class PlateController extends SpringActionController
         public void setTemplateName(String templateName)
         {
             _templateName = templateName;
+        }
+    }
+
+    public static class CreatePlateForm
+    {
+        private String _name;
+        private PlateType _plateType;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public PlateType getPlateType()
+        {
+            return _plateType;
+        }
+
+        public void setPlateType(PlateType plateType)
+        {
+            _plateType = plateType;
+        }
+    }
+
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
+    {
+        @Override
+        public void validateForm(CreatePlateForm form, Errors errors)
+        {
+            if (StringUtils.trimToNull(form.getName()) == null)
+                errors.reject(ERROR_GENERIC, "Plate \"name\" is required.");
+        }
+
+        @Override
+        public Object execute(CreatePlateForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName());
+                return success(plate);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create plate. An error has occurred.");
+            }
+
+            return null;
+        }
+    }
+
+    @RequiresAnyOf({ReadPermission.class, DesignAssayPermission.class})
+    public static class GetPlateTypesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return PlateManager.get().getPlateTypes();
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetPlateOperationConfirmationDataAction extends ReadOnlyApiAction<DataViewSnapshotSelectionForm>
+    {
+        @Override
+        public void validateForm(DataViewSnapshotSelectionForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+        }
+
+        @Override
+        public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
+        {
+            var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), form.getIds(false));
+            return success(results);
         }
     }
 }
