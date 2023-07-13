@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +44,7 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -4278,7 +4280,6 @@ public class StudyManager
         }
     }
 
-
     // Return a source->alias map for the specified participant
     public Map<String, String> getAliasMap(StudyImpl study, User user, String ptid)
     {
@@ -4301,7 +4302,6 @@ public class StudyManager
         if (null != ss)
             ss.deleteResource(docid);
     }
-
 
     public static void indexDatasets(IndexTask task, Container c, Date modifiedSince)
     {
@@ -4349,7 +4349,7 @@ public class StudyManager
                 return;
             task = ss.defaultTask();
         }
-        String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDatasetId())).toString();
+        String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDatasetId()));
 
         StringBuilder body = new StringBuilder();
         Map<String, Object> props = new HashMap<>();
@@ -4394,106 +4394,109 @@ public class StudyManager
         if (null != ptids && ptids.size() == 0)
             return;
 
-        final int BATCH_SIZE = 500;
-        if (null != ptids && ptids.size() > BATCH_SIZE)
-        {
-            ArrayList<String> list = new ArrayList<>(BATCH_SIZE);
-            for (String ptid : ptids)
-            {
-                list.add(ptid);
-                if (list.size() == BATCH_SIZE)
-                {
-                    final ArrayList<String> l = list;
-                    Runnable r = () -> indexParticipants(task, c, l, modifiedSince);
-                    task.addRunnable(r, SearchService.PRIORITY.bulk);
-                    list = new ArrayList<>(BATCH_SIZE);
-                }
-            }
-            indexParticipants(task, c, list, modifiedSince);
-            return;
-        }
-
         final StudyImpl study = StudyManager.getInstance().getStudy(c);
         if (null == study)
             return;
+
         final String nav = NavTree.toJS(Collections.singleton(new NavTree("study", PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(c))), null, false).toString();
 
-        SQLFragment f = new SQLFragment();
+        SQLFragment baseFragment = new SQLFragment();
+        baseFragment.append("SELECT Container, ParticipantId FROM ");
+        baseFragment.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
 
-        f.append("SELECT Container, ParticipantId FROM ");
-        f.append(StudySchema.getInstance().getTableInfoParticipant(), "p");
-        f.append(" WHERE Container = ?");
-        f.add(c);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
-        if (null != ptids)
-        {
-            f.append(" AND ParticipantId ");
-            StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
-        }
-
-        SQLFragment lastIndexedFragment = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p").toSQLFragment(null, null);
-        if (!lastIndexedFragment.isEmpty())
-            f.append(" AND ").append(lastIndexedFragment);
-
+        SimpleFilter.OrClause lastIndexedOrClause = new SimpleFilter.OrClause();
+        LastIndexedClause standardLastIndexedClause = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p");
+        if (!standardLastIndexedClause.isEmpty())
+            lastIndexedOrClause.addClause(standardLastIndexedClause);
         @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
-
         if (null != aliasTable)
         {
             // Need to reindex participants whose aliases have changed
-            f.append(" OR ParticipantId IN (\nSELECT ParticipantId FROM\n")
+            SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
                 .append(aliasTable.getFromSQL("aliases"))
                 .append("WHERE aliases.Modified > p.LastIndexed)");
+            lastIndexedOrClause.addClause(new SimpleFilter.SQLClause(aliasFragment));
         }
+        if (!lastIndexedOrClause.getClauses().isEmpty())
+            filter.addClause(lastIndexedOrClause);
+
+        baseFragment
+            .append(" ")
+            .append(filter.getSQLFragment(StudySchema.getInstance().getSqlDialect()));
 
         final ActionURL executeURL = new ActionURL(StudyController.ParticipantAction.class, c);
         executeURL.setExtraPath(c.getId());
 
-        new SqlSelector(StudySchema.getInstance().getSchema(), f).forEach(rs -> {
-            final String ptid = rs.getString(2);
-            String displayTitle = "Study " + study.getLabel() + " -- " +
-                    StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + ptid;
-            ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(ptid));
-            Path p = new Path(c.getId(), ptid);
-            String docid = "participant:" + p;
+        final int BATCH_SIZE = 500;
+        List<List<String>> batches = ptids != null ? ListUtils.partition(ptids, BATCH_SIZE) : Collections.singletonList(null);
 
-            String uniqueIds = ptid;
+        batches.forEach(batch -> {
+            Runnable runnable = () -> {
+                SQLFragment sql;
 
-            if (null != aliasTable)
-            {
-                // Add all participant aliases as high priority uniqueIds
-                Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
-
-                if (!aliasMap.isEmpty())
-                    uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
-            }
-
-            Map<String, Object> props = new HashMap<>();
-            props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
-            props.put(SearchService.PROPERTY.title.toString(), displayTitle);
-            props.put(SearchService.PROPERTY.identifiersHi.toString(), uniqueIds);
-            props.put(SearchService.PROPERTY.navtrail.toString(), nav);
-
-            // Index a barebones participant document for now TODO: Figure out if it's safe to include demographic data or not (can all study users see it?)
-
-            // SimpleDocument
-            SimpleDocumentResource r = new SimpleDocumentResource(
-                    p, docid,
-                    c.getId(),
-                    "text/plain",
-                    displayTitle,
-                    execute, props
-            )
-            {
-                @Override
-                public void setLastIndexed(long ms, long modified)
+                if (null != batch)
                 {
-                    StudySchema ss = StudySchema.getInstance();
-                    SQLFragment update = new SQLFragment("UPDATE ").append(ss.getTableInfoParticipant()).append(" SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?");
-                    update.addAll(new Timestamp(ms), c, ptid);
-                    new SqlExecutor(ss.getSchema()).execute(update);
+                    sql = new SQLFragment(baseFragment); // Clone the base fragment before modifying
+                    sql.append(" AND ParticipantId ");
+                    StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, batch);
                 }
+                else
+                {
+                    sql = baseFragment;
+                }
+
+                new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(rs -> {
+                    final String ptid = rs.getString(2);
+                    String displayTitle = "Study " + study.getLabel() + " -- " +
+                        StudyService.get().getSubjectNounSingular(study.getContainer()) + " " + ptid;
+                    ActionURL execute = executeURL.clone().addParameter("participantId", String.valueOf(ptid));
+                    Path p = new Path(c.getId(), ptid);
+                    String docid = "participant:" + p;
+
+                    String uniqueIds = ptid;
+
+                    if (null != aliasTable)
+                    {
+                        // Add all participant aliases as high priority uniqueIds
+                        Map<String, String> aliasMap = StudyManager.getInstance().getAliasMap(study, User.getSearchUser(), ptid);
+
+                        if (!aliasMap.isEmpty())
+                            uniqueIds = uniqueIds + " " + StringUtils.join(aliasMap.values(), " ");
+                    }
+
+                    Map<String, Object> props = new HashMap<>();
+                    props.put(SearchService.PROPERTY.categories.toString(), subjectCategory.getName());
+                    props.put(SearchService.PROPERTY.title.toString(), displayTitle);
+                    props.put(SearchService.PROPERTY.identifiersHi.toString(), uniqueIds);
+                    props.put(SearchService.PROPERTY.navtrail.toString(), nav);
+
+                    // Index a barebones participant document for now TODO: Figure out if it's safe to include demographic data or not (can all study users see it?)
+
+                    // SimpleDocument
+                    SimpleDocumentResource r = new SimpleDocumentResource(
+                        p, docid,
+                        c.getId(),
+                        "text/plain",
+                        displayTitle,
+                        execute, props
+                    )
+                    {
+                        @Override
+                        public void setLastIndexed(long ms, long modified)
+                        {
+                            StudySchema ss = StudySchema.getInstance();
+                            SQLFragment update = new SQLFragment("UPDATE ").append(ss.getTableInfoParticipant()).append(" SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?");
+                            update.addAll(new Timestamp(ms), c, ptid);
+                            new SqlExecutor(ss.getSchema()).execute(update);
+                        }
+                    };
+                    task.addResource(r, SearchService.PRIORITY.item);
+                });
             };
-            task.addResource(r, SearchService.PRIORITY.item);
+
+            task.addRunnable(runnable, SearchService.PRIORITY.bulk);
         });
     }
 

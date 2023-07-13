@@ -479,7 +479,7 @@ public class SimpleFilter implements Filter
             }
         }
 
-        protected List<FilterClause> getClauses()
+        public List<FilterClause> getClauses()
         {
             return _clauses;
         }

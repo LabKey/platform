@@ -373,56 +373,77 @@ public class ListManager implements SearchService.DocumentProvider
         scope.addCommitTask(() -> {
             ListDefinition list = ListDefinitionImpl.of(listDef);
 
-            // Turning on each-item indexing, or changing document title template, body template,
-            // or body setting with each-item turned on means reindexing all items, so clear last indexed column
-            if (newEachItemIndex && (
-                !oldEachItemIndex ||
-                !Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate) ||
-                !Objects.equals(newEachItemBodyTemplate, oldEachItemBodyTemplate) ||
-                newEachItemBodySetting != oldEachItemBodySetting
-            ))
+            // Is each-item indexing turned on?
+            if (newEachItemIndex)
             {
-                clearLastIndexed(scope, ListSchema.getInstance().getSchemaName(), listDef);
+                // Turning on each-item indexing, or changing document title template, body template,
+                // or body setting -> clear this list's LastIndexed column
+                if
+                (
+                    !oldEachItemIndex ||
+                    !Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate) ||
+                    !Objects.equals(newEachItemBodyTemplate, oldEachItemBodyTemplate) ||
+                    newEachItemBodySetting != oldEachItemBodySetting
+                )
+                {
+                    clearLastIndexed(scope, ListSchema.getInstance().getSchemaName(), listDef);
+                }
+            }
+            else
+            {
+                // Turning off each-item indexing -> clear item docs from the index
+                if (oldEachItemIndex)
+                    deleteIndexedItems(list);
             }
 
-            // Turning off each-item indexing -> clear item docs from the index
-            if (oldEachItemIndex && !newEachItemIndex)
-                deleteIndexedItems(list);
-
-            // Turning on attachment indexing or changing title template -> clear attachment last indexed
-            if (newFileAttachmentIndex && (
-                !oldFileAttachmentIndex ||
-                !Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate) // Attachment indexing uses the each-item title template
-            ))
-                clearAttachmentLastIndexed(list);
-
-            // Turning off attachment indexing -> clear attachment docs from the index
-            if (oldFileAttachmentIndex && !newFileAttachmentIndex)
-                deleteIndexedAttachments(list);
-
-            // Turning on entire-list indexing, or changing the title template, body template, indexing settings, or
-            // body settings with entire-list indexing on means reindexing the entire-list document, so clear that
-            // list's last indexed column
-            if (newEntireListIndex && (
-                !oldEntireListIndex ||
-                !Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate) ||
-                !Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate) ||
-                newEntireListIndexSetting != oldEntireListIndexSetting ||
-                newEntireListBodySetting != oldEntireListBodySetting
-            ))
+            // Is attachment indexing turned on?
+            if (newFileAttachmentIndex)
             {
-                SQLFragment sql = new SQLFragment("UPDATE ")
-                    .append(getListMetadataTable().getSelectName())
-                    .append(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
-                    .add(list.getListId());
-
-                new SqlExecutor(scope).execute(sql);
+                // Turning on attachment indexing or changing title template -> clear attachment LastIndexed column
+                if
+                (
+                    !oldFileAttachmentIndex ||
+                    !Objects.equals(newEachItemTitleTemplate, oldEachItemTitleTemplate) // Attachment indexing uses the each-item title template
+                )
+                {
+                    clearAttachmentLastIndexed(list);
+                }
+            }
+            else
+            {
+                // Turning off attachment indexing -> clear attachment docs from the index
+                if (oldFileAttachmentIndex)
+                    deleteIndexedAttachments(list);
             }
 
-            // Turning off entire-list indexing -> clear entire-list doc from the index
-            if (oldEntireListIndex && !newEntireListIndex)
-                deleteIndexedEntireListDoc(list);
+            // Is entire-list indexing turned on?
+            if (newEntireListIndex)
+            {
+                // Turning on entire-list indexing, or changing the title template, body template, indexing settings, or
+                // body settings -> clear this list's last indexed column
+                if
+                (
+                    !oldEntireListIndex ||
+                    !Objects.equals(newEntireListTitleTemplate, oldEntireListTitleTemplate) ||
+                    !Objects.equals(newEntireListBodyTemplate, oldEntireListBodyTemplate) ||
+                    newEntireListIndexSetting != oldEntireListIndexSetting ||
+                    newEntireListBodySetting != oldEntireListBodySetting
+                )
+                {
+                    SQLFragment sql = new SQLFragment("UPDATE ")
+                        .append(getListMetadataTable().getSelectName())
+                        .append(" SET LastIndexed = NULL WHERE ListId = ? AND LastIndexed IS NOT NULL")
+                        .add(list.getListId());
 
+                    new SqlExecutor(scope).execute(sql);
+                }
+            }
+            else
+            {
+                // Turning off entire-list indexing -> clear entire-list doc from the index
+                if (oldEntireListIndex)
+                    deleteIndexedEntireListDoc(list);
+            }
         }, DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
@@ -432,7 +453,7 @@ public class ListManager implements SearchService.DocumentProvider
         QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldName, updatedName, new SchemaKey(null, ListQuerySchema.NAME), user, c);
     }
 
-    // CONSIDER: move "list delete" from  ListDefinitionImpl.delete() implementation to ListManager for consistency
+    // CONSIDER: move "list delete" from ListDefinitionImpl.delete() implementation to ListManager for consistency
     void deleteListDef(Container c, int listid)
     {
         DbScope scope = getListMetadataSchema().getScope();
