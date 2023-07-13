@@ -32,7 +32,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;
-import org.labkey.api.assay.plate.PlateTypeHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -62,8 +61,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -590,16 +587,8 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                PlateType plateType = form.getPlateType();
-                PlateTypeHandler plateTypeHandler = PlateManager.get().getPlateTypeHandler(plateType.getAssayType());
-                PlateTemplate plateTemplate = plateTypeHandler.createTemplate(plateType.getType(), getContainer(), plateType.getRows(), plateType.getCols());
-
-                Plate plate = PlateManager.get().createPlate(plateTemplate, null, null);
-                plate.setName(form.getName());
-
-                int plateRowId = PlateManager.get().save(getContainer(), getUser(), plate);
-
-                return success(PlateManager.get().getPlate(getContainer(), plateRowId));
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName());
+                return success(plate);
             }
             catch (Exception e)
             {
@@ -633,25 +622,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
         {
-            List<Map<String, Object>> allowedRows = new ArrayList<>();
-            List<Map<String, Object>> notAllowedRows = new ArrayList<>();
-
-            // TODO: This is really expensive. Find a way to consolidate this check into a single query.
-            form.getIds(false).forEach(plateRowId -> {
-                Map<String, Object> rowMap = Map.of("RowId", plateRowId);
-                PlateTemplate plate = PlateManager.get().getPlate(getContainer(), plateRowId);
-                if (plate == null)
-                    notAllowedRows.add(rowMap);
-                else if (PlateManager.get().getRunCountUsingPlateTemplate(getContainer(), plate) > 0)
-                    notAllowedRows.add(rowMap);
-                else
-                    allowedRows.add(rowMap);
-            });
-
-            Map<String, Collection<Map<String, Object>>> results = new HashMap<>();
-            results.put("allowed", allowedRows);
-            results.put("notAllowed", notAllowedRows);
-
+            var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), form.getIds(false));
             return success(results);
         }
     }

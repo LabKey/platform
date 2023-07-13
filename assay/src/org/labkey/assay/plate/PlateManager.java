@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -95,11 +96,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.labkey.api.data.CompareType.IN;
 
 /**
@@ -174,6 +177,33 @@ public class PlateManager implements PlateService
             return new PlateImpl(plateTemplate, wellValues, excluded, runId, plateNumber);
 
         throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
+    }
+
+    public @NotNull Plate createAndSavePlate(
+        @NotNull Container container,
+        @NotNull User user,
+        @NotNull PlateType plateType,
+        @Nullable String plateName
+    ) throws Exception
+    {
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            PlateTypeHandler plateTypeHandler = getPlateTypeHandler(plateType.getAssayType());
+            PlateTemplate plateTemplate = plateTypeHandler.createTemplate(plateType.getType(), container, plateType.getRows(), plateType.getCols());
+
+            Plate plate = createPlate(plateTemplate, null, null);
+            if (StringUtils.trimToNull(plateName) != null)
+                plate.setName(plateName.trim());
+
+            int plateRowId = save(container, user, plate);
+            plate = getPlate(container, plateRowId);
+            if (plate == null)
+                throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save.");
+
+            tx.commit();
+
+            return plate;
+        }
     }
 
     @Override
@@ -524,12 +554,16 @@ public class PlateManager implements PlateService
         return new Lsid(nameSpace, "Folder-" + container.getRowId(), id);
     }
 
+    private DbScope.Transaction ensureTransaction(Lock... locks)
+    {
+        return AssayDbSchema.getInstance().getSchema().getScope().ensureTransaction(locks);
+    }
+
     private int savePlateImpl(Container container, User user, PlateTemplateImpl plate) throws Exception
     {
         boolean updateExisting = plate.getRowId() != null;
 
-        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (DbScope.Transaction transaction = ensureTransaction())
         {
             Integer plateId = plate.getRowId();
             String plateInstanceLsid = plate.getLSID();
@@ -680,7 +714,7 @@ public class PlateManager implements PlateService
     }
 
     // return a list of wellId and wellGroupId pairs
-    private List<List<Integer>> getWellGroupPositions(PlateTemplateImpl plate, PositionImpl position) throws SQLException
+    private List<List<Integer>> getWellGroupPositions(PlateTemplateImpl plate, PositionImpl position)
     {
         List<? extends WellGroupTemplateImpl> groups = plate.getWellGroups(position);
         List<List<Integer>> wellGroupPositions = new ArrayList<>(groups.size());
@@ -1090,10 +1124,33 @@ public class PlateManager implements PlateService
         return plateTypes;
     }
 
+    public @NotNull Map<String, Collection<Map<String, Object>>> getPlateOperationConfirmationData(
+        @NotNull Container container,
+        @NotNull Set<Integer> plateRowIds
+    )
+    {
+        List<Map<String, Object>> allowedRows = new ArrayList<>();
+        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+
+        // TODO: This is really expensive. Find a way to consolidate this check into a single query.
+        plateRowIds.forEach(plateRowId -> {
+            Map<String, Object> rowMap = Map.of("RowId", plateRowId);
+            PlateTemplate plate = getPlate(container, plateRowId);
+            if (plate == null)
+                notAllowedRows.add(rowMap);
+            else if (getRunCountUsingPlateTemplate(container, plate) > 0)
+                notAllowedRows.add(rowMap);
+            else
+                allowedRows.add(rowMap);
+        });
+
+        return Map.of("allowed", allowedRows, "notAllowed", notAllowedRows);
+    }
+
     public static final class TestCase
     {
         @Test
-        public void createPlateTemplate() throws SQLException, Exception
+        public void createPlateTemplate() throws Exception
         {
             final Container c = JunitUtil.getTestContainer();
 
@@ -1208,5 +1265,19 @@ public class PlateManager implements PlateService
             assertEquals(0, PlateManager.get().getPlateTemplates(c).size());
         }
 
+        @Test
+        public void testCreateAndSavePlate() throws Exception
+        {
+            // Arrange
+            Container container = JunitUtil.getTestContainer();
+            User user = TestContext.get().getUser();
+            PlateType plateType = new PlateType(TsvPlateTypeHandler.TYPE, TsvPlateTypeHandler.BLANK_PLATE, "Test plate type", 8, 12);
+
+            // Act
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "testCreateAndSavePlate plate");
+
+            // Assert
+            assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
+        }
     }
 }

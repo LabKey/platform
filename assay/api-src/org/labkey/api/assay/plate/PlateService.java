@@ -58,7 +58,8 @@ public interface PlateService
     }
 
     /**
-     * Creates a new plate instance based on the specified plate template and well data.
+     * Instantiates a new plate instance based on the specified plate template and well data.
+     * This plate is not persisted to the database.
      * @param template The template that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
@@ -69,7 +70,8 @@ public interface PlateService
     @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells, int runId, int plateNumber);
 
     /**
-     * Creates a new plate instance based on the specified plate template and well data.
+     * Instantiates a new plate instance based on the specified plate template and well data.
+     * This plate is not persisted to the database.
      * @param template The template that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
