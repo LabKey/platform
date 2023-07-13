@@ -1764,13 +1764,12 @@ public class ContainerManager
                 }
                 containerIds.forEach(id -> deletingContainers.put(id, user.getUserId()));
             }
-            List<Boolean> deleted = new ArrayList<>();
+            boolean deleted = true;
             for (Container c : containers)
             {
-                Boolean delete = delete(c, user, comment);
-                deleted.add(delete);
+                deleted = deleted && delete(c, user, comment);
             }
-            return deleted.stream().allMatch(Boolean::booleanValue);
+            return deleted;
         }
         finally
         {
@@ -1852,6 +1851,10 @@ public class ContainerManager
         if (success)
         {
             LOG.debug("Completed container delete for " + c.getContainerNoun(true) + " " + c.getPath());
+        }
+        else
+        {
+            LOG.warn("Failed to delete container: " + c.getPath());
         }
         return success;
     }
