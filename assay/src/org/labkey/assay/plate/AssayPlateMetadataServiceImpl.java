@@ -161,25 +161,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             if (!jsonData.isEmpty())
             {
-                try
+                AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+                TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_DATA_TABLE, null);
+                if (tableInfo != null)
                 {
-                    AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
-                    TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_DATA_TABLE, null);
-                    if (tableInfo != null)
-                    {
-                        QueryUpdateService qus = tableInfo.getUpdateService();
-                        BatchValidationException errors = new BatchValidationException();
+                    QueryUpdateService qus = tableInfo.getUpdateService();
+                    BatchValidationException errors = new BatchValidationException();
 
-                        qus.insertRows(user, container, jsonData, errors, null, null);
-                        if (errors.hasErrors())
-                        {
-                            throw new ExperimentException(errors.getLastRowError());
-                        }
+                    qus.insertRows(user, container, jsonData, errors, null, null);
+                    if (errors.hasErrors())
+                    {
+                        throw new ExperimentException(errors.getLastRowError());
                     }
-                }
-                catch (Exception e)
-                {
-                    throw new ExperimentException(e);
                 }
             }
         }
