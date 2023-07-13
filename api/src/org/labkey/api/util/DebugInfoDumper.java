@@ -318,7 +318,7 @@ public class DebugInfoDumper
         List<Thread> threads = new ArrayList<>(stackTraces.keySet());
         threads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
 
-        Set<String> skipMethods = Set.of("pushThreadDumpContext", "beginTransaction", "ensureTransaction", "getTroubleshootingStackTrace");
+        Set<String> skipMethods = Set.of("pushThreadDumpContext", "beginTransaction", "ensureTransaction", "execute", "getTroubleshootingStackTrace");
 
         for (Thread thread : threads)
         {
@@ -351,7 +351,7 @@ public class DebugInfoDumper
                 var messages = extraInfo.toArray(new ThreadExtraContext[0]);
                 for (var i = messages.length-1 ; i>= 0 ; i--)
                 {
-                    logWriter.debug("\t" + messages[i].context);
+                    logWriter.debug("\t" + messages[i].context.replace('\n',' '));
                     var messageStack = messages[i].stack();
                     if (null != messageStack)
                     {
