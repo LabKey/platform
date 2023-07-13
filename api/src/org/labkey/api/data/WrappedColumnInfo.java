@@ -21,6 +21,10 @@ public class WrappedColumnInfo
 {
     public static MutableColumnInfo wrap(ColumnInfo delegate)
     {
+        if (delegate == null)
+        {
+            throw new NullPointerException("Cannot wrap a null column");
+        }
         return new MutableColumnInfoWrapper(delegate);
     }
 
