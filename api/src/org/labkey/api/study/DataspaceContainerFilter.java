@@ -184,7 +184,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     */
     private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", new CacheLoader<String,Set<GUID>>(){
         @Override
-        public Set<GUID> load(String key, @Nullable Object argument)
+        public Set<GUID> load(@NotNull String key, @Nullable Object argument)
         {
             Container project = ContainerManager.getForId(key);
             if (null == project || !project.isProject())

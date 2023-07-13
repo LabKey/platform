@@ -145,7 +145,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController.StudyJspView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
@@ -1609,11 +1608,11 @@ public class StudyManager
 
                     SQLFragment sqlf = new SQLFragment();
                     sqlf.append("DELETE FROM ");
-                    sqlf.append(t.getSelectName());
+                    sqlf.append(t);
                     if (schema.getSqlDialect().isSqlServer())
                         sqlf.append(" WITH (UPDLOCK)");
                     sqlf.append(" WHERE LSID IN (SELECT LSID FROM ");
-                    sqlf.append(t.getSelectName());
+                    sqlf.append(t);
                     sqlf.append(" d, ");
                     sqlf.append(StudySchema.getInstance().getTableInfoParticipantVisit(), "pv");
                     sqlf.append(" WHERE d.ParticipantId = pv.ParticipantId AND d.SequenceNum = pv.SequenceNum AND pv.Container = ?");
@@ -1994,11 +1993,11 @@ public class StudyManager
         try (Transaction transaction = scope.ensureTransaction())
         {
             // TODO fix updating across study data
-            SQLFragment sql = new SQLFragment("UPDATE " + def.getStorageTableInfo().getSelectName() + "\n" +
-                    "SET QCState = ");
+            SQLFragment sql = new SQLFragment("UPDATE " ).append(def.getStorageTableInfo());
+            sql.append(" SET QCState = ");
             // do string concatenation, rather that using a parameter, for the new state id because Postgres null
             // parameters are typed which causes a cast exception trying to set the value back to null (bug 6370)
-            sql.append(newState != null ? newState.getRowId() : "NULL");
+            sql.appendValue(newState != null ? newState.getRowId() : null);
             sql.append(", modified = ?");
             sql.add(new Date());
             sql.append("\nWHERE lsid ");
@@ -2510,12 +2509,12 @@ public class StudyManager
             "WHERE v.RowId = vm.VisitRowId and vm.DataSetId = d.DataSetId and " +
             "v.Container = vm.Container and vm.Container = d.Container " +
             "and v.Container = ? and v.RowId = ?\n" +
-            "ORDER BY d.DisplayOrder,d.DataSetId;";
+            "ORDER BY d.DisplayOrder,d.DataSetId";
 
     private static final String VISITMAP_JOIN_BY_DATASET = "SELECT vm.VisitRowId, vm.Required\n" +
             "FROM study.VisitMap vm JOIN study.Visit v ON vm.VisitRowId = v.RowId\n" +
             "WHERE vm.Container = ? AND vm.DataSetId = ?\n" +
-            "ORDER BY v.DisplayOrder, v.RowId;";
+            "ORDER BY v.DisplayOrder, v.RowId";
 
     List<VisitDataset> getMapping(final VisitImpl visit)
     {
@@ -2667,8 +2666,7 @@ public class StudyManager
 
         SchemaKey schemaPath = SchemaKey.fromParts(SCHEMA.getSchemaName());
         QueryService.get().fireQueryDeleted(user, study.getContainer(), null, schemaPath, Collections.singleton(ds.getName()));
-        StudyServiceImpl.addDatasetAuditEvent(
-                user, study.getContainer(), ds, "Dataset deleted: " + ds.getName(),null);
+        new DatasetDefinition.DatasetAuditHandler(ds).addAuditEvent(user, study.getContainer(), AuditBehaviorType.DETAILED, "Dataset deleted: " + ds.getName(),null);
 
         unindexDataset(ds);
     }
@@ -2899,7 +2897,7 @@ public class StudyManager
     {
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ");
-        sql.append(StudySchema.getInstance().getTableInfoStudySnapshot().getSelectName());
+        sql.append(StudySchema.getInstance().getTableInfoStudySnapshot());
         sql.append(" SET ");
         sql.append(columnName);
         sql.append(" = NULL WHERE ");
@@ -2957,6 +2955,7 @@ public class StudyManager
 
         try (ResultSet rs = new TableSelector(sdti, filter, new Sort("DatasetId")).getResultSet())
         {
+            ColumnInfo visitDateCol = sdti.getColumn("_VisitDate");
             while (rs.next())
             {
                 ParticipantDataset pd = new ParticipantDataset();
@@ -2969,7 +2968,7 @@ public class StudyManager
                 if (!dataset.isDemographicData())
                 {
                     pd.setSequenceNum(rs.getBigDecimal("SequenceNum"));
-                    pd.setVisitDate(rs.getTimestamp("_VisitDate"));
+                    pd.setVisitDate(rs.getTimestamp(visitDateCol.getAlias()));
                 }
                 pd.setParticipantId(rs.getString("ParticipantId"));
                 pds.add(pd);
@@ -3099,7 +3098,7 @@ public class StudyManager
         SQLFragment filter = new SQLFragment();
         if (!study.getShareDatasetDefinitions())
         {
-            filter.append("Container=").append(study.getContainer());
+            filter.append("Container=").appendValue(study.getContainer());
         }
         else
         {
@@ -3363,9 +3362,8 @@ public class StudyManager
     private void setAlternateId(Study study, String containerId, String participantId, @Nullable String alternateId)
     {
         // Set alternateId even if null, because that's how we clear it
-        SQLFragment sql = new SQLFragment(String.format(
-                "UPDATE %s SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?", SCHEMA.getTableInfoParticipant().getSelectName()),
-                alternateId, containerId, participantId);
+        SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET AlternateId = ? WHERE Container = ? AND ParticipantId = ?")
+                .addAll(alternateId, containerId, participantId);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
@@ -3375,7 +3373,7 @@ public class StudyManager
         assert null != participantId;
         if (null != alternateId || null != dateOffset)
         {
-            SQLFragment sql = new SQLFragment("UPDATE " + SCHEMA.getTableInfoParticipant().getSelectName() + " SET ");
+            SQLFragment sql = new SQLFragment("UPDATE ").append(SCHEMA.getTableInfoParticipant()).append(" SET ");
             boolean needComma = false;
             if (null != alternateId)
             {
@@ -4491,8 +4489,9 @@ public class StudyManager
                 public void setLastIndexed(long ms, long modified)
                 {
                     StudySchema ss = StudySchema.getInstance();
-                    new SqlExecutor(ss.getSchema()).execute("UPDATE " + ss.getTableInfoParticipant().getSelectName() +
-                        " SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?", new Timestamp(ms), c, ptid);
+                    SQLFragment update = new SQLFragment("UPDATE ").append(ss.getTableInfoParticipant()).append(" SET LastIndexed = ? WHERE Container = ? AND ParticipantId = ?");
+                    update.addAll(new Timestamp(ms), c, ptid);
+                    new SqlExecutor(ss.getSchema()).execute(update);
                 }
             };
             task.addResource(r, SearchService.PRIORITY.item);

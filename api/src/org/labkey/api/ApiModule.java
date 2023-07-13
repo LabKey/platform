@@ -18,7 +18,6 @@ package org.labkey.api;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.json.OldJsonTest;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
@@ -39,6 +38,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DiskCachingDataIterator;
@@ -48,6 +48,7 @@ import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
 import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
@@ -73,8 +74,8 @@ import org.labkey.api.reader.JSONDataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.reports.report.ReportType;
+import org.labkey.api.reports.report.r.RReport;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
 import org.labkey.api.security.AuthenticationConfiguration;
@@ -174,6 +175,7 @@ public class ApiModule extends CodeOnlyModule
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
             ExistingRecordDataIterator.TestCase.class,
+            ExperimentJSONConverter.TestCase.class,
             ExtUtil.TestCase.class,
             FieldKey.TestCase.class,
             FileType.TestCase.class,
@@ -189,12 +191,13 @@ public class ApiModule extends CodeOnlyModule
             JsonUtil.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
+            Measurement.Unit.TestCase.class,
+            Measurement.TestCase.class,
             MemTracker.TestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
-            OldJsonTest.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             PasswordExpiration.TestCase.class,
@@ -229,6 +232,7 @@ public class ApiModule extends CodeOnlyModule
     {
         List<Factory<Class<?>>> list = new ArrayList<>(super.getIntegrationTestFactories());
         list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        list.add(new JspTestCase("/org/labkey/api/module/actionAndFormTest.jsp"));
         return list;
     }
 

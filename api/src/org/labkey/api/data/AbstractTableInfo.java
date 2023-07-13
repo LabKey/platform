@@ -52,6 +52,7 @@ import org.labkey.api.query.SchemaTreeVisitor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.ColumnInfoTransformer;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -344,7 +345,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSelectName())
-            return new SQLFragment().append(getSelectName()).append(" ").append(alias);
+            return new SQLFragment().appendIdentifier(getSelectName()).append(" ").append(alias);
         else
             return new SQLFragment().append("(").append(getFromSQL()).append(") ").append(alias);
     }
@@ -1100,6 +1101,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
             }
             if (!fromSchema.getSchemaName().equals(fk.getFkDbSchema()) || !effectiveTargetContainer.equals(fromSchema.getContainer()))
             {
+                if (lookupContainer == null) {
+                    cf = QueryService.get().getProductContainerFilterForLookups(fromSchema.getContainer(), fromSchema.getUser(), cf);
+                }
+
                 // Let the QueryForeignKey lazily create the schema on demand
                 ret = QueryForeignKey.from(fromSchema, cf)
                         .schema(fk.getFkDbSchema(), effectiveTargetContainer)
@@ -1116,6 +1121,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         if (ret == null)
         {
+            if (lookupContainer == null) {
+                cf = QueryService.get().getProductContainerFilterForLookups(fromSchema.getContainer(), fromSchema.getUser(), cf);
+            }
+
             // We can reuse the same schema object
             ret = QueryForeignKey.from(fromSchema, cf)
                     .container(lookupContainer)
@@ -1290,10 +1299,10 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
-        if(xmlTable.getImportMessage() != null)
+        if (xmlTable.getImportMessage() != null)
             setImportMessage(xmlTable.getImportMessage());
 
-        if(xmlTable.getImportTemplates() != null)
+        if (xmlTable.getImportTemplates() != null)
             setImportTemplates(xmlTable.getImportTemplates().getTemplateArray());
 
         // Optimization - only check for wrapped columns based on the "real" set of columns, not columns that are
@@ -1380,7 +1389,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         if (xmlTable.getButtonBarOptions() != null)
             _buttonBarConfig = new ButtonBarConfig(xmlTable.getButtonBarOptions());
 
-        if(xmlTable.getAggregateRowOptions() != null && xmlTable.getAggregateRowOptions().getPosition() != null)
+        if (xmlTable.getAggregateRowOptions() != null && xmlTable.getAggregateRowOptions().getPosition() != null)
         {
             setAggregateRowConfig(xmlTable);
         }
@@ -1501,11 +1510,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _aggregateRowConfig = new AggregateRowConfig(false, false);
 
         PositionTypeEnum.Enum position = xmlTable.getAggregateRowOptions().getPosition();
-        if(position.equals(PositionTypeEnum.BOTH) || position.equals(PositionTypeEnum.TOP))
+        if (position.equals(PositionTypeEnum.BOTH) || position.equals(PositionTypeEnum.TOP))
         {
             _aggregateRowConfig.setAggregateRowFirst(true);
         }
-        if(position.equals(PositionTypeEnum.BOTH) || position.equals(PositionTypeEnum.BOTTOM))
+        if (position.equals(PositionTypeEnum.BOTH) || position.equals(PositionTypeEnum.BOTTOM))
         {
             _aggregateRowConfig.setAggregateRowLast(true);
         }
@@ -1576,13 +1585,6 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         {
             loadFromXML(schema, metadata, errors);
         }
-    }
-
-    @Nullable
-    @Override
-    public String getSelectName()
-    {
-        return null;
     }
 
     @Nullable
@@ -1889,14 +1891,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         //RenderContext rc = new RenderContext(ctx);
         Map<String, Container> renderCtx = Collections.singletonMap("container", ctx.getContainer());
 
-        if(_importTemplates != null)
+        if (_importTemplates != null)
         {
             for (Pair<String, StringExpression> pair : _importTemplates)
             {
-                if(pair.second instanceof DetailsURL)
-                    templates.add(Pair.of(pair.first, ((DetailsURL)pair.second).copy(ctx.getContainer()).getActionURL().toString()));
-                else if (pair.second instanceof StringExpressionFactory.URLStringExpression)
-                    templates.add(Pair.of(pair.first, pair.second.eval(renderCtx)));
+                if (pair.second instanceof DetailsURL detailsURL)
+                    templates.add(Pair.of(pair.first, detailsURL.copy(ctx.getContainer()).getActionURL().toString()));
+                else if (pair.second instanceof StringExpressionFactory.URLStringExpression expr)
+                    templates.add(Pair.of(pair.first, expr.eval(renderCtx)));
             }
         }
 
@@ -1980,6 +1982,22 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean supportsInsertOption(QueryUpdateService.InsertOption option)
     {
         return !_disallowedInsertOptions.contains(option);
+    }
+
+    private Map<FieldKey, SearchService.PROPERTY> searchIndexColumns = null;
+
+    public void indexColumn(FieldKey column, SearchService.PROPERTY property)
+    {
+        if (searchIndexColumns == null)
+            searchIndexColumns = new HashMap<>();
+        searchIndexColumns.put(column, property);
+    }
+
+    public SearchService.PROPERTY getSearchIndexColumn(FieldKey column)
+    {
+        if (searchIndexColumns == null)
+            return null;
+        return searchIndexColumns.get(column);
     }
 
     public static class TestCase extends Assert{

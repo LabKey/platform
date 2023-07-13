@@ -72,6 +72,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.util.JspTestCase;
@@ -120,6 +121,7 @@ import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
 import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
+import org.labkey.query.sql.Method;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.SqlParser;
 import org.labkey.query.view.InheritedQueryDataViewProvider;
@@ -378,6 +380,7 @@ public class QueryModule extends DefaultModule
             JdbcType.TestCase.class,
             MemberSet.TestCase.class,
             MetadataElementBase.TestCase.class,
+            Method.TestCase.class,
             QNode.TestCase.class,
             ReportsController.SerializationTest.class,
             SqlParser.SqlParserTestCase.class,

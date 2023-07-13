@@ -27,12 +27,32 @@ import java.util.List;
  */
 public interface ExperimentListener
 {
+    /** Called after an experiment is deleted (in-transaction). */
+    default void afterExperimentDeleted(Container c, User user, ExpExperiment experiment)
+    {
+    }
+
+    /** Called after an experiment is saved (post-transaction). */
+    default void afterExperimentSaved(Container c, User user, ExpExperiment experiment)
+    {
+    }
+
     /** Called before deleting a row from exp.experiment */
     default void beforeExperimentDeleted(Container c, User user, ExpExperiment experiment)
     {}
 
     default void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols)
     { }
+
+    /** Called after an experiment run is deleted (in-transaction). */
+    default void afterRunDelete(ExpProtocol protocol, ExpRun run, User user)
+    {
+    }
+
+    /** Called after an experiment run is saved (post-transaction). */
+    default void afterRunSaved(Container container, User user, ExpProtocol protocol, ExpRun run)
+    {
+    }
 
     // called before the experiment run is created (and saved)
     default void beforeRunCreated(Container container, User user, ExpProtocol protocol, ExpRun run) throws BatchValidationException
@@ -57,5 +77,4 @@ public interface ExperimentListener
     default void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user) { }
 
     default void afterMaterialCreated(List<? extends ExpMaterial> materials, Container container, User user) { }
-
 }

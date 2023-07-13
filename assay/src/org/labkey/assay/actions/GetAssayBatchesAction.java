@@ -15,7 +15,8 @@
  */
 package org.labkey.assay.actions;
 
-import org.json.old.JSONArray;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.assay.DefaultAssaySaveHandler;
@@ -36,9 +37,10 @@ public class GetAssayBatchesAction extends BaseProtocolAPIAction<SimpleApiJsonFo
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors)
     {
         List<ExpExperiment> batches = new ArrayList<>();
-        if (form.getJsonObject().has(AssayJSONConverter.BATCH_IDS))
+        JSONObject json = form.getJsonObject();
+        if (json.has(AssayJSONConverter.BATCH_IDS))
         {
-            JSONArray batchIds = form.getJsonObject().getJSONArray(AssayJSONConverter.BATCH_IDS);
+            JSONArray batchIds = json.getJSONArray(AssayJSONConverter.BATCH_IDS);
             for (int idx = 0; idx < batchIds.length(); idx++)
             {
                 int batchId = batchIds.getInt(idx);

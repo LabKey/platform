@@ -15,6 +15,7 @@
  */
 package org.labkey.assay.actions;
 
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.assay.DefaultAssaySaveHandler;
@@ -25,10 +26,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.springframework.validation.BindException;
 
-/**
- * User: jeckels
- * Date: Jan 15, 2009
- */
 @RequiresPermission(ReadPermission.class)
 public class GetAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
@@ -36,9 +33,10 @@ public class GetAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonForm
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors)
     {
         ExpExperiment batch = null;
-        if (form.getJsonObject().has(AssayJSONConverter.BATCH_ID))
+        JSONObject json = form.getJsonObject();
+        if (json.has(AssayJSONConverter.BATCH_ID))
         {
-            int batchId = form.getJsonObject().getInt(AssayJSONConverter.BATCH_ID);
+            int batchId = json.getInt(AssayJSONConverter.BATCH_ID);
             batch = DefaultAssaySaveHandler.lookupBatch(getContainer(), batchId);
         }
 

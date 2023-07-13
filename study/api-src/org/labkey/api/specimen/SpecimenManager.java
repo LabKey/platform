@@ -77,7 +77,7 @@ public class SpecimenManager
     {
         TableInfo tableInfo = SpecimenSchema.get().getTableInfoSpecimenEvent(container);
         SQLFragment sql = new SQLFragment("SELECT MAX(ExternalId) FROM ");
-        sql.append(tableInfo.getSelectName());
+        sql.append(tableInfo);
         return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Long.class).get(0);
     }
 
@@ -174,7 +174,7 @@ public class SpecimenManager
 
         new SqlExecutor(SpecimenSchema.get().getSchema()).execute(deleteVialSql);
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen.getSelectName() + " WHERE ").append(visitRangeSql1);
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " ).append( tableInfoSpecimen ).append( " WHERE ").append(visitRangeSql1);
         SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 
@@ -197,12 +197,10 @@ public class SpecimenManager
         sqlVisitRange.append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" >= ? AND ")
                 .append(tinfoSpecimen.getColumn("VisitValue").getValueSql(specimenAlias)).append(" <= ?");
 
-        SQLFragment sql = new SQLFragment();
         if (TimepointType.VISIT == study.getTimepointType())
         {
-            sql.append(sqlVisitRange);
-            sql.add(visit.getSequenceNumMin());
-            sql.add(visit.getSequenceNumMax());
+            sqlVisitRange.add(visit.getSequenceNumMin());
+            sqlVisitRange.add(visit.getSequenceNumMax());
         }
         else
         {
@@ -219,12 +217,11 @@ public class SpecimenManager
             }
             else
             {
-                sql.append(sqlVisitRange);
-                sql.add(visitValues.get(0));
-                sql.add(visitValues.get(visitValues.size() - 1));
+                sqlVisitRange.add(visitValues.get(0));
+                sqlVisitRange.add(visitValues.get(visitValues.size() - 1));
             }
         }
-        return sql;
+        return sqlVisitRange;
     }
 
     public void deleteSpecimen(@NotNull Vial vial, boolean clearCaches)

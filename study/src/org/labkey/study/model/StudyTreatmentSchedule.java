@@ -15,10 +15,11 @@
  */
 package org.labkey.study.model;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
-import org.labkey.api.action.CustomApiForm;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.HttpView;
 
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import java.util.Map;
 /**
  * Represents a study's cohort/treatment/visit mapping information. Used to serialize JSON to the treatment schedule.
  */
-public class StudyTreatmentSchedule implements CustomApiForm
+public class StudyTreatmentSchedule implements ApiJsonForm
 {
     Container _container;
 
@@ -149,31 +150,24 @@ public class StudyTreatmentSchedule implements CustomApiForm
     }
 
     @Override
-    public void bindProperties(Map<String, Object> props)
+    public void bindJson(JSONObject json)
     {
         _container = HttpView.currentContext().getContainer();
 
-        Object treatmentsInfo = props.get("treatments");
-        if (treatmentsInfo != null && treatmentsInfo instanceof JSONArray)
+        JSONArray treatmentsJSON = json.optJSONArray("treatments");
+        if (treatmentsJSON != null)
         {
             _treatments = new ArrayList<>();
-
-            JSONArray treatmentsJSON = (JSONArray) treatmentsInfo;
-            for (int i = 0; i < treatmentsJSON.length(); i++)
-                _treatments.add(TreatmentImpl.fromJSON(treatmentsJSON.getJSONObject(i), _container));
+            for (JSONObject treatment : JsonUtil.toJSONObjectList(treatmentsJSON))
+                _treatments.add(TreatmentImpl.fromJSON(treatment, _container));
         }
 
-        Object cohortsInfo = props.get("cohorts");
-        if (cohortsInfo != null && cohortsInfo instanceof JSONArray)
+        JSONArray cohortsJSON = json.optJSONArray("cohorts");
+        if (cohortsJSON != null)
         {
             _cohorts = new ArrayList<>();
-
-            JSONArray cohortsJSON = (JSONArray) cohortsInfo;
-            for (int i = 0; i < cohortsJSON.length(); i++)
-            {
-                JSONObject cohortJSON = cohortsJSON.getJSONObject(i);
+            for (JSONObject cohortJSON : JsonUtil.toJSONObjectList(cohortsJSON))
                 _cohorts.add(CohortImpl.fromJSON(cohortJSON));
-            }
         }
     }
 }

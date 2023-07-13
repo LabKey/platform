@@ -18,8 +18,8 @@ package org.labkey.api.data.views;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
@@ -158,17 +158,17 @@ public class DataViewService
 
     public static final int DEFAULT_CATEGORY_DISPLAY_ORDER = 1000;
 
-    public JSONArray toJSON(Container container, User user, List<DataViewInfo> views)
+    public JSONArray toJSON(User user, List<DataViewInfo> views)
     {
         JSONArray jsonViews = new JSONArray();
 
         for (DataViewInfo info : views)
-            jsonViews.put(toJSON(container, user, info));
+            jsonViews.put(toJSON(user, info));
 
         return jsonViews;
     }
 
-    public JSONObject toJSON(Container container, User user, DataViewInfo info)
+    public JSONObject toJSON(User user, DataViewInfo info)
     {
         JSONObject o = new JSONObject();
 

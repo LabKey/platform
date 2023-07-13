@@ -77,6 +77,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
             case Contact:
                 var contactCol = wrapColumn(alias, _rootTable.getColumn("ContactId"));
+                contactCol.setShownInInsertView(false); // Issue 47576
                 contactCol.setLabel("Contact");
                 return contactCol;
             case ExperimentDescriptionURL:
@@ -128,7 +129,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         {
             SQLFragment existsSql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
             existsSql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-            existsSql.append(" WHERE ExperimentRunId = ").append(run.getRowId()).append(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+            existsSql.append(" WHERE ExperimentRunId = ").appendValue(run.getRowId()).append(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
 
             sql = getSqlDialect().wrapExistsExpression(existsSql);
         }
@@ -206,14 +207,14 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         if (parentProtocol != null)
         {
             sql.append("\nAND exp.experimentrun.protocollsid = ");
-            sql.appendStringLiteral(parentProtocol.getLSID());
+            sql.appendValue(parentProtocol.getLSID());
         }
         if (childProtocol != null)
         {
             sql.append("\nAND exp.experimentrun.rowid IN" +
                     "\n(SELECT exp.protocolapplication.runid" +
                     "\nFROM exp.protocolapplication WHERE exp.protocolapplication.protocollsid = ");
-            sql.appendStringLiteral(childProtocol.getLSID());
+            sql.appendValue(childProtocol.getLSID());
             sql.append(")");
         }
         sql.append(")");

@@ -35,6 +35,7 @@ import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -309,7 +310,6 @@ public class QueryServiceImpl implements QueryService
      *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_IN_FILTER_TYPE)
      * </code>
      */
-
     public static final CompareType COLUMN_IN = new CompareType("COLUMN IN", "columnin", "COLUMN_IN", true /* dataValueRequired */, "sql", null)
     {
         @Override
@@ -332,7 +332,6 @@ public class QueryServiceImpl implements QueryService
      *     Filter.create("RowId",  'SELECT SampleId FROM assay.General.assay1.Data WHERE field1 < 5 AND field2 NOT NULL', COLUMN_NOT_IN_FILTER_TYPE)
      * </code>
      */
-
     public static final CompareType COLUMN_NOT_IN = new CompareType("COLUMN NOT IN", "columnnotin", "COLUMN_NOT_IN", true /* dataValueRequired */, "sql", null)
     {
         @Override
@@ -477,16 +476,16 @@ public class QueryServiceImpl implements QueryService
 
         private QExpr bind(QExpr expr, Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            if (expr instanceof QUnion || expr instanceof QRowStar || expr instanceof QIfDefined)
+            if (expr instanceof QRowStar || expr instanceof QIfDefined)
             {
                 query.getParseErrors().add(new QueryException("Expression is not supported in where filter"));
                 return null;
             }
 
             /* See QuerySelect.declareFields() */
-            if (expr instanceof QQuery qquery)
+            if (expr instanceof QQuery || expr instanceof QUnion)
             {
-                QueryRelation select = Query.createQueryRelation(query, qquery, true);
+                QueryRelation select = Query.createQueryRelation(query, expr, true);
                 select.declareFields();
                 return new QQuery(select);
             }
@@ -497,7 +496,7 @@ public class QueryServiceImpl implements QueryService
                 ColumnInfo c = columnMap.get(key);
                 if (null == c)
                 {
-                    query.getParseErrors().add(new QueryException("column not found: " + key.toString()));
+                    query.getParseErrors().add(new QueryException("column not found: " + key));
                     return null;
                 }
                 return new QColumnInfo(c);
@@ -525,9 +524,7 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     private static final FieldKey expObjectIdFieldKey = new FieldKey(null, BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
-
 
     /* It would be nice to put with class ChildOfMethod and class ParentOfMethod, but our build dependencies mean this goes here for now */
     private static class InLineageOfClause extends WhereClause
@@ -568,7 +565,6 @@ public class QueryServiceImpl implements QueryService
             return super.toSQLFragment(columnMap, dialect);
         }
     }
-
 
     public static class QColumnInfo extends QInternalExpr
     {
@@ -629,13 +625,12 @@ public class QueryServiceImpl implements QueryService
         _metadataLastModified.set(new Date().getTime());
     }
 
-
     @Override
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && !((UserSchema) schema).isFolder())
-            return (UserSchema) schema;
+        if (schema instanceof UserSchema userSchema && !userSchema.isFolder())
+            return userSchema;
 
         return null;
     }
@@ -644,12 +639,12 @@ public class QueryServiceImpl implements QueryService
     public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
-        if (schema instanceof UserSchema && !((UserSchema) schema).isFolder())
-            return (UserSchema) schema;
+        if (schema instanceof UserSchema userSchema && !userSchema.isFolder())
+            return userSchema;
 
         return null;
     }
-    
+
     @Override
     public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name)
     {
@@ -860,10 +855,6 @@ public class QueryServiceImpl implements QueryService
             QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true)
                     .forEach(addQueryDefToMap);
         }
-        if (includeMetadataOverride)
-        {
-
-        }
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(ContainerManager.getSharedContainer(), schemaName, true, includeSnapshots, true))
         {
             addCustomQueryDefToMap(user, container, ret, queryDef);
@@ -900,7 +891,6 @@ public class QueryServiceImpl implements QueryService
         MODULE_CUSTOM_VIEW_CACHE.onModuleChanged(module);
         INVALIDATE_QUERY_METADATA_HANDLER.moduleChanged(module);
     }
-
 
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
     {
@@ -1426,13 +1416,11 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
     {
         return saveSessionQuery(context.getRequest().getSession(true), container, context.getUser(), schemaName, sql, metadataXml);
     }
-
 
     @Override
     public QueryDefinition saveSessionQuery(@NotNull HttpSession session, Container container, User user, String schemaName, String sql, String metadataXml)
@@ -1459,13 +1447,11 @@ public class QueryServiceImpl implements QueryService
         return getSessionQuery(session, container, user, schemaKey, queryName);
     }
 
-
     @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql)
     {
         return saveSessionQuery(context, container, schemaName, sql, null);
     }
-
 
     private static final String PERSISTED_TEMP_QUERIES_KEY = "LABKEY.PERSISTED_TEMP_QUERIES";
 
@@ -1492,9 +1478,8 @@ public class QueryServiceImpl implements QueryService
         @Override
         public boolean equals(Object obj)
         {
-            if (obj instanceof SessionQuery)
+            if (obj instanceof SessionQuery sq)
             {
-                SessionQuery sq = (SessionQuery) obj;
                 if (!_sql.equals(sq._sql))
                     return false;
                 if (_metadata == null && sq._metadata != null)
@@ -1567,7 +1552,6 @@ public class QueryServiceImpl implements QueryService
         return createTempQueryDefinition(user, container, schemaName, queryName, query);
     }
 
-
     private QueryDefinition createTempQueryDefinition(User user, Container container, SchemaKey schemaName, String queryName, @NotNull SessionQuery query)
     {
         QueryDefinition qdef = createQueryDef(user, container, schemaName, queryName);
@@ -1615,9 +1599,8 @@ public class QueryServiceImpl implements QueryService
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 Set<FieldKey> pkColumnMap = new HashSet<>();
                 ContainerContext cc = table.getContainerContext();
-                if (cc instanceof ContainerContext.FieldKeyContext)
+                if (cc instanceof ContainerContext.FieldKeyContext fko)
                 {
-                    ContainerContext.FieldKeyContext fko = (ContainerContext.FieldKeyContext) cc;
                     pkColumnMap.add(fko.getFieldKey());
                 }
 
@@ -1712,7 +1695,6 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-
     @Override
     public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
@@ -1743,16 +1725,12 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
-
     @Override
     public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns,
                                                         @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
-        HashMap<FieldKey, ColumnInfo> hm = new HashMap<>();
-        Set<ColumnInfo> involvedColumns = new HashSet<>();
-        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, hm);
+        return ensureRequiredColumns(table, columns, filter, sort, unresolvedColumns, new HashMap<>());
     }
-
 
     // mapping may include multiple fieldkeys pointing at same columninfo (see ColumnInfo.resolveColumn());
     public List<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter,
@@ -1846,9 +1824,8 @@ public class QueryServiceImpl implements QueryService
 
             for (FieldKey field : unresolvedColumns)
             {
-                if (filter instanceof SimpleFilter)
+                if (filter instanceof SimpleFilter simpleFilter)
                 {
-                    SimpleFilter simpleFilter = (SimpleFilter) filter;
                     simpleFilter.deleteConditions(field);
                 }
 
@@ -1859,7 +1836,6 @@ public class QueryServiceImpl implements QueryService
 
         return new ArrayList<>(ret.values());
     }
-
 
     private void resolveSortColumns(ColumnInfo col, Map<FieldKey, ColumnInfo> columnMap, AliasManager manager,
                                                      LinkedHashMap<FieldKey,ColumnInfo> ret, boolean addSortKeysOnly)
@@ -1907,10 +1883,9 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey, ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
     {
-        if (fieldKey == null)
+        if (fieldKey == null) // TODO: Can this resolve "selectionMethods/selectionMethodId$Sname"?
             return null;
 
         // This could be made more general, but I don't think there's a need.  To reduce testing
@@ -1954,7 +1929,6 @@ public class QueryServiceImpl implements QueryService
         return null;
     }
 
-
     public Map<String, UserSchema> getExternalSchemas(User user, Container c)
     {
         Map<String, UserSchema> ret = new HashMap<>();
@@ -1969,7 +1943,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -1988,7 +1962,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
+                LOG.warn("Could not load schema " + def.getSourceSchemaName() + " from " + def.getDataSource(), e);
             }
         }
 
@@ -2010,7 +1984,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -2030,7 +2004,7 @@ public class QueryServiceImpl implements QueryService
             }
             catch (Exception e)
             {
-                LogManager.getLogger(QueryServiceImpl.class).error("Error creating linked schema " + def.getUserSchemaName(), e);
+                LOG.error("Error creating linked schema " + def.getUserSchemaName(), e);
             }
         }
 
@@ -2062,7 +2036,7 @@ public class QueryServiceImpl implements QueryService
         }
         catch (Exception e)
         {
-            LogManager.getLogger(QueryServiceImpl.class).error("Error deleting linked schema " + name, e);
+            LOG.error("Error deleting linked schema " + name, e);
         }
     }
 
@@ -2491,31 +2465,21 @@ public class QueryServiceImpl implements QueryService
         return new LabKeyQuerySelector(schema, sql);
     }
 
-    @Override
-    @NotNull
-    public TableSelector selector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
-    {
-        return new LabKeyQuerySelector(schema, sql, columnNames, filter, sort);
-    }
-
     private static class LabKeyQuerySelector extends TableSelector
     {
         public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql)
         {
-            super(QueryServiceImpl.get().createTable(schema, sql));
+            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo());
         }
 
         public LabKeyQuerySelector(@NotNull QuerySchema schema, @NotNull String sql, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
         {
-            super(QueryServiceImpl.get().createTable(schema, sql), columnNames, filter, sort);
+            super(QueryServiceImpl.get().getSelectBuilder(schema, sql).getTableInfo(), columnNames, filter, sort);
         }
     }
 
-    private TableInfo createTable(QuerySchema schema, String sql)
-    {
-        return createTable(schema, sql, null, false);
-    }
 
+    @Override
     public TableInfo createTable(QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList)
     {
         Query q = new Query(schema);
@@ -2523,27 +2487,19 @@ public class QueryServiceImpl implements QueryService
         q.setTableMap(tableMap);
         q.parse(sql);
 
-        if (q.getParseErrors().size() > 0)
-            throw q.getParseErrors().get(0);
-
-        TableInfo table = q.getTableInfo();
-
-        if (q.getParseErrors().size() > 0)
-            throw q.getParseErrors().get(0);
-
-        return table;
+        return getSelectBuilder(q).getTableInfo();
     }
 
 
     @Override
-    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
+    public Results select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached)
     {
-        TableInfo table = createTable(schema, sql, tableMap, strictColumnList);
+        Query q = new Query(schema);
+        q.setStrictColumnList(strictColumnList);
+        q.setTableMap(tableMap);
+        q.parse(sql);
 
-        QueryLogging queryLogging = new QueryLogging();
-        SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
-
-        return new SqlSelector(table.getSchema().getScope(), sqlf, queryLogging).getResultSet(cached);
+        return getSelectBuilder(q).select(Map.of(), cached);
     }
 
 
@@ -2555,12 +2511,7 @@ public class QueryServiceImpl implements QueryService
         q.setTableMap(tableMap);
         q.parse(sql);
 
-        if (q.getParseErrors().size() > 0)
-            throw q.getParseErrors().get(0);
-
-        TableInfo table = q.getTableInfo();
-
-        return select(table, table.getColumns(), null, null, parameters, cached);
+        return getSelectBuilder(q).select(parameters, cached);
     }
 
 
@@ -2612,62 +2563,54 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
     // verify that named parameters have been bound
     @Override
     public void validateNamedParameters(SQLFragment frag)
     {
         for (Object o : frag.getParams())
         {
-            if (!(o instanceof ParameterDecl))
-                continue;
-            ParameterDecl p = (ParameterDecl) o;
-            throw new NamedParameterNotProvided(p.getName());
+            if (o instanceof ParameterDecl p)
+                throw new NamedParameterNotProvided(p.getName());
         }
     }
-
 
     @Override
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache)
     {
-        QueryLogging queryLogging = new QueryLogging();
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
-        bindNamedParameters(sql, parameters);
-        validateNamedParameters(sql);
-        ResultSet rs = new SqlSelector(table.getSchema().getScope(), sql, queryLogging).getResultSet(cache, cache);
-
-        // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
-        // close the underlying ResultSet before returning since it won't be accessible anywhere else
-        boolean success = false;
-        try
-        {
-            ResultsImpl result = new ResultsImpl(rs, columns);
-            success = true;
-            return result;
-        }
-        finally
-        {
-            if (!success)
-            {
-                ResultSetUtil.close(rs);
-            }
-        }
+        return getSelectBuilder(table)
+                .columns(columns)
+                .filter(filter)
+                .sort(sort)
+                .select(parameters, cache);
     }
 
     @Override
     public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort)
     {
-        return getSelectSQL(table, selectColumns, filter, sort, maxRows, offset, forceSort, QueryLogging.emptyQueryLogging());
+        return getSelectBuilder(table)
+                .columns(selectColumns)
+                .filter(filter)
+                .sort(sort)
+                .maxRows(maxRows)
+                .offset(offset)
+                .forceSort(forceSort)
+                .buildSqlFragment();
     }
 
     @Override
     public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
     {
-        var query = new Query(table.getUserSchema());
-        var selectView = QuerySelectView.create(query, table, selectColumns, filter, sort, maxRows, offset, forceSort, queryLogging, false);
-        return selectView.getSql();
+        return getSelectBuilder(table)
+                .columns(selectColumns)
+                .filter(filter)
+                .sort(sort)
+                .maxRows(maxRows)
+                .offset(offset)
+                .forceSort(forceSort)
+                .queryLogging(queryLogging)
+                .buildSqlFragment();
     }
 
     @Override
@@ -2676,10 +2619,26 @@ public class QueryServiceImpl implements QueryService
         return new SelectBuilderImpl(table);
     }
 
+    public SelectBuilder getSelectBuilder(Query query)
+    {
+        return new SelectBuilderImpl(query);
+    }
+
+    @Override
+    public SelectBuilder getSelectBuilder(QuerySchema schema, String sql)
+    {
+        Query q = new Query(schema);
+        q.setStrictColumnList(false);
+        q.setTableMap(null);
+        q.parse(sql);
+        return getSelectBuilder(q);
+    }
+
 
     class SelectBuilderImpl implements SelectBuilder
     {
         final TableInfo table;
+        final Query query;
         Collection<ColumnInfo> columns;
         Filter filter;
         Sort sort;
@@ -2692,6 +2651,20 @@ public class QueryServiceImpl implements QueryService
         SelectBuilderImpl(TableInfo table)
         {
             this.table = table;
+            this.query = null;
+        }
+
+        SelectBuilderImpl(Query query)
+        {
+            this.query = query;
+
+            if (query.getParseErrors().size() > 0)
+                throw query.getParseErrors().get(0);
+
+            this.table = query.getTableInfo();
+
+            if (query.getParseErrors().size() > 0)
+                throw query.getParseErrors().get(0);
         }
 
         @Override
@@ -2751,20 +2724,68 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public SQLFragment build()
+        public SQLFragment buildSqlFragment()
         {
             if (null == queryLogging)
                 queryLogging = QueryLogging.emptyQueryLogging();
 
+            if (null == columns || columns.isEmpty())
+                columns = table.getColumns();
+
             var query = new Query(table.getUserSchema());
-            var selectView = QuerySelectView.create(query, this.table, this.columns, this.filter, this.sort, this.maxRows, this.offset, this.forceSort, this.queryLogging, this.distinct);
+            var selectView = QuerySelectView.create(query, table, columns, filter, sort, maxRows, offset, forceSort, queryLogging, distinct);
             return selectView.getSql();
+        }
+
+        @Override
+        public SqlSelector buildSqlSelector(@Nullable Map<String, Object> parameters)
+        {
+            SQLFragment sql = buildSqlFragment();
+            bindNamedParameters(sql, parameters);
+            validateNamedParameters(sql);
+            QueryLogging queryLogging = getQueryLogging();
+            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
+        }
+
+        @Override
+        public Results select(@Nullable Map<String, Object> parameters, boolean cache)
+        {
+            SqlSelector selector = buildSqlSelector(parameters);
+            ResultSet rs = selector.getResultSet(cache, cache);
+
+            // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
+            // close the underlying ResultSet before returning since it won't be accessible anywhere else
+            boolean success = false;
+            try
+            {
+                ResultsImpl result = new ResultsImpl(rs, columns);
+                success = true;
+                return result;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    ResultSetUtil.close(rs);
+                }
+            }
+        }
+
+        public TableInfo getTable()
+        {
+            return table;
         }
 
         @Override
         public QueryLogging getQueryLogging()
         {
             return queryLogging;
+        }
+
+        @Override
+        public TableInfo getTableInfo()
+        {
+            return table;
         }
     }
 
@@ -2907,11 +2928,17 @@ public class QueryServiceImpl implements QueryService
         env.putAll((HashMap<Environment, Object>) o);
     }
 
-
     @Override
     public void clearEnvironment()
     {
         environments.get().clear();
+    }
+
+    @Override
+    public int moveAuditEvents(Container targetContainer, List<Integer> rowPks, String schemaName, String queryName)
+    {
+        QueryUpdateAuditProvider provider = new QueryUpdateAuditProvider();
+        return provider.moveEvents(targetContainer, rowPks, schemaName, queryName);
     }
 
     @Override
@@ -2999,7 +3026,6 @@ public class QueryServiceImpl implements QueryService
 
         AuditLogService.get().addEvent(user, event);
     }
-
 
     @Override
     public List<DetailedAuditTypeEvent> getQueryUpdateAuditRecords(User user, Container container, long transactionAuditId)
@@ -3144,24 +3170,6 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(def.getHierarchies());
     }
 
-    /*
-    public Set<ColumnInfo> getIncomingLookups(User user, Container c, TableInfo targetTable, Set<SchemaKey> schemaKeys)
-    {
-        Set<ColumnInfo> lookups = new HashSet<>();
-
-        Set<UserSchema> schemas = schemaKeys.stream().map(key -> getUserSchema(user, c, key)).collect(Collectors.toSet());
-        UserSchema schema = getUserSchema(user, c, schemaKey);
-        SchemaTreeWalker walk = new SchemaTreeWalker<ColumnInfo, Void>(true) {
-            @Override
-            public ColumnInfo visitTable(TableInfo table, Path path, Void param)
-            {
-                return super.visitTable(table, path, param);
-            }
-        };
-        Set<ColumnInfo> lookups = walk.visitTop(schemas, null);
-    }
-    */
-
     @Override
     public TableInfo analyzeQuery(
             UserSchema userSchema, String queryName,
@@ -3208,7 +3216,6 @@ public class QueryServiceImpl implements QueryService
         return _analyzeTableInfo(from, t, dependencyGraph);
     }
 
-
     private TableInfo _analyzeTableInfo(DependencyObject from, TableInfo source, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph)
     {
         if (null == source)
@@ -3244,7 +3251,6 @@ public class QueryServiceImpl implements QueryService
         return source;
     }
 
-
     final static SchemaKey coreSchemaKey = SchemaKey.fromParts("core");
 
     private boolean _includeLookupDependency(TableInfo from, TableInfo to)
@@ -3265,7 +3271,6 @@ public class QueryServiceImpl implements QueryService
         return false;
     }
 
-
     @Override
     public void registerQueryAnalysisProvider(QueryAnalysisService provider)
     {
@@ -3277,9 +3282,6 @@ public class QueryServiceImpl implements QueryService
     {
         return _queryAnalysisService;
     }
-
-
-
 
     /* registry of ColumnInfoTransformer use to build common columns */
     Map<String, ColumnInfoTransformer> columnTransformerMap = Collections.synchronizedMap(new CaseInsensitiveHashMap<>());
@@ -3295,6 +3297,18 @@ public class QueryServiceImpl implements QueryService
     public ColumnInfoTransformer findColumnInfoTransformer(String conceptURI)
     {
         return columnTransformerMap.get(conceptURI);
+    }
+
+    @Override
+    public @Nullable ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter)
+    {
+        if (isProductProjectsAllFolderScopeEnabled())
+        {
+            ContainerFilter lookupCf = getContainerFilterForLookups(container, user);
+            if (lookupCf != null)
+                return lookupCf;
+        }
+        return defaultContainerFilter;
     }
 
     @Override
@@ -3353,7 +3367,7 @@ public class QueryServiceImpl implements QueryService
 					roleAssignments.getColumn("userid"),
 					roleAssignments.getColumn("role"));
 
-                try (ResultSet rs = qs.select(roleAssignments, l, null, null))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 3);
                 }
@@ -3366,7 +3380,7 @@ public class QueryServiceImpl implements QueryService
                         roleAssignments.getColumn("role"));
 		        Sort sort = new Sort("+userid");
 
-                try (ResultSet rs = qs.select(roleAssignments, l, null, sort))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).sort(sort).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 3);
                 }
@@ -3379,7 +3393,7 @@ public class QueryServiceImpl implements QueryService
                         roleAssignments.getColumn("role"));
                 Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
 
-                try (ResultSet rs = qs.select(roleAssignments, l, f, null))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments).columns(l).filter(f).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 3);
                 }
@@ -3394,13 +3408,15 @@ public class QueryServiceImpl implements QueryService
 		        Sort sort = new Sort("+userid");
                 Filter f = new SimpleFilter(FieldKey.fromParts("userid"), -3);
 
-                try (ResultSet rs = qs.select(roleAssignments, map.values(), f, sort))
+                try (ResultSet rs = qs.getSelectBuilder(roleAssignments)
+                        .columns(map.values())
+                        .filter(f)
+                        .sort(sort).select())
                 {
                     assertEquals(rs.getMetaData().getColumnCount(), 4);
                 }
 	        }
         }
-
 
         @Test
         public void testParameters() throws SQLException
@@ -3518,6 +3534,26 @@ public class QueryServiceImpl implements QueryService
                 assertEquals("Custom views from the simpletest module", 10, MODULE_CUSTOM_VIEW_CACHE.getResourceMap(simpleTest).size());
                 assertEquals("Queries from the simpletest module", 5, MODULE_QUERY_DEF_CACHE.getResourceMap(simpleTest).size());
                 assertEquals("Query metadata overrides from the simpletest module", 3, MODULE_QUERY_METADATA_DEF_CACHE.getResourceMap(simpleTest).size());
+            }
+        }
+
+        @Test
+        public void testWhereClauseWithUnion()
+        {
+            TestContext ctx = TestContext.get();
+            UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ContainerManager.getRoot(), "core");
+            TableInfo containersTableInfo = schema.getTable("containers");
+            WhereClause clause = new WhereClause("(SELECT RowId FROM containers WHERE RowId IN (1) UNION SELECT RowId FROM containers WHERE RowId IN (2))");
+            SQLFragment sql = clause.toSQLFragment(containersTableInfo.getExtendedColumns(false), schema.getDbSchema().getSqlDialect());
+            assertTrue(sql.toString().contains("UNION"));
+
+            try
+            {
+                new WhereClause("(Invalid1 UNION SELECT RowId FROM containers WHERE RowId IN (2))");
+            }
+            catch (Exception e)
+            {
+                assertTrue(e.getMessage().contains("Syntax error near 'UNION'"));
             }
         }
     }

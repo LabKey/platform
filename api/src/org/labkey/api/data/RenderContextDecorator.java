@@ -175,10 +175,10 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
+    public Results select(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.selectForDisplay(table, columns, parameters, filter, sort, maxRows, offset, async);
+        return _ctx.select(table, columns, parameters, filter, sort, maxRows, offset, async);
     }
 
     @Override

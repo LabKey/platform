@@ -19,8 +19,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
@@ -31,11 +31,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * User: klum
- * Date: Oct 12, 2011
- * Time: 7:23:43 PM
- */
 public class ViewCategory extends Entity implements Comparable<ViewCategory>
 {
     private int _rowId;
@@ -171,19 +166,19 @@ public class ViewCategory extends Entity implements Comparable<ViewCategory>
 
         category.setContainer(c.getId());
 
-        Object row = info.get("rowid");
+        Object row = info.opt("rowid");
         if (row instanceof Integer)
             category.setRowId((Integer)row);
 
-        Object label = info.get("label");
+        Object label = info.opt("label");
         if (label instanceof String)
             category.setLabel((String)label);
 
-        Object displayOrder = info.get("displayOrder");
+        Object displayOrder = info.opt("displayOrder");
         if (displayOrder instanceof Integer)
             category.setDisplayOrder((Integer)displayOrder);
 
-        Object parent = info.get("parent");
+        Object parent = info.opt("parent");
         if (parent instanceof Integer)
         {
             category.setParent((Integer)parent);

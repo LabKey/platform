@@ -17,7 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
 import org.labkey.api.module.ModuleResourceCacheListener;
@@ -31,8 +31,6 @@ import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -44,29 +42,28 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
     @Override
     public Map<String, TablesDocument> load(Stream<? extends Resource> resources, Module module)
     {
-        Map<String, TablesDocument> map = new CaseInsensitiveHashMap<>();
+        // Ensures case-insensitive sort on filename, which matches method below
+        Map<String, TablesDocument> map = new CaseInsensitiveTreeMap<>();
 
         resources
             .filter(resource -> isSchemaXmlFile(resource.getName()))
-            .forEach(resource -> {
-                TablesDocument doc = getTablesDoc(resource);
-                if (null != doc)
-                    map.put(resource.getName(), doc);
-            });
+            // Put null table docs (malformed schema xml files) in the map to ensure all schema names are in the map's
+            // key set. This ensures consistency with the method below.
+            .forEach(resource -> map.put(resource.getName(), getTablesDoc(resource)));
 
         return unmodifiable(map);
     }
 
-    // Return an unmodifiable list of schema.xml filenames in this module, bypassing the cache and file listeners. Handy
-    // at startup, so we don't register listeners and leak modules before pruning occurs.
-    public static List<String> getFilenames(Module module)
+    // Returns a stream of schema.xml filenames in this module, bypassing the cache and file listeners. Handy at
+    // startup, so we don't register listeners and leak modules before pruning occurs.
+    public static Stream<String> getSchemaFilenames(Module module)
     {
         Resource schemas = module.getModuleResource(QueryService.MODULE_SCHEMAS_PATH);
 
-        return null == schemas ? Collections.emptyList() : schemas.list().stream()
+        return null == schemas ? Stream.empty() : schemas.list().stream()
             .map(Resource::getName)
             .filter(SchemaXmlCacheHandler::isSchemaXmlFile)
-            .toList();
+            .sorted(String.CASE_INSENSITIVE_ORDER);
     }
 
     private static boolean isSchemaXmlFile(String filename)

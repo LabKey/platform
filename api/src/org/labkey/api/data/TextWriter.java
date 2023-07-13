@@ -30,8 +30,6 @@ import java.io.PrintWriter;
 
 /**
  * Base class for exports that generate text-based representations of their content, such as TSV, CSV, or FASTA.
- * User: adam
- * Date: Dec 30, 2010
  */
 public abstract class TextWriter implements AutoCloseable
 {
@@ -43,7 +41,9 @@ public abstract class TextWriter implements AutoCloseable
     protected PrintWriter _pw = null;
 
     protected abstract String getFilename();
-    protected abstract void write();
+
+    // Write the contents and return the number of rows that were written
+    protected abstract int write();
 
     /**
      * Override to return a different content type
@@ -105,37 +105,37 @@ public abstract class TextWriter implements AutoCloseable
     }
 
     // Create a file and stream it to the browser.
-    public void write(HttpServletResponse response) throws IOException
+    public int write(HttpServletResponse response) throws IOException
     {
         prepare(response);
-        write();
+        return write();
     }
 
     // Write a newly created file to the file system.
-    public void write(File file) throws IOException
+    public int write(File file) throws IOException
     {
         prepare(file);
-        write();
+        return write();
     }
 
-    public void write(OutputStream os) throws IOException
+    public int write(OutputStream os) throws IOException
     {
         prepare(os);
-        write();
+        return write();
     }
 
     // Write a newly created file to the PrintWriter.
-    public void write(PrintWriter pw) throws IOException
+    public int write(PrintWriter pw) throws IOException
     {
         _pw = pw;
-        write();
+        return write();
     }
 
     // Write content to a string builder.
-    public void write(StringBuilder builder) throws IOException
+    public int write(StringBuilder builder) throws IOException
     {
         prepare(builder);
-        write();
+        return write();
     }
 
     @Override

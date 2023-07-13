@@ -1245,24 +1245,23 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public boolean handlePost(AnnouncementForm form, BindException errors)
         {
-            AnnouncementModel ann = form.selectAnnouncement();
+            AnnouncementModel oldAnn = form.selectAnnouncement();
 
-            if (null == ann)
+            if (null == oldAnn)
             {
                 throw new NotFoundException("Announcement");
             }
 
-            if (!getPermissions().allowUpdate(ann))
+            if (!getPermissions().allowUpdate(oldAnn))
             {
                 throw new UnauthorizedException();
             }
 
-            Container c = getContainer();
-
+            form.setOldValues(oldAnn);
             AnnouncementModel update = form.getBean();
 
-            // TODO: What is this checking for?
-            if (!c.getId().equals(update.getContainerId()))
+            // Ensure that requested announcement's container matches current container (where perms have been checked)
+            if (!getContainer().getId().equals(update.getContainerId()))
             {
                 throw new UnauthorizedException();
             }
@@ -1290,7 +1289,7 @@ public class AnnouncementsController extends SpringActionController
             if (null != urlHelper)
                 throw new RedirectException(urlHelper);
             else
-                throw new RedirectException(getThreadURL(getContainer(), ann.getParent(), ann.getRowId()));
+                throw new RedirectException(getThreadURL(getContainer(), oldAnn.getParent(), oldAnn.getRowId()));
         }
 
         @Override
@@ -1731,7 +1730,7 @@ public class AnnouncementsController extends SpringActionController
             // Validate "expires" conversion from String to Date
             try
             {
-                String expires = StringUtils.trimToNull((String) get("expires"));
+                String expires = StringUtils.trimToNull(get("expires"));
                 if (null != expires)
                     DateUtil.parseDateTime(getContainer(), expires);
             }
@@ -2404,7 +2403,7 @@ public class AnnouncementsController extends SpringActionController
                     else
                     {
                         // See if they're subscribed to the whole forum
-                        int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifer());
+                        int emailOption = getEmailOptionIncludingInherited(c, getViewContext().getUser(), ann.lookupSrcIdentifier());
 
                         // Or if they're subscribed because they've posted to this thread already
                         // Remember the emailOption is a bitmask, so don't use simple equality checks
@@ -2427,13 +2426,13 @@ public class AnnouncementsController extends SpringActionController
                         if (forumSubscription)
                         {
                             // Give them a link to the forum level subscription UI
-                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
+                            buttons.addChild("unsubscribe", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifier()));
                         }
                         else
                         {
                             // Otherwise, let them subscribe to either the forum or the specific thread
                             NavTree subscribeTree = new NavTree("subscribe");
-                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifer()));
+                            subscribeTree.addChild("forum", getEmailPreferencesURL(c, getViewContext().getActionURL(), ann.lookupSrcIdentifier()));
                             ActionURL subscribeThreadURL = new ActionURL(SubscribeThreadAction.class, c);
                             subscribeThreadURL.addParameter("threadId", ann.getParent() == null ? ann.getEntityId() : ann.getParent());
                             subscribeThreadURL.addReturnURL(getViewContext().getActionURL());

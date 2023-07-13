@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner.SqlScript;
@@ -254,7 +255,7 @@ public abstract class AbstractClrInstallationManager
     protected abstract String getCurrentVersion();
     protected abstract String getInstallationExceptionMsg();
     protected abstract String getUninstallationExceptionMsg();
-    protected abstract String getInstallationCheckSql();
+    protected abstract SQLFragment getInstallationCheckSql();
     protected abstract String getVersionCheckSql();
     protected abstract void addAdminWarningMessages(Warnings warnings);
 }

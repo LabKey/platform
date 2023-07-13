@@ -21,10 +21,13 @@ import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.Pair;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -44,6 +47,7 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
+    private List<Pair<Integer, Container>> _lists;
     private Set<String> _queryKeys;
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs = new LSIDRelativizer.RelativizedLSIDs(LSIDRelativizer.FOLDER_RELATIVE);
@@ -164,14 +168,36 @@ public class FolderExportContext extends AbstractFolderContext
         _viewIds = new HashSet<>(Arrays.asList(viewIds));
     }
 
+    /**
+     * @return List Ids within current container context, useful during Folder Export to get Lists within that Folder.
+     */
     public Set<Integer> getListIds()
     {
         return _listIds;
     }
 
+    /**
+     * @param listIds List Ids within current container context
+     */
     public void setListIds(Integer[] listIds)
     {
         _listIds = new HashSet<>(Arrays.asList(listIds));
+    }
+
+    /**
+     * @return A list of List Ids and associated Containers, useful when getting Lists from specific Containers
+     */
+    public List<Pair<Integer, Container>> getLists()
+    {
+        return _lists;
+    }
+
+    /**
+     * @param lists selected List Ids and associated Containers
+     */
+    public void setLists(List<Pair<Integer, Container>> lists)
+    {
+        _lists = new LinkedList<>(lists);
     }
 
     public LSIDRelativizer.RelativizedLSIDs getRelativizedLSIDs()

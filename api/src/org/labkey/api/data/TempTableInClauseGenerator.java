@@ -82,13 +82,12 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         if (tempTableInfo == null)
         {
             tempTableInfo = new TempTableInfo("InClause", Collections.singletonList(new BaseColumnInfo("Id", jdbcType, 0, false)), null);
-            String tableName = tempTableInfo.getSelectName();
             SQLFragment sqlCreate = new SQLFragment("CREATE TABLE ");
-            sqlCreate.append(tableName)
+            sqlCreate.append(tempTableInfo)
                     .append("\n(Id ")
                     .append(DbSchema.getTemp().getSqlDialect().getSqlTypeName(jdbcType))
                     .append(jdbcType == JdbcType.VARCHAR ? "(450)" : "")
-                    .append(");");
+                    .append(")");
 
             // When the in clause receives more parameters than it is set to handle, a temporary table is created to handle the overflow.
             // While the associated mutating operations are necessary, they are not a viable CSRF attack vector.
@@ -97,6 +96,7 @@ public class TempTableInClauseGenerator implements InClauseGenerator
                 new SqlExecutor(DbSchema.getTemp()).execute(sqlCreate);
             }
             tempTableInfo.track();
+            String tableName = tempTableInfo.getSelectName();
             String sql1 = "INSERT INTO " + tableName + " (Id) VALUES (?)";
             String sql100 = "INSERT INTO " + tableName + " (Id) VALUES (?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?),(?)";
             try
@@ -121,19 +121,14 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             }
             TempTableInfo cacheEntry = tempTableInfo;
 
-            if (DbSchema.getTemp().getScope().isTransactionActive())
-            {
-                // Only put the entry in the cache after it's committed, since nobody else will be able to see
-                // it until then. See issue 38605
-                DbSchema.getTemp().getScope().getCurrentTransaction().addCommitTask(() -> _tempTableCache.put(cacheKey, cacheEntry), DbScope.CommitTaskOption.POSTCOMMIT);
-            }
-            else
-            {
+            // Don't bother caching if we're in a transaction
+            // a) The table won't be visible to other connections until we commit
+            // b) It is more likely that this temptable is only used once anyway (e.g. used by a data iterator)
+            if (!DbSchema.getTemp().getScope().isTransactionActive())
                 _tempTableCache.put(cacheKey, cacheEntry);
-            }
         }
 
-        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo.getSelectName()).append(")");
+        sql.append(" IN (SELECT Id FROM ").append(tempTableInfo).append(")");
         sql.addTempToken(tempTableInfo);
         return sql;
     }
@@ -203,41 +198,6 @@ public class TempTableInClauseGenerator implements InClauseGenerator
         }
 
         @Test
-        public void testIntegerRollback()
-        {
-            SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
-            try (DbScope.Transaction ignored = _scope.ensureTransaction())
-            {
-                SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-                Assert.assertEquals("Validate inside transaction, pre-rollback", 2, new SqlSelector(_scope, sql).getRowCount());
-                // Intentionally exit without committing, thus rolling back the transaction
-            }
-            SQLFragment sql = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-            Assert.assertEquals("Validate outside transaction, post-rollback", 2, new SqlSelector(_scope, sql).getRowCount());
-        }
-
-        @Test
-        public void testIntegerCommit()
-        {
-            SQLFragment sourceSQL = new SQLFragment("SELECT a from (SELECT 1 AS a UNION SELECT 2 AS a UNION SELECT 7 AS a) b WHERE a ");
-            SQLFragment secondSelectSQL;
-            try (DbScope.Transaction transaction = _scope.ensureTransaction())
-            {
-                SQLFragment originalSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-                Assert.assertEquals("Validate inside transaction", 2, new SqlSelector(_scope, originalSelectSQL).getRowCount());
-
-                secondSelectSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-                Assert.assertNotEquals("SQL shouldn't match until it's been committed", originalSelectSQL, secondSelectSQL);
-                Assert.assertEquals("Validate second inside transaction", 2, new SqlSelector(_scope, secondSelectSQL).getRowCount());
-
-                transaction.commit();
-            }
-            SQLFragment postCommitSQL = new TempTableInClauseGenerator().appendInClauseSql(new SQLFragment(sourceSQL), INTEGERS);
-            Assert.assertEquals("SQL should match after the original has been committed", secondSelectSQL, postCommitSQL);
-            Assert.assertEquals("Validate after commit", 2, new SqlSelector(_scope, postCommitSQL).getRowCount());
-        }
-
-        @Test
         public void testString()
         {
             SQLFragment sql = new SQLFragment("SELECT a from (SELECT 'a' AS a UNION SELECT 'b' AS a UNION SELECT 'g' AS a) b WHERE a ");
@@ -247,8 +207,6 @@ public class TempTableInClauseGenerator implements InClauseGenerator
             Assert.assertEquals("Validate second string IN clause", 2, new SqlSelector(_scope, secondSQL).getRowCount());
 
             Assert.assertEquals("Validate SQL matches, indicated cached results", firstSQL, secondSQL);
-
-
         }
     }
 }

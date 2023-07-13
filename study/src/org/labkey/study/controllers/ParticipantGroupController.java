@@ -18,15 +18,15 @@ package org.labkey.study.controllers;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -78,11 +78,6 @@ import java.util.Set;
 import static org.labkey.api.util.HttpUtil.Method.DELETE;
 import static org.labkey.api.util.HttpUtil.Method.POST;
 
-/**
- * User: klum
- * Date: May 30, 2011
- * Time: 2:58:38 PM
- */
 public class ParticipantGroupController extends BaseStudyController
 {
     enum GroupType {
@@ -837,7 +832,7 @@ public class ParticipantGroupController extends BaseStudyController
         }
     }
 
-    public static class GroupsForm implements NewCustomApiForm
+    public static class GroupsForm implements ApiJsonForm
     {
         private final List<Group> _groups = new ArrayList<>();
 
@@ -847,15 +842,15 @@ public class ParticipantGroupController extends BaseStudyController
         }
 
         @Override
-        public void bindJson(org.json.JSONObject json)
+        public void bindJson(JSONObject json)
         {
             if (json.has("groups"))
             {
-                org.json.JSONArray groupArr = json.getJSONArray("groups");
+                JSONArray groupArr = json.getJSONArray("groups");
 
                 for (int i=0; i < groupArr.length(); i++)
                 {
-                    org.json.JSONObject group = groupArr.getJSONObject(i);
+                    JSONObject group = groupArr.getJSONObject(i);
 
                     GroupType type = GroupType.valueOf(group.getString("type"));
 

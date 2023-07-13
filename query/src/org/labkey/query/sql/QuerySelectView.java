@@ -1,6 +1,7 @@
 package org.labkey.query.sql;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -273,7 +275,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 selectFrag.append(strComma);
                 selectFrag.append(column.getValueSql(tableAlias));
                 selectFrag.append(" AS ");
-                selectFrag.append(dialect.makeLegalIdentifier(column.getAlias()));
+                selectFrag.appendIdentifier(dialect.makeLegalIdentifier(column.getAlias()));
                 strComma = ",\n";
             }
         }
@@ -338,11 +340,13 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (filter != null)
         {
-            if (filter instanceof SimpleFilter)
+            if (filter instanceof SimpleFilter simpleFilter)
             {
-                for (var c : ((SimpleFilter) filter).getClauses())
+                for (var c : simpleFilter.getClauses())
+                {
                     if (c instanceof QueryServiceImpl.QueryCompareClause qcc)
                         qcc.setQuery(_query);
+                }
             }
             filterFrag = filter.getSQLFragment(dialect, "x", columnMap);
         }
@@ -382,7 +386,7 @@ public class QuerySelectView extends AbstractQueryRelation
     {
         Map<ColumnInfo, Set<FieldKey>> shouldLogNameToDataLoggingMap = new HashMap<>();
         Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
-        String columnLoggingComment = null;
+        Set<String> columnLoggingComments = new LinkedHashSet<>();
         SelectQueryAuditProvider selectQueryAuditProvider = null;
         for (ColumnInfo column : allColumns)
         {
@@ -394,8 +398,7 @@ public class QuerySelectView extends AbstractQueryRelation
                 shouldLogNameLoggings.add(columnLogging);
                 if (null == selectQueryAuditProvider)
                     selectQueryAuditProvider = columnLogging.getSelectQueryAuditProvider();
-                if (null == columnLoggingComment)
-                    columnLoggingComment = columnLogging.getLoggingComment();
+                columnLoggingComments.addAll(columnLogging.getLoggingComments());
                 if (null != columnLogging.getException())
                 {
                     UnauthorizedException uae = columnLogging.getException();
@@ -447,7 +450,7 @@ public class QuerySelectView extends AbstractQueryRelation
 
         if (null != table.getUserSchema() && !queryLogging.isReadOnly())
         {
-            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
+            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), StringUtils.join(columnLoggingComments,"\n"),
                     shouldLogNameLoggings, dataLoggingColumns, selectQueryAuditProvider);
         }
         else if (!shouldLogNameLoggings.isEmpty())
@@ -492,17 +495,18 @@ public class QuerySelectView extends AbstractQueryRelation
         return Collections.singletonList(col);
     }
 
+    private static final int DEFAULT_SORT_MAX_COLUMNS = 5; // Limit default ORDER BY in no PK case to five columns
 
     private static boolean addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
     {
 	    /* There is a bit of a chicken-and-egg problem here
-	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
+	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure
 	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
 	     */
         Map<FieldKey, ColumnInfo> available = new HashMap<>();
         columns.forEach(c -> available.putIfAbsent(c.getFieldKey(), c));
 
-        Set<FieldKey> presentInSort = sort.getSortList().stream().map(sf -> sf.getFieldKey()).collect(Collectors.toSet());
+        Set<FieldKey> presentInSort = sort.getSortList().stream().map(Sort.SortField::getFieldKey).collect(Collectors.toSet());
 
         boolean addedSortKeys = false;
 
@@ -514,9 +518,13 @@ public class QuerySelectView extends AbstractQueryRelation
             if (sortFields != null && !sortFields.isEmpty())
             {
                 if (presentInSort.add(column.getFieldKey()))
+                {
                     // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
                     sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
-                addedSortKeys = true;
+                    addedSortKeys = true;
+                    if (sort.getSortList().size() >= DEFAULT_SORT_MAX_COLUMNS)
+                        break;
+                }
             }
         }
         return addedSortKeys;

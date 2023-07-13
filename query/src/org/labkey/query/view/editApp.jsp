@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.json.old.JSONObject" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -125,14 +125,14 @@
     <tr>
         <td valign="top" class="labkey-form-label">Defaults:</td>
         <td>
-            <textarea name="defaults" id="defaults"><%=defaults == null ? HtmlString.EMPTY_STRING : defaults.getJavaScriptFragment(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
+            <textarea name="defaults" id="defaults"><%=defaults == null ? HtmlString.EMPTY_STRING : json(defaults, OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
         </td>
     </tr>
 
     <tr>
         <td valign="top" class="labkey-form-label">Values:</td>
         <td>
-            <textarea name="values" id="values"><%=values == null ? HtmlString.EMPTY_STRING : values.getJavaScriptFragment(OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
+            <textarea name="values" id="values"><%=values == null ? HtmlString.EMPTY_STRING : json(values, OlapController.APP_CONTEXT_JSON_INDENT)%></textarea>
         </td>
     </tr>
 </p>

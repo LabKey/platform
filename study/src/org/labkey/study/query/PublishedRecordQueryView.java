@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -43,10 +44,11 @@ public class PublishedRecordQueryView extends DatasetQueryView
     private final String _sourceLsid;
     private final int _publishSourceId;
     private final int _recordCount;
+    @Nullable
     private final Dataset.PublishSource _publishSource;
 
     public PublishedRecordQueryView(UserSchema schema, DatasetQuerySettings settings, String sourceLsid,
-                                    Dataset.PublishSource source, int publishSourceId, int recordCount)
+                                    @Nullable Dataset.PublishSource source, int publishSourceId, int recordCount)
     {
         super(schema, settings, null);
         _sourceLsid = sourceLsid;
@@ -104,7 +106,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             super.renderFormEnd(ctx, out);
             if (_count < _recordCount)
             {
-                Container c = _publishSource.resolveSourceLsidContainer(_sourceLsid, null);
+                Container c = _publishSource == null ? null : _publishSource.resolveSourceLsidContainer(_sourceLsid, null);
                 if (c != null)
                 {
                     if (_count == 0)

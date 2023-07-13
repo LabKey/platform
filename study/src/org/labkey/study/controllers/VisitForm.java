@@ -15,20 +15,15 @@
  */
 package org.labkey.study.controllers;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.math.BigDecimal;
 
 /**
@@ -37,6 +32,7 @@ import java.math.BigDecimal;
  */
 public class VisitForm extends ViewForm
 {
+    private int _id;
     private int[] _datasetIds;
     private String[] _datasetStatus;
     private BigDecimal _sequenceNumMin;
@@ -56,7 +52,6 @@ public class VisitForm extends ViewForm
     {
     }
 
-
     public void validate(Errors errors, Study study)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
@@ -65,19 +60,11 @@ public class VisitForm extends ViewForm
             return;
         }
 
-        HttpServletRequest request = getRequest();
-        String oldValues = request.getParameter(DataRegion.OLD_VALUES_NAME);
+        int rowId = getId();
 
-        if (null != StringUtils.trimToNull(oldValues))
+        if (0 != rowId)
         {
-            try
-            {
-                _visit = PageFlowUtil.decodeObject(VisitImpl.class, oldValues);
-            }
-            catch (IOException x)
-            {
-                throw new RuntimeException(x);
-            }
+            _visit = StudyManager.getInstance().getVisitForRowId(study, rowId).createMutable();
         }
 
         //check for null min/max sequence numbers
@@ -103,12 +90,6 @@ public class VisitForm extends ViewForm
         if (visit.getSequenceNumMin().compareTo(visit.getSequenceNumMax()) > 0)
         {
             errors.reject(null, "The minimum value cannot be greater than the maximum value for the visit range.");
-/*
-                double min = visit.getSequenceNumMax();
-                double max = visit.getSequenceNumMin();
-                visit.setSequenceNumMax(max);
-                visit.setSequenceNumMin(min);
-*/
         }
         setBean(visit);
     }
@@ -119,7 +100,6 @@ public class VisitForm extends ViewForm
         Study visitStudy = StudyManager.getInstance().getStudyForVisits(study);
         return visitStudy.getContainer();
     }
-
 
     public VisitImpl getBean()
     {
@@ -163,6 +143,16 @@ public class VisitForm extends ViewForm
         setLabel(bean.getLabel());
         setCohortId(bean.getCohortId());
         setSequenceNumHandling(bean.getSequenceNumHandling());
+    }
+
+    public int getId()
+    {
+        return _id;
+    }
+
+    public void setId(int id)
+    {
+        _id = id;
     }
 
     public String[] getDatasetStatus()

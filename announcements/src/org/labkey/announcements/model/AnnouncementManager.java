@@ -608,7 +608,7 @@ public class AnnouncementManager
                         else
                         {
                             reason = EmailNotificationBean.Reason.signedUp;
-                            changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifer());
+                            changePreferenceURL = AnnouncementsController.getEmailPreferencesURL(c, AnnouncementsController.getBeginURL(c), a.lookupSrcIdentifier());
                         }
 
                         try
@@ -697,6 +697,11 @@ public class AnnouncementManager
         }
 
         return result;
+    }
+
+    public static int updateContainer(List<String> discussionSrcIds, Container targetContainer, User user)
+    {
+        return ContainerManager.updateContainer(_comm.getTableInfoAnnouncements(), "discussionSrcIdentifier", discussionSrcIds, targetContainer, user, false);
     }
 
 

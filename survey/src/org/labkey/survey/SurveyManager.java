@@ -16,15 +16,14 @@
 
 package org.labkey.survey;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
@@ -66,6 +65,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.survey.model.SurveyListener;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
@@ -155,7 +155,7 @@ public class SurveyManager
                         if (trimmedMap.containsKey("lookup"))
                         {
                             JSONObject lookup = (JSONObject)trimmedMap.get("lookup");
-                            if (!lookup.containsKey("containerPath"))
+                            if (!lookup.has("containerPath"))
                             {
                                 // use the container Id for the generated property as it avoids dealing with special/tricky characters
                                 // the user can still enter the path as a string if they would like
@@ -349,7 +349,7 @@ public class SurveyManager
         if (surveys.length > 0)
         {
             SQLFragment deleteSurveysSql = new SQLFragment("DELETE FROM ");
-            deleteSurveysSql.append(s.getSurveysTable().getSelectName()).append(" WHERE Container = ?").add(c);
+            deleteSurveysSql.append(s.getSurveysTable()).append(" WHERE Container = ?").add(c);
             executor.execute(deleteSurveysSql);
 
             // invoke any survey listeners to clean up any dependent objects
@@ -386,7 +386,7 @@ public class SurveyManager
                     deleteSurvey(c, user, survey.getRowId());
             }
             SQLFragment deleteSurveyDesignsSql = new SQLFragment("DELETE FROM ");
-            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable().getSelectName()).append(" WHERE RowId = ?").add(surveyDesignId);
+            deleteSurveyDesignsSql.append(s.getSurveyDesignsTable()).append(" WHERE RowId = ?").add(surveyDesignId);
             executor.execute(deleteSurveyDesignsSql);
 
             transaction.commit();
@@ -701,7 +701,7 @@ public class SurveyManager
      * @param metadata
      * @return the error messages
      */
-    public static String validateSurveyMetadata(String metadata) throws IOException, JsonProcessingException
+    public static String validateSurveyMetadata(String metadata) throws IOException
     {
         ObjectMapper mapper = new ObjectMapper();
         mapper.readTree(metadata);
@@ -725,11 +725,11 @@ public class SurveyManager
                     {
                         JSONObject section = jsonSections.getJSONObject(i);
 
-                        if (!section.containsKey("title"))
+                        if (!section.has("title"))
                             sb.append("Each section must contain a property named : 'title'\n");
                         else if (section.has("questions"))
                         {
-                            for (JSONObject question : section.getJSONArray("questions").toJSONObjectArray())
+                            for (JSONObject question : JsonUtil.toJSONObjectList(section.getJSONArray("questions")))
                             {
                                 if (question == null)
                                 {

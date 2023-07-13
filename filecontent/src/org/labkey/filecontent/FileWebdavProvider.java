@@ -57,13 +57,9 @@ public class FileWebdavProvider implements WebdavService.Provider
     @Nullable
     public Set<String> addChildren(@NotNull WebdavResource target, boolean isListing)
     {
-        if (!(target instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(target instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
-
-        if (c.isRoot())
-            return null;
 
         FileContentService svc = FileContentService.get();
         if (svc == null)
@@ -81,6 +77,9 @@ public class FileWebdavProvider implements WebdavService.Provider
             }
         }
 
+        if (c.isRoot())
+            return result;
+
         // Check if there are any named file sets
         for (AttachmentDirectory dir : svc.getRegisteredDirectories(c))
         {
@@ -97,9 +96,8 @@ public class FileWebdavProvider implements WebdavService.Provider
     @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
+        if (!(parent instanceof WebdavResolverImpl.WebFolderResource folder))
             return null;
-        WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) parent;
         Container c = folder.getContainer();
 
         FileContentService service = FileContentService.get();
@@ -130,7 +128,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         return null;
     }
 
-    class _FilesResource extends FileSystemResource
+    static class _FilesResource extends FileSystemResource
     {
         public _FilesResource(WebdavResource folder, String name, File file, SecurityPolicy policy)
         {
@@ -169,7 +167,7 @@ public class FileWebdavProvider implements WebdavService.Provider
     }
 
 
-    class _FilesetsFolder extends AbstractWebdavResourceCollection
+    static class _FilesetsFolder extends AbstractWebdavResourceCollection
     {
         Container _c;
         HashMap<String,AttachmentDirectory> _map = new HashMap<>();

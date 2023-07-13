@@ -103,9 +103,10 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             _selectedColumns.put(pt.getFieldKey(), pt);
         }
 
-        // add ref to first column, this may be used in (SELECT) expression
+        // add ref to first column, this may be required for expressions such as WHERE IN (SELECT ...)
+        // we use _query as the referer to make sure this ref does not go away
         if (!_selectedColumns.isEmpty())
-            _selectedColumns.get(0).addRef(this);
+            _selectedColumns.get(0).addRef(_query);
 
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
@@ -189,7 +190,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             ColumnLogging columnLogging = col.getColumnLogging();
             if (null == columnLogging.getException())
                 columnLogging = new ColumnLogging(getSchema().getName(), ret.getName(), ci.getFieldKey(),
-                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
+                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComments(), columnLogging.getSelectQueryAuditProvider());
             ci.setColumnLogging(columnLogging);
             ci.setKeyField(ci.getFieldKey().equals(key));
             ret.addColumn(ci);
@@ -266,6 +267,33 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         public Sort getDefaultSort()
         {
             return _crosstabTableInfo.getDefaultSort();
+        }
+
+
+
+        @Override
+        public @NotNull SQLFragment getFromSQL(String alias)
+        {
+            for (var lkCol : _selectedColumns)
+                lkCol.addRef(this);
+            return super.getFromSQL(alias);
+        }
+
+        @Override
+        public @NotNull SQLFragment getFromSQL(String alias, Set<FieldKey> fieldKeys)
+        {
+            if (null == fieldKeys)
+                getFromSQL(alias);
+            for (var lkCol : _selectedColumns)
+                lkCol.releaseRef(this);
+            for (var lkCol : _selectedColumns)
+            {
+                if (fieldKeys.contains(lkCol.getFieldKey()))
+                    lkCol.addRef(this);
+            }
+            // column 0 should still have a reference because it has a reference from _query (see constructor)
+            assert _selectedColumns.get(0).ref.count() > 0;
+            return super.getFromSQL(alias);
         }
     }
 
@@ -347,7 +375,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
 
 
     @Override
-    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
+    public RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, ColumnType.Fk fk, @NotNull String name)
     {
         QLWColumn parent = (QLWColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
@@ -404,9 +432,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     public SQLFragment getSql()
     {
         if (!_hasLookups)
-        {
             return _source.getSql();
-        }
 
         SQLFragment sourceFromSql = _source.getFromSql();
         if (null == sourceFromSql || !_query.getParseErrors().isEmpty())
@@ -613,7 +639,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         }
 
         @Override
-        void copyColumnAttributesTo(BaseColumnInfo to)
+        void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
             computeColumnLoggingsAndPHI();
 
@@ -789,8 +815,19 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         @Override
         public int addRef(@NotNull Object refer)
         {
-            _foreignKey.addRef(refer);
+            _foreignKey.addRef(this);
             return super.addRef(refer);
+        }
+
+        @Override
+        public int releaseRef(@NotNull Object refer)
+        {
+            if (0 == ref.count())
+                return 0;
+            int count = super.releaseRef(refer);
+            if (count == 0)
+                _foreignKey.releaseRef(this);
+            return count;
         }
 
         @Override
@@ -811,9 +848,9 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
     public Map<FieldKey, FieldKey> getRemapMap(Map<String, FieldKey> outerMap)
     {
         Map<FieldKey,String> innerMap = new HashMap<>();
-        _selectedColumns.entrySet().forEach(e -> {
-            assert e.getKey().equals(e.getValue().getFieldKey());
-            innerMap.put(e.getKey(), e.getValue().getUniqueName());
+        _selectedColumns.forEach((key, value) -> {
+            assert key.equals(value.getFieldKey());
+            innerMap.put(key, value.getUniqueName());
         });
         return QueryRelation.generateRemapMap(innerMap , outerMap);
     }
@@ -840,7 +877,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
                 .forEach(ptc -> _mapSourceUniqueNameToFieldKey.put(ptc._wrapped.getUniqueName(), ptc.getFieldKey()));
 
         CaseInsensitiveHashSet warnings = new CaseInsensitiveHashSet();
-        QueryTableInfo fakeTableInfo = new QueryTableInfo(this, "UNION")
+        QueryTableInfo fakeTableInfo = new QueryTableInfo(this, "QLW")
         {
             @Override
             @NotNull

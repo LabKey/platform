@@ -15,8 +15,8 @@
  */
 package org.labkey.api.exp.api;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
@@ -39,8 +39,6 @@ import java.util.Map;
 
 /**
  * Serializes and deserializes JSON for assay-related APIs
- * User: jeckels
- * Date: Jan 21, 2009
  */
 public class AssayJSONConverter
 {
@@ -61,7 +59,7 @@ public class AssayJSONConverter
 
     public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null, settings);
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null, settings, user);
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())

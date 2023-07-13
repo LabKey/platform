@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.data.ColumnInfo"%>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.security.SecurityUrls" %>
@@ -34,10 +33,10 @@
 <%@ page import="org.labkey.issue.IssuesController.DetailsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
 <%@ page import="org.labkey.issue.IssuesController.ListAction" %>
-<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssueListDef" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="org.labkey.issue.model.IssueManager.EntryTypeNames" %>
+<%@ page import="org.labkey.issue.model.IssueObject" %>
 <%@ page import="org.labkey.issue.model.IssuePage" %>
 <%@ page import="org.labkey.issue.view.IssuesListView" %>
 <%@ page import="org.springframework.validation.BindException" %>
@@ -297,22 +296,19 @@
                     <tr><%=bean.renderLabel(bean.getLabel("Resolved", false))%><td nowrap="true"><%=h(bean.writeDate(issue.getResolved()))%><%=h(issue.getResolvedBy() != null ? " by " : "")%> <%=h(issue.getResolvedByName(user))%></td></tr>
                     <%=bean.renderColumn(propertyMap.get("resolution"), getViewContext(), bean.isVisible("resolution"), bean.isReadOnly("resolution"))%>
                     <%
-                        if (bean.isVisible("resolution") || !"open".equals(issue.getStatus()))
-                        {%>
-                    <tr><%=bean.renderLabel(bean.getLabel("Duplicate", false))%><td><%
-                        if (bean.isVisible("duplicate"))
+                    if (bean.isVisible("duplicate"))
+                    {%>
+                        <tr><%=bean.renderLabel(bean.getLabel("Duplicate", false))%><td><%
+                        if("Duplicate".equals(issue.getResolution()) && !bean.isReadOnly("duplicate"))
                         {
-                            if("Duplicate".equals(issue.getResolution()))
-                            {
-                                //Enabled duplicate field.%>
-                        <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
+                            //Enabled duplicate field.%>
+                            <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.type("number").minValue("1"))%><%
                         }
                         else
                         {
                             //Disabled duplicate field.%>
-                        <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
-                            }
-                        %>
+                            <%=bean.writeInput("duplicate", issue.getDuplicate() == null ? null : String.valueOf(issue.getDuplicate()), builder->builder.disabled(true))%><%
+                        }%>
                         <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                             var duplicateInput = document.getElementsByName('duplicate')[0];
                             var duplicateOrig = duplicateInput.value;
@@ -333,20 +329,21 @@
                                 }
                                 LABKEY.setDirty(true);
                             }
-                            if (window.addEventListener)
-                                resolutionSelect.addEventListener('change', updateDuplicateInput, false);
-                            else if (window.attachEvent)
-                                resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-                        </script><%
-                        }
-                        else
-                        {
-                            if(issue.getDuplicate() != null)
-                            {%>
-                        <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
-                                }
-                            }%>
+                            if (resolutionSelect){
+                                if (window.addEventListener)
+                                    resolutionSelect.addEventListener('change', updateDuplicateInput, false);
+                                else if (window.attachEvent)
+                                    resolutionSelect.attachEvent('onchange', updateDuplicateInput);
+                            }
+                        </script>
                     </td></tr><%
+                    }
+                    else
+                    {
+                        if (issue.getDuplicate() != null)
+                        {%>
+                            <a href="<%=h(IssuesController.getDetailsURL(c, issue.getDuplicate(), false))%>"><%=issue.getDuplicate()%></a><%
+                        }
                     }%>
                     <tr><%=bean.renderLabel(bean.getLabel("Related", false))%><td>
                         <%=bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), builder->builder.id("related"))%>
@@ -448,7 +445,6 @@
     {%>
         <%= generateReturnUrlFormField(bean.getReturnURL()) %> <%
     }%>
-    <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().name())%>">
     <input type="hidden" name="dirty" value="false">
 </labkey:form>

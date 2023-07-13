@@ -293,13 +293,13 @@ public abstract class ContainerFilter
             {
                 Container c = ContainerManager.getForId(containerId);
                 if (null != c)
-                    list.append(c);
+                    list.appendValue(c);
                 else
-                    list.append("'").append(containerId.toString()).append("'");
+                    list.appendValue(containerId);
             }
             else
             {
-                list.append("'").append(containerId.toString()).append("'");
+                list.appendValue(containerId);
             }
             list.append(")");
             comma = ", ";
@@ -318,11 +318,11 @@ public abstract class ContainerFilter
             select.append(list);
             select.append(") as _containerids_ (Id) ");
             // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-            select.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type IN ('");
-            select.append(StringUtils.join(includedChildTypes, "','"));
-            select.append("') )");
+            select.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type ");
+            schema.getSqlDialect().appendInClauseSql(select, includedChildTypes);
+            select.append(")");
         }
-        else if (ids.size() < 10 || ! useCTE())
+        else if (ids.size() < 10 || !useCTE())
         {
             SQLFragment result = new SQLFragment(containerColumnSQL);
             result.append(" IN (").append(list).append(")");

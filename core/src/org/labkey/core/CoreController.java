@@ -442,7 +442,10 @@ public class CoreController extends SpringActionController
                 {
                     Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
                     SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
-                    try (Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null))
+                    var select = QueryService.get().getSelectBuilder(table)
+                            .columns(col)
+                            .filter(filter);
+                    try (Results results = select.select())
                     {
                         if (results.getSize() != 1 || !results.next())
                             throw new NotFoundException("Row not found for primary key");
@@ -722,7 +725,7 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             if (json == null)
             {
                 throw new NotFoundException("No JSON posted");
@@ -860,7 +863,7 @@ public class CoreController extends SpringActionController
         @Override
         public void validateForm(SimpleApiJsonForm form, Errors errors)
         {
-            JSONObject object = form.getNewJsonObject();
+            JSONObject object = form.getJsonObject();
             String targetIdentifier = object.optString("container", null);
 
             if (null == targetIdentifier)
@@ -945,7 +948,7 @@ public class CoreController extends SpringActionController
             }
 
             // Prepare aliases
-            JSONObject object = form.getNewJsonObject();
+            JSONObject object = form.getJsonObject();
             Boolean addAlias = (Boolean) object.get("addAlias");
 
             List<String> aliasList = new ArrayList<>(ContainerManager.getAliasesForContainer(target));
@@ -1384,7 +1387,7 @@ public class CoreController extends SpringActionController
             if (p != null)
                 response.put("project", getContainerProps(p));
 
-            return new ApiSimpleResponse(response);
+            return response;
         }
 
         private Map<String, Object> getContainerProps(Container c)
@@ -1670,7 +1673,7 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
         {
             ViewContext ctx = getViewContext();
-            JSONObject formData = form.getNewJsonObject();
+            JSONObject formData = form.getJsonObject();
             JSONArray a = formData.getJSONArray("properties");
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
@@ -1815,17 +1818,20 @@ public class CoreController extends SpringActionController
                 if (dataType != null && writer.show(getContainer()) && !excludeForDataspace && !excludeForTemplate)
                 {
                     writerMap.put("name", dataType);
-                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
+                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType(), form.isForTemplate()));
 
                     Collection<Writer<?, ?>> childWriters = writer.getChildren(true, form.isForTemplate());
                     if (!childWriters.isEmpty())
                     {
-                        List<String> children = new ArrayList<>();
+                        List<Map<String, Object>> children = new ArrayList<>();
                         for (Writer<?, ?> child : childWriters)
                         {
                             dataType = child.getDataType();
                             if (dataType != null)
-                                children.add(dataType);
+                            {
+                                children.add(Map.of("name", dataType,
+                                        "selectedByDefault", child.selectedByDefault(form.getExportType(), form.isForTemplate())));
+                            }
                         }
 
                         if (children.size() > 0)

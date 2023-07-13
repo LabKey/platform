@@ -197,6 +197,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
+            if (!acceptColumn(baseColumn))
+                continue;
+
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
@@ -413,6 +416,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                 DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, cf, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
                 ColumnInfo datasetColumn = table.getColumn(displayField);
+                if (null == datasetColumn)
+                    return null;
                 MutableColumnInfo lookup = WrappedColumnInfo.wrap(datasetColumn);
                 lookup.setFieldKey(new FieldKey(parent.getFieldKey(), lookup.getName()));
                 return lookup;
@@ -485,6 +490,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
     }
 
+    protected boolean acceptColumn(ColumnInfo column)
+    {
+        return true;
+    }
 
     @Override
     public void addContextualRole(Role contextualRole)
@@ -548,7 +557,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
-        return "PHI accessed in dataset. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
+        return "PHI accessed in dataset '" + getName() + "'. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
     }
 
     @Override
@@ -708,7 +717,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 }
                 else
                 {
-                    sqlf.append(" AND __PV__.Container = '").append(getContainer().getId()).append("'");
+                    sqlf.append(" AND __PV__.Container = ").appendValue(getContainer());
                 }
                 sqlf.append(") ").append(innerAlias).append(" ");
 
@@ -1131,8 +1140,14 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     /** Wrap a column in our underlying publish source results table with one that puts it in the dataset table */
     protected ExprColumn wrapPublishSourceColumn(final ColumnInfo columnInfo, final String name, AliasSupplier<String> supplier)
     {
-        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(supplier.get(ExprColumn.STR_TABLE_ALIAS)), columnInfo.getJdbcType())
+        ExprColumn wrappedColumn = new ExprColumn(this, name, null, columnInfo.getJdbcType())
         {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                return columnInfo.getValueSql(supplier.get(tableAlias));
+            }
+
             @Override
             public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
             {

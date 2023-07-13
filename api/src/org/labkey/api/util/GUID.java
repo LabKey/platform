@@ -20,14 +20,16 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.json.JSONString;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.security.Crypt;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -65,7 +67,7 @@ import java.util.regex.Pattern;
 
 
 @SuppressWarnings({"UnnecessarySemicolon"})
-public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToRender
+public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToRender, JSONString
 {
     private static final int version  =       0x00001000;
     private static final int reserved =       0x00008000;
@@ -132,10 +134,9 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
 
         if (null != p)
         {
-            try (InputStream str = p.getInputStream())
+            try (InputStream str = p.getInputStream(); BufferedReader in = Readers.getReader(str))
             {
                 Pattern pattern = Pattern.compile(".*(\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}(-|:)\\p{XDigit}\\p{XDigit}).*");
-                BufferedReader in = new BufferedReader(new InputStreamReader(str));
                 String line;
                 while (null != (line = in.readLine()))
                 {
@@ -339,6 +340,12 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue, SafeToR
     public JdbcType getJdbcParameterType()
     {
         return JdbcType.GUID;
+    }
+
+    @Override
+    public String toJSONString()
+    {
+        return JSONObject.quote(_str);
     }
 }
 

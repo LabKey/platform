@@ -134,7 +134,7 @@ public class ReturnURLString
         }
     }
 
-    // Issue 35896 - Disallow external redirects to URLs not on the whitelist
+    // Issue 35896 - Disallow external redirects to URLs not on the allow list
     private static boolean isAllowableHost(@NotNull URLHelper h)
     {
         return h.isAllowableHost();

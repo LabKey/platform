@@ -41,14 +41,12 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
-import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -243,13 +241,21 @@ public class ExperimentUpgradeCode implements UpgradeCode
         LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
     }
 
-    private static Map<String, List<String>> findContainersWithAliquotRecomputes()
+    /**
+     * Called from exp-23.000-23.001.sql
+     */
+    public static void cleanUpAliquotRecomputeFlag(ModuleContext context)
+    {
+        // do nothing.
+        // exp.material.recomputerollup dropped in exp-23.004-23.005.sql
+    }
+
+    private static Map<String, List<String>> findContainersWithAliquot()
     {
         SQLFragment sql = new SQLFragment()
-                .append("SELECT distinct cpastype, container\n")
+                .append("SELECT DISTINCT cpastype, container\n")
                 .append("FROM ").append(ExperimentService.get().getTinfoMaterial(), "m").append("\n")
-                .append("WHERE m.recomputerollup = ?")
-                .add(true);
+                .append("WHERE m.AliquotCount IS NOT NULL AND m.AliquotCount <> 0");
 
         @NotNull Map<String, Object>[] results = new SqlSelector(ExperimentService.get().getSchema(), sql).getMapArray();
         if (results.length > 0)
@@ -267,11 +273,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         return Collections.emptyMap();
     }
-
     /**
-     * Called from exp-23.000-23.001.sql
+     * Called from exp-23.007-23.008.sql
      */
-    public static void cleanUpAliquotRecomputeFlag(ModuleContext context)
+    public static void recomputeAliquotAvailableAmount(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
@@ -279,9 +284,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            InventoryService inventoryService = InventoryService.get();
+            // find sample types
             SampleTypeService sampleTypeService = SampleTypeService.get();
-            Map<String, List<String>> containerSampleTypes = findContainersWithAliquotRecomputes();
+            Map<String, List<String>> containerSampleTypes = findContainersWithAliquot();
             for (String containerId : containerSampleTypes.keySet())
             {
                 Container container = ContainerManager.getForId(containerId);
@@ -289,7 +294,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     continue;
 
                 List<String> sampleTypes = containerSampleTypes.get(containerId);
-                LOG.info("** starting cleaning up exp.material.recalcFlag in folder: " + container.getPath());
+                LOG.info("** starting recalculating exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
 
                 try
                 {
@@ -299,15 +304,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
                         if (sampleType == null)
                             continue;
 
-                        int cleanedUpCount = sampleTypeService.resetRecomputeFlagForNonParents(sampleType, container);
-                        if (cleanedUpCount > 0)
-                            LOG.info("*** cleaned up RecomputeRollup flag for " + cleanedUpCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
-                        if (inventoryService != null)
-                        {
-                            int syncedCount = inventoryService.recomputeSampleTypeRollup(sampleType, container, false);
-                            if (syncedCount > 0)
-                                LOG.info("*** recalculated aliquot roll-up for " + cleanedUpCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
-                        }
+                        int syncedCount = sampleTypeService.recomputeSampleTypeAvailableAliquotRollup(sampleType, container);
+                        if (syncedCount > 0)
+                            LOG.info("*** recalculated aliquotAvailableCount/Volume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
                     }
                 }
                 catch (SQLException e)
@@ -315,7 +314,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                     throw new RuntimeException(e);
                 }
 
-                LOG.info("** finished cleaning up exp.material.recalcFlag in folder: " + container.getPath());
+                LOG.info("** finished cleaning up exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
             }
 
             transaction.commit();

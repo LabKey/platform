@@ -127,15 +127,15 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 {
     private static final String UPLOAD_LOG = ".upload.log";
     private static final Map<String, AttachmentType> ATTACHMENT_TYPE_MAP = new HashMap<>();
+    private static final Set<String> ATTACHMENT_COLUMNS = Set.of("Parent", "Container", "DocumentName", "DocumentSize", "DocumentType", "Created", "CreatedBy", "LastIndexed");
 
     public AttachmentServiceImpl()
     {
         ContainerManager.addContainerListener(this);
     }
 
-
     @Override
-    public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename, @Nullable String alias, boolean inlineIfPossible) throws ServletException, IOException
     {
         if (null == filename || 0 == filename.length())
         {
@@ -148,7 +148,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         boolean asAttachment = !canInline || !inlineIfPossible;
 
         response.reset();
-        writeDocument(new ResponseWriter(response), parent, filename, asAttachment);
+        writeDocument(new ResponseWriter(response), parent, filename, alias, asAttachment);
 
         User user = null;
         try
@@ -166,6 +166,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         {
             addAuditEvent(user, parent, filename, "The attachment " + filename + " was downloaded");
         }
+    }
+
+
+    @Override
+    public void download(HttpServletResponse response, AttachmentParent parent, String filename, boolean inlineIfPossible) throws ServletException, IOException
+    {
+        download(response, parent, filename, null, inlineIfPossible);
     }
 
 
@@ -353,7 +360,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 continue;
 
             checkSecurityPolicy(parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
-            deleteAttachmentIndex(parent, atts);
+            deleteIndexedAttachments(parent, atts);
 
             new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(parent));
             if (parent instanceof AttachmentDirectory)
@@ -363,7 +370,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void deleteAttachmentIndexes(List<String> parentIds)
+    public void deleteIndexedAttachments(List<String> parentIds)
     {
         TableSelector ts = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
                 PageFlowUtil.set("Parent", "DocumentName"),
@@ -371,42 +378,56 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         try (ResultSet rs = ts.getResultSet())
         {
-            while(rs.next())
+            while (rs.next())
             {
-                deleteAttachmentIndex(rs.getString("Parent"), rs.getString("DocumentName"));
+                deleteIndexedAttachment(rs.getString("Parent"), rs.getString("DocumentName"));
             }
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
-
     }
 
-    private void deleteAttachmentIndex(String parent, String name)
+    private void deleteIndexedAttachment(AttachmentParent parent, String name)
+    {
+        deleteIndexedAttachment(parent.getEntityId(), name);
+    }
+
+    private void deleteIndexedAttachment(String parent, String name)
     {
         SearchService ss = SearchService.get();
         if (ss != null)
             ss.deleteResource(makeDocId(parent, name));
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
+            "UPDATE core.Documents SET LastIndexed = NULL WHERE Parent = ? and DocumentName = ?", parent, name)
+        );
     }
 
-    private void deleteAttachmentIndex(AttachmentParent parent, List<Attachment> atts)
+    private void deleteIndexedAttachments(AttachmentParent parent, List<Attachment> atts)
     {
-        if (atts.isEmpty())
-            return;
-
-        SearchService ss = SearchService.get();
-        if (ss != null)
-            for (Attachment att : atts)
-                ss.deleteResource(makeDocId(parent, att.getName()));
+        for (Attachment att : atts)
+            deleteIndexedAttachment(parent, att.getName());
     }
-
 
     @Override
-    public void deleteAttachmentIndex(AttachmentParent parent)
+    public void deleteIndexedAttachments(AttachmentParent parent)
     {
         List<Attachment> atts = getAttachments(parent);
-        deleteAttachmentIndex(parent, atts);
+        deleteIndexedAttachments(parent, atts);
+    }
+
+    private void _deleteAttachment(AttachmentParent parent, String name, @Nullable User auditUser)
+    {
+        checkSecurityPolicy(auditUser, parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
+        deleteIndexedAttachment(parent, name);
+
+        new SqlExecutor(coreTables().getSchema()).execute(sqlDelete(parent, name));
+        if (parent instanceof AttachmentDirectory)
+            ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
+
+        if (null != auditUser)
+            addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
     }
 
 
@@ -417,20 +438,22 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
         if (null != att)
         {
-            checkSecurityPolicy(auditUser, parent);   // Only check policy if there are attachments (a client may delete attachment and policy, but attempt to delete again)
-            SearchService ss = SearchService.get();
-            if (ss != null)
-                ss.deleteResource(makeDocId(parent, att.getName()));
-
-            new SqlExecutor(coreTables().getSchema()).execute(sqlDelete(parent, name));
-            if (parent instanceof AttachmentDirectory)
-                ((AttachmentDirectory)parent).deleteAttachment(auditUser, name);
-
+            _deleteAttachment(parent, name, auditUser);
             AttachmentCache.removeAttachments(parent);
-
-            if (null != auditUser)
-                addAuditEvent(auditUser, parent, name, "The attachment " + name + " was deleted");
         }
+    }
+
+    @Override
+    public void deleteAttachments(AttachmentParent parent, Collection<String> names, @Nullable User auditUser)
+    {
+        Map<String, Attachment> attachmentMap = getAttachments(parent, names);
+
+        for (Attachment attachment : attachmentMap.values())
+        {
+            _deleteAttachment(parent, attachment.getName(), null);
+        }
+
+        AttachmentCache.removeAttachments(parent);
     }
 
 
@@ -482,7 +505,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     }
 
     @Override
-    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser)
+    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
     {
         SearchService ss = SearchService.get();
         for (AttachmentParent parent : parents)
@@ -496,8 +519,18 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 for (Attachment att : atts)
                 {
                     filename = att.getName();
-                    if (ss != null)
-                        ss.deleteResource(makeDocId(parent, filename));
+                    if (parent instanceof AttachmentDirectory parentDir)
+                    {
+                        File currentDir = parentDir.getFileSystemDirectoryPath().toFile();
+                        File newDir =  parentDir.getFileSystemDirectoryPath(newContainer).toFile();
+                        File src = new File(currentDir, filename);
+                        File dest = new File(newDir, filename);
+                        if (!src.exists())
+                            throw new FileNotFoundException(src.getAbsolutePath());
+                        if (dest.exists())
+                            throw new AttachmentService.DuplicateFilenameException(dest.getAbsolutePath());
+                    }
+                    deleteIndexedAttachment(parent, filename);
                     addAuditEvent(auditUser, parent, filename, "The attachment " + filename + " was moved");
                 }
                 AttachmentCache.removeAttachments(parent);
@@ -693,7 +726,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 SQLFragment selectStatement = new SQLFragment();
 
                 // Adding unique column RowId ensures we get the proper count
-                selectStatement.append("SELECT RowId, CAST('").append(type.getUniqueName()).append("' AS VARCHAR(500)) AS Type FROM ")
+                selectStatement.append("SELECT RowId, CAST(").appendValue(type.getUniqueName()).append(" AS VARCHAR(500)) AS Type FROM ")
                     .append(CoreSchema.getInstance().getTableInfoDocuments(), "d")
                     .append(" WHERE ");
                 addAndVerifyWhereSql(type, selectStatement);
@@ -856,7 +889,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         TableInfo table = column.getParentTable();
-        selectStatements.add("    SELECT " + expression + " AS EntityId, '" + table.getSelectName() + "' AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
+        selectStatements.add("    SELECT " + expression + " AS EntityId, " + table.getSqlDialect().quoteStringLiteral(table.getSelectName()) + " AS TableName FROM " + table.getSelectName() + (null != where ? " WHERE " + where : "") + "\n");
     }
 
     private WebPartView getResultSetView(SQLFragment sql, String title, @Nullable ActionURL linkUrl)
@@ -872,6 +905,37 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     {
         checkSecurityPolicy(parent);
         return getAttachmentHelper(parent, name);
+    }
+
+    @Override
+    public Map<String, Attachment> getAttachments(AttachmentParent parent, Collection<String> names)
+    {
+        checkSecurityPolicy(parent);
+        Map<String, Attachment> attachments = new HashMap<>();
+
+        if (parent instanceof AttachmentDirectory)
+        {
+            for (Attachment attachment : getAttachments(parent))
+                if (names.contains(attachment.getName()))
+                    attachments.put(attachment.getName(), attachment);
+        }
+        else
+        {
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parent.getEntityId());
+            filter.addCondition(FieldKey.fromParts("DocumentName"), names, CompareType.IN);
+            // Note: we are intentionally skipping the AttachmentCache here. If we hit the cache here while getting
+            // attachments from the global attachment parent we'll load every single attachment into the cache first,
+            // which could be very expensive on servers that have a ton of attachments.
+            List<Attachment> attachmentsList = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
+                    ATTACHMENT_COLUMNS,
+                    filter,
+                    new Sort("+RowId")).getArrayList(Attachment.class);
+
+            for (Attachment attachment : attachmentsList)
+                attachments.put(attachment.getName(), attachment);
+        }
+
+        return attachments;
     }
 
     private @Nullable Attachment getAttachmentHelper(AttachmentParent parent, String name)
@@ -922,15 +986,16 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         return Collections.emptyList();
     }
 
-    // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
-    @Override
-    public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
+    private void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, @Nullable String alias, boolean asAttachment) throws ServletException, IOException
     {
         checkSecurityPolicy(parent);
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
         DbSchema schema = coreTables().getSchema();
+
+        if (alias == null)
+            alias = name;
 
         try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
@@ -950,13 +1015,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             {
                 File parentDir = ((AttachmentDirectory) parent).getFileSystemDirectory();
                 if (!parentDir.exists())
-                    throw new NotFoundException("No parent directory for downloaded file " + name + ". Please contact an administrator.");
+                    throw new NotFoundException("No parent directory for downloaded file " + alias + ". Please contact an administrator.");
                 File file = new File(parentDir, name);
                 if (!file.exists())
-                    throw new NotFoundException("Could not find file " + name);
+                    throw new NotFoundException("Could not find file " + alias);
 
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + name + "\"");
+                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
                 s = new FileInputStream(file);
             }
             else
@@ -968,9 +1033,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + name + "\"");
+                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
                 else
-                    writer.setContentDisposition("inline; filename=\"" + name + "\"");
+                    writer.setContentDisposition("inline; filename=\"" + alias + "\"");
 
                 int size = rs.getInt("DocumentSize");
                 if (size > 0)
@@ -1005,6 +1070,13 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                 schema.getScope().releaseConnection(conn);
             }
         }
+    }
+
+    // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
+    @Override
+    public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
+    {
+        writeDocument(writer, parent, name, null, asAttachment);
     }
 
 
@@ -1248,10 +1320,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
-
     private static String makeDocId(AttachmentParent parent, String name)
     {
-        return makeDocId(parent.getEntityId(), PageFlowUtil.encode(name));
+        return makeDocId(parent.getEntityId(), name);
     }
 
     private static String makeDocId(String parentId, String name)
@@ -1301,7 +1372,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (null == cat)
                 setSearchCategory(SearchService.fileCategory);
             else
-                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + " " + cat.toString());
+                setSearchProperty(SearchService.PROPERTY.categories, SearchService.fileCategory.toString() + StringUtils.capitalize(cat.toString()));
         }
 
         AttachmentResource(@NotNull WebdavResource folder, @NotNull AttachmentParent parent, @NotNull Attachment attachment)
@@ -1333,7 +1404,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         @Override
         public String getDocumentId()
         {
-            return "attachment:/" + _parent.getEntityId() + "/" + PageFlowUtil.encode(_name);
+            return makeDocId(_parent, _name);
         }
 
         Attachment getAttachment()
@@ -1625,7 +1696,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             }
             catch (RuntimeException e)
             {
-                throw new UnauthorizedException("Cannot get user to check against secure resource's  policy.");       // We have a policy but can't get user, so fail
+                throw new UnauthorizedException("Cannot get user to check against secure resource's policy.");       // We have a policy but can't get user, so fail
             }
             checkSecurityPolicy(user, attachmentParent);
         }

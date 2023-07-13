@@ -73,7 +73,7 @@ public class SecurityGroupWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public boolean selectedByDefault(ExportType type)
+        public boolean selectedByDefault(ExportType type, boolean forTemplate)
         {
             return false;
         }

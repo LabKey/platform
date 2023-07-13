@@ -21,7 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
@@ -74,6 +74,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
@@ -89,7 +90,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -183,7 +183,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         try
         {
-            // Whether or not we need to save batch properties
+            // Whether we need to save batch properties
             boolean forceSaveBatchProps = false;
             if (batch == null)
             {
@@ -249,6 +249,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         boolean forceSaveBatchProps
     ) throws ExperimentException, ValidationException
     {
+        context.setAutoFillDefaultResultColumns(run.getRowId() > 0); // need to setAutoFillDefaultResultColumns before run is saved
+
         final Container container = context.getContainer();
 
         Map<ExpMaterial, String> inputMaterials = new HashMap<>();
@@ -334,11 +336,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<>();
 
-            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm)
+            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm<ProviderType> uploadForm)
             {
                 context.setTransformResult(transformResult);
-                ((AssayRunUploadForm)context).setName(run.getName());
-                ((AssayRunUploadForm) context).setComments(run.getComments());
+                uploadForm.setName(run.getName());
+                uploadForm.setComments(run.getComments());
                 throw new ValidationException(" ");
             }
 
@@ -408,19 +410,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 ProvenanceService pvs = ProvenanceService.get();
                 Set<String> runInputLSIDs = null;
-                if (provInputsProperty instanceof String)
+                if (provInputsProperty instanceof String provInputs)
                 {
                     // parse as a JSONArray of values or a comma-separated list of values
-                    String provInputs = (String)provInputsProperty;
                     if (provInputs.startsWith("[") && provInputs.endsWith("]"))
                         provInputsProperty = new JSONArray(provInputs);
                     else
                         runInputLSIDs = Set.of(provInputs.split(","));
                 }
 
-                if (provInputsProperty instanceof JSONArray)
+                if (provInputsProperty instanceof JSONArray jsonArray)
                 {
-                    runInputLSIDs = Arrays.stream(((JSONArray)provInputsProperty).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                    runInputLSIDs = jsonArray.toList().stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toSet());
                 }
 
                 if (runInputLSIDs != null && !runInputLSIDs.isEmpty())
@@ -518,7 +521,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
                 dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
-                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null);
+                dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null, context.shouldAutoFillDefaultResultColumns());
             }
         }
         else
@@ -537,7 +540,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext);
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
             }
         }
     }

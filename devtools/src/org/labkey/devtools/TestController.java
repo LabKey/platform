@@ -25,6 +25,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.MethodsAllowed;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -43,11 +44,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -1052,5 +1055,24 @@ public class TestController extends SpringActionController
     @MethodsAllowed(PUT)
     public class PutAction extends GetAction
     {
+    }
+
+
+    /** fast abd simple to test sql and api w/o dealing with the schema browser */
+    @RequiresLogin
+    public static class TestSQLAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors)
+        {
+            getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
+            getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));
+            return new HtmlView("<script src='" + AppProps.getInstance().getContextPath() + "/query/testquery.js'></script><div id=testQueryDiv style='min-height:600px;min-width:800px;' nonce='" + HttpView.currentPageConfig().getScriptNonce()  + "'></div>");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
     }
 }

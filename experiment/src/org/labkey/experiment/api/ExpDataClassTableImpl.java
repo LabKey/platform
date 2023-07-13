@@ -160,6 +160,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 col.setFk( fk );
                 return col;
             }
+            case ImportAliases:
+                return createImportAliasColumn("ImportAliases", null, "data class");
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -181,6 +183,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         addColumn(Column.Category).setHidden(true);
         addColumn(Column.SampleSet);
         addColumn(Column.DataCount);
+        addColumn(Column.ImportAliases);
 
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));

@@ -19,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -72,18 +72,25 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -92,13 +99,16 @@ import org.labkey.experiment.api.AliasInsertHelper;
 import org.labkey.experiment.api.ExpDataClassDataTableImpl;
 import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpRunItemTableImpl;
+import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.SampleTypeUpdateServiceDI;
 import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -112,18 +122,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.exp.api.ExpData.DATA_INPUTS_PREFIX_LC;
+import static org.labkey.api.exp.api.ExpData.DATA_INPUT_PARENT;
+import static org.labkey.api.exp.api.ExpMaterial.ALIQUOTED_FROM_INPUT;
+import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUTS_PREFIX_LC;
+import static org.labkey.api.exp.api.ExpMaterial.MATERIAL_INPUT_PARENT;
+import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
+import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
 
 
 public class ExpDataIterators
 {
-    private static final Logger LOG = LogHelper.getLogger(ExpDataIterators.class, "Experiment data related data iterators");
+    private static final Logger LOG = LogHelper.getLogger(ExpDataIterators.class, "Experiment data-related data iterators");
 
     public static class CounterDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -214,12 +237,12 @@ public class ExpDataIterators
     public static class ExpMaterialValidatorIterator extends ValidatorIterator
     {
         private Integer _aliquotedFromColInd = null;
-        private boolean isUpdateOnly;
+        private final boolean _isUpdateOnly;
 
         public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
         {
             super(data, context, c, user);
-            isUpdateOnly = context.getInsertOption().updateOnly;
+            _isUpdateOnly = context.getInsertOption().updateOnly;
         }
 
         @Override
@@ -228,9 +251,9 @@ public class ExpDataIterators
             if (_aliquotedFromColInd == null)
             {
                 Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (!isUpdateOnly && columnNameMap.containsKey("AliquotedFrom"))
-                    _aliquotedFromColInd = columnNameMap.get("AliquotedFrom");
-                else if (isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
+                if (!_isUpdateOnly && columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+                    _aliquotedFromColInd = columnNameMap.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+                else if (_isUpdateOnly && columnNameMap.containsKey("AliquotedFromLSID"))
                     _aliquotedFromColInd = columnNameMap.get("AliquotedFromLSID");
                 else
                     _aliquotedFromColInd = -1;
@@ -274,6 +297,147 @@ public class ExpDataIterators
             ExpMaterialValidatorIterator validate = new ExpMaterialValidatorIterator(LoggingDataIterator.wrap(validateInput), context, c, user);
             validate.setDebugName("ExpMaterialDataIteratorBuilder validate");
             return validate;
+        }
+    }
+
+    public static class AliquotRollupDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final ExpSampleType _sampleType;
+        private final Container _container;
+
+        public AliquotRollupDataIteratorBuilder(@NotNull DataIteratorBuilder in, ExpSampleType sampleType, Container container)
+        {
+            _in = in;
+            _sampleType = sampleType;
+            _container = container;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new AliquotRollupDataIterator(pre, context, _sampleType, _container));
+        }
+    }
+
+    public static class AliquotRollupDataIterator extends WrapperDataIterator
+    {
+        private final DataIteratorContext _context;
+
+        private final Integer _storedAmountCol;
+        private final Integer _unitsCol;
+        private final Integer _sampleStateCol;
+        private final ExpSampleType _sampleType;
+        private final Integer _aliquotedFromCol;
+        private final Integer _aliquotedFromLsidCol;
+        private final Integer _parentLsidToRecomputeCol;
+        private final Integer _parentNameToRecomputeCol;
+        private final boolean _isInsert;
+        private final boolean _isUpdate;
+
+        private List<Integer> availableSampleStatuses = new ArrayList<>();
+
+        protected AliquotRollupDataIterator(DataIterator di, DataIteratorContext context, ExpSampleType sampleType, Container container)
+        {
+            super(di);
+            _context = context;
+            _isInsert = !context.getInsertOption().allowUpdate;
+            _isUpdate = context.getInsertOption().updateOnly;
+            _sampleType = sampleType;
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+            _storedAmountCol = map.get("StoredAmount");
+            _unitsCol = map.get("Units");
+            _sampleStateCol = map.get("SampleState");
+            _aliquotedFromCol = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            _aliquotedFromLsidCol = map.get("AliquotedFromLSID");
+            _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
+            _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
+
+            if (SampleStatusService.get().supportsSampleStatus())
+            {
+                for (DataState state: SampleStatusService.get().getAllProjectStates(container))
+                {
+                    if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                        availableSampleStatuses.add(state.getRowId());
+                }
+            }
+
+        }
+
+        @Override
+        public Object get(int i)
+        {
+            if (i == _parentLsidToRecomputeCol || i == _parentNameToRecomputeCol)
+            {
+                if (_isInsert)
+                {
+                    if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
+                        return get(_aliquotedFromCol); // recompute parent when new aliquot is created
+                    return null;
+                }
+
+
+                if (_isUpdate)
+                {
+                    if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
+                        return null; // update will only trigger recompute if stored amount or unit or status is updated)
+                }
+
+                Map<String, Object> existingMap = getExistingRecord();
+                if (existingMap != null)
+                {
+                    if (_storedAmountCol == null && _unitsCol == null && _sampleStateCol == null)
+                        return null; // update/merge existing will only trigger recompute if stored amount or unit or status is updated)
+
+                    if (i == _parentNameToRecomputeCol) // only return lsid if existing map not null
+                        return null;
+
+                    String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
+                    String aliquotParent = (String) existingMap.get(AliquotedFromLSID.name());
+                    String recalcLsid = rootAliquot != null ? rootAliquot : aliquotParent;
+                    Double existingAmount = (Double) existingMap.get("StoredAmount");
+                    String existingUnits = (String) existingMap.get("Units");
+                    Integer existingState = (Integer) existingMap.get("SampleState");
+
+                    if (!availableSampleStatuses.isEmpty())
+                    {
+                        Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
+                        if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
+                            return recalcLsid;
+                    }
+
+                    Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
+                    String newUnits = _unitsCol == null ? null : (String) get(_unitsCol);
+
+                    boolean amountChanged = !(Objects.equals(existingAmount, newAmount) && Objects.equals(existingUnits, newUnits));
+                    if (!amountChanged && (_storedAmountCol == null || _unitsCol == null))
+                    {
+                        if (_storedAmountCol == null && !Objects.equals(existingUnits, newUnits))
+                            amountChanged = true;
+                        if (_unitsCol == null && !Objects.equals(existingAmount, newAmount))
+                            amountChanged = true;
+                    }
+
+                    return amountChanged ? recalcLsid : null;
+                }
+
+                // without existing record, we have to be conservative and assume this is a new aliquot, or a amount/status update
+                // merge: either a new record, or detailed audit disabled
+                if (!_isUpdate)
+                {
+                    if (i == _parentNameToRecomputeCol && _aliquotedFromCol != null)
+                        return get(_aliquotedFromCol); // recompute parent when new aliquot is created
+                    return null;
+                }
+                // update only, return lsid
+                if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null && i == _parentLsidToRecomputeCol)
+                    return get(_aliquotedFromLsidCol);
+
+                return null;
+            }
+
+            return super.get(i);
         }
     }
 
@@ -342,7 +506,7 @@ public class ExpDataIterators
             if (getErrors().hasErrors())
                 return hasNext;
 
-            // after the last row, insert all of the aliases
+            // after the last row, insert all aliases
             if (!hasNext)
             {
                 final ExperimentService svc = ExperimentService.get();
@@ -772,13 +936,9 @@ public class ExpDataIterators
                             }
                         }
                     }
-                    else if (o instanceof JSONArray)
+                    else if (o instanceof JSONArray ja)
                     {
-                        parentNames = Arrays.stream(((JSONArray) o).toArray()).map(String::valueOf).collect(Collectors.toSet());
-                    }
-                    else if (o instanceof org.json.JSONArray)
-                    {
-                        parentNames = ((org.json.JSONArray) o).toList().stream().map(String::valueOf).collect(Collectors.toSet());
+                        parentNames = ja.toList().stream().map(String::valueOf).collect(Collectors.toSet());
                     }
                     else if (o instanceof Collection)
                     {
@@ -798,9 +958,9 @@ public class ExpDataIterators
 
                     String parentColName = _parentCols.get(parentCol);
                     Set<Pair<String, String>> parts = parentNames.stream()
-                            .map(String::trim)
-                            .map(s -> Pair.of(parentColName, s))
-                            .collect(Collectors.toSet());
+                        .map(String::trim)
+                        .map(s -> Pair.of(parentColName, s))
+                        .collect(Collectors.toSet());
 
                     allParts.addAll(parts);
                 }
@@ -843,7 +1003,7 @@ public class ExpDataIterators
             if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
                 return;
 
-            if (_isSample && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
+            if (_isSample && aliquotedFrom == null && !((ExpMaterial) runItem).isOperationPermitted(SampleTypeService.SampleOperations.EditLineage))
                 throw new ValidationException(String.format("Sample %s with status %s cannot have its lineage updated.", runItem.getName(), ((ExpMaterial) runItem).getStateLabel()));
 
             // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
@@ -944,7 +1104,7 @@ public class ExpDataIterators
             for (Map.Entry<String, Integer> entry : map.entrySet())
             {
                 String name = entry.getKey();
-                if (_isSample && "AliquotedFrom".equalsIgnoreCase(name))
+                if (_isSample && ExpMaterial.ALIQUOTED_FROM_INPUT.equalsIgnoreCase(name))
                 {
                     aliquotParentCol = entry.getValue();
                 }
@@ -991,7 +1151,7 @@ public class ExpDataIterators
                         }
                         else
                         {
-                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, "AliquotedFrom"));
+                            getErrors().addRowError(new ValidationException("Expected string value for aliquot parent name: " + o, ExpMaterial.ALIQUOTED_FROM_INPUT));
                         }
 
                         if (aliquotParentName != null)
@@ -1018,7 +1178,11 @@ public class ExpDataIterators
             {
                 try
                 {
-                    RemapCache cache = new RemapCache(true);
+                    boolean allowBulkLoadRemapCache = true;
+                    if (_context.getConfigParameterBoolean(SkipBulkRemapCache))
+                        allowBulkLoadRemapCache = false;
+
+                    RemapCache cache = new RemapCache(allowBulkLoadRemapCache);
                     Map<Integer, ExpMaterial> materialCache = new HashMap<>();
                     Map<Integer, ExpData> dataCache = new HashMap<>();
 
@@ -1606,7 +1770,7 @@ public class ExpDataIterators
             else if (parts.length == 2)
             {
                 String namePart = QueryKey.decodePart(parts[1]);
-                if (ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                if (MATERIAL_INPUT_PARENT.equalsIgnoreCase(parts[0]))
                 {
                     if (isEmptyEntity)
                     {
@@ -1662,7 +1826,7 @@ public class ExpDataIterators
                             throw new ValidationException("Sample output '" + entityName + "' not found in Sample Type '" + namePart + "'.");
                     }
                 }
-                else if (ExpData.DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
+                else if (DATA_INPUT_PARENT.equalsIgnoreCase(parts[0]))
                 {
                     if (isEmptyEntity)
                     {
@@ -1693,7 +1857,7 @@ public class ExpDataIterators
                             if (ExpSchema.DataClassCategoryType.sources.name().equalsIgnoreCase(dataClass.getCategory()))
                                 throw new ValidationException("Source '" + entityName + "' not found in Source Type  '" + namePart + "'.");
                             else
-                                throw new ValidationException("Data input '" + entityName + "' not found in in Data Class '" + namePart + "'.");
+                                throw new ValidationException("Data input '" + entityName + "' not found in Data Class '" + namePart + "'.");
                         }
                     }
                 }
@@ -1960,7 +2124,7 @@ public class ExpDataIterators
             ExpDataTable.Column.LSID.toString(),
             ExpDataTable.Column.Created.toString(),
             ExpDataTable.Column.CreatedBy.toString(),
-            ExpMaterialTable.Column.AliquotedFromLSID.toString(),
+            AliquotedFromLSID.toString(),
             "genId");
 
     public static class PersistDataIteratorBuilder implements DataIteratorBuilder
@@ -2037,7 +2201,11 @@ public class ExpDataIterators
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
             if (context.getInsertOption().updateOnly)
+            {
                 dontUpdate.add("objectid");
+                dontUpdate.add("cpastype");
+                dontUpdate.add("lastindexed");
+            }
 
             boolean isMergeOrUpdate = context.getInsertOption().allowUpdate;
             _isUpdateUsingLsid = context.getInsertOption().updateOnly && colNameMap.containsKey("lsid") && context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate);
@@ -2067,8 +2235,8 @@ public class ExpDataIterators
                 }
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
-                dontUpdate.add(ExpMaterialTable.Column.RootMaterialLSID.toString());
-                dontUpdate.add(ExpMaterialTable.Column.AliquotedFromLSID.toString());
+                dontUpdate.add(RootMaterialLSID.toString());
+                dontUpdate.add(AliquotedFromLSID.toString());
             }
             else if (isMergeOrUpdate)
             {
@@ -2119,12 +2287,359 @@ public class ExpDataIterators
             // Wire up derived parent/child data and materials
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
-            // Hack: add the alias and lsid values back into the input so we can process them in the chained data iterator
             DataIteratorBuilder step7 = step6;
-            if (null != _indexFunction)
-                step7 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step6, _indexFunction)); // may need to add this after the aliases are set
+            boolean hasRollUpColumns = colNameMap.containsKey(PARENT_RECOMPUTE_LSID_COL);
+            if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns) && hasRollUpColumns)
+                step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, ((ExpMaterialTableImpl) _expTable).getSampleType(), _container));
 
-            return LoggingDataIterator.wrap(step7.getDataIterator(context));
+            // Hack: add the alias and lsid values back into the input, so we can process them in the chained data iterator
+            DataIteratorBuilder step8 = step7;
+            if (null != _indexFunction)
+                step8 = LoggingDataIterator.wrap(new ExpDataIterators.SearchIndexIteratorBuilder(step7, _indexFunction)); // may need to add this after the aliases are set
+
+            return LoggingDataIterator.wrap(step8.getDataIterator(context));
+        }
+    }
+
+    public static class MultiSampleTypeDataIterator extends WrapperDataIterator
+    {
+        private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
+        private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
+        private static final int BATCH_SIZE = 1000;
+        record TypeData(
+                ExpSampleTypeImpl sampleType,
+                TableInfo tableInfo,
+                File dataFile,
+                List<Integer> fieldIndexes,
+                Map<Integer, String> dependencyIndexes,
+                List<String> dataRows
+        ) { }
+
+        private final DataIteratorContext _context;
+        private final Container _container;
+        private final User _user;
+        private Integer _fileNameColIndex = null;
+        private String _fileNameColName = null;
+        // want to process the sample types in the order given in the original file, unless we have dependencies
+        private final Map<String, TypeData> _fileDataMap = new TreeMap<>();
+        private final SamplesSchema _schema;
+        private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
+        private final int _sampleIdIndex;
+        private final Map<String, Set<String>> _idsPerType = new HashMap<>();
+        private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
+
+        public MultiSampleTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user)
+        {
+            super(di);
+            _context = context;
+            _container = container;
+            _user = user;
+            _schema = new SamplesSchema(_user, _container);
+            Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
+
+            _sampleIdIndex = map.getOrDefault("Name", -1);
+            SAMPLE_TYPE_FIELD_NAMES.forEach(name -> {
+                if (map.get(name) != null)
+                {
+                    if (_fileNameColIndex != null)
+                        _context.getErrors().addRowError(new ValidationException("Only one of " + SAMPLE_TYPE_FIELD_NAMES + " allowed for import."));
+                    _fileNameColIndex = map.get(name);
+                    _fileNameColName = di.getColumnInfo(_fileNameColIndex).getName();
+                }
+            });
+            if (_fileNameColIndex == null)
+                _context.getErrors().addRowError(new ValidationException("Could not determine sample type. Please provide a 'Sample Type' column in the data."));
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            boolean hasNext = super.next();
+
+            if (_context.getErrors().hasErrors())
+                return hasNext;
+
+            if (!hasNext)
+            {
+                Collection<String> importOrderKeys = getImportOrderKeys();
+                if (!_context.getErrors().hasErrors())
+                {
+                    _context.setCrossTypeImport(false);
+                    // process the individual files
+                    importOrderKeys.forEach(key -> {
+                        TypeData typeData = _fileDataMap.get(key);
+                        writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+                        var updateService = typeData.tableInfo.getUpdateService();
+                        if (updateService == null)
+                        {
+                            _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
+                        }
+                        else
+                        {
+                            try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                            {
+                                // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
+                                configureLoader(loader, typeData.tableInfo, null, true);
+                                updateService.loadRows(_user, _container, loader, _context, null);
+                            }
+                            catch (SQLException | IOException e)
+                            {
+                                String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                                LOG.error(msg, e);
+                                _context.getErrors().addRowError(new ValidationException(msg));
+                            }
+                        }
+                    });
+                    _context.setCrossTypeImport(true);
+                }
+
+                return false;
+            }
+            else
+            {
+                String fileName = StringUtils.trim((String) get(_fileNameColIndex));
+                if (StringUtils.isEmpty(fileName))
+                    _context.getErrors().addRowError(new ValidationException("No value provided for '" + _fileNameColName + "'."));
+                else
+                {
+                    TypeData typeData = _fileDataMap.get(fileName);
+                    if (typeData == null)
+                    {
+                        ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(_container, _user, fileName);
+                        if (sampleType == null)
+                            _context.getErrors().addRowError(new ValidationException(_fileNameColName + " '" + fileName + "' not found.") );
+                        else
+                        {
+                            try
+                            {
+                                typeData = createHeaderRow(sampleType);
+                                if (typeData != null)
+                                    _fileDataMap.put(fileName, typeData);
+                            }
+                            catch (IOException e)
+                            {
+                                _context.getErrors().addRowError(new ValidationException("Error writing file for '" + sampleType.getName() + "'."));
+                            }
+                        }
+                    }
+                    if (typeData != null)
+                    {
+                        addDataRow(typeData);
+                    }
+                }
+                return hasNext;
+            }
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+            _fileDataMap.values().forEach(typeData -> {
+                if (typeData.dataFile != null)
+                    typeData.dataFile.delete();
+            });
+            super.close();
+        }
+
+        private Collection<String> getImportOrderKeys()
+        {
+            List<String> keys = new ArrayList<>();
+            Set<String> allKeys = _fileDataMap.keySet();
+            // if the parents referenced in the file are not samples that are potentially being created in this file, there is no dependency
+            _idsPerType.forEach((typeName, ids) -> {
+                Set<String> parentIds = _parentIdsPerType.get(typeName);
+                if (parentIds != null && ids.stream().noneMatch(parentIds::contains))
+                {
+                    _orderDependencies.values().forEach(set -> set.remove(typeName));
+                }
+            });
+
+            allKeys.forEach(key -> {
+                if (!_orderDependencies.containsKey(key) || _orderDependencies.get(key).isEmpty())
+                {
+                    keys.add(key);
+                    _orderDependencies.values().forEach(set -> set.remove(key));
+                }
+            });
+
+            boolean hasCycle = keys.isEmpty();
+            while (keys.size() != allKeys.size() && !hasCycle)
+            {
+                Set<String> addedTypeNames = new HashSet<>();
+                _orderDependencies.forEach((typeName, dependencies) -> {
+                    if (dependencies.isEmpty() && !keys.contains(typeName))
+                    {
+                        keys.add(typeName);
+                        addedTypeNames.add(typeName);
+                    }
+                });
+                if (addedTypeNames.isEmpty())
+                    hasCycle = true;
+                else
+                    _orderDependencies.values().forEach(set -> set.removeAll(addedTypeNames));
+            }
+            if (hasCycle)
+            {
+                if (_context.getInsertOption().allowUpdate)
+                    LOG.warn("Possible derivation circular dependencies when updates are allowed. Using ordering of sample types based data rows.");
+                else
+                    _context.getErrors().addRowError(new ValidationException("Unable to determine ordering for sample type imports. " +
+                            "A cycle of derivation dependencies among the sample types exists. " +
+                            "Adjust or remove dependencies for this import."));
+                return _fileDataMap.keySet();
+            }
+
+            return keys;
+        }
+
+        private TypeData createHeaderRow(ExpSampleTypeImpl sampleType) throws IOException
+        {
+            List<QueryException> qpe = new ArrayList<>();
+            QueryDefinition qDef = _schema.getQueryDefForTable(sampleType.getName());
+            TableInfo samplesTable = qDef.getTable(_schema, qpe, true);
+            if (samplesTable == null)
+            {
+                _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
+                return null;
+            }
+            File dataFile = FileUtil.createTempFile("~importSplit-", sampleType.getName() + ".tsv");
+            Set<String> validFields = new CaseInsensitiveHashSet();
+            samplesTable.getColumns().forEach(column -> {
+                if (!IGNORED_FIELD_NAMES.contains(column.getName()))
+                {
+                    validFields.add(column.getName());
+                    validFields.addAll(column.getImportAliasSet());
+                    validFields.add(column.getLabel());
+                }
+            });
+            Map<String, String> aliasMap = sampleType.getImportAliasMap();
+            validFields.addAll(aliasMap.keySet());
+            validFields.add(ALIQUOTED_FROM_INPUT);
+            validFields.add("StorageUnit");
+            validFields.add("Storage Unit");
+            // For consistency with other storage fields that are imported without spaces in the names
+            validFields.add("EnteredStorage");
+            List<Integer> fieldIndexes = new ArrayList<>();
+            Map<Integer, String> dependencyIndexes = new HashMap<>();
+            List<String> header = new ArrayList<>();
+            // index is 1-based; column 0 is the rowNumber
+            for (int i = 1; i <= getColumnCount(); i++)
+            {
+                ColumnInfo colInfo = getColumnInfo(i);
+                String name = colInfo.getName();
+                String lcName = name.toLowerCase();
+                if (validFields.contains(name))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                }
+                if (lcName.startsWith(MATERIAL_INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                    // no dependencies to register if the names of samples are not being provided in the file.
+                    if (_sampleIdIndex != -1)
+                    {
+                        String typeName = name.replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "");
+                        if (!sampleType.getName().equals(typeName))
+                            dependencyIndexes.put(i, typeName);
+                    }
+                }
+                else if (lcName.startsWith(DATA_INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                }
+                else if (lcName.startsWith(INPUTS_PREFIX_LC))
+                {
+                    fieldIndexes.add(i);
+                    header.add(name);
+                    if (_sampleIdIndex != -1)
+                        dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
+                }
+                else if (aliasMap.containsKey(name) && _sampleIdIndex != -1)
+                {
+                    String aliasTarget = aliasMap.get(name);
+                    if (aliasTarget.toLowerCase().startsWith(MATERIAL_INPUTS_PREFIX_LC))
+                        dependencyIndexes.put(i, aliasTarget
+                            .replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "")
+                        );
+                }
+            }
+
+            if (header.isEmpty())
+            {
+                _context.getErrors().addRowError(new ValidationException("No columns found for sample type '" + sampleType.getName() + "'."));
+                return null;
+            }
+
+            List<String> dataRows = new ArrayList<String>();
+            dataRows.add(StringUtils.join(header, "\t"));
+            return new TypeData(sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows);
+        }
+
+        private void addDataRow(TypeData typeData)
+        {
+            if (typeData.dataRows.size() == BATCH_SIZE)
+                writeRowsToFile(typeData);
+
+            List<Object> dataRow = new ArrayList<>();
+            typeData.fieldIndexes.forEach(index -> {
+                Object data = get(index);
+                dataRow.add(data);
+                if (data != null)
+                {
+                    if (index == _sampleIdIndex)
+                        _idsPerType.computeIfAbsent(typeData.sampleType.getName(), k -> new HashSet<>()).add(data.toString());
+
+                    // if the data represents a derivation dependency between types, and we're creating ids within the file,
+                    // capture a dependency map, so we can try to figure out a good ordering to use for importing the data.
+                    if (typeData.dependencyIndexes.containsKey(index) && _sampleIdIndex >= 0)
+                    {
+                        String parentTypeName = typeData.dependencyIndexes.get(index);
+                        _orderDependencies.computeIfAbsent(typeData.sampleType.getName(), i -> new HashSet<>()).add(parentTypeName);
+                        _parentIdsPerType.computeIfAbsent(parentTypeName, k -> new HashSet<>()).add(data.toString());
+                    }
+                }
+            });
+            typeData.dataRows.add(StringUtils.join(dataRow, "\t"));
+        }
+
+        private void writeRowsToFile(TypeData typeData)
+        {
+            if (typeData.dataRows.size() == 0)
+                return;
+
+            try (FileWriter writer = new FileWriter(typeData.dataFile, true))
+            {
+                writer.write(StringUtils.join(typeData.dataRows, System.lineSeparator()));
+                typeData.dataRows.clear();
+            }
+            catch (IOException e)
+            {
+                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.sampleType.getName() + "'."));
+            }
+        }
+    }
+
+    public static class MultiSampleTypeDataIteratorBuilder implements DataIteratorBuilder
+    {
+        private final DataIteratorBuilder _in;
+        private final Container _container;
+        private final User _user;
+
+        public MultiSampleTypeDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in)
+        {
+            _in = in;
+            _container = container;
+            _user = user;
+        }
+
+        @Override
+        public DataIterator getDataIterator(DataIteratorContext context)
+        {
+            DataIterator pre = _in.getDataIterator(context);
+            return LoggingDataIterator.wrap(new MultiSampleTypeDataIterator(pre, context, _container, _user));
         }
     }
 }

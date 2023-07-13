@@ -31,7 +31,10 @@ public interface ExpMaterial extends ExpRunItem
 {
     String DEFAULT_CPAS_TYPE = "Material";
     String MATERIAL_INPUT_PARENT = "MaterialInputs";
+    String MATERIAL_INPUTS_PREFIX = MATERIAL_INPUT_PARENT + "/";
+    String MATERIAL_INPUTS_PREFIX_LC = MATERIAL_INPUTS_PREFIX.toLowerCase();
     String MATERIAL_OUTPUT_CHILD = "MaterialOutputs";
+    String ALIQUOTED_FROM_INPUT = "AliquotedFrom";
 
     @Nullable
     ExpSampleType getSampleType();
@@ -57,8 +60,15 @@ public interface ExpMaterial extends ExpRunItem
 
     String getStateLabel();
 
+    Double getStoredAmount();
+
+    void setStoredAmount(Double amount);
+
+    String getUnits();
+
+    void setUnits(String units);
+
     // rollup - begin
-    boolean isRecomputeRollup();
     int getAliquotCount();
     double getAliquotVolume();
     String getAliquotUnit();
@@ -73,4 +83,5 @@ public interface ExpMaterial extends ExpRunItem
     Date getMaterialExpDate();
 
     ActionURL detailsURL(Container container, boolean checkForOverride);
+
 }

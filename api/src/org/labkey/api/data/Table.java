@@ -698,7 +698,7 @@ public class Table
 
         SQLFragment insertSQL = new SQLFragment();
         StringBuilder columnSQL = new StringBuilder();
-        StringBuilder valueSQL = new StringBuilder();
+        SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
         ColumnInfo versionColumn = null;
         String comma = "";
@@ -753,9 +753,9 @@ public class Table
 
                 valueSQL.append('?');
                 if (value instanceof Parameter.JdbcParameterValue)
-                    insertSQL.add(value);
+                    valueSQL.add(value);
                 else
-                    insertSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                    valueSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
             comma = ", ";
         }
@@ -1053,8 +1053,8 @@ public class Table
 
         SQLFragment where = filter.getSQLFragment(table.getSqlDialect(), null, createColumnMap(table,null));
 
-        String deleteSQL = "DELETE FROM " + table.getSelectName() + "\n\t" + where.getSQL();
-        int result = new SqlExecutor(table.getSchema()).execute(deleteSQL, where.getParams().toArray());
+        SQLFragment deleteSQL = new SQLFragment("DELETE FROM ").append(table).append("\n\t").append(where);
+        int result = new SqlExecutor(table.getSchema()).execute(deleteSQL);
 
         notifyTableUpdate(table);
         return result;
@@ -1607,7 +1607,7 @@ public class Table
         // BASE TABLE delete
         //
 
-        sqlfDeleteTable = new SQLFragment("DELETE " + table.getSelectName());
+        sqlfDeleteTable = new SQLFragment("DELETE ").append(table);
         sqlfDelete.append(sqlfWhere);
 
         if (null != sqlfDeleteObject)

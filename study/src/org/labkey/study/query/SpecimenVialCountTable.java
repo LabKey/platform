@@ -105,9 +105,6 @@ public class SpecimenVialCountTable extends BaseStudyTable
             "            ELSE 0\n" +
             "        END) AS expectedavailablecount\n" +
             "   FROM ");
-        sql.append(tableInfoVial.getFromSQL("Vial"))
-            .append("\n  GROUP BY Vial.specimenhash) ")
-            .append(alias);
         sql.add(getContainer());
         sql.add(Boolean.TRUE);
         sql.add(Boolean.TRUE);
@@ -115,6 +112,9 @@ public class SpecimenVialCountTable extends BaseStudyTable
         sql.add(Boolean.TRUE);
         sql.add(Boolean.TRUE);
         sql.add(Boolean.FALSE);
+        sql.append(tableInfoVial.getFromSQL("Vial"))
+            .append("\n  GROUP BY Vial.specimenhash) ")
+            .append(alias);
         return sql;
     }
 }

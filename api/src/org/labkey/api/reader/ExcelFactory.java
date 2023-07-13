@@ -204,7 +204,14 @@ public class ExcelFactory
                 sheetNames.add(ctSheet.getName());
             }
         };
-        return getMetadata(wb, sheetNames);
+        try
+        {
+            return getMetadata(wb, sheetNames);
+        }
+        catch (IllegalArgumentException | POIXMLException e)
+        {
+            throw reportErrorOpeningExcelFile(e);
+        }
     }
 
 
@@ -265,16 +272,18 @@ public class ExcelFactory
         }
         catch (IllegalArgumentException | POIXMLException e)
         {
-            // Issue 45464 - improve error message for .xlsx variant that's unsupported by POI
-            if (e.getMessage() != null && e.getMessage().contains("57699"))
-            {
-                throw new ExcelFormatException("Unable to open file as an Excel document. \"Strict Open XML Spreadsheet\" versions of .xlsx files are not supported.", e);
-            }
-            else
-            {
-                throw new ExcelFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()), e);
-            }
+            throw reportErrorOpeningExcelFile(e);
         }
+    }
+
+    private static ExcelFormatException reportErrorOpeningExcelFile(RuntimeException e)
+    {
+        // Issue 45464 - improve error message for .xlsx variant that's unsupported by POI
+        if (e.getMessage() != null && e.getMessage().contains("57699"))
+        {
+            return new ExcelFormatException("Unable to open file as an Excel document. \"Strict Open XML Spreadsheet\" versions of .xlsx files are not supported.", e);
+        }
+        return new ExcelFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()), e);
     }
 
     /**
@@ -319,9 +328,9 @@ public class ExcelFactory
                     Object value = rowArray.isNull(colIndex) ? null : rowArray.get(colIndex);
                     JSONObject metadataObject = null;
                     CellStyle cellStyle = defaultStyle;
-                    if (value instanceof JSONObject)
+                    if (value instanceof JSONObject jo)
                     {
-                        metadataObject = (JSONObject)value;
+                        metadataObject = jo;
                         value = metadataObject.get("value");
                     }
 

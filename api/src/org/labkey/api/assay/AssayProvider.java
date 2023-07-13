@@ -359,7 +359,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, ViewContext context);
     AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> createRunUploadFactory(ExpProtocol protocol, User user, Container c);
 
-
     /* .xar.xml import/export helpers */
 
     // return a class instead of directly implementing methods on AssayProvider so we can keep state
@@ -383,4 +382,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @param protocols all protocols for this assay provider
      */
     default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
+
+    void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData);
 }

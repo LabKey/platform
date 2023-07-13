@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -300,7 +300,7 @@ public class VisualizationServiceImpl implements VisualizationService
         props.put("isRecommendedVariable", col.isRecommendedVariable());
         props.put("defaultScale", col.getDefaultScale().name());
 
-        Map<String, Object> lookupJSON = JsonWriter.getLookupInfo(col, false);
+        JSONObject lookupJSON = JsonWriter.getLookupInfo(col, false);
         if (lookupJSON != null)
         {
             props.put("lookup", lookupJSON);

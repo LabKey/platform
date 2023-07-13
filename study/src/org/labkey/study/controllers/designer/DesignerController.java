@@ -19,8 +19,8 @@ package org.labkey.study.controllers.designer;
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -123,8 +123,8 @@ public class DesignerController extends SpringActionController
             return number;
         }
 
-        private String title;
-        private int number;
+        private final String title;
+        private final int number;
 
         public static WizardStep fromNumber(int number)
         {
@@ -355,7 +355,6 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetStudyDesigns extends ReadOnlyApiAction<GetStudyDesignsForm>
     {
-
         @Override
         public ApiResponse execute(GetStudyDesignsForm getStudyDesignsForm, BindException errors) throws Exception
         {
@@ -383,9 +382,10 @@ public class DesignerController extends SpringActionController
             return null;
         }
 
-        Map<String,Object> containerJSON(Container c)
+        JSONObject containerJSON(Container c)
         {
             JSONObject j = new JSONObject();
+
             j.put("id", c.getId());
             j.put("path", c.getPath());
             j.put("name", c.getName());
@@ -582,6 +582,7 @@ public class DesignerController extends SpringActionController
     {
         String folderName = StringUtils.trimToNull(form.getFolderName());
         Container container = getContainer();
+        String message;
         if (null == folderName)
             form.setMessage("Please set a folder name.");
         else if (null == form.getBeginDate())
@@ -591,10 +592,10 @@ public class DesignerController extends SpringActionController
         }
         else if (container.hasChild(folderName) && null != BaseStudyController.getStudy(container.getChild(folderName)))
             form.setMessage(container.getName() + " already has a child named " + folderName + " containing a study.");
-        else if (!StudyService.get().isValidSubjectColumnName(getContainer(), form.getSubjectColumnName()))
-            form.setMessage("\"" + form.getSubjectColumnName() + "\" is not a valid subject column name.");
-        else if (!StudyService.get().isValidSubjectNounSingular(getContainer(), form.getSubjectNounSingular()))
-            form.setMessage("\"" + form.getSubjectNounSingular() + "\" is not a valid subject noun.");
+        else if (null != (message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), form.getSubjectColumnName())))
+            form.setMessage(message);
+        else if (null != (message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), form.getSubjectNounSingular())))
+            form.setMessage(message);
         else
         {
             GWTStudyDefinition def = getStudyDefinition(form);

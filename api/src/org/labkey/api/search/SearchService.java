@@ -17,10 +17,10 @@ package org.labkey.api.search;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -41,8 +41,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.xml.sax.ContentHandler;
@@ -85,6 +87,13 @@ public interface SearchService
     default long getFileSizeLimit()
     {
         return DEFAULT_FILE_SIZE_LIMIT * (1024*1024);
+    }
+
+    // If "_docid" parameter is present, strip it and redirect as a convenience in the "result was found" case
+    static void stripDocIdParameterAndRedirect(@NotNull ActionURL url)
+    {
+        if (null != url.getParameter("_docid"))
+            throw new RedirectException(url.clone().deleteParameter("_docid"));
     }
 
     SearchCategory navigationCategory = new SearchCategory("navigation", "internal category", false);
@@ -136,6 +145,7 @@ public interface SearchService
         categories("searchCategories"),
         ontology("ontology"),
         summary("summary"),
+        jsonData("jsonData"),
         securableResourceId(SecurableResource.class.getName()),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
@@ -301,6 +311,7 @@ public interface SearchService
     {
         public long totalHits;
         public List<SearchHit> hits;
+        public long offset;
     }
 
     class SearchHit
@@ -314,6 +325,7 @@ public interface SearchService
         public String url;
         public String navtrail;
         public String identifiers; // identifiersHi
+        public JSONObject jsonData;
         public float score;
 
         public String normalizeHref(Path contextPath)
@@ -365,12 +377,10 @@ public interface SearchService
 
     WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
-    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
+    SearchResult search(SearchOptions options) throws IOException;
 
     // return list of uniqueId
-    List<String> searchUniqueIds(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
-
-    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
+    List<String> searchUniqueIds(SearchOptions options) throws IOException;
 
     @Nullable SearchHit find(String docId) throws IOException;
 
@@ -456,7 +466,9 @@ public interface SearchService
          *if the full-text search is deleted, providers may need to clear
          * any stored lastIndexed values.
          */
-        void indexDeleted() throws SQLException;
+        default void indexDeleted() throws SQLException
+        {
+        }
 
         /**
          * Thrown for a document that is an illegal/invalid state that should not be indexed, but can be safely ignored.
@@ -615,6 +627,85 @@ public interface SearchService
         public List<FieldKey> getFieldKeys()
         {
             return new ArrayList<>(_fieldKeys);
+        }
+    }
+
+    class SearchOptions
+    {
+        public final List<SearchCategory> categories;
+        public final Container container;
+        public final List<String> fields;
+        public final Boolean invertResults;
+        public final Integer limit;
+        public final Integer offset;
+        public final String queryString;
+        public final SearchScope scope;
+        public final String sortField;
+        public final User user;
+
+        private SearchOptions(
+            String queryString,
+            User user,
+            Container container,
+            @Nullable List<SearchCategory> categories,
+            @Nullable SearchScope scope,
+            @Nullable String sortField,
+            @Nullable Integer offset,
+            @Nullable Integer limit,
+            @Nullable Boolean invertResults,
+            @Nullable List<String> fields
+        )
+        {
+            this.categories = categories;
+            this.container = container;
+            this.fields = fields;
+            this.invertResults = invertResults != null && invertResults;
+            this.limit = limit == null ? 100 : limit;
+            this.offset = offset == null ? 0 : offset;
+            this.queryString = queryString;
+            this.scope = scope == null ? SearchScope.Folder : scope;
+            this.sortField = sortField;
+            this.user = user;
+        }
+
+        public static class Builder
+        {
+            public List<SearchCategory> categories;
+            public Container container;
+            public List<String> fields;
+            public Boolean invertResults;
+            public Integer limit;
+            public Integer offset;
+            public String queryString;
+            public SearchScope scope;
+            public String sortField;
+            public User user;
+
+            public Builder() {}
+
+            public Builder(String queryString, User user, Container container)
+            {
+                this.container = container;
+                this.queryString = queryString;
+                this.user = user;
+            }
+
+            public Builder(SearchOptions options)
+            {
+                this(options.queryString, options.user, options.container);
+                this.categories = options.categories;
+                this.fields = options.fields;
+                this.invertResults = options.invertResults;
+                this.limit = options.limit;
+                this.offset = options.offset;
+                this.scope = options.scope;
+                this.sortField = options.sortField;
+            }
+
+            public SearchOptions build()
+            {
+                return new SearchOptions(queryString, user, container, categories, scope, sortField, offset, limit, invertResults, fields);
+            }
         }
     }
 }

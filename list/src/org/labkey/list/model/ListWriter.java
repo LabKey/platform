@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2019 LabKey Corporation
+ * Copyright (c) 2009-2023 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -46,6 +47,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
@@ -90,7 +92,6 @@ public class ListWriter
         // We exclude picklists because they contain just sampleIds, which will be different in the new container.
         // Picklists are meant to be transient, so not including them in the export makes sense.
         Map<String, ListDefinition> lists = ListService.get().getLists(c, user, false, false, false);
-        PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
 
         if (!lists.isEmpty())
         {
@@ -113,40 +114,58 @@ public class ListWriter
                     }
                 }
             }
-            // Create meta data doc
-            TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
-            TablesType tablesXml = tablesDoc.addNewTables();
+            List<Pair<String, ListDefinition>> pairList = lists.entrySet().stream().map(m -> new Pair<>(m.getKey(), m.getValue())).collect(Collectors.toList());
+            writeLists(pairList, listsDir, ctx, user);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
-            // Create doc for non-table settings (discussions, indexing settings & templates)
-            ListsDocument listSettingsDoc = ListsDocument.Factory.newInstance();
-            ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
+    private void writeLists(List<Pair<String, ListDefinition>> listsToExport, VirtualFile listsDir, FolderExportContext ctx, User user) throws IOException, SQLException
+    {
+        PHI exportPhiLevel = (ctx != null) ? ctx.getPhiLevel() : PHI.NotPHI;
+
+        // Create meta data doc
+        TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
+        TablesType tablesXml = tablesDoc.addNewTables();
+
+        // Create doc for non-table settings (discussions, indexing settings & templates)
+        ListsDocument listSettingsDoc = ListsDocument.Factory.newInstance();
+        ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
+
+        for (Pair<String, ListDefinition> list : listsToExport)
+        {
+            ListDefinition def = list.getValue();
+            Container c = def.getContainer();
 
             // Insert standard comment explaining where the data lives, who exported it, and when
             if (ctx.isAddExportComment())
                 XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
             ListQuerySchema schema = new ListQuerySchema(user, c);
+            TableInfo ti = schema.getTable(def.getName());
 
-            for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
+
+            // Continue exporting other lists if a TableInfo can't be loaded. One possible scenario: extra long column names
+            // with MV indicators cause errors right now. We need to fix that, but export also needs to be resilient.
+            if (null == ti)
+                continue;
+
+            // Write meta data
+            TableType tableXml = tablesXml.addNewTable();
+            ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, exportPhiLevel));
+            xmlWriter.writeTable(tableXml);
+
+            // Write settings
+            ListsDocument.Lists.List settings = listSettingsXml.addNewList();
+            writeSettings(settings, def);
+
+            // Write data
+            if (includeListData(ctx))
             {
-                ListDefinition def = entry.getValue();
-                TableInfo ti = schema.getTable(def.getName());
-
-                // Continue exporting other lists if a TableInfo can't be loaded. One possible scenario: extra long column names
-                // with MV indicators cause errors right now. We need to fix that, but export also needs to be resilient.
-                if (null == ti)
-                    continue;
-
-                // Write meta data
-                TableType tableXml = tablesXml.addNewTable();
-                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, exportPhiLevel));
-                xmlWriter.writeTable(tableXml);
-
-                // Write settings
-                ListsDocument.Lists.List settings = listSettingsXml.addNewList();
-                writeSettings(settings, def);
-
-                // Write data
                 Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
 
                 if (null != ctx && ctx.isAlternateIds())
@@ -157,10 +176,10 @@ public class ListWriter
                 if (!columns.isEmpty())
                 {
                     List<DisplayColumn> displayColumns = columns
-                        .stream()
-                        .filter(Objects::nonNull)
-                        .map(ListExportDataColumn::new)
-                        .collect(Collectors.toCollection(LinkedList::new));
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .map(ListExportDataColumn::new)
+                            .collect(Collectors.toCollection(LinkedList::new));
 
                     // Sort the data rows by PK, #11261
                     Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
@@ -170,17 +189,36 @@ public class ListWriter
                     {
                         tsvWriter.setApplyFormats(false);
                         tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                        PrintWriter out = listsDir.getPrintWriter(def.getName() + ".tsv");
+                        PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
                         tsvWriter.write(out);
                     }
 
                     writeAttachments(ti, def, c, listsDir, exportPhiLevel);
                 }
             }
+        }
 
-            listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
-            listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+        listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
+        listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+    }
 
+    private boolean includeListData(FolderExportContext ctx)
+    {
+        return ctx.getDataTypes().contains(FolderArchiveDataTypes.LIST_DATA);
+    }
+
+    public boolean write(User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception
+    {
+        List<Pair<String, ListDefinition>> listsToExport = new LinkedList<>();
+        for (Pair<Integer, Container> selectedLists : ctx.getLists())
+        {
+            ListDefinition list = ListService.get().getList(selectedLists.second, selectedLists.first);
+            listsToExport.add(new Pair<>(list.getName(), list));
+        }
+
+        if (!listsToExport.isEmpty())
+        {
+            writeLists(listsToExport, listsDir, ctx, user);
             return true;
         }
         else
@@ -216,14 +254,12 @@ public class ListWriter
         if (!def.getAllowExport()) settings.setAllowExport(def.getAllowExport());
 
         if (def.getEachItemIndex()) settings.setEachItemIndex(def.getEachItemIndex());
-        if (def.getEachItemTitleSetting().getValue() != 0) settings.setEachItemTitleSetting(def.getEachItemTitleSetting().getValue());
         if (null != def.getEachItemTitleTemplate()) settings.setEachItemTitleTemplate(def.getEachItemTitleTemplate());
         if (def.getEachItemBodySetting().getValue() != 0) settings.setEachItemBodySetting(def.getEachItemBodySetting().getValue());
         if (null != def.getEachItemBodyTemplate()) settings.setEachItemBodyTemplate(def.getEachItemBodyTemplate());
 
         if (def.getEntireListIndex()) settings.setEntireListIndex(def.getEntireListIndex());
         if (def.getEntireListIndexSetting().getValue() != 0) settings.setEntireListIndexSetting(def.getEntireListIndexSetting().getValue());
-        if (def.getEntireListTitleSetting().getValue() != 0) settings.setEntireListTitleSetting(def.getEntireListTitleSetting().getValue());
         if (null != def.getEntireListTitleTemplate()) settings.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
         if (def.getEntireListBodySetting().getValue() != 0) settings.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
         if (null != def.getEntireListBodyTemplate()) settings.setEntireListBodyTemplate(def.getEntireListBodyTemplate());

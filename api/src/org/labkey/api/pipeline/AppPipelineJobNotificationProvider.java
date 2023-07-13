@@ -8,6 +8,7 @@ import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.QueryImportPipelineJob;
 import org.labkey.api.security.SecurityManager;
 
@@ -39,6 +40,12 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     return samples;
                 else if (schemaName.equalsIgnoreCase("exp.data"))
                     return sources;
+                else if (schemaName.equalsIgnoreCase("exp"))
+                {
+                    String queryName = queryImportPipelineJob.getImportContextBuilder().getQueryName();
+                    if (queryName.equalsIgnoreCase("materials"))
+                        return samples;
+                }
             }
             else if (job instanceof AssayUploadPipelineJob)
             {
@@ -122,7 +129,10 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
             QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
 
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            urlFragment += "/" + type + "?";
+            if (!"materials".equalsIgnoreCase(type) || !"exp".equalsIgnoreCase(queryImportPipelineJob.getImportContextBuilder().getSchemaName()))
+                urlFragment += "/" + type + "?";
+            else
+                urlFragment += "?";
 
             String and = "";
 
@@ -153,24 +163,23 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
 
     private String getJobSuccessMsg(PipelineJob job, @NotNull ImportType importType, @Nullable Map<String, Object> info)
     {
-        if (job instanceof QueryImportPipelineJob)
+        if (job instanceof QueryImportPipelineJob queryImportPipelineJob)
         {
-            QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
-
+            boolean crossTypeImport = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().getOrDefault(AbstractQueryImportAction.Params.crossTypeImport, false);
             String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            StringBuilder successMsg = new StringBuilder("Successfully imported ");
+            StringBuilder successMsg = new StringBuilder("Successfully");
+            Integer count = null;
             if (info != null)
             {
-                Integer count =  (Integer) info.get("rowCount");
-                if (count != null)
-                {
-                    successMsg.append(count).append(" ");
-                }
+                count = (Integer) info.get("rowCount");
+                if (info.containsKey("terminalStorageCreated"))
+                    successMsg.append(" created ").append(info.get("terminalStorageCreated")).append(" terminal storage unit(s) and");
             }
 
             successMsg
-                    .append(type)
-                    .append(" ")
+                    .append(" imported ")
+                    .append(count != null ? count + " " : "")
+                    .append(!crossTypeImport ? type + " " : "")
                     .append(importType.name())
                     .append(" from ")
                     .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
@@ -231,9 +240,14 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
         if (job instanceof QueryImportPipelineJob)
         {
             QueryImportPipelineJob queryImportPipelineJob = (QueryImportPipelineJob) job;
-
-            String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
-            urlFragment += "/" + type + "?";
+            Boolean isCrossType = queryImportPipelineJob.getImportContextBuilder().getOptionParamsMap().get(AbstractQueryImportAction.Params.crossTypeImport);
+            if (isCrossType)
+                urlFragment = "/crossType/" + importType.name() + "?";
+            else
+            {
+                String type = queryImportPipelineJob.getImportContextBuilder().getQueryName();
+                urlFragment += "/" + type + "?";
+            }
 
             String and = "";
             if (info != null)

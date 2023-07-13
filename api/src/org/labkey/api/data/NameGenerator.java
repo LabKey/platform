@@ -161,6 +161,7 @@ public class NameGenerator
         batchRandomId(3294),
         containerPath("containerPathValue"),
         contextPath("contextPathValue"),
+        rootSampleCount(124),
         dailySampleCount(14), // sample counts can both be SubstitutionValue as well as modifiers
         dataRegionName("dataRegionNameValue"),
         genId(1001),
@@ -220,6 +221,7 @@ public class NameGenerator
     private final FieldKeyStringExpression _parsedNameExpression;
 
     // extracted from name expression after parsing
+    private boolean _exprHasSampleRootCounter = false;
     private boolean _exprHasSampleCounterFormats = false;
     private boolean _exprHasLineageInputs = false;
     private boolean _exprHasLineageLookup = false;
@@ -231,7 +233,7 @@ public class NameGenerator
     private final Map<String, ExpDataClass> _dataClasses = new HashMap<>();
     private final Map<Integer, ExpMaterial> materialCache = new HashMap<>();
     private final Map<Integer, ExpData> dataCache = new HashMap<>();
-    private final RemapCache renameCache = new RemapCache(true);
+    private RemapCache renameCache;
     private final Map<String, Map<String, Object>> objectPropertiesCache = new HashMap<>();
 
     private final Container _container;
@@ -245,7 +247,7 @@ public class NameGenerator
 
     private final String _currentDataTypeName; // used for name expression validation/preview at creation time, before the SampleType or DataClass is created
 
-    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName, boolean allBulkRemapCache)
     {
         _parentTable = parentTable;
         _container = container;
@@ -253,12 +255,18 @@ public class NameGenerator
         _validateSyntax = validateSyntax;
         _domainProperties = domainProperties;
         _currentDataTypeName = currentDataTypeName;
+        renameCache = new RemapCache(allBulkRemapCache);
         initialize(importAliases);
+    }
+
+    public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties, String currentDataTypeName)
+    {
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, currentDataTypeName, false);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, boolean validateSyntax, @Nullable List<? extends GWTPropertyDescriptor> domainProperties)
     {
-        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, false, null, null);
+        this(nameExpression, parentTable, allowSideEffects, importAliases, container, getNonConflictCountFn, counterSeqPrefix, validateSyntax, domainProperties, null);
     }
 
     public NameGenerator(@NotNull String nameExpression, @Nullable TableInfo parentTable, boolean allowSideEffects, @Nullable Map<String, String> importAliases, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
@@ -279,6 +287,7 @@ public class NameGenerator
         _validateSyntax = false;
         _domainProperties = null;
         _currentDataTypeName = null;
+        renameCache = new RemapCache(true);
         initialize(null);
     }
 
@@ -338,6 +347,8 @@ public class NameGenerator
 
         if (properties != null)
             properties.forEach(field -> substitutionFields.add(field.getName()));
+
+        substitutionFields.remove(null);
 
         if (substitutionFields.isEmpty())
             return Collections.emptyList();
@@ -608,14 +619,15 @@ public class NameGenerator
             return Stream.empty();
 
         Stream<String> values;
-        if (value instanceof String)
+        if (value instanceof String || value instanceof Number)
         {
-            if (StringUtils.isEmpty(((String) value).trim()))
+            String valueStr = value instanceof String ? (String) value : value.toString();
+            if (StringUtils.isEmpty((valueStr).trim()))
                 return Stream.empty();
 
             // Issue 44841: The names of the parents may include commas, so we parse the set of parent names
             // using TabLoader instead of just splitting on the comma.
-            try (TabLoader tabLoader = new TabLoader((String) value))
+            try (TabLoader tabLoader = new TabLoader(valueStr))
             {
                 tabLoader.setDelimiterCharacter(',');
                 tabLoader.setUnescapeBackslashes(false);
@@ -626,7 +638,7 @@ public class NameGenerator
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalStateException("Unable to parse parent names from " + value, e);
+                    throw new IllegalStateException("Unable to parse parent names from " + valueStr, e);
                 }
             }
         }
@@ -661,6 +673,11 @@ public class NameGenerator
         }
 
         return true;
+    }
+
+    public static boolean isRootSampleCountToken(FieldKey token)
+    {
+        return SubstitutionFormat.rootSampleCount.name().equalsIgnoreCase(token.toString());
     }
 
     public static boolean isLineageToken(Object token, @Nullable Map<String, String> importAliases)
@@ -837,6 +854,7 @@ public class NameGenerator
         boolean hasSampleCounterFormat = false;
         boolean hasLineageInputs = false;
         boolean hasLineageLookup = false;
+        boolean hasSampleRootCounter = false;
         List<FieldKey> lookups = new ArrayList<>();
         Map<String, List<String>> lineageLookupFields = new CaseInsensitiveHashMap<>();
         Set<String> substitutionValues = new CaseInsensitiveHashSet();
@@ -922,6 +940,9 @@ public class NameGenerator
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
                     if (fieldParts.size() == 1)
                     {
+                        if (isRootSampleCountToken(fkTok))
+                            hasSampleRootCounter = true;
+
                         if (_validateSyntax)
                         {
                             String fieldName = fieldParts.get(0);
@@ -1163,6 +1184,7 @@ public class NameGenerator
             _exprLookups = fieldKeyLookup;
         }
 
+        _exprHasSampleRootCounter = hasSampleRootCounter;
         _exprHasSampleCounterFormats = hasSampleCounterFormat;
         _exprHasLineageInputs = hasLineageInputs;
         _exprHasLineageLookup = hasLineageLookup;
@@ -1326,7 +1348,7 @@ public class NameGenerator
     @NotNull
     public State createState(boolean incrementSampleCounts)
     {
-        return new State(incrementSampleCounts);
+        return new State(incrementSampleCounts, _exprHasSampleRootCounter);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
@@ -1361,11 +1383,28 @@ public class NameGenerator
         private final Map<String, ArrayList<Object>> _ancestorCache;
         private final Map<String, Map<String, DbSequence>> _prefixCounterSequences;
 
+        private final DbSequence _rootCounterSequence;
+
         private boolean _prefixCounterSequencesCleaned = false;
 
-        private State(boolean incrementSampleCounts)
+        private State(boolean incrementSampleCounts, boolean exprHasSampleRootCounter)
         {
             _incrementSampleCounts = incrementSampleCounts;
+
+            if (incrementSampleCounts) // determine if need to incrementRootSampleCount
+            {
+                DbSequence rootCountSeq = SampleTypeService.get().getRootSampleSequence();
+                if (exprHasSampleRootCounter || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
+                {
+                    _rootCounterSequence = rootCountSeq;
+                    if (rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a server
+                        _rootCounterSequence.ensureMinimum(SampleTypeService.get().getRootSampleCount());
+                }
+                else
+                    _rootCounterSequence = null;
+            }
+            else
+                _rootCounterSequence = null;
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
@@ -1378,6 +1417,16 @@ public class NameGenerator
             _prefixCounterSequences = new HashMap<>();
         }
 
+        public boolean isIncrementSampleCounts()
+        {
+            return _incrementSampleCounts;
+        }
+
+        public DbSequence getRootCounterSequence()
+        {
+            return _rootCounterSequence;
+        }
+
         public Map<String, Map<String, DbSequence>> getPrefixCounterSequences()
         {
             return _prefixCounterSequences;
@@ -1387,6 +1436,9 @@ public class NameGenerator
         {
             if (_prefixCounterSequencesCleaned)
                 return;
+
+            if (_rootCounterSequence != null)
+                _rootCounterSequence.sync();
 
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
@@ -1451,14 +1503,29 @@ public class NameGenerator
             // and put the sample counts into the context so that any sample counters not bound to a column will be replaced; e.g, "${dailySampleCount}".
             // It is important to do this even if a "name" is explicitly provided so the sample counts are accurate.
             Map<String, Long> sampleCounts = null;
-            if (_incrementSampleCounts && !_exprHasSampleCounterFormats)
+            if (_incrementSampleCounts)
             {
-                if (null == getSampleCountsFunction)
+                if (!_exprHasSampleCounterFormats)
                 {
-                    Date now = (Date)_batchExpressionContext.get("now");
-                    getSampleCountsFunction = SampleTypeService.get().getSampleCountsFunction(now);
+                    if (null == getSampleCountsFunction)
+                    {
+                        Date now = (Date)_batchExpressionContext.get("now");
+                        getSampleCountsFunction = SampleTypeService.get().getSampleCountsFunction(now);
+                    }
+                    sampleCounts = getSampleCountsFunction.apply(null);
                 }
-                sampleCounts = getSampleCountsFunction.apply(null);
+
+                if (_rootCounterSequence != null)
+                {
+                    if (sampleCounts == null)
+                        sampleCounts = new HashMap<>();
+
+                    boolean skipRootSampleCount = altExpression != null; // so far altExpression is not null only when generating aliquots
+                    if (!skipRootSampleCount)
+                        sampleCounts.put("rootSampleCount", _rootCounterSequence.next());
+                    else
+                        sampleCounts.put("rootSampleCount", _rootCounterSequence.current());
+                }
             }
 
             // Always execute the extraPropsFns, if available, to increment the ${genId} counter in the non-QueryUpdateService code path.
@@ -1856,7 +1923,10 @@ public class NameGenerator
                             Collection<FieldKey> fields = Collections.singleton(relativeFieldKey);
                             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(lookupTable, fields);
 
-                            try (Results results = QueryService.get().select(lookupTable, cols.values(), filter, null))
+                            var select = QueryService.get().getSelectBuilder(lookupTable)
+                                    .columns(cols.values())
+                                    .filter(filter);
+                            try (Results results = select.select())
                             {
                                 if (results.next())
                                 {
@@ -2223,9 +2293,6 @@ public class NameGenerator
                 {
                     long existingCount = -1;
 
-                    if (_getNonConflictCountFn != null)
-                        existingCount = _getNonConflictCountFn.apply(prefix);
-
                     if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
                     {
                         // TODO: use DbSequence.ReclaimableDbSequence for 23.3 and investigate enabling ReclaimablePreallocateSequence in develop
@@ -2248,6 +2315,9 @@ public class NameGenerator
                     }
 
                     long currentSeqMax = counterSeq.current();
+
+                    if (_getNonConflictCountFn != null)
+                        existingCount = _getNonConflictCountFn.apply(prefix);
 
                     if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
                         counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
@@ -2556,7 +2626,7 @@ public class NameGenerator
         {
 
             Map<Object, Object> m = new HashMap<>();
-            m.put("AliquotedFrom", aliquotedFrom);
+            m.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
             m.put("SourceMeta", sourceMeta);
 
             Container c = JunitUtil.getTestContainer();
@@ -2592,7 +2662,7 @@ public class NameGenerator
                 assertEquals("S100.mouse1.2", s);
 
                 Map<Object, Object> m2 = new HashMap<>();
-                m2.put("AliquotedFrom", aliquotedFrom);
+                m2.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 m2.put("SourceMeta", "mouse2");
 
                 s = se.eval(m2);
@@ -2773,6 +2843,8 @@ public class NameGenerator
             validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","The 'MaterialInputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
 
             validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
+
+            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "The 'rootSampleCount' substitution pattern starting at position 2 should be preceded by the string '${'."));
         }
 
         @Test

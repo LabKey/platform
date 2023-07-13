@@ -31,7 +31,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
-import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,8 +53,6 @@ public interface InventoryService
             "StorageLocation",
             "EnteredStorage",
             "StorageStatus",
-            "StoredAmount",
-            "Units",
             "StorageComment"
     );
 
@@ -67,6 +65,8 @@ public interface InventoryService
 
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, @Nullable String userComment, QueryService.AuditAction action, @Nullable List<Map<String, Object>> rows, @Nullable List<Map<String, Object>> existingRows);
 
+    Map<String, Integer> moveSamples(Collection<Integer> sampleIds, Container targetContainer, User user);
+
     @NotNull
     List<Map<String, Object>> getSampleStorageLocationData(User user, Container container, int sampleId);
 
@@ -77,13 +77,10 @@ public interface InventoryService
     @NotNull
     String getWellLabel(int boxId, int row, Integer col);
 
-    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container, boolean forceAll) throws SQLException;
-
-    void recomputeSamplesRollup(Set<Integer> parentIds, String sampleTypeMetricUnit, Container container) throws SQLException;
-
     static boolean isFreezerManagementEnabled(Container c)
     {
         Set<Module> moduleSet = c.getActiveModules();
         return moduleSet.contains(ModuleLoader.getInstance().getModule("Inventory"));
     }
+
 }

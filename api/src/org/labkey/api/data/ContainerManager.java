@@ -47,6 +47,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
 import org.labkey.api.data.Container.LockState;
 import org.labkey.api.data.SimpleFilter.InClause;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.exp.ExperimentException;
@@ -67,6 +68,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.AuthorRole;
@@ -81,6 +83,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -93,6 +96,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -119,6 +123,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
 
 /**
  * This class manages a hierarchy of collections, backed by a database table called Containers.
@@ -150,7 +156,7 @@ public class ContainerManager
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = HOME_PROJECT_PATH + "/support";
 
     private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(Constants.getMaxContainers(), CacheManager.DAY, "Containers");
-    private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
+    private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLockWithName(ContainerManager.class, "DATABASE_QUERY_LOCK");
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
@@ -237,12 +243,22 @@ public class ContainerManager
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user)
     {
+        return createContainer(parent, name, title, description, type, user, null);
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user, @Nullable String auditMsg)
+    {
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
-        return createContainer(parent, name, title, description, user, properties);
+        return createContainer(parent, name, title, description, user, properties, auditMsg);
     }
 
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
+    {
+        return createContainer(parent, name, title, description, user, properties, null);
+    }
+
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties, @Nullable String auditMsg)
     {
         String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);
@@ -340,7 +356,7 @@ public class ContainerManager
         // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
         _removeFromCache(parent);
 
-        fireCreateContainer(c, user);
+        fireCreateContainer(c, user, auditMsg);
 
         return c;
     }
@@ -1774,6 +1790,10 @@ public class ContainerManager
             // and delete all container-based sequences
             DbSequenceManager.deleteAll(c);
 
+            ExperimentService experimentService = ExperimentService.get();
+            if (experimentService != null)
+                experimentService.removeContainerDataTypeExclusions(c.getId());
+
             // After we've committed the transaction, be sure that we remove this container from the cache
             // See https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=17015
             tx.addCommitTask(() ->
@@ -2105,20 +2125,22 @@ public class ContainerManager
     }
 
 
-    public static String getIdsAsCsvList(Set<Container> containers)
+    public static SQLFragment getIdsAsCsvList(Set<Container> containers, SqlDialect d)
     {
         if (0 == containers.size())
-            return "(NULL)";    // WHERE x IN (NULL) should match no rows
+            return new SQLFragment("(NULL)");    // WHERE x IN (NULL) should match no rows
 
-        StringBuilder csvList = new StringBuilder("(");
-
+        SQLFragment csvList = new SQLFragment("(");
+        String comma = "";
         for (Container container : containers)
-            csvList.append("'").append(container.getId()).append("',");
+        {
+            csvList.append(comma);
+            comma = ",";
+            csvList.appendValue(container, d);
+        }
+        csvList.append(")");
 
-        // Replace last comma with ending paren
-        csvList.replace(csvList.length() - 1, csvList.length(), ")");
-
-        return csvList.toString();
+        return csvList;
     }
 
 
@@ -2145,6 +2167,11 @@ public class ContainerManager
 
         /** Called after a new container has been created */
         void containerCreated(Container c, User user);
+
+        default void containerCreated(Container c, User user, @Nullable String auditMsg)
+        {
+            containerCreated(c, user);
+        }
 
         /** Called immediately prior to deleting the row from core.containers */
         void containerDeleted(Container c, User user);
@@ -2280,7 +2307,7 @@ public class ContainerManager
     }
 
 
-    protected static void fireCreateContainer(Container c, User user)
+    protected static void fireCreateContainer(Container c, User user, @Nullable String auditMsg)
     {
         List<ContainerListener> list = getListeners();
 
@@ -2288,7 +2315,7 @@ public class ContainerManager
         {
             try
             {
-                cl.containerCreated(c, user);
+                cl.containerCreated(c, user, auditMsg);
             }
             catch (Throwable t)
             {
@@ -2469,6 +2496,81 @@ public class ContainerManager
                 path).getArray(Container.class);
 
         return ret.length == 0 ? null : ret[0];
+    }
+
+    public static Container getMoveTargetContainer(@NotNull String entityType, @NotNull Container sourceContainer, User user, @Nullable String targetIdOrPath, Errors errors)
+    {
+        if (targetIdOrPath == null)
+        {
+            errors.reject(ERROR_GENERIC, "A target container must be specified for the move operation.");
+            return null;
+        }
+
+        Container _targetContainer = getContainerForIdOrPath(targetIdOrPath);
+        if (_targetContainer == null)
+        {
+            errors.reject(ERROR_GENERIC, "The target container was not found: " + targetIdOrPath + ".");
+            return null;
+        }
+
+        if (!_targetContainer.hasPermission(user, InsertPermission.class))
+        {
+            errors.reject(ERROR_GENERIC, "You do not have permission to move " + entityType + " to the target container: " + targetIdOrPath + ".");
+            return null;
+        }
+
+        if (!isValidTargetContainer(sourceContainer, _targetContainer))
+        {
+            errors.reject(ERROR_GENERIC, "Invalid target container for the move operation: " + targetIdOrPath + ".");
+            return null;
+        }
+        return _targetContainer;
+    }
+
+    private static Container getContainerForIdOrPath(String targetContainer)
+    {
+        Container c = ContainerManager.getForId(targetContainer);
+        if (c == null)
+            c = ContainerManager.getForPath(targetContainer);
+
+        return c;
+    }
+
+    // targetContainer must be in the same app project at this time
+    // i.e. child of current project, project of current child, sibling within project
+    private static boolean isValidTargetContainer(Container current, Container target)
+    {
+        if (current.isRoot() || target.isRoot())
+            return false;
+
+        if (current.equals(target))
+            return false;
+
+        boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
+        boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
+        boolean moveFromChildToSibling = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target.getParent());
+
+        return moveFromProjectToChild || moveFromChildToProject || moveFromChildToSibling;
+    }
+
+    public static int updateContainer(TableInfo dataTable, String idField, Collection<?> ids, Container targetContainer, User user, boolean withModified)
+    {
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            SQLFragment dataUpdate = new SQLFragment("UPDATE ").append(dataTable)
+                    .append(" SET container = ").appendValue(targetContainer.getEntityId());
+            if (withModified)
+            {
+                dataUpdate.append(", modified = ").appendValue(new Date());
+                dataUpdate.append(", modifiedby = ").appendValue(user.getUserId());
+            }
+            dataUpdate.append(" WHERE ").append(idField);
+            dataTable.getSchema().getSqlDialect().appendInClauseSql(dataUpdate, ids);
+            int numUpdated = new SqlExecutor(dataTable.getSchema()).execute(dataUpdate);
+            transaction.commit();
+
+            return numUpdated;
+        }
     }
 
     /**

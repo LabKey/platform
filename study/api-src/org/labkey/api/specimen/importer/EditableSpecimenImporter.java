@@ -225,10 +225,10 @@ public class EditableSpecimenImporter extends SpecimenImporter
         TableInfo tableInfoVial = SpecimenSchema.get().getTableInfoVial(container);
 
         SQLFragment sqlPrefix = new SQLFragment();
-        sqlPrefix.append("UPDATE ").append(tableInfoSpecimenEvent.getSelectName())
+        sqlPrefix.append("UPDATE ").append(tableInfoSpecimenEvent)
             .append(" SET Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanTRUE())
             .append(" WHERE VialId IN ")
-            .append("(SELECT RowId FROM ").append(tableInfoVial.getSelectName())
+            .append("(SELECT RowId FROM ").append(tableInfoVial)
             .append(" WHERE Obsolete = ").append(tableInfoSpecimenEvent.getSqlDialect().getBooleanFALSE())
             .append(" AND " + GUID_COLNAME).append(" ");
 

@@ -30,6 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
@@ -40,7 +41,6 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NewCustomApiForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -690,14 +690,14 @@ public class VisualizationController extends SpringActionController
      * Alternately a form-encoded post with a parameter called svg to allow JavaScript clients to access it
      */
     @RequiresPermission(ReadPermission.class)
-    abstract class ExportSVGAction extends BaseViewAction
+    abstract class ExportSVGAction extends BaseViewAction<Object>
     {
         private SvgSource _svgSource;
 
         @Override
         protected String getCommandClassMethodName()
         {
-            return "execute";
+            return "validate";
         }
 
         @Override
@@ -1536,21 +1536,21 @@ public class VisualizationController extends SpringActionController
         public void setAllowToggleMode(boolean allowToggleMode)
         {
             _allowToggleMode = allowToggleMode;
-        }        
+        }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            super.bindProperties(props);
+            super.bindJson(json);
 
-            _renderType = (String)props.get("renderType");
-            _dataRegionName = (String)props.get("dataRegionName");
-            _svg = (String)props.get("svg");
-            _thumbnailType = (String)props.get("thumbnailType");
+            _renderType = json.optString("renderType", null);
+            _dataRegionName = json.optString("dataRegionName", null);
+            _svg = json.optString("svg", null);
+            _thumbnailType = json.optString("thumbnailType", null);
 
-            Object json = props.get("jsonData");
-            if (json != null)
-                _jsonData = json.toString();
+            Object jsonData = json.opt("jsonData");
+            if (jsonData != null)
+                _jsonData = jsonData.toString();
         }
     }
 
@@ -1578,7 +1578,7 @@ public class VisualizationController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetSourceCountsAction extends MutatingApiAction<SourceCountForm>
+    public static class GetSourceCountsAction extends MutatingApiAction<SourceCountForm>
     {
         @Override
         public ApiResponse execute(SourceCountForm form, BindException errors) throws Exception
@@ -1595,46 +1595,37 @@ public class VisualizationController extends SpringActionController
                 throw new IllegalArgumentException("No such schema: " + schemaName);
             }
 
-            VisualizationProvider provider = userSchema.createVisualizationProvider();
+            VisualizationProvider<?> provider = userSchema.createVisualizationProvider();
             if (provider == null)
             {
                 throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());
             }
 
-            ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-            writer.startResponse();
-
-            writer.startMap("counts");
+            Map<String, Integer> values = new HashMap<>();
             try (ResultSet rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName)))
             {
-                Map<String, Integer> values = new HashMap<>();
                 while (rs.next())
                 {
                     values.put(rs.getString("label"), rs.getInt("value"));
                 }
 
-                String key;
                 for (int i = 0; i < sources.length(); i++)
                 {
-                    key = sources.getString(i);
-                    if (values.containsKey(key))
-                        writer.writeProperty(key, values.get(key));
-                    else
-                        writer.writeProperty(key, 0);
+                    String key = sources.getString(i);
+                    if (!values.containsKey(key))
+                        values.put(key, 0);
                 }
             }
             catch (SQLException x)
             {
                 throw new RuntimeSQLException(x);
             }
-            writer.endMap();
-            writer.endResponse();
 
-            return null;
+            return new ApiSimpleResponse(Map.of("success", true, "counts",values));
         }
     }
 
-    public static class SourceCountForm implements NewCustomApiForm
+    public static class SourceCountForm implements ApiJsonForm
     {
         private JSONObject _json;
 

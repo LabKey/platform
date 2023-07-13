@@ -5,7 +5,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import java.util.Date;
 
 /* Java bean used in marshalling and unmarshalling*/
-public class ListDomainKindProperties implements Cloneable
+public class ListDomainKindProperties implements Cloneable, ListIndexingSettings
 {
     private int listId;
     private String name;
@@ -202,6 +202,7 @@ public class ListDomainKindProperties implements Cloneable
         this.discussionSetting = discussionSetting;
     }
 
+    @Override
     public String getEntireListTitleTemplate()
     {
         return entireListTitleTemplate;
@@ -212,6 +213,7 @@ public class ListDomainKindProperties implements Cloneable
         this.entireListTitleTemplate = entireListTitleTemplate;
     }
 
+    @Override
     public int getEntireListIndexSetting()
     {
         return entireListIndexSetting;
@@ -222,6 +224,7 @@ public class ListDomainKindProperties implements Cloneable
         this.entireListIndexSetting = entireListIndexSetting;
     }
 
+    @Override
     public int getEntireListBodySetting()
     {
         return entireListBodySetting;
@@ -232,6 +235,7 @@ public class ListDomainKindProperties implements Cloneable
         this.entireListBodySetting = entireListBodySetting;
     }
 
+    @Override
     public String getEachItemTitleTemplate()
     {
         return eachItemTitleTemplate;
@@ -242,6 +246,7 @@ public class ListDomainKindProperties implements Cloneable
         this.eachItemTitleTemplate = eachItemTitleTemplate;
     }
 
+    @Override
     public int getEachItemBodySetting()
     {
         return eachItemBodySetting;
@@ -252,6 +257,7 @@ public class ListDomainKindProperties implements Cloneable
         this.eachItemBodySetting = eachItemBodySetting;
     }
 
+    @Override
     public boolean isEntireListIndex()
     {
         return entireListIndex;
@@ -262,6 +268,7 @@ public class ListDomainKindProperties implements Cloneable
         this.entireListIndex = entireListIndex;
     }
 
+    @Override
     public String getEntireListBodyTemplate()
     {
         return entireListBodyTemplate;
@@ -272,6 +279,7 @@ public class ListDomainKindProperties implements Cloneable
         this.entireListBodyTemplate = entireListBodyTemplate;
     }
 
+    @Override
     public boolean isEachItemIndex()
     {
         return eachItemIndex;
@@ -282,6 +290,7 @@ public class ListDomainKindProperties implements Cloneable
         this.eachItemIndex = eachItemIndex;
     }
 
+    @Override
     public String getEachItemBodyTemplate()
     {
         return eachItemBodyTemplate;
@@ -292,6 +301,7 @@ public class ListDomainKindProperties implements Cloneable
         this.eachItemBodyTemplate = eachItemBodyTemplate;
     }
 
+    @Override
     public boolean isFileAttachmentIndex()
     {
         return fileAttachmentIndex;

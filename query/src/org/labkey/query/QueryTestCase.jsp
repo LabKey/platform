@@ -12,7 +12,6 @@
 <%@ page import="org.labkey.api.collections.ArrayListMap" %>
 <%@ page import="org.labkey.api.collections.CaseInsensitiveHashMap" %>
 <%@ page import="org.labkey.api.collections.RowMapFactory" %>
-<%@ page import="org.labkey.api.data.CachedResultSet" %>
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerFilter" %>
@@ -79,6 +78,7 @@
 <%@ page import="java.util.concurrent.Callable" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
 <%@ page import="static java.util.Objects.requireNonNull" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
 
@@ -300,7 +300,7 @@ d,seven,twelve,day,month,date,duration,guid
             if (null == container)
                 container = JunitUtil.getTestContainer();
 
-            try (CachedResultSet rs = resultset(_sql, container == JunitUtil.getTestContainer() ? null : container))
+            try (var rs = resultset(_sql, container == JunitUtil.getTestContainer() ? null : container))
             {
                 ResultSetMetaData md = rs.getMetaData();
                 if (_countColumns >= 0)
@@ -330,7 +330,7 @@ d,seven,twelve,day,month,date,duration,guid
             }
         }
 
-        protected void validateResults(CachedResultSet rs) throws Exception
+        protected void validateResults(ResultSet rs) throws Exception
         {
         }
     }
@@ -368,7 +368,7 @@ d,seven,twelve,day,month,date,duration,guid
         }
 
         @Override
-        protected void validateResults(CachedResultSet rs) throws Exception
+        protected void validateResults(ResultSet rs) throws Exception
         {
             assertTrue("Expected one row: " + _sql, rs.next());
             Object o = rs.getObject(1);
@@ -431,7 +431,7 @@ d,seven,twelve,day,month,date,duration,guid
         @Override
         void validate(@Nullable Container container)
         {
-            try (CachedResultSet ignored = (CachedResultSet) QueryService.get().select(lists, _sql))
+            try (Results ignored = QueryService.get().getSelectBuilder(lists, _sql).select())
             {
                 Assert.fail("should fail: " + _sql);
             }
@@ -968,7 +968,10 @@ d,seven,twelve,day,month,date,duration,guid
                         new SqlTest("SELECT f FROM (SELECT CAST(jsonb_insert('{\"a\": [0,1,2]}', '{a, 1}', '\"new_value\"', true) AS VARCHAR) AS f) X WHERE f = '{\"a\": [0, 1, \"new_value\", 2]}'", 1, 1),
 
                         // TEST CTE handling with undocumented test-only methods
-                        new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1)
+                        new SqlTest("SELECT __cte_two__() as two, __cte_three__() as three, __cte_two__() * __cte_three__() as six_simple, __cte_times__(__cte_two__(), __cte_three__()) as six_complex", 4, 1),
+
+                        // JDBC escape sequences
+                        new SqlTest("SELECT * FROM (SELECT CAST({ts '2023-06-02 00:00:00'} AS DATE) AS d) x WHERE d = {d '2023-06-02'}", 1, 1)
                 ));
 
         if (majorVersion >= 12)
@@ -1220,7 +1223,7 @@ d,seven,twelve,day,month,date,duration,guid
 
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    CachedResultSet resultset(String sql, @Nullable Container container)
+    Results resultset(String sql, @Nullable Container container)
     {
         QuerySchema schema = lists;
         if (null != container)
@@ -1229,7 +1232,7 @@ d,seven,twelve,day,month,date,duration,guid
 
         try
         {
-            CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, null, true, true);
+            Results rs = QueryService.get().select(schema, sql, null, true, true);
             assertNotNull(sql, rs);
             return rs;
         }
@@ -1266,7 +1269,7 @@ d,seven,twelve,day,month,date,duration,guid
         SqlDialect dialect = lists.getDbSchema().getSqlDialect();
         String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
 
-        try (CachedResultSet rs = resultset(sql, null))
+        try (var rs = resultset(sql, null))
         {
             ResultSetMetaData md = rs.getMetaData();
             assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("d", dialect)));
@@ -1333,33 +1336,72 @@ d,seven,twelve,day,month,date,duration,guid
     // Duplicate column names are supported. Introduced as an option for #35424; made the default behavior for #42081.
     private void testDuplicateColumns(User user, Container c) throws SQLException
     {
-        String sql = "SELECT d, seven, d, seven FROM R";
-        QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
-        query.setSql(sql);
-        ArrayList<QueryException> qerrors = new ArrayList<>();
-        TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
+        {
+            String sql = "SELECT d, seven, d, seven FROM R";
+            QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
+            query.setSql(sql);
+            ArrayList<QueryException> qerrors = new ArrayList<>();
+            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
 
-        if (null == t)
-        {
-            Assert.fail("Table not found");
-        }
-        else if (!qerrors.isEmpty())
-        {
-            throw qerrors.get(0);
-        }
-        else
-        {
-            try (Results rs = QueryService.get().select(t, t.getColumns(), null, null))
+            if (null == t)
             {
-                assertNotNull(sql, rs);
-                assertEquals(sql, Rsize, rs.getSize());
-                ResultSetMetaData md = rs.getMetaData();
-                assertEquals(sql, 4, md.getColumnCount());
-                assertEquals(sql, 4, rs.getFieldMap().size());
-                assertEquals(sql, "d", rs.getColumn(1).getName());
-                assertEquals(sql, "seven", rs.getColumn(2).getName());
-                assertEquals(sql, "d_1", rs.getColumn(3).getName());
-                assertEquals(sql, "seven_1", rs.getColumn(4).getName());
+                Assert.fail("Table not found");
+            }
+            else if (!qerrors.isEmpty())
+            {
+                throw qerrors.get(0);
+            }
+            else
+            {
+                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                {
+                    assertNotNull(sql, rs);
+                    assertEquals(sql, Rsize, rs.getSize());
+                    ResultSetMetaData md = rs.getMetaData();
+                    assertEquals(sql, 4, md.getColumnCount());
+                    assertEquals(sql, 4, rs.getFieldMap().size());
+                    assertEquals(sql, "d", rs.getColumn(1).getName());
+                    assertEquals(sql, "seven", rs.getColumn(2).getName());
+                    assertEquals(sql, "d_1", rs.getColumn(3).getName());
+                    assertEquals(sql, "seven_1", rs.getColumn(4).getName());
+                }
+            }
+        }
+
+        {
+            /*
+            * Test that the duplicate columns are aliased even if they have explicit AS clauses
+            * NOTE: I think it would be even better to change the column name of the column selected by "*" rather than the explicitly select column.
+            * Still this is better than not de-duplicating.
+            */
+            String sql = "SELECT *, d as D, seven as SEVEN FROM R";
+            QueryDefinition query = QueryService.get().createQueryDef(user, c, SchemaKey.fromParts("lists"), GUID.makeHash());
+            query.setSql(sql);
+            ArrayList<QueryException> qerrors = new ArrayList<>();
+            TableInfo t = query.getTable(query.getSchema(), qerrors, false, true);
+
+            if (null == t)
+            {
+                Assert.fail("Table not found");
+            }
+            else if (!qerrors.isEmpty())
+            {
+                throw qerrors.get(0);
+            }
+            else
+            {
+                try (Results rs = QueryService.get().getSelectBuilder(t).select())
+                {
+                    assertNotNull(sql, rs);
+                    assertEquals(sql, Rsize, rs.getSize());
+                    ResultSetMetaData md = rs.getMetaData();
+                    assertEquals(sql, Rcolumns+2, md.getColumnCount());
+                    assertEquals(sql, Rcolumns+2, rs.getFieldMap().size());
+                    int d1 = rs.findColumn(new FieldKey(null,"d_1"));
+                    int seven1 = rs.findColumn(new FieldKey(null,"seven_1"));
+                    assertEquals(sql, Rcolumns+1, d1);
+                    assertEquals(sql, Rcolumns+2, seven1);
+                }
             }
         }
     }

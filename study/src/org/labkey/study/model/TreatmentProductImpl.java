@@ -16,7 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.TreatmentProduct;
 import org.labkey.api.util.Pair;
@@ -190,15 +190,15 @@ public class TreatmentProductImpl implements TreatmentProduct
         //treatmentProduct.setDose(o.getString("Dose"));
         //treatmentProduct.setRoute(o.getString("Route"));
         treatmentProduct.setContainer(container);
-        if (o.containsKey("ProductId") && o.get("ProductId") instanceof Integer)
-            treatmentProduct.setProductId(o.getInt("ProductId"));
-        if (o.containsKey("TreatmentId") && o.get("TreatmentId") instanceof Integer)
-            treatmentProduct.setTreatmentId(o.getInt("TreatmentId"));
-        if (o.containsKey("RowId"))
+        if (o.has("ProductId") && o.get("ProductId") instanceof Integer productId)
+            treatmentProduct.setProductId(productId);
+        if (o.has("TreatmentId") && o.get("TreatmentId") instanceof Integer treatmentId)
+            treatmentProduct.setTreatmentId(treatmentId);
+        if (o.has("RowId"))
             treatmentProduct.setRowId(o.getInt("RowId"));
-        if (o.containsKey("DoseAndRoute"))
+        if (o.has("DoseAndRoute"))
             treatmentProduct.setDoseAndRoute(o.getString("DoseAndRoute"));
-        if (o.containsKey("ProductDoseRoute"))
+        if (o.has("ProductDoseRoute"))
             treatmentProduct.populateProductDoseRoute(o.getString("ProductDoseRoute"));
 
         return treatmentProduct;

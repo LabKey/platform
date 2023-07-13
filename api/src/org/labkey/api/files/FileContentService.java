@@ -346,4 +346,6 @@ public interface FileContentService
      * Returns a list of DirectoryPattern objects for the active modules in the given container.
      * */
     List<DirectoryPattern> getZiploaderPatterns(Container container);
+
+    File getMoveTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer);
 }

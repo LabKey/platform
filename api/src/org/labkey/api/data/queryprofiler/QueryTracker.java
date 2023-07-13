@@ -23,11 +23,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ByteArrayHashKey;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.util.Compress;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -39,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.DataFormatException;
 
@@ -49,8 +53,10 @@ import java.util.zip.DataFormatException;
 class QueryTracker
 {
     private final @Nullable DbScope _scope;
-    private final String _sql;
-    private final boolean _validSql;
+    private String _sql;
+    private boolean _truncated;
+    private final String _hash;
+    private boolean _validSql;
     private final long _firstInvocation;
     private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new ReferenceMap<>(ReferenceStrength.SOFT, ReferenceStrength.HARD, true); // Not sure about purgeValues
 
@@ -61,12 +67,14 @@ class QueryTracker
     private long _cumulative = 0;
     private long _lastInvocation;
 
-    QueryTracker(@Nullable DbScope scope, @NotNull String sql, long elapsed, String stackTrace, boolean validSql)
+    QueryTracker(@Nullable DbScope scope, @NotNull String sql, @NotNull String hash, long elapsed, String stackTrace, boolean validSql, boolean truncated)
     {
         _scope = scope;
         _sql = sql;
+        _hash = hash;
         _validSql = validSql;
         _firstInvocation = System.currentTimeMillis();
+        _truncated = truncated;
 
         addInvocation(elapsed, stackTrace);
     }
@@ -93,6 +101,16 @@ class QueryTracker
     public DbScope getScope()
     {
         return _scope;
+    }
+
+    public String getHash()
+    {
+        return _hash;
+    }
+
+    public boolean isTruncated()
+    {
+        return _truncated;
     }
 
     public String getSql()
@@ -123,7 +141,7 @@ class QueryTracker
 
     public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && Table.isSelect(_sql);
+        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && Table.isSelect(_sql);
     }
 
     public long getCount()
@@ -161,7 +179,7 @@ class QueryTracker
         return _stackTraces.size();
     }
 
-    public void renderStackTraces(PrintWriter out)
+    public DOM.Renderable renderStackTraces()
     {
         // Descending order by occurrences (the value)
         Set<Pair<String, AtomicInteger>> set = new TreeSet<>((e1, e2) ->
@@ -191,8 +209,8 @@ class QueryTracker
             }
         }
 
-        int commonLength = 0;
-        String formattedCommonPrefix = "";
+        int commonLength;
+        DOM.Renderable formattedCommonPrefix;
 
         if (set.size() > 1)
         {
@@ -202,24 +220,37 @@ class QueryTracker
             if (-1 != idx)
             {
                 commonLength = idx;
-                formattedCommonPrefix = "<b>" + PageFlowUtil.filter(commonPrefix.substring(0, commonLength), true) + "</b>";
+                formattedCommonPrefix = DOM.STRONG(HtmlString.of(commonPrefix.substring(0, commonLength), true));
+            }
+            else
+            {
+                commonLength = 0;
+                formattedCommonPrefix = HtmlString.EMPTY_STRING;
             }
         }
-
-        out.println("<tr><td><strong>Count</strong></td><td style=\"padding-left:1em;\"><strong>Traces</strong></td></tr>\n");
-
-        int alt = 0;
-        String[] classes = new String[]{"labkey-alternate-row", "labkey-row"};
-
-        for (Map.Entry<String, AtomicInteger> entry : set)
+        else
         {
-            String stackTrace = entry.getKey();
-            String formattedStackTrace = formattedCommonPrefix + PageFlowUtil.filter(stackTrace.substring(commonLength), true);
-            int count = entry.getValue().get();
-
-            out.println("<tr class=\"" + classes[alt] + "\"><td valign=top align=right>" + count + "</td><td style=\"padding-left:1em;\">" + formattedStackTrace + "</td></tr>\n");
-            alt = 1 - alt;
+            commonLength = 0;
+            formattedCommonPrefix = HtmlString.EMPTY_STRING;
         }
+
+        AtomicBoolean alt = new AtomicBoolean();
+
+        return DOM.TABLE(
+                DOM.TR(
+                        DOM.TD(DOM.STRONG("Count")),
+                        DOM.TD(DOM.STRONG(DOM.at(DOM.Attribute.style, "padding-left: 1em;"), "Traces"))
+                ),
+                set.stream().map(entry -> {
+                    String stackTrace = entry.getKey();
+                    int count = entry.getValue().get();
+                    alt.set(!alt.get());
+                    return DOM.TR(DOM.cl(alt.get() ? "labkey-alternate-row" : "labkey-row"),
+                            DOM.TD(DOM.at(DOM.Attribute.style, "text-align: right; vertical-align: top"), count),
+                            DOM.TD(DOM.at(DOM.Attribute.style, "padding-left: 1em;"), formattedCommonPrefix, HtmlString.of(stackTrace.substring(commonLength), true))
+                            );
+                })
+        );
     }
 
     @Override
@@ -298,15 +329,17 @@ class QueryTracker
             if (set.shouldDisplay())
                 out.println("<td style=\"text-align:right;vertical-align:top;\">" + ((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this) + "</td>");
 
-        ActionURL url = factory.getActionURL(getSql());
+        ActionURL url = factory.getActionURL(getHash());
         out.println("<td style=\"text-align:right;vertical-align:top;\"><a href=\"" + PageFlowUtil.filter(url.getLocalURIString()) + "\">" + Formats.commaf0.format(getStackTraceCount()) + "</a></td>");
         // In the full grid view, limit SQL to 2,000 characters (before encoding). Individual detail view still shows full SQL with and without parameters. See #29642.
         out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(StringUtils.abbreviate(getSql(), 2000), true) + "</td>");
         out.println("</tr>");
     }
 
-    public void exportRow(PrintWriter out)
+    public void exportRow(TSVWriter tsvWriter)
     {
+        PrintWriter out = tsvWriter.getPrintWriter();
+
         String tab = "";
 
         for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
@@ -318,7 +351,19 @@ class QueryTracker
             }
         }
 
-        out.print(tab + getSql().trim().replaceAll("(\\s)+", " "));
+        out.print(tab);
+        out.print(tsvWriter.quoteValue(getSql()));
         out.print('\n');
+    }
+
+    public void truncate(int longSqlLimit)
+    {
+        if (_sql.length() > longSqlLimit)
+        {
+            _truncated = true;
+            _validSql = false;
+            _sql = _sql.substring(0, longSqlLimit);
+        }
+
     }
 }

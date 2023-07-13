@@ -87,7 +87,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
     public ExpRunTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperimentRun(), schema, cf);
-        Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
+        assert Table.checkAllColumns(this, getColumns(), "ExpRunTableImpl");
     }
 
     @Override
@@ -199,7 +199,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 sql.append(separator);
                 separator = ", ";
-                sql.append(run.getRowId());
+                sql.appendValue(run.getRowId());
             }
             sql.append(")");
             addCondition(sql);
@@ -301,7 +301,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return ret;
             }
             case Flag:
-                return createFlagColumn(alias);
+            {
+                var result = createFlagColumn(alias);
+                result.setShownInInsertView(false); // Issue 47576
+                return result;
+            }
             case Links:
             {
                 var result = wrapColumn("Links", _rootTable.getColumn("RowId"));
@@ -525,9 +529,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
                         sql.append(", ");
                         sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
-                        sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = '");
-                        sql.append(type);
-                        sql.append("'");
+                        sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = ").appendValue(type);
                         return sql;
                     }
                 };
@@ -787,7 +789,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         {
                             SQLFragment sql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-                            sql.append(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).append(" AND ExperimentId = ").append(exp.getRowId()).append(")");
+                            sql.append(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).append(" AND ExperimentId = ").appendValue(exp.getRowId()).append(")");
 
                             return getSqlDialect().wrapExistsExpression(sql);
                         }

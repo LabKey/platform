@@ -8,7 +8,8 @@ public abstract class StandardStartupPropertyHandler<T extends Enum<T> & Startup
      * @param scope The scope name
      * @param type An enum that defines possible properties in this scope. The enum constants are used to validate
      *             property entries and to document available properties. The order of constant definitions determines
-     *             the order they'll be displayed on the "Available Startup Properties" admin console page.
+     *             the order they'll be displayed in the "Available" section on the "Startup Properties" admin console
+     *             page.
      */
     protected StandardStartupPropertyHandler(String scope, Class<T> type)
     {

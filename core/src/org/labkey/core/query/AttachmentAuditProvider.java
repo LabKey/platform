@@ -20,6 +20,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -28,6 +29,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -87,6 +89,11 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         legacyMap.put(FieldKey.fromParts("EntityId"), COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID);
         legacyMap.put(FieldKey.fromParts("key1"), COLUMN_NAME_ATTACHMENT);
         return legacyMap;
+    }
+
+    public int moveEvents(Container targetContainer, Collection<Integer> entityIds)
+    {
+        return moveEvents(targetContainer, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID, entityIds);
     }
 
     @Override

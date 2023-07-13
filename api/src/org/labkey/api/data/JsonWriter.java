@@ -19,8 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.compliance.PhiTransformedColumnInfo;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -86,7 +86,7 @@ public class JsonWriter
         @Nullable ColumnInfo cinfo = dc.getColumnInfo();
         Map<String, Object> props = new LinkedHashMap<>();
         JSONObject ext = new JSONObject();
-        props.put("ext",ext);
+        props.put("ext", ext);
 
         // Some DisplayColumns aren't backed by a ColumnInfo, so handle null when determining metadata
         String name = cinfo == null ? dc.getName() : cinfo.getName();
@@ -177,6 +177,8 @@ public class JsonWriter
 
         props.put("derivationDataScope", cinfo == null ? null : cinfo.getDerivationDataScope());
 
+        props.put("wrappedColumnName", cinfo == null ? null : cinfo.getWrappedColumnName());
+
         ColumnInfo displayField = dc.getDisplayColumnInfo();
         if (displayField != null && displayField != cinfo)
         {
@@ -239,7 +241,7 @@ public class JsonWriter
                     if (rows > 0)
                         props.put("rows", Math.min(1000,rows));
                 }
-                ext.put("xtype","textarea");
+                ext.put("xtype", "textarea");
             }
 
             props.put("shortCaption", cinfo.getShortLabel());
@@ -288,7 +290,7 @@ public class JsonWriter
 
         if (includeLookup && cinfo != null)
         {
-            Map<String, Object> lookupJSON = getLookupInfo(cinfo, includeDomainFormat);
+            JSONObject lookupJSON = getLookupInfo(cinfo, includeDomainFormat);
             if (lookupJSON != null)
             {
                 props.put("lookup", lookupJSON);
@@ -374,7 +376,7 @@ public class JsonWriter
             String key = null;
             List<String> pks = lookupTable.getPkColumnNames();
 
-            //Issue 20092: the target column specified by the FK does not necessarily need to be a true PK
+            // Issue 20092: the target column specified by the FK does not necessarily need to be a true PK
             // PERF computing getLookupColumnName() can be expensive, but we only want to do this work when it is not == default pk
             // suggest having fk.getLookupColumnName() which returns explicitly set LookupColumnName, and fk.computeLookupColumnName()
             // NOTE: Don't try to resolve the lookup column on the lookup table because
@@ -382,15 +384,14 @@ public class JsonWriter
             if (fk.getLookupColumnName() != null && !(fk instanceof MultiValuedForeignKey))
             {
                 key = fk.getLookupColumnName();
-                if (lookupTable instanceof TableInfo)
+                if (lookupTable instanceof TableInfo lookupTableInfo)
                 {
                     //NOTE: the XML could specify a column with different casing than the canonical name.  this could be problematic for client side JS.  \
-                    ColumnInfo targetCol = ((TableInfo)lookupTable).getColumn(key);
+                    ColumnInfo targetCol = lookupTableInfo.getColumn(key);
                     if (targetCol != null)
                         key = targetCol.getName();
                     else
                     {
-                        //
                         TableInfo parentTable = columnInfo.getParentTable();
                         UserSchema userSchema = parentTable.getUserSchema();
                         String containerInfo = userSchema == null ? "" : " in container " + userSchema.getContainer().getPath();
@@ -412,9 +413,8 @@ public class JsonWriter
             }
             lookupInfo.put("keyColumn", key);
 
-            if (fk instanceof MultiValuedForeignKey)
+            if (fk instanceof MultiValuedForeignKey mvfk)
             {
-                MultiValuedForeignKey mvfk = (MultiValuedForeignKey)fk;
                 String junctionLookup = mvfk.getJunctionLookup();
                 lookupInfo.put("multiValued", junctionLookup != null ? "junction" : "value");
                 if (junctionLookup != null)

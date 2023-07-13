@@ -1718,17 +1718,20 @@ public class StudyPublishManager implements StudyPublishService
                     col = ((ILineageDisplayColumn) dc).getInnerBoundColumn();
                 }
 
-                if (org.labkey.api.gwt.client.ui.PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                if (col != null)
                 {
-                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.VisitId) && col.getJdbcType().isReal())
-                        fieldKeyMap.put(LinkToStudyKeys.VisitId, ci.getFieldKey());
-                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.Date) && col.getJdbcType().isDateOrTime())
-                        fieldKeyMap.put(LinkToStudyKeys.Date, ci.getFieldKey());
-                }
+                    if (org.labkey.api.gwt.client.ui.PropertyType.VISIT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                    {
+                        if (!fieldKeyMap.containsKey(LinkToStudyKeys.VisitId) && col.getJdbcType().isReal())
+                            fieldKeyMap.put(LinkToStudyKeys.VisitId, ci.getFieldKey());
+                        if (!fieldKeyMap.containsKey(LinkToStudyKeys.Date) && col.getJdbcType().isDateOrTime())
+                            fieldKeyMap.put(LinkToStudyKeys.Date, ci.getFieldKey());
+                    }
 
-                if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
-                {
-                    fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
+                    if (!fieldKeyMap.containsKey(LinkToStudyKeys.ParticipantId) && org.labkey.api.gwt.client.ui.PropertyType.PARTICIPANT_CONCEPT_URI.equalsIgnoreCase(col.getConceptURI()))
+                    {
+                        fieldKeyMap.put(LinkToStudyKeys.ParticipantId, ci.getFieldKey());
+                    }
                 }
             }
         }

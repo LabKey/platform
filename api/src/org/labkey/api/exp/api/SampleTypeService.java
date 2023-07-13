@@ -20,13 +20,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSequence;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.qc.DataState;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -37,6 +40,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public interface SampleTypeService
@@ -46,7 +50,9 @@ public interface SampleTypeService
     String MODULE_NAME = "Experiment";
 
     enum ConfigParameters {
-        DeferAliquotRuns // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately
+        DeferAliquotRuns, // (Bool) skip creation of aliquot derivation runs, used during import when the runs come in separately,
+        SkipMaxSampleCounterFunction,
+        SkipAliquotRollup
     }
 
     enum SampleOperations {
@@ -61,7 +67,8 @@ public interface SampleTypeService
         RemoveFromWorkflow("removing from a workflow"),
         AddAssayData("addition of associated assay data"),
         LinkToStudy("linking to study"),
-        RecallFromStudy("recalling from a study");
+        RecallFromStudy("recalling from a study"),
+        Move("moving to a different project");
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
 
@@ -98,10 +105,6 @@ public interface SampleTypeService
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol, String nameExpression)
             throws ExperimentException, SQLException;
 
-    @NotNull
-    ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
-            throws ExperimentException, SQLException;
-
     /**
      * (MAB) todo need a builder interface, or at least  parameter bean
      */
@@ -112,14 +115,13 @@ public interface SampleTypeService
 
     @NotNull
     ExpSampleType createSampleType(Container container, User user, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                   String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                   @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category)
+                                   String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit)
             throws ExperimentException, SQLException;
 
     @NotNull
     ExpSampleType createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField)
+                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField, @Nullable List<String> excludedContainerIds)
             throws ExperimentException, SQLException;
 
     @NotNull
@@ -203,9 +205,11 @@ public interface SampleTypeService
     // used by DomainKind.invalidate()
     void indexSampleType(ExpSampleType sampleType);
 
-    ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
+    DbSequence getRootSampleSequence();
 
-    boolean parentAliasHasCorrectFormat(String parentAlias);
+    long getRootSampleCount();
+
+    ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
 
     void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata);
 
@@ -218,7 +222,13 @@ public interface SampleTypeService
 
     String getOperationNotPermittedMessage(Collection<? extends ExpMaterial> samples, SampleOperations operation);
 
-    int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws SQLException;
 
-    long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container);
+    int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException;
+
+    int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
+
+    int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
+
+    Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 }

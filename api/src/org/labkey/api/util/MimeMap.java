@@ -129,7 +129,7 @@ public class MimeMap implements FileNameMap
         try (InputStream is = MimeMap.class.getResourceAsStream("mime.txt"))
         {
             // tab delimited file is easier to edit in a spreadsheet
-            List<String> lines = IOUtils.readLines(is);
+            List<String> lines = IOUtils.readLines(is, StringUtilsLabKey.DEFAULT_CHARSET);
             for (String line : lines)
             {
                 int tab = StringUtils.indexOfAny(line, "\t ");

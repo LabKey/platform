@@ -63,6 +63,13 @@
 
 %>
 <%=formatMissedErrors("form")%>
+
+<style>
+    .child-checkbox {
+        margin-left: 20px;
+    }
+</style>
+
 <div id="createFormDiv"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.QuickTips.init();
@@ -137,17 +144,9 @@
 
             var scrollToBottom = function() {
                 Ext4.defer(function() {
-                    if (Ext4.isChrome) {
-                        Ext4.getBody().scroll('b', 10000, true);
-                    }
-                    else {
-                        // sadly, cannot get other browsers to animate properly
-                        window.scrollTo(0, document.body.scrollHeight);
-                    }
+                    window.scrollTo(0, document.body.scrollHeight);
                 }, 200);
             };
-
-            var folderTemplateWriters = null;
 
             var panel = Ext4.create('LABKEY.ext4.AdminWizardForm', {
                 renderTo: 'createFormDiv',
@@ -454,23 +453,73 @@
                         scope: this,
                         success: function (response)
                         {
-                            var responseText = Ext4.decode(response.responseText);
-                            folderTemplateWriters = responseText.writers;
-                            // for now force 'Study' writer into the list of Folder Objects that get copied, will noop if Source Template Folder is not a study
-                            folderTemplateWriters.push({"name" : "Study",
-                                "selectedByDefault" : true, description: 'does not include dataset data and specimens'});
-                            this.renderTemplateInfo();
+                            let responseText = Ext4.decode(response.responseText);
+                            this.updateFolderObjects(responseText.writers);
                         }
                     });
                 },
-                renderTemplateInfo : function() {
-                    // initialize the set of folder template writers the first time only
-                    if (folderTemplateWriters == null)
-                    {
-                        this.getFolderTemplateWriters();
-                        return;
-                    }
+                updateFolderObjects : function(folderTemplateWriters) {
+                    var folderWriterConfigs = [];
 
+                    Ext4.each(folderTemplateWriters, function(writer)
+                    {
+                        var hasChildren = Ext4.isArray(writer.children) && writer.children.length > 0;
+
+                        var writerConfig = {
+                            xtype: "checkbox",
+                            name: "templateWriterTypes",
+                            hideLabel: true,
+                            boxLabel: writer.description ? writer.name + ' (' + writer.description + ')' : writer.name,
+                            itemId: writer.name,
+                            inputValue: writer.name,
+                            checked: !hasLoaded ? writer.selectedByDefault : (selectedTemplateWriters.indexOf(writer.name) > -1),
+                            objectType: hasChildren ? "parent" : null
+                        };
+
+                        if (hasChildren)
+                        {
+                            writerConfig.listeners = {
+                                change: function(cb, checked)
+                                {
+                                    var childCbs = cb.up('panel').queryBy(function(childCb){ return childCb.parentId == cb.itemId; });
+                                    Ext4.each(childCbs, function(childCb){ childCb.setValue(checked); });
+                                }
+                            }
+                        }
+
+                        folderWriterConfigs.push(writerConfig);
+
+                        if (hasChildren)
+                        {
+                            Ext4.each(writer.children, function(child)
+                            {
+                                folderWriterConfigs.push({
+                                    xtype: "checkbox",
+                                    fieldCls : 'child-checkbox',
+                                    name: "templateWriterTypes",
+                                    hideLabel: true,
+                                    boxLabel: child.name,
+                                    inputValue: child.name,
+                                    checked: writerConfig.checked && child.selectedByDefault,
+                                    parentId: writer.name
+                                });
+                            });
+                        }
+                    }, this);
+
+                    // get the panel holding the list of folder objects
+                    let pnl = this.down('#template_folder_writers');
+                    if (pnl) {
+                        this.down('#templateIncludeSubfolders').setVisible(true);
+                        this.down('#folderObjectsLabel').setVisible(true);
+                        this.down('#folderOptionsLabel').setVisible(true);
+
+                        pnl.removeAll();
+                        pnl.add(folderWriterConfigs);
+                        scrollToBottom();
+                    }
+                },
+                renderTemplateInfo : function() {
                     var target = this.down('#additionalTypeInfo');
                     target.add([
                         {
@@ -480,6 +529,7 @@
                             xtype: 'combo',
                             name: 'templateSourceId',
                             itemId: 'sourceFolderCombo',
+                            emptyText: 'Select a template folder',
                             allowBlank: false,
                             displayField: 'path',
                             valueField: 'id',
@@ -494,70 +544,31 @@
                             tpl : new Ext4.XTemplate(
                                 '<tpl for="."><div class="x4-boundlist-item">{path:htmlEncode}</div></tpl>'
                             ),
+                            listeners: {
+                                change: function(cmp, newValue){
+                                    selectedTemplateFolder = newValue;
+                                    this.getFolderTemplateWriters();
+                                },
+                                scope : this
+                            }
                         },{
                             html: 'Folder objects to copy:',
-                            cls: 'labkey-wizard-header'
+                            cls: 'labkey-wizard-header',
+                            itemId: 'folderObjectsLabel',
+                            hidden: true
                         },{
                             xtype: 'panel',
                             border: false,
-                            items: function()
-                            {
-                                var folderWriterConfigs = [];
-
-                                Ext4.each(folderTemplateWriters, function(writer)
-                                {
-                                    var hasChildren = Ext4.isArray(writer.children) && writer.children.length > 0;
-
-                                    var writerConfig = {
-                                        xtype: "checkbox",
-                                        name: "templateWriterTypes",
-                                        hideLabel: true,
-                                        boxLabel: writer.description ? writer.name + ' (' + writer.description + ')' : writer.name,
-                                        itemId: writer.name,
-                                        inputValue: writer.name,
-                                        checked: !hasLoaded ? writer.selectedByDefault : (selectedTemplateWriters.indexOf(writer.name) > -1),
-                                        objectType: hasChildren ? "parent" : null
-                                    };
-
-                                    if (hasChildren)
-                                    {
-                                        writerConfig.listeners = {
-                                            change: function(cb, checked)
-                                            {
-                                                var childCbs = cb.up('panel').queryBy(function(childCb){ return childCb.parentId == cb.itemId; });
-                                                Ext4.each(childCbs, function(childCb){ childCb.setValue(checked); });
-                                            }
-                                        }
-                                    }
-
-                                    folderWriterConfigs.push(writerConfig);
-
-                                    if (hasChildren)
-                                    {
-                                        Ext4.each(writer.children, function(childWriterName)
-                                        {
-                                            folderWriterConfigs.push({
-                                                xtype: "checkbox",
-                                                name: "templateWriterTypes",
-                                                hidden: true,
-                                                hideLabel: true,
-                                                boxLabel: childWriterName,
-                                                inputValue: childWriterName,
-                                                checked: writerConfig.checked,
-                                                parentId: writer.name
-                                            });
-                                        });
-                                    }
-                                }, this);
-
-                                return folderWriterConfigs;
-                            }()
+                            itemId: 'template_folder_writers',
                         },{
                             html: 'Options:',
-                            cls: 'labkey-wizard-header'
+                            cls: 'labkey-wizard-header',
+                            itemId: 'folderOptionsLabel',
+                            hidden: true
                         },{
                             xtype: 'checkbox',
                             hideLabel: true,
+                            hidden: true,
                             boxLabel: 'Include Subfolders',
                             name: 'templateIncludeSubfolders',
                             itemId: 'templateIncludeSubfolders',

@@ -17,12 +17,7 @@ package org.labkey.api.action;
 
 import org.json.JSONObject;
 
-/**
- * User: jgarms
- * Date: Aug 13, 2008
- * Time: 3:39:02 PM
- */
-public class SimpleApiJsonForm implements NewCustomApiForm
+public class SimpleApiJsonForm implements ApiJsonForm
 {
     private JSONObject _json;
 
@@ -32,21 +27,8 @@ public class SimpleApiJsonForm implements NewCustomApiForm
         _json = json;
     }
 
-    @Deprecated
-    public org.json.old.JSONObject getJsonObject()
-    {
-        return null != _json ? new org.json.old.JSONObject(_json.toString()) : null;
-    }
-
-    public JSONObject getNewJsonObject()
+    public JSONObject getJsonObject()
     {
         return _json;
-    }
-
-    // For backwards compatibility
-    @Deprecated
-    public void bindProperties(org.json.old.JSONObject json)
-    {
-        _json = json.toNewJSONObject();
     }
 }

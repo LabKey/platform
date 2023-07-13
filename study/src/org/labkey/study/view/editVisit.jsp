@@ -48,7 +48,6 @@
 %>
 <labkey:errors/>
 <labkey:form action="<%=urlFor(VisitSummaryAction.class)%>" method="POST">
-<input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
     <table class="lk-fields-table">
         <tr>

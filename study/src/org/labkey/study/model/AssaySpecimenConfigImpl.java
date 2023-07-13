@@ -17,20 +17,16 @@ package org.labkey.study.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.AssaySpecimenConfig;
+import org.labkey.api.util.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-/**
- * User: cnathe
- * Date: 12/14/13
- */
 
 /**
  * Represents an assay/specimen configuration for a study
@@ -234,7 +230,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         props.put("Source", getSource());
         props.put("TubeType", getTubeType());
         props.put("PrimaryTypeId", getPrimaryTypeId());
-        props.put("DerivtiveTypeId", getDerivativeTypeId());
+        props.put("DerivativeTypeId", getDerivativeTypeId());
         props.put("Lab", getLab());
         props.put("SampleType", getSampleType());
         props.put("SampleQuantity", getSampleQuantity());
@@ -247,38 +243,35 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
     {
         AssaySpecimenConfigImpl assay = new AssaySpecimenConfigImpl(container, o.getString("AssayName"), o.getString("Description"));
 
-        if (o.containsKey("RowId"))
+        if (o.has("RowId"))
             assay.setRowId(o.getInt("RowId"));
-
-        if (o.containsKey("DataSet") && o.get("DataSet") instanceof Integer && o.getInt("DataSet") > 0)
+        if (o.has("DataSet") && o.get("DataSet") instanceof Integer && o.getInt("DataSet") > 0)
             assay.setDataset(o.getInt("DataSet"));
-        if (o.containsKey("Source") && !StringUtils.isEmpty(o.getString("Source")))
+        if (o.has("Source") && !StringUtils.isEmpty(o.getString("Source")))
             assay.setSource(o.getString("Source"));
-        if (o.containsKey("LocationId") && o.get("LocationId") instanceof Integer && o.getInt("LocationId") > 0)
+        if (o.has("LocationId") && o.get("LocationId") instanceof Integer && o.getInt("LocationId") > 0)
             assay.setLocationId(o.getInt("LocationId"));
-        if (o.containsKey("TubeType") && !StringUtils.isEmpty(o.getString("TubeType")))
+        if (o.has("TubeType") && !StringUtils.isEmpty(o.getString("TubeType")))
             assay.setTubeType(o.getString("TubeType"));
-        if (o.containsKey("Lab") && !StringUtils.isEmpty(o.getString("Lab")))
+        if (o.has("Lab") && !StringUtils.isEmpty(o.getString("Lab")))
             assay.setLab(o.getString("Lab"));
-        if (o.containsKey("SampleType") && !StringUtils.isEmpty(o.getString("SampleType")))
+        if (o.has("SampleType") && !StringUtils.isEmpty(o.getString("SampleType")))
             assay.setSampleType(o.getString("SampleType"));
-        if (o.containsKey("SampleQuantity") && (o.get("SampleQuantity") instanceof Integer || o.get("SampleQuantity") instanceof Double) && o.getDouble("SampleQuantity") > 0)
+        if (o.has("SampleQuantity") && (o.get("SampleQuantity") instanceof Integer || o.get("SampleQuantity") instanceof Double) && o.getDouble("SampleQuantity") > 0)
             assay.setSampleQuantity(o.getDouble("SampleQuantity"));
-        if (o.containsKey("SampleUnits") && !StringUtils.isEmpty(o.getString("SampleUnits")))
+        if (o.has("SampleUnits") && !StringUtils.isEmpty(o.getString("SampleUnits")))
             assay.setSampleUnits(o.getString("SampleUnits"));
-        if (o.containsKey("PrimaryTypeId") && o.get("PrimaryTypeId") instanceof Integer)
+        if (o.has("PrimaryTypeId") && o.get("PrimaryTypeId") instanceof Integer)
             assay.setPrimaryTypeId(o.getInt("PrimaryTypeId"));
-        if (o.containsKey("DerivativeTypeId") && o.get("DerivativeTypeId") instanceof Integer)
+        if (o.has("DerivativeTypeId") && o.get("DerivativeTypeId") instanceof Integer)
             assay.setDerivativeTypeId(o.getInt("DerivativeTypeId"));
 
-        Object visitMapInfo = o.get("VisitMap");
-        if (visitMapInfo != null && visitMapInfo instanceof JSONArray)
+        JSONArray visitMapJSON = o.optJSONArray("VisitMap");
+        if (visitMapJSON != null)
         {
-            JSONArray visitMapJSON = (JSONArray) visitMapInfo;
-
             List<AssaySpecimenVisitImpl> assayVisitMap = new ArrayList<>();
-            for (int j = 0; j < visitMapJSON.length(); j++)
-                assayVisitMap.add(AssaySpecimenVisitImpl.fromJSON(visitMapJSON.getJSONObject(j), container));
+            for (JSONObject assaySpecimen : JsonUtil.toJSONObjectList(visitMapJSON))
+                assayVisitMap.add(AssaySpecimenVisitImpl.fromJSON(assaySpecimen, container));
 
             assay.setAssayVisitMap(assayVisitMap);
         }

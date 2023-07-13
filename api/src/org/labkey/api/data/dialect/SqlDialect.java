@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
@@ -65,6 +66,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * User: arauch
  * Date: Dec 28, 2004
@@ -100,7 +103,7 @@ public abstract class SqlDialect
         Set<String> types = _tableTypeMap.keySet();
         _tableTypes = types.toArray(new String[0]);
         _reservedWordSet = getReservedWords();
-        _stringHandler = createStringHandler();
+        // NOTE: do not call createStringHandler() here, it may depend on child member fields being initialized (they are not initialized yet!)
 
         MemTracker.getInstance().put(this);
     }
@@ -256,6 +259,10 @@ public abstract class SqlDialect
         addSqlTypeNames(_sqlTypeNameMap);
     }
 
+    protected Map<String, Integer> getSqlTypeNameMap()
+    {
+        return _sqlTypeNameMap;
+    }
 
     private void initializeSqlTypeIntMap()
     {
@@ -425,6 +432,11 @@ public abstract class SqlDialect
     // during bootstrap or upgrade.
     public void prepare(DbScope scope)
     {
+        synchronized (this)
+        {
+            // prepare code may have changed state that requires a new stringHandler
+            _stringHandler = null;
+        }
     }
 
     public abstract void prepareConnection(Connection conn) throws SQLException;
@@ -435,9 +447,16 @@ public abstract class SqlDialect
         return new StandardDialectStringHandler();
     }
 
-    public DialectStringHandler getStringHandler()
+    public synchronized DialectStringHandler getStringHandler()
     {
+        if (null == _stringHandler)
+            _stringHandler = createStringHandler();
         return _stringHandler;
+    }
+
+    public String quoteStringLiteral(String s)
+    {
+        return getStringHandler().quoteStringLiteral(s);
     }
 
     // Set of keywords returned by DatabaseMetaData.getMetaData() plus the SQL 2003 keywords
@@ -579,10 +598,34 @@ public abstract class SqlDialect
     // GroupConcat is usable as an aggregate function within a GROUP BY
     public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
     {
-        return getGroupConcat(sql, distinct, sorted, "','");
+        return getGroupConcat(sql, distinct, sorted, ",");
     }
 
-    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL);
+    /**
+     * GroupConcat is usable as an aggregate function within a GROUP BY
+     *
+     * @param sql
+     * @param distinct
+     * @param sorted
+     * @param delimiter Simple Java string to use as a delimiter (not SQL!)
+     * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
+     */
+    public final SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
+    {
+        SQLFragment delimiterFrag = new SQLFragment().appendStringLiteral(delimiter, this);
+        return getGroupConcat(sql, distinct, sorted, new SQLFragment(delimiterFrag));
+    }
+
+    /**
+     * GroupConcat is usable as an aggregate function within a GROUP BY
+     *
+     * @param sql
+     * @param distinct
+     * @param sorted
+     * @param delimiterSQL SQL expression to use as a delimiter
+     * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
+     */
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL);
 
     public abstract boolean supportsSelectConcat();
 
@@ -659,7 +702,7 @@ public abstract class SqlDialect
     public SQLFragment getDatePart(int part, SQLFragment value)
     {
         SQLFragment datePartExpr = new SQLFragment(value);
-        datePartExpr.setRawSQL(getDatePart(part, datePartExpr.getRawSQL()));
+        datePartExpr.setSqlUnsafe(getDatePart(part, datePartExpr.getRawSQL()));
         return datePartExpr;
     }
 
@@ -670,21 +713,21 @@ public abstract class SqlDialect
     public SQLFragment getDateTimeToDateCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL(getDateTimeToDateCast(cast.getRawSQL()));
+        cast.setSqlUnsafe(getDateTimeToDateCast(cast.getRawSQL()));
         return cast;
     }
 
     public SQLFragment getVarcharCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
+        cast.setSqlUnsafe( "CAST(" + cast.getRawSQL() + " AS " + getSqlCastTypeName(JdbcType.VARCHAR) + ")");
         return cast;
     }
 
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
+        cast.setSqlUnsafe("CAST(" + cast.getRawSQL() + " AS NUMERIC)");
         return cast;
     }
 
@@ -719,7 +762,7 @@ public abstract class SqlDialect
     /**
      * Wrap one or more INSERT statements to allow explicit specification
      * of values for auto-incrementing columns (e.g. IDENTITY in SQL Server
-     * or SERIAL in Postgres). The input StringBuffer is modified to
+     * or SERIAL in Postgres). The input StringBuilder is modified to
      * wrap the statements in dialect-specific code to allow this.
      *
      * @param statements the insert statements. If more than one,
@@ -739,6 +782,18 @@ public abstract class SqlDialect
     public boolean isSystemTable(String tableName)
     {
         return systemTableSet.contains(tableName);
+    }
+
+    // Default value for the "Schemas to Exclude" box on the test data source page
+    public @NotNull String getDefaultSchemasToExcludeFromTesting()
+    {
+        return "";
+    }
+
+    // Default value for the "Tables to Exclude" box on the test data source page
+    public @NotNull String getDefaultTablesToExcludeFromTesting()
+    {
+        return "";
     }
 
     public abstract boolean isSystemSchema(String schemaName);
@@ -849,7 +904,7 @@ public abstract class SqlDialect
 
     protected boolean isKeyword(SqlExecutor executor, String candidate)
     {
-        String sql = getIdentifierTestSql(candidate);
+        SQLFragment sql = getIdentifierTestSql(candidate);
 
         try
         {
@@ -881,14 +936,14 @@ public abstract class SqlDialect
         return 61;
     }
 
-    protected String getIdentifierTestSql(String candidate)
+    protected SQLFragment getIdentifierTestSql(String candidate)
     {
         String keyword = getTempTableKeyword();
         String name = getTempTablePrefix() + candidate;
 
-        return "SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
+        return SQLFragment.unsafe("SELECT " + candidate + " FROM (SELECT 1 AS " + candidate + ") x ORDER BY " + candidate + ";\n" +
                "CREATE " + keyword + " TABLE " + name + " (" + candidate + " VARCHAR(50));\n" +
-               "DROP TABLE " + name + ";";
+               "DROP TABLE " + name + ";");
     }
 
 
@@ -1127,7 +1182,7 @@ public abstract class SqlDialect
     // guaranteed to be valid or safe SQL!
     public String substituteParameters(SQLFragment frag)
     {
-        return _stringHandler.substituteParameters(frag);
+        return getStringHandler().substituteParameters(frag);
     }
 
 
@@ -1690,5 +1745,47 @@ public abstract class SqlDialect
     public boolean shouldTest()
     {
         return true;
+    }
+
+
+    public static class DialectTestCase
+    {
+        DbScope s;
+        SqlDialect d;
+
+        @Test
+        public void testScopes()
+        {
+            DbScope.getDbScopesToTest().forEach(scope ->
+            {
+                this.s = scope;
+                this.d = scope.getSqlDialect();
+                testDialectStringHandler();
+            });
+        }
+
+        void testEquals(String expected, SQLFragment sqlf)
+        {
+            try
+            {
+                assertEquals(expected, new SqlSelector(s, sqlf).getObject(String.class));
+            }
+            catch (AssertionError|Exception ae)
+            {
+                throw new AssertionError("Expected [" + expected + "] Failed for dialect " + d.getClass().getName() + " on scope " + s.getDatabaseUrl() + ": " + sqlf.toDebugString(), ae);
+            }
+        }
+
+        void testDialectStringHandler()
+        {
+            // quotes backslashes etc
+            for (String v : Arrays.asList("", "'", "\"", "\\", "''", "\\'", "\\\\'", "'''", "><&/%\\' \"1~\\!@$&'()\"_+{}-=[],.#\u2603\u00E4\u00F6\u00FC\u00C5"))
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v,d));
+
+            // test things that look like postgres escapes
+            //  https://www.postgresql.org/docs/15/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-ESCAPE
+            for (String v : Arrays.asList("\\b", "\\f", "\\n", "\\r", "\\t", "\\1", "\\22", "\\333", "\\xf", "\\x20", "\\1234", "\\U12345678"))
+                testEquals(v, new SQLFragment("SELECT ").appendStringLiteral(v, d));
+        }
     }
 }

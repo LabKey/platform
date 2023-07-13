@@ -785,9 +785,10 @@ public class ViewServlet extends HttpServlet
 
     public static boolean validChar(int ch)
     {
-        boolean allowRepacementChar = true;
-        // 0xFFFD is sometimes used as a substitute for an illegal sequence
-        return ch < 256 ? legal[ch] : (ch != 0xFFFD || allowRepacementChar) && Character.isDefined(ch) && (Character.isWhitespace(ch) || !Character.isISOControl(ch));
+        // 0xFFFD is sometimes used as a substitute for an illegal sequence, we allow it.
+        // All iso controls are < 256, so we don't need to check Character.isISOControl(ch) here.
+        // JVM uses >>> in "fast" test, good enough for me.
+        return ((ch >>> 8) == 0) ? legal[ch] : Character.isDefined(ch);
     }
 
     public static boolean validChars(CharSequence s)

@@ -72,6 +72,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -198,7 +199,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             return new SQLFragment("NULL");
         TableInfo ti = def.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT O.ObjectId FROM ").append(ti.getSelectName()).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
+        sql.append("SELECT O.ObjectId FROM ").append(ti).append(" SD JOIN exp.Object O ON SD.Lsid=O.ObjectURI WHERE O.container=?");
         sql.add(def.getContainer());
         return sql;
     }
@@ -535,7 +536,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain domain, DatasetDefinition def)
     {
         String name = datasetProperties.getName();
-        String label = datasetProperties.getLabel();
         String keyPropertyName = datasetProperties.getKeyPropertyName();
         Integer datasetId = datasetProperties.getDatasetId();
         boolean isManagedField = datasetProperties.isKeyPropertyManaged();
@@ -557,11 +557,22 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (name.length() > 200)
             throw new IllegalArgumentException("Dataset name must be under 200 characters.");
 
-        // issue 17766: check if dataset or query exist with this name
-        if ((!name.equals(domain.getName()) || def == null) && (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name)))
-            throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\".");
+        if (!name.equals(domain.getName()) || def == null)
+        {
+            // issue 17766: check if dataset or query exist with this name
+            if (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name))
+                throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name + "\".");
+
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), User.getSearchUser());
+
+            // Now check standard study tables
+            if (schema.getTableNames().contains(name))
+                throw new IllegalArgumentException("A study table exists with the name \"" + name + "\".");
+        }
 
         // Label related exceptions
+
+        String label = Objects.requireNonNullElse(datasetProperties.getLabel(), name); // Need to verify label uniqueness even if label is unspecified
 
         if ((def == null || !def.getLabel().equals(label)) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
             throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\".");

@@ -383,7 +383,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                         throw new AssayException("Linked Dataset Category name must be shorter than 200 characters.");
 
                     ExpProtocol protocol;
-                    if (assay.getProtocolId() == null)
+                    boolean isNew = assay.getProtocolId() == null;
+                    if (isNew)
                     {
                         // check for existing assay protocol with the given name before creating
                         if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
@@ -560,6 +561,9 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                         if (domainErrors.hasErrors())
                             throw domainErrors;
                     }
+
+                    if (assay.getExcludedContainerIds() != null && (!isNew || !assay.getExcludedContainerIds().isEmpty()))
+                        ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.AssayDesign, assay.getExcludedContainerIds(), protocol.getRowId(), getUser());
 
                     QueryService.get().updateLastModified();
                     transaction.commit();

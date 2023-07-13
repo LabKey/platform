@@ -64,6 +64,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private String autoLinkCategory;
     private Integer parentCol;
     private String category;
+    private List<String> excludedContainerIds;
 
     //Ignored on import/save, use Domain.name & Domain.description instead
     private String name;
@@ -226,4 +227,13 @@ public class SampleTypeDomainKindProperties implements Cloneable
         this.category = category;
     }
 
+    public List<String> getExcludedContainerIds()
+    {
+        return excludedContainerIds;
+    }
+
+    public void setExcludedContainerIds(List<String> excludedContainerIds)
+    {
+        this.excludedContainerIds = excludedContainerIds;
+    }
 }

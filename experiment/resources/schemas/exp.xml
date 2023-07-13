@@ -235,19 +235,17 @@
           <column columnName="LastIndexed"/>
           <column columnName="EntireListIndex"/>
           <column columnName="EntireListIndexSetting"/>
-          <column columnName="EntireListTitleSetting" />
           <column columnName="EntireListTitleTemplate"/>
           <column columnName="EntireListBodySetting" />
           <column columnName="EntireListBodyTemplate"/>
           <column columnName="EachItemIndex"/>
-          <column columnName="EachItemTitleSetting" />
           <column columnName="EachItemTitleTemplate"/>
           <column columnName="EachItemBodySetting" />
           <column columnName="EachItemBodyTemplate"/>
           <column columnName="FileAttachmentIndex"/>
       </columns>
   </table>
-    <table tableName="Material" tableDbType="TABLE">
+  <table tableName="Material" tableDbType="TABLE">
     <columns>
       <column columnName="RowId">
           <description>Contains the unique identifier for this sample</description>
@@ -296,12 +294,26 @@
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
       </column>
-      <column columnName="RecomputeRollup">
-          <isHidden>true</isHidden>
-          <isUserEditable>false</isUserEditable>
-          <shownInDetailsView>false</shownInDetailsView>
-          <shownInInsertView>false</shownInInsertView>
-          <shownInUpdateView>false</shownInUpdateView>
+      <column columnName="StoredAmount">
+          <columnTitle>Amount</columnTitle>
+          <description>The amount of this sample currently on hand</description>
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleSet/MetricUnit</property>
+                  <property name="amountField">StoredAmount</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
+      <column columnName="Units">
+          <description>The units associated with the StoredAmount for this sample</description>
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleSet/MetricUnit</property>
+                  <property name="alternateUnitsField">AliquotUnit</property>
+              </properties>
+          </displayColumnFactory>
       </column>
       <column columnName="AliquotCount">
           <columnTitle>Aliquots Created Count</columnTitle>
@@ -311,7 +323,21 @@
           <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="AliquotVolume">
-          <columnTitle>Aliquot Total Volume</columnTitle>
+          <columnTitle>Aliquot Total Amount</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AvailableAliquotCount">
+          <columnTitle>Available Aliquot Count</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AvailableAliquotVolume">
+          <columnTitle>Available Aliquot Amount</columnTitle>
           <isUserEditable>false</isUserEditable>
           <shownInDetailsView>false</shownInDetailsView>
           <shownInInsertView>false</shownInInsertView>
@@ -439,6 +465,11 @@
       </column>
         <column columnName="LastIndexed">
             <description>Contains the time this data class was last updated in the search index</description>
+            <isUserEditable>false</isUserEditable>
+            <isHidden>true</isHidden>
+        </column>
+        <column columnName="DataParentImportAliasMap">
+            <description>Column holds json serialized blob of aliases to dataclass parents used for import</description>
             <isUserEditable>false</isUserEditable>
             <isHidden>true</isHidden>
         </column>
@@ -994,10 +1025,29 @@
       <column columnName="RootMaterialLSID"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
-      <column columnName="RecomputeRollup"/>
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="AvailableAliquotCount"/>
+      <column columnName="AvailableAliquotVolume"/>
+      <column columnName="StoredAmount">
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="amountField">StoredAmount</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
+      <column columnName="Units">
+          <displayColumnFactory>
+              <className>org.labkey.api.data.measurement.UnitsDataColumn$Factory</className>
+              <properties>
+                  <property name="defaultUnitsField">SampleTypeUnits</property>
+                  <property name="alternateUnitsField">AliquotUnit</property>
+              </properties>
+          </displayColumnFactory>
+      </column>
       <column columnName="MaterialExpDate"/>
     </columns>
   </table>
@@ -1182,6 +1232,18 @@
                 </fk>
             </column>
             <column columnName="DataRowId"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="DataTypeExclusion" tableDbType="UNKNOWN">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="DataTypeRowId"/>
+            <column columnName="DataType"/>
+            <column columnName="ExcludedContainer" />
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>

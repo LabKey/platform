@@ -29,7 +29,9 @@ public class FolderArchiveDataTypes
     public static final String WEBPART_PROPERTIES_AND_LAYOUT = "Webpart properties and layout";
     public static final String CONTAINER_SPECIFIC_MODULE_PROPERTIES = "Container specific module properties";
     public static final String EXPERIMENTS_AND_RUNS = "Experiments, Protocols, and Runs";
-    public static final String LISTS = "Lists";
+    public static final String EXPERIMENT_RUNS = "Experiment Runs";
+    public static final String LIST_DESIGN = "List Designs";
+    public static final String LIST_DATA = "List Data";
     public static final String QUERIES = "Queries";
     public static final String GRID_VIEWS = "Grid Views";
     public static final String REPORTS_AND_CHARTS = "Reports and Charts";
@@ -43,7 +45,10 @@ public class FolderArchiveDataTypes
     public static final String FILES = "Files";
     public static final String FILE_BROWSER_SETTINGS = "File browser admin configurations";
     public static final String ETLS = "ETL Definitions";
-    public static final String SAMPLE_TYPES_AND_DATA_CLASSES = "Sample Types and Data Classes";
+    public static final String SAMPLE_TYPE_DESIGNS = "Sample Type Designs";
+    public static final String SAMPLE_TYPE_DATA = "Sample Type Data";
+    public static final String DATA_CLASS_DESIGNS = "Data Class Designs";
+    public static final String DATA_CLASS_DATA = "Data Class Data";
     public static final String INVENTORY = "Inventory locations and items";
     public static final String VIEW_CATEGORIES = "Categories";
 }

@@ -20,11 +20,14 @@ import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MethodInfo;
 import org.labkey.api.data.MutableColumnInfo;
@@ -45,7 +48,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.Pair;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 
@@ -59,6 +61,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS_NOT;
 
@@ -86,7 +89,10 @@ public abstract class Method
                     if (args.size() == 3)
                     {
                         QNode nodeInterval = args.get(2);
-                        TimestampDiffInterval i = TimestampDiffInterval.parse(nodeInterval.getTokenText());
+                        String text = nodeInterval.getTokenText();
+                        if (text.length() >= 2 && text.startsWith("'") && text.endsWith("'"))
+                            text = text.substring(1,text.length()-1);
+                        TimestampDiffInterval i = TimestampDiffInterval.parse(text);
                         if (!(i == TimestampDiffInterval.SQL_TSI_MONTH || i == TimestampDiffInterval.SQL_TSI_YEAR))
                         {
                             parseErrors.add(new QueryParseException("AGE function supports SQL_TSI_YEAR or SQL_TSI_MONTH", null,
@@ -235,7 +241,7 @@ public abstract class Method
                     }
                     className = param.substring(0,dot);
                     propertyName = param.substring(dot + 1);
-                    Class cls = Class.forName(className);
+                    Class<?> cls = Class.forName(className);
                     Field f = cls.getField(propertyName);
                     if (!Modifier.isStatic(f.getModifiers()) || !Modifier.isFinal(f.getModifiers()))
                         parseErrors.add(new QueryParseException(_name.toUpperCase() + "() field must be public static final: " + propertyName, null, line, column));
@@ -597,7 +603,7 @@ public abstract class Method
             SQLFragment[] arguments = argumentsIN.clone();
             if (arguments.length >= 1)
             {
-                TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[0].getSQL());
+                TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[0]);
                 if (i != null)
                     arguments[0] = new SQLFragment(i.name());
             }
@@ -619,11 +625,14 @@ public abstract class Method
         SQL_TSI_YEAR;
 
 
+        static TimestampDiffInterval parse(SQLFragment sqlf)
+        {
+            return parse(toSimpleString(sqlf));
+        }
+
         static TimestampDiffInterval parse(String s)
         {
             String interval = StringUtils.trimToEmpty(s).toUpperCase();
-            if (interval.length() >= 2 && interval.startsWith("'") && interval.endsWith("'"))
-                interval = interval.substring(1,interval.length()-1);
             if (!interval.startsWith("SQL_TSI"))
                 interval = "SQL_TSI_" + interval;
             try
@@ -724,11 +733,11 @@ public abstract class Method
             ret.append(")");                            
             return ret;
         }
+
+        /** This code could be avoided by making our parser a little smarter to handle the valid convert constants */
         String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
-            String typeName = StringUtils.trimToEmpty(typeSqlFragment.getSQL());
-            if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
-                typeName = typeName.substring(1,typeName.length()-1);
+            String typeName = toSimpleString(typeSqlFragment);
             if (typeName.startsWith("SQL_"))
                 typeName = typeName.substring(4);
             return typeName;
@@ -848,10 +857,10 @@ public abstract class Method
             SQLFragment scaled = new SQLFragment();
             scaled.append("(");
             scaled.append(arguments[0]);
-            scaled.append(")*").append(Math.pow(10,i));
+            scaled.append(")*").appendValue(Math.pow(10,i));
             SQLFragment ret = super.getSQL(dialect, new SQLFragment[] {scaled});
             ret.append("/");
-            ret.append(Math.pow(10,i));
+            ret.appendValue(Math.pow(10,i));
             return ret;
 		}
 	}
@@ -869,7 +878,7 @@ public abstract class Method
         {
             if (arguments.length == 2)
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
-            TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[2].getSQL());
+            TimestampDiffInterval i = TimestampDiffInterval.parse(arguments[2]);
             if (i == TimestampDiffInterval.SQL_TSI_YEAR)
                 return new AgeInYearsMethodInfo().getSQL(dialect, arguments);
             if (i == TimestampDiffInterval.SQL_TSI_MONTH)
@@ -968,7 +977,7 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             // try to turn second argument into pattern
-            SQLFragment pattern = escapeLikePattern(arguments[1], '!', null, "%");
+            SQLFragment pattern = escapeLikePattern(dialect, arguments[1], '!', null, "%");
             if (null != pattern)
             {
                 String like = dialect.getCaseInsensitiveLikeOperator();
@@ -1045,13 +1054,9 @@ public abstract class Method
         public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
-            ret.add(new Callable(){
-                @Override
-                public Object call()
-                {
-                    User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
-                    return null == user ? null : user.getUserId();
-                }
+            ret.add((Callable<Integer>) () -> {
+                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                return null == user ? null : user.getUserId();
             });
             return ret;
         }
@@ -1173,7 +1178,7 @@ public abstract class Method
                 String className = param.substring(0,dot);
                 String propertyName = param.substring(dot+1);
 
-                Class cls;
+                Class<?> cls;
                 try
                 {
                     cls = Class.forName(className);
@@ -1222,7 +1227,7 @@ public abstract class Method
     }
 
 
-    class ContextPathInfo extends AbstractMethodInfo
+    static class ContextPathInfo extends AbstractMethodInfo
     {
         ContextPathInfo()
         {
@@ -1239,7 +1244,7 @@ public abstract class Method
     }
 
 
-    class IsMemberInfo extends AbstractMethodInfo
+    static class IsMemberInfo extends AbstractMethodInfo
     {
         IsMemberInfo()
         {
@@ -1340,7 +1345,7 @@ public abstract class Method
     }
 
 
-    class OverlapsMethodInfo extends AbstractMethodInfo
+    static class OverlapsMethodInfo extends AbstractMethodInfo
     {
         OverlapsMethodInfo()
         {
@@ -1358,7 +1363,7 @@ public abstract class Method
         }
     }
 
-    class SimilarToMethodInfo extends AbstractMethodInfo
+    static class SimilarToMethodInfo extends AbstractMethodInfo
     {
         SimilarToMethodInfo()
         {
@@ -1400,21 +1405,19 @@ public abstract class Method
     }
 
 
-
-
-    public static SQLFragment escapeLikePattern(SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
+    /* passing in a non-null dialect allows for inlining strings literals */
+    public static SQLFragment escapeLikePattern(@Nullable SqlDialect d, SQLFragment f, char escapeChar, @Nullable String prepend, @Nullable String append)
     {
         if (!isSimpleString(f))
             return null;
-
+        String string = toSimpleString(f);
         String escapeChars = "_%[" + escapeChar;
-        SQLFragment esc = new SQLFragment();
+        StringBuilder esc = new StringBuilder();
 
-        esc.append("'");
         if (null != prepend)
             esc.append(prepend);
 
-        for (char c : f.getSQL().substring(1,f.length()-1).toCharArray())
+        for (char c : string.toCharArray())
         {
             if (-1 != escapeChars.indexOf(c))
                 esc.append(escapeChar);
@@ -1423,32 +1426,53 @@ public abstract class Method
 
         if (null != append)
             esc.append(append);
-        esc.append('\'');
 
-        return esc;
+        return new SQLFragment().appendValue(esc, d);
     }
 
 
+    /** NOTE: because of how our parser works, a bunch of random SQL keywords end up as strings.
+     * isSimpleString() and toSimpleString() can be used to "extract" those sequences.
+     * For instance "SQL_TSI_DAY"
+     * It would be better to parse these into QSqlKeyword or something like that, but we'd still have the
+     * problem of propagating these via SQLFragment.
+     */
     public static boolean isSimpleString(SQLFragment f)
     {
+        String s = f.getSQL();
+        // am I a simple bound parameter?
+        if ("?".equals(s) && f.getParams().size()==1)
+            return f.getParams().get(0) instanceof String;
         if (f.getParams().size() > 0)
             return false;
-        String s = f.getSQL();
-        if (s.length() < 2 || !s.startsWith("'"))
-            return false;
-        return s.length()-1 == s.indexOf('\'',1);
+        if (s.endsWith("::VARCHAR"))
+            s = s.substring(0, s.length()-"::VARCHAR".length());
+        // am I 'normal' SQL String with no embedded single-quotes?
+        if (s.length() >= 2 && s.startsWith("'"))
+            return s.length()-1 == s.indexOf('\'',1);
+        // am I a sqlserver N' string with no embedded single-quotes?
+        if (s.length() >= 3 && s.startsWith("N'"))
+            return s.length()-1 == s.indexOf('\'',2);
+        return false;
     }
 
-
+    /** see {@link #isSimpleString(SQLFragment)} */
     public static String toSimpleString(SQLFragment f)
     {
-        assert isSimpleString(f);
+        if (!isSimpleString(f))
+            throw new IllegalArgumentException(f.toDebugString());
         String s = f.getSQL();
-        if (s.length() < 2 || !s.startsWith("'"))
-            return s;
-        s = s.substring(1,s.length()-1);
-        s = StringUtils.replace(s,"''","'");
-        return s;
+        if ("?".equals(s) && f.getParams().size()==1)
+            return (String)f.getParams().get(0);
+        assert(s.startsWith("'") || s.startsWith("N'"));
+        assert(s.endsWith("'") || s.endsWith("'::VARCHAR"));
+        if (s.endsWith("::VARCHAR"))
+            s = s.substring(0, s.length()-"::VARCHAR".length());
+        if (s.startsWith("'"))
+            return s.substring(1,s.length()-1);
+        if (s.startsWith("N'"))
+            return s.substring(2,s.length()-1);
+        throw new IllegalArgumentException(f.toDebugString());
     }
 
 
@@ -1525,23 +1549,22 @@ public abstract class Method
             {
                 return new AbstractMethodInfo(JdbcType.VARCHAR)
                 {
-                    private final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
+                    private static final Set<String> ALLOWED_OPERATORS = Set.of("->", "->>", "#>", "#>>", "@>", "<@",
                             "?", "?|", "?&", "||", "-", "#-");
 
                     @Override
                     public SQLFragment getSQL(SqlDialect dialect, SQLFragment[] arguments)
                     {
                         SQLFragment rawOperator = arguments[1];
-                        String operatorRawString = rawOperator.getSQL();
-                        if (!rawOperator.getParams().isEmpty() || !operatorRawString.startsWith("'") || !operatorRawString.endsWith("'"))
+                        String strippedOperator = isSimpleString(rawOperator) ? toSimpleString(rawOperator) : null;
+                        if (StringUtils.isBlank(strippedOperator))
                         {
-                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                            throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
-                        String strippedOperator = operatorRawString.substring(1, operatorRawString.length() - 1);
                         if (!ALLOWED_OPERATORS.contains(strippedOperator))
                         {
-                            throw new QueryParseException("Unsupported JSON operator: " + rawOperator, null, 0, 0);
+                            throw new QueryParseException("Unsupported JSON operator: " + strippedOperator, null, 0, 0);
                         }
 
                         return new SQLFragment("(").append(arguments[0]).append(")").
@@ -1732,6 +1755,46 @@ public abstract class Method
                     return new SQLFragment("(").append(arguments[0]).append(")::").append(_targetType);
                 }
             };
+        }
+    }
+
+
+    public static class TestCase extends Assert
+    {
+        void assertIsSimpleString(String expected, SQLFragment s)
+        {
+            assertTrue(expected + " should be a simple string", isSimpleString(s));
+            assertEquals(expected, toSimpleString(s));
+        }
+        void assertNotSimpleString(SQLFragment s)
+        {
+            assertFalse(s.toDebugString() + " should not be a simple string", isSimpleString(s));
+        }
+
+        @Test
+        public void testSimpleStringIntended()
+        {
+            SqlDialect d = CoreSchema.getInstance().getSqlDialect();
+
+            // These are the simple cases that isSimpleString is intended to handle
+            // e.g SQL keywords and oeprators
+            for (var s : List.of("->", "->>", "#>", "#>>", "@>", "<@", "?", "?|", "?&", "||", "-", "#-", SQL_TSI_FRAC_SECOND.name()))
+            {
+                assertIsSimpleString(s, new SQLFragment().appendStringLiteral(s,d));
+                assertIsSimpleString(s, new SQLFragment("'" + s + "'"));
+                assertIsSimpleString(s, new SQLFragment("N'" + s + "'"));
+                assertIsSimpleString(s, new SQLFragment("'" + s + "'::VARCHAR"));
+                assertIsSimpleString(s, new SQLFragment("?").add(s));
+            }
+        }
+
+        @Test
+        public void testSimpleString()
+        {
+            assertNotSimpleString(new SQLFragment("test ?").add("param"));
+            assertNotSimpleString(new SQLFragment("?").add(5));
+            assertNotSimpleString(new SQLFragment("SELECT 'test'"));
+            assertNotSimpleString(new SQLFragment("'test''string'"));
         }
     }
 }

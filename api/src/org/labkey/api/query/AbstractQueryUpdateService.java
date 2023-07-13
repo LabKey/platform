@@ -125,7 +125,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      *   - attachments
      *
      *  If a subclass wants to disable some of these features (w/o subclassing), put flags here...
-    */
+     */
     protected boolean _enableExistingRecordsDataIterator = true;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
@@ -173,7 +173,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, ReadPermission.class))
@@ -213,7 +213,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return new TransactionAuditProvider.TransactionAuditEvent(container.getId(), auditAction, auditId);
     }
 
-    public static void addTransactionAuditEvent(DbScope.Transaction transaction,  User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
+    public static void addTransactionAuditEvent(DbScope.Transaction transaction, User user, TransactionAuditProvider.TransactionAuditEvent auditEvent)
     {
         UserSchema schema = AuditLogService.getAuditLogSchema(user, ContainerManager.getRoot());
 
@@ -243,7 +243,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /**
-     *  if QUS want to use something other than PKs to select existing rows for merge it can override this method
+     * if QUS want to use something other than PKs to select existing rows for merge it can override this method
      * Used only for generating  ExistingRecordDataIterator at the moment
      */
     protected Set<String> getSelectKeys(DataIteratorContext context)
@@ -267,7 +267,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             dib = ExistingRecordDataIterator.createBuilder(dib, getQueryTable(), getSelectKeys(context));
         }
 
-        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
+        dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
         return dib;
@@ -276,7 +276,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
     /**
      * Implementation to use insertRows() while we migrate to using DIB for all code paths
-     *
+     * <p>
      * DataIterator should/must use same error collection as passed in
      */
     @Deprecated
@@ -314,10 +314,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return 0;
     }
 
+    protected boolean hasImportRowsPermission(User user, Container container, DataIteratorContext context)
+    {
+        return hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class);
+    }
 
     protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        if (!hasPermission(user, context.getInsertOption().updateOnly ? UpdatePermission.class : InsertPermission.class))
+        if (!hasImportRowsPermission(user, container, context))
             throw new UnauthorizedException("You do not have permission to " + (context.getInsertOption().updateOnly ? "update data in this table." : "insert data into this table."));
 
         if (!context.getConfigParameterBoolean(ConfigParameters.SkipInsertOptionValidation))
@@ -329,7 +333,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
 
-        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers);
+        boolean skipTriggers = context.getConfigParameterBoolean(ConfigParameters.SkipTriggers) || context.isCrossTypeImport();
         boolean hasTableScript = hasTableScript(container);
         TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, user, extraScriptContext, context.getInsertOption().useImportAliases);
         if (!skipTriggers)
@@ -361,7 +365,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         else
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, null);
             return count;
         }
     }
@@ -411,15 +415,20 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
     }
 
-    /* can be used for simple book keeping tasks, per row processing belongs in a data iterator */
+    /* can be used for simple bookkeeping tasks, per row processing belongs in a data iterator */
     protected void afterInsertUpdate(int count, BatchValidationException errors)
     {}
 
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
+        return loadRows(user, container, rows, null, context, extraScriptContext);
+    }
+
+    public int loadRows(User user, Container container, DataIteratorBuilder rows, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
+    {
         configureDataIteratorContext(context);
-        int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
+        int count = _importRowsUsingDIB(user, container, rows, outputRows, context, extraScriptContext);
         afterInsertUpdate(count, context.getErrors());
         return count;
     }

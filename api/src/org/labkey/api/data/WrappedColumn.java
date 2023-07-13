@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.ExprColumn;
 
 /**
@@ -32,7 +33,7 @@ public class WrappedColumn extends ExprColumn
 
     public WrappedColumn(ColumnInfo col, String name)
     {
-        super(col.getParentTable(), name, col.getValueSql(ExprColumn.STR_TABLE_ALIAS), col.getJdbcType());
+        super(col.getParentTable(), name, null, col.getJdbcType());
         // Need to propagate if this is a special kind of column, like "entityid" or "userid"
         setSqlTypeName(col.getSqlTypeName());
         setCalculated(true);
@@ -55,4 +56,9 @@ public class WrappedColumn extends ExprColumn
         return _col.getValueSql(tableAlias);
     }
 
+    @Override
+    public @Nullable String getWrappedColumnName()
+    {
+        return _col != null ? _col.getName() : null;
+    }
 }

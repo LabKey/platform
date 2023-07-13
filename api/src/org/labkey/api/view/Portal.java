@@ -175,12 +175,12 @@ public class Portal implements ModuleChangeListener
 
         // Select all containers that are affected
         SQLFragment where = filter.getSQLFragment(Portal.getSqlDialect());
-        SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts().getSelectName()).append(" ").append(where);
+        SQLFragment selectContainers = new SQLFragment("SELECT DISTINCT Container FROM ").append(Portal.getTableInfoPortalWebParts()).append(" ").append(where);
         Collection<String> containersToClear = new SqlSelector(Portal.getSchema(), selectContainers).getCollection(String.class);
 
         // Clear the properties
         SQLFragment update = new SQLFragment("UPDATE ");
-        update.append(Portal.getTableInfoPortalWebParts().getSelectName());
+        update.append(Portal.getTableInfoPortalWebParts());
         update.append(" SET Properties = NULL ");
         update.append(where);
         new SqlExecutor(Portal.getSchema()).execute(update);
@@ -977,44 +977,46 @@ public class Portal implements ModuleChangeListener
         {
             // Try insert; SQL checks if pageId or index is already there and doesn't insert in those cases.
             List<String> insertColumns = new ArrayList<>();
-            SQLFragment insertSQL = new SQLFragment("INSERT INTO ");
+            ArrayList<Object> insertValues = new ArrayList<>();
 
             insertColumns.add("EntityId");
-            insertSQL.add(p.getEntityId());
+            insertValues.add(p.getEntityId());
             insertColumns.add("Container");
-            insertSQL.add(p.getContainer());
+            insertValues.add(p.getContainer());
             insertColumns.add("PageId");
-            insertSQL.add(p.getPageId());
+            insertValues.add(p.getPageId());
             insertColumns.add(legalIndexName);
-            insertSQL.add(p.getIndex());
+            insertValues.add(p.getIndex());
             insertColumns.add("Caption");
-            insertSQL.add(p.getCaption());
+            insertValues.add(p.getCaption());
             insertColumns.add("Hidden");
-            insertSQL.add(p.isHidden());
+            insertValues.add(p.isHidden());
             insertColumns.add("Type");
-            insertSQL.add(p.getType());
+            insertValues.add(p.getType());
             insertColumns.add("Action");
-            insertSQL.add(p.getAction());
+            insertValues.add(p.getAction());
             insertColumns.add("TargetFolder");
-            insertSQL.add(p.getTargetFolder());
+            insertValues.add(p.getTargetFolder());
             insertColumns.add("Permanent");
-            insertSQL.add(p.isPermanent());
+            insertValues.add(p.isPermanent());
             insertColumns.add("Properties");
-            insertSQL.add(p.getProperties());
+            insertValues.add(p.getProperties());
 
-            insertSQL.append(portalTable.getSelectName())
+            SQLFragment insertSQL = new SQLFragment("INSERT INTO ")
+                    .append(portalTable)
                     .append("\n(")
                     .append(StringUtils.join(insertColumns, ", "))
                     .append(")\n")
                     .append(" (SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?\n WHERE ? NOT IN (")
+                    .addAll(insertValues)
                     .add(p.getPageId())
                     .append("SELECT PageId FROM ")
-                    .append(portalTable.getSelectName())
+                    .append(portalTable)
                     .append(" WHERE Container = ? AND PageId = ?) AND\n")
                     .add(p.getContainer()).add(p.getPageId())
                     .append(" ? NOT IN (SELECT ").append(legalIndexName).append(" FROM ")
                     .add(p.getIndex())
-                    .append(portalTable.getSelectName())
+                    .append(portalTable)
                     .append(" WHERE Container = ?)")
                     .add(p.getContainer())
                     .append(getSqlDialect().isPostgreSQL() ? " FOR UPDATE)" : ")");
@@ -1026,12 +1028,12 @@ public class Portal implements ModuleChangeListener
             // Either we're only updating or insert found that pageId or index is already there.
             // If index is already there for a different page, update will update other fields, but not index.
             SQLFragment updateSQL = new SQLFragment("UPDATE ");
-            updateSQL.append(portalTable.getSelectName());
+            updateSQL.append(portalTable);
 
             SQLFragment indexSQL = new SQLFragment("CASE WHEN ? NOT IN\n(SELECT ");
             indexSQL.append(legalIndexName).append(" FROM ")
                     .add(p.getIndex())
-                    .append(portalTable.getSelectName())
+                    .append(portalTable)
                     .append(" WHERE Container = ? AND NOT (PageId = ?))\nTHEN ? ELSE ").append(legalIndexName).append(" END\n")
                     .add(p.getContainer()).add(p.getPageId()).add(p.getIndex());
 

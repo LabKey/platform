@@ -193,7 +193,7 @@ public class ListImporter
                 {
                     // four cases to handle
                     // delete rows that are not in import (true/false == !useMerge)
-                    // use data-diffing import strategery (true/false == DataIntegrationService is available)
+                    // use data-diffing import strategy (true/false == DataIntegrationService is available)
 
                     boolean deleteFromTarget = !_importContext.useMerge();
                     boolean tryDataDiffing = !supportAI && null != DataIntegrationService.get();
@@ -287,9 +287,9 @@ public class ListImporter
                                             sequence = "list." + sequence;
                                     }
 
-                                    SQLFragment keyupdate = new SQLFragment("SELECT setval('").append(sequence).append("'");
+                                    SQLFragment keyupdate = new SQLFragment("SELECT setval(").appendStringLiteral(sequence,dialect);
                                     keyupdate.append(", coalesce((SELECT MAX(").append(dialect.quoteIdentifier(def.getKeyName().toLowerCase())).append(")+1 FROM ").append(tableName);
-                                    keyupdate.append("), 1), false);");
+                                    keyupdate.append("), 1), false)");
                                     new SqlExecutor(ti.getSchema()).execute(keyupdate);
                                 }
 
@@ -399,7 +399,7 @@ public class ListImporter
         }
     }
 
-    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, Collection<ValidatorImporter> validatorImporters, List<String> errors) throws Exception
+    private boolean createNewList(Container c, User user, String listName, Collection<Integer> preferredListIds, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, Collection<ValidatorImporter> validatorImporters, List<String> errors, Logger log) throws Exception
     {
         final String keyName = listXml.getPkColumnName();
 
@@ -429,14 +429,12 @@ public class ListImporter
             list.setAllowExport(listSettingsXml.getAllowExport());
 
             list.setEachItemIndex(listSettingsXml.getEachItemIndex());
-            list.setEachItemTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEachItemTitleSetting()));
             list.setEachItemTitleTemplate(listSettingsXml.getEachItemTitleTemplate());
             list.setEachItemBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEachItemBodySetting()));
             list.setEachItemBodyTemplate(listSettingsXml.getEachItemBodyTemplate());
 
             list.setEntireListIndex(listSettingsXml.getEntireListIndex());
             list.setEntireListIndexSetting(ListDefinition.IndexSetting.getForValue(listSettingsXml.getEntireListIndexSetting()));
-            list.setEntireListTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEntireListTitleSetting()));
             list.setEntireListTitleTemplate(listSettingsXml.getEntireListTitleTemplate());
             list.setEntireListBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEntireListBodySetting()));
             list.setEntireListBodyTemplate(listSettingsXml.getEntireListBodyTemplate());
@@ -444,6 +442,14 @@ public class ListImporter
             list.setFileAttachmentIndex(listSettingsXml.getFileAttachmentIndex());
             if (listSettingsXml.getCategory() != null)
                 list.setCategory(ListDefinition.Category.valueOf(listSettingsXml.getCategory()));
+
+            // These settings have been ignored for years. Code remnants were removed for 23.7, Issue 48182.
+            // TODO: Remove these XSD elements and warnings in 25.7 or before.
+            if (listSettingsXml.isSetEntireListTitleSetting())
+                log.warn("List setting \"entireListTitleSetting\" is no longer supported; remove references to it in lists/settings.xml.");
+
+            if (listSettingsXml.isSetEachItemTitleSetting())
+                log.warn("List setting \"eachItemTitleSetting\" is no longer supported; remove references to it in lists/settings.xml.");
         }
 
         list.setPreferredListIds(preferredListIds);
@@ -513,11 +519,9 @@ public class ListImporter
             XmlObject listSettingsXml = listsDir.getXmlBean(ListWriter.SETTINGS_FILENAME);
 
             // Settings file is optional
-            if (listSettingsXml instanceof ListsDocument)
+            if (listSettingsXml instanceof ListsDocument listSettingsDoc)
             {
-                ListsDocument listSettingsDoc = (ListsDocument)listSettingsXml;
                 XmlBeansUtil.validateXmlDocument(listSettingsDoc, ListWriter.SETTINGS_FILENAME);
-
                 ListsDocument.Lists.List[] listArray = listSettingsDoc.getLists().getListArray();
 
                 // Create a name->list setting map
@@ -581,7 +585,7 @@ public class ListImporter
                 try
                 {
                     log.info("Recreating list: " + name);
-                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), validatorImporters, errors);
+                    boolean success = createNewList(c, user, name, preferredListIds, tableType, listSettingsMap.get(name), validatorImporters, errors, log);
                     assert success;
                 }
                 catch (ImportException e)

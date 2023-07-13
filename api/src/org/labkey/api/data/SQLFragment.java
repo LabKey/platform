@@ -23,10 +23,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -48,6 +50,8 @@ import java.util.stream.StreamSupport;
  */
 public class SQLFragment implements Appendable, CharSequence
 {
+    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "sqlfragment-disable-strict-checks";
+
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
@@ -57,7 +61,7 @@ public class SQLFragment implements Appendable, CharSequence
     // use ordered map to make sql generation more deterministic (see collectCommonTableExpressions())
     private LinkedHashMap<Object,CTE> commonTableExpressionsMap = null;
 
-    private class CTE implements Cloneable
+    private static class CTE
     {
         CTE(@NotNull String name)
         {
@@ -104,9 +108,18 @@ public class SQLFragment implements Appendable, CharSequence
         sql = "";
     }
 
-    public SQLFragment(CharSequence sql, @Nullable List<?> params)
+    public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        this.sql = sql.toString();
+        if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+            StringUtils.contains(charseq, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+        }
+
+        // allow statement separators
+        this.sql = charseq.toString();
         if (null != params)
             this.params = new ArrayList<>(params);
     }
@@ -126,7 +139,9 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(SQLFragment other, boolean deep)
     {
-        this(other.getSqlCharSequence(), other.params);
+        sql = other.getSqlCharSequence().toString();
+        if (null != other.params)
+            addAll(other.params);
         if (null != other.commonTableExpressionsMap && !other.commonTableExpressionsMap.isEmpty())
         {
             if (null == this.commonTableExpressionsMap)
@@ -154,13 +169,26 @@ public class SQLFragment implements Appendable, CharSequence
         return null != sb ? sb.toString() : null != sql ? sql : "";
     }
 
-    /* useful for wrapping existing SQL, for instance adding a cast
+    /*
+     * Directly set the current SQL.
+     *
+     * This is useful for wrapping existing SQL, for instance adding a cast
      * Obviously parameter number and order must remain unchanged
+     *
+     * This can also be used for processing sql scripts (e.g. module .sql update scripts)
      */
-    public void setRawSQL(String sql)
+    public SQLFragment setSqlUnsafe(String unsafe)
     {
-        sb = new StringBuilder(sql);
+        this.sql = unsafe;
+        this.sb = null;
+        return this;
     }
+
+    public static SQLFragment unsafe(String unsafe)
+    {
+        return new SQLFragment().setSqlUnsafe(unsafe);
+    }
+
 
     private String replaceCteTokens(String self, String select, List<Pair<String,CTE>> ctes)
     {
@@ -347,15 +375,53 @@ public class SQLFragment implements Appendable, CharSequence
     private StringBuilder getStringBuilder()
     {
         if (null == sb)
-            sb = new StringBuilder(sql);
+            sb = new StringBuilder(null==sql?"":sql);
         return sb;
     }
 
 
     @Override
-    public SQLFragment append(CharSequence s)
+    public SQLFragment append(CharSequence charseq)
     {
-        getStringBuilder().append(s);
+        if (null == charseq)
+            return this;
+
+        if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+            StringUtils.contains(charseq, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+        }
+
+        getStringBuilder().append(charseq);
+        return this;
+    }
+
+
+    /** Functionally the same as append(CharSequence).  This method just has different asserts */
+    public SQLFragment appendIdentifier(CharSequence charseq)
+    {
+        if (null == charseq)
+            return this;
+        String identifier = charseq.toString().strip();
+
+        boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
+        if ((StringUtils.countMatches(identifier, '\"') % 2) != 0 || (!quoted && StringUtils.containsAny(identifier, "*/\\'\"?;- \t\n")))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to incorrectly formatted");
+        }
+
+        getStringBuilder().append(charseq);
+        return this;
+    }
+
+
+    /** append End Of Statement */
+    public SQLFragment appendEOS()
+    {
+        getStringBuilder().append(";\n");
         return this;
     }
 
@@ -368,26 +434,123 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     /** Adds the container's ID as an in-line string constant to the SQL */
-    public SQLFragment append(@NotNull Container c)
+    public SQLFragment appendValue(Container c)
     {
-        String id = c.getId();
+        if (null == c)
+            return appendNull();
+        return appendValue(c, null);
+    }
+
+    public  SQLFragment appendValue(@NotNull Container c, SqlDialect dialect)
+    {
+        appendValue(c.getEntityId(), dialect);
         String name = c.getName();
-
-        if (StringUtils.containsAny(id,"*/'\"?"))
-            throw new IllegalStateException();
-
-        append("'").append(id).append("'");
-        if (!StringUtils.containsAny(name,"*/'\"?"))
-            append("/* ").append(c.getName()).append(" */");
+        if (!StringUtils.containsAny(name,"*/\\'\"?"))
+            append("/* ").append(name).append(" */");
         return this;
     }
 
-    /** Adds the object's toString() to the SQL */
-    public SQLFragment append(Object o)
+    public SQLFragment appendNull()
     {
-        getStringBuilder().append(o);
+        getStringBuilder().append("NULL");
         return this;
     }
+
+    public SQLFragment appendValue(Boolean B, @NotNull SqlDialect dialect)
+    {
+        if (null == B)
+            return appendNull();
+        getStringBuilder().append(B ? dialect.getBooleanTRUE() : dialect.getBooleanFALSE());
+        return this;
+    }
+
+    public SQLFragment appendValue(Integer I)
+    {
+        if (null == I)
+            return appendNull();
+        getStringBuilder().append((int)I);
+        return this;
+    }
+
+    public SQLFragment appendValue(Long L)
+    {
+        if (null == L)
+            return appendNull();
+        getStringBuilder().append((long)L);
+        return this;
+    }
+
+    public SQLFragment appendValue(Float F)
+    {
+        if (null == F)
+            return appendNull();
+        getStringBuilder().append((float)F);
+        return this;
+    }
+
+    public SQLFragment appendValue(Number N)
+    {
+        if (null == N)
+            return appendNull();
+        // Do we know that default java toString() for all numbers creates a valid SQL literal?
+        getStringBuilder().append(String.valueOf(N));
+        return this;
+    }
+
+    public final SQLFragment appendValue(java.util.Date d)
+    {
+        if (null == d)
+            return appendNull();
+        if (d.getClass() == java.util.Date.class)
+            getStringBuilder().append("{ts '").append(new Timestamp(d.getTime())).append("'}");
+        else if (d.getClass() == java.sql.Timestamp.class)
+            getStringBuilder().append("{ts '").append(d).append("'}");
+        else if (d.getClass() == java.sql.Date.class)
+            getStringBuilder().append("{d '").append(d).append("'}");
+        else
+            throw new IllegalStateException("Unexpected date type: " + d.getClass().getName());
+        return this;
+    }
+
+    public SQLFragment appendValue(GUID g)
+    {
+        return appendValue(g, null);
+    }
+
+    public SQLFragment appendValue(GUID g, SqlDialect d)
+    {
+        if (null == g)
+            return appendNull();
+        // doesn't need StringHandler, just hex and hyphen
+        String sqlGUID = "'" + g + "'";
+        // I'm testing dialect type, because some dialects do not support getGuidType(), and postgers uses VARCHAR anyway
+        if (null != d && d.isSqlServer())
+            getStringBuilder().append("CAST(").append(sqlGUID).append(" AS UNIQUEIDENTIFIER)");
+        else
+            getStringBuilder().append(sqlGUID);
+        return this;
+    }
+
+    public SQLFragment appendValue(Enum<?> e)
+    {
+        if (null == e)
+            return appendNull();
+        String name = e.name();
+        // Enum.name() usually returns a simple string (a legal java identifier), this is a paranoia check.
+        if (name.contains("'"))
+            throw new IllegalStateException();
+        getStringBuilder().append("'").append(name).append("'");
+        return this;
+    }
+
+    public SQLFragment append(FieldKey fk)
+    {
+        if (null == fk)
+            return appendNull();
+        append(String.valueOf(fk));
+        return this;
+    }
+
 
     /** Adds the object as a JDBC parameter value */
     public SQLFragment add(Object p)
@@ -398,18 +561,20 @@ public class SQLFragment implements Appendable, CharSequence
 
 
     /** Adds the objects as JDBC parameter values */
-    public void addAll(Collection<?> l)
+    public SQLFragment addAll(Collection<?> l)
     {
         getMutableParams().addAll(l);
+        return this;
     }
 
 
     /** Adds the objects as JDBC parameter values */
-    public void addAll(Object... values)
+    public SQLFragment addAll(Object... values)
     {
         if (values == null)
-            return;
+            return this;
         addAll(Arrays.asList(values));
+        return this;
     }
 
 
@@ -423,9 +588,9 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment append(SQLFragment f)
     {
         if (null != f.sb)
-            append(f.sb);
+            getStringBuilder().append(f.sb);
         else
-            append(f.sql);
+            getStringBuilder().append(f.sql);
         if (null != f.params)
             addAll(f.params);
         mergeCommonTableExpressions(f);
@@ -472,15 +637,15 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
 
-    /** use append(TableInfo, String alias) */
-    @Deprecated
+    /** see also append(TableInfo, String alias) */
     public SQLFragment append(TableInfo table)
     {
-        String s = table.getSelectName();
+        SQLFragment s = table.getSQLName();
         if (s != null)
             return append(s);
 
-        return append(table.getFromSQL(table.getName()));
+        String alias = table.getSqlDialect().makeLegalIdentifier(table.getName());
+        return append(table.getFromSQL(alias));
     }
 
     /** Add a table/query to the SQL with an alias, as used in a FROM clause */
@@ -497,18 +662,33 @@ public class SQLFragment implements Appendable, CharSequence
         return this;
     }
 
-    /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
-    public SQLFragment appendStringLiteral(@NotNull CharSequence s)
+    /** This is like appendValue(CharSequence s), but force use of literal syntax
+     * CAUTIONARY NOTE: String literals in PostgresSQL are tricky because of overloaded functions
+     *    array_agg('string') fails array_agg('string'::VARCHAR) works
+     *    json_object('{}) works json_object('string'::VARCHAR) fails
+     * In the case of json_object() it expects TEXT. Postgres  will promote 'json' to TEXT, but not 'json'::VARCHAR
+     */
+    public SQLFragment appendStringLiteral(CharSequence s, @NotNull SqlDialect d)
     {
-        if (StringUtils.contains(s,"'") || StringUtils.contains(s,"\\"))
-        {
-            append("?");
-            add(s.toString());
-            return this;
-        }
-        append("'");
-        append(s);
-        append("'");
+        if (null==s)
+            return appendNull();
+        getStringBuilder().append(d.getStringHandler().quoteStringLiteral(s.toString()));
+        return this;
+    }
+
+    /** Add to the SQL as either an in-line string literal or as a JDBC parameter depending on whether it would need escaping */
+    public SQLFragment appendValue(CharSequence s)
+    {
+        return appendValue(s, null);
+    }
+
+    public SQLFragment appendValue(CharSequence s, SqlDialect d)
+    {
+        if (null==s)
+            return appendNull();
+        if (null==d || s.length() > 200)
+            return append("?").add(s.toString());
+        appendStringLiteral(s, d);
         return this;
     }
 
@@ -530,6 +710,14 @@ public class SQLFragment implements Appendable, CharSequence
     /** Insert into the SQL */
     public void insert(int index, String str)
     {
+        if ((StringUtils.countMatches(str, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(str, '\"') % 2) != 0 ||
+            StringUtils.contains(str, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
+        }
+
         getStringBuilder().insert(index, str);
     }
 
@@ -582,20 +770,6 @@ public class SQLFragment implements Appendable, CharSequence
     public CharSequence subSequence(int start, int end)
     {
         return getSqlCharSequence().subSequence(start, end);
-    }
-
-    public SQLFragment appendIf(boolean test, CharSequence s)
-    {
-        if (test)
-            this.append(s);
-        return this;
-    }
-
-    public SQLFragment applyIf(boolean test, Consumer<SQLFragment> block)
-    {
-        if (test)
-            block.accept(this);
-        return this;
     }
 
     /**
@@ -665,14 +839,6 @@ public class SQLFragment implements Appendable, CharSequence
         cte.recursive = recursive;
     }
 
-    @Nullable
-    public String getCommonTableExpressionToken(Object key)
-    {
-        if (null == commonTableExpressionsMap)
-            commonTableExpressionsMap = new LinkedHashMap<>();
-        CTE cte = commonTableExpressionsMap.get(key);
-        return null != cte ? cte.token() : null;
-    }
 
     private void mergeCommonTableExpressions(SQLFragment sqlFrom)
     {
@@ -747,12 +913,18 @@ public class SQLFragment implements Appendable, CharSequence
 
             SQLFragment b = new SQLFragment("SELECT * FROM CTE WHERE y=?","xxyzzy");
             b.addCommonTableExpression(new Object(), "CTE", a);
-            assertEquals( "WITH\n/*CTE*/\n" +
-                    "\tCTE AS (SELECT a FROM b WHERE x=?)\n" +
-                    "SELECT * FROM CTE WHERE y=?", b.getSQL());
-            assertEquals( "WITH\n/*CTE*/\n" +
-                    "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
-                    "SELECT * FROM CTE WHERE y='xxyzzy'", filterDebugString(b.toDebugString()));
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tCTE AS (SELECT a FROM b WHERE x=?)
+                    SELECT * FROM CTE WHERE y=?""",
+                    b.getSQL());
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tCTE AS (SELECT a FROM b WHERE x=5)
+                    SELECT * FROM CTE WHERE y='xxyzzy'""",
+                    filterDebugString(b.toDebugString()));
             List<Object> params = b.getParams();
             assertEquals(2,params.size());
             assertEquals(5, params.get(0));
@@ -760,12 +932,18 @@ public class SQLFragment implements Appendable, CharSequence
 
 
             SQLFragment c = new SQLFragment(b);
-            assertEquals( "WITH\n/*CTE*/\n" +
-                    "\tCTE AS (SELECT a FROM b WHERE x=?)\n" +
-                    "SELECT * FROM CTE WHERE y=?", c.getSQL());
-            assertEquals( "WITH\n/*CTE*/\n" +
-                    "\tCTE AS (SELECT a FROM b WHERE x=5)\n" +
-                    "SELECT * FROM CTE WHERE y='xxyzzy'", filterDebugString(c.toDebugString()));
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tCTE AS (SELECT a FROM b WHERE x=?)
+                    SELECT * FROM CTE WHERE y=?""",
+                    c.getSQL());
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tCTE AS (SELECT a FROM b WHERE x=5)
+                    SELECT * FROM CTE WHERE y='xxyzzy'""",
+                    filterDebugString(c.toDebugString()));
             params = c.getParams();
             assertEquals(2,params.size());
             assertEquals(5, params.get(0));
@@ -778,28 +956,31 @@ public class SQLFragment implements Appendable, CharSequence
             String token = sqlf.addCommonTableExpression("KEY_A", "cte1", new SQLFragment("SELECT * FROM a"));
             sqlf.append("SELECT * FROM ").append(token).append(" _1");
 
-            assertEquals(
-                    "WITH\n/*CTE*/\n" +
-                    "\tcte1 AS (SELECT * FROM a)\n" +
-                    "SELECT * FROM cte1 _1",
-                sqlf.getSQL());
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tcte1 AS (SELECT * FROM a)
+                    SELECT * FROM cte1 _1""",
+                    sqlf.getSQL());
 
             SQLFragment sqlf2 = new SQLFragment();
             String token2 = sqlf2.addCommonTableExpression("KEY_A", "cte2", new SQLFragment("SELECT * FROM a"));
             sqlf2.append("SELECT * FROM ").append(token2).append(" _2");
-            assertEquals(
-                    "WITH\n/*CTE*/\n" +
-                            "\tcte2 AS (SELECT * FROM a)\n" +
-                            "SELECT * FROM cte2 _2",
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tcte2 AS (SELECT * FROM a)
+                    SELECT * FROM cte2 _2""",
                     sqlf2.getSQL());
 
             SQLFragment sqlf3 = new SQLFragment();
             String token3 = sqlf3.addCommonTableExpression("KEY_B", "cte3", new SQLFragment("SELECT * FROM b"));
             sqlf3.append("SELECT * FROM ").append(token3).append(" _3");
-            assertEquals(
-                    "WITH\n/*CTE*/\n" +
-                            "\tcte3 AS (SELECT * FROM b)\n" +
-                            "SELECT * FROM cte3 _3",
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tcte3 AS (SELECT * FROM b)
+                    SELECT * FROM cte3 _3""",
                     sqlf3.getSQL());
 
             SQLFragment union = new SQLFragment();
@@ -808,17 +989,18 @@ public class SQLFragment implements Appendable, CharSequence
             union.append(sqlf2);
             union.append("\nUNION\n");
             union.append(sqlf3);
-            assertEquals(
-                "WITH\n/*CTE*/\n" +
-                    "\tcte1 AS (SELECT * FROM a)\n" +
-                    ",/*CTE*/\n" +
-                    "\tcte3 AS (SELECT * FROM b)\n" +
-                    "SELECT * FROM cte1 _1\n" +
-                    "UNION\n" +
-                    "SELECT * FROM cte1 _2\n" +
-                    "UNION\n" +
-                    "SELECT * FROM cte3 _3",
-                union.getSQL());
+            assertEquals("""
+                    WITH
+                    /*CTE*/
+                    \tcte1 AS (SELECT * FROM a)
+                    ,/*CTE*/
+                    \tcte3 AS (SELECT * FROM b)
+                    SELECT * FROM cte1 _1
+                    UNION
+                    SELECT * FROM cte1 _2
+                    UNION
+                    SELECT * FROM cte3 _3""",
+                    union.getSQL());
         }
 
         @Test
@@ -831,9 +1013,11 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment b = new SQLFragment();
                 String cteToken = b.addCommonTableExpression(new Object(), "CTE", a);
                 b.append("SELECT * FROM ").append(cteToken).append(" WHERE p=?").add("parameterTWO");
-                assertEquals("WITH\n/*CTE*/\n" +
-                                "\tCTE AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)\n" +
-                                "SELECT * FROM CTE WHERE p='parameterTWO'",
+                assertEquals("""
+                        WITH
+                        /*CTE*/
+                        \tCTE AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
+                        SELECT * FROM CTE WHERE p='parameterTWO'""",
                         filterDebugString(b.toDebugString()));
                 assertEquals("parameterONE", b.getParams().get(0));
             }
@@ -843,17 +1027,18 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterTWO");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB = c.addCommonTableExpression(new Object(), "_B_", b);
+                String cteTokenB = c.addCommonTableExpression(new Object(), "B_", b);
                 c.append("SELECT * FROM ").append(cteTokenB).append(" WHERE i=?").add(3);
-                assertEquals("WITH\n" +
-                                "/*CTE*/\n" +
-                                "\t_A_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)\n" +
-                                ",/*CTE*/\n" +
-                                "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterTWO')\n" +
-                                "SELECT * FROM _B_ WHERE i=3",
+                assertEquals("""
+                        WITH
+                        /*CTE*/
+                        \tA_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
+                        ,/*CTE*/
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterTWO')
+                        SELECT * FROM B_ WHERE i=3""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(3, params.size());
@@ -867,20 +1052,21 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment a2 = new SQLFragment("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
-                String cteTokenA2 = c.addCommonTableExpression(new Object(), "_A2_", a2);
-                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
-                assertEquals("WITH\n" +
-                                "/*CTE*/\n" +
-                                "\t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
-                                ",/*CTE*/\n" +
-                                "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')\n" +
-                                ",/*CTE*/\n" +
-                                "\t_A2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)\n" +
-                                "SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i",
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression(new Object(), "A2_", a2);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
+                assertEquals("""
+                        WITH
+                        /*CTE*/
+                        \tA_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        ,/*CTE*/
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterB')
+                        ,/*CTE*/
+                        \tA2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)
+                        SELECT *, 4 as xyz FROM B_ B, A2_ A WHERE B.i=A.i""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
@@ -895,20 +1081,21 @@ public class SQLFragment implements Appendable, CharSequence
             {
                 SQLFragment cf = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "_A_", cf);
+                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "A_", cf);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
-                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "_A2_", cf);
-                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
-                assertEquals("WITH\n" +
-                                "/*CTE*/\n" +
-                                "\t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
-                                ",/*CTE*/\n" +
-                                "\t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')\n" +
-                                ",/*CTE*/\n" +
-                                "\t_A2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)\n" +
-                                "SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i",
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "A2_", cf);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
+                assertEquals("""
+                        WITH
+                        /*CTE*/
+                        \tA_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        ,/*CTE*/
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterB')
+                        ,/*CTE*/
+                        \tA2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        SELECT *, 4 as xyz FROM B_ B, A2_ A WHERE B.i=A.i""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
@@ -917,6 +1104,38 @@ public class SQLFragment implements Appendable, CharSequence
                 assertEquals("parameterAone", params.get(2));
                 assertEquals(4, params.get(3));
             }
+        }
+
+
+        private void shouldFail(Runnable r)
+        {
+            try
+            {
+                r.run();
+                if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    fail("Expected IllegalArgumentException");
+            }
+            catch (IllegalArgumentException e)
+            {
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    fail("Did not expect IllegalArgumentException");
+            }
+        }
+
+
+        @Test
+        public void testIllegalArgument()
+        {
+            shouldFail(() -> new SQLFragment(";"));
+            shouldFail(() -> new SQLFragment().append(";"));
+            shouldFail(() -> new SQLFragment("AND name='"));
+            shouldFail(() -> new SQLFragment().append("AND name = '"));
+            shouldFail(() -> new SQLFragment().append("AND name = 'Robert'); DROP TABLE Students; --"));
+
+            shouldFail(() -> new SQLFragment().appendIdentifier("column name"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("?"));
+            shouldFail(() -> new SQLFragment().appendIdentifier(";"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"column\"name\""));
         }
     }
 
@@ -967,4 +1186,14 @@ public class SQLFragment implements Appendable, CharSequence
 
         return new SQLFragment(sql, params);
     }
+
+
+
+    /* REMOVE THIS - These methods are going away, but this allows us to merge w/o doing 100 modules at the same time */
+    @Deprecated public SQLFragment append(@NotNull Container c) {return appendValue(c);}
+    @Deprecated public SQLFragment append(Integer i) {return appendValue(i);}
+    @Deprecated public SQLFragment append(java.util.Date date) {return appendValue(date);}
+//    @Deprecated public SQLFragment append(Object o) {return append(String.valueOf(o));}
+    @Deprecated public SQLFragment appendStringLiteral(CharSequence s) {return appendValue(s);}
+    /* END OF REMOVE THIS */
 }

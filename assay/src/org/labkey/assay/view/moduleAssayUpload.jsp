@@ -70,7 +70,7 @@ LABKEY.page.assay = <%=json(new JSONObject(assay), 2)%>;
  if (batchId > 0)
  {
     ExpExperiment batch = lookupBatch(batchId);
-    org.json.old.JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+    JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
     %>LABKEY.page.batch = new LABKEY.Exp.RunGroup(<%=json(batchJson, 2)%>);<%
  }
  else

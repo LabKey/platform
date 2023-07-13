@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
@@ -57,6 +58,7 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SampleStatusTable;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -88,6 +90,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+
+import static org.labkey.api.exp.api.ExpDataClass.NEW_DATA_CLASS_ALIAS_VALUE;
+import static org.labkey.api.exp.api.SampleTypeService.NEW_SAMPLE_TYPE_ALIAS_VALUE;
 
 public interface ExperimentService extends ExperimentRunTypeSource
 {
@@ -125,7 +130,17 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     enum QueryOptions
     {
-        UseLsidForUpdate
+        UseLsidForUpdate,
+        GetSampleRecomputeCol,
+        SkipBulkRemapCache,
+    }
+
+    enum DataTypeForExclusion
+    {
+        SampleType,
+        DataClass,
+        AssayDesign,
+        StorageLocation
     }
 
     @Nullable
@@ -234,11 +249,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
                                  List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
             throws ExperimentException;
 
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
+            throws ExperimentException;
+
     /**
      * Create a new DataClass with the provided domain properties and top level options.
      */
     ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField)
+                                            List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo, @Nullable List<String> disabledSystemField, @Nullable Map<String, String> importAliases)
             throws ExperimentException;
 
     /**
@@ -356,6 +375,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperiment getExpExperiment(String lsid);
 
+    List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds);
+
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
     ExpProtocol getExpProtocol(int rowid);
@@ -428,6 +449,50 @@ public interface ExperimentService extends ExperimentRunTypeSource
                ExpMaterial.MATERIAL_INPUT_PARENT.equalsIgnoreCase(prefix) ||
                ExpData.DATA_OUTPUT_CHILD.equalsIgnoreCase(prefix) ||
                ExpMaterial.MATERIAL_OUTPUT_CHILD.equalsIgnoreCase(prefix);
+    }
+    
+    static boolean parentAliasHasCorrectFormat(String parentAlias)
+    {
+        //check if it is of the expected format or targeting the to be created sample type or dataclass
+        if (!(ExperimentService.isInputOutputColumn(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias) || NEW_DATA_CLASS_ALIAS_VALUE.equals(parentAlias)))
+            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
+
+        return true;
+    }
+    
+    static void validateParentAlias(Map<String, String> aliasMap, Set<String> reservedNames, Set<String> existingAliases, GWTDomain updatedDomainDesign, String dataTypeNoun)
+    {
+        Set<String> dupes = new CaseInsensitiveHashSet();
+        aliasMap.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedValue = StringUtils.trimToNull(value);
+            if (trimmedKey == null)
+                throw new IllegalArgumentException("Import alias heading cannot be blank");
+
+            if (trimmedValue == null)
+            {
+                throw new IllegalArgumentException("You must specify a valid parent type for the import alias.");
+            }
+
+            if (reservedNames.contains(trimmedKey))
+            {
+                throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
+            }
+
+            if (updatedDomainDesign != null && !existingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
+            {
+                throw new IllegalArgumentException(String.format("An existing " + dataTypeNoun + " property conflicts with parent alias header: %1$s", trimmedKey));
+            }
+
+            if (!dupes.add(trimmedKey))
+            {
+                throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
+            }
+
+            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_TYPE_ALIAS_VALUE, or DataInput/<name> or NEW_DATA_CLASS_ALIAS_VALUE
+            if (!ExperimentService.parentAliasHasCorrectFormat(trimmedValue))
+                throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
+        });
     }
 
     /**
@@ -607,6 +672,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     TableInfo getTinfoEdge();
 
     TableInfo getTinfoObjectLegacyNames();
+
+    TableInfo getTinfoDataTypeExclusion();
 
     /**
      * Get all runs associated with these materials, including the source runs and any derived runs
@@ -877,6 +944,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
 
+    void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType);
+
+    void removeContainerDataTypeExclusions(String containerId);
+
+    @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
+
+    Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
+
+    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
+
+    void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+
+    String getDisabledDataTypeAuditMsg(ExperimentService.DataTypeForExclusion type, List<Integer> ids, boolean isUpdate);
+
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
     void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
@@ -932,6 +1013,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @return The number of edges removed.
      */
     int removeEdges(ExpLineageEdge.FilterOptions options);
+
+    int updateExpObjectContainers(TableInfo tableInfo, List<Integer> rowIds, Container targetContainer);
+
+    int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
+
+    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior);
+
+    int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
+
+    Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
+
+    int moveAuditEvents(Container targetContainer, List<String> runLsids);
 
     class XarExportOptions
     {

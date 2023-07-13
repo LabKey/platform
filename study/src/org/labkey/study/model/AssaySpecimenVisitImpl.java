@@ -16,7 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.AssaySpecimenVisit;
 
@@ -101,10 +101,10 @@ public class AssaySpecimenVisitImpl implements AssaySpecimenVisit
     public static AssaySpecimenVisitImpl fromJSON(@NotNull JSONObject o, Container container)
     {
         // AssaySpecimenId may not be specified in JSON
-        int assaySpecimenId = o.containsKey("AssaySpecimenId") ? o.getInt("AssaySpecimenId") : 0;
+        int assaySpecimenId = o.has("AssaySpecimenId") ? o.getInt("AssaySpecimenId") : 0;
         AssaySpecimenVisitImpl assaySpecimenVisit = new AssaySpecimenVisitImpl(container, assaySpecimenId, o.getInt("VisitId"));
 
-        if (o.containsKey("RowId"))
+        if (o.has("RowId"))
             assaySpecimenVisit.setRowId(o.getInt("RowId"));
 
         return assaySpecimenVisit;

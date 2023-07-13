@@ -16,12 +16,10 @@
 
 package org.labkey.experiment.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
@@ -39,10 +38,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -51,16 +52,23 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpMaterialRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.NameExpressionOptionService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
@@ -73,6 +81,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -80,7 +90,9 @@ import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
+import org.labkey.api.qc.SampleStatusService;
+import org.labkey.api.query.AbstractQueryUpdateService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -89,14 +101,19 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.experiment.SampleTypeAuditProvider;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -126,16 +143,20 @@ import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVEN
 import static org.labkey.api.data.CompareType.STARTS_WITH;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.data.NameGenerator.EXPERIMENTAL_WITH_COUNTER;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
+import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
+    public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
+
     // columns that may appear in a row when only the sample status is updating.
     public static final Set<String> statusUpdateColumns = Set.of(
             ExpMaterialTable.Column.Modified.name().toLowerCase(),
@@ -149,7 +170,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return (SampleTypeServiceImpl) SampleTypeService.get();
     }
 
-    private static final Logger LOG = LogManager.getLogger(SampleTypeServiceImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(SampleTypeServiceImpl.class, "Info about sample type operations");
 
     // SampleType -> Container cache
     private final Cache<String, String> sampleTypeCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleType to container");
@@ -220,6 +241,11 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return ExperimentServiceImpl.get().getTinfoProtocolInput();
     }
 
+    private TableInfo getTinfoMaterialAliasMap()
+    {
+        return ExperimentServiceImpl.get().getTinfoMaterialAliasMap();
+    }
+
     private DbSchema getExpSchema()
     {
         return ExperimentServiceImpl.get().getExpSchema();
@@ -250,7 +276,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoMaterialSource(), "ms")
-                .append(" WHERE ms.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" WHERE ms.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND ms.LSID = ?").add(sampleType.getLSID())
                 .append(" AND (ms.lastIndexed IS NULL OR ms.lastIndexed < ? OR (ms.modified IS NOT NULL AND ms.lastIndexed < ms.modified))")
                 .add(sampleType.getModified());
@@ -268,7 +294,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoMaterial(), "m")
-                .append(" WHERE m.LSID NOT LIKE '%:").append(StudyService.SPECIMEN_NAMESPACE_PREFIX).append("%'")
+                .append(" WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
                 .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
                 .add(sampleType.getModified());
@@ -477,7 +503,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public DataState getSampleState(Container container, Integer stateRowId)
     {
-        return DataStateManager.getInstance().getStateForRowId(container, stateRowId);
+        return SampleStatusService.get().getStateForRowId(container, stateRowId);
     }
 
     private ExpSampleTypeImpl _getSampleType(String lsid)
@@ -587,7 +613,9 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             executor.execute("UPDATE " + getTinfoProtocolInput() + " SET materialSourceId = NULL WHERE materialSourceId = ?", source.getRowId());
             executor.execute("DELETE FROM " + getTinfoMaterialSource() + " WHERE RowId = ?", rowId);
 
-            addSampleTypeAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+            addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
+
+            ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
 
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -616,9 +644,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         LOG.info("Deleted SampleType '" + source.getName() + "' from '" + c.getPath() + "' in " + timer.getDuration());
     }
 
-    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleTypeImpl sampleType, Long txAuditId, String auditUserComment)
+    private void addSampleTypeDeletedAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String auditUserComment)
     {
-        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), String.format("Sample Type deleted: %1$s", sampleType.getName()));
+        addSampleTypeAuditEvent(user, c, sampleType, txAuditId, String.format("Sample Type deleted: %1$s", sampleType.getName()),auditUserComment, "delete type");
+    }
+
+    private void addSampleTypeAuditEvent(User user, Container c, ExpSampleType sampleType, Long txAuditId, String comment, String auditUserComment, String insertUpdateChoice)
+    {
+        SampleTypeAuditProvider.SampleTypeAuditEvent event = new SampleTypeAuditProvider.SampleTypeAuditEvent(c.getId(), comment);
         event.setUserComment(auditUserComment);
 
         if (txAuditId != null)
@@ -629,7 +662,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSourceLsid(sampleType.getLSID());
             event.setSampleSetName(sampleType.getName());
         }
-        event.setInsertUpdateChoice("delete type");
+        event.setInsertUpdateChoice(insertUpdateChoice);
         AuditLogService.get().addEvent(user, event);
     }
 
@@ -651,36 +684,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     @NotNull
     @Override
-    public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, String nameExpression)
-            throws ExperimentException
-    {
-        return createSampleType(c,u,name,description,properties,indices,-1,-1,-1, -1, nameExpression, null);
-    }
-
-    @NotNull
-    @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {
         return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3,
-                parentCol, nameExpression, null, templateInfo, null, null, null, null, null, null);
+                parentCol, nameExpression, null, templateInfo, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
-                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category) throws ExperimentException
+                                              String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, autoLinkTargetContainer, autoLinkCategory, category, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField)
+                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField, @Nullable List<String> excludedContainerIds)
         throws ExperimentException
     {
         if (name == null)
@@ -818,7 +842,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
-        String importAliasJson = getAliasJson(importAliases, name);
+        String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid);
@@ -863,6 +887,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     domain.save(u);
                     st.save(u);
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+                    if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
+                        ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
@@ -880,50 +906,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         return st;
     }
-
-    public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
-    {
-        if (importAliases == null || importAliases.size() == 0)
-            return null;
-
-        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
-
-        try
-        {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(aliases);
-        }
-        catch (JsonProcessingException e)
-        {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
-    {
-        Map<String, String> cleanAliases = new HashMap<>();
-        importAliases.forEach((key, value) -> {
-            String trimmedKey = StringUtils.trimToNull(key);
-            String trimmedVal = StringUtils.trimToNull(value);
-
-            //Sanity check this should be caught earlier
-            if (trimmedKey == null || trimmedVal == null)
-                throw new IllegalArgumentException("Parent aliases contain blanks");
-
-            //Substitute the currentAliasName for the placeholder value
-            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
-                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
-            {
-                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
-            }
-
-            cleanAliases.put(trimmedKey, trimmedVal);
-        });
-
-        return cleanAliases;
-    }
-
 
     public enum SampleSequenceType
     {
@@ -988,6 +970,21 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         };
     }
 
+    @Override
+    public DbSequence getRootSampleSequence()
+    {
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+            return DbSequenceManager.getReclaimable(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0);
+
+        return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0, 100);
+    }
+
+    @Override
+    public long getRootSampleCount()
+    {
+        return new SqlSelector(ExperimentService.get().getSchema(),
+                "SELECT COUNT(*) FROM exp.material WHERE AliquotedFromLsid IS NULL").getObject(Long.class).longValue();
+    }
 
     @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
@@ -1071,17 +1068,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (hasNameChange)
                 ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
+            if (options != null && options.getExcludedContainerIds() != null)
+                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+
             if (!errors.hasErrors())
             {
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {
                     clearMaterialSourceCache(container);
 
-                    if (finalHasMetricUnitChanged && InventoryService.get() != null)
+                    if (finalHasMetricUnitChanged)
                     {
                         try
                         {
-                            InventoryService.get().recomputeSampleTypeRollup(st, container, true);
+                            recomputeSampleTypeRollup(st, container);
                         }
                         catch (SQLException e)
                         {
@@ -1095,16 +1095,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return errors;
-    }
-
-    @Override
-    public boolean parentAliasHasCorrectFormat(String parentAlias)
-    {
-        //check if it is of the expected format or targeting the to be created sample type
-        if (!(ExperimentService.isInputOutputColumn(parentAlias) || NEW_SAMPLE_TYPE_ALIAS_VALUE.equals(parentAlias)))
-            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
-
-        return true;
     }
 
     public String getCommentDetailed(QueryService.AuditAction action, boolean isUpdate)
@@ -1205,7 +1195,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return event;
     }
 
-    private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    private SampleTimelineAuditEvent createAuditRecord(Container container, String comment, String userComment, ExpMaterial sample, @Nullable Map<String, Object> metadata)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (getExpSchema().getScope().getCurrentTransaction() != null)
@@ -1221,6 +1211,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             event.setSampleType(type.getName());
             event.setSampleTypeId(type.getRowId());
         }
+        event.setUserComment(userComment);
         event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
         return event;
     }
@@ -1228,13 +1219,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata)
     {
-        AuditLogService.get().addEvent(user, createAuditRecord(container, comment, sample, metadata));
+        AuditLogService.get().addEvent(user, createAuditRecord(container, comment, userComment, sample, metadata));
     }
 
     @Override
     public void addAuditEvent(User user, Container container, String comment, String userComment, ExpMaterial sample, Map<String, Object> metadata, String updateType)
     {
-        SampleTimelineAuditEvent event = createAuditRecord(container, comment, sample, metadata);
+        SampleTimelineAuditEvent event = createAuditRecord(container, comment, userComment, sample, metadata);
         event.setInventoryUpdateType(updateType);
         AuditLogService.get().addEvent(user, event);
     }
@@ -1297,24 +1288,423 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return message + " " + operation.getDescription() + ".";
     }
 
-    private Collection<Integer> getNonAliquotParentsWithRecalcSql(String sampleTypeLsid, Container container) throws SQLException
+    @Override
+    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
-        SQLFragment sql = new SQLFragment(
-                """
-                        SELECT parent.rowId
-                        FROM exp.material AS parent
-                        WHERE parent.container = ?
-                            AND parent.RecomputeRollup = ?
-                            AND parent.lsid NOT IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE rootMaterialLsid IS NOT NULL)
-                            AND parent.cpastype = ?"""
-        );
+        Pair<Collection<Integer>, Collection<Integer>> parentsGroup = getAliquotParentsForRecalc(sampleType.getLSID(), container);
+        Collection<Integer> allParents = parentsGroup.first;
+        Collection<Integer> withAmountsParents = parentsGroup.second;
+        return recomputeSamplesRollup(allParents, withAmountsParents, sampleType.getMetricUnit(), container);
+    }
 
-        sql.add(container);
-        sql.add(true);
+    @Override
+    public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException
+    {
+        return recomputeSamplesRollup(sampleIds, sampleIds, sampleTypeMetricUnit, container);
+    }
+
+    public record AliquotAmountUnitResult(Double amount, String unit, boolean isAvailable) {}
+
+    public record AliquotAvailableAmountUnit(Double amount, String unit, Double availableAmount) {}
+
+    public int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    {
+        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
+    }
+
+    public int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    {
+        Map<Integer, String> sampleUnits = new HashMap<>();
+        TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
+        DbScope scope = materialTable.getSchema().getScope();
+
+        List<Integer> availableSampleStates = new ArrayList<>();
+
+        if (SampleStatusService.get().supportsSampleStatus())
+        {
+            for (DataState state: SampleStatusService.get().getAllProjectStates(container))
+            {
+                if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                    availableSampleStates.add(state.getRowId());
+            }
+        }
+
+        if (!parents.isEmpty())
+        {
+            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAliquotCounts(parents);
+            try (Connection c = scope.getConnection())
+            {
+                Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+                Parameter count = new Parameter("rollupCount", JdbcType.INTEGER);
+                ParameterMapStatement pm = new ParameterMapStatement(scope, c,
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
+
+                List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
+
+                ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
+                {
+                    for (Map.Entry<Integer, Pair<Integer, String>> sampleAliquotCount: sublist)
+                    {
+                        Integer sampleId = sampleAliquotCount.getKey();
+                        Integer aliquotCount = sampleAliquotCount.getValue().first;
+                        String sampleUnit = sampleAliquotCount.getValue().second;
+                        sampleUnits.put(sampleId, sampleUnit);
+
+                        rowid.setValue(sampleId);
+                        count.setValue(aliquotCount);
+
+                        pm.addBatch();
+                    }
+                    pm.executeBatch();
+                });
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+
+        if (!parents.isEmpty() || (availableParents != null && !availableParents.isEmpty()))
+        {
+            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAvailableAliquotCounts(availableParents == null ? parents : availableParents, availableSampleStates);
+            try (Connection c = scope.getConnection())
+            {
+                Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+                Parameter count = new Parameter("AvailableAliquotCount", JdbcType.INTEGER);
+                ParameterMapStatement pm = new ParameterMapStatement(scope, c,
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AvailableAliquotCount = ? WHERE RowId = ?").addAll(count, rowid), null);
+
+                List<Map.Entry<Integer, Pair<Integer, String>>> sampleAliquotCountList = new ArrayList<>(sampleAliquotCounts.entrySet());
+
+                ListUtils.partition(sampleAliquotCountList, 1000).forEach(sublist ->
+                {
+                    for (Map.Entry<Integer, Pair<Integer, String>> sampleAliquotCount: sublist)
+                    {
+                        Integer sampleId = sampleAliquotCount.getKey();
+                        Integer aliquotCount = sampleAliquotCount.getValue().first;
+                        String sampleUnit = sampleAliquotCount.getValue().second;
+                        sampleUnits.put(sampleId, sampleUnit);
+
+                        rowid.setValue(sampleId);
+                        count.setValue(aliquotCount);
+
+                        pm.addBatch();
+                    }
+                    pm.executeBatch();
+                });
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+
+        }
+
+        if (!withAmountsParents.isEmpty())
+        {
+            Map<Integer, List<AliquotAmountUnitResult>> samplesAliquotAmounts = getSampleAliquotAmounts(withAmountsParents, availableSampleStates);
+
+            try (Connection c = scope.getConnection())
+            {
+                Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+                Parameter amount = new Parameter("amount", JdbcType.DOUBLE);
+                Parameter unit = new Parameter("unit", JdbcType.VARCHAR);
+                Parameter availableAmount = new Parameter("availableAmount", JdbcType.DOUBLE);
+
+                ParameterMapStatement pm = new ParameterMapStatement(scope, c,
+                        new SQLFragment("UPDATE ").append(materialTable).append(" SET AliquotVolume = ?, AliquotUnit = ? , AvailableAliquotVolume = ? WHERE RowId = ? ").addAll(amount, unit, availableAmount, rowid), null);
+
+                List<Map.Entry<Integer, List<AliquotAmountUnitResult>>> sampleAliquotAmountsList = new ArrayList<>(samplesAliquotAmounts.entrySet());
+
+                ListUtils.partition(sampleAliquotAmountsList, 1000).forEach(sublist ->
+                {
+                    for (Map.Entry<Integer, List<AliquotAmountUnitResult>> sampleAliquotAmounts: sublist)
+                    {
+                        Integer sampleId = sampleAliquotAmounts.getKey();
+                        List<AliquotAmountUnitResult> aliquotAmounts = sampleAliquotAmounts.getValue();
+
+                        AliquotAvailableAmountUnit amountUnit = convertToDisplayUnits(aliquotAmounts, sampleTypeUnit, sampleUnits.get(sampleId));
+                        if (amountUnit == null)
+                            continue;
+
+                        rowid.setValue(sampleId);
+                        amount.setValue(amountUnit.amount);
+                        unit.setValue(amountUnit.unit);
+                        availableAmount.setValue(amountUnit.availableAmount);
+
+                        pm.addBatch();
+                    }
+                    pm.executeBatch();
+                });
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+        }
+
+        return parents.size() > 0 ? parents.size() : (availableParents != null ? availableParents.size() : withAmountsParents.size());
+    }
+
+    @Override
+    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws SQLException
+    {
+        Set<Integer> rootSamplesToRecalc = getRootSampleIdsFromParents(sampleType.getLSID(), parentLsids, parentNames);
+        return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
+    }
+
+    @Override
+    public int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
+    {
+        List<Integer> rootSamplesWithAvailableAliquot = getRootLsidsWithAvailableAliquots(sampleType.getLSID(), container);
+        if (rootSamplesWithAvailableAliquot.isEmpty())
+            return 0;
+
+        List<Integer> rootSamplesWithAliquotVolume = getRootSampleIdsWithAliquotVolume(sampleType.getLSID(), container);
+
+        Set<Integer> s1 = new HashSet<>(rootSamplesWithAvailableAliquot);
+        Set<Integer> s2 = new HashSet<>(rootSamplesWithAliquotVolume);
+        s1.retainAll(s2);
+        List<Integer> rootSamplesWithAvailableAliquotVolume = new ArrayList<>(s1);
+
+        return recomputeSamplesRollup(Collections.emptyList(), rootSamplesWithAvailableAliquot, rootSamplesWithAvailableAliquotVolume, sampleType.getMetricUnit(), container);
+    }
+
+    private List<Integer> getRootSampleIdsWithAliquotVolume(String sampleTypeLsid, Container container) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
+        sql.append(" WHERE root.cpastype = ")
+                .appendValue(sampleTypeLsid)
+                .append(" AND aliquotedfromlsid IS NULL ")
+                .append(" AND aliquotVolume > 0 ")
+                .append(" AND root.container = ")
+                .appendValue(container);
+
+        return new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private List<Integer> getRootLsidsWithAvailableAliquots(String sampleTypeLsid, Container container) throws SQLException
+    {
+        List<Integer> availableSampleStates = new ArrayList<>();
+
+        if (SampleStatusService.get().supportsSampleStatus())
+        {
+            for (DataState state: SampleStatusService.get().getAllProjectStates(container))
+            {
+                if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                    availableSampleStates.add(state.getRowId());
+            }
+        }
+
+        DbSchema dbSchema = getExpSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
+
+        SQLFragment inner = new SQLFragment("SELECT DISTINCT(rootmateriallsid) FROM exp.material ali");
+        inner.append(" WHERE ali.cpastype = ")
+                .appendValue(sampleTypeLsid)
+                .append(" AND ali.rootmateriallsid IS NOT NULL ")
+                .append(" AND ali.container = ")
+                .appendValue(container)
+                .append(" AND ali.SampleState ")
+                .appendInClause(availableSampleStates, dialect);
+
+        SQLFragment sql = new SQLFragment("SELECT rowid FROM exp.material root WHERE root.lsid IN (")
+                .append(inner)
+                .append(")");
+
+        return new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private Set<Integer> getRootSampleIdsFromParents(String sampleTypeLsid, Set<String> parentLsids, Set<String> parentNames) throws SQLException
+    {
+        Set<Integer> rootIds = new HashSet<>();
+        rootIds.addAll(getRootSampleIdsFromParentKeys(sampleTypeLsid, parentLsids, true));
+        rootIds.addAll(getRootSampleIdsFromParentKeys(sampleTypeLsid, parentNames, false));
+        return rootIds;
+    }
+
+    private Set<Integer> getRootSampleIdsFromParentKeys(String sampleTypeLsid, Set<String> parentKeys, boolean isLsid) throws SQLException
+    {
+        if (parentKeys == null || parentKeys.isEmpty())
+            return Collections.emptySet();
+
+        DbSchema exp = getExpSchema();
+        SqlDialect dialect = exp.getSqlDialect();
+
+        SQLFragment sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
+        sql.append(" WHERE root.cpastype = ?");
         sql.add(sampleTypeLsid);
+        sql.append(" AND root.lsid IN (SELECT distinct rootMaterialLsid FROM exp.material WHERE ");
+        sql.append(isLsid ? "LSID" : "Name");
+        sql.appendInClause(parentKeys, dialect);
+        sql.append(" )");
+
+        Set<Integer> rootIds = new HashSet<>();
+        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
+        {
+            while (rs.next())
+                rootIds.add(rs.getInt(1));
+        }
+
+        sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
+        sql.append(" WHERE root.cpastype = ? AND root.rootMaterialLsid IS NULL ");
+        sql.add(sampleTypeLsid);
+        sql.append(" AND root.");
+        sql.append(isLsid ? "LSID" : "Name");
+        sql.appendInClause(parentKeys, dialect);
+
+        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
+        {
+            while (rs.next())
+                rootIds.add(rs.getInt(1));
+        }
+
+        return rootIds;
+    }
+
+    private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
+    {
+        if (volumeUnits == null || volumeUnits.isEmpty())
+            return null;
+
+        String totalDisplayUnitStr = sampleTypeUnitsStr;
+        Measurement.Unit totalDisplayUnit = null;
+
+        if (StringUtils.isEmpty(totalDisplayUnitStr) && (sampleItemUnit != null))
+        {
+            // if sample type lacks unit, but the sample has a unit, use sample's unit
+            totalDisplayUnitStr = sampleItemUnit;
+        }
+
+        // if sample unit is empty, use 1st aliquot unit
+        if (StringUtils.isEmpty(totalDisplayUnitStr))
+        {
+            String aliquotUnit = volumeUnits.get(0).unit;
+            if (!StringUtils.isEmpty(aliquotUnit))
+                totalDisplayUnitStr = aliquotUnit;
+        }
+
+        if (!StringUtils.isEmpty(totalDisplayUnitStr))
+        {
+            try
+            {
+                totalDisplayUnit = Measurement.Unit.valueOf(totalDisplayUnitStr);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // do nothing; leave unit as null;
+            }
+        }
+
+        Double totalVolume = 0.0;
+        Double totalAvailableVolume = 0.0;
+
+        for (AliquotAmountUnitResult volumeUnit : volumeUnits)
+        {
+            Measurement.Unit unit = null;
+            try
+            {
+                double storedAmount = volumeUnit.amount;
+                String aliquotUnit = volumeUnit.unit;
+                boolean isAvailable = volumeUnit.isAvailable;
+
+                try
+                {
+                    unit = StringUtils.isEmpty(aliquotUnit) ? totalDisplayUnit : Measurement.Unit.valueOf(aliquotUnit);
+                }
+                catch (IllegalArgumentException ignore)
+                {
+                }
+
+                double convertedAmount = 0;
+                // include in total volume only if aliquot unit is compatible
+                if (totalDisplayUnit != null && totalDisplayUnit.isCompatible(unit))
+                    convertedAmount = unit.convertAmount(storedAmount, totalDisplayUnit);
+                else if (totalDisplayUnit == null) // sample (or 1st aliquot) unit is not a supported unit, or is blank
+                {
+                    if (StringUtils.isEmpty(totalDisplayUnitStr) && StringUtils.isEmpty(aliquotUnit)) //aliquot units are empty
+                        convertedAmount = storedAmount;
+                    else if (totalDisplayUnitStr != null && totalDisplayUnitStr.equalsIgnoreCase(aliquotUnit)) //aliquot units use the same no supported unit ('cc')
+                        convertedAmount = storedAmount;
+                }
+
+                totalVolume += convertedAmount;
+                if (isAvailable)
+                    totalAvailableVolume += convertedAmount;
+            }
+            catch (IllegalArgumentException ignore) // invalid volume
+            {
+
+            }
+        }
+
+        if (Double.compare(totalVolume, 0.0) == 0)
+        {
+            totalVolume = null;
+            totalDisplayUnit = null;
+        }
+
+        if (Double.compare(totalAvailableVolume, 0.0) == 0)
+        {
+            totalAvailableVolume = null;
+        }
+
+        return new AliquotAvailableAmountUnit(totalVolume, totalDisplayUnit == null ? null : totalDisplayUnit.name(), totalAvailableVolume);
+    }
+
+    public Pair<Collection<Integer>, Collection<Integer>> getAliquotParentsForRecalc(String sampleTypeLsid, Container container) throws SQLException
+    {
+        Collection<Integer> parents = getAliquotParents(sampleTypeLsid, container);
+        Collection<Integer> withAmountsParents = parents.isEmpty() ? Collections.emptySet() : getAliquotsWithAmountsParents(sampleTypeLsid, container);
+        return new Pair<>(parents, withAmountsParents);
+    }
+
+    private Collection<Integer> getAliquotParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
+    {
+        return getAliquotParents(sampleTypeLsid, false, container);
+    }
+
+    private Collection<Integer> getAliquotsWithAmountsParents(String sampleTypeLsid, Container container) throws IllegalStateException, SQLException
+    {
+        return getAliquotParents(sampleTypeLsid, true, container);
+    }
+
+    private SQLFragment getParentsOfAliquotsWithAmountsSql()
+    {
+        return new SQLFragment(
+    """
+        SELECT distinct parent.rowId, parent.cpastype
+        FROM exp.material AS aliquot
+        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+        WHERE aliquot.storedAmount IS NOT NULL AND\s
+        """);
+    }
+
+    private SQLFragment getParentsOfAliquotsSql()
+    {
+        return new SQLFragment(
+    """
+        SELECT distinct parent.rowId, parent.cpastype
+        FROM exp.material AS aliquot
+        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+        WHERE
+        """);
+    }
+
+    private Collection<Integer> getAliquotParents(String sampleTypeLsid, boolean withAmount, Container container) throws SQLException
+    {
+        DbSchema dbSchema = getExpSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
+
+        SQLFragment sql = withAmount ? getParentsOfAliquotsWithAmountsSql() : getParentsOfAliquotsSql();
+
+        sql.append("parent.cpastype = ?");
+        sql.add(sampleTypeLsid);
+        sql.append(" AND parent.container = ?");
+        sql.add(container.getId());
 
         Set<Integer> parentIds = new HashSet<>();
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
+        try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
         {
             while (rs.next())
                 parentIds.add(rs.getInt(1));
@@ -1323,46 +1713,412 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return parentIds;
     }
 
-    private int resetRecomputeFlagForNonParents(Collection<Integer> parentIds)
+    private Map<Integer, Pair<Integer, String>> getSampleAliquotCounts(Collection<Integer> sampleIds) throws SQLException
     {
-        if (!parentIds.isEmpty())
-        {
-            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
-            DbScope scope = tableInfo.getSchema().getScope();
+        DbSchema dbSchema = getExpSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
 
-            try (Connection c = scope.getConnection())
+        SQLFragment sql = new SQLFragment(
+                """
+                        SELECT m.RowId as SampleId, m.Units,
+                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+                        FROM exp.material AS m
+                        LEFT JOIN(
+                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
+                        FROM exp.material m2 GROUP BY RootMaterialLSID
+                        ) AS c ON m.lsid = c.rootLsid
+                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+        dialect.appendInClauseSql(sql, sampleIds);
+
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
+        {
+            while (rs.next())
             {
-                SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
-                        append(" SET RecomputeRollup = ? WHERE RowId ");
-                sql.add(false);
-                sql.appendInClause(parentIds, tableInfo.getSqlDialect());
-                new SqlExecutor(tableInfo.getSchema()).execute(sql);
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
+                int parentId = rs.getInt(1);
+                String sampleUnit = rs.getString(2);
+                int aliquotCount = rs.getInt(3);
+
+                sampleAliquotCounts.put(parentId, new Pair<>(aliquotCount, sampleUnit));
             }
         }
-        return parentIds.size();
+
+        return sampleAliquotCounts;
     }
 
-    // volumne/unit update events might have marked sample that is not an aliquot parent as need re-calc, which should be cleaned up
-    @Override
-    public int resetRecomputeFlagForNonParents(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
+    private Map<Integer, Pair<Integer, String>> getSampleAvailableAliquotCounts(Collection<Integer> sampleIds, Collection<Integer> availableSampleStates) throws SQLException
     {
-        Collection<Integer> parentIds = getNonAliquotParentsWithRecalcSql(sampleType.getLSID(), container);
-        return resetRecomputeFlagForNonParents(parentIds);
+        DbSchema dbSchema = getExpSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
+
+        SQLFragment sql = new SQLFragment(
+                """
+                        SELECT m.RowId as SampleId, m.Units,
+                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+                        FROM exp.material AS m
+                        LEFT JOIN(
+                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
+                        FROM exp.material m2
+                        WHERE m2.SampleState """)
+                .appendInClause(availableSampleStates, dialect)
+                .append("""
+                         GROUP BY RootMaterialLSID
+                        ) AS c ON m.lsid = c.rootLsid
+                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+        dialect.appendInClauseSql(sql, sampleIds);
+
+        Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
+        try (ResultSet rs = new SqlSelector(dbSchema, sql).getResultSet())
+        {
+            while (rs.next())
+            {
+                int parentId = rs.getInt(1);
+                String sampleUnit = rs.getString(2);
+                int aliquotCount = rs.getInt(3);
+
+                sampleAliquotCounts.put(parentId, new Pair<>(aliquotCount, sampleUnit));
+            }
+        }
+
+        return sampleAliquotCounts;
     }
+
+    private Map<Integer, List<AliquotAmountUnitResult>> getSampleAliquotAmounts(Collection<Integer> sampleIds, List<Integer> availableSampleStates) throws SQLException
+    {
+        DbSchema exp = getExpSchema();
+        SqlDialect dialect = exp.getSqlDialect();
+
+        SQLFragment sql = new SQLFragment(
+                """
+                    SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate
+                    FROM exp.material AS aliquot
+                    JOIN exp.material AS parent
+                    ON parent.lsid = aliquot.rootmateriallsid
+                    WHERE aliquot.rootmateriallsid IS NOT NULL AND parent.rowid\s
+                    """);
+        dialect.appendInClauseSql(sql, sampleIds);
+
+        Map<Integer, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new HashMap<>();
+
+        try (ResultSet rs = new SqlSelector(exp, sql).getResultSet())
+        {
+            while (rs.next())
+            {
+                int parentId = rs.getInt(1);
+                Double volume = rs.getDouble(2);
+                String unit = rs.getString(3);
+                int sampleState = rs.getInt(4);
+
+                if (!sampleAliquotAmounts.containsKey(parentId))
+                    sampleAliquotAmounts.put(parentId, new ArrayList<>());
+
+                sampleAliquotAmounts.get(parentId).add(new AliquotAmountUnitResult(volume, unit, availableSampleStates.contains(sampleState)));
+            }
+        }
+        // for any parents with no remaining aliquots, set the amounts to 0
+        for (Integer parentId : sampleIds)
+        {
+            if (!sampleAliquotAmounts.containsKey(parentId))
+            {
+                List<AliquotAmountUnitResult> aliquotAmounts = new ArrayList<>();
+                aliquotAmounts.add(new AliquotAmountUnitResult(0.0, null, false));
+                sampleAliquotAmounts.put(parentId, aliquotAmounts);
+            }
+        }
+
+        return sampleAliquotAmounts;
+    }
+
+    record FileFieldRenameData(ExpSampleType sampleType, String sampleName, String fieldName, File sourceFile, File targetFile) { }
 
     @Override
-    public long getRecomputeRollupRowCount(ExpSampleType sampleType, Container container)
+    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
     {
-        var s = DbSchema.get("exp", DbSchemaType.Module);
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT rowId FROM exp.material WHERE RecomputeRollup=" + s.getSqlDialect().getBooleanTRUE());
-        sql.append(" AND cpastype = ? AND container = ?");
-        sql.add(sampleType.getLSID());
-        sql.add(container);
-        return new SqlSelector(s, sql).getRowCount();
+        if (samples == null || samples.isEmpty())
+            throw new IllegalArgumentException("No samples provided to move operation.");
+
+        Map<ExpSampleType, List<ExpMaterial>> sampleTypesMap = new HashMap<>();
+        samples.forEach(sample ->
+            sampleTypesMap.computeIfAbsent(sample.getSampleType(), t -> new ArrayList<>()).add(sample));
+        Map<String, Integer> updateCounts = new HashMap<>();
+        updateCounts.put("samples", 0);
+        updateCounts.put("sampleAliases", 0);
+        updateCounts.put("sampleAuditEvents", 0);
+        Map<Integer, List<FileFieldRenameData>> fileMovesBySampleId = new HashMap<>();
+        ExperimentService expService = ExperimentService.get();
+
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            if (AuditBehaviorType.NONE != auditBehavior)
+            {
+                TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
+                auditEvent.setRowCount(samples.size());
+                AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
+            }
+
+            for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry: sampleTypesMap.entrySet())
+            {
+                ExpSampleType sampleType = entry.getKey();
+                SamplesSchema schema = new SamplesSchema(user, sampleType.getContainer());
+                TableInfo samplesTable = schema.getTable(sampleType, null);
+
+                List<ExpMaterial> typeSamples = entry.getValue();
+                List<Integer> sampleIds = typeSamples.stream().map(ExpMaterial::getRowId).toList();
+
+                // update for exp.material.container
+                updateCounts.put("samples", updateCounts.get("samples") + ContainerManager.updateContainer(getTinfoMaterial(), "rowid", sampleIds, targetContainer, user, true));
+
+                // update for exp.object.container
+                expService.updateExpObjectContainers(getTinfoMaterial(), sampleIds, targetContainer);
+
+                // update the paths to files associated with individual samples
+                fileMovesBySampleId.putAll(updateSampleFilePaths(sampleType, typeSamples, targetContainer, user));
+
+                // update for exp.materialaliasmap.container
+                updateCounts.put("sampleAliases", updateCounts.get("sampleAliases") + expService.aliasMapRowContainerUpdate(getTinfoMaterialAliasMap(), sampleIds, targetContainer));
+
+                // update inventory.item.container
+                InventoryService inventoryService = InventoryService.get();
+                if (inventoryService != null)
+                {
+                    Map<String, Integer> inventoryCounts = inventoryService.moveSamples(sampleIds, targetContainer, user);
+                    inventoryCounts.forEach((key, count) -> {
+                        updateCounts.compute(key, (k, c) -> c == null ? count : c + count);
+                    });
+                }
+
+                // create summary audit entries for the source and target containers
+                String samplesPhrase = StringUtilsLabKey.pluralize(sampleIds.size(), "sample");
+                addSampleTypeAuditEvent(user, sourceContainer, sampleType, transaction.getAuditId(),
+                        "Moved " + samplesPhrase + " to " + targetContainer.getPath(), userComment, "moved from project");
+                addSampleTypeAuditEvent(user, targetContainer, sampleType, transaction.getAuditId(),
+                        "Moved " + samplesPhrase  + " from " + sourceContainer.getPath(), userComment, "moved to project");
+
+                // move the events associated with the samples that have moved
+                SampleTimelineAuditProvider auditProvider = new SampleTimelineAuditProvider();
+                int auditEventCount = auditProvider.moveEvents(targetContainer, sampleIds);
+                updateCounts.compute("sampleAuditEvents", (k, c) -> c == null ? auditEventCount : c + auditEventCount );
+
+                AuditBehaviorType stAuditBehavior = samplesTable.getAuditBehavior(auditBehavior);
+                // create new events for each sample that was moved.
+                if (stAuditBehavior == AuditBehaviorType.DETAILED)
+                {
+                    for (ExpMaterial sample : typeSamples)
+                    {
+                        SampleTimelineAuditEvent event = createAuditRecord(targetContainer, "Sample project was updated.", userComment, sample, null);
+                        Map<String, Object> oldRecordMap = new HashMap<>();
+                        oldRecordMap.put("Project", sourceContainer.getName());
+                        Map<String, Object> newRecordMap = new HashMap<>();
+                        newRecordMap.put("Project", targetContainer.getName());
+                        if (fileMovesBySampleId.containsKey(sample.getRowId()))
+                        {
+                            fileMovesBySampleId.get(sample.getRowId()).forEach(fileUpdateData -> {
+                               oldRecordMap.put(fileUpdateData.fieldName, fileUpdateData.sourceFile.getAbsolutePath());
+                               newRecordMap.put(fileUpdateData.fieldName, fileUpdateData.targetFile.getAbsolutePath());
+                            });
+                        }
+                        event.setOldRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, oldRecordMap));
+                        event.setNewRecordMap(AbstractAuditTypeProvider.encodeForDataMap(targetContainer, newRecordMap));
+                        AuditLogService.get().addEvent(user, event);
+                    }
+                }
+            }
+
+            updateCounts.putAll(moveDerivationRuns(samples, targetContainer, user));
+
+            transaction.addCommitTask(() -> {
+                // update search index for moved samples via indexSampleType() helper, it filters for samples to index
+                // based on the modified date
+                for (ExpSampleType sampleType : sampleTypesMap.keySet())
+                    SampleTypeServiceImpl.get().indexSampleType(sampleType);
+            }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+
+            transaction.addCommitTask(() -> {
+                int fileMoveCount = 0;
+                for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
+                {
+                    for (FileFieldRenameData renameData : sampleFileRenameData)
+                    {
+                        if (moveFile(renameData))
+                            fileMoveCount++;
+                    }
+                }
+                updateCounts.put("sampleFiles", fileMoveCount);
+            }, POSTCOMMIT);
+
+            transaction.commit();
+        }
+
+        return updateCounts;
     }
 
+    private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        // collect unique runIds mapped to the samples that are moving that have that runId
+        Map<Integer, Set<ExpMaterial>> runIdSamples = new HashMap<>();
+        samples.forEach(sample -> {
+            if (sample.getRunId() != null)
+                runIdSamples.computeIfAbsent(sample.getRunId(), t -> new HashSet<>()).add(sample);
+        });
+        ExperimentService expService = ExperimentService.get();
+        // find the set of runs associated with samples that are moving
+        List<? extends ExpRun> runs = expService.getExpRuns(runIdSamples.keySet());
+        List<ExpRun> toUpdate = new ArrayList<>();
+        List<ExpRun> toSplit = new ArrayList<>();
+        for (ExpRun run : runs)
+        {
+            Set<Integer> outputIds = run.getMaterialOutputs().stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            Set<Integer> movingIds = runIdSamples.get(run.getRowId()).stream().map(ExpMaterial::getRowId).collect(Collectors.toSet());
+            if (movingIds.size() == outputIds.size() && movingIds.containsAll(outputIds))
+                toUpdate.add(run);
+            else
+                toSplit.add(run);
+        }
+
+        int updateCount = expService.moveExperimentRuns(toUpdate, targetContainer, user);
+        int splitCount = splitExperimentRuns(toSplit, runIdSamples, targetContainer, user);
+        return Map.of("sampleDerivationRunsUpdated", updateCount, "sampleDerivationRunsSplit", splitCount);
+    }
+
+    private int splitExperimentRuns(List<ExpRun> runs, Map<Integer, Set<ExpMaterial>> movingSamples, Container targetContainer, User user) throws ExperimentException, BatchValidationException
+    {
+        final ViewBackgroundInfo targetInfo = new ViewBackgroundInfo(targetContainer, user, null);
+        ExperimentServiceImpl expService = (ExperimentServiceImpl) ExperimentService.get();
+        int runCount = 0;
+        for (ExpRun run : runs)
+        {
+            ExpProtocolApplication sourceApplication = null;
+            ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+            boolean isAliquot = SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(run.getProtocol().getLSID());
+
+            Set<ExpMaterial> movingSet = movingSamples.get(run.getRowId());
+            int numStaying = 0;
+            Map<ExpMaterial, String> movingOutputsMap = new HashMap<>();
+            ExpMaterial aliquotParent = null;
+            // the derived samples (outputs of the run) are inputs to the output step of the run (obviously)
+            for (ExpMaterialRunInput materialInput : outputApp.getMaterialInputs())
+            {
+                ExpMaterial material = materialInput.getMaterial();
+                if (movingSet.contains(material))
+                {
+                    // clear out the run and source application so a new derivation run can be created.
+                    material.setRun(null);
+                    material.setSourceApplication(null);
+                    movingOutputsMap.put(material, materialInput.getRole());
+                }
+                else
+                {
+                    if (sourceApplication == null)
+                        sourceApplication = material.getSourceApplication();
+                    numStaying++;
+                }
+                if (isAliquot && aliquotParent == null && material.getAliquotedFromLSID() != null)
+                {
+                    aliquotParent = expService.getExpMaterial(material.getAliquotedFromLSID());
+                }
+            }
+
+            if (isAliquot && aliquotParent != null)
+            {
+                ExpRunImpl expRun = expService.createAliquotRun(aliquotParent, movingOutputsMap.keySet(), targetInfo);
+                expService.saveSimpleExperimentRun(expRun, run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), Collections.emptyMap(), targetInfo, LOG, false);
+                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                run.setName(ExperimentServiceImpl.getAliquotRunName(aliquotParent, numStaying));
+            }
+            else
+            {
+                // create a new derivation run for the samples that are moving
+                expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
+                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
+            }
+            run.save(user);
+            List<Integer> movingSampleIds = movingSet.stream().map(ExpMaterial::getRowId).toList();
+
+            outputApp.removeMaterialInputs(user, movingSampleIds);
+            if (sourceApplication != null)
+                sourceApplication.removeMaterialInputs(user, movingSampleIds);
+
+            runCount++;
+        }
+        return runCount;
+    }
+
+    // return the map of file renames
+    private Map<Integer, List<FileFieldRenameData>> updateSampleFilePaths(ExpSampleType sampleType, List<ExpMaterial> samples, Container targetContainer, User user)
+    {
+        Map<Integer, List<FileFieldRenameData>> sampleFileRenames = new HashMap<>();
+
+        FileContentService fileService = FileContentService.get();
+        if (fileService == null)
+        {
+            LOG.warn("No file service available. Sample files cannot be moved.");
+            return sampleFileRenames;
+        }
+
+        if (fileService.getFileRoot(targetContainer) == null)
+        {
+            LOG.warn("No file root found for target container " + targetContainer + "'. Files cannot be moved.");
+            return sampleFileRenames;
+        }
+
+        List<? extends DomainProperty> fileDomainProps = sampleType.getDomain()
+                .getProperties().stream()
+                .filter(prop -> PropertyType.FILE_LINK.getTypeUri().equals(prop.getRangeURI())).toList();
+        if (fileDomainProps.isEmpty())
+            return sampleFileRenames;
+
+        Map<Container, Boolean> hasFileRoot = new HashMap<>();
+        for (ExpMaterial sample : samples)
+        {
+            boolean hasSourceRoot = hasFileRoot.computeIfAbsent(sample.getContainer(), (container) -> fileService.getFileRoot(container) != null);
+            if (!hasSourceRoot)
+                LOG.warn("No file root found for source container " + sample.getContainer() + ". Files cannot be moved.");
+            else
+                for (DomainProperty fileProp : fileDomainProps )
+                {
+                    String sourceFileName = (String) sample.getProperty(fileProp);
+                    File updatedFile = FileContentService.get().getMoveTargetFile(sourceFileName, sample.getContainer(), targetContainer);
+                    if (updatedFile != null)
+                    {
+                        FileFieldRenameData renameData = new FileFieldRenameData(sampleType, sample.getName(), fileProp.getName(), new File(sourceFileName), updatedFile);
+                        fileService.fireFileMoveEvent(renameData.sourceFile, renameData.targetFile, user, targetContainer);
+                        sampleFileRenames.putIfAbsent(sample.getRowId(), new ArrayList<>());
+                        List<FileFieldRenameData> fieldRenameData = sampleFileRenames.get(sample.getRowId());
+                        fieldRenameData.add(renameData);
+                    }
+                }
+        }
+
+        return sampleFileRenames;
+    }
+
+    private boolean moveFile(FileFieldRenameData renameData)
+    {
+        if (!renameData.targetFile.getParentFile().exists())
+        {
+            if (!renameData.targetFile.getParentFile().mkdirs())
+            {
+                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                        renameData.targetFile.getParent(),
+                        renameData.sourceFile.getAbsolutePath(),
+                        renameData.sampleType.getName(),
+                        renameData.sampleName,
+                        renameData.fieldName));
+                return false;
+            }
+        }
+        if (!renameData.sourceFile.renameTo(renameData.targetFile))
+        {
+            LOG.warn(String.format("Rename of '%s' to '%s' for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.targetFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName));
+            return false;
+        }
+
+        return true;
+    }
 }

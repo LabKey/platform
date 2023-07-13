@@ -430,19 +430,20 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
         if (useOutputIntoTableVar || proposedVariable != null)
         {
-            sql.insert(0, "DECLARE @TableVar TABLE(" + columnName + " INTEGER);\n");
+            SQLFragment declareTableVar = new SQLFragment("DECLARE @TableVar TABLE(").appendIdentifier(columnName).append(" INTEGER)").appendEOS().append("\n");
+            sql.prepend(declareTableVar);
 
             if (null != proposedVariable)
             {
                 ret = "@" + proposedVariable;
 
                 // Note: Assume one row and one column for now
-                sql.append(";\nSELECT TOP 1 ").append(ret).append(" = ").append(columnName).append(" FROM @TableVar;");
+                sql.appendEOS().append("\nSELECT TOP 1 ").append(ret).append(" = ").append(columnName).append(" FROM @TableVar").appendEOS();
             }
             else
             {
                 // Note: Assume one row and one column for now
-                sql.append(";\nSELECT TOP 1 ").append(columnName).append(" FROM @TableVar;");
+                sql.appendEOS().append("\nSELECT TOP 1 ").append(columnName).append(" FROM @TableVar").appendEOS();
             }
         }
 
@@ -633,7 +634,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
@@ -733,7 +734,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         ret.insert(0, "SUBSTRING ((");
         ret.append(" FOR XML PATH ('')), ");
         // Trim off the first delimiter
-        ret.append(delimiter.length() + 1);
+        ret.appendValue(delimiter.length() + 1);
         // We want all the characters, so use a ridiculously long value to ensure that we don't truncate
         ret.append(", 2147483647)");
 
@@ -836,7 +837,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
-        cast.setRawSQL("CAST(" + cast.getRawSQL() + " AS FLOAT)");
+        cast.setSqlUnsafe("CAST(" + cast.getRawSQL() + " AS FLOAT)");
         return cast;
     }
 
@@ -915,7 +916,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public String getAnalyzeCommandForTable(String tableName)
     {
-        return "UPDATE STATISTICS " + tableName + ";";
+        return "UPDATE STATISTICS " + tableName;
     }
 
     @Override
@@ -1156,7 +1157,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
             fkString.append(constraintName).append(" FOREIGN KEY (")
                     .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(tableInfo).append(" (")
                     .append(foreignKey.getForeignColumnName()).append(")");
             createTableSqlParts.add(fkString.toString());
         }
@@ -1799,7 +1800,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         // RDS doesn't allow executing sp_updatestats, so just skip it for now, part of #35805.
         // In the future, we may want to integrate with something like SQL Maintenance Solution tool,
         // https://ola.hallengren.com/sql-server-index-and-statistics-maintenance.html
-        return DbScope.getLabKeyScope().isRds() ? null : "EXEC sp_updatestats;";
+        return DbScope.getLabKeyScope().isRds() ? null : "EXEC sp_updatestats";
     }
 
 

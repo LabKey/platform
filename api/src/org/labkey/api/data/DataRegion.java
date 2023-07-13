@@ -23,14 +23,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -46,10 +49,12 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
@@ -268,7 +273,7 @@ public class DataRegion extends DisplayElement
         _messageSuppliers.add(supplier);
     }
 
-    public void addDisplayColumn(DisplayColumn col)
+    public void addDisplayColumn(@NotNull  DisplayColumn col)
     {
         assert null != col;
         if (null == col)
@@ -278,7 +283,7 @@ public class DataRegion extends DisplayElement
             col.setInputPrefix(_inputPrefix);
     }
 
-    public void addDisplayColumn(int index, DisplayColumn col)
+    public void addDisplayColumn(int index, @NotNull DisplayColumn col)
     {
         assert null != col;
         if (null == col)
@@ -294,6 +299,7 @@ public class DataRegion extends DisplayElement
             addDisplayColumn(displayColumn);
     }
 
+    /* We don't want callers to modify this list directly.  However, this is the only way for subclasses to modify the list */
     public List<DisplayColumn> getDisplayColumns()
     {
         return _displayColumns;
@@ -342,6 +348,11 @@ public class DataRegion extends DisplayElement
 
     public void setDisplayColumns(List<DisplayColumn> displayColumns)
     {
+        /** NOTE - the cleaner thing to do here would be
+         *         clearColumns();
+         *         displayColumns.forEach(this::addDisplayColumn);
+         * however, this breaks MS2 which seems to do funny things with nested RenderContexts
+         */
         _displayColumns = displayColumns;
         if (null != _inputPrefix)
             for (DisplayColumn dc : _displayColumns)
@@ -1325,7 +1336,7 @@ public class DataRegion extends DisplayElement
      */
     protected List<DisplayColumn> getColumnsForMetadata()
     {
-        return getDisplayColumns();
+        return Collections.unmodifiableList(getDisplayColumns());
     }
 
     protected JSONObject toJSON(RenderContext ctx)
@@ -3029,5 +3040,44 @@ public class DataRegion extends DisplayElement
     protected boolean useTableWrap()
     {
         return true;
+    }
+
+
+
+    public static class TestCase extends Assert
+    {
+        // test that we aren't generating extraneous joins to core.container
+        @Test
+        public void testNoContainerJoin() throws Exception
+        {
+            var table = DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer())
+                    .getSchema("wiki")
+                    .getTable("CurrentWikiVersions");
+            ViewContext context = HttpView.getRootContext();
+
+            {
+                var dr = new DataRegion();
+                dr.setColumns(List.of(table.getColumn("Title"), table.getColumn("Container")));
+                try (Results rs = dr.getResults(new RenderContext(context)))
+                {
+                    assertEquals(4, rs.getFieldMap().size());
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Title")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Container")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Container", "DisplayName")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
+                }
+            }
+
+            {
+                var dr = new DataRegion();
+                dr.setColumns(List.of(table.getColumn("Title")));
+                try (Results rs = dr.getResults(new RenderContext(context)))
+                {
+                    assertEquals(2, rs.getFieldMap().size());
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("Title")));
+                    assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
+                }
+            }
+        }
     }
 }

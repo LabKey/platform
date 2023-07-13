@@ -1,6 +1,7 @@
 package org.labkey.study.writer;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
@@ -23,5 +24,11 @@ public class SampleTypeDatasetData implements InternalStudyWriter
     public boolean includeWithTemplate()
     {
         return false;
+    }
+
+    @Override
+    public boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+    {
+        return !forTemplate;
     }
 }

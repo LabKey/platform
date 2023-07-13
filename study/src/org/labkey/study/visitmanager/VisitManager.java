@@ -685,7 +685,7 @@ public abstract class VisitManager
         ptids.append(tableSpecimen, "_specimens_");
 
         SQLFragment ptidsP = new SQLFragment();
-        ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant.getSelectName()).append(" WHERE Container = ?");
+        ptidsP.append("SELECT ParticipantId FROM ").append(tableParticipant).append(" WHERE Container = ?");
         ptidsP.add(c);
         // Databases limit the size of IN clauses, so check that we won't blow the cap
         if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
@@ -696,7 +696,7 @@ public abstract class VisitManager
         }
 
         SQLFragment del = new SQLFragment();
-        del.append("DELETE FROM ").append(tableParticipant.getSelectName());
+        del.append("DELETE FROM ").append(tableParticipant);
         del.append("\nWHERE Container = ? ");
         del.add(c);
         del.append("AND ParticipantId IN\n");

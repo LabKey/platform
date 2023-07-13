@@ -102,10 +102,6 @@ import java.util.stream.Collectors;
  *
  * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically by JDK 7's try {}
  * resource handling.
- *
- * User: migra
- * Date: Nov 16, 2005
- * Time: 10:20:54 AM
  */
 public class DbScope
 {
@@ -121,7 +117,7 @@ public class DbScope
     private static volatile DbScope _labkeyScope = null;
 
     private final DbScopeLoader _dbScopeLoader;
-    private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
+    private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS data sources
     private final String _databaseProductName;
     private final String _databaseProductVersion;
     private final String _driverName;
@@ -1186,9 +1182,13 @@ public class DbScope
 
     private static List<String> getSchemaNames(Module module, boolean useCache)
     {
-        return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
+        return
+        (
+            useCache ?
+                SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream() :
+                SchemaXmlCacheHandler.getSchemaFilenames(module)
+        )
             .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-            .sorted()
             .toList();
     }
 
@@ -1549,7 +1549,7 @@ public class DbScope
         {
             if (i > 0)
             {
-                LOG.error("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
+                LOG.warn("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
 
                 try
                 {
@@ -1557,7 +1557,7 @@ public class DbScope
                 }
                 catch (InterruptedException e)
                 {
-                    LOG.error("ensureDataBase", e);
+                    LOG.warn("ensureDataBase", e);
                 }
             }
 
@@ -1582,8 +1582,8 @@ public class DbScope
                 }
                 else
                 {
-                    LOG.error("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
-                    LOG.error("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
+                    LOG.warn("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
+                    LOG.warn("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
                     lastException = e;
                 }
             }
@@ -1730,7 +1730,7 @@ public class DbScope
     {
         return getLoaders().stream()
             .map(DbScopeLoader::getDsName)
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(LinkedHashSet::new)); // Keep them in labkey.xml order for schema browser, etc.
     }
 
     /**
@@ -2184,6 +2184,7 @@ public class DbScope
             _conn = conn;
             _transactionKind = transactionKind;
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
+            MemTracker.get().put(this);
         }
 
         @Override @Nullable
@@ -2576,7 +2577,7 @@ public class DbScope
 
             SQLFragment query = new SQLFragment("SELECT\n");
             query.append("  COUNT(*) AS NumRows,\n");
-            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, dialect.getStringHandler().quoteStringLiteral(delimiter))).append(" AS StrVals\n");
+            query.append("  ").append(dialect.getGroupConcat(new SQLFragment("StrVal"), distinct, sorted, delimiter)).append(" AS StrVals\n");
             query.append("FROM (\n");
             query.append("  VALUES\n");
             query.append("  (1, 'x'),\n");

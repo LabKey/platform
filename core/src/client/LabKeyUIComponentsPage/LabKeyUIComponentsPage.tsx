@@ -45,7 +45,6 @@ import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './const
 import { QueriesListingPage } from "./QueriesListingPage";
 import { EditableGridPage } from "./EditableGridPage";
 import { DetailPage } from "./DetailPage";
-import { SampleInsertPage } from './SampleInsertPage';
 import { AssayImportPage } from "./AssayImportPage";
 import { LineagePage } from "./LineagePage";
 import { UserProfilePage } from "./UserProfilePage";
@@ -63,8 +62,6 @@ const COMPONENT_NAMES = List<SelectInputOption>([
     {value: 'DetailPanel'},
     {value: 'EditableDetailPanel'},
     {value: 'EditableGridPanel'},
-    {value: 'EntityInsertPanel'},
-    {value: 'EntityInsertPanelForUpdate'},
     {value: 'FileAttachmentForm'},
     {value: 'Grid'},
     {value: 'GridPanel'},
@@ -273,18 +270,7 @@ export class App extends React.Component<any, State> {
                 {selected === 'EditableGridPanel' &&
                     <EditableGridPage/>
                 }
-                {selected === 'EntityInsertPanel' &&
-                    this.renderPanel('EntityInsertPanel',
-                        <SampleInsertPage/>
-                    )
-                }
-                {selected === 'EntityInsertPanelForUpdate' &&
-                    this.renderPanel('EntityInsertPanel',
-                        <SampleInsertPage isUpdate={true}/>
-                    )
-                }
-
-                    {selected === 'FileAttachmentForm' &&
+                {selected === 'FileAttachmentForm' &&
                     <>
                         {this.renderPanel('FileAttachmentForm',
                             <FileAttachmentForm
@@ -391,6 +377,7 @@ export class App extends React.Component<any, State> {
                             summary={'Test search result summary text for the components page.'}
                             url={'#searchresultcard'}
                             iconUrl={'/labkey/_images/construct.svg'}
+                            isTopResult={true}
                         />
                     )
                 }

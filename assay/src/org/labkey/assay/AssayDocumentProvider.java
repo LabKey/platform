@@ -3,7 +3,7 @@ package org.labkey.assay;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -23,11 +23,6 @@ public class AssayDocumentProvider implements DocumentProvider
     {
         Runnable runEnumerate = () -> AssayService.get().indexAssays(task, c);
         task.addRunnable(runEnumerate, SearchService.PRIORITY.group);
-    }
-
-    @Override
-    public void indexDeleted()
-    {
     }
 
     public static SearchService.ResourceResolver getSearchResolver()
@@ -52,10 +47,8 @@ public class AssayDocumentProvider implements DocumentProvider
                 jsonObject.put("modifiedBy", assayProtocol.getModifiedBy().getEmail());
                 jsonObject.put("modified", assayProtocol.getModified());
 
-                return jsonObject;
+                return jsonObject.toMap();
             }
         };
     }
-
-
 }

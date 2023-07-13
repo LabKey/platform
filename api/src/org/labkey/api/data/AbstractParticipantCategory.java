@@ -15,8 +15,8 @@
  */
 package org.labkey.api.data;
 
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
@@ -29,12 +29,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * User: klum
- * Date: Jun 8, 2011
- * Time: 2:49:27 PM
- */
 
 /**
  * Represents a category of participants in related groups.

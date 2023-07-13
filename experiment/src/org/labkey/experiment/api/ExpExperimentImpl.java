@@ -17,6 +17,9 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -69,6 +72,27 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
+        return getQueryRowReference(null);
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference(@Nullable User user)
+    {
+        // If an ExpExperiment represents an Assay Batch, then resolve the QueryRowReference more specifically
+        // to the Assay Batch.
+        // NK: This could be done via a Handler pattern (similar to ExperimentProtocolHandler) but given
+        // the current narrow use case for Assay Batches I've elected to just resolve them directly here.
+        ExpProtocol protocol = getBatchProtocol();
+        if (protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+            if (provider != null)
+            {
+                AssayProtocolSchema schema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+                return new QueryRowReference(protocol.getContainer(), schema.getSchemaPath(), AssayProtocolSchema.BATCHES_TABLE_NAME, FieldKey.fromParts(ExpExperimentTable.Column.RowId.name()), getRowId());
+            }
+        }
+
         return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.RunGroups.name(), FieldKey.fromParts(ExpExperimentTable.Column.RowId.name()), getRowId());
     }
 
@@ -113,7 +137,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     }
 
     @Override
-    public ExpProtocol getBatchProtocol()
+    public @Nullable ExpProtocol getBatchProtocol()
     {
         if (_object.getBatchProtocolId() == null)
         {
@@ -168,7 +192,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public void addRuns(User user, ExpRun... newRuns)
     {
-        try (DbScope.Transaction transaction = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction transaction = ExperimentServiceImpl.get().ensureTransaction())
         {
             List<ExpRunImpl> existingRuns = getRuns();
             Set<Integer> existingRunIds = new HashSet<>();
@@ -225,7 +249,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
     @Override
     public void save(User user)
     {
-        save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
+        try (DbScope.Transaction tx = ExperimentServiceImpl.get().ensureTransaction())
+        {
+            save(user, ExperimentServiceImpl.get().getTinfoExperiment(), false);
+
+            tx.addCommitTask(() -> ExperimentServiceImpl.get().onAfterExperimentSaved(this, getContainer(), user), DbScope.CommitTaskOption.POSTCOMMIT);
+
+            tx.commit();
+        }
     }
 
     @Override

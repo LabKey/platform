@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 LabKey Corporation
+ * Copyright (c) 2013-2023 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.labkey.list.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -26,14 +25,17 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExportException;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
@@ -94,6 +96,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
@@ -133,8 +136,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -217,9 +223,9 @@ public class ListController extends SpringActionController
             // users should see all lists without a category and public picklists and any lists they created.
             SimpleFilter filter = new SimpleFilter();
 
-            SQLFragment sql = new SQLFragment("Category IS NULL OR Category = '")
-                    .append(ListDefinition.Category.PublicPicklist.toString())
-                    .append("' OR CreatedBy = ").append(getUser().getUserId());
+            SQLFragment sql = new SQLFragment("Category IS NULL OR Category = ")
+                    .appendValue(ListDefinition.Category.PublicPicklist)
+                    .append(" OR CreatedBy = ").appendValue(getUser().getUserId());
             filter.addWhereClause(sql, FieldKey.fromParts("Category"), FieldKey.fromParts("CreatedBy"));
             settings.setBaseFilter(filter);
 
@@ -730,7 +736,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
-            return _list.importListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption);
+            return _list.importListItems(getUser(), getContainer(), dl, errors, null, null, false, getOptionParamValue(Params.importLookupByAlternateKey), _insertOption);
         }
 
         @Override
@@ -940,24 +946,35 @@ public class ListController extends SpringActionController
             Container c = getContainer();
             List<String> errorMessages = new ArrayList<>();
             Set<String> selection = DataRegionSelection.getSelected(form.getViewContext(), false);
-            List<Integer> listIDs = new ArrayList<>();
+            List<Pair<Integer, Container>> selectedLists = new LinkedList<>();
+            Map<String, Integer> duplicateNames = new HashMap<>();
 
-            // List export is only supported for lists defined in the current folder
             for (Pair<Integer, Container> pair : getListIdContainerPairs(selection, c, errorMessages))
             {
-                if (pair.second != c)
+                String listName = Objects.requireNonNull(ListManager.get().getList(pair.second, pair.first)).getName();
+
+                //Display simple error to the user when Lists with the same names are selected.
+                if (duplicateNames.containsKey(listName))
                 {
-                    errorMessages.add(String.format("Cannot export lists defined in %s from %s. List export is only supported for lists defined in the current folder.", pair.second.getPath(), c.getName()));
-                    break;
+                    errors.reject(ERROR_MSG, "'" + listName + "' is already selected, please select Lists with unique names to Export.");
+                    throw new ExportException(new SimpleErrorView(errors, true));
                 }
-                listIDs.add(pair.first);
+                else
+                {
+                    duplicateNames.put(listName, pair.first);
+                }
+                // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
+                if (!pair.second.hasPermission(getUser(), DesignListPermission.class))
+                {
+                    errors.reject(ERROR_MSG, String.format("List archive export is only supported for Lists in folders where you are an administrator. Try filtering to select only Lists in the local folder."));
+                    throw new ExportException(new SimpleErrorView(errors, true));
+                }
+                selectedLists.add(pair);
             }
 
-            if (!errorMessages.isEmpty())
-                throw new IllegalArgumentException(StringUtils.join(errorMessages, "\n"));
-
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogManager.getLogger(ListController.class)));
-            ctx.setListIds(listIDs.toArray(new Integer[0]));
+            Set<String> dataTypes = PageFlowUtil.set(FolderArchiveDataTypes.LIST_DESIGN, FolderArchiveDataTypes.LIST_DATA);
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, dataTypes, "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
+            ctx.setLists(selectedLists);
             ListWriter writer = new ListWriter();
 
             // Export to a temporary file first so exceptions are displayed by the standard error page, Issue #44152
@@ -967,7 +984,7 @@ public class ListController extends SpringActionController
 
             try (ZipFile zip = new ZipFile(tempDir, filename))
             {
-                writer.write(c, getUser(), zip, ctx);
+                writer.write(getUser(), zip, ctx);
             }
 
             Path tempZipFile = tempDir.resolve(filename);

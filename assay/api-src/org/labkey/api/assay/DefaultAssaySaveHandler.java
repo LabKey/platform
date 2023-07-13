@@ -16,12 +16,12 @@
 
 package org.labkey.api.assay;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
@@ -43,6 +43,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
@@ -51,10 +52,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: jeckels
- * Date: Jul 12, 2007
- */
 public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implements AssaySaveHandler
 {
     protected static final Logger LOG = LogManager.getLogger(DefaultAssaySaveHandler.class);
@@ -241,7 +238,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             propertyMap.put(prop.getName(), prop);
         List<Map<String, Object>> dataRows = new ArrayList<>();
 
-        for (Map<String, Object> row : dataArray.toMapList())
+        for (Map<String, Object> row : JsonUtil.toMapList(dataArray))
         {
             Map<String, Object> dataRow = new CaseInsensitiveHashMap<>();
             for (Map.Entry<String, Object> entry : row.entrySet())
@@ -291,10 +288,10 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
             if (runJsonObject != null && runJsonObject.has(ExperimentJSONConverter.PROPERTIES))
             {
-                Map<String, Object> runProperties = runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
-                factory.setRunProperties(runProperties);
+                JSONObject runProperties = runJsonObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
+                factory.setRunProperties(runProperties.toMap());
                 // BUGBUG?: The original ModuleRunUploadForm sets batch properties from the runJsonObject ?!! maybe we shouldn't do that
-                factory.setBatchProperties(runProperties);
+                factory.setBatchProperties(runProperties.toMap());
             }
             factory.setUploadedData(Collections.emptyMap());
             factory.setRawData(dataRows);
@@ -338,6 +335,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     }
 
     @Override
+    @Deprecated // Use new JSONObject variant above
     public ExpData handleData(ViewContext context, JSONObject dataObject) throws ValidationException
     {
         List<AssayDataType> knownTypes = new ArrayList<>();

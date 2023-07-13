@@ -22,15 +22,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
@@ -71,12 +71,9 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.reports.report.r.RConnectionHolder;
-import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ViewCategory;
@@ -87,8 +84,6 @@ import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.r.RReport;
-import org.labkey.api.reports.report.r.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -98,6 +93,11 @@ import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.reports.report.r.RConnectionHolder;
+import org.labkey.api.reports.report.r.RReport;
+import org.labkey.api.reports.report.r.RReportJob;
+import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
+import org.labkey.api.reports.report.r.RserveScriptEngine;
 import org.labkey.api.reports.report.view.AjaxScriptReportView;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
@@ -130,6 +130,7 @@ import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -2598,7 +2599,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class BrowseDataForm extends ReturnUrlForm implements CustomApiForm
+    public static class BrowseDataForm extends ReturnUrlForm implements ApiJsonForm
     {
         private int index;
         private String pageId;
@@ -2606,7 +2607,7 @@ public class ReportsController extends SpringActionController
         private boolean includeMetadata = true;
         private boolean manageView;
         private int _parent = -2;
-        Map<String, Object> _props;
+        private JSONObject _json;
         private boolean includeUncategorized = false;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
@@ -2686,14 +2687,14 @@ public class ReportsController extends SpringActionController
         public void setIncludeUncategorized(boolean includeUncategorized) { this.includeUncategorized = includeUncategorized; }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            _props = props;
+            _json = json;
         }
 
-        public Map<String, Object> getProps()
+        public JSONObject getJson()
         {
-            return _props;
+            return _json;
         }
     }
 
@@ -2724,7 +2725,7 @@ public class ReportsController extends SpringActionController
                 {
                     webPartProps.put("useDynamicHeight", props.get("webpart.useDynamicHeight"));
                 }
-                // older installs wont have a useDynamicHeight prop but thats ok
+                // older installs won't have a useDynamicHeight prop but that's ok
                 else if (props.containsKey("webpart.height") && null != props.get("webpart.height") && !props.get("webpart.height").equals("0"))
                 {
                     webPartProps.put("useDynamicHeight", "false");
@@ -2744,7 +2745,7 @@ public class ReportsController extends SpringActionController
             }
             else
             {
-                props = resolveJSONProperties(form.getProps());
+                props = resolveJSONProperties(form.getJson());
             }
 
             SortOrder sortOrder;
@@ -2795,7 +2796,7 @@ public class ReportsController extends SpringActionController
                 response.put("visibleColumns", columns);
 
                 // provider editor information
-                Map<String, Map<String, Object>> viewTypeProps = new HashMap<>();
+                Map<String, JSONObject> viewTypeProps = new HashMap<>();
                 for (DataViewProvider.Type type : visibleDataTypes)
                 {
                     DataViewProvider provider = DataViewService.get().getProvider(type, getViewContext());
@@ -2852,7 +2853,7 @@ public class ReportsController extends SpringActionController
                             category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                     }
                 }
-                response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views));
+                response.put("data", DataViewService.get().toJSON(getUser(), views));
             }
 
             return response;
@@ -2867,18 +2868,17 @@ public class ReportsController extends SpringActionController
             return defaultState;
         }
 
-        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
+        private Map<String, String> resolveJSONProperties(JSONObject json)
         {
-            JSONObject jsonProps = (JSONObject) formProps;
             Map<String, String> props = new HashMap<>();
             boolean explicit = false;
 
-            if (null != jsonProps && jsonProps.size() > 0)
+            if (null != json && !json.isEmpty())
             {
                 try
                 {
                     // Data Types Filter
-                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
+                    JSONArray dataTypes = json.getJSONArray("dataTypes");
                     for (int i=0; i < dataTypes.length(); i++)
                     {
                         props.put((String) dataTypes.get(i), "on");
@@ -3158,7 +3158,7 @@ public class ReportsController extends SpringActionController
             // Construct response
             JSONObject root = new JSONObject();
             JSONObject tree = convertTree(rootHelper);
-            JSONArray children = (JSONArray)tree.get("children");
+            JSONArray children = tree.getJSONArray("children");
             root.put("name", ".");
             root.put("expanded", true);
             root.put("children", children);
@@ -3187,11 +3187,11 @@ public class ReportsController extends SpringActionController
             ArrayList<JSONObject> views = new ArrayList<>();
             for (DataViewInfo view : helper.views)
             {
-                JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
+                JSONObject viewJson = DataViewService.get().toJSON(getUser(), view);
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
                 viewJson.put("icon", view.getIconUrl().getLocalURIString());
-                viewJson.put("iconCls", view.getIconCls());
+                viewJson.put("iconCls", view.getIconCls() == null ? JSONObject.NULL : view.getIconCls());
                 views.add(viewJson);
             }
             Comparator<JSONObject>naturalOrderComparator = (JSONObject a, JSONObject b) ->
@@ -3217,7 +3217,7 @@ public class ReportsController extends SpringActionController
             else if (form.isManageView())
                 props = getAdminConfiguration();
             else
-                props = resolveJSONProperties(form.getProps());
+                props = resolveJSONProperties(form.getJson());
 
             for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
@@ -3245,18 +3245,17 @@ public class ReportsController extends SpringActionController
             return defaultState;
         }
 
-        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
+        private Map<String, String> resolveJSONProperties(JSONObject json)
         {
-            JSONObject jsonProps = (JSONObject) formProps;
             Map<String, String> props = new HashMap<>();
             boolean explicit = false;
 
-            if (null != jsonProps && jsonProps.size() > 0)
+            if (null != json && !json.isEmpty())
             {
                 try
                 {
                     // Data Types Filter
-                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
+                    JSONArray dataTypes = json.getJSONArray("dataTypes");
                     for (int i=0; i < dataTypes.length(); i++)
                     {
                         props.put((String) dataTypes.get(i), "on");
@@ -3368,7 +3367,7 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class CategoriesForm implements CustomApiForm, HasViewContext
+    public static class CategoriesForm implements ApiJsonForm, HasViewContext
     {
         private List<ViewCategory> _categories = new ArrayList<>();
         private ViewContext _context;
@@ -3384,12 +3383,12 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            Object categoriesProp = props.get("categories");
+            JSONArray categoriesProp = json.optJSONArray("categories");
             if (categoriesProp != null)
             {
-                for (JSONObject categoryInfo : ((JSONArray) categoriesProp).toJSONObjectArray())
+                for (JSONObject categoryInfo : JsonUtil.toJSONObjectList(categoriesProp))
                 {
                     _categories.add(ViewCategory.fromJSON(_context.getContainer(), categoryInfo));
                 }
@@ -3589,25 +3588,24 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class DeleteDataViewsForm implements CustomApiForm
+    public static class DeleteDataViewsForm implements ApiJsonForm
     {
         List<Pair<String, String>> _views = new ArrayList<>();
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            if (props.containsKey("views"))
+            if (json.has("views"))
             {
-                Object views = props.get("views");
-                if (views instanceof JSONArray)
+                Object views = json.get("views");
+                if (views instanceof JSONArray ja)
                 {
-                    for (JSONObject view : ((JSONArray)views).toJSONObjectArray())
+                    for (JSONObject view : JsonUtil.toJSONObjectList(ja))
                         _views.add(new Pair<>(view.getString("dataType"), view.getString("id")));
                 }
-                else if (views instanceof JSONObject)
+                else if (views instanceof JSONObject jo)
                 {
-                    JSONObject view = (JSONObject)views;
-                    _views.add(new Pair<>(view.getString("dataType"), view.getString("id")));
+                    _views.add(new Pair<>(jo.getString("dataType"), jo.getString("id")));
                 }
             }
         }
@@ -3934,9 +3932,9 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class ReportsForm implements CustomApiForm, HasViewContext
+    public static class ReportsForm implements ApiJsonForm, HasViewContext
     {
-        private List<Report> _reports = new ArrayList<>();
+        private final List<Report> _reports = new ArrayList<>();
         private ViewContext _context;
 
         public List<Report> getReports()
@@ -3945,12 +3943,12 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public void bindProperties(Map<String, Object> props)
+        public void bindJson(JSONObject json)
         {
-            Object reportsProp = props.get("reports");
+            JSONArray reportsProp = json.optJSONArray("reports");
             if (reportsProp != null)
             {
-                for (JSONObject reportInfo : ((JSONArray) reportsProp).toJSONObjectArray())
+                for (JSONObject reportInfo : JsonUtil.toJSONObjectList(reportsProp))
                 {
                     ReportIdentifier reportId = AbstractReportIdentifier.fromString(reportInfo.getString("reportId"), getViewContext().getUser(), getViewContext().getContainer());
                     if (reportId != null)
@@ -4038,7 +4036,7 @@ public class ReportsController extends SpringActionController
                     List<DataViewInfo> reports = provider.getViews(getViewContext(), form.getSchemaName(), form.getQueryName());
                     for (DataViewInfo report : reports)
                     {
-                        json.add(DataViewService.get().toJSON(getContainer(), getUser(), report));
+                        json.add(DataViewService.get().toJSON(getUser(), report));
                     }
                 }
             }

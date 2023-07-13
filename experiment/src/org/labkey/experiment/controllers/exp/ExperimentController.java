@@ -56,8 +56,32 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.MenuButton;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.exp.AbstractMoveEntitiesAction;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
@@ -91,6 +115,7 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -99,6 +124,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -150,6 +176,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.Link;
@@ -164,28 +191,31 @@ import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.HBox;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.InsertView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.UpdateView;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewForm;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.*;
+import org.labkey.experiment.ChooseExperimentTypeBean;
+import org.labkey.experiment.ConfirmDeleteView;
+import org.labkey.experiment.CustomPropertiesView;
+import org.labkey.experiment.DataClassWebPart;
+import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExpDataFileListener;
+import org.labkey.experiment.ExperimentRunDisplayColumn;
+import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.LineageGraphDisplayColumn;
+import org.labkey.experiment.MoveRunsBean;
+import org.labkey.experiment.ParentChildView;
+import org.labkey.experiment.ProtocolApplicationDisplayColumn;
+import org.labkey.experiment.ProtocolDisplayColumn;
+import org.labkey.experiment.ProtocolWebPart;
+import org.labkey.experiment.RunGroupWebPart;
+import org.labkey.experiment.SampleTypeDisplayColumn;
+import org.labkey.experiment.SampleTypeWebPart;
+import org.labkey.experiment.StandardAndCustomPropertiesView;
+import org.labkey.experiment.XarExportPipelineJob;
+import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
@@ -193,6 +223,7 @@ import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
+import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -240,6 +271,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -277,10 +309,6 @@ import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
-/**
- * User: jeckels
- * Date: Dec 13, 2007
- */
 public class ExperimentController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(ExperimentController.class);
@@ -418,7 +446,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            JSONObject json = form.getNewJsonObject();
+            JSONObject json = form.getJsonObject();
             String selectionKey = json.optString("selectionKey", null);
             List<ExpRun> runs = new ArrayList<>();
 
@@ -2263,7 +2291,7 @@ public class ExperimentController extends SpringActionController
                 {
                     // Try to write the exception back to the caller if we haven't already flushed the buffer
                     ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-                    writer.writeAndClose(e);
+                    writer.writeResponse(e);
                 }
                 catch (IllegalStateException ise)
                 {
@@ -2551,7 +2579,7 @@ public class ExperimentController extends SpringActionController
                 {
                     for (int i = 0; i < rowsArray.length(); i++)
                     {
-                        List<Object> objectList = ((JSONArray) rowsArray.get(i)).toList();
+                        List<Object> objectList = rowsArray.getJSONArray(i).toList();
                         Iterator<Object> it = objectList.iterator();
                         List<String> list = new ArrayList<>();
 
@@ -3290,7 +3318,9 @@ public class ExperimentController extends SpringActionController
                 tx.commit();
             }
 
-            response.putIfAbsent("success", !errors.hasErrors());
+            if (null != response.get("success"))
+                response.put("success", !errors.hasErrors());
+
             return response;
         }
 
@@ -3487,63 +3517,6 @@ public class ExperimentController extends SpringActionController
         }
 
     }
-
-    public static class DataViewSnapshotSelectionForm extends DataViewSelectionForm
-    {
-        private boolean _useSnapshotSelection;
-
-        public boolean isUseSnapshotSelection()
-        {
-            return _useSnapshotSelection;
-        }
-
-        public void setUseSnapshotSelection(boolean useSnapshotSelection)
-        {
-            _useSnapshotSelection = useSnapshotSelection;
-        }
-
-        @Override
-        public Set<Integer> getIds(boolean clear)
-        {
-            if (_rowIds != null) return _rowIds;
-            if (_useSnapshotSelection)
-                return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(getViewContext(), getDataRegionSelectionKey()));
-            else
-                return DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
-        }
-    }
-
-    public static class DataViewSelectionForm extends ViewForm
-    {
-        protected String _dataRegionSelectionKey;
-        protected Set<Integer> _rowIds;
-
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
-        }
-
-        public Set<Integer> getRowIds()
-        {
-            return _rowIds;
-        }
-
-        public void setRowIds(Set<Integer> rowIds)
-        {
-            _rowIds = rowIds;
-        }
-
-        public Set<Integer> getIds(boolean clear)
-        {
-            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
-        }
-    }
-
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
@@ -4016,23 +3989,71 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class ImportSamplesAction extends AbstractExpDataImportAction
     {
+        DataIteratorContext _context;
+
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
             _form = queryForm;
-            _form.setSchemaName("samples");
             _insertOption = queryForm.getInsertOption();
+            boolean crossTypeImport = getOptionParamValue(Params.crossTypeImport);
+            _form.setSchemaName(getTargetSchemaName());
+            if (crossTypeImport)
+            {
+                _form.setQueryName(getPipelineTargetQueryName());
+            }
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
-                errors.reject(ERROR_MSG, "Sample type name is required");
+                errors.reject(ERROR_REQUIRED, "Sample type name is required");
             else
             {
-                ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
-                if (sampleType == null)
+                if (!crossTypeImport)
                 {
-                    errors.reject(ERROR_MSG, "Sample type '" + queryForm.getQueryName() + " not found.");
+                    ExpSampleTypeImpl sampleType = SampleTypeServiceImpl.get().getSampleType(getContainer(), getUser(), queryForm.getQueryName());
+                    if (sampleType == null)
+                    {
+                        errors.reject(ERROR_GENERIC, "Sample type '" + queryForm.getQueryName() + " not found.");
+                    }
                 }
             }
+        }
+
+        private String getTargetSchemaName()
+        {
+            return getOptionParamValue(Params.crossTypeImport) ? ExpSchema.SCHEMA_NAME : "samples";
+        }
+
+        @Override
+        protected UserSchema getTargetSchema()
+        {
+            return getOptionParamValue(Params.crossTypeImport) ? QueryService.get().getUserSchema(getUser(), getContainer(), getTargetSchemaName()) : super.getTargetSchema();
+        }
+
+        @Override
+        protected String getPipelineTargetQueryName()
+        {
+            return getOptionParamValue(Params.crossTypeImport) ? "materials" : super.getPipelineTargetQueryName();
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+        {
+            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null);
+
+            TableInfo tInfo = _target;
+            QueryUpdateService updateService = _updateService;
+            if (getOptionParamValue(Params.crossTypeImport))
+            {
+                tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
+                updateService = tInfo.getUpdateService();
+            }
+
+            int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
+
+            if (getOptionParamValue(Params.crossTypeImport))
+                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "crossTypeImport");
+
+            return count;
         }
 
         @Override
@@ -4055,6 +4076,17 @@ public class ExperimentController extends SpringActionController
             root.addChild("Import Data");
         }
 
+        @Override
+        protected JSONObject createSuccessResponse(int rowCount)
+        {
+            JSONObject json = super.createSuccessResponse(rowCount);
+            if (!_context.getResponseInfo().isEmpty())
+            {
+                for (String key : _context.getResponseInfo().keySet())
+                    json.put(key, _context.getResponseInfo().get(key));
+            }
+            return json;
+        }
     }
 
     public abstract class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
@@ -4062,20 +4094,27 @@ public class ExperimentController extends SpringActionController
         protected QueryForm _form;
 
         @Override
+        public void validateForm(QueryForm form, Errors errors)
+        {
+            QueryDefinition query = form.getQueryDef();
+            if (query.getContainerFilter() != null && query.getContainerFilter().getType() != null)
+            {
+                // cross folder import not supported
+                if (query.getContainerFilter().getType() != ContainerFilter.Type.Current)
+                    errors.reject(ERROR_GENERIC, "ContainerFilter is not supported for import actions.");
+            }
+        }
+
+        @Override
         protected void initRequest(QueryForm form) throws ServletException
         {
             QueryDefinition query = form.getQueryDef();
-            if (query.getContainerFilter() == null)
-            {
-                ContainerFilter cf = QueryService.get().getContainerFilterForLookups(getContainer(), getUser());
-                if (cf != null)
-                    query.setContainerFilter(cf);
-            }
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
+
             if (!qpe.isEmpty())
                 throw qpe.get(0);
-            if (null != t)
+            if (!getOptionParamValue(Params.crossTypeImport) && null != t)
             {
                 setTarget(t);
                 setShowMergeOption(t.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));
@@ -4149,13 +4188,13 @@ public class ExperimentController extends SpringActionController
             _insertOption = queryForm.getInsertOption();
             super.validateForm(queryForm, errors);
             if (queryForm.getQueryName() == null)
-                errors.reject(ERROR_MSG, "Data class name is required");
+                errors.reject(ERROR_REQUIRED, "Data class name is required");
             else
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(getContainer(), getUser(), queryForm.getQueryName());
                 if (dataClass == null)
                 {
-                    errors.reject(ERROR_MSG, "Data class '" + queryForm.getQueryName() + " not found.");
+                    errors.reject(ERROR_GENERIC, "Data class '" + queryForm.getQueryName() + " not found.");
                 }
             }
         }
@@ -4223,6 +4262,7 @@ public class ExperimentController extends SpringActionController
         public boolean handlePost(ExperimentForm form, BindException errors) throws Exception
         {
             form.doUpdate();
+            form.refreshFromDb();
             _exp = form.getBean();
             return true;
         }
@@ -5704,7 +5744,7 @@ public class ExperimentController extends SpringActionController
                 if (outputData.size() > 0)
                     successMessage.append(outputData.size()).append(" data");
 
-                org.json.old.JSONObject ret;
+                JSONObject ret;
                 if (run != null)
                     ret = ExperimentJSONConverter.serializeRun(run, null, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                 else
@@ -6912,9 +6952,9 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
+                            JSONObject props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                             props.put("docid", docId);
-                            notInIndex.add(props);
+                            notInIndex.add(props.toMap());
                         }
                     }
                 }
@@ -7248,7 +7288,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (id.startsWith(SAMPLE_ID_PREFIX))
                 {
-                    sampleIdValuesSql.append(sampleIdComma).append("\t(").append(index);
+                    sampleIdValuesSql.append(sampleIdComma).append("\t(").appendValue(index);
                     sampleIdValuesSql.append(", ");
                     sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
                     sampleIdValuesSql.append(")");
@@ -7256,7 +7296,7 @@ public class ExperimentController extends SpringActionController
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
-                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").append(index);
+                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
                     uniqueIdValuesSql.append(", ");
                     uniqueIdValuesSql.append(LabKeySql.quoteString(id.substring(UNIQUE_ID_PREFIX.length())));
                     uniqueIdValuesSql.append(")");
@@ -7431,39 +7471,47 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public Object execute(GenIdForm form, BindException errors) throws Exception
+        public Object execute(GenIdForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
 
-            if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            try
             {
-                if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
-                    throw new UnauthorizedException("Insufficient permissions.");
-
-
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
-                if (sampleType != null)
-                    sampleType.ensureMinGenId(form.getGenId());
-                else
+                if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
                 {
-                    resp.put("success", false);
-                    resp.put("error", "Sample type does not exist.");
+                    if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                        throw new UnauthorizedException("Insufficient permissions.");
+
+
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                    if (sampleType != null)
+                        sampleType.ensureMinGenId(form.getGenId());
+                    else
+                    {
+                        resp.put("success", false);
+                        resp.put("error", "Sample type does not exist.");
+                    }
+                }
+                else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+                {
+                    if (!getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
+                        throw new BadRequestException("Insufficient permissions.");
+
+                    ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
+                    if (dataClass != null)
+                        dataClass.ensureMinGenId(form.getGenId(), getContainer());
+                    else
+                    {
+                        resp.put("success", false);
+                        resp.put("error", "DataClass does not exist.");
+                    }
                 }
             }
-            else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
+            catch (ExperimentException e)
             {
-                if (!getContainer().hasPermission(getUser(), DesignDataClassPermission.class))
-                    throw new BadRequestException("Insufficient permissions.");
-
-                ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
-                if (dataClass != null)
-                    dataClass.ensureMinGenId(form.getGenId(), getContainer());
-                else
-                {
-                    resp.put("success", false);
-                    resp.put("error", "DataClass does not exist.");
-                }
+                resp.put("success", false);
+                resp.put("error", e.getMessage());
             }
 
             return resp;
@@ -7517,14 +7565,14 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
-            if (!"sample".equalsIgnoreCase(form.getDataType()) && !"data".equalsIgnoreCase(form.getDataType()))
-                errors.reject(ERROR_REQUIRED, "Data type (sample or data) must be specified.");
+            if (!"sample".equalsIgnoreCase(form.getDataType()) && !"data".equalsIgnoreCase(form.getDataType())&& !"assayrun".equalsIgnoreCase(form.getDataType()))
+                errors.reject(ERROR_REQUIRED, "Data type (sample, data or assayrun) must be specified.");
         }
 
         @Override
         public Object execute(CrossFolderSelectionForm form, BindException errors)
         {
-            Pair<Integer, Integer> result = ExperimentServiceImpl.getCurrentAndCrossFolderDataCount(form.getIds(false), "sample".equalsIgnoreCase(form.getDataType()), getContainer());
+            Pair<Integer, Integer> result = ExperimentServiceImpl.getCurrentAndCrossFolderDataCount(form.getIds(false), form.getDataType(), getContainer());
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -7608,23 +7656,17 @@ public class ExperimentController extends SpringActionController
                         .getSampleTypes(container, user, true);
 
                 StringBuilder builder = new StringBuilder();
-                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th><th>#Cleaned</th><th>#Needs Further Recalc</th></tr>");
+                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
 
-                InventoryService inventoryService = InventoryService.get();
+                SampleTypeService service = SampleTypeService.get();
                 for (ExpSampleType sampleType : sampleTypes)
                 {
                     int updatedCount;
-                    updatedCount = inventoryService.recomputeSampleTypeRollup(sampleType, container, true);
-                    int cleanedCount = SampleTypeServiceImpl.get().resetRecomputeFlagForNonParents(sampleType, container);
-                    long remainingCount = SampleTypeServiceImpl.get().getRecomputeRollupRowCount(sampleType, container);
+                    updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
                     builder.append("<tr><td>")
                             .append(sampleType.getName())
                             .append("</td><td>")
                             .append(updatedCount)
-                            .append("</td><td>")
-                            .append(cleanedCount)
-                            .append("</td><td>")
-                            .append(remainingCount)
                             .append("</td></tr>");
                 }
 
@@ -7634,4 +7676,230 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    @ActionNames("moveSources, moveDataClassObjects")
+    @RequiresPermission(UpdatePermission.class)
+    public static class MoveDataClassObjectsAction extends AbstractMoveEntitiesAction
+    {
+        private List<? extends ExpData> _dataClassObjects;
+
+        @Override
+        public void validateForm(MoveEntitiesForm form, Errors errors)
+        {
+            _entityType = "sources";
+            super.validateForm(form, errors);
+            validateDataIds(form, errors);
+        }
+
+        @Override
+        protected Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
+        {
+            return ExperimentService.get().moveDataClassObjects(_dataClassObjects, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
+        }
+
+        @Override
+        protected void updateSelections(MoveEntitiesForm form)
+        {
+            updateSelections(form, _dataClassObjects.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
+        }
+
+        private void validateDataIds(MoveEntitiesForm form, Errors errors)
+        {
+            Set<Integer> dataIds = form.getIds(false); // handle clear of selectionKey after move complete
+            if (dataIds == null || dataIds.isEmpty())
+            {
+                errors.reject(ERROR_GENERIC, "Source IDs must be specified for the move operation.");
+                return;
+            }
+
+            _dataClassObjects = ExperimentServiceImpl.get().getExpDatas(dataIds);
+            if (_dataClassObjects.size() != dataIds.size())
+            {
+                errors.reject(ERROR_GENERIC, "Unable to find all sources for the move operation.");
+                return;
+            }
+
+            // verify all sources are from the current container
+            if (_dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(getContainer())))
+            {
+                errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");
+            }
+        }
+
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public static class MoveSamplesAction extends AbstractMoveEntitiesAction
+    {
+        private List<? extends ExpMaterial> _materials;
+
+        @Override
+        public void validateForm(MoveEntitiesForm form, Errors errors)
+        {
+            _entityType = "samples";
+            super.validateForm(form, errors);
+            validateSampleIds(form, errors);
+        }
+
+        @Override
+        public Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
+        {
+            return SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
+        }
+
+        private void validateSampleIds(MoveEntitiesForm form, Errors errors)
+        {
+            Set<Integer> sampleIds = form.getIds(false); // handle clear of selectionKey after move complete
+            if (sampleIds == null || sampleIds.isEmpty())
+            {
+                errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
+                return;
+            }
+
+            _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
+            if (_materials.size() != sampleIds.size())
+            {
+                errors.reject(ERROR_GENERIC, "Unable to find all samples for the move operation.");
+                return;
+            }
+
+            // verify all samples are from the current container
+            if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
+            {
+                errors.reject(ERROR_GENERIC, "All samples must be from the current container for the move operation.");
+                return;
+            }
+
+            // verify allowed moves based on sample statuses
+            List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
+            for (ExpMaterial material : _materials)
+            {
+                DataState sampleStatus = material.getSampleState();
+                if (sampleStatus == null) continue;
+
+                // prevent move for locked samples
+                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
+                {
+                    invalidStatusSamples.add(material);
+                }
+                // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
+                // only applies when moving from child to parent or child to sibling
+                else if (!getContainer().isProject() && sampleStatus.getContainer().equals(getContainer()))
+                {
+                    invalidStatusSamples.add(material);
+                }
+            }
+            if (!invalidStatusSamples.isEmpty())
+                errors.reject(ERROR_GENERIC, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
+        }
+
+        @Override
+        protected void updateSelections(MoveEntitiesForm form)
+        {
+            updateSelections(form, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetEffectiveSchemaQueryAction extends ReadOnlyApiAction<EffectiveQueryForm>
+    {
+        private ContainerFilter.Type _containerFilterType = null;
+        @Override
+        public void validateForm(EffectiveQueryForm form, Errors errors)
+        {
+            try
+            {
+                _containerFilterType = ContainerFilter.Type.valueOf(form.getContainerFilter());
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new IllegalArgumentException("'containerFilter' parameter is not valid");
+            }
+
+            if (form.getTimestamp() == null)
+                throw new IllegalArgumentException("'timestamp' parameter is required");
+        }
+
+        @Override
+        public Object execute(EffectiveQueryForm form, BindException errors) throws Exception
+        {
+            Container container = getContainer();
+            User user = getUser();
+            ContainerFilter dataTypeCF = _containerFilterType.create(container, user);
+            ExperimentService experimentService = ExperimentService.get();
+            Date effectiveDate = new Date(form.getTimestamp());
+            String schemaName = form.getSchemaName();
+            String queryName = form.getQueryName();
+            String effectiveSchemaName = schemaName;
+            String effectiveQueryName = queryName;
+            if ("samples".equalsIgnoreCase(schemaName))
+            {
+                ExpSampleType sampleType = SampleTypeService.get().getEffectiveSampleType(container, user, queryName, effectiveDate, dataTypeCF);
+                if (sampleType != null)
+                    effectiveQueryName = sampleType.getName(); // sample type might have been renamed
+            }
+            else if ("exp.data".equalsIgnoreCase(schemaName))
+            {
+                ExpDataClass dataClass = experimentService.getEffectiveDataClass(container, user, queryName, effectiveDate, dataTypeCF);
+                if (dataClass != null) // dataclass might have been renamed
+                    effectiveQueryName = dataClass.getName();
+            }
+            else if ("assay.general".equalsIgnoreCase(schemaName))
+            {
+                // TODO: get effective schemaname, when assay design renaming is supported
+                // effectiveSchemaName = getEffectiveExpProtocol
+            }
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("schemaName", effectiveSchemaName);
+            resp.put("queryName", effectiveQueryName);
+            return resp;
+        }
+    }
+
+    public static class EffectiveQueryForm extends QueryForm
+    {
+        private String _containerFilter;
+        private Long _timestamp;
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        @Override
+        protected QuerySettings createQuerySettings(UserSchema schema)
+        {
+            var result = super.createQuerySettings(schema);
+            if (getContainerFilter() != null)
+            {
+                try
+                {
+                    ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(getContainerFilter());
+                    result.setContainerFilterName(containerFilterType.name());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new IllegalArgumentException("'containerFilter' parameter is not valid");
+                }
+            }
+            return result;
+        }
+
+        public Long getTimestamp()
+        {
+            return _timestamp;
+        }
+
+        public void setTimestamp(Long timestamp)
+        {
+            _timestamp = timestamp;
+        }
+
+    }
 }

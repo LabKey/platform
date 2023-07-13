@@ -26,7 +26,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
@@ -61,9 +60,10 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 
 public class QuerySelect extends AbstractQueryRelation implements Cloneable
@@ -99,11 +99,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     // shim tableinfo used for creating expression columninfo
     private final SQLTableInfo _sti;
     private final AliasManager _aliasManager;
-//    private List<SelectColumn> _medianColumns = new ArrayList<>();                  // Possible way to support SQL Server Median
-
-    // This is set by initializeSelect(), it will remain false ONLY when there is a recursive union.
-    // In that case initializeSelect() will have to be called again in a 2nd pass see QueryWith constructor
-    private boolean initialized = false;
 
     private boolean  skipSuggestedColumns = false;  // set to skip normal getSuggestedColumns() code
 
@@ -118,7 +113,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
-        super(query, schema, StringUtils.defaultString(alias, "_select" + query.incrementAliasCounter()));
+        super(query, schema, StringUtils.defaultString(alias, "select_" + query.incrementAliasCounter()));
         _inFromClause = false;
 
         // subqueryTable is only for expr.createColumnInfo()
@@ -197,7 +192,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     @Override
     public void setQuery(Query query)
     {
-//        assert getParseErrors().size() == 0;
         super.setQuery(query);
         for (QueryRelation r : _tables.values())
             r.setQuery(query);
@@ -234,7 +228,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     }
                 }
                 QExpr copy = ((QExpr) gb).copyTree();
-                SelectColumn col = new SelectColumn(copy, "__gb_key__" + index);
+                SelectColumn col = new SelectColumn(copy, "gb_key__" + index);
                 _columns.put(col.getFieldKey(), col);
                 ret.put(col.getName(), col);
             }
@@ -503,8 +497,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 }
             }
         }
-
-        initialized = true;
     }
 
 
@@ -712,27 +704,23 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 alias = (QIdentifier) children.get(1);
 
             ContainerFilter.Type cfType = null;
-            Map<String, Object> annotations = ((QUnknownNode) node).getAnnotations();
-            if (null != annotations)
+            for (var entry : ((QUnknownNode) node).getAnnotations().entrySet())
             {
-                for (var entry : annotations.entrySet())
+                var value = entry.getValue();
+                switch (entry.getKey().toLowerCase())
                 {
-                    var value = entry.getValue();
-                    switch (entry.getKey().toLowerCase())
-                    {
-                        case "containerfilter":
-                            if (!(value instanceof String))
-                            {
-                                _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
-                                continue;
-                            }
-                            cfType = ContainerFilter.getType((String) value);
-                            if (null == cfType)
-                                _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
-                            break;
-                        default:
-                            _query.getParseErrors().add(new QueryParseException("Unknown annotation: " + entry.getKey(), null, node.getLine(), node.getColumn()));
-                    }
+                    case "containerfilter":
+                        if (!(value instanceof String))
+                        {
+                            _query.getParseErrors().add(new QueryParseException("ContainerFilter annotation requires a string value", null, node.getLine(), node.getColumn()));
+                            continue;
+                        }
+                        cfType = ContainerFilter.getType((String) value);
+                        if (null == cfType)
+                            _query.getParseErrors().add(new QueryParseException("Unrecognized container filter type: " + value, null, node.getLine(), node.getColumn()));
+                        break;
+                    default:
+                        _query.getParseErrors().add(new QueryParseException("Unknown annotation: " + entry.getKey(), null, node.getLine(), node.getColumn()));
                 }
             }
 
@@ -741,7 +729,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             FieldKey aliasKey = table.getAlias();
             if (null == aliasKey)
             {
-                table.setAlias(new QIdentifier("_auto_alias_" + _tables.size() + "_"));
+                table.setAlias(new QIdentifier("auto_alias_" + _tables.size() + "_"));
                 aliasKey = table.getAlias();
                 reportWarning("Subquery in FROM clause does not have an alias", expr);
             }
@@ -895,7 +883,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 // TODO make table method work on outer tables
                 if (methodName)
                 {
-                    parseError("Method not found: " + key.toString(), expr);
+                    parseError("Method not found: " + key, expr);
                 }
                 return super.getField(key, expr, referant);
             }
@@ -1110,7 +1098,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         for (Map.Entry<FieldKey,QueryRelation> entry : _tables.entrySet())
             entry.getValue().declareFields();
 
-        Set selectAliases = Sets.newCaseInsensitiveHashSet();
+        Set<String> selectAliases = Sets.newCaseInsensitiveHashSet();
         if (null != _columns)
         {
             for (SelectColumn column : _columns.values())
@@ -1335,30 +1323,45 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             @Override
             public SQLFragment getFromSQL(String alias)
             {
-                SQLFragment f = new SQLFragment();
-                if (_sqlAllColumns == null)
+                try (var recursion = _query.queryRecursionCheck("Too many tables used in this query.  Query may be recursive.", null))
                 {
-                    markAllSelected(_query);
-                    _sqlAllColumns = getSql();
+                    SQLFragment f = new SQLFragment();
+                    if (_sqlAllColumns == null)
+                    {
+                        markAllSelected(_query);
+                        _sqlAllColumns = getSql();
+                    }
+                    f.append("(").append(_sqlAllColumns).append(") ").append(alias);
+                    return f;
                 }
-                f.append("(").append(_sqlAllColumns).append(") ").append(alias);
-                return f;
             }
 
             @NotNull
             @Override
             public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedFieldKeys)
             {
-                if (null != selectedFieldKeys && !selectedFieldKeys.isEmpty())
+                if (null == selectedFieldKeys)
                 {
-                    Set<String> names = selectedFieldKeys.stream()
-                        .map(FieldKey::getRootName)
-                        .collect(Collectors.toSet());
-                    releaseAllSelected(_query);
-                    markAllSelected(new CaseInsensitiveHashSet(names),_query);
+                    markAllSelected(_query);
                 }
                 else
-                    markAllSelected(_query);
+                {
+                    assert !_columns.isEmpty();
+                    if (selectedFieldKeys.isEmpty())
+                    {
+                        // this could be SELECT COUNT(*) for instance, just mark first column as selected
+                        markAllSelected(Set.of(requireNonNull(getFirstColumn()).getName()), _query);
+                    }
+                    else
+                    {
+                        Set<String> names = selectedFieldKeys.stream()
+                                .map(FieldKey::getRootName)
+                                .collect(Collectors.toSet());
+                        releaseAllSelected(_query);
+                        markAllSelected(new CaseInsensitiveHashSet(names), _query);
+                    }
+                }
+
                 SQLFragment s = getSql();
                 if (!getParseErrors().isEmpty())
                     throw getParseErrors().get(0);
@@ -1532,7 +1535,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     {
         for (SelectColumn c : _columns.values())
         {
-            c._selected = true;
             c.addRef(referant);
         }
     }
@@ -1542,20 +1544,14 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         for (SelectColumn c : _columns.values())
         {
             if (names.contains(c.getName()))
-            {
-                c._selected = true;
                 c.addRef(referant);
-            }
         }
     }
 
     public void releaseAllSelected(Object referant)
     {
         for (SelectColumn column : _columns.values())
-        {
-            int count = column.releaseRef(referant);
-            column._selected = (count > 0);
-        }
+            column.releaseRef(referant);
     }
 
     @Override
@@ -1723,7 +1719,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 if (null != wrapAlias)
                 {
                     if (gbExpr instanceof QField)
-                        sql.append(wrapAlias).append(".").append(getSqlDialect().makeLegalIdentifier(((QField) gbExpr).getName()));
+                        sql.append(wrapAlias).append(".").appendIdentifier(getSqlDialect().makeLegalIdentifier(((QField) gbExpr).getName()));
                     else
                         parseError("Cannot generate SQL for Median", expr);
                 }
@@ -1802,7 +1798,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             sql.append(") ").append(getAlias());
         }
 
-        if (!AppProps.getInstance().isDevMode() || _inFromClause || null == sql)
+        if (!AppProps.getInstance().isDevMode() || _inFromClause)
             return sql;
 
         // debug comments
@@ -1873,10 +1869,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     public SelectColumn getColumn(@NotNull String name)
     {
         FieldKey key = new FieldKey(null,name);
-        SelectColumn col = _columns.get(key);
-        if (col != null)
-            col._selected = true;
-        return col;
+        return _columns.get(key);
     }
 
     // 1 indexed to be compatible with all the other database-y apis
@@ -1953,12 +1946,8 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         for (SelectColumn sc : _columns.values())
         {
             QExpr expr = sc.getResolvedField();
-            if (expr instanceof QField)
-            {
-                QField f = (QField) expr;
-                if (f._column == find)
-                    return sc;
-            }
+            if (expr instanceof QField f && f._column == find)
+                return sc;
         }
         return null;
     }
@@ -1991,7 +1980,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (fromLookupColumn == null)
             return null;
         SelectColumn sc = new SelectColumn(new QField(fromLookupColumn, null));
-        sc._selected = true;
         _columns.put(key, sc);
         return sc;
     }
@@ -2044,9 +2032,8 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             if (null == sc._field || sc._suggestedColumn)
                 continue;
             QExpr expr = sc.getResolvedField();
-            if (!(expr instanceof QField))
+            if (!(expr instanceof QField field))
                 continue;
-            QField field = (QField)expr;
             if (null == field.getTable() || null == field.getRelationColumn())
                 continue;
 
@@ -2076,7 +2063,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 QField field = new QField(s, null);
                 SelectColumn selectColumn = new SelectColumn(field, true);
                 selectColumn._suggestedColumn = true;
-                selectColumn._selected = true;
                 _columns.put(selectColumn.getFieldKey(), selectColumn);
                 ret.add(selectColumn);
             }
@@ -2102,10 +2088,9 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             return c;
 
         QExpr qexpr = parent.getResolvedField();
-        if (!(qexpr instanceof QField))
+        if (!(qexpr instanceof QField parentField))
             return null;
 
-        QField parentField = (QField)qexpr;
         RelationColumn fromParentColumn = parentField.getRelationColumn();
         if (fromParentColumn == null)
             return null;
@@ -2113,7 +2098,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         if (fromLookupColumn == null)
             return null;
         SelectColumn col = new SelectColumn(new QField(fromLookupColumn, null));
-        col._selected = true;
         _columns.put(key, col);
         return col;
     }
@@ -2122,7 +2106,6 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
     public class SelectColumn extends RelationColumn
     {
         @Nullable final FieldKey _sourceColumnFieldKey;
-        boolean _selected = false;
         boolean _selectStarColumn = false;
         QNode _node;
         QExpr _field;
@@ -2261,7 +2244,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                 expr.appendSql(b, _query);
                 b.append(" AS VARCHAR");
                 if (len > 0)
-                    b.append("(").append(len).append(")");
+                    b.append("(").appendValue(len).append(")");
                 b.append(")");
                 return b;
             }
@@ -2359,7 +2342,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
         @Override
         void copyColumnAttributesTo(@NotNull BaseColumnInfo to)
         {
-            Objects.requireNonNull(to);
+            requireNonNull(to);
             QExpr expr = getResolvedField();
             if (expr instanceof QField)
             {

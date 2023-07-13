@@ -21,9 +21,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONException;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
@@ -40,6 +40,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -113,35 +114,28 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         boolean makeNameUnique = false;
         ExpExperiment batch;
-        if (batchJsonObject.has(ExperimentJSONConverter.ID))
+        if (!batchJsonObject.isNull(ExperimentJSONConverter.ID))
         {
             batch = lookupBatch(context.getContainer(), batchJsonObject.getInt(ExperimentJSONConverter.ID));
         }
         else
         {
-            String batchName;
-            if (batchJsonObject.has(ExperimentJSONConverter.NAME))
-            {
-                batchName = batchJsonObject.getString(ExperimentJSONConverter.NAME);
-            }
-            else
-            {
-                batchName = null;
+            String batchName = batchJsonObject.optString(ExperimentJSONConverter.NAME, null);
+            if (batchName == null)
                 makeNameUnique = true;
-            }
             batch = AssayService.get().createStandardBatch(context.getContainer(), batchName, protocol);
         }
 
         if (batchJsonObject.has(ExperimentJSONConverter.COMMENT))
         {
-            batch.setComments(batchJsonObject.getString(ExperimentJSONConverter.COMMENT));
+            batch.setComments(batchJsonObject.optString(ExperimentJSONConverter.COMMENT, null));
         }
         handleStandardProperties(context, batchJsonObject, batch, getBatchDomainProperties(protocol));
 
         List<ExpRun> runs = new ArrayList<>();
-        if (batchJsonObject.has(AssayJSONConverter.RUNS))
+        JSONArray runsArray = batchJsonObject.optJSONArray(AssayJSONConverter.RUNS);
+        if (runsArray != null)
         {
-            JSONArray runsArray = batchJsonObject.getJSONArray(AssayJSONConverter.RUNS);
             for (int i = 0; i < runsArray.length(); i++)
             {
                 JSONObject runJsonObject = runsArray.getJSONObject(i);
@@ -249,10 +243,9 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     @Override
     public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
-        String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
 
-        if (runJsonObject.has(ExperimentJSONConverter.ID))
+        if (!runJsonObject.isNull(ExperimentJSONConverter.ID))
         {
             int runId = runJsonObject.getInt(ExperimentJSONConverter.ID);
             run = ExperimentService.get().getExpRun(runId);
@@ -267,12 +260,13 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
         else
         {
+            String name = runJsonObject.optString(ExperimentJSONConverter.NAME, null);
             run = createRun(name, context.getContainer(), protocol);
         }
 
         if (runJsonObject.has(ExperimentJSONConverter.COMMENT))
         {
-            run.setComments(runJsonObject.getString(ExperimentJSONConverter.COMMENT));
+            run.setComments(runJsonObject.optString(ExperimentJSONConverter.COMMENT, null));
         }
 
         try
@@ -316,7 +310,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         if (jsonObject.has(ExperimentJSONConverter.NAME))
         {
-            object.setName(jsonObject.getString(ExperimentJSONConverter.NAME));
+            object.setName(jsonObject.optString(ExperimentJSONConverter.NAME, null));
         }
 
         object.save(context.getUser());
@@ -339,9 +333,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
-        for (int i = 0; i < inputDataArray.length(); i++)
+        for (JSONObject dataObject : JsonUtil.toJSONObjectList(inputDataArray))
         {
-            JSONObject dataObject = inputDataArray.getJSONObject(i);
             inputData.put(handleData(context, dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
@@ -388,8 +381,8 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     /**
-     * Enables the implementor to decide how to save the passed in ExpRun.  The default implementation deletes the
-     * run and recreates it.  A custom implementation could choose to enforce that only certain aspects of the
+     * Enables the implementor to decide how to save the passed in ExpRun. The default implementation deletes the
+     * run and recreates it. A custom implementation could choose to enforce that only certain aspects of the
      * protocol application change or choose not add its own data for saving.
      * Called from DefaultAssaySaveHandler.handleRun.
      */
@@ -529,7 +522,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
                 try
                 {
-                    materialName = sampleType.createSampleName(properties);
+                    materialName = sampleType.createSampleName(properties.toMap());
                 }
                 catch (ExperimentException e)
                 {
@@ -545,7 +538,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 {
                     List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(materialName, context.getContainer(), context.getUser());
                     if (materials.size() > 1)
-                        throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleType to disambiguate the desired material.");
+                        throw new NotFoundException("More than one material matches name '" + materialName + "'. Provide name and sampleType to disambiguate the desired material.");
                     if (materials.size() == 1)
                         material = materials.get(0);
                 }
@@ -566,7 +559,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             JSONObject materialProperties = materialObject.getJSONObject(ExperimentJSONConverter.PROPERTIES);
             // Treat an empty properties collection as if there were no property map at all.
             // To delete a property, include a property map with that property and set its value to null.
-            if (materialProperties.size() > 0)
+            if (!materialProperties.isEmpty())
             {
                 List<? extends DomainProperty> dps = sampleType != null ? sampleType.getDomain().getProperties() : Collections.emptyList();
                 handleProperties(context, material, dps, materialProperties);

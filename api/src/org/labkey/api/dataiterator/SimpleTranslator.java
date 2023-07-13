@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentFile;
@@ -35,6 +35,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ConversionExceptionWithMessage;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CounterDefinition;
 import org.labkey.api.data.DbSequence;
@@ -113,7 +114,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
      */
     static final int NO_MV_INDEX = 0;
 
-    private DataIterator _data;
+    protected DataIterator _data;
     protected Object[] _row = null;
     private Container _mvContainer;
     private Map<String,String> _missingValues = Collections.emptyMap();
@@ -163,10 +164,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     protected Object addConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
     {
         String msg;
-        if (null != value && null != target)
-        {
+        if (x instanceof ConversionExceptionWithMessage)
+            msg = x.getMessage();
+        else if (null != value && null != target)
             msg = ConvertHelper.getStandardConversionErrorMessage(value, fieldName, target.getJavaClass());
-        }
         else if (null != x)
             msg = StringUtils.defaultString(x.getMessage(), x.toString());
         else
@@ -887,21 +888,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 for (Object o1 : (Object[])o)
                     values.add(_c.convert(o1));
             }
-            else if (o instanceof Collection)
+            else if (o instanceof Collection<?> col)
             {
-                for (Object o1 : (Collection)o)
+                for (Object o1 : col)
                     values.add(_c.convert(o1));
             }
-            else if (o instanceof JSONArray)
+            else if (o instanceof JSONArray ja)
             {
                 // Only supports array of simple values right now.
-                for (Object o1 : ((JSONArray)o).toArray())
-                    values.add(_c.convert(o1));
-            }
-            else if (o instanceof org.json.JSONArray)
-            {
-                // Only supports array of simple values right now.
-                for (Object o1 : ((org.json.JSONArray) o).toList())
+                for (Object o1 : ja.toList())
                     values.add(_c.convert(o1));
             }
             else if (o != null)
@@ -911,7 +906,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             return values;
         }
-
     }
 
     public enum RemapMissingBehavior

@@ -16,7 +16,7 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.attachments.SvgSource;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -99,7 +99,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
             {
                 JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");
                 JSONObject newChartConfig = new JSONObject(newJson).getJSONObject("chartConfig");
-                return newChartConfig != null && !newChartConfig.equals(origChartConfig);
+                return newChartConfig != null && !newChartConfig.similar(origChartConfig);
             }
         }
         return false;

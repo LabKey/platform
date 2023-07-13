@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ImportAliasable;
@@ -65,6 +66,8 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -73,6 +76,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -174,7 +178,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public ColumnInfo getExpObjectColumn()
     {
-        var ret = wrapColumn("_ExpMaterialTableImpl_object_", _rootTable.getColumn("objectid"));
+        var ret = wrapColumn("ExpMaterialTableImpl_object_", _rootTable.getColumn("objectid"));
         ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
         return ret;
     }
@@ -251,7 +255,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ? ELSE ? END)").add(false).add(true), JdbcType.BOOLEAN);
+                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ").appendValue(false,getSqlDialect()).append(" ELSE ").appendValue(true,getSqlDialect()).append(" END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -269,6 +273,34 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     nameCol.setShownInUpdateView(false);
                 }
                 return nameCol;
+            }
+            case RawAmount ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+            }
+            case StoredAmount ->
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+                columnInfo.setLabel("Amount");
+                columnInfo.setImportAliasesSet(Set.of("Amount"));
+                return columnInfo;
+            }
+            case RawUnits ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn("Units"));
+            }
+            case Units ->
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn("Units"));
+                columnInfo.setFk(new LookupForeignKey("Value", "Value")
+                {
+                    @Override
+                    public @Nullable TableInfo getLookupTableInfo()
+                    {
+                        return getExpSchema().getTable(ExpSchema.MEASUREMENT_UNITS_TABLE);
+                    }
+                });
+                return columnInfo;
             }
             case Description ->
             {
@@ -333,7 +365,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 SQLFragment sql = new SQLFragment("(SELECT pa.rowId FROM ")
                         .append(ExperimentService.get().getTinfoProtocolApplication(), "pa")
                         .append(" WHERE pa.runId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".runId")
-                        .append(" AND pa.cpasType = '").append(ExpProtocol.ApplicationType.ExperimentRunOutput.name()).append("'")
+                        .append(" AND pa.cpasType = ").appendValue(ExpProtocol.ApplicationType.ExperimentRunOutput)
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
@@ -415,7 +447,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case SampleState ->
             {
-                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
+                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getAllProjectStates(getContainer()).size() > 0;
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
                 ret.setHidden(!statusEnabled);
@@ -423,14 +455,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setShownInInsertView(statusEnabled);
                 ret.setShownInUpdateView(statusEnabled);
                 ret.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
-                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+                ret.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                         .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
-                return ret;
-            }
-            case RecomputeRollup ->
-            {
-                var ret = wrapColumn(alias, _rootTable.getColumn("RecomputeRollup"));
-                ret.setHidden(true);
                 return ret;
             }
             case AliquotCount ->
@@ -442,18 +468,31 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case AliquotVolume ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("AliquotVolume"));
-                ret.setLabel("Aliquot Total Volume");
+                ret.setLabel("Aliquot Total Amount");
+                return ret;
+            }
+            case AvailableAliquotVolume ->
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AvailableAliquotVolume"));
+                ret.setLabel("Available Aliquot Amount");
+                return ret;
+            }
+            case AvailableAliquotCount ->
+            {
+                var ret = wrapColumn(alias, _rootTable.getColumn("AvailableAliquotCount"));
+                ret.setLabel("Available Aliquot Count");
                 return ret;
             }
             case AliquotUnit ->
             {
-                return wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+                var ret =  wrapColumn(alias, _rootTable.getColumn("AliquotUnit"));
+                ret.setShownInDetailsView(false);
+                return ret;
             }
             case MaterialExpDate ->
             {
                 var ret = wrapColumn(alias, _rootTable.getColumn("MaterialExpDate"));
                 ret.setLabel("Expiration Date");
-                ret.setHidden(false); // TODO: true until system fields can be disabled
                 ret.setShownInDetailsView(true);
                 ret.setShownInInsertView(true);
                 ret.setShownInUpdateView(true);
@@ -545,7 +584,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 sql.append(separator);
                 separator = ", ";
-                sql.append(material.getRowId());
+                sql.appendValue(material.getRowId());
             }
             sql.append(")");
             addCondition(sql);
@@ -707,7 +746,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(ExpMaterialTable.Column.Flag);
 
         var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
-        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getStates(getContainer()).size() > 0;
+        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getAllProjectStates(getContainer()).size() > 0;
         statusColInfo.setShownInDetailsView(statusEnabled);
         statusColInfo.setShownInInsertView(statusEnabled);
         statusColInfo.setShownInUpdateView(statusEnabled);
@@ -715,7 +754,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
         if (statusEnabled)
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
-        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getLookupContainerFilter())
+        statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                 .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
 
         // TODO is this a real Domain???
@@ -723,8 +762,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
             addSampleTypeColumns(st, defaultCols);
-            if (InventoryService.get() != null && !st.isMedia())
-                defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
             setName(_ss.getName());
 
@@ -732,6 +769,67 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             gridUrl.addParameter("rowId", st.getRowId());
             setGridURL(new DetailsURL(gridUrl));
         }
+
+        addColumn(Column.AliquotCount);
+        addColumn(Column.AliquotVolume);
+        addColumn(Column.AliquotUnit);
+        addColumn(Column.AvailableAliquotCount);
+        addColumn(Column.AvailableAliquotVolume);
+
+        addColumn(Column.StoredAmount);
+        defaultCols.add(FieldKey.fromParts(Column.StoredAmount));
+
+        addColumn(Column.Units);
+        defaultCols.add(FieldKey.fromParts(Column.Units));
+
+        var rawAmountColumn = addColumn(Column.RawAmount);
+        rawAmountColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+                        keys.add(FieldKey.fromParts(Column.StoredAmount));
+
+                    }
+                };
+            }
+        });
+        rawAmountColumn.setHidden(true);
+        rawAmountColumn.setShownInDetailsView(false);
+        rawAmountColumn.setShownInInsertView(false);
+        rawAmountColumn.setShownInUpdateView(false);
+
+        var rawUnitsColumn = addColumn(Column.RawUnits);
+        rawUnitsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo)
+                {
+                    @Override
+                    public void addQueryFieldKeys(Set<FieldKey> keys)
+                    {
+                        super.addQueryFieldKeys(keys);
+                        keys.add(FieldKey.fromParts(Column.Units));
+
+                    }
+                };
+            }
+        });
+        rawUnitsColumn.setHidden(true);
+        rawUnitsColumn.setShownInDetailsView(false);
+        rawUnitsColumn.setShownInInsertView(false);
+        rawUnitsColumn.setShownInUpdateView(false);
+
+        if (InventoryService.get() != null && (st == null || !st.isMedia()))
+            defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
 
         addVocabularyDomains();
@@ -775,6 +873,16 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _ss);
             addColumn(lineageLookup);
         }
+    }
+
+    private ContainerFilter getSampleStatusLookupContainerFilter()
+    {
+        // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
+        // for the sample status lookup since in the app project context we want to share status definitions accross
+        // a given project instead of creating duplicate statuses in each subfolder project.
+        ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
+        type = type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
+        return type.create(getUserSchema());
     }
 
     @Override
@@ -912,8 +1020,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             new FieldKey(null, "objectid"),
             new FieldKey(null, "RowId"),
             new FieldKey(null, "LSID"),                 // Flag
-            new FieldKey(null, "rootMaterialLsid"),     // IsAliquot
-            new FieldKey(null, "aliquotedfromlsid"),    // AliquotedFrom
             new FieldKey(null, "SourceApplicationId"),  // SourceProtocolApplication
             new FieldKey(null, "runId"),                // Run, RunApplication
             new FieldKey(null, "CpasType"));            // SampleSet
@@ -925,6 +1031,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (null == selectedColumns)
             return ALL_COLUMNS;
         selectedColumns = new TreeSet<>(selectedColumns);
+        if (selectedColumns.contains(new FieldKey(null, ExpMaterial.ALIQUOTED_FROM_INPUT)))
+            selectedColumns.add(new FieldKey(null, "aliquotedfromlsid"));
+        if (selectedColumns.contains(new FieldKey(null, "IsAliquot")))
+            selectedColumns.add(new FieldKey(null, "rootMaterialLsid"));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());
@@ -936,11 +1046,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
-
-        selectedColumns = computeInnerSelectedColumns(selectedColumns);
+        Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
+        provisionedCols.remove(Column.LSID.name());
+        provisionedCols.remove(Column.Name.name());
+        boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
 
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+
+        selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         SQLFragment sql = new SQLFragment();
         sql.appendComment("<ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
@@ -955,7 +1069,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 comma = ", ";
             }
         }
-        if (null != provisioned)
+        if (null != provisioned && hasProvisionedColumns)
         {
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
@@ -984,7 +1098,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                                 .append(" ELSE ")
                                 .append(propertyColumn.getValueSql("root"))
                                 .append(" END) AS ")
-                                .append(propertyColumn.getSelectName());
+                                .appendIdentifier(propertyColumn.getSelectName());
                     }
                     comma = ", ";
                 }
@@ -992,7 +1106,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
         sql.append(" FROM ");
         sql.append(_rootTable, "m");
-        if (null != provisioned)
+        if (null != provisioned && hasProvisionedColumns)
         {
             sql.append(" INNER JOIN ").append(provisioned, "self").append(" ON m.lsid = self.lsid")
                     .append(" LEFT JOIN ").append(provisioned, "root").append(" ON m.rootMaterialLsid = root.lsid");
@@ -1131,17 +1245,18 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             var persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, _ss, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleTypeObjectId)
                     .setFileLinkDirectory("sampletype");
-            SearchService ss = SearchService.get();
-            if (null != ss)
+            SearchService searchService = SearchService.get();
+            if (null != searchService)
             {
-                persist.setIndexFunction(lsids -> () ->
+                persist.setIndexFunction(lsids -> propertiesTable.getSchema().getScope().addCommitTask(() -> {
                     ListUtils.partition(lsids, 100).forEach(sublist ->
-                        ss.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
+                        searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
                             for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
-                                expMaterial.index(ss.defaultTask());
+                                expMaterial.index(searchService.defaultTask());
                         })
-                    )
+                    );
+                }, DbScope.CommitTaskOption.POSTCOMMIT)
                 );
             }
 

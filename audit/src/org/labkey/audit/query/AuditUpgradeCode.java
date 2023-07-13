@@ -35,9 +35,9 @@ public class AuditUpgradeCode implements UpgradeCode
             else
             {
                 String pkName = tableName + "_pk";
-                sql.append("ALTER TABLE audit.").append(tableName).append(" DROP CONSTRAINT ").append(pkName).append(";\n");
-                sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId BIGINT NOT NULL;\n");
-                sql.append("ALTER TABLE audit.").append(tableName).append(" ADD CONSTRAINT ").append(pkName).append(" PRIMARY KEY (RowId);\n");
+                sql.append("ALTER TABLE audit.").append(tableName).append(" DROP CONSTRAINT ").append(pkName).appendEOS();
+                sql.append("ALTER TABLE audit.").append(tableName).append(" ALTER COLUMN RowId BIGINT NOT NULL").appendEOS();;
+                sql.append("ALTER TABLE audit.").append(tableName).append(" ADD CONSTRAINT ").append(pkName).append(" PRIMARY KEY (RowId)").appendEOS();;
             }
 
             try (DbScope.Transaction transaction = scope.ensureTransaction())

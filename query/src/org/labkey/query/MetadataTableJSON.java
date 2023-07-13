@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -28,6 +29,7 @@ import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.WrappedColumn;
 import org.labkey.api.exp.PropertyType;
@@ -174,8 +176,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         {
             ColumnType xmlColumn = columnsToDelete.get(metadataColumnJSON.getName());
             ColumnInfo rawColumnInfo = rawTableInfo.getColumn(metadataColumnJSON.getName());
+            boolean isNewColumn = false;
             if (rawColumnInfo == null)
             {
+                isNewColumn = true;
                 rawColumnInfo = new BaseColumnInfo((FieldKey)null, (TableInfo)null);
                 // Establish the type of the column
                 if (metadataColumnJSON.getWrappedColumnName() != null)
@@ -185,7 +189,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     {
                         continue;
                     }
-                    ((BaseColumnInfo)rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
+                    ((MutableColumnInfo) rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
                 }
                 else
                 {
@@ -204,7 +208,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn = xmlTable.getColumns().addNewColumn();
                 xmlColumn.setColumnName(metadataColumnJSON.getName());
 
-                if (metadataColumnJSON.getWrappedColumnName() != null)
+                if (metadataColumnJSON.getWrappedColumnName() != null && isNewColumn)
                 {
                     // This is a newly created column that wraps another column
                     xmlColumn.setWrappedColumnName(metadataColumnJSON.getWrappedColumnName());
@@ -389,11 +393,13 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             // Set the FK
             if (!metadataColumnJSON.isLookupCustom() && metadataColumnJSON.getLookupQuery() != null && metadataColumnJSON.getLookupSchema() != null)
             {
-                Pair<Lookup, Boolean> lookup = createLookup(rawColumnInfo.getFk(), container);
+                ForeignKey rawForeignKey = rawColumnInfo.getFk();
+                Pair<Lookup, Boolean> lookup = createLookup(rawForeignKey, container);
 
                 // Check if it's the same FK, based on schema, query, and container
                 if (lookup == null ||
-                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaKey()) ||
+                        // Note, getLookupSchema() is a String so it must be compared against a String here hence the use of getSchemaName()
+                        !metadataColumnJSON.getLookupSchema().equals(lookup.first.getSchemaName()) ||
                         !metadataColumnJSON.getLookupQuery().equals(lookup.first.getQueryName()) ||
                         !Objects.equals(metadataColumnJSON.getLookupContainer(), lookup.first.getContainer() != null ? lookup.first.getContainer().getPath() : null))
                 {
@@ -405,7 +411,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         if (fkTableInfo != null)
                         {
                             List<String> pkCols = fkTableInfo.getPkColumnNames();
-                            if (pkCols.size() == 1)
+                            String rawLookupColumnName = rawForeignKey != null ? rawForeignKey.getLookupColumnName() : null;
+                            if (pkCols.size() == 1 || rawLookupColumnName != null)
                             {
                                 ColumnType.Fk fk = xmlColumn.getFk();
                                 if (fk == null)
@@ -414,7 +421,12 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                                 }
                                 fk.setFkDbSchema(metadataColumnJSON.getLookupSchema());
                                 fk.setFkTable(metadataColumnJSON.getLookupQuery());
-                                fk.setFkColumnName(pkCols.get(0));
+
+                                // Issue 47495: respect lookup column provided by established foreign key
+                                if (rawLookupColumnName != null)
+                                    fk.setFkColumnName(rawLookupColumnName);
+                                else
+                                    fk.setFkColumnName(pkCols.get(0));
                                 if (targetContainer != null)
                                 {
                                     fk.setFkFolderPath(targetContainer.getPath());
@@ -490,10 +502,15 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
                 // May be empty, or may have empty text between the start and end tags
                 if (childNodes.getLength() == 0 ||
-                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text && ((Text)childNodes.item(0)).getData().trim().length() == 0))
+                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text txt && txt.getData().trim().length() == 0))
                 {
                     // Remove columns that no longer have any metadata set on them
                     removeColumn(xmlTable, xmlColumn);
+                }
+                else if (metadataColumnJSON.getWrappedColumnName() != null)
+                {
+                    // ensure the wrapped column name is set for all saved columns
+                    xmlColumn.setWrappedColumnName(metadataColumnJSON.getWrappedColumnName());
                 }
             }
         }
@@ -528,6 +545,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         aliasesSet.forEach(importAliasesXml::addImportAlias);
     }
 
+    @Nullable
     private static TableType getTableType(String name, TablesDocument doc)
     {
         if (doc != null && doc.getTables() != null)
@@ -561,6 +579,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         }
     }
 
+    @Nullable
     public static MetadataTableJSON getMetadata(String schemaName, String tableName, User user, Container container) throws MetadataUnavailableException
     {
         Map<String, MetadataColumnJSON> columnInfos = new CaseInsensitiveHashMap<>();
@@ -619,12 +638,8 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             metadataColumnJSON.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             metadataColumnJSON.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
 
-            if (columnInfo instanceof WrappedColumn wc)
-            {
-                ColumnInfo wrappedCol = wc.getWrappedColumn();
-                if (wrappedCol != null)
-                    metadataColumnJSON.setWrappedColumnName(wrappedCol.getColumnName());
-            }
+            if (columnInfo.getWrappedColumnName() != null)
+                metadataColumnJSON.setWrappedColumnName(columnInfo.getWrappedColumnName());
 
             if (columnInfo.getFk() != null)
             {
@@ -826,6 +841,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         return result;
     }
 
+    @Nullable
     private static Pair<Lookup, Boolean> createLookup(ForeignKey fk, Container currentContainer)
     {
         if (fk == null)
@@ -871,6 +887,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         return Pair.of(lookup, custom);
     }
 
+    @Nullable
     private static TablesDocument parseDocument(String xml) throws XmlException
     {
         if (xml == null)

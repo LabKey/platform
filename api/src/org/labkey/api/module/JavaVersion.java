@@ -73,7 +73,7 @@ public enum JavaVersion
 
     public static JavaVersion get()
     {
-        // Determine current Java specification version, normalized to an int (e.g., 10, 11, 12, 13, 14, 15, 16, 17...).
+        // Determine current Java specification version, normalized to an int (e.g., 17, 18, 19, 20...).
         // Commons lang methods like SystemUtils.isJavaVersionAtLeast() aren't an option because that library isn't
         // released often enough to keep up with the Java rapid release cadence.
         String[] versionArray = SystemUtils.JAVA_SPECIFICATION_VERSION.split("\\.");

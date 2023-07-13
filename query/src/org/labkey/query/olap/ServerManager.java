@@ -29,8 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
@@ -464,7 +464,7 @@ public class ServerManager
                             s = System.currentTimeMillis();
                             execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
                             e = System.currentTimeMillis();
-                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery.toString());
+                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery);
                         }
 
 

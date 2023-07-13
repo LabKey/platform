@@ -1002,12 +1002,11 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         TableInfo sp = sqs.getTable("StudyProperties");
         if (null != sp)
         {
-            List<ColumnInfo> cols = sp.getColumns();
-            try (Results results = QueryService.get().select(sp, cols, null, null))
+            try (Results results = QueryService.get().getSelectBuilder(sp).select())
             {
                 if (results.next())
                 {
-                    for (ColumnInfo col : cols)
+                    for (ColumnInfo col : sp.getColumns())
                     {
                         if (_skipProperties.contains(col.getName()))
                             continue;

@@ -348,7 +348,7 @@ public class QAggregate extends QExpr
                 {
                     SqlBuilder delimiter = new SqlBuilder(builder.getDialect());
                     ((QExpr)iter.next()).appendSql(delimiter, query);
-                    gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter.getSQL());
+                    gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter);
                 }
                 else
                 {
@@ -470,7 +470,7 @@ public class QAggregate extends QExpr
             if (getType()._propagateAttributes)
             {
                 field.getRelationColumn().copyColumnAttributesTo((BaseColumnInfo)ret);
-                // but not these attributes, maybe I should have a white-list instead of a black-list
+                // but not these attributes, maybe I should have an include list instead of an exclude list
                 ret.setLabel(null);
                 ret.setURL(null);
                 ret.setMvColumnName(null);

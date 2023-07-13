@@ -746,6 +746,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
             return _inner.getSelectName();
         }
 
+        @Override
+        public @Nullable SQLFragment getSQLName()
+        {
+            return _inner.getSQLName();
+        }
+
         @Nullable
         @Override
         public String getMetaDataName()
@@ -1042,8 +1048,12 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return getDomainKind(domain).getScope();
     }
 
-    private static SqlDialect getSqlDialect(Domain domain){
-        return getScope(domain).getSqlDialect();
+    private static SqlDialect getSqlDialect(Domain domain)
+    {
+        DbScope scope = getScope(domain);
+        if (null != scope)
+            return scope.getSqlDialect();
+        return CoreSchema.getInstance().getSqlDialect();
     }
 
     @Override

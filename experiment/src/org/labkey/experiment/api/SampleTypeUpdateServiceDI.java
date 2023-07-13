@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,11 +41,13 @@ import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.dataiterator.AttachmentDataIterator;
 import org.labkey.api.dataiterator.CachingDataIterator;
 import org.labkey.api.dataiterator.DataIterator;
@@ -57,8 +58,10 @@ import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.DropColumnsDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.MapDataIterator;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
+import org.labkey.api.dataiterator.WrapperDataIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -76,7 +79,6 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -92,14 +94,17 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -111,12 +116,20 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
+import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
+import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 
 /**
  *
@@ -129,16 +142,24 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
  */
 public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
-    public static final Logger LOG = LogManager.getLogger(SampleTypeUpdateServiceDI.class);
+    public static final Logger LOG = LogHelper.getLogger(SampleTypeUpdateServiceDI.class, "Sample type update service info");
+
+    public static final String PARENT_RECOMPUTE_LSID_COL = "ParentLsidToRecompute";
+    public static final String PARENT_RECOMPUTE_NAME_COL = "ParentNameToRecompute";
+    public static final String PARENT_RECOMPUTE_LSID_SET = "ParentLsidToRecomputeSet";
+    public static final String PARENT_RECOMPUTE_NAME_SET = "ParentNameToRecomputeSet";
 
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
-    static {
+
+    static
+    {
         SAMPLE_ALT_IMPORT_NAME_COLS = new CaseInsensitiveHashMap<>();
         SAMPLE_ALT_IMPORT_NAME_COLS.put("SampleId", "Name");
         SAMPLE_ALT_IMPORT_NAME_COLS.put("Sample Id", "Name");
     }
 
-    public enum Options {
+    public enum Options
+    {
         SkipDerivation,
         SkipAliquot
     }
@@ -194,35 +215,138 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
         assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+        ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
+        Map<Enum, Object> finalConfigParameters = configParameters == null ? new HashMap<>() : configParameters;
+        finalConfigParameters.put(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
+        int ret = _importRowsUsingDIB(user, container, rows, outputRows, getDataIteratorContext(errors, InsertOption.INSERT, finalConfigParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            if (InventoryService.get() != null)
-            {
-                try
-                {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            onSamplesChanged();
+            onSamplesChanged(outputRows, configParameters, container);
             audit(QueryService.AuditAction.INSERT);
         }
         return ret;
     }
 
+    private Pair<Set<String>, Set<String>> getSampleParentsForRecalc(List<Map<String, Object>> outputRows)
+    {
+        if (outputRows == null || outputRows.isEmpty())
+            return null;
+
+        Set<String> parentLsids = new HashSet<>();
+        Set<String> parentNames = new HashSet<>();
+        if (outputRows.size() == 1 && outputRows.get(0).containsKey(PARENT_RECOMPUTE_LSID_SET))
+        {
+            parentLsids.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_LSID_SET));
+            if (outputRows.get(0).containsKey(PARENT_RECOMPUTE_NAME_SET))
+                parentNames.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_NAME_SET));
+        }
+        else
+        {
+            for (int i = 0; i < outputRows.size(); i++)
+            {
+                Map<String, Object> result = outputRows.get(i);
+                if (!result.containsKey(PARENT_RECOMPUTE_LSID_COL))
+                    break;
+                Object lsidObj = result.get(PARENT_RECOMPUTE_LSID_COL);
+                Object nameObj = result.get(PARENT_RECOMPUTE_NAME_COL);
+                if (lsidObj != null)
+                    parentLsids.add((String) lsidObj);
+                if (nameObj != null)
+                    parentNames.add((String) nameObj);
+            }
+        }
+
+        return new Pair<>(parentLsids, parentNames);
+    }
+
+    @Override
+    protected int _pump(DataIteratorBuilder etl, final @Nullable ArrayList<Map<String, Object>> rows, DataIteratorContext context)
+    {
+        DataIterator it = etl.getDataIterator(context);
+
+        try
+        {
+            if (null != rows)
+            {
+
+                MapDataIterator maps = DataIteratorUtil.wrapMap(it, false);
+                Map<String, Integer> columnMap = DataIteratorUtil.createColumnNameMap(it);
+                Integer parentLsidToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_LSID_COL);
+                Integer parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NAME_COL);
+
+                boolean hasRollUpColumns = parentLsidToRecomputeCol != null && parentNameToRecomputeCol != null;
+                Set<String> lsidToRecompute = new HashSet<>();
+                Set<String> nameToRecompute = new HashSet<>();
+
+                if (hasRollUpColumns)
+                {
+                    Map<String, Object> recomputeRes = new CaseInsensitiveHashMap<>();
+                    if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
+                    {
+                        recomputeRes.put(PARENT_RECOMPUTE_LSID_SET, lsidToRecompute);
+                        recomputeRes.put(PARENT_RECOMPUTE_NAME_SET, nameToRecompute);
+                        rows.add(recomputeRes);
+                    }
+                }
+
+                if (hasRollUpColumns || !context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
+                {
+                    it = new WrapperDataIterator(maps)
+                    {
+                        @Override
+                        public boolean next() throws BatchValidationException
+                        {
+                            boolean ret = super.next();
+                            if (ret)
+                            {
+                                if (hasRollUpColumns && context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
+                                {
+                                    Object lsidObj = (_delegate).get(parentLsidToRecomputeCol);
+                                    if (lsidObj != null)
+                                        lsidToRecompute.add((String) lsidObj);
+                                    Object nameObj = (_delegate).get(parentNameToRecomputeCol);
+                                    if (nameObj != null)
+                                    {
+                                        if (nameObj instanceof String)
+                                        {
+                                            nameToRecompute.add((String) nameObj);
+                                        }
+                                        else if (nameObj instanceof Number)
+                                        {
+                                            nameToRecompute.add(nameObj.toString());
+                                        }
+                                    }
+                                }
+                                else
+                                    rows.add(((MapDataIterator) _delegate).getMap());
+                            }
+                            return ret;
+                        }
+                    };
+                }
+            }
+
+            Pump pump = new Pump(it, context);
+            pump.run();
+
+            return pump.getRowCount();
+        }
+        finally
+        {
+            DataIteratorUtil.closeQuietly(it);
+        }
+    }
+
     @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        if (context.isCrossTypeImport())
+            return new ExpDataIterators.MultiSampleTypeDataIteratorBuilder(user, container, data);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
 
-        dib = ((UpdateableTableInfo)getQueryTable()).persistRows(dib, context);
+        dib = ((UpdateableTableInfo) getQueryTable()).persistRows(dib, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
         dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
 
@@ -230,7 +354,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (userSchema != null)
         {
             ExpSampleType sampleType = ((ExpMaterialTableImpl) getQueryTable()).getSampleType();
-            if (InventoryService.get() != null)
+            if (InventoryService.get() != null && !_sampleType.isMedia())
                 dib = LoggingDataIterator.wrap(InventoryService.get().getPersistStorageItemDataIteratorBuilder(dib, userSchema.getContainer(), userSchema.getUser(), sampleType));
 
             if (sampleType.getAutoLinkTargetContainer() != null && StudyPublishService.get() != null && !context.getInsertOption().updateOnly/* TODO support link to study on update? */)
@@ -242,7 +366,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
-        assert _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
+        assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
 
         // Issue 44256: We want to support "Name", "SampleId" and "Sample Id" for easier import
         // Issue 46639: "SampleId" column header not recognized when loading samples from pipeline trigger
@@ -250,7 +374,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             if (rows instanceof DataLoader) // junit test uses ListofMapsDataIterator
             {
-                if (((DataLoader) rows).getColumnInfoMap().isEmpty())
+                if (!context.isCrossTypeImport() && ((DataLoader) rows).getColumnInfoMap().isEmpty())
                     ((DataLoader) rows).setKnownColumns(getQueryTable().getColumns());
                 ColumnDescriptor[] columnDescriptors = ((DataLoader) rows).getColumns(SAMPLE_ALT_IMPORT_NAME_COLS);
                 for (ColumnDescriptor columnDescriptor : columnDescriptors)
@@ -267,22 +391,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new RuntimeException(e);
         }
 
-        int ret = super.loadRows(user, container, rows, context, extraScriptContext);
-        if (ret > 0 && !context.getErrors().hasErrors())
+        context.putConfigParameter(ExperimentService.QueryOptions.GetSampleRecomputeCol, true);
+        ArrayList<Map<String, Object>> outputRows = new ArrayList<>();
+        int ret = super.loadRows(user, container, rows, outputRows, context, extraScriptContext);
+        if (ret > 0 && !context.getErrors().hasErrors() && _sampleType != null)
         {
-            if (InventoryService.get() != null)
-            {
-                try
-                {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            onSamplesChanged();
+            boolean isMediaUpdate = _sampleType.isMedia() && context.getInsertOption().updateOnly;
+            onSamplesChanged(!isMediaUpdate ? outputRows : null, context.getConfigParameters(), container);
             audit(context.getInsertOption().auditAction);
         }
         return ret;
@@ -295,19 +410,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         int ret = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (ret > 0 && !errors.hasErrors())
         {
-            if (InventoryService.get() != null)
-            {
-                try
-                {
-                    InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            onSamplesChanged();
+            onSamplesChanged(null, configParameters, container); // mergeRows not really used, skip wiring recalc
             audit(QueryService.AuditAction.MERGE);
         }
         return ret;
@@ -325,10 +428,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            if (InventoryService.get() != null)
-                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
-
-            onSamplesChanged();
+            onSamplesChanged(results, configParameters, container);
             audit(QueryService.AuditAction.INSERT);
         }
         return results;
@@ -354,9 +454,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             DbScope scope = getSchema().getDbSchema().getScope();
             results = scope.executeWithRetry(transaction ->
                     super._updateRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.UPDATE, finalConfigParameters), extraScriptContext));
-
-            if (InventoryService.get() != null && results != null && results.size() > 0 && !errors.hasErrors())
-                InventoryService.get().recomputeSampleTypeRollup(_sampleType, container, false);
         }
         else
         {
@@ -369,11 +466,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
-            onSamplesChanged();
+            onSamplesChanged(!_sampleType.isMedia() ? results : null, configParameters, container);
             audit(QueryService.AuditAction.UPDATE);
         }
 
         return results;
+    }
+
+    @Override
+    protected boolean hasImportRowsPermission(User user, Container container, DataIteratorContext context)
+    {
+        return context.isCrossTypeImport() || super.hasImportRowsPermission(user, container, context);
     }
 
     @Override
@@ -407,6 +510,23 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new CaseInsensitiveHashSet(fields);
     }
 
+    public static boolean isAliquotStatusChangeNeedRecalc(Collection<Integer> availableStatuses, Integer oldStatus, Integer newStatus)
+    {
+        if (availableStatuses == null || availableStatuses.isEmpty())
+            return false;
+
+        if (oldStatus == newStatus)
+            return false;
+
+        if (availableStatuses.contains(oldStatus) && !availableStatuses.contains(newStatus))
+            return true;
+
+        if (availableStatuses.contains(newStatus) && !availableStatuses.contains(oldStatus))
+            return true;
+
+        return false;
+    }
+
     @Override
     protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
     {
@@ -420,13 +540,54 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (row.containsKey(Name.name()) && StringUtils.isEmpty(newName))
             throw new ValidationException("Sample name cannot be blank");
 
-       String oldName = (String) oldRow.get(Name.name());
+        String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
         if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
             throw new ValidationException("User-specified sample name not allowed");
 
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
+
+        String aliquotRollupRoot = null;
+
+        if (!_sampleType.isMedia() && isAliquot)
+        {
+            String aliquotRoot = (String) oldRow.get(RootMaterialLSID.name());
+
+            if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
+            {
+                Measurement oldAmount = new Measurement(oldRow.get(StoredAmount.name()), (String) oldRow.get(Units.name()), _sampleType.getMetricUnit());
+                Measurement newAmount = new Measurement(row.get(StoredAmount.name()), (String) row.get(Units.name()), _sampleType.getMetricUnit());
+
+                if (!oldAmount.equals(newAmount))
+                {
+                    if (StringUtils.isNotEmpty(aliquotRoot))
+                        aliquotRollupRoot = aliquotRoot;
+                }
+            }
+
+            if (StringUtils.isEmpty(aliquotRollupRoot) && row.containsKey(SampleState.name()))
+            {
+                List<Integer> availableSampleStatuses = new ArrayList<>();
+                if (SampleStatusService.get().supportsSampleStatus())
+                {
+                    for (DataState state: SampleStatusService.get().getAllProjectStates(c))
+                    {
+                        if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                            availableSampleStatuses.add(state.getRowId());
+                    }
+                }
+
+                if (!availableSampleStatuses.isEmpty())
+                {
+                    Integer oldState = (Integer) oldRow.get(SampleState.name());
+                    Integer newState = (Integer) row.get(SampleState.name());
+                    if (isAliquotStatusChangeNeedRecalc(availableSampleStatuses, oldState, newState))
+                        aliquotRollupRoot = aliquotRoot;
+                }
+            }
+        }
+
         Set<String> aliquotFields = getAliquotSpecificFields();
         Set<String> sampleMetaFields = getSampleMetaFields();
 
@@ -440,16 +601,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             throw new ValidationException("Updating aliquotedFrom is not supported");
         rowCopy.remove(AliquotedFromLSID.name());
         rowCopy.remove(RootMaterialLSID.name());
-        rowCopy.remove("AliquotedFrom");
+        rowCopy.remove(ExpMaterial.ALIQUOTED_FROM_INPUT);
 
         // We need to allow updating from one locked status to another locked status, but without other changes
         // and updating from either locked or unlocked to something else while also updating other metadata
-        DataState oldStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) oldRow.get(ExpMaterialTable.Column.SampleState.name()));
+        DataState oldStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) oldRow.get(SampleState.name()));
         boolean oldAllowsOp = SampleStatusService.get().isOperationPermitted(oldStatus, SampleTypeService.SampleOperations.EditMetadata);
-        DataState newStatus = DataStateManager.getInstance().getStateForRowId(getContainer(), (Integer) rowCopy.get(ExpMaterialTable.Column.SampleState.name()));
+        DataState newStatus = SampleStatusService.get().getStateForRowId(getContainer(), (Integer) rowCopy.get(SampleState.name()));
         boolean newAllowsOp = SampleStatusService.get().isOperationPermitted(newStatus, SampleTypeService.SampleOperations.EditMetadata);
 
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
+
+        if (aliquotRollupRoot != null)
+            ret.put(PARENT_RECOMPUTE_LSID_COL, aliquotRollupRoot);
 
         Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
         boolean hasNonStatusChange = false;
@@ -586,9 +750,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 if (rowId == null)
                     throw new QueryUpdateServiceException("RowID is required to delete a Sample Type Material");
 
-                if (!SampleStatusService.get().isOperationPermitted(getContainer(), (Integer) map.get(ExpMaterialTable.Column.SampleState.name()), SampleTypeService.SampleOperations.Delete))
+                Integer sampleStateId = (Integer) map.get(SampleState.name());
+                if (!SampleStatusService.get().isOperationPermitted(getContainer(), sampleStateId, SampleTypeService.SampleOperations.Delete))
                 {
-                    DataState dataState = DataStateManager.getInstance().getStateForRowId(container, (Integer) map.get(ExpMaterialTable.Column.SampleState.name()));
+                    DataState dataState = SampleStatusService.get().getStateForRowId(container, sampleStateId);
                     throw new QueryUpdateServiceException(String.format("Sample with RowID %d cannot be deleted due to its current status (%s)", rowId, dataState));
                 }
 
@@ -748,10 +913,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, boolean getDetails)
+    public Map<Integer, Map<String, Object>> getExistingRows(User user, Container container, Map<Integer, Map<String, Object>> keys, boolean verifyNoCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, !getDetails);
+        return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
     private ContainerFilter getSampleDataCF(Container container, User user)
@@ -767,9 +932,65 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ContainerFilter.current(container);
     }
 
-    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, boolean skipInputs)
+    private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
+
+    private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
+    {
+        if (!(getQueryTable() instanceof UpdateableTableInfo updatable) || dataColumns == null)
+            return new ExistingRowSelect(getQueryTable(), ALL_COLUMNS, true, false);
+
+        CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
+        if (null == remap)
+            remap = CaseInsensitiveHashMap.of();
+
+        Set<String> includedColumns = new CaseInsensitiveHashSet("name", "lsid", "rowid");
+        for (ColumnInfo column : getQueryTable().getColumns())
+        {
+            if (dataColumns.contains(column.getColumnName()))
+                includedColumns.add(column.getColumnName());
+            else if (dataColumns.contains(remap.get(column.getColumnName())))
+                includedColumns.add(remap.get(column.getColumnName()));
+        }
+
+        boolean isAllFromMaterialTable = new CaseInsensitiveHashSet(Stream.of(ExpMaterialTable.Column.values())
+                .map(Enum::name)
+                .collect(Collectors.toSet()))
+                .containsAll(includedColumns);
+        TableInfo selectTable = isAllFromMaterialTable ? ExperimentService.get().getTinfoMaterial() : getQueryTable();
+
+        boolean hasParentInput = false;
+        if (_sampleType != null)
+        {
+            try
+            {
+                Map<String, String> importAliases = _sampleType.getImportAliasMap();
+                for (String col : dataColumns)
+                {
+                    if (!hasParentInput && ExperimentService.isInputOutputColumn(col) || equalsIgnoreCase("parent",col) || importAliases.containsKey(col))
+                    {
+                        hasParentInput = true;
+                        break;
+                    }
+
+                }
+            }
+            catch (IOException ignored)
+            {
+            }
+
+        }
+
+        return new ExistingRowSelect(selectTable, includedColumns, hasParentInput, isAllFromMaterialTable /* Unlike samples table, Materials table doesn't have container filter applied*/);
+    }
+
+    private Map<Integer, Map<String, Object>> getMaterialMapsWithInput(Map<Integer, Map<String, Object>> keys, User user, Container container, boolean checkCrossFolderData, boolean verifyExisting, @Nullable Set<String> columns)
             throws QueryUpdateServiceException, InvalidKeyException
     {
+        ExistingRowSelect existingRowSelect = getExistingRowSelect(columns);
+        TableInfo queryTableInfo = existingRowSelect.tableInfo;
+        Set<String> selectColumns = existingRowSelect.columns;
+        boolean filterToCurrentContainer = existingRowSelect.addContainerFilter;
+
         Map<Integer, Map<String, Object>> sampleRows = new LinkedHashMap<>();
         Map<Integer, String> rowNumLsid = new HashMap<>();
 
@@ -804,8 +1025,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (!rowIdRowNumMap.isEmpty())
         {
-            Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIdRowNumMap.keySet(), CompareType.IN);
+            if (filterToCurrentContainer)
+                filter.addCondition(FieldKey.fromParts("Container"), container);
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 Integer rowId = (Integer) row.get("rowid");
@@ -825,8 +1048,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             useLsid = true;
             allKeys.addAll(lsidRowNumMap.keySet());
 
-            Filter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
-            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
+            if (filterToCurrentContainer)
+                filter.addCondition(FieldKey.fromParts("Container"), container);
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String sampleLsid = (String) row.get("lsid");
@@ -842,8 +1067,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             allKeys.addAll(nameRowNumMap.keySet());
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
             filter.addCondition(FieldKey.fromParts("Name"), nameRowNumMap.keySet(), CompareType.IN);
+            if (filterToCurrentContainer)
+                filter.addCondition(FieldKey.fromParts("Container"), container);
 
-            Map<String, Object>[] rows = new TableSelector(getQueryTable(), filter, null).getMapArray();
+            Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get("name");
@@ -859,7 +1086,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
             SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user));
+            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user)); // don't use TinfoMaterial here since UserSchema is needed
+            if (tInfo == null)
+                throw new QueryUpdateServiceException("Unable to get the existing sample record");
+
             existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
             Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
@@ -874,27 +1104,34 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (verifyExisting && !allKeys.isEmpty())
             throw new InvalidKeyException("Sample does not exist: " + allKeys.iterator().next() + ".");
 
+        // if contains domain fields, check for aliquot specific fields
+        if (!queryTableInfo.getName().equalsIgnoreCase("material"))
+        {
+            Set<String> parentOnlyFields = getSampleMetaFields();
+            for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
+            {
+                Map<String, Object> sampleRow = rowNumSampleRow.getValue();
 
-        if (skipInputs)
+                if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
+                {
+                    for (String parentOnlyField : parentOnlyFields)
+                        sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
+                }
+            }
+        }
+
+        if (!existingRowSelect.includeParent)
             return sampleRows;
 
         List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 
-        Set<String> parentOnlyFields = getSampleMetaFields();
-
         for (Map.Entry<Integer, Map<String, Object>> rowNumSampleRow : sampleRows.entrySet())
         {
             Integer rowNum = rowNumSampleRow.getKey();
             String lsidKey = rowNumLsid.get(rowNum);
             Map<String, Object> sampleRow = rowNumSampleRow.getValue();
-
-            if (!StringUtils.isEmpty((String) sampleRow.get(AliquotedFromLSID.name())))
-            {
-                for (String parentOnlyField : parentOnlyFields)
-                    sampleRow.put(parentOnlyField, null); // ignore inherited fields for aliquots
-            }
 
             if (!parents.containsKey(lsidKey))
                 continue;
@@ -929,20 +1166,72 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMap(getMaterialRowId(keys), getMaterialLsid(keys), user, container, true);
     }
 
-    private void onSamplesChanged()
+    private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
+        Pair<Set<String>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
+        boolean useBackgroundRecalc = false;
+        if (parentKeys != null)
+        {
+            int parentSize = parentKeys.first.size() + parentKeys.second.size();
+            useBackgroundRecalc = parentSize > 20;
+        }
+
+        boolean skipRecalc = false;
+        if (params != null && params.containsKey(SkipAliquotRollup)) // used by ExperimentStressTest only to avoid deadlock in test
+            skipRecalc = Boolean.TRUE == params.get(SkipAliquotRollup);
+
+        if (!useBackgroundRecalc && parentKeys != null && !skipRecalc)
+            handleRecalc(parentKeys.first, parentKeys.second, false, container);
+
         if (tx != null)
         {
-             if (!tx.isAborted())
-                 tx.addCommitTask(this::fireSamplesChanged, DbScope.CommitTaskOption.POSTCOMMIT);
-             else
-                 LOG.info("Skipping onSamplesChanged callback; transaction aborted");
+            if (!tx.isAborted())
+            {
+                boolean finalUseBackgroundRecalc = useBackgroundRecalc;
+                boolean finalSkipRecalc = skipRecalc;
+                tx.addCommitTask(() -> {
+                    fireSamplesChanged();
+                    if (finalUseBackgroundRecalc && !finalSkipRecalc)
+                        handleRecalc(parentKeys.first, parentKeys.second, true, container);
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }
+            else
+                LOG.info("Skipping onSamplesChanged callback; transaction aborted");
         }
         else
         {
             fireSamplesChanged();
         }
+    }
+
+    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, Container container)
+    {
+        if (useBackgroundThread)
+        {
+            JobRunner.getDefault().execute(() -> {
+                try
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            });
+        }
+        else
+        {
+            try
+            {
+                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
     }
 
     private void fireSamplesChanged()
@@ -1003,7 +1292,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
                 if (isReservedHeader(name) || isContainerField)
                 {
-                    // Allow 'Name' and 'Comment' to be loaded by the TabLoader.
+                    // Allow some fields on exp.materials to be loaded by the TabLoader.
                     // Skip over other reserved names 'RowId', 'Run', etc.
                     if (isCommentHeader(name))
                         continue;
@@ -1019,6 +1308,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         continue;
                     if (isMaterialExpDateHeader(name))
                         continue;
+                    if (isStoredAmountHeader(name))
+                        continue;
+                    if (isUnitsHeader(name))
+                        continue;
                     drop.add(name);
                 }
             }
@@ -1028,15 +1321,17 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (!drop.isEmpty())
                 source = new DropColumnsDataIterator(source, drop);
 
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
             if (context.getInsertOption() == InsertOption.UPDATE)
             {
                 SimpleTranslator addAliquotedFrom = new SimpleTranslator(source, context);
 
-                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(source);
                 if (!columnNameMap.containsKey("aliquotedfromlsid"))
                     addAliquotedFrom.addNullColumn("aliquotedfromlsid", JdbcType.VARCHAR);
                 addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
+                addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
+                addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
                 var addAliquotedFromDI = new SampleUpdateAliquotedFromDataIterator(new CachingDataIterator(addAliquotedFrom), materialTable, sampleType.getRowId(), columnNameMap.containsKey("lsid"));
@@ -1060,6 +1355,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             final int batchSize = context.getInsertOption().batch ? BATCH_SIZE : 1;
             addGenId.addSequenceColumn(genIdCol, sampleType.getContainer(), ExpSampleTypeImpl.SEQUENCE_PREFIX, sampleType.getRowId(), batchSize, sampleType.getMinGenId());
             addGenId.addUniqueIdDbSequenceColumns(ContainerManager.getRoot(), materialTable);
+            // only add when AliquotedFrom column is not null
+            if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+            {
+                addGenId.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
+                addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
+            }
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
 
             // Table Counters
@@ -1111,7 +1412,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         private static boolean isSampleStateHeader(String name)
         {
-            return isExpMaterialColumn(ExpMaterialTable.Column.SampleState, name);
+            return isExpMaterialColumn(SampleState, name);
         }
 
         private static boolean isCommentHeader(String name)
@@ -1127,6 +1428,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static boolean isMaterialExpDateHeader(String name)
         {
             return isExpMaterialColumn(ExpMaterialTable.Column.MaterialExpDate, name);
+        }
+
+        private static boolean isStoredAmountHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.StoredAmount, name) || "Amount".equalsIgnoreCase(name);
+        }
+
+        public static boolean isUnitsHeader(String name)
+        {
+            return isExpMaterialColumn(ExpMaterialTable.Column.Units, name);
         }
     }
 
@@ -1166,12 +1477,10 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 // do nothing
             }
-            nameGen = sampleType.getNameGenerator(dataContainer, user);
-            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user);
-            if (nameGen != null)
-                nameState = nameGen.createState(true);
-            else
-                nameState = null;
+            boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
+            nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
+            aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
+            nameState = nameGen != null ? nameGen.createState(true) : null;
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
             _batchSize = batchSize;
@@ -1214,7 +1523,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             Map<String,Object> map = new HashMap<>(((MapDataIterator)getInput()).getMap());
 
             String aliquotedFrom = null;
-            Object aliquotedFromObj = map.get("AliquotedFrom");
+            Object aliquotedFromObj = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
             if (aliquotedFromObj != null)
             {
                 if (aliquotedFromObj instanceof String)
@@ -1222,7 +1531,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     // Issue 45563: We need the AliquotedFrom name to be quoted so we can properly find the parent,
                     // but we don't want to include the quotes in the name we generate using AliquotedFrom
                     aliquotedFrom = StringUtilsLabKey.unquoteString((String) aliquotedFromObj);
-                    map.put("AliquotedFrom", aliquotedFrom);
+                    map.put(ExpMaterial.ALIQUOTED_FROM_INPUT, aliquotedFrom);
                 }
                 else if (aliquotedFromObj instanceof Number)
                 {
@@ -1326,11 +1635,13 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private static final String INVALID_NONALIQUOT_PROPERTY = "A sample property [%1$s] value has been ignored for an aliquot.";
 
         private final ExpSampleTypeImpl _sampleType;
+        private final Measurement.Unit _metricUnit;
 
         public _SamplesCoerceDataIterator(DataIterator source, DataIteratorContext context, ExpSampleTypeImpl sampleType, ExpMaterialTableImpl materialTable)
         {
             super(source, context);
             _sampleType = sampleType;
+            _metricUnit = _sampleType.getMetricUnit() != null ? Measurement.Unit.valueOf(_sampleType.getMetricUnit()) : null;
             setDebugName("Coerce before trigger script - samples");
             init(materialTable, context.getInsertOption().useImportAliases);
         }
@@ -1349,16 +1660,19 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             }
 
             int derivationDataColInd = -1;
-            for (int i = 1; i <= count; i++)
+            int unitDataColInd = -1;
+            int amountDataColInd = -1;
+            for (int i = 1; i <= count && (derivationDataColInd < 0 || unitDataColInd < 0 || amountDataColInd < 0); i++)
             {
                 ColumnInfo from = di.getColumnInfo(i);
                 if (from != null)
                 {
                     if (getAliquotedFromColName().equalsIgnoreCase(from.getName()))
-                    {
                         derivationDataColInd = i;
-                        break;
-                    }
+                    else if ("Units".equalsIgnoreCase(from.getName()))
+                        unitDataColInd = i;
+                    else if ("StoredAmount".equalsIgnoreCase(from.getName()) || "Amount".equalsIgnoreCase(from.getName()))
+                        amountDataColInd = i;
                 }
             }
 
@@ -1396,6 +1710,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                         else
                             addColumn(to.getName(), i);
                     }
+                    else if (name.equalsIgnoreCase("Units"))
+                    {
+                        addColumn(to, new SampleUnitsConvertColumn(name, i, to.getJdbcType()));
+                    }
+                    else if (name.equalsIgnoreCase("StoredAmount"))
+                    {
+                        addColumn(to, new SampleAmountConvertColumn(name, i, to.getJdbcType()));
+                    }
                     else
                     {
                         if (isScopedField)
@@ -1419,7 +1741,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         private String getAliquotedFromColName()
         {
             // for update, AliquotedFromLSID is reselected from existing row. For other actions, "AliquotedFrom" needs to be provided
-            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : "AliquotedFrom";
+            return _context.getInsertOption().updateOnly ? AliquotedFromLSID.name() : ExpMaterial.ALIQUOTED_FROM_INPUT;
         }
 
         private void _addConvertColumn(String name, int fromIndex, JdbcType toType, ForeignKey toFk, int derivationDataColInd, boolean isAliquotField)
@@ -1439,6 +1761,37 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             c = new DerivationScopedConvertColumn(fromIndex, c, derivationDataColInd, isAliquotField, String.format(INVALID_ALIQUOT_PROPERTY, col.getName()), String.format(INVALID_NONALIQUOT_PROPERTY, col.getName()));
 
             addColumn(col, c);
+        }
+
+
+        protected class SampleUnitsConvertColumn extends SimpleTranslator.SimpleConvertColumn
+        {
+            public SampleUnitsConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            {
+                super(fieldName, indexFrom, to, true);
+            }
+
+            @Override
+            protected Object convert(Object o)
+            {
+                Measurement.validateUnits((String) o, _metricUnit);
+                return o;
+            }
+
+        }
+
+        protected class SampleAmountConvertColumn extends SimpleTranslator.SimpleConvertColumn
+        {
+            public SampleAmountConvertColumn(String fieldName, int indexFrom, @Nullable JdbcType to)
+            {
+                super(fieldName, indexFrom, to, true);
+            }
+
+            @Override
+            protected Object convert(Object amountObj)
+            {
+                return Measurement.convertToAmount(amountObj);
+            }
         }
     }
 

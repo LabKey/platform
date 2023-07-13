@@ -18,8 +18,8 @@ package org.labkey.query.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
@@ -76,10 +76,6 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-/**
- * User: dave
- * Date: Sep 3, 2009
- */
 @RequiresPermission(ReadPermission.class)
 @Action(ActionType.SelectMetaData.class)
 public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsAction.Form>
@@ -158,7 +154,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         }
 
         if (null == tinfo)
-            throw new NotFoundException("Could not find the specified query in the schema '" + form.getSchemaName() + "'");
+            throw new NotFoundException("Could not find the specified query '" + form.getQueryName() + "' in the schema '" + form.getSchemaName() + "'");
 
         resp.put("supportGroupConcatSubSelect", tinfo.getSqlDialect().supportsGroupConcatSubSelect());
         resp.put("supportMerge", tinfo.supportsInsertOption(QueryUpdateService.InsertOption.MERGE));

@@ -34,7 +34,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -51,7 +50,6 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
-import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
@@ -82,6 +80,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.util.StringUtilsLabKey.append;
 
 public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements ExpMaterial
 {
@@ -215,7 +215,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     {
         if (getSampleStateId() == null)
             return null;
-        return DataStateManager.getInstance().getStateForRowId(getContainer(), getSampleStateId());
+
+        return SampleStatusService.get().getStateForRowId(getContainer(), getSampleStateId());
     }
 
 
@@ -229,9 +230,27 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public boolean isRecomputeRollup()
+    public Double getStoredAmount()
     {
-        return _object.isRecomputeRollup();
+        return _object.getStoredAmount();
+    }
+
+    @Override
+    public void setStoredAmount(Double amount)
+    {
+        _object.setStoredAmount(amount);
+    }
+
+    @Override
+    public String getUnits()
+    {
+        return _object.getUnits();
+    }
+
+    @Override
+    public void setUnits(String units)
+    {
+        _object.setUnits(units);
     }
 
     @Override
@@ -415,10 +434,10 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         Map<String, Object> props = new HashMap<>();
         Set<String> identifiersHi = new HashSet<>();
 
-        // Name is identifier with highest weight
+        // Name is identifier with the highest weight
         identifiersHi.add(getName());
 
-        // Add aliases in parenthesis in the title
+        // Add aliases in parentheses in the title
         StringBuilder title = new StringBuilder("Sample - " + getName());
         Collection<String> aliases = this.getAliases();
         if (!aliases.isEmpty())
@@ -498,23 +517,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     static final List<Pair<Integer,Long>> updateLastIndexedList = new ArrayList<>();
-
-    private static void append(StringBuilder sb, @Nullable Identifiable identifiable)
-    {
-        if (null != identifiable)
-            append(sb, identifiable.getName());
-    }
-
-    private static void append(StringBuilder sb, @Nullable String value)
-    {
-        if (null != value)
-        {
-            if (sb.length() > 0)
-                sb.append(" ");
-
-            sb.append(value);
-        }
-    }
 
     @Override
     public String getDocumentId()

@@ -58,7 +58,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.wiki.DiffMatchPatch.Diff;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -85,6 +84,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.wiki.DiffMatchPatch.Diff;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
 import org.labkey.wiki.model.WikiTree;
@@ -1017,7 +1017,7 @@ public class WikiController extends SpringActionController
                 //map source page row ids to new page row ids
                 Map<Integer, Integer> pageIdMap = new HashMap<>();
                 //shortcut for root topics
-                pageIdMap.put(-1, -1);
+                pageIdMap.put(null, null);
 
                 //copy each page in the list
                 for (String name : srcPageNames)
@@ -1152,8 +1152,7 @@ public class WikiController extends SpringActionController
             else
             {
                 // Result was found; strip the "_docid" parameter and redirect as a convenience
-                if (null != getViewContext().getActionURL().getParameter("_docid"))
-                    throw new RedirectException(getViewContext().cloneActionURL().deleteParameter("_docid"));
+                SearchService.stripDocIdParameterAndRedirect(getViewContext().getActionURL());
 
                 int version = form.getVersion();
 
@@ -1621,7 +1620,7 @@ public class WikiController extends SpringActionController
     {
         private String _name;
         private String _title;
-        private int _parent;
+        private Integer _parent;
         private String _siblingOrder;
         private String _nextAction;
         private boolean _shouldIndex;
@@ -1693,13 +1692,13 @@ public class WikiController extends SpringActionController
             _title = title;
         }
 
-        public int getParent()
+        public Integer getParent()
         {
             return _parent;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setParent(int parent)
+        public void setParent(Integer parent)
         {
             _parent = parent;
         }
@@ -2045,7 +2044,7 @@ public class WikiController extends SpringActionController
         private String _name;
         private String _title;
         private String _body;
-        private Integer _parent = -1;
+        private Integer _parent;
         private Integer _pageVersionId;
         private String _rendererType;
         private String _pageId;
@@ -2127,9 +2126,9 @@ public class WikiController extends SpringActionController
             _pageVersionId = pageVersionId;
         }
 
-        public int getParentId()
+        public Integer getParentId()
         {
-            return null == _parent ? -1 : _parent;
+            return _parent;
         }
 
         public String getRendererType()
@@ -2367,7 +2366,7 @@ public class WikiController extends SpringActionController
                     (null != wikiversion.getBody() && null == form.getBody()) ||
                     (null != wikiversion.getBody() && null != form.getBody() && wikiversion.getBody().compareTo(form.getBody().trim()) != 0) ||
                     !wikiversion.getRendererTypeEnum().equals(currentRendererType) ||
-                    wikiUpdate.getParent() != form.getParentId() ||
+                    !Objects.equals(wikiUpdate.getParent(), form.getParentId()) ||
                     wikiUpdate.isShowAttachments() != form.isShowAttachments() ||
                     wikiUpdate.isShouldIndex() != form.isShouldIndex())
             {

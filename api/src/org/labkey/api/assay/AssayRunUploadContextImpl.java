@@ -80,6 +80,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<?, String> _outputDatas;
     private final Map<?, String> _outputMaterials;
     private final boolean _allowCrossRunFileInputs;
+    private final boolean _allowLookupByAlternateKey;
 
     // Lazily created fields
     private Map<String, File> _uploadedData;
@@ -94,6 +95,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     protected String _jobDescription;
     protected String _jobNotificationProvider;
     protected String _pipelineJobGUID;
+
+    private boolean _autoFillDefaultResultColumns;
 
     private AssayRunUploadContextImpl(Factory<ProviderType> factory)
     {
@@ -116,6 +119,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _outputDatas = factory._outputDatas == null ? emptyMap() : unmodifiableMap(factory._outputDatas);
         _outputMaterials = factory._outputMaterials == null ? emptyMap() : unmodifiableMap(factory._outputMaterials);
         _allowCrossRunFileInputs = factory._allowCrossRunFileInputs;
+        _allowLookupByAlternateKey = factory._allowLookupByAlternateKey;
 
         // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
         _rawData = factory._rawData;
@@ -378,6 +382,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
+    public boolean isAllowLookupByAlternateKey()
+    {
+        return _allowLookupByAlternateKey;
+    }
+
+    @Override
     public ProviderType getProvider()
     {
         return _provider;
@@ -442,5 +452,18 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         return _logger;
     }
+
+    @Override
+    public  boolean shouldAutoFillDefaultResultColumns()
+    {
+        return _autoFillDefaultResultColumns;
+    }
+
+    @Override
+    public  void setAutoFillDefaultResultColumns(boolean autoFill)
+    {
+        _autoFillDefaultResultColumns = autoFill;
+    }
+
 
 }

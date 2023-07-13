@@ -26,6 +26,7 @@
             testMultiClausesFilter: testMultiClausesFilter,
             testCaseInsensitiveFilterField: testCaseInsensitiveFilterField,
             testHidePagingCount: testHidePagingCount,
+            testAsyncTotalRowsCount: testAsyncTotalRowsCount,
             testShowAllTotalRows: testShowAllTotalRows,
             testGetBaseFilters: testGetBaseFilters,
             testFilterOnSortColumn: testFilterOnSortColumn,
@@ -143,7 +144,7 @@
                     }
                 },
                 failure: function() {
-                   alert('Failed test: List out all queries in schema');
+                    alert('Failed test: List out all queries in schema');
                 }
             });
         }
@@ -196,6 +197,7 @@
             new LABKEY.QueryWebPart({
                 title: 'Sort by Tag',
                 schemaName: 'Samples',
+                columns: 'Name,id,sort,tag',
                 queryName: 'sampleDataTest1',
                 sort: 'tag',
                 renderTo: RENDERTO,
@@ -206,12 +208,19 @@
                         var result2 = results[1].lastChild.innerHTML;
                         var result3 = results[2].lastChild.innerHTML;
 
-                        if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
+                        var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
+                        if (tableHeader !== 'tag') {
+                            alert('Failed test: Sort by Tag. Expected "tag" to be the rightmost column; Found ' + tableHeader);
+                        }
+                        else if (result1.localeCompare(result2) > 0 || result2.localeCompare(result3) > 0) {
                             alert('Failed test: Sort by Tag. Expected "tag" column to be sorted ascending');
                         }
                         else {
                             LABKEY.Utils.signalWebDriverTest("testSort");
                         }
+                    }
+                    else {
+                        alert("Didn't find enough results rows");
                     }
                 },
                 failure: function() {
@@ -719,6 +728,41 @@
             });
         }
 
+        function testAsyncTotalRowsCount() {
+            var schema = 'Samples';
+            var query = 'sampleDataTest1';
+
+            LABKEY.Query.selectRows({
+                schemaName: schema,
+                queryName: query,
+                success: function(ssr) {
+                    var TOTAL_EXPECTED_ROWS = ssr.rowCount;
+
+                    new LABKEY.QueryWebPart({
+                        title: 'Async Total Rows Count',
+                        schemaName: schema,
+                        queryName: query,
+                        maxRows: 5,
+                        showPaginationCountAsync: true,
+                        renderTo: RENDERTO,
+                        failure: function() {
+                            alert('Failed test: Async Total Rows Count.');
+                        },
+                        listeners: {
+                            render: function(dr) {
+                                // timeout is used here to defer displaying error until after region is rendered.
+                                // Less confusing when comparing error against current region state.
+                                setTimeout(function() {
+                                    assertPagingCount(dr, 1, 5, TOTAL_EXPECTED_ROWS)
+                                    LABKEY.Utils.signalWebDriverTest('testAsyncTotalRowsCount');
+                                }, 100);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
         function testShowAllTotalRows() {
             new LABKEY.QueryWebPart({
                 title: 'Show All Rows',
@@ -808,6 +852,7 @@
                 title: 'Filter on "Sort" column (Regression #33536)',
                 schemaName: 'Samples',
                 queryName: 'sampleDataTest1',
+                columns: 'Name, id, sort, tag',
                 renderTo: RENDERTO,
                 filterArray: [
                     LABKEY.Filter.create('Sort', '50;60;70', LABKEY.Filter.Types.EQUALS_ONE_OF)
@@ -838,6 +883,11 @@
                             if (rowElements.length !== 3) {
                                 alert('Failed test: Filter on "Sort" column. rowElements length not consistent with rows found (3).');
                                 return;
+                            }
+
+                            var tableHeader = $('.labkey-data-region thead tr:nth-child(1)')[0].lastChild.title;
+                            if (tableHeader !== 'tag') {
+                                alert('Failed test: Filter on "Sort" column. Expected "tag" to be the rightmost column; Found ' + tableHeader);
                             }
 
                             var tagRowValue = rowElements[0].lastChild.innerHTML;

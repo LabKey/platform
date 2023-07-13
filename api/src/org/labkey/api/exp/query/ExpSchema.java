@@ -27,6 +27,7 @@ import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -64,6 +65,7 @@ public class ExpSchema extends AbstractExpSchema
     public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategoryType";
     public static final String SAMPLE_STATE_TYPE_TABLE = "SampleStateType";
     public static final String SAMPLE_TYPE_CATEGORY_TABLE = "SampleTypeCategoryType";
+    public static final String MEASUREMENT_UNITS_TABLE = "MeasurementUnits";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -264,6 +266,7 @@ public class ExpSchema extends AbstractExpSchema
         tableNames.add(DATA_CLASS_CATEGORY_TABLE);
         tableNames.add(SAMPLE_STATE_TYPE_TABLE);
         tableNames.add(SAMPLE_TYPE_CATEGORY_TABLE);
+        tableNames.add(MEASUREMENT_UNITS_TABLE);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
@@ -347,6 +350,14 @@ public class ExpSchema extends AbstractExpSchema
             return new EnumTableInfo<>(SampleTypeCategoryType.class, this, SampleTypeCategoryType::name, true, "Contains the list of available sample type category types.");
         }
 
+        if (MEASUREMENT_UNITS_TABLE.equalsIgnoreCase(name))
+        {
+            EnumTableInfo<Measurement.Unit> table =  new EnumTableInfo<>(Measurement.Unit.class, this, Measurement.Unit::name, false, "Contains the list of available units for measurements such as sample stored amounts.");
+            table.setPublicSchemaName(this.getName());
+            table.setName(MEASUREMENT_UNITS_TABLE);
+            return table;
+        }
+
         return null;
     }
 
@@ -366,7 +377,8 @@ public class ExpSchema extends AbstractExpSchema
                 SampleTypeService.SampleOperations.RemoveFromWorkflow,
                 SampleTypeService.SampleOperations.AddAssayData,
                 SampleTypeService.SampleOperations.LinkToStudy,
-                SampleTypeService.SampleOperations.RecallFromStudy
+                SampleTypeService.SampleOperations.RecallFromStudy,
+                SampleTypeService.SampleOperations.Move
         )),
         Locked(Set.of(
                 SampleTypeService.SampleOperations.AddToPicklist

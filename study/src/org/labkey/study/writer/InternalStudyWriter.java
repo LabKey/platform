@@ -26,9 +26,4 @@ import org.labkey.study.model.StudyImpl;
 */
 public interface InternalStudyWriter extends BaseStudyWriter<StudyImpl, StudyExportContext>
 {
-    @Override
-    default boolean includeWithTemplate()
-    {
-        return true;
-    }
 }

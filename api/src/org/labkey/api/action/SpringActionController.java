@@ -20,7 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -33,7 +33,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleAction;
-import org.labkey.api.premium.PremiumService;
+import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
@@ -481,7 +481,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 try
                 {
                     ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL().clone());
-                    CommonsMultipartResolver resolver = PremiumService.get().getMultipartResolver(info);
+                    CommonsMultipartResolver resolver = AntiVirusProviderRegistry.get().getMultipartResolver(info);
                     resolver.setUploadTempDir(new FileSystemResource(getTempUploadDir()));
                     request = resolver.resolveMultipart(request);
                     context.setRequest(request);
@@ -1108,7 +1108,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 }
                 catch (IllegalAccessException | InstantiationException | InvocationTargetException e)
                 {
-                    _log.error("unexpected error", e);
+                    _log.error("Unexpected error attempting to instantiate " + getActionClass(), e);
                     throw new RuntimeException(e);
                 }
             }
@@ -1275,17 +1275,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             String message = "MUTATING SQL executed as part of handling action: " +
                     (null == vc ? "" : vc.getRequest().getMethod()) + " " +
                     c.getName() + (verbose ? ("\n" + sql) : "");
-            IllegalStateException e = new IllegalStateException(message);
-
-            if (AppProps.getInstance().isDevMode())
-            {
-                throw e;
-            }
-            else
-            {
-                HttpServletRequest request = null != vc ? vc.getRequest() : null;
-                ExceptionUtil.logExceptionToMothership(request, e);
-            }
+            throw new IllegalStateException(message);
         }
     }
 

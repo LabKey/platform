@@ -45,4 +45,10 @@ public abstract class AbstractPlateTypeHandler implements PlateTypeHandler
     {
         return true;
     }
+
+    @Override
+    public boolean canCreateNewGroups(WellGroup.Type type)
+    {
+        return true;
+    }
 }

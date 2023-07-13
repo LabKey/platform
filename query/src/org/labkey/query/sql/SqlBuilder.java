@@ -16,16 +16,21 @@
 
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.GUID;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 public class SqlBuilder extends Builder
 {
-    private DbSchema _schema;
-    private SqlDialect _dialect;
+    private final DbSchema _schema;
+    private final @NotNull SqlDialect _dialect;
 
 
     public SqlBuilder(DbSchema schema)
@@ -34,8 +39,10 @@ public class SqlBuilder extends Builder
         _dialect = schema.getSqlDialect();
     }
 
-    public SqlBuilder(SqlDialect dialect)
+    public SqlBuilder(@NotNull SqlDialect dialect)
     {
+        Objects.requireNonNull(dialect);
+        _schema = null;
         _dialect = dialect;
     }
 
@@ -46,7 +53,6 @@ public class SqlBuilder extends Builder
 
     /**
      * Append a '?' to the generated SQL, and add the object to the list of the params.
-     * @param value
      */
     public void appendParam(Object value)
     {
@@ -55,19 +61,13 @@ public class SqlBuilder extends Builder
     }
 
     @Override
-    public void addAll(Collection<?> params)
+    public SqlBuilder addAll(Collection<?> params)
     {
         super.addAll(Arrays.asList(params.toArray()));
+        return this;
     }
 
-    public void appendLiteral(String value)
-    {
-        if (value.indexOf("\\") >= 0 || value.indexOf("\'") >= 0)
-            throw new IllegalArgumentException("Illegal characters in '" + value + "'");
-        append("'" + value + "'");
-    }
-
-    public SqlDialect getDialect()
+    public @NotNull SqlDialect getDialect()
     {
         return _dialect;
     }
@@ -77,13 +77,72 @@ public class SqlBuilder extends Builder
         return _schema;
     }
 
-    public void appendIdentifier(String str)
-    {
-        append("\"" + str + "\"");
-    }
-
     public boolean allowUnsafeCode()
     {
         return false;
+    }
+
+    @Override
+    public SQLFragment appendValue(CharSequence s)
+    {
+        return super.appendValue(s, _dialect);
+    }
+
+//    @Override
+    public SQLFragment appendStringLiteral(CharSequence s)
+    {
+        return super.appendStringLiteral(s, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendStringLiteral(CharSequence s, SqlDialect d)
+    {
+        assert null==d || _dialect==d;
+        return super.appendStringLiteral(s,  _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(CharSequence s, SqlDialect d)
+    {
+        assert null==d || _dialect==d;
+        return super.appendValue(s, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(GUID g)
+    {
+        return super.appendValue(g, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(GUID g, SqlDialect d)
+    {
+        assert null==d || _dialect==d;
+        return super.appendValue(g, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(@NotNull Container c)
+    {
+        return super.appendValue(c, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(@NotNull Container c, SqlDialect d)
+    {
+        assert null==d || _dialect==d;
+        return super.appendValue(c, _dialect);
+    }
+
+    public SQLFragment appendValue(Boolean B)
+    {
+        return super.appendValue(B, _dialect);
+    }
+
+    @Override
+    public SQLFragment appendValue(Boolean B, @NotNull SqlDialect d)
+    {
+        assert null==d || _dialect==d;
+        return super.appendValue(B, _dialect);
     }
 }

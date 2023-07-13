@@ -42,7 +42,7 @@ import org.apache.commons.beanutils.converters.SqlTimeConverter;
 import org.apache.commons.beanutils.converters.StringConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -508,7 +508,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 long length = blob.length();
                 if (length > Integer.MAX_VALUE)
                 {
-                    throw new ConversionException("Blob length too long:" + blob.length());
+                    throw new ConversionExceptionWithMessage("Blob length too long:" + blob.length());
                 }
 
                 return blob.getBytes(1, (int) length);
@@ -882,14 +882,14 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return value;
 
             if (value instanceof Map)
-                return new JSONObject((Map)value);
+                return new JSONObject((Map<?, ?>)value);
+
             if (value instanceof String)
                 return new JSONObject((String)value);
 
-            throw new ConversionException("Could not convert '" + value + "' to an JSONObject");
+            throw new ConversionExceptionWithMessage("Could not convert '" + value + "' to a JSONObject");
         }
     }
-
 
     /* Java 7 formats using infinity symbol instead of "Infinity", but doesn't parse it */
     public static class InfDoubleConverter implements Converter

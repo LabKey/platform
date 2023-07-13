@@ -15,7 +15,7 @@
  */
 package org.labkey.api.visualization;
 
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
@@ -89,7 +89,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
             // jsonData.queryConfig.queryName
             JSONObject json = new JSONObject(getJSON());
             JSONObject queryJson = json.getJSONObject("queryConfig");
-            String queryName = queryJson.getString("queryName");
+            String queryName = queryJson.optString("queryName", null);
             if (queryName != null)
             {
                 for (QueryChangeListener.QueryPropertyChange qpc : changes)
@@ -122,7 +122,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         JSONObject newJson = new JSONObject();
         JSONObject oldChartConfig = oldJson.getJSONObject("chartConfig");
 
-        if(oldChartConfig.get("geomOptions") != null)
+        if (oldChartConfig.get("geomOptions") != null)
         {
             return json;
         }
@@ -206,6 +206,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         return queryView;
     }
 
+    // TODO: Delete?
     private List<DisplayColumn> getDisplayColumns(ContainerUser context, String schemaName, String queryName, String viewName) throws ValidationException
     {
         UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);

@@ -9,6 +9,8 @@ public class DataGeneratorRegistry
         AssayDesigns,
         StorageHierarchy,
         SamplesInStorage,
+        WorkflowJobs,
+        Notebooks,
     };
 
     private static final Map<DataType, DataGenerator.DataGenerationDriver> _dataGeneratorMap = new HashMap<>();

@@ -100,7 +100,9 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
                 // NOTE: Use negative rowId for unsaved well groups to support GWTWellGroup.equals()
                 int wellGroupId = copyTemplate || group.getRowId() == null ? -1 * (i+1) : group.getRowId();
-                translated.add(new GWTWellGroup(wellGroupId, group.getType().name(), group.getName(), positions, groupProperties));
+                GWTWellGroup gwtWellGroup = new GWTWellGroup(wellGroupId, group.getType().name(), group.getName(), positions, groupProperties);
+                gwtWellGroup.setAllowNewGroups(handler.canCreateNewGroups(group.getType()));
+                translated.add(gwtWellGroup);
             }
 
             int newPlateId = copyTemplate || template.getRowId() == null ? -1 : template.getRowId();

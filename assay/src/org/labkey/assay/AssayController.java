@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -55,7 +55,6 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.AssayRunsAction;
 import org.labkey.api.assay.actions.BaseAssayAction;
 import org.labkey.api.assay.actions.DesignerAction;
-import org.labkey.api.assay.actions.PlateBasedUploadWizardAction;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.assay.actions.ReimportRedirectAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -152,6 +151,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -170,37 +170,37 @@ import java.util.zip.ZipOutputStream;
 public class AssayController extends SpringActionController
 {
     private static final DefaultActionResolver _resolver = new DefaultActionResolver(AssayController.class,
+        AssayBatchDetailsAction.class,
+        AssayBatchesAction.class,
+        AssayDetailRedirectAction.class,
+        AssayPlateMetadataTemplateAction.class,
+        AssayResultDetailsAction.class,
+        AssayResultsAction.class,
+        AssayRunDetailsAction.class,
+        AssayRunsAction.class,
+        DeleteAction.class,
+        DeleteProtocolAction.class,
+        DesignerAction.class,
         GetAssayBatchAction.class,
         GetAssayBatchesAction.class,
-        SaveAssayBatchAction.class,
         GetAssayRunAction.class,
         GetAssayRunsAction.class,
-        SaveAssayRunsAction.class,
-        ImportRunApiAction.class,
-        UploadWizardAction.class,
-        TransformResultsAction.class,
-        PlateBasedUploadWizardAction.class,
-        PipelineDataCollectorRedirectAction.class,
-        DeleteAction.class,
-        DesignerAction.class,
-        ImportAction.class,
-        TsvImportAction.class,
-        TemplateAction.class,
-        AssayBatchesAction.class,
-        AssayBatchDetailsAction.class,
-        AssayRunsAction.class,
-        AssayRunDetailsAction.class,
-        AssayResultsAction.class,
-        AssayResultDetailsAction.class,
-        ReimportRedirectAction.class,
-        ShowSelectedRunsAction.class,
-        ShowSelectedDataAction.class,
-        SetDefaultValuesAssayAction.class,
-        AssayDetailRedirectAction.class,
-        SaveProtocolAction.class,
         GetProtocolAction.class,
-        DeleteProtocolAction.class,
-        AssayPlateMetadataTemplateAction.class
+        ImportAction.class,
+        ImportRunApiAction.class,
+        MoveAssayRunsAction.class,
+        PipelineDataCollectorRedirectAction.class,
+        ReimportRedirectAction.class,
+        SaveAssayBatchAction.class,
+        SaveAssayRunsAction.class,
+        SaveProtocolAction.class,
+        SetDefaultValuesAssayAction.class,
+        ShowSelectedDataAction.class,
+        ShowSelectedRunsAction.class,
+        TemplateAction.class,
+        TransformResultsAction.class,
+        TsvImportAction.class,
+        UploadWizardAction.class
     );
 
     public AssayController()
@@ -284,13 +284,13 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public static class AssayListAction extends MutatingApiAction<AssayListForm>
+    public static class AssayListAction extends ReadOnlyApiAction<AssayListForm>
     {
         @Override
         public ApiResponse execute(AssayListForm form, BindException errors)
         {
             Container c = getContainer();
-            HashMap<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
+            Map<ExpProtocol, AssayProvider> assayProtocols = new HashMap<>();
             List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c);
             for (ExpProtocol protocol : protocols)
             {
@@ -305,7 +305,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
+    public static ApiResponse serializeAssayDefinitions(Map<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
     {
         List<Map<String, Object>> assayList = new ArrayList<>();
         for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
@@ -335,8 +335,8 @@ public class AssayController extends SpringActionController
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
         assayProperties.put("reRunSupport", provider.getReRunSupport());
         assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
-        if (provider instanceof PlateBasedAssayProvider)
-            assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
+        if (provider instanceof PlateBasedAssayProvider plateBased)
+            assayProperties.put("plateTemplate", plateBased.getPlateTemplate(c, protocol));
         assayProperties.put("requireCommentOnQCStateChange", AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocol.getContainer()));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
@@ -361,7 +361,7 @@ public class AssayController extends SpringActionController
             domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), table, user));
         }
 
-        Map<ExpProtocol.AssayDomainTypes, String> domainTypes = new HashMap<>();
+        Map<ExpProtocol.AssayDomainTypes, String> domainTypes = new EnumMap<>(ExpProtocol.AssayDomainTypes.class);
 
         final Domain batchDomain = provider.getBatchDomain(protocol);
         domainTypes.put(ExpProtocol.AssayDomainTypes.Batch, batchDomain == null ? null : batchDomain.getName());
@@ -584,55 +584,7 @@ public class AssayController extends SpringActionController
         }
     }
 
-    public static class CreateAssayForm extends ProtocolIdForm
-    {
-        private String _assayContainer;
-
-        public CreateAssayForm() { }
-
-        public String getAssayContainer()
-        {
-            return _assayContainer;
-        }
-
-        public void setAssayContainer(String assayContainer)
-        {
-            _assayContainer = assayContainer;
-        }
-
-        public Container getCreateContainer()
-        {
-            if (_assayContainer != null)
-            {
-                Container c = ContainerManager.getForId(_assayContainer);
-                if (c != null)
-                    return c;
-            }
-            return getContainer();
-        }
-    }
-
-    public static class ChooseAssayBean
-    {
-        private ActionURL _actionURL;
-
-        public List<AssayProvider> getProviders()
-        {
-            List<AssayProvider> providers = new ArrayList<>(AssayService.get().getAssayProviders());
-
-            // Remove AssayProviders without a designer action
-            providers.removeIf(provider -> provider.getDesignerAction() == null);
-            providers.sort(Comparator.comparing(AssayProvider::getName));
-            return providers;
-        }
-
-        public ActionURL getReturnURL()
-        {
-            return _actionURL;
-        }
-    }
-
-    public class AssayProviderBean
+    public static class AssayProviderBean
     {
         String name;
         String description;
@@ -1461,7 +1413,9 @@ public class AssayController extends SpringActionController
                 for (Integer id : form.getRowList())
                 {
                     // assuming that column in storage table has same name
-                    Table.update(getUser(), ti, Collections.singletonMap(flagCol.getColumnName(),comment), id);
+                    Map<String, Object> flagComment = new HashMap<>();
+                    flagComment.put(flagCol.getColumnName(), comment);
+                    Table.update(getUser(), ti, flagComment, id);
                     rowsAffected++;
                 }
                 transaction.commit();

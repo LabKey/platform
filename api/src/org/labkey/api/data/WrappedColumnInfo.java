@@ -21,6 +21,10 @@ public class WrappedColumnInfo
 {
     public static MutableColumnInfo wrap(ColumnInfo delegate)
     {
+        if (delegate == null)
+        {
+            throw new NullPointerException("Cannot wrap a null column");
+        }
         return new MutableColumnInfoWrapper(delegate);
     }
 
@@ -123,6 +127,17 @@ public class WrappedColumnInfo
             public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
             {
                 sourceColumnInfo.declareJoins(parentAlias, map);
+            }
+
+            @Override
+            public @Nullable String getWrappedColumnName()
+            {
+                if (sourceColumnInfo != null)
+                {
+                    if (!getName().equalsIgnoreCase(sourceColumnInfo.getName()))
+                        return sourceColumnInfo.getName();
+                }
+                return null;
             }
         };
         ret.copyAttributesFrom(sourceColumnInfo);

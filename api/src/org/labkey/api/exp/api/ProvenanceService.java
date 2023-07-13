@@ -1,8 +1,8 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.json.old.JSONArray;
-import org.json.old.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ExperimentException;
@@ -170,7 +170,7 @@ public interface ProvenanceService
      * Extract the provenance map information from the data rows
      *
      * @param context
-     * @param params a ProveanceRecordingParams object
+     * @param params a ProvenanceRecordingParams object
      * @param rows the input rows
      * @param responseRows the inserted or updated rows
      * @return

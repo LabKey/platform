@@ -17,7 +17,7 @@ package org.labkey.api.query;
 
 
 import org.apache.commons.lang3.StringUtils;
-import org.json.old.JSONObject;
+import org.json.JSONObject;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -33,15 +33,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-/**
- * User: klum
- * Date: Jun 23, 2011
- * Time: 7:27:25 PM
- */
 public class ReportDataRegion extends DataRegion
 {
-    private HttpView _reportView;
-    private Report _report;
+    private final HttpView _reportView;
+    private final Report _report;
 
     private HttpServletRequest _request;
     private HttpServletResponse _response;

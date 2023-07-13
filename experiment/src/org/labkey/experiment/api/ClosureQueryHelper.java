@@ -11,6 +11,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MaterializedQueryHelper;
 import org.labkey.api.data.MutableColumnInfo;
@@ -33,7 +34,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.NotFoundException;
 
@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -60,7 +59,7 @@ public class ClosureQueryHelper
 
     /* TODO/CONSIDER every SampleType and Dataclass should have a unique ObjectId so it can be stored as an in lineage tables (e.g. edge/closure tables) */
 
-    record ClosureTable(MaterializedQueryHelper helper, AtomicInteger counter, TableType type, String lsid) {};
+    record ClosureTable(MaterializedQueryHelper helper, AtomicInteger counter, TableType type, String lsid) {}
 
     static final Map<String, ClosureTable> queryHelpers = Collections.synchronizedMap(new HashMap<>());
     // use this as a separate LRU implementation, because I only want to track calls to getValueSql() not other calls to queryHelpers.get()
@@ -68,15 +67,10 @@ public class ClosureQueryHelper
 
     static
     {
-        MemTracker.getInstance().register(new MemTrackerListener()
-        {
-            @Override
-            public void beforeReport(Set<Object> set)
+        MemTracker.getInstance().register(set -> {
+            synchronized (queryHelpers)
             {
-                synchronized (queryHelpers)
-                {
-                    queryHelpers.values().forEach(ch -> set.add(ch.helper));
-                }
+                queryHelpers.values().forEach(ch -> set.add(ch.helper));
             }
         });
     }
@@ -173,18 +167,6 @@ public class ClosureQueryHelper
     }
 
 
-    static SQLFragment selectSql(SqlDialect d, SQLFragment from)
-    {
-        String cte = d.isPostgreSQL() ? pgMaterialClosureCTE : mssqlMaterialClosureCTE;
-        String select = d.isPostgreSQL() ? pgMaterialClosureSql : mssqlMaterialClosureSql;
-
-        String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
-        assert cteParts.length == 2;
-
-        return new SQLFragment(cteParts[0]).append(from).append(cteParts[1]).append(select);
-    }
-
-
     /*
      * This can be used to add a column directly to an exp table, or to create a column
      * in an intermediate fake lookup table
@@ -209,7 +191,7 @@ public class ClosureQueryHelper
                 String sourceLsid = source.getLSID();
                 if (sourceLsid == null)
                     return new SQLFragment(" NULL ");
-                return ClosureQueryHelper.getValueSql(sourceType, sourceLsid, objectId, target);
+                return ClosureQueryHelper.getValueSql(parentTable.getUserSchema(), sourceType, sourceLsid, objectId, target);
             }
         };
         ret.setDisplayColumnFactory(AncestorLookupDisplayColumn::new);
@@ -232,7 +214,8 @@ public class ClosureQueryHelper
                 {
                     if (ret.getConceptURI() == null)
                         ret.setConceptURI(CONCEPT_URI);
-                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo));
+                    DisplayColumnFactory originalDisplayColumnFactory = ret.getDisplayColumnFactory();
+                    ret.setDisplayColumnFactory(colInfo -> new AncestorLookupDisplayColumn(foreignKey, colInfo, originalDisplayColumnFactory));
                 }
                 return ret;
             }
@@ -246,26 +229,55 @@ public class ClosureQueryHelper
     }
 
 
-    public static SQLFragment getValueSql(TableType type, String sourceLSID, SQLFragment objectId, ExpObject target)
+    public static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, ExpObject target)
     {
         if (target instanceof ExpSampleType st)
-            return getValueSql(type, sourceLSID, objectId, "m" + st.getRowId());
+            return getValueSql(userSchema, type, sourceLSID, objectId, "m" + st.getRowId());
         if (target instanceof ExpDataClass dc)
-            return getValueSql(type, sourceLSID, objectId, "d" + dc.getRowId());
+            return getValueSql(userSchema, type, sourceLSID, objectId, "d" + dc.getRowId());
         throw new IllegalStateException();
     }
 
 
-    private static SQLFragment getValueSql(TableType type, String sourceLSID, SQLFragment objectId, String targetId)
+    private static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, String targetId)
     {
-        MaterializedQueryHelper helper = getClosureHelper(type, sourceLSID, true);
-
+        var closureTableInfo = getClosureTableInfo(userSchema, type, sourceLSID);
         return new SQLFragment()
                 .append("(SELECT rowId FROM ")
-                .append(helper.getFromSql("CLOS", null))
-                .append(" WHERE targetId='").append(targetId).append("'")
+                .append(closureTableInfo.getFromSQL("CLOS"))
+                .append(" WHERE targetId=").appendValue(targetId)
                 .append(" AND Start_=").append(objectId)
                 .append(")");
+    }
+
+
+    /**
+     * Note this is not a fully constructed TableInfo; it is just a wrapper for MaterializedQueryHelper.getFromSql().
+     * We do this so that we can use the handy method UserSchema.getCachedLookupTableInfo() to reuse the same temp table
+     * for multiple lookups in the same query.
+     */
+    private static TableInfo getClosureTableInfo(UserSchema userSchema, TableType type, String sourceLSID)
+    {
+        var tx = userSchema.getDbSchema().getScope().getCurrentTransaction();
+        String key = ClosureQueryHelper.class.getName() + "/" + (null == tx ? "-" : tx.getId());
+        return userSchema.getCachedLookupTableInfo(key, () ->
+        {
+            MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true));
+            final SQLFragment fromSQL = helper.getFromSql(ExprColumn.STR_TABLE_ALIAS, null);
+            var ret = new VirtualTable<>(DbSchema.getTemp(), "--" + ClosureQueryHelper.class.getName() + "--", userSchema)
+            {
+                @Override
+                public @NotNull SQLFragment getFromSQL(String tableAlias)
+                {
+                    String sql = StringUtils.replace(fromSQL.getSQL(), ExprColumn.STR_TABLE_ALIAS, tableAlias);
+                    SQLFragment ret = new SQLFragment(sql);
+                    ret.addAll(fromSQL.getParams());
+                    return ret;
+                }
+            };
+            ret.setLocked(true);
+            return ret;
+         });
     }
 
 
@@ -293,7 +305,7 @@ public class ClosureQueryHelper
                 upsert = new SQLFragment()
                         .append("INSERT INTO temp.${NAME} (Start_, rowId, targetid)\n")
                         .append("SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(" TMP\n")
-                        .append("ON CONFLICT(Start_,targetId) DO UPDATE SET rowId = EXCLUDED.rowId;");
+                        .append("ON CONFLICT(Start_,targetId) DO UPDATE SET rowId = EXCLUDED.rowId").appendEOS();
             }
             else
             {
@@ -301,7 +313,7 @@ public class ClosureQueryHelper
                         .append("MERGE temp.${NAME} AS Target\n")
                         .append("USING (SELECT Start_, RowId, targetId FROM temp.").append(tempTableName).append(") AS Source ON Target.Start_=Source.Start_ AND Target.targetid=Source.targetId\n")
                         .append("WHEN MATCHED THEN UPDATE SET Target.targetId = Source.targetId\n")
-                        .append("WHEN NOT MATCHED THEN INSERT (Start_, rowId, targetid) VALUES (Source.Start_, Source.rowId, Source.targetId);");
+                        .append("WHEN NOT MATCHED THEN INSERT (Start_, rowId, targetid) VALUES (Source.Start_, Source.rowId, Source.targetId)").appendEOS();
             }
 
             helper.upsert(upsert);
@@ -345,9 +357,9 @@ public class ClosureQueryHelper
                 .append("FROM (SELECT m.RowId, m.ObjectId FROM exp.material m\n")
                 .append("INNER JOIN exp.MaterialInput mi ON m.rowId = mi.materialId\n")
                 .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
-                .append("WHERE pa.RunId = ").append(runId)
+                .append("WHERE pa.RunId = ").appendValue(runId)
                 .append(" AND m.cpasType = ? ").add(sourceTypeLsid)
-                .append(" AND pa.CpasType = '").append(ExperimentRunOutput.name()).append("') _seed_ ");
+                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput).append(") _seed_ ");
         incrementalRecompute(sourceTypeLsid, seedFrom);
     }
 
@@ -365,19 +377,20 @@ public class ClosureQueryHelper
         if (null == type)
             throw new IllegalStateException();
 
-        closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
-                {
-                    SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
-                    SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
 
-                    var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
-                        .setIsSelectInto(true)
-                        .addIndex("CREATE UNIQUE INDEX uq_${NAME} ON temp.${NAME} (targetId,Start_)")
-                        .maxTimeToCache(CACHE_INVALIDATION_INTERVAL)
-                        .addInvalidCheck(() -> getInvalidationCounterString(sourceLSID))
-                        .build();
-                    return new ClosureTable(helper, new AtomicInteger(), type, sourceLSID);
-                });
+        closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
+        {
+            SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
+            SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
+
+            var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
+                    .setIsSelectInto(true)
+                    .addIndex("CREATE UNIQUE INDEX uq_${NAME} ON temp.${NAME} (targetId,Start_)")
+                    .maxTimeToCache(CACHE_INVALIDATION_INTERVAL)
+                    .addInvalidCheck(() -> getInvalidationCounterString(sourceLSID))
+                    .build();
+            return new ClosureTable(helper, new AtomicInteger(), type, sourceLSID);
+        });
 
         // update LRU
         synchronized (lruQueryHelpers)
@@ -617,7 +630,7 @@ public class ClosureQueryHelper
                     return type;
             throw new NotFoundException("No table type found for object " + object.getName() + " with class " + object.getClass());
         }
-    };
+    }
 
 
     private static class LineageLookupTypesTableInfo extends VirtualTable<UserSchema>
@@ -636,6 +649,8 @@ public class ClosureQueryHelper
                     public @Nullable ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
                     {
                         if (null == displayField)
+                            return null;
+                        if (null == _userSchema)
                             return null;
                         var target = lk.getInstance(_userSchema.getContainer(), _userSchema.getUser(), displayField);
                         if (null == target)

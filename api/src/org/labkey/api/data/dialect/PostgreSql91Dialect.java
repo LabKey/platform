@@ -25,6 +25,8 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.Selector.ForEachBlock;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
+import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -91,12 +93,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
     // standard_conforming_strings in on by default; before 9.1, it was off by default. We check the server setting
     // when we prepare a new DbScope and use this when we escape and parse string literals.
-    private boolean _standardConformingStrings = true;
+    private Boolean _standardConformingStrings = Boolean.TRUE;
     private PostgreSqlServerType _serverType = PostgreSqlServerType.PostgreSQL;
 
     public boolean getStandardConformingStrings()
     {
-        return _standardConformingStrings;
+        // make sure we're not calling this before finishing instance init
+        assert _standardConformingStrings != null;
+        return _standardConformingStrings == null || _standardConformingStrings;
     }
 
     public void setStandardConformingStrings(boolean standardConformingStrings)
@@ -307,16 +311,18 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return false;
     }
 
+    private static final LimitRowsCustomizer CUSTOMIZER = new StandardLimitRowsCustomizer(true);
+
     @Override
     public SQLFragment limitRows(SQLFragment frag, int maxRows)
     {
-        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, true);
+        return LimitRowsSqlGenerator.limitRows(frag, maxRows, 0, CUSTOMIZER);
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, true);
+        return LimitRowsSqlGenerator.limitRows(select, from, filter, order, groupBy, maxRows, offset, CUSTOMIZER);
     }
 
     @Override
@@ -468,15 +474,14 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         SQLFragment result = new SQLFragment("array_to_string(array(");
         result.append(selectSql);
-        result.append("), '");
-        result.append(delimiter);
-        result.append("')");
-
+        result.append("), ");
+        result.append(getStringHandler().quoteStringLiteral(delimiter));
+        result.append(")");
         return result;
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
     {
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
@@ -1222,7 +1227,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             String constraintName = "fk_" + foreignKey.getColumnName() + "_" + change.getTableName() + "_" + tableInfo.getName();
             fkString.append(constraintName).append(" FOREIGN KEY (")
                     .append(foreignKey.getColumnName()).append(") REFERENCES ")
-                    .append(tableInfo.getSelectName()).append(" (")
+                    .append(tableInfo).append(" (")
                     .append(foreignKey.getForeignColumnName()).append(")");
             createTableSqlParts.add(fkString.toString());
         }
@@ -1331,7 +1336,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             }
             else if (prop.getJdbcType() == JdbcType.VARCHAR)
             {
-                colSpec.add(" DEFAULT '" + prop.getDefaultValue().toString() + "'");
+                colSpec.add(" DEFAULT " + getStringHandler().quoteStringLiteral(prop.getDefaultValue().toString()));
             }
             else
             {

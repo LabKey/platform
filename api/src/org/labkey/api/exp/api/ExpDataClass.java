@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
@@ -24,7 +25,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -34,6 +37,7 @@ import java.util.function.Function;
  */
 public interface ExpDataClass extends ExpObject
 {
+    String NEW_DATA_CLASS_ALIAS_VALUE = "{{this_data_class}}";
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.DataClass";
 
     String getDataLsidPrefix();
@@ -104,4 +108,8 @@ public interface ExpDataClass extends ExpObject
     long getCurrentGenId();
 
     void ensureMinGenId(long newSeqValue, Container c) throws ExperimentException;
+
+    @NotNull Map<String, String> getImportAliasMap() throws IOException;
+
+    void setImportAliasMap(Map<String, String> aliasMap);
 }

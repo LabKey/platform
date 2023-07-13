@@ -74,7 +74,6 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
@@ -84,7 +83,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -159,8 +157,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
     public static final String CPAS_DATA_SOURCE = "cpasDataSource";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
-
-    private static volatile List<String> _missingViews = Collections.emptyList();
 
     private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
@@ -286,7 +282,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         _log.debug("ModuleLoader init");
 
-
         // CONSIDER: could optimize more by not
 
         setJavaVersion();
@@ -317,9 +312,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     // Proxy to teleport ExplodedModuleService from outer ClassLoader to inner
-    static class _Proxy implements InvocationHandler
+    private static class _Proxy implements InvocationHandler
     {
-        private final Object delegate;
+        private final Object _delegate;
         private final Map<String,Method> _methods = new HashMap<>();
 
         public static ExplodedModuleService newInstance(Object obj)
@@ -336,24 +331,23 @@ public class ModuleLoader implements Filter, MemTrackerListener
         private _Proxy(Object obj)
         {
             Set<String> methodNames = Set.of("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory", "getDeletedModulesDirectory", "newModule");
-            this.delegate = obj;
+            _delegate = obj;
             Arrays.stream(obj.getClass().getMethods()).forEach(method -> {
                 if (methodNames.contains(method.getName()))
-                        _methods.put(method.getName(), method);
+                    _methods.put(method.getName(), method);
             });
             methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment.  Could not find method: " + name); });
         }
 
         @Override
-        public Object invoke(Object proxy, Method m, Object[] args)
-                throws Throwable
+        public Object invoke(Object proxy, Method m, Object[] args) throws Throwable
         {
             try
             {
                 Method delegate_method = _methods.get(m.getName());
                 if (null == delegate_method)
                     throw new IllegalArgumentException(m.getName());
-                return delegate_method.invoke(delegate, args);
+                return delegate_method.invoke(_delegate, args);
             }
             catch (InvocationTargetException e)
             {
@@ -369,6 +363,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /* this is called if new archive is exploded (for existing or new modules) */
     public void updateModuleDirectory(File dir, File archive)
     {
+        Module moduleCreated;
+        boolean fireModuleChanged = false;
         // TODO move call to ContextListener.fireModuleChangeEvent() into this method
         synchronized (_modulesLock)
         {
@@ -377,7 +373,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             {
                 throw new IllegalStateException("Not a valid module: " + archive.getName());
             }
-            var moduleCreated = moduleList.get(0);
+            moduleCreated = moduleList.get(0);
             if (null != archive)
                 moduleCreated.setZippedPath(archive);
 
@@ -437,8 +433,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                     ctx.setModuleState(ModuleState.Starting);
                     moduleCreated.startup(ctx);
                     ctx.setModuleState(ModuleState.Started);
-
-                    ContextListener.fireModuleChangeEvent(moduleCreated);
+                    fireModuleChanged = true;
                 }
             }
             catch (Throwable x)
@@ -447,10 +442,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 throw UnexpectedException.wrap(x);
             }
         }
+
+        // Issue 48225 - fire event outside the synchronized block to avoid deadlocks
+        if (fireModuleChanged)
+        {
+            ContextListener.fireModuleChangeEvent(moduleCreated);
+        }
     }
 
     /** Full web-server initialization */
-    private void doInit(ServletContext servletCtx, Execution execution) throws Exception
+    private void doInit(ServletContext servletCtx, Execution execution) throws ServletException
     {
         _log.info(BANNER);
         ErrorLogRotator.init();
@@ -528,7 +529,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         else
         {
-            // Refuse to upgrade if any LabKey-managed module has a schema version that's too old. Issue 46922.
+            // Refuse to start up if any LabKey-managed module has a schema version that's too old. Issue 46922.
 
             // Modules that are designated as "managed" and reside in LabKey-managed repositories
             var labkeyModules = _modules.stream()
@@ -728,8 +729,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             .ifPresent(module -> {
                 String msg = String.format("Invalid LabKey deployment. The '%s' module has been renamed, %s", module.getName(),
                     AppProps.getInstance().getProjectRoot() == null
-                        ? " please deploy an updated distribution and restart LabKey." // Likely production environment
-                        : " please update your enlistment." // Likely dev environment
+                        ? "please deploy an updated distribution and restart LabKey." // Likely production environment
+                        : "please update your enlistment." // Likely dev environment
                 );
 
                 throw new IllegalStateException(msg);
@@ -1498,7 +1499,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 runScripts(runner, module, SchemaUpdateType.After);
         }
 
-        refreshMissingViews();
+        if (_startupState == StartupState.StartupComplete)
+        {
+            WarningService.get().rerunSchemaCheck();
+        }
     }
 
     // Runs the drop and create scripts in a single module using the standard upgrade script runner
@@ -1741,8 +1745,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
             _modules.remove(m);
         }
 
-        if (m instanceof DefaultModule)
-            ((DefaultModule)m).unregister();
+        if (m instanceof DefaultModule defaultModule)
+            defaultModule.unregister();
 
         ContextListener.fireModuleChangeEvent(m);
         clearUnknownModuleCount();
@@ -1772,7 +1776,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // performedUpgrade is true if any module required upgrading
     private void afterUpgrade(boolean performedUpgrade, File lockFile)
     {
-        verifyDatabaseViews();
         setUpgradeState(UpgradeState.UpgradeComplete);
 
         if (performedUpgrade)
@@ -1787,38 +1790,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         lockFile.delete();
 
         verifyRequiredModules();
-    }
-
-    // Register an admin warning that reports if any database views are missing, Issue 40187
-    private void verifyDatabaseViews()
-    {
-        // This is a "dynamic" warning because RecreateViewsAction might correct the problem at runtime
-        WarningService.get().register(new WarningProvider()
-        {
-            @Override
-            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
-            {
-                if (context.getUser().hasSiteAdminPermission())
-                {
-                    if (showAllWarnings || !_missingViews.isEmpty())
-                        warnings.add(HtmlStringBuilder.of("The following required database views are not present: " + _missingViews +
-                            ". This is a serious problem that indicates the LabKey database schemas did not upgrade correctly and are in a bad state."));
-                }
-            }
-        });
-        refreshMissingViews();
-    }
-
-    // Determine if any module database views are missing
-    private void refreshMissingViews()
-    {
-        _missingViews = DbSchema.getAllSchemasToTest().stream()
-            .flatMap(s -> s.getTableXmlMap().entrySet().stream()
-                .filter(e -> "VIEW".equalsIgnoreCase(e.getValue().getTableDbType()))
-                .filter(e -> s.getTable(e.getKey()).getTableType() == DatabaseTableType.NOT_IN_DB)
-                .map(e -> s.getName() + "." + e.getValue().getTableName())
-            )
-            .collect(Collectors.toList());
     }
 
     // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
@@ -1954,16 +1925,13 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public List<Module> getModules(boolean userHasEnableRestrictedModulesPermission)
     {
-        synchronized (_modulesLock)
-        {
-            if (userHasEnableRestrictedModulesPermission)
-                return getModules();
+        if (userHasEnableRestrictedModulesPermission)
+            return getModules();
 
-            return _modules
-                .stream()
-                .filter(module -> !module.getRequireSitePermission())
-                .collect(Collectors.toList());
-        }
+        return getModules()
+            .stream()
+            .filter(module -> !module.getRequireSitePermission())
+            .toList();
     }
 
     /**
@@ -1981,19 +1949,18 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return result;
     }
 
-    // Returns a set of data source names representing all external data sources that are required for module schemas
+    // Returns a set of data source names representing all external data sources that are required for module schemas.
+    // These are just the names that modules advertise; there's no guarantee that they're defined in labkey.xml or
+    // valid. Be sure to null check after attempting to resolve each to a DbScope.
     public Set<String> getAllModuleDataSourceNames()
     {
-        synchronized (_modulesLock)
-        {
-            // Find all the external data sources that modules require
-            Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
+        // Find all the external data sources that modules require
+        Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
 
-            for (Module module : _modules)
-                allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
+        for (Module module : getModules())
+            allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
 
-            return allModuleDataSourceNames;
-        }
+        return allModuleDataSourceNames;
     }
 
     public Set<String> getModuleDataSourceNames(Module module)
@@ -2023,15 +1990,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // CONSIDER: ModuleUtil.java
     public Collection<String> getModuleSummaries(Container c)
     {
-        synchronized (_modulesLock)
-        {
-            LinkedList<String> list = new LinkedList<>();
+        List<String> list = new LinkedList<>();
 
-            for (Module m : _modules)
-                list.addAll(m.getSummary(c));
+        for (Module m : getModules())
+            list.addAll(m.getSummary(c));
 
-            return list;
-        }
+        return list;
     }
 
     public void initControllerToModule()

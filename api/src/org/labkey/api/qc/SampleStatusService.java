@@ -3,6 +3,7 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -45,6 +46,10 @@ public interface SampleStatusService
 
     @NotNull List<DataState> getStates(Container container);
 
+    @NotNull List<DataState> getAllProjectStates(Container container);
+
+    DataState getStateForRowId(Container container, Integer stateId);
+
     boolean isOperationPermitted(Container container, Integer stateId, @NotNull SampleTypeService.SampleOperations operation);
 
     boolean isOperationPermitted(DataState status, @NotNull SampleTypeService.SampleOperations operation);
@@ -74,6 +79,18 @@ public interface SampleStatusService
         public @NotNull List<DataState> getStates(Container container)
         {
             return SampleStateManager.getInstance().getStates(container);
+        }
+
+        @Override
+        public @NotNull List<DataState> getAllProjectStates(Container container)
+        {
+            return SampleStateManager.getInstance().getAllProjectStates(container);
+        }
+
+        @Override
+        public DataState getStateForRowId(Container container, Integer stateId)
+        {
+            return SampleStateManager.getInstance().getState(container, stateId);
         }
 
         @Override

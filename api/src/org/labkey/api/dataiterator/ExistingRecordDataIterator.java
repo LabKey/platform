@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -14,6 +15,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -55,12 +57,12 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
     final boolean useMark;
     int lastPrefetchRowNumber = -1;
     final HashMap<Integer,Map<String,Object>> existingRecords = new HashMap<>();
+    final Set<String> _dataColumnNames = new CaseInsensitiveHashSet();
 
     final User user;
     final Container c;
     final boolean _checkCrossFolderData;
     final boolean _verifyExisting;
-    final boolean _getDetailedData; // If true, get extra information, such as lineage
 
     final DataIteratorContext _context;
 
@@ -83,12 +85,14 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
         c = userSchema != null ? userSchema.getContainer() : null;
         _checkCrossFolderData = context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.CheckForCrossProjectData);
         _verifyExisting = option.updateOnly;
-        _getDetailedData = detailed;
 
         var map = DataIteratorUtil.createColumnNameMap(in);
         containerCol = map.get("Container");
 
         Collection<String> keyNames = null==keys ? target.getPkColumnNames() : keys;
+
+        _dataColumnNames.addAll(detailed ? map.keySet() : keyNames);
+
         for (String name : keyNames)
         {
             Integer index = map.get(name);
@@ -248,7 +252,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                         container = (String) containerObj;
                 }
 
-                sqlf.append(comma).append("(").append(lastPrefetchRowNumber);
+                sqlf.append(comma).append("(").appendValue(lastPrefetchRowNumber);
                 comma = "\n,";
                 for (int p = 0; p < pkColumns.size(); p++)
                 {
@@ -262,7 +266,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
 
             sqlf.append("\n) AS _values_ (_row_number_");
             for (int p = 0; p < pkColumns.size(); p++)
-                sqlf.append(",").append("key").append(p);
+                sqlf.append(",").append("key").appendValue(p);
             sqlf.append("))\n");
 
             sqlf.append("SELECT _key_columns_._row_number_, _target_.* FROM ");
@@ -273,7 +277,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             for (int p = 0; p < pkColumns.size(); p++)
             {
                 sqlf.append(and);
-                sqlf.append("(_key_columns_.key").append(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
+                sqlf.append("(_key_columns_.key").appendValue(p).append("=(").append(pkColumns.get(p).getValueSql("_target_")).append("))");
                 and = " AND ";
             }
             return new Pair<>(sqlf, rowNumContainers);
@@ -371,7 +375,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 }
                 while (--rowsToFetch > 0 && _delegate.next());
 
-                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _getDetailedData);
+                Map<Integer, Map<String, Object>> rowsMap = qus.getExistingRows(user, c, keysMap, _checkCrossFolderData, _verifyExisting, _dataColumnNames);
                 for (Map.Entry<Integer, Map<String, Object>> rowMap : rowsMap.entrySet())
                 {
                     Map<String, Object> map = rowMap.getValue();
