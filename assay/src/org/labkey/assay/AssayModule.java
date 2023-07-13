@@ -133,7 +133,7 @@ public class AssayModule extends SpringModule
         PlateService.setInstance(new PlateManager());
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
-        DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
+        PlateSchema.register(this);
         DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
 
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleTypeDomainKind());

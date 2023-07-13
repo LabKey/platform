@@ -36,14 +36,17 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
@@ -58,7 +61,11 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -68,6 +75,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateTable;
+import org.labkey.assay.plate.query.WellGroupTable;
+import org.labkey.assay.plate.query.WellTable;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
@@ -401,7 +412,7 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public int save(Container container, User user, PlateTemplate plateObj) throws SQLException
+    public int save(Container container, User user, PlateTemplate plateObj) throws Exception
     {
         if (!(plateObj instanceof PlateTemplateImpl))
             throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
@@ -502,57 +513,63 @@ public class PlateManager implements PlateService
 
     private String getLsid(PlateTemplateImpl plate, Class type, boolean instance)
     {
+        return getLsid(type, plate.getContainer(), plate.isTemplate(), instance).toString();
+    }
+
+    public Lsid getLsid(Class type, Container container, boolean isTemplate, boolean isInstance)
+    {
         String nameSpace;
         if (type == Plate.class)
-            nameSpace = plate.isTemplate() ? "PlateTemplate" : "PlateInstance";
+            nameSpace = isTemplate ? "PlateTemplate" : "PlateInstance";
         else if (type == WellGroup.class)
-            nameSpace = plate.isTemplate() ? "WellGroupTemplate" : "WellGroupInstance";
+            nameSpace = isTemplate ? "WellGroupTemplate" : "WellGroupInstance";
         else if (type == Well.class)
-            nameSpace = plate.isTemplate() ? "WellTemplate" : "WellInstance";
+            nameSpace = isTemplate ? "WellTemplate" : "WellInstance";
         else
             throw new IllegalArgumentException("Unknown type " + type);
 
         String id;
-        if (instance)
+        if (isInstance)
             id = GUID.makeGUID();
         else
             id = LSID_CLASS_OBJECT_ID;
-        return new Lsid(nameSpace, "Folder-" + plate.getContainer().getRowId(), id).toString();
+        return new Lsid(nameSpace, "Folder-" + container.getRowId(), id);
     }
 
-    private int savePlateImpl(Container container, User user, PlateTemplateImpl plate) throws SQLException
+    private int savePlateImpl(Container container, User user, PlateTemplateImpl plate) throws Exception
     {
         boolean updateExisting = plate.getRowId() != null;
 
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            PlateTemplateImpl savedPlate;
-            String plateInstanceLsid;
+            Integer plateId = plate.getRowId();
+            String plateInstanceLsid = plate.getLSID();
             String plateObjectLsid;
+            Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateTemplateImpl.class).toMap(plate, new ArrayListMap<>());
+            QueryUpdateService qus = getPlateUpdateService(container, user);
+            BatchValidationException errors = new BatchValidationException();
+
             if (updateExisting)
             {
-                plateInstanceLsid = plate.getLSID();
-
                 // replace the GUID objectId with the fixed "objectType" value
                 Lsid lsid = Lsid.parse(plateInstanceLsid);
                 plateObjectLsid = lsid.edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
 
-                LOG.debug("Updating existing plate. name=" + plate.getName() + ", rowId=" + plate.getRowId() + ", lsid=" + plateInstanceLsid + ", objectLsid=" + plateObjectLsid);
-                savedPlate = Table.update(user, AssayDbSchema.getInstance().getTableInfoPlate(), plate, plate.getRowId());
+                qus.updateRows(user, container, Collections.singletonList(plateRow), null, errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
             }
             else
             {
-                plateInstanceLsid = getLsid(plate, Plate.class, true);
                 plateObjectLsid = getLsid(plate, Plate.class, false);
-                plate.setLsid(plateInstanceLsid);
-                plate.setContainer(container);
-
-                LOG.debug("Creating new plate. name=" + plate.getName() + ", rowId=" + plate.getRowId() + ", lsid=" + plateInstanceLsid + ", objectLsid=" + plateObjectLsid);
-                savedPlate = Table.insert(user, AssayDbSchema.getInstance().getTableInfoPlate(), plate);
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateRow), errors, null, null);
+                if (errors.hasErrors())
+                    throw errors;
+                plateId = (Integer)insertedRows.get(0).get("RowId");
+                plateInstanceLsid = (String)insertedRows.get(0).get("Lsid");
             }
-
-            savePropertyBag(container, plateInstanceLsid, plateObjectLsid, savedPlate.getProperties(), updateExisting);
+            savePropertyBag(container, plateInstanceLsid, plateObjectLsid, plate.getProperties(), updateExisting);
 
             // delete well groups first
             List<? extends WellGroupTemplateImpl> deletedWellGroups = plate.getDeletedWellGroups();
@@ -560,40 +577,43 @@ public class PlateManager implements PlateService
             {
                 assert deletedWellGroup.getRowId() != null && deletedWellGroup.getRowId() > 0;
                 LOG.debug("Deleting well group: name=" + deletedWellGroup.getName() + ", rowId=" + deletedWellGroup.getRowId());
-                deleteWellGroup(deletedWellGroup.getRowId());
+                deleteWellGroup(container, user, deletedWellGroup.getRowId());
             }
 
+            QueryUpdateService wellGroupQus = getWellGroupUpdateService(container, user);
             for (WellGroupTemplateImpl wellgroup : plate.getWellGroupTemplates(null))
             {
                 assert !wellgroup._deleted;
-                String wellGroupInstanceLsid;
+                String wellGroupInstanceLsid = wellgroup.getLSID();
                 String wellGroupObjectLsid;
+                Map<String, Object> wellGroupRow;
+                BatchValidationException wellGroupErrors = new BatchValidationException();
 
                 if (wellgroup.getRowId() != null && wellgroup.getRowId() > 0)
                 {
-                    wellGroupInstanceLsid = wellgroup.getLSID();
-
                     // replace the GUID objectId with the fixed "objectType" value
                     Lsid lsid = Lsid.parse(wellGroupInstanceLsid);
                     wellGroupObjectLsid = lsid.edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
 
-                    LOG.debug("Updating well group: name=" + wellgroup.getName() + ", rowId=" + wellgroup.getRowId() + ", lsid=" + wellGroupInstanceLsid + ", objectLsid=" + wellGroupObjectLsid);
-                    WellGroupTemplateImpl savedWellGroup = Table.update(user, AssayDbSchema.getInstance().getTableInfoWellGroup(), wellgroup, wellgroup.getRowId());
+                    wellGroupRow = ObjectFactory.Registry.getFactory(WellGroupTemplateImpl.class).toMap(wellgroup, new ArrayListMap<>());
+                    wellGroupQus.updateRows(user, container, Collections.singletonList(wellGroupRow), null, wellGroupErrors, null, null);
+                    if (wellGroupErrors.hasErrors())
+                        throw wellGroupErrors;
 
                     savePropertyBag(container, wellGroupInstanceLsid, wellGroupObjectLsid, wellgroup.getProperties(), true);
                 }
                 else
                 {
-                    wellGroupInstanceLsid = getLsid(plate, WellGroup.class, true);
                     wellGroupObjectLsid = getLsid(plate, WellGroup.class, false);
-                    wellgroup.setLsid(wellGroupInstanceLsid);
-                    wellgroup.setPlateId(savedPlate.getRowId());
+                    wellgroup.setPlateId(plateId);
+                    wellGroupRow = ObjectFactory.Registry.getFactory(WellGroupTemplateImpl.class).toMap(wellgroup, new ArrayListMap<>());
 
-                    LOG.debug("Creating new well group: name=" + wellgroup.getName() + ", lsid=" + wellGroupInstanceLsid + ", objectLsid=" + wellGroupObjectLsid);
-                    assert wellgroup.getRowId() == null;
-                    WellGroupTemplateImpl newWellGroup = Table.insert(user, AssayDbSchema.getInstance().getTableInfoWellGroup(), wellgroup);
-                    assert newWellGroup.getRowId() != null && newWellGroup.getRowId() > 0;
+                    List<Map<String, Object>> insertedRows = wellGroupQus.insertRows(user, container, Collections.singletonList(wellGroupRow), wellGroupErrors, null, null);
+                    if (wellGroupErrors.hasErrors())
+                        throw wellGroupErrors;
 
+                    wellGroupInstanceLsid = (String)insertedRows.get(0).get("Lsid");
+                    wellgroup = ObjectFactory.Registry.getFactory(WellGroupTemplateImpl.class).fromMap(wellgroup, insertedRows.get(0));
                     savePropertyBag(container, wellGroupInstanceLsid, wellGroupObjectLsid, wellgroup.getProperties(), false);
                 }
             }
@@ -604,7 +624,7 @@ public class PlateManager implements PlateService
             Map<Pair<Integer, Integer>, PositionImpl> existingPositionMap = new HashMap<>();
             if (updateExisting)
             {
-                for (PositionImpl existingPosition : getPositions(savedPlate))
+                for (PositionImpl existingPosition : getPositions(plate))
                 {
                     existingPositionMap.put(Pair.of(existingPosition.getRow(), existingPosition.getCol()), existingPosition);
                 }
@@ -615,6 +635,7 @@ public class PlateManager implements PlateService
             }
 
             List<List<Integer>> wellGroupPositions = new LinkedList<>();
+            QueryUpdateService wellQus = getWellUpdateService(container, user);
             for (int row = 0; row < plate.getRows(); row++)
             {
                 for (int col = 0; col < plate.getColumns(); col++)
@@ -637,11 +658,15 @@ public class PlateManager implements PlateService
                         assert position.getRowId() == null || position.getRowId() == 0;
                         assert wellInstanceLsidPrefix != null;
 
-                        String wellLsid = wellInstanceLsidPrefix + "-well-" + position.getRow() + "-" + position.getCol();
-                        position.setLsid(wellLsid);
-                        position.setPlateId(savedPlate.getRowId());
-                        PositionImpl newPosition = Table.insert(user, AssayDbSchema.getInstance().getTableInfoWell(), position);
-                        assert newPosition.getRowId() != 0;
+                        position.setPlateId(plateId);
+                        Map<String, Object> wellRow = ObjectFactory.Registry.getFactory(PositionImpl.class).toMap(position, new ArrayListMap<>());
+                        BatchValidationException wellErrors = new BatchValidationException();
+
+                        List<Map<String, Object>> insertedRows = wellQus.insertRows(user, container, Collections.singletonList(wellRow), wellErrors, null, null);
+                        if (wellErrors.hasErrors())
+                            throw wellErrors;
+
+                        position = ObjectFactory.Registry.getFactory(PositionImpl.class).fromMap(position, insertedRows.get(0));
                     }
 
                     // collect well group positions to save
@@ -662,7 +687,7 @@ public class PlateManager implements PlateService
 
             transaction.commit();
             clearCache();
-            return savedPlate.getRowId();
+            return plateId;
         }
     }
 
@@ -730,12 +755,20 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public void deletePlate(Container container, int rowid)
+    public void deletePlate(Container container, User user, int rowid) throws Exception
+    {
+        Map<String, Object> key = Collections.singletonMap("RowId", rowid);
+        QueryUpdateService qus = getPlateUpdateService(container, user);
+        qus.deleteRows(user, container, Collections.singletonList(key), null, null);
+    }
+
+    // Called by the Plate Query Update Service prior to deleting a plate
+    public void beforePlateDelete(Container container, Integer plateId)
     {
         final AssayDbSchema schema = AssayDbSchema.getInstance();
 
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
-        plateFilter.addCondition(FieldKey.fromParts("RowId"), rowid);
+        plateFilter.addCondition(FieldKey.fromParts("RowId"), plateId);
         PlateTemplateImpl plate = new TableSelector(schema.getTableInfoPlate(),
                 plateFilter, null).getObject(PlateTemplateImpl.class);
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
@@ -751,30 +784,25 @@ public class PlateManager implements PlateService
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
 
-        DbScope scope = schema.getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
-        {
-            OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
-            deleteWellGroupPositions(plate);
-            Table.delete(schema.getTableInfoWell(), plateIdFilter);
-            Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
-            Table.delete(schema.getTableInfoPlate(), plateFilter);
-            transaction.commit();
-            clearCache();
-        }
+        OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
+        deleteWellGroupPositions(plate);
+        Table.delete(schema.getTableInfoWell(), plateIdFilter);
+        Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
     }
 
-    private void deleteWellGroup(int wellGroupId)
+    private void deleteWellGroup(Container container, User user, int wellGroupId) throws Exception
     {
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         DbScope scope = schema.getSchema().getScope();
         assert scope.isTransactionActive();
 
-        deleteWellGroupPositions(wellGroupId);
-        Table.delete(schema.getTableInfoWellGroup(), wellGroupId);
+        Map<String, Object> key = Collections.singletonMap("RowId", wellGroupId);
+        QueryUpdateService qus = getWellGroupUpdateService(container, user);
+        qus.deleteRows(user, container, Collections.singletonList(key), null, null);
     }
 
-    private void deleteWellGroupPositions(int wellGroupId)
+    // Called by the WellGroup Query Update Service prior to deleting a well group
+    public void beforeDeleteWellGroup(Container container, Integer wellGroupId)
     {
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         DbScope scope = schema.getSchema().getScope();
@@ -838,6 +866,39 @@ public class PlateManager implements PlateService
     public PlateTypeHandler getPlateTypeHandler(String plateTypeName)
     {
         return _plateTypeHandlers.get(plateTypeName);
+    }
+
+    private @NotNull QueryUpdateService getPlateUpdateService(Container container, User user)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        TableInfo tableInfo = schema.getTable(PlateTable.NAME);
+        QueryUpdateService qus = tableInfo.getUpdateService();
+        if (qus == null)
+            throw new IllegalStateException("Unable to resolve QueryUpdateService for Plates.");
+
+        return qus;
+    }
+
+    private @NotNull QueryUpdateService getWellGroupUpdateService(Container container, User user)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        TableInfo tableInfo = schema.getTable(WellGroupTable.NAME);
+        QueryUpdateService qus = tableInfo.getUpdateService();
+        if (qus == null)
+            throw new IllegalStateException("Unable to resolve QueryUpdateService for Well Groups.");
+
+        return qus;
+    }
+
+    private @NotNull QueryUpdateService getWellUpdateService(Container container, User user)
+    {
+        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        TableInfo tableInfo = schema.getTable(WellTable.NAME);
+        QueryUpdateService qus = tableInfo.getUpdateService();
+        if (qus == null)
+            throw new IllegalStateException("Unable to resolve QueryUpdateService for Wells.");
+
+        return qus;
     }
 
     private static class PlateLsidHandler implements LsidManager.LsidHandler<Plate>
@@ -934,7 +995,7 @@ public class PlateManager implements PlateService
 
     @Override
     public PlateTemplate copyPlateTemplate(PlateTemplate source, User user, Container destContainer)
-            throws SQLException, PlateService.NameConflictException
+            throws Exception
     {
         PlateTemplate destination = PlateService.get().getPlateTemplate(destContainer, source.getName());
         if (destination != null)
@@ -952,7 +1013,7 @@ public class PlateManager implements PlateService
             for (String property : originalGroup.getPropertyNames())
                 copyGroup.setProperty(property, originalGroup.getProperty(property));
         }
-        PlateService.get().save(destContainer, user, destination);
+        save(destContainer, user, destination);
         return getPlateTemplate(destContainer, destination.getName());
     }
 
@@ -986,7 +1047,7 @@ public class PlateManager implements PlateService
         PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getEntityId()), template);
     }
 
-    private void clearCache()
+    public void clearCache()
     {
         PLATE_TEMPLATE_CACHE.removeUsingFilter(new Cache.StringPrefixFilter(PlateTemplateImpl.class.getName()));
     }
@@ -1010,7 +1071,7 @@ public class PlateManager implements PlateService
     public static final class TestCase
     {
         @Test
-        public void createPlateTemplate() throws SQLException
+        public void createPlateTemplate() throws SQLException, Exception
         {
             final Container c = JunitUtil.getTestContainer();
 
@@ -1119,7 +1180,7 @@ public class PlateManager implements PlateService
             // DELETE
             //
 
-            PlateService.get().deletePlate(c, updatedTemplate.getRowId());
+            PlateService.get().deletePlate(c, TestContext.get().getUser(), updatedTemplate.getRowId());
 
             assertNull(PlateService.get().getPlate(c, updatedTemplate.getRowId()));
             assertEquals(0, PlateManager.get().getPlateTemplates(c).size());

@@ -29,6 +29,7 @@ import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.ViewContext;
 
@@ -181,7 +182,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                         throw new Exception("A plate template with name '" + gwtPlate.getName() + "' already exists.");
 
                     // delete the existing plate first
-                    PlateService.get().deletePlate(getContainer(), other.getRowId());
+                    PlateService.get().deletePlate(getContainer(), getUser(), other.getRowId());
                 }
 
                 template = PlateManager.get().createPlateTemplate(getContainer(), gwtPlate.getType(), gwtPlate.getRows(), gwtPlate.getCols());
@@ -233,7 +234,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             PlateManager.get().getPlateTypeHandler(template.getType()).validate(getContainer(), getUser(), template);
             return PlateService.get().save(getContainer(), getUser(), template);
         }
-        catch (SQLException | ValidationException e)
+        catch (BatchValidationException | ValidationException e)
         {
             LOG.error("Error saving plate", e);
             throw new Exception(e);

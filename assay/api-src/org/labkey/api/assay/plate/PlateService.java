@@ -144,7 +144,7 @@ public interface PlateService
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
 
-    int save(Container container, User user, PlateTemplate plate) throws SQLException;
+    int save(Container container, User user, PlateTemplate plate) throws Exception;
 
     /**
      * Gets a plate instance object by row id.
@@ -191,7 +191,7 @@ public interface PlateService
      * @param container The object's container.
      * @param rowid The row id of the plate object to be deleted.
      */
-    void deletePlate(Container container, int rowid);
+    void deletePlate(Container container, User user, int rowid) throws Exception;
 
     /**
      * Registration of a details link provider allows plate grid views to include links to plate-specific detail pages.
@@ -208,7 +208,7 @@ public interface PlateService
      * @throws SQLException Thrown in the event of a database failure.
      * @throws NameConflictException Thrown if the destination container already contains a template by the same name.
      */
-    PlateTemplate copyPlateTemplate(PlateTemplate source, User user, Container destination) throws SQLException, NameConflictException;
+    PlateTemplate copyPlateTemplate(PlateTemplate source, User user, Container destination) throws Exception;
 
     /**
      * Registers a handler for a particular type of plate
