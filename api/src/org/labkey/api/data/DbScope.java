@@ -40,6 +40,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DeadlockPreventingException;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
@@ -130,6 +131,8 @@ public class DbScope
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final boolean _rds;
     private final String _escape; // LIKE escape character
+    private AutoCloseable _closeOnClose = null;
+
 
     /**
      * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
@@ -627,6 +630,8 @@ public class DbScope
                         {
                             serverLocks.forEach(Lock::lock);
                             serverLockSuccess = true;
+
+                            pushThreadDumpContext("scope: " + this.getDisplayName() + " transaction started");
                         }
                         finally
                         {
@@ -661,6 +666,18 @@ public class DbScope
 
         return result;
     }
+
+
+    // NOTE: beginTransaction() and close() are not necessarily in the same function (e.g. in a try-with-resources block), but they usually are
+    // seems more useful than not to call pushThreadDumpContext from here, rather than in every usage of ensureTransaction().
+    private void pushThreadDumpContext(String mesg)
+    {
+        _closeOnClose = DebugInfoDumper.pushThreadDumpContext(mesg);
+    }
+
+
+    static final ThreadLocal<Boolean> _inScopeExecuteWithRetry = ThreadLocal.withInitial(() -> false);
+
 
     public interface RetryFn<ReturnType>
     {
@@ -705,53 +722,65 @@ public class DbScope
 
     private  <ReturnType> ReturnType _executeWithRetry(boolean useTx, RetryFn<ReturnType> fn, Lock... extraLocks)
     {
-        // don't retry if we're already in a transaction, it won't help
-        ReturnType ret = null;
-        int tries = isTransactionActive() ? 1 : 3;
-        long delay = 100;
-        RuntimeException lastException = null;
-        for (var tri=0 ; tri < tries ; tri++ )
+        final boolean isNested = _inScopeExecuteWithRetry.get();
+
+        try
         {
-            lastException = null;
-            try
+            _inScopeExecuteWithRetry.set(true);
+
+            // don't retry if we're already in a transaction, it won't help
+            // also don't retry if we are in a nested _executeWithRetry()
+            ReturnType ret = null;
+            int tries = isTransactionActive() || isNested ? 1 : 3;
+            long delay = 100;
+            RuntimeException lastException = null;
+            for (var tri=0 ; tri < tries ; tri++ )
             {
-                if (useTx)
+                if (tri > 0)
                 {
-                    try (Transaction transaction = ensureTransaction(extraLocks))
+                    try { Thread.sleep(tri*delay); } catch (InterruptedException ignored) {}
+                    LOG.info("Retrying operation after deadlock", new Throwable());
+                }
+
+                lastException = null;
+                try
+                {
+                    if (useTx)
                     {
-                        ret = fn.exec(transaction);
-                        transaction.commit();
+                        try (Transaction transaction = ensureTransaction(extraLocks))
+                        {
+                            ret = fn.exec(transaction);
+                            transaction.commit();
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        ret = fn.exec(null);
                         break;
                     }
                 }
-                else
+                catch (DeadlockLoserDataAccessException dldae)
                 {
-                    ret = fn.exec(null);
-                    break;
+                    lastException = dldae;
+                }
+                catch (RuntimeSQLException e)
+                {
+                    lastException = e;
+                    if (!SqlDialect.isTransactionException(e))
+                        break;
                 }
             }
-            catch (DeadlockLoserDataAccessException dldae)
-            {
-                lastException = dldae;
-                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
-                LOG.info("Retrying operation after deadlock", new Throwable());
-            }
-            catch (RuntimeSQLException e)
-            {
-                lastException = e;
-                if (!SqlDialect.isTransactionException(e))
-                {
-                    break;
-                }
-                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
-                LOG.info("Retrying operation after deadlock", new Throwable());
-            }
+
+            if (null != lastException)
+                throw lastException;
+
+            return ret;
         }
-
-        if (null != lastException)
-            throw lastException;
-
-        return ret;
+        finally
+        {
+            _inScopeExecuteWithRetry.set(isNested);
+        }
     }
 
 
@@ -2272,6 +2301,9 @@ public class DbScope
                 }
 
                 clearCommitTasks();
+
+                if (null != _closeOnClose)
+                    try {_closeOnClose.close();} catch (Exception ignore) {}
             }
             else
             {
@@ -2315,6 +2347,8 @@ public class DbScope
                             conn.commit();
                             conn.setAutoCommit(true);
                             LOG.debug("setAutoCommit(true)");
+                            if (null != _closeOnClose)
+                                try { _closeOnClose.close(); } catch (Exception ignore) {}
                         }
                         finally
                         {
