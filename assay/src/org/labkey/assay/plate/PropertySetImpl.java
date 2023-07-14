@@ -16,6 +16,8 @@
 
 package org.labkey.assay.plate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.PropertySet;
 
@@ -24,11 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 4:43:49 PM
- */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class PropertySetImpl implements PropertySet
 {
     private Map<String, Object> _properties = new HashMap<>();
@@ -37,7 +35,6 @@ public abstract class PropertySetImpl implements PropertySet
 
     public PropertySetImpl()
     {
-
     }
 
     public PropertySetImpl(Container container)
@@ -45,13 +42,14 @@ public abstract class PropertySetImpl implements PropertySet
         _container = container;
     }
 
+    @JsonIgnore
     @Override
     public Set<String> getPropertyNames()
     {
         return _properties.keySet();
     }
 
-
+    @JsonIgnore
     @Override
     public Object getProperty(String name)
     {
@@ -70,6 +68,7 @@ public abstract class PropertySetImpl implements PropertySet
         _properties = new HashMap<>(properties);
     }
 
+    @JsonIgnore
     public Map<String, Object> getProperties()
     {
         return Collections.unmodifiableMap(_properties);
@@ -86,6 +85,7 @@ public abstract class PropertySetImpl implements PropertySet
         _lsid = lsid;
     }
 
+    @JsonIgnore
     @Override
     public Container getContainer()
     {

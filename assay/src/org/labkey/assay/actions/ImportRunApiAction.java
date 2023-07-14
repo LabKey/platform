@@ -118,7 +118,6 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         Map<Object, String> inputMaterial = new HashMap<>();
         Map<Object, String> outputMaterial = new HashMap<>();
 
-
         // 'json' form field -- allows for multipart forms
         JSONObject json = form.getJson();
         if (json == null)
@@ -228,9 +227,8 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             }
         }
 
-        AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory
-                = provider.createRunUploadFactory(protocol, getViewContext());
-        factory.setName(name)
+        AssayRunUploadContext.Factory<? extends AssayProvider, ? extends AssayRunUploadContext.Factory> factory = provider.createRunUploadFactory(protocol, getViewContext())
+                .setName(name)
                 .setWorkflowTask(workflowTask)
                 .setComments(comments)
                 .setRunProperties(runProperties)
@@ -586,6 +584,4 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             return springBindParameters(this, "form", m);
         }
     }
-
-
 }

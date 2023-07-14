@@ -1,5 +1,6 @@
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;
@@ -7,7 +8,6 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Pair;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +31,7 @@ public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
     }
 
     @Override
-    public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException
+    public PlateTemplate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount)
     {
         PlateTemplate template = PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
 

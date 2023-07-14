@@ -58,7 +58,8 @@ public interface PlateService
     }
 
     /**
-     * Creates a new plate instance based on the specified plate template and well data.
+     * Instantiates a new plate instance based on the specified plate template and well data.
+     * This plate is not persisted to the database.
      * @param template The template that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
@@ -66,16 +67,17 @@ public interface PlateService
      * @param plateNumber Plate number (1-based)
      * @return A plate instance object.
      */
-    Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excludedWells, int runId, int plateNumber);
+    @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells, int runId, int plateNumber);
 
     /**
-     * Creates a new plate instance based on the specified plate template and well data.
+     * Instantiates a new plate instance based on the specified plate template and well data.
+     * This plate is not persisted to the database.
      * @param template The template that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
      * @return A plate instance object.
      */
-    Plate createPlate(PlateTemplate template, double[][] wellValues, @Nullable boolean[][] excludedWells);
+    @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells);
 
     /**
      * Adds a new well group to the plate
@@ -93,7 +95,7 @@ public interface PlateService
      * @param templateName The template's name.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
-    PlateTemplate getPlateTemplate(Container container, String templateName);
+    @Nullable PlateTemplate getPlateTemplate(Container container, String templateName);
 
     /**
      * Gets an existing plate template.
@@ -101,7 +103,7 @@ public interface PlateService
      * @param lsid The template's lsid.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
-    PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
+    @Nullable PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
 
     /**
      * Gets an existing plate template.
@@ -109,7 +111,7 @@ public interface PlateService
      * @param plateId The template's id.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
-    PlateTemplate getPlateTemplate(Container container, int plateId);
+    @Nullable PlateTemplate getPlateTemplate(Container container, int plateId);
 
     /**
      * Gets all plate templates for the specified container.
@@ -149,18 +151,18 @@ public interface PlateService
     /**
      * Gets a plate instance object by row id.
      * @param container The plate's container.
-     * @param rowid The row id of the plate.
+     * @param rowId The row id of the plate.
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
-    Plate getPlate(Container container, int rowid);
+    @Nullable Plate getPlate(Container container, int rowId);
 
     /**
-     * Gets a plate instance by entity id.
+     * Gets a plate instance by lsid.
      * @param container The plate's container.
-     * @param entityId The plate's entity id.
-     * @return The requested plate, or null if no plate exists with the specified entity id.
+     * @param lsid The plate's lsid.
+     * @return The requested plate, or null if no plate exists with the specified lsid.
      */
-    Plate getPlate(Container container, String entityId);
+    @Nullable Plate getPlate(Container container, String lsid);
 
     /**
      * Gets a well group by row id.
