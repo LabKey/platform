@@ -17,14 +17,12 @@
 %>
 <%@ page import="org.labkey.api.assay.plate.PlateService" %>
 <%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
-<%@ page import="org.labkey.api.assay.plate.PlateTypeHandler" %>
 <%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
 <%@ page import="org.labkey.api.util.Link" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
 <%@ page import="org.labkey.api.util.element.Option" %>
 <%@ page import="org.labkey.api.util.element.Select" %>
@@ -37,6 +35,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.assay.plate.model.PlateType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -207,35 +206,20 @@
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
         List<Option> templates = new ArrayList<>();
-        for (PlateTypeHandler handler : PlateManager.get().getPlateTypeHandlers())
+        for (PlateType plateType : PlateManager.get().getPlateTypes())
         {
-            for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
-            {
-                int rows = size.getKey();
-                int cols = size.getValue();
-                int wellCount = rows * cols;
-                String sizeDesc = wellCount + " well (" + rows + "x" + cols + ") ";
-                ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
-                designerURL.addParameter("rowCount", rows);
-                designerURL.addParameter("colCount", cols);
-                designerURL.addParameter("assayType", handler.getAssayType());
-                List<String> types = handler.getTemplateTypes(size);
-                if (types == null || types.isEmpty())
-                {
-                    templates.add(new Option.OptionBuilder()
-                            .label("new " + sizeDesc + handler.getAssayType() + " template")
-                            .value(designerURL.toString())
-                            .build());
-                }
-                for (String template : types)
-                {
-                    designerURL.replaceParameter("templateType", template);
-                    templates.add(new Option.OptionBuilder()
-                            .label("new " + sizeDesc + handler.getAssayType() + " " + template + " template")
-                            .value(designerURL.toString())
-                            .build());
-                }
-            }
+            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
+            designerURL.addParameter("rowCount", plateType.getRows());
+            designerURL.addParameter("colCount", plateType.getCols());
+            designerURL.addParameter("assayType", plateType.getAssayType());
+
+            if (plateType.getType() != null)
+                designerURL.replaceParameter("templateType", plateType.getType());
+
+            templates.add(new Option.OptionBuilder()
+                    .label("new " + plateType.getDescription() + " template")
+                    .value(designerURL.toString())
+                    .build());
         }
 %>
         <br/>

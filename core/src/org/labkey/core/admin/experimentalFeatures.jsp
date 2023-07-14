@@ -16,15 +16,11 @@
  */
 %>
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("internal/jQuery");
-    }
+<%
+    boolean showHidden = PageFlowUtil.mapFromQueryString(request.getQueryString()).containsKey("showHidden");
 %>
 <style>
     .toggle-label-text {
@@ -39,7 +35,6 @@
         margin-left: 1.5em;
     }
 </style>
-
 <p class="labkey-error">
     <strong>WARNING</strong>:
     These experimental features may change, break, or disappear at any time.
@@ -48,6 +43,7 @@
 </p>
 <div class="list-group">
 <% for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags()) { %>
+<% if (!showHidden && flag.isHidden()) continue; %>
 <div class="list-group-item">
     <label>
         <input id="<%=h(flag.getFlag())%>" type="checkbox" <%=checked(flag.isEnabled())%>>

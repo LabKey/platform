@@ -464,7 +464,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
+            // autoFillDefaultResultColumns - only populate created/modified/by for results created separately from runs
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns);
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
@@ -574,36 +575,44 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private void addAssayPlateMetadata(Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
-                                       ExpData resultData, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
+    private void addAssayPlateMetadata(
+        Container container,
+        User user,
+        ExpRun run,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        ExpData resultData,
+        List<Map<String, Object>> inserted,
+        Map<Integer, String> rowIdToLsidMap
+    ) throws ExperimentException
     {
-        if (provider.isPlateMetadataEnabled(protocol))
+        if (!provider.isPlateMetadataEnabled(protocol))
+            return;
+
+        // find the ExpData object for the plate metadata
+        List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
+        if (datas.size() == 1)
         {
-            // find the ExpData object for the plate metadata
-            List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
-            if (datas.size() == 1)
+            ExpData plateData = datas.get(0);
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateData.getDataType());
+            if (svc != null)
             {
-                ExpData plateData = datas.get(0);
-                AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateData.getDataType());
-                if (svc != null)
-                {
-                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
+                Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
 
-                    if (plateData.getFile() != null)
-                        plateMetadata = svc.parsePlateMetadata(plateData.getFile());
-                    else if (getRawPlateMetadata() != null)
-                        plateMetadata = getRawPlateMetadata();
-                    else
-                        throw new ExperimentException("There was no plate metadata JSON available for this run");
-
-                    svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
-                }
+                if (plateData.getFile() != null)
+                    plateMetadata = svc.parsePlateMetadata(plateData.getFile());
+                else if (getRawPlateMetadata() != null)
+                    plateMetadata = getRawPlateMetadata();
                 else
-                    throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
+                    throw new ExperimentException("There was no plate metadata JSON available for this run");
+
+                svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
             }
             else
-                throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
+                throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
         }
+        else
+            throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
     }
 
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
