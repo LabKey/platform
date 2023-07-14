@@ -3698,9 +3698,10 @@ if (!LABKEY.DataRegions) {
         region.skipTotalRowCount = false;
     };
 
-    var totalRowCountRequest;
+    var totalRowCountRequests = {}; // track the request per region name so that we cancel the correct request when necessary
     var _loadAsyncTotalRowCount = function(region, params, jsonData) {
         // if there is a previous request pending, abort it before starting a new one
+        var totalRowCountRequest = totalRowCountRequests[region.name];
         if (totalRowCountRequest !== undefined) {
             totalRowCountRequest.abort();
         }
@@ -3708,7 +3709,7 @@ if (!LABKEY.DataRegions) {
         region.totalRows = undefined;
         region.loadingTotalRows = true;
 
-        totalRowCountRequest = LABKEY.Query.selectRows({
+        totalRowCountRequests[region.name] = LABKEY.Query.selectRows({
             ...region.getQueryConfig(),
             method: 'POST',
             containerPath: region.containerPath,
@@ -3721,7 +3722,7 @@ if (!LABKEY.DataRegions) {
             includeUpdateColumn: false,
             includeTotalCount: true,
             success: function(json) {
-                totalRowCountRequest = undefined;
+                totalRowCountRequests[region.name] = undefined;
                 region.loadingTotalRows = false;
 
                 if (json !== undefined && json.rowCount !== undefined) {
@@ -3741,7 +3742,7 @@ if (!LABKEY.DataRegions) {
                 var aborted = request.status === 0;
                 if (!aborted) {
                     console.error(error);
-                    totalRowCountRequest = undefined;
+                    totalRowCountRequests[region.name] = undefined;
                     region.loadingTotalRows = false;
                     _getFormSelector(region).find('a.labkey-paginationText').html(_getPaginationText(region));
                 }
