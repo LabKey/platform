@@ -101,6 +101,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -2127,23 +2128,17 @@ public class PageFlowUtil
         if (!errors.isEmpty() || (null != scriptWarnings && !scriptWarnings.isEmpty()))
             throw new IllegalArgumentException("empty errors collection expected");
 
-        // NOTE: tidy is unhappy if there is nothing but comments and whitespace
-        //       and also about degenerate comments, such as "<!-->"
-        //       We will remove the degenerates from anything we return
-        String htmlWithNoDegenerates = html.replaceAll("<!--*>|<!>", "");
+        String trimmedHtml = StringUtils.trimToEmpty(html);
 
-        String trimmedHtml = StringUtils.trimToEmpty(htmlWithNoDegenerates);
-
-        if (trimmedHtml.length() == 0)
+        if (trimmedHtml.isEmpty())
             return "";
 
-        trimmedHtml = trimmedHtml.replaceAll("<!--.*?-->", "");
         trimmedHtml = StringUtils.trimToEmpty(trimmedHtml);
         if (trimmedHtml.isEmpty())
-            return htmlWithNoDegenerates;
+            return html;
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
-        String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
+        String xml = StringUtils.trimToEmpty(TidyUtil.tidyHTML(trimmedHtml, true, errors));
         if (!errors.isEmpty())
         {
             if (scriptWarnings != null)
@@ -2180,11 +2175,11 @@ public class PageFlowUtil
             }
         }
 
-        if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
+        if (!errors.isEmpty() || (null != scriptWarnings && !scriptWarnings.isEmpty()))
             return null;
 
         // let's return html not xhtml
-        String tidy = TidyUtil.tidyHTML(htmlWithNoDegenerates, false, errors);
+        String tidy = StringUtils.trimToEmpty(TidyUtil.tidyHTML(html, false, errors));
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
         //and Word includes some when saving as HTML (even Filtered HTML).
         int beginOpenBodyIndex = tidy.indexOf("<body");
@@ -2659,13 +2654,22 @@ public class PageFlowUtil
             assertHtmlParsing("<b>No script here, friends</b>", 0, 0);
             assertHtmlParsing("<p><script>alert('script');</script></p>", 0, 1);
 
+            // Spacing around the <script> element
+            assertHtmlParsing("<p>< script>alert('script');</script></p>", 0, 0);
+            assertHtmlParsing("<p>< script  >alert('script');</script></p>", 0, 0);
+            assertHtmlParsing("<p><script  >alert('script');</script></p>", 0, 1);
+
             // Bogus tag trips error reporting, so assume there might be script
             assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 0, 1);
             assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 0, 0);
 
             // Unclosed tags - not considered an error
             assertHtmlParsing("<b><script>alert('script');</script>", 0, 1);
+            assertHtmlParsing("<b><script>alert('script')", 0, 1);
             assertHtmlParsing("<b>No script", 0, 0);
+
+            // Extra closed tags - not considered an error
+            assertHtmlParsing("</b><script>alert('script');</script>", 0, 1);
         }
 
         private void assertHtmlParsing(String html, int expectedErrors, int expectedScriptWarnings)
