@@ -84,7 +84,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
     private final PathWatchService _pollingWatcher;
 
-    private long _lastPollingExceptionTime = 0;
+    private volatile long _lastPollingExceptionTime = 0;
 
     FileSystemWatcherImpl() throws IOException
     {
