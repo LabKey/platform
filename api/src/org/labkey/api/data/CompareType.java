@@ -395,7 +395,7 @@ public abstract class CompareType
                 List<String> values = new ArrayList<>();
                 if (value != null && !value.toString().trim().equals(""))
                 {
-                    values.addAll(parseParams(value, getValueSeparator()));
+                    values.addAll(parseParams(value, getValueSeparator(), getSecondaryValueSeparator()));
                 }
                 return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
             }
@@ -413,6 +413,12 @@ public abstract class CompareType
         {
             return SimpleFilter.InClause.SEPARATOR;
         }
+
+        @Override
+        public String getSecondaryValueSeparator()
+        {
+            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
+        }
     };
 
     public static final CompareType CONTAINS_NONE_OF = new CompareType("Does Not Contain Any Of (example usage: a;b;c)", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
@@ -427,7 +433,7 @@ public abstract class CompareType
             }
             else
             {
-                Set<String> values = parseParams(value, getValueSeparator());
+                Set<String> values = parseParams(value, getValueSeparator(), getSecondaryValueSeparator());
 
                 return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
             }
@@ -444,6 +450,12 @@ public abstract class CompareType
         public String getValueSeparator()
         {
             return SimpleFilter.InClause.SEPARATOR;
+        }
+
+        @Override
+        public String getSecondaryValueSeparator()
+        {
+            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
         }
     };
 
@@ -468,7 +480,7 @@ public abstract class CompareType
                     }
                     else
                     {
-                        values.addAll(parseParams(value, getValueSeparator()));
+                        values.addAll(parseParams(value, getValueSeparator(), getSecondaryValueSeparator()));
                     }
                 }
                 return new SimpleFilter.InClause(fieldKey, values, true);
@@ -486,6 +498,12 @@ public abstract class CompareType
         public String getValueSeparator()
         {
             return SimpleFilter.InClause.SEPARATOR;
+        }
+
+        @Override
+        public String getSecondaryValueSeparator()
+        {
+            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
         }
     };
 
@@ -510,7 +528,7 @@ public abstract class CompareType
                     }
                     else
                     {
-                        values.addAll(parseParams(value, getValueSeparator()));
+                        values.addAll(parseParams(value, getValueSeparator(), getSecondaryValueSeparator()));
                     }
                 }
                 return new SimpleFilter.InClause(fieldKey, values, true, true);
@@ -528,6 +546,12 @@ public abstract class CompareType
         public String getValueSeparator()
         {
             return SimpleFilter.InClause.SEPARATOR;
+        }
+
+        @Override
+        public String getSecondaryValueSeparator()
+        {
+            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
         }
     };
 
@@ -917,6 +941,7 @@ public abstract class CompareType
     private final String _scriptName;
 
     private String _valueSeparator;
+    private String _secondaryValueSeparator;
 
     protected CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
     {
@@ -982,6 +1007,23 @@ public abstract class CompareType
         Set<String> values = new LinkedHashSet<>();
         parseParams(value, separator, values);
         return values;
+    }
+
+    // ROSALINE TODO: Refactor against above fn for modularity
+    protected static Set<String> parseParams(Object value_, String separator, String secondarySeparator)
+    {
+        if (value_ == null)
+            return Collections.emptySet();
+        String value = value_.toString();
+        if (StringUtils.isBlank(value))
+            return Collections.emptySet();
+
+        value = value.replace(secondarySeparator, separator);
+
+        // check for JSON marker
+        Set<String> values = new LinkedHashSet<>();
+        parseParams(value, separator, values);
+        return values.stream().map(String::trim).collect(Collectors.toSet());
     }
 
     // If you don't want to squash duplicate parameter values use this method instead of parseParams
@@ -1084,6 +1126,11 @@ public abstract class CompareType
     public String getValueSeparator()
     {
         return _valueSeparator;
+    }
+
+    public String getSecondaryValueSeparator()
+    {
+        return _secondaryValueSeparator;
     }
 
     public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
