@@ -624,6 +624,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 results.put("dataClassCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
+                results.put("dataWithDataParentsCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT d.sourceApplicationId) FROM exp.data d\n" +
+                        "JOIN exp.datainput di ON di.targetapplicationid = d.sourceapplicationid"));
 
                 results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
                 results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
