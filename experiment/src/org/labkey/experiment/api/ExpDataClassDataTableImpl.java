@@ -487,6 +487,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         ColumnInfo colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(colOutputs, false), Set.of(colOutputs.getFieldKey()));
 
+        MutableColumnInfo lineageLookup = ClosureQueryHelper.createLineageLookupColumnInfo("Ancestors", this, _rootTable.getColumn("rowid"), _dataClass);
+        addColumn(lineageLookup);
+
         ActionURL gridUrl = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
         gridUrl.addParameter("rowId", _dataClass.getRowId());
         setGridURL(new DetailsURL(gridUrl));

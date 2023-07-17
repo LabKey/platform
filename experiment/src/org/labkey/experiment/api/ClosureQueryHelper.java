@@ -111,7 +111,6 @@ public class ClosureQueryHelper
             GROUP BY targetId, Start_
             """;
 
-
     static String mssqlMaterialClosureCTE = String.format("""
             WITH CTE_ AS (
 
@@ -232,16 +231,16 @@ public class ClosureQueryHelper
     public static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, ExpObject target)
     {
         if (target instanceof ExpSampleType st)
-            return getValueSql(userSchema, type, sourceLSID, objectId, "m" + st.getRowId());
+            return getValueSql(userSchema, type, sourceLSID, objectId, "m" + st.getRowId(), true);
         if (target instanceof ExpDataClass dc)
-            return getValueSql(userSchema, type, sourceLSID, objectId, "d" + dc.getRowId());
+            return getValueSql(userSchema, type, sourceLSID, objectId, "d" + dc.getRowId(), false);
         throw new IllegalStateException();
     }
 
 
-    private static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, String targetId)
+    private static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, String targetId, boolean isSampleType)
     {
-        var closureTableInfo = getClosureTableInfo(userSchema, type, sourceLSID);
+        var closureTableInfo = getClosureTableInfo(userSchema, type, sourceLSID, isSampleType);
         return new SQLFragment()
                 .append("(SELECT rowId FROM ")
                 .append(closureTableInfo.getFromSQL("CLOS"))
@@ -256,13 +255,13 @@ public class ClosureQueryHelper
      * We do this so that we can use the handy method UserSchema.getCachedLookupTableInfo() to reuse the same temp table
      * for multiple lookups in the same query.
      */
-    private static TableInfo getClosureTableInfo(UserSchema userSchema, TableType type, String sourceLSID)
+    private static TableInfo getClosureTableInfo(UserSchema userSchema, TableType type, String sourceLSID, boolean isSampleType)
     {
         var tx = userSchema.getDbSchema().getScope().getCurrentTransaction();
         String key = ClosureQueryHelper.class.getName() + "/" + (null == tx ? "-" : tx.getId());
         return userSchema.getCachedLookupTableInfo(key, () ->
         {
-            MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true));
+            MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true, isSampleType));
             final SQLFragment fromSQL = helper.getFromSql(ExprColumn.STR_TABLE_ALIAS, null);
             var ret = new VirtualTable<>(DbSchema.getTemp(), "--" + ClosureQueryHelper.class.getName() + "--", userSchema)
             {
@@ -283,10 +282,10 @@ public class ClosureQueryHelper
 
     static final AtomicInteger temptableNumber = new AtomicInteger();
 
-    private static void incrementalRecompute(String sourceLSID, SQLFragment from)
+    private static void incrementalRecompute(String sourceLSID, SQLFragment from, boolean isSampleType)
     {
         // if there's nothing cached, we don't need to do incremental
-        MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false);
+        MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false, isSampleType);
         if (null == helper || !helper.isCached(null))
             return;
 
@@ -343,7 +342,6 @@ public class ClosureQueryHelper
         }
     }
 
-
     public static void invalidateMaterialsForRun(String sourceTypeLsid, int runId)
     {
         var tx = getScope().getCurrentTransaction();
@@ -360,11 +358,30 @@ public class ClosureQueryHelper
                 .append("WHERE pa.RunId = ").appendValue(runId)
                 .append(" AND m.cpasType = ? ").add(sourceTypeLsid)
                 .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput).append(") _seed_ ");
-        incrementalRecompute(sourceTypeLsid, seedFrom);
+        incrementalRecompute(sourceTypeLsid, seedFrom, true);
+    }
+
+    public static void invalidateDataObjectsForRun(String sourceTypeLsid, int runId)
+    {
+        var tx = getScope().getCurrentTransaction();
+        if (null != tx)
+        {
+            tx.addCommitTask(() -> invalidateDataObjectsForRun(sourceTypeLsid, runId), DbScope.CommitTaskOption.POSTCOMMIT);
+            return;
+        }
+
+        SQLFragment seedFrom = new SQLFragment()
+                .append("FROM (SELECT d.RowId, d.ObjectId FROM exp.data d\n")
+                .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
+                .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
+                .append("WHERE pa.RunId = ").appendValue(runId)
+                .append(" AND d.cpasType = ? ").add(sourceTypeLsid)
+                .append(" AND pa.CpasType = ").appendValue(ExperimentRunOutput).append(") _seed_ ");
+        incrementalRecompute(sourceTypeLsid, seedFrom, false);
     }
 
 
-    private static MaterializedQueryHelper getClosureHelper(TableType type, String sourceLSID, boolean computeIfAbsent)
+    private static MaterializedQueryHelper getClosureHelper(TableType type, String sourceLSID, boolean computeIfAbsent, boolean isSampleType)
     {
         ClosureTable closure;
 
@@ -380,7 +397,9 @@ public class ClosureQueryHelper
 
         closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
         {
-            SQLFragment from = new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ").add(cpasType);
+            SQLFragment from = isSampleType ? new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ") :
+                    new SQLFragment(" FROM exp.Data WHERE Data.cpasType = ? ");
+            from.add(cpasType);
             SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
 
             var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
