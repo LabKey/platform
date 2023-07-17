@@ -656,7 +656,7 @@ public class ClosureQueryHelper
     {
         LineageLookupTypesTableInfo(UserSchema userSchema, ExpObject source)
         {
-            super(userSchema.getDbSchema(), "LineageLookupTypes",userSchema);
+            super(userSchema.getDbSchema(), "LineageLookupTypes", userSchema);
 
             for (var lk : TableType.values())
             {
