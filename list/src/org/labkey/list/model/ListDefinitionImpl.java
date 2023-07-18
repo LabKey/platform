@@ -425,7 +425,7 @@ public class ListDefinitionImpl implements ListDefinition
         _domain = null;
         getDomain();
 
-        ListManager.get().indexList(_def, true);
+        ListManager.get().indexList(_def);
     }
 
     private void ensureKey()

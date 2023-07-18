@@ -1105,7 +1105,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             if (success)
             {
-                i._res.setLastIndexed(i._start, i._modified);
+                // On a fast machine, _start could be less than _modified, since _start is set via HeartBeat. However,
+                // we don't ever want to set LastIndexed to a timestamp less than Modified, otherwise we'll end up
+                // reindexing this doc on the next pass.
+                i._res.setLastIndexed(Math.max(i._start, i._modified), i._modified);
                 synchronized (_commitLock)
                 {
                     String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
@@ -1237,6 +1240,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
     {
+        _log.debug("Indexing container \"" + c + "\", since: " + since);
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
 
         Runnable r = () ->
