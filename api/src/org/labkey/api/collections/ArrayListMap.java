@@ -206,7 +206,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         }
         
         while (i >= _row.size())
-            _row.add(null);
+            _row.add(DOES_NOT_CONTAINKEY);
         return convertToV(_row.set(i,value));
     }
 
@@ -256,11 +256,11 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
             {
                 while (entryList.size() <= i)
                     entryList.add(null);
-                entryList.set(i, new Pair<K, V>(key, (V) v));
+                entryList.set(i, new Pair<>(key, (V) v));
             }
         }
         var ret = new LinkedHashSet<Entry<K, V>>();
-        entryList.stream().filter(Objects::nonNull).forEach(e -> ret.add(e));
+        entryList.stream().filter(Objects::nonNull).forEach(ret::add);
         return ret;
     }
 
@@ -361,25 +361,28 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         buf.append("{");
 
         Iterator<Map.Entry<K, Integer>> i = _findMap.entrySet().iterator();
-        boolean hasNext = i.hasNext();
-        while (hasNext)
+        String separator = "";
+        while (i.hasNext())
         {
             Map.Entry<K, Integer> e = i.next();
             Object key = e.getKey();
             int index = e.getValue().intValue();
-            Object value = index >= _row.size() ? null : _row.get(index);
-            if (key == this)
-                buf.append("(this Map)");
-            else
-                buf.append(key);
-            buf.append("=");
-            if (value == this)
-                buf.append("(this Map)");
-            else
-                buf.append(value);
-            hasNext = i.hasNext();
-            if (hasNext)
-                buf.append(", ");
+            Object value = index >= _row.size() ? DOES_NOT_CONTAINKEY : _row.get(index);
+
+            if (value != DOES_NOT_CONTAINKEY)
+            {
+                buf.append(separator);
+                if (key == this)
+                    buf.append("(this Map)");
+                else
+                    buf.append(key);
+                buf.append("=");
+                if (value == this)
+                    buf.append("(this Map)");
+                else
+                    buf.append(value);
+                separator = ", ";
+            }
         }
 
         buf.append("}");
@@ -406,14 +409,34 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
     public static class TestCase extends Assert
     {
-        @Test
-        public void test()
+        private ArrayListMap<String, String> createAndPopulate()
         {
             ArrayListMap<String, String> a = new ArrayListMap<>(4);
             a.put("Z", "one");
             a.put("B", "two");
             a.put("C", "three");
             a.put("D", "four");
+            return a;
+        }
+
+        @Test
+        public void testToString()
+        {
+            ArrayListMap<String, String> a = createAndPopulate();
+            assertEquals("{Z=one, B=two, C=three, D=four}", a.toString());
+
+            ArrayListMap<String,String> b = new ArrayListMap<>(a, new ArrayList<>());
+            b.put("G", "test");
+            assertEquals("{G=test}", b.toString());
+            b.put("Z", "test2");
+            assertEquals("{Z=test2, G=test}", b.toString());
+
+            assertEquals("{Z=one, B=two, C=three, D=four}", a.toString());
+        }
+        @Test
+        public void test()
+        {
+            ArrayListMap<String, String> a = createAndPopulate();
 
             {
                 assertEquals(a.get("Z"), "one");
@@ -471,7 +494,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
             var it = a.entrySet().iterator();
 
-            ArrayListMap<String,String> b = new ArrayListMap<>(a, new ArrayList<String>());
+            ArrayListMap<String,String> b = new ArrayListMap<>(a, new ArrayList<>());
             b.put("Z", "ONE");
             b.put("E", "FIVE");
             a.put("F", "six");
