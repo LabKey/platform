@@ -503,24 +503,26 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
             assertEquals(a.get("Z"), "one");
             assertEquals(b.get("Z"), "ONE");
 
-            assertTrue(a.containsKey("E"));
+            assertFalse(a.containsKey("E"));
             assertNull(a.get("E"));
+            assertTrue(b.containsKey("E"));
             assertEquals("FIVE", b.get("E"));
             assertNull(a.put("E", "five"));
             assertEquals("five", a.get("E"));
             assertEquals("FIVE", b.get("E"));
 
-            assertTrue(b.containsKey("F"));
+            assertFalse(b.containsKey("F"));
+            assertTrue(a.containsKey("F"));
             assertNull(b.get("F"));
             assertEquals("six", a.get("F"));
             
             assertEquals("SEVEN", b.get("G"));
             assertTrue(b.containsKey("G"));
-            assertEquals(7, b.values().size());
+            assertEquals(3, b.values().size());
             assertEquals("SEVEN", b.remove("G"));
             assertNull(b.get("G"));
             assertFalse(b.containsKey("G"));
-            assertEquals(6, b.values().size());
+            assertEquals(2, b.values().size());
             assertNull(b.put("G","SEVENTY"));
             assertEquals("SEVENTY", b.get("G"));
             assertTrue(b.containsKey("G"));
