@@ -354,18 +354,19 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
 
     // need to override toString() since we don't implement entrySet()
+    @Override
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("{");
 
-        Iterator i = _findMap.entrySet().iterator();
+        Iterator<Map.Entry<K, Integer>> i = _findMap.entrySet().iterator();
         boolean hasNext = i.hasNext();
         while (hasNext)
         {
-            Map.Entry e = (Map.Entry) i.next();
+            Map.Entry<K, Integer> e = i.next();
             Object key = e.getKey();
-            int index = ((Integer) e.getValue()).intValue();
+            int index = e.getValue().intValue();
             Object value = index >= _row.size() ? null : _row.get(index);
             if (key == this)
                 buf.append("(this Map)");
