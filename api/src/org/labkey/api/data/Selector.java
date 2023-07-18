@@ -38,10 +38,8 @@ public interface Selector
     /**
      * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
      * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
+     * resource usage. If you are, for example, invoking a stored procedure that will have side effects via a SELECT
+     * statement, you must explicitly start your own transaction and commit it.
      */
     TableResultSet getResultSet();
 
@@ -76,9 +74,7 @@ public interface Selector
      * Returns an uncached sequential Stream of objects representing rows from the database. Converts each result row into
      * an object of the specified class. The Stream is backed by a live ResultSet with an open Connection, so <b>it must be
      * closed</b>, typically using try-with-resources. This is less convenient than a cached Stream, but useful when large
-     * results are expected.
-     *
-     * An example showing proper closing:
+     * results are expected. An example showing proper closing:
      *
      * <pre>{@code
      *
@@ -147,18 +143,33 @@ public interface Selector
      */
     <T> void forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock);
 
-    /** Return a new map from a two-column query; the first column is the key, the second column is the value. */
+    /**
+     * Return a new value map from a query. If the result has a single column, return an identity map. If the result has
+     * multiple columns, the first column is the key, the second column is the value.
+     */
     @NotNull <K, V> Map<K, V> getValueMap();
 
-    /** Populate an existing map from a two-column query; the first column is the key, the second column is the value. */
+    /**
+     * Populate an existing map from a query. If the result has a single column, populate an identity map. If the result
+     * has multiple columns, the first column is the key, the second column is the value.
+     */
     @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
 
-    /** Return a new MultiValuedMap from a two-column query; the first column is the key, the second column is the value of which there may be more than one for the key. */
+    /**
+     * Return a new MultiValuedMap from a query. If the result has a single column, return an identity map. If the
+     * result has multiple columns, the first column is the key, the second column is the value, of which there may be
+     * more than one for each key.
+     */
     @NotNull <K, V> MultiValuedMap<K, V> getMultiValuedMap();
 
-    /** Populate an existing MultiValuedMap from a two-column query; the first column is the key, the second column is the value of which there may be more than one for the key. */
+    /**
+     * Populate an existing MultiValuedMap from a query. If the result has a single column, return an identity map. If
+     * the result has multiple columns, the first column is the key, the second column is the value, of which there may
+     * be more than one for each key.
+     */
     @NotNull <K, V> MultiValuedMap<K, V> fillMultiValuedMap(@NotNull final MultiValuedMap<K, V> multiMap);
 
+    @SuppressWarnings("UnusedReturnValue")
     @NotNull <K> Set<K> fillSet(@NotNull final Set<K> fillSet);
 
     /** Callback interface for dealing with objects streamed from the database one-by-one */

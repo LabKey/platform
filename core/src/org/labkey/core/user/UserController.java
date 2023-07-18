@@ -286,14 +286,7 @@ public class UserController extends SpringActionController
         populateUserGridButtonBar(gridButtonBar, isAnyAdmin);
         rgn.setButtonBar(gridButtonBar, DataRegion.MODE_GRID);
 
-        ActionURL showUsersURL = new ActionURL(ShowUsersAction.class, c);
-        showUsersURL.addParameter(DataRegion.LAST_FILTER_PARAM, true);
-        ActionButton showGrid = new ActionButton(showUsersURL, c.isRoot() ? "Show Users" : "Show Project Users");
-        showGrid.setActionType(ActionButton.Action.LINK);
-
         ButtonBar detailsButtonBar = new ButtonBar();
-        if (isAnyAdmin)
-            detailsButtonBar.add(showGrid);
 
         ActionURL editURL = new ActionURL(ShowUpdateAction.class, getContainer());
         editURL.addParameter(QueryParam.schemaName.toString(), "core");
@@ -320,8 +313,18 @@ public class UserController extends SpringActionController
         }
         updateButtonBar.add(update);
         if (isUserManager)
-            updateButtonBar.add(showGrid);
+            updateButtonBar.add(getShowGridButton(c));
         rgn.setButtonBar(updateButtonBar, DataRegion.MODE_UPDATE);
+    }
+
+    private ActionButton getShowGridButton(Container c)
+    {
+        ActionURL showUsersURL = new ActionURL(ShowUsersAction.class, c);
+        showUsersURL.addParameter(DataRegion.LAST_FILTER_PARAM, true);
+        ActionButton showGrid = new ActionButton(showUsersURL, c.isRoot() ? "Show Users" : "Show Project Users");
+        showGrid.setActionType(ActionButton.Action.LINK);
+
+        return showGrid;
     }
 
     private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean isAnyAdmin)
@@ -1715,6 +1718,16 @@ public class UserController extends SpringActionController
                 bb.add(viewPermissions);
             }
 
+            if (isUserManager && canManageDetailsUser)
+            {
+                ActionURL cloneUrl = urlProvider(SecurityUrls.class).getClonePermissionsURL(detailsUser, getViewContext().getActionURL());
+                ActionButton cloneButton = new ActionButton(cloneUrl, "Clone Permissions");
+                cloneButton.setActionType(ActionButton.Action.LINK);
+                cloneButton.setTooltip("Replace this user's permissions with those of another user");
+
+                bb.add(cloneButton);
+            }
+
             if (isOwnRecord)
             {
                 if (!isUserManager  // site/app admin already had this link added above
@@ -1724,8 +1737,17 @@ public class UserController extends SpringActionController
                 {
                     bb.add(makeChangeEmailButton(c, detailsUser));
                 }
+            }
 
-                ActionButton doneButton;
+            if (isProjectAdminOrBetter)
+            {
+                bb.add(getShowGridButton(c));
+            }
+
+            if (isOwnRecord)
+            {
+                final ActionButton doneButton;
+
                 if (null != form.getReturnUrl())
                 {
                     doneButton = new ActionButton("Done", form.getReturnURLHelper());
@@ -1747,16 +1769,6 @@ public class UserController extends SpringActionController
                 doneButton.addContextualRole(OwnerRole.class);
                 bb.add(doneButton);
                 bb.addContextualRole(OwnerRole.class);
-            }
-
-            if (isUserManager && canManageDetailsUser)
-            {
-                ActionURL cloneUrl = urlProvider(SecurityUrls.class).getClonePermissionsURL(detailsUser, getViewContext().getActionURL());
-                ActionButton cloneButton = new ActionButton(cloneUrl, "Clone Permissions");
-                cloneButton.setActionType(ActionButton.Action.LINK);
-                cloneButton.setTooltip("Replace this user's permissions with those of another user");
-
-                bb.add(cloneButton);
             }
 
             VBox view = new VBox(detailsView);

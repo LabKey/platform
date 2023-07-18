@@ -574,16 +574,18 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     {
         // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
         getStandardResultSetFactory().handleResultSet((rs, conn) -> {
-            if (rs.getMetaData().getColumnCount() < 2)
-                throw new IllegalStateException("Must select at least two columns to use fillValueMap() or getValueMap()");
+            int columnCount = rs.getMetaData().getColumnCount();
+            if (columnCount < 1)
+                throw new IllegalStateException("Must select at least one column to use fillValueMap() or getValueMap()");
 
             ResultSetIterator iter = new ResultSetIterator(rs);
 
             while (iter.hasNext())
             {
                 RowMap rowMap = (RowMap)iter.next();
+                K key = (K)rowMap.get(1);
                 //noinspection unchecked
-                fn.apply((K)rowMap.get(1), (V)rowMap.get(2));
+                fn.apply(key, (V)(1 == columnCount ? key : rowMap.get(2))); // One column => treat as an identity map
             }
 
             return null;

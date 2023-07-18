@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -266,7 +265,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         {
             List<String> emails = stream
                 .map(User::getEmail)
-                .collect(Collectors.toList());
+                .toList();
             assertEquals(count, emails.size());
         }
 
@@ -274,7 +273,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         try (Stream<String> stream = selector.uncachedStream(String.class))
         {
             List<String> emails = stream
-                .collect(Collectors.toList());
+                .toList();
             assertEquals(count, emails.size());
         }
 
@@ -293,7 +292,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
         List<String> emails = selector.stream(User.class)
             .map(User::getEmail)
-            .collect(Collectors.toList());
+            .toList();
         assertEquals(count, emails.size());
 
         // findFirst() should work and shouldn't cause any problems (e.g., shouldn't log a not closed exception)
@@ -341,7 +340,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         {
             assertEquals(count, selector.getValueMap().size());
             assertTrue("Expected getValueMap() to fail with unstable column ordering", stable);
-            assertTrue("Expected getValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 1);
+            assertTrue("Expected getValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 0);
         }
         catch (IllegalStateException e)
         {
@@ -354,7 +353,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             selector.fillValueMap(map);
             assertEquals(count, map.size());
             assertTrue("Expected fillValueMap() to fail with unstable column ordering", stable);
-            assertTrue("Expected fillValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 1);
+            assertTrue("Expected fillValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 0);
         }
         catch (IllegalStateException e)
         {
