@@ -42,8 +42,14 @@ INSERT INTO mothership.Dedupe (MaxId, SoftwareReleaseId)
 UPDATE mothership.serversession s SET softwarereleaseid = (SELECT MaxId FROM mothership.Dedupe d
                    WHERE s.SoftwareReleaseId = d.SoftwareReleaseId);
 
-DROP TABLE mothership.Dedupe;
+-- Drop and recreate FK to speed up the DELETE constraint checking
+ALTER TABLE mothership.ServerSession DROP CONSTRAINT FK_ServerSession_SoftwareRelease;
 
 DELETE FROM mothership.softwarerelease WHERE SoftwareReleaseId NOT IN
-                                             (SELECT DISTINCT SoftwareReleaseId FROM mothership.serversession);
+                                             (SELECT DISTINCT MaxId FROM mothership.Dedupe);
+
+ALTER TABLE mothership.ServerSession ADD CONSTRAINT FK_ServerSession_SoftwareRelease FOREIGN KEY (SoftwareReleaseId) REFERENCES mothership.SoftwareRelease(SoftwareReleaseId);
+
+DROP TABLE mothership.Dedupe;
+
 
