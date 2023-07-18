@@ -365,7 +365,8 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
         {
             Map.Entry e = (Map.Entry) i.next();
             Object key = e.getKey();
-            Object value = _row.get(((Integer) e.getValue()).intValue());
+            int index = ((Integer) e.getValue()).intValue();
+            Object value = index >= _row.size() ? null : _row.get(index);
             if (key == this)
                 buf.append("(this Map)");
             else
