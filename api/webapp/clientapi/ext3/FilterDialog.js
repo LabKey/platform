@@ -62,7 +62,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             // hook key events
             keys:[{
                 key: Ext.EventObject.ENTER,
-                handler: this.onApply,
+                handler: this.onKeyEnter,
                 scope: this
             },{
                 key: Ext.EventObject.ESC,
@@ -156,6 +156,28 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         });
 
         return true;
+    },
+
+    onKeyEnter : function() {
+        var view = this.getContainer().getActiveTab();
+        var filters = view.getFilters()
+        if (filters && filters.length > 0) {
+            var hasMultiValueFilter = false;
+            filters.forEach(filter => {
+                var urlSuffix = filter.getFilterType().getURLSuffix();
+                if (filter.getFilterType().isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between'))
+                    hasMultiValueFilter = true;
+            })
+            if (hasMultiValueFilter)
+                return;
+        }
+
+
+        this.onApply();
+    },
+
+    hasMultiValueFilter: function() {
+        this._getFilters()
     },
 
     onApply : function() {
@@ -414,17 +436,18 @@ LABKEY.FilterDialog.ViewPanel = Ext.extend(Ext.form.FormPanel, {
         console.error('All classes which extend LABKEY.FilterDialog.ViewPanel must implement setFilters(filterArray)');
     },
 
-    getXtype : function() {
+    getXtypes : function() {
+        const textInputTypes = ['textfield', 'textarea'];
         switch (this.jsonType) {
             case "date":
-                return "datefield";
+                return ["datefield"];
             case "int":
             case "float":
-                return "textfield";
+                return textInputTypes;
             case "boolean":
-                return 'labkey-booleantextfield';
+                return ['labkey-booleantextfield'];
             default:
-                return "textfield";
+                return textInputTypes;
         }
     },
 
@@ -486,20 +509,22 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             inputValue = dateVal.format(LABKEY.extDefaultDateFormat); // convert back to date field accepted format for render
         }
 
-        if (this.inputs[f]) {
-            this.inputs[f].setValue(inputValue);
+        var inputs = this.getVisibleInputs();
+        if (inputs[f]) {
+            inputs[f].setValue(inputValue);
         }
     },
 
     onViewReady : function() {
+        var inputs = this.getVisibleInputs();
         if (this.filters.length == 0) {
             for (var c=0; c < this.combos.length; c++) {
                 // Update the input enabled/disabled status by using the 'select' event listener on the combobox.
                 // However, ComboBox doesn't fire 'select' event when changed programatically so we fire it manually.
                 this.combos[c].reset();
                 this.combos[c].fireEvent('select', this.combos[c], null);
-                if (this.inputs[c]) {
-                    this.inputs[c].reset();
+                if (inputs[c]) {
+                    inputs[c].reset();
                 }
             }
         }
@@ -512,16 +537,20 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         }
 
         //Issue 24550: always select the first filter field, and also select text if present
-        if (this.inputs[0]) {
-            this.inputs[0].focus(true, 100, this.inputs[0]);
+        if (inputs[0]) {
+            inputs[0].focus(true, 100, inputs[0]);
         }
 
         this.changed = false;
     },
 
+    getVisibleInputs: function() {
+        return this.inputs.filter(input => !input.hidden);
+    },
+
     checkValid : function() {
         var combos = this.combos;
-        var inputs = this.inputs, input, value, f;
+        var inputs = this.getVisibleInputs(), input, value, f;
 
         var isValid = true;
 
@@ -567,13 +596,18 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     },
 
     addFilterConfig: function(idx, items) {
+        var subItems = [this.getComboConfig(idx)];
+        var inputConfigs = this.getInputConfigs(idx);
+        inputConfigs.forEach(config => {
+            subItems.push(config);
+        });
         items.push({
             xtype: 'panel',
             layout: 'form',
             itemId: 'filterPair' + idx,
             border: false,
             defaults: this.itemDefaults,
-            items: [this.getComboConfig(idx), this.getInputConfig(idx)],
+            items: subItems,
             scope: this
         });
     },
@@ -638,9 +672,11 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     enableInputField : function (combo) {
 
         var idx = combo.filterIndex;
-        var inputField = this.find('itemId', 'inputField'+idx)[0];
+        var inputField = this.find('itemId', 'inputField'+idx+'-0')[0];
+        var textAreaField = this.find('itemId', 'inputField'+idx+'-1')[0];
 
-        var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
+        const urlSuffix = combo.getValue().toLowerCase();
+        var filter = LABKEY.Filter.getFilterTypeForURLSuffix(urlSuffix);
         var selectedValue = filter ? filter.getURLSuffix() : '';
 
         var combos = this.combos;
@@ -653,9 +689,22 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             inputField.blur();
         }
         else {
-            inputField.enable();
-            inputField.validate();
-            inputField.focus('', 50)
+            if (filter.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
+                textAreaField.show();
+                textAreaField.enable();
+                textAreaField.setValue(inputField.getValue());
+                textAreaField.validate();
+                textAreaField.focus('', 50);
+                inputField.hide();
+            }
+            else {
+                inputField.show();
+                inputField.enable();
+                inputField.setValue(textAreaField.getValue());
+                inputField.validate();
+                inputField.focus('', 50);
+                textAreaField.hide();
+            }
         }
 
         //if the value is null, this indicates no filter chosen.  if it lacks an operator (ie. isBlank)
@@ -690,7 +739,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     getFilters : function() {
 
-        var inputs = this.inputs;
+        var inputs = this.getVisibleInputs();
         var combos = this.combos;
         var value, type, filters = [];
 
@@ -716,71 +765,78 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         return undefined;
     },
 
-    getInputConfig : function(idx) {
+    getInputConfigs : function(idx) {
         var me = this;
-        var config = {
-            xtype         : this.getXtype(),
-            itemId        : 'inputField' + idx,
-            filterIndex   : idx,
-            id            : 'value_'+(idx + 1),   //for compatibility with tests...
-            width         : 330,
-            blankText     : 'You must enter a value.',
-            validateOnBlur: true,
-            value         : null,
-            altFormats    : this.getAltDateFormats(),
-            validator : function(value) {
+        const xTypes = this.getXtypes();
+        var configs = [];
+        xTypes.forEach((xType, typeId) => {
+            var config = {
+                xtype         : xType,
+                itemId        : 'inputField' + idx + '-' + typeId,
+                filterIndex   : idx,
+                id            : 'value_'+(idx + 1) + (typeId ? '-' + typeId: ''),   //for compatibility with tests...
+                width         : 330,
+                blankText     : 'You must enter a value.',
+                validateOnBlur: true,
+                value         : null,
+                altFormats    : this.getAltDateFormats(),
+                hidden: typeId === 1,
+                disabled: typeId === 1,
+                validator : function(value) {
 
-                // support for filtering '∞'
-                if (me.jsonType == 'float' && value.indexOf('∞') > -1) {
-                    value = value.replace('∞', 'Infinity');
-                    this.setRawValue(value); // does not fire validation
-                }
-
-                var combos = me.combos;
-                if (!combos.length) {
-                    return;
-                }
-
-                return me.inputFieldValidator(this, combos[idx]);
-            },
-            listeners: {
-                disable : function(field){
-                    //Call validate after disable so any pre-existing validation errors go away.
-                    if(field.rendered) {
-                        field.validate();
+                    // support for filtering '∞'
+                    if (me.jsonType == 'float' && value.indexOf('∞') > -1) {
+                        value = value.replace('∞', 'Infinity');
+                        this.setRawValue(value); // does not fire validation
                     }
-                },
-                focus : function(f) {
-                    if (this.focusTask) {
-                        Ext.TaskMgr.stop(this.focusTask);
-                    }
-                },
-                render : function(input) {
-                    me.inputs.push(input);
-                    if (!me.focusReady) {
-                        me.focusReady = true;
-                        // create a task to set the input focus that will get started after layout is complete,
-                        // the task will run for a max of 2000ms but will get stopped when the component receives focus
-                        this.focusTask = {interval:150, run: function(){
-                                input.focus(null, 50);
-                                Ext.TaskMgr.stop(this.focusTask);
-                            }, scope: this, duration: 2000};
-                    }
-                },
-                change : this.inputListener,
-                scope : this
-            },
-            scope: this
-        };
-        if (this.jsonType === "date") {
-            config.format = LABKEY.extDefaultDateFormat;
 
-            // default invalidText : "{0} is not a valid date - it must be in the format {1}",
-            // override the default warning msg as there is one preferred format, but there are also a set of acceptable altFormats
-            config.invalidText = "{0} might not be a valid date - the preferred format is {1}";
-        }
+                    var combos = me.combos;
+                    if (!combos.length) {
+                        return;
+                    }
 
-        return config;
+                    return me.inputFieldValidator(this, combos[idx]);
+                },
+                listeners: {
+                    disable : function(field){
+                        //Call validate after disable so any pre-existing validation errors go away.
+                        if(field.rendered) {
+                            field.validate();
+                        }
+                    },
+                    focus : function(f) {
+                        if (this.focusTask) {
+                            Ext.TaskMgr.stop(this.focusTask);
+                        }
+                    },
+                    render : function(input) {
+                        me.inputs.push(input);
+                        if (!me.focusReady) {
+                            me.focusReady = true;
+                            // create a task to set the input focus that will get started after layout is complete,
+                            // the task will run for a max of 2000ms but will get stopped when the component receives focus
+                            this.focusTask = {interval:150, run: function(){
+                                    input.focus(null, 50);
+                                    Ext.TaskMgr.stop(this.focusTask);
+                                }, scope: this, duration: 2000};
+                        }
+                    },
+                    change : this.inputListener,
+                    scope : this
+                },
+                scope: this
+            };
+            if (this.jsonType === "date") {
+                config.format = LABKEY.extDefaultDateFormat;
+
+                // default invalidText : "{0} is not a valid date - it must be in the format {1}",
+                // override the default warning msg as there is one preferred format, but there are also a set of acceptable altFormats
+                config.invalidText = "{0} might not be a valid date - the preferred format is {1}";
+            }
+
+            configs.push(config);
+        })
+        return configs;
     },
 
     inputListener : function(input, newVal, oldVal) {
@@ -879,10 +935,19 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 useNull: true
             });
 
-            var convertedVal = field.convert(value);
-            if (!Ext.isEmpty(value) && value != convertedVal) {
-                return "Invalid value: " + value;
-            }
+            var values = !Ext.isEmpty(value) && value.indexOf('\n') > -1 ?  value.split('\n') : [value];
+            var invalid = null;
+            values.forEach(val => {
+                if (val == null)
+                    return;
+                var convertedVal = field.convert(val);
+                if (!Ext.isEmpty(val) && val != convertedVal) {
+                    invalid = val;
+                }
+            })
+
+            if (invalid != null)
+                return "Invalid value: " + invalid;
         }
         else {
             console.log('Unrecognized type: ' + this.jsonType);
