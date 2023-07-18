@@ -1741,7 +1741,10 @@ public class UserController extends SpringActionController
 
             if (isProjectAdminOrBetter)
             {
-                bb.add(getShowGridButton(c));
+                ActionButton showGrid = getShowGridButton(c);
+                if (!isOwnRecord)
+                    showGrid.setPrimary(true);
+                bb.add(showGrid);
             }
 
             if (isOwnRecord)
@@ -1767,6 +1770,7 @@ public class UserController extends SpringActionController
                 }
 
                 doneButton.addContextualRole(OwnerRole.class);
+                doneButton.setPrimary(true);
                 bb.add(doneButton);
                 bb.addContextualRole(OwnerRole.class);
             }
