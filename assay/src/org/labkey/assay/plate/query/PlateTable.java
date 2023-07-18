@@ -53,6 +53,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
+import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -206,15 +207,14 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             Integer plateId = (Integer) oldRow.get("RowId");
             Plate plate = PlateManager.get().getPlate(container, plateId);
-            if (plate != null)
-            {
-                int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
-                if (runsInUse > 0)
-                    throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be updated", runsInUse));
+            if (plate == null)
+                return Collections.emptyMap();
 
-                return super.updateRow(user, container, row, oldRow);
-            }
-            return Collections.emptyMap();
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+            if (runsInUse > 0)
+                throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+
+            return super.updateRow(user, container, row, oldRow);
         }
 
         @Override
@@ -222,24 +222,23 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             Integer plateId = (Integer)oldRowMap.get("RowId");
             Plate plate = PlateManager.get().getPlate(container, plateId);
-            if (plate != null)
+            if (plate == null)
+                return Collections.emptyMap();
+
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+            if (runsInUse > 0)
+                throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+
+            try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
-                int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
-                if (runsInUse > 0)
-                    throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be deleted", runsInUse));
+                PlateManager.get().beforePlateDelete(container, plateId);
+                Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
-                {
-                    PlateManager.get().beforePlateDelete(container, plateId);
-                    Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
+                transaction.addCommitTask(() -> PlateManager.get().clearCache(), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.commit();
 
-                    transaction.addCommitTask(() -> PlateManager.get().clearCache(), DbScope.CommitTaskOption.POSTCOMMIT);
-                    transaction.commit();
-
-                    return returnMap;
-                }
+                return returnMap;
             }
-            return Collections.emptyMap();
         }
     }
 }

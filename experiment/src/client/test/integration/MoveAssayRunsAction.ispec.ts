@@ -1,5 +1,6 @@
 import mock from 'mock-fs';
-import { hookServer, RequestOptions, SecurityRole, successfulResponse } from '@labkey/test';
+import { PermissionRoles } from '@labkey/api';
+import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
 import {
     getAssayResults,
     getAssayRunMovedAuditLogs,
@@ -27,7 +28,7 @@ let noPermsUserOptions: RequestOptions;
 
 let assayAId, assayWithRunFileId, assayWithResultFileId;
 
-const getAssayDesignPayload = (name: string, runFields: [], resultFields: []) => {
+const getAssayDesignPayload = (name: string, runFields: any[], resultFields: any[]) => {
     return {
         "allowEditableResults": true,
         "editableResults": true,
@@ -81,21 +82,21 @@ beforeAll(async () => {
 
     // create users with different permissions
     editorUser = await server.createUser('test_editor@expctrltest.com', 'pwSuperA1!');
-    await server.addUserToRole(editorUser.username, SecurityRole.Editor, PROJECT_NAME);
-    await server.addUserToRole(editorUser.username, SecurityRole.Editor, subfolder1.path);
-    await server.addUserToRole(editorUser.username, SecurityRole.Editor, subfolder2.path);
+    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, PROJECT_NAME);
+    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder1.path);
+    await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder2.path);
     editorUserOptions = { requestContext: await server.createRequestContext(editorUser) };
 
     const subEditorUser = await server.createUser('test_subeditor@expctrltest.com', 'pwSuperA1!');
-    await server.addUserToRole(subEditorUser.username, SecurityRole.Reader, PROJECT_NAME);
-    await server.addUserToRole(subEditorUser.username, SecurityRole.Editor, subfolder1.path);
-    await server.addUserToRole(subEditorUser.username, SecurityRole.Editor, subfolder2.path);
+    await server.addUserToRole(subEditorUser.username, PermissionRoles.Reader, PROJECT_NAME);
+    await server.addUserToRole(subEditorUser.username, PermissionRoles.Editor, subfolder1.path);
+    await server.addUserToRole(subEditorUser.username, PermissionRoles.Editor, subfolder2.path);
     subEditorUserOptions = { requestContext: await server.createRequestContext(subEditorUser) };
 
     const authorUser = await server.createUser('test_author@expctrltest.com', 'pwSuperA1!');
-    await server.addUserToRole(authorUser.username, SecurityRole.Author, PROJECT_NAME);
-    await server.addUserToRole(authorUser.username, SecurityRole.Author, subfolder1.path);
-    await server.addUserToRole(authorUser.username, SecurityRole.Author, subfolder2.path);
+    await server.addUserToRole(authorUser.username, PermissionRoles.Author, PROJECT_NAME);
+    await server.addUserToRole(authorUser.username, PermissionRoles.Author, subfolder1.path);
+    await server.addUserToRole(authorUser.username, PermissionRoles.Author, subfolder2.path);
     authorUserOptions = { requestContext: await server.createRequestContext(authorUser) };
 
     const noPermsUser = await server.createUser('test_no_perms@expctrltest.com', 'pwSuperA1!');

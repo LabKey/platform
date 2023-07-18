@@ -109,6 +109,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         setContainer(template.getContainer());
     }
 
+    @JsonIgnore
     @Override
     public @Nullable ActionURL detailsURL()
     {
@@ -146,6 +147,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return addWellGroup(name, type, allPositions);
     }
 
+    @JsonIgnore
     @Override
     public WellGroupImpl addWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
@@ -292,12 +294,14 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return _columns;
     }
 
+    @JsonIgnore
     @Override
     public String getName()
     {
         return _name;
     }
 
+    @JsonIgnore
     @Override
     public int getRows()
     {
@@ -310,6 +314,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return new PositionImpl(_container, row, col);
     }
 
+    @JsonIgnore
     @Override
     public Integer getRowId()
     {
@@ -331,6 +336,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         _rows = rows;
     }
 
+    @JsonIgnore
     @Override
     public void setName(String name)
     {
@@ -423,6 +429,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return 0;
     }
 
+    @JsonIgnore
     @Override
     public String getType()
     {
@@ -434,6 +441,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         _type = type;
     }
 
+    @JsonIgnore
     public void markWellGroupForDeletion(WellGroup group)
     {
         WellGroupImpl wellGroup = (WellGroupImpl) group;
