@@ -16,15 +16,15 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.study.PropertySet;
+import org.labkey.api.view.ActionURL;
+
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 10:18:16 AM
- */
-public interface WellGroup extends WellData, WellGroupTemplate
+public interface WellGroup extends PropertySet, Identifiable, WellData
 {
     enum Type
     {
@@ -37,6 +37,10 @@ public interface WellGroup extends WellData, WellGroupTemplate
         SAMPLE
     }
 
+    Integer getRowId();
+
+    List<Position> getPositions();
+
     List<? extends WellData> getWellData(boolean combineReplicates);
 
     Set<WellGroup> getOverlappingGroups();
@@ -46,4 +50,24 @@ public interface WellGroup extends WellData, WellGroupTemplate
     Double getMinDilution();
 
     Double getMaxDilution();
+
+    default void setPositions(List<? extends Position> positions)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    Type getType();
+
+    @Override
+    String getName();
+
+    boolean contains(Position position);
+
+    String getPositionDescription();
+
+    @Override
+    default @Nullable ActionURL detailsURL()
+    {
+        return null;
+    }
 }

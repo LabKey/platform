@@ -3,7 +3,8 @@ package org.labkey.assay.plate.view;
 import org.json.JSONObject;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -39,7 +40,7 @@ public class AssayPlateMetadataTemplateAction extends ExportAction<AssayPlateMet
         String template = null;
         if (form.getTemplate() != null)
         {
-            PlateTemplate plateTemplate = PlateService.get().getPlateTemplateFromLsid(getContainer(), form.getTemplate());
+            Plate plateTemplate = PlateService.get().getPlate(getContainer(), Lsid.parse(form.getTemplate()));
             if (plateTemplate != null)
             {
                 Random rand = new Random();

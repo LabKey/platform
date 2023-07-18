@@ -45,13 +45,13 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
      * @param wellType - The well type to create rows for.
      */
     public void addSampleProperties(String propertyName, String groupColumnName, Map<String, Map<DomainProperty, String>> propertySet,
-                                    PlateTemplate plate, WellGroup.Type wellType)
+                                    Plate plate, WellGroup.Type wellType)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
 
         if (plate != null)
         {
-            for (WellGroupTemplate group : plate.getWellGroups())
+            for (WellGroup group : plate.getWellGroups())
             {
                 if (group.getType() != wellType)
                     continue;
@@ -81,10 +81,10 @@ public class PlateBasedDataExchangeHandler extends TsvDataExchangeHandler
     /**
      * Create fake wellgroup data for debugging and testing of programmatic QC scripts.
      */
-    protected Map<String, Map<DomainProperty, String>> createTestSampleProperties(List<? extends DomainProperty> properties, PlateTemplate template, WellGroup.Type type)
+    protected Map<String, Map<DomainProperty, String>> createTestSampleProperties(List<? extends DomainProperty> properties, Plate template, WellGroup.Type type)
     {
         Map<String, Map<DomainProperty, String>> specimens = new HashMap<>();
-        for (WellGroupTemplate wellGroup : template.getWellGroups())
+        for (WellGroup wellGroup : template.getWellGroups())
         {
             if (wellGroup.getType() != type)
                 continue;

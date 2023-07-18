@@ -40,7 +40,7 @@ public interface PlateTypeHandler
      * createTemplate will be given a null value for templateTypeName when it is creating a new template which is a
      * default for that assay type.
      */
-    PlateTemplate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
+    Plate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
 
     List<Pair<Integer, Integer>> getSupportedPlateSizes();
 
@@ -54,7 +54,7 @@ public interface PlateTypeHandler
     /**
      * Validate a new or edited plate template for handler specific errors.
      */
-    void validateTemplate(Container container, User user, PlateTemplate template) throws ValidationException;
+    void validateTemplate(Container container, User user, Plate template) throws ValidationException;
 
     Map<String, List<String>> getDefaultGroupsForTypes();
 

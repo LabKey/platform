@@ -19,7 +19,6 @@ package org.labkey.assay.plate.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -206,10 +205,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Integer plateId = (Integer) oldRow.get("RowId");
-            PlateTemplate plate = PlateManager.get().getPlateTemplate(container, plateId);
+            Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate != null)
             {
-                int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+                int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
                 if (runsInUse > 0)
                     throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be updated", runsInUse));
 
@@ -222,10 +221,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             Integer plateId = (Integer)oldRowMap.get("RowId");
-            PlateTemplate plate = PlateManager.get().getPlateTemplate(container, plateId);
+            Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate != null)
             {
-                int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+                int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
                 if (runsInUse > 0)
                     throw new QueryUpdateServiceException(String.format("Plate template is used by %d runs and cannot be deleted", runsInUse));
 

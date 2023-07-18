@@ -44,7 +44,7 @@ public class TextPlateReader extends AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException
+    public double[][] loadFile(Plate template, File dataFile) throws ExperimentException
     {
         String fileName = dataFile.getName().toLowerCase();
         if (!fileName.endsWith(".txt"))

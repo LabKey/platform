@@ -22,6 +22,7 @@ import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -58,26 +59,37 @@ public interface PlateService
     }
 
     /**
-     * Instantiates a new plate instance based on the specified plate template and well data.
+     * Instantiates a new plate instance based on the specified plate and well data.
      * This plate is not persisted to the database.
-     * @param template The template that this instance is based upon.
+     * @param plate The plate that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
      * @param runId Id of the run, if already exists, otherwise -1
      * @param plateNumber Plate number (1-based)
-     * @return A plate instance object.
+     * @return A plate instance object with the applied data.
      */
-    @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells, int runId, int plateNumber);
+    @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells, int runId, int plateNumber);
 
     /**
-     * Instantiates a new plate instance based on the specified plate template and well data.
+     * Instantiates a new plate instance based on the specified plate and well data.
      * This plate is not persisted to the database.
-     * @param template The template that this instance is based upon.
+     * @param plate The plate that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
      * @return A plate instance object.
      */
-    @Nullable Plate createPlate(PlateTemplate template, double[][] wellValues, boolean[][] excludedWells);
+    @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells);
+
+    /**
+     * Creates a new plate template.
+     * @param container The template's container.
+     * @param templateType The type of plate template, if associated with a particular assay.
+     * @param rowCount The number of columns in the plate.
+     * @param columnCount The number of rows in the plate.
+     * @return A newly created plate template instance.
+     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
+     */
+    Plate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount);
 
     /**
      * Adds a new well group to the plate
@@ -90,63 +102,20 @@ public interface PlateService
     WellGroup createWellGroup(Plate plate, String name, WellGroup.Type type, List<Position> positions);
 
     /**
-     * Gets an existing plate template.
-     * @param container The template's container.
-     * @param templateName The template's name.
-     * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
+     * Gets an existing plate.
+     * @param container The plate's container.
+     * @param plateName The plate's name.
+     * @return  The requested plate, or null if no template exists with the specified name in the specified container.
      */
-    @Nullable PlateTemplate getPlateTemplate(Container container, String templateName);
+    @Nullable Plate getPlate(Container container, String plateName);
 
     /**
-     * Gets an existing plate template.
-     * @param container The template's container.
-     * @param lsid The template's lsid.
-     * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
+     * Gets an existing plate.
+     * @param container The plate's container.
+     * @param lsid The plate's lsid.
+     * @return  The requested plate, or null if no plate exists with the specified name in the specified container.
      */
-    @Nullable PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
-
-    /**
-     * Gets an existing plate template.
-     * @param container The template's container.
-     * @param plateId The template's id.
-     * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
-     */
-    @Nullable PlateTemplate getPlateTemplate(Container container, int plateId);
-
-    /**
-     * Gets all plate templates for the specified container.
-     * @param container The templates' container.
-     * @return An array of all plate templates from the specified container.
-     */
-    @NotNull
-    List<? extends PlateTemplate> getPlateTemplates(Container container);
-
-    int getRunCountUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate);
-
-    List<? extends ExpRun> getRunsUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate);
-
-    /**
-     * Creates a new plate template.
-     * @param container The template's container.
-     * @param templateType The type of plate template, if associated with a particular assay.
-     * @param rowCount The number of columns in the plate.
-     * @param columnCount The number of rows in the plate.
-     * @return A newly created plate template instance.
-     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
-     */
-    PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount);
-
-    /**
-     * Creates a new plate template.
-     * @param container The template's container.
-     * @param user The current user.
-     * @param plate The plate template to save.
-     * @return A newly created plate template instance.
-     * @throws SQLException Thrown in the event of a database failure.
-     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
-     */
-
-    int save(Container container, User user, PlateTemplate plate) throws Exception;
+    @Nullable Plate getPlate(Container container, Lsid lsid);
 
     /**
      * Gets a plate instance object by row id.
@@ -157,12 +126,33 @@ public interface PlateService
     @Nullable Plate getPlate(Container container, int rowId);
 
     /**
-     * Gets a plate instance by lsid.
-     * @param container The plate's container.
-     * @param lsid The plate's lsid.
-     * @return The requested plate, or null if no plate exists with the specified lsid.
+     * Gets all plate templates for the specified container. Plate templates are Plate instances
+     * which have their template field set to TRUE.
+     *
+     * @return An array of all plates that are configured as templates from the specified container.
      */
-    @Nullable Plate getPlate(Container container, String lsid);
+    @NotNull
+    List<Plate> getPlateTemplates(Container container);
+
+    /**
+     * Returns the number of assay runs that are linked to the specified plate. Currently, this only works
+     * for the standard assay with plate support since other assays types do not store the plate ID with the
+     * run.
+     */
+    int getRunCountUsingPlate(@NotNull Container c, @NotNull Plate plate);
+
+    List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull Plate plate);
+
+    /**
+     * Creates a new plate template.
+     * @param container The template's container.
+     * @param user The current user.
+     * @param plate The plate template to save.
+     * @return A newly created plate template instance.
+     * @throws SQLException Thrown in the event of a database failure.
+     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
+     */
+    int save(Container container, User user, Plate plate) throws Exception;
 
     /**
      * Gets a well group by row id.
@@ -202,7 +192,7 @@ public interface PlateService
     void registerDetailsLinkResolver(PlateDetailsResolver resolver);
 
     /**
-     * Copies a plate template from one container to another.
+     * Copies a plate from one container to another.
      * @param source The source plate template
      * @param user The user performing the copy
      * @param destination The destinatino container
@@ -210,7 +200,7 @@ public interface PlateService
      * @throws SQLException Thrown in the event of a database failure.
      * @throws NameConflictException Thrown if the destination container already contains a template by the same name.
      */
-    PlateTemplate copyPlateTemplate(PlateTemplate source, User user, Container destination) throws Exception;
+    Plate copyPlate(Plate source, User user, Container destination) throws Exception;
 
     /**
      * Registers a handler for a particular type of plate
@@ -237,7 +227,7 @@ public interface PlateService
     interface PlateDetailsResolver
     {
         /**
-         * Returns a URL to the a details page for this plate.
+         * Returns a URL to the details page for this plate.
          * @param plate The plate instance for which a details URL is desired.
          * @return A valid and complete ActionURL if the plate is recognized, or null if it is not.
          */

@@ -3,7 +3,7 @@ package org.labkey.assay.plate;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Pair;
@@ -31,9 +31,9 @@ public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
     }
 
     @Override
-    public PlateTemplate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount)
+    public Plate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount)
     {
-        PlateTemplate template = PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
+        Plate template = PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
 
         template.addWellGroup("Positive", WellGroup.Type.CONTROL, Collections.emptyList());
         template.addWellGroup("Negative", WellGroup.Type.CONTROL, Collections.emptyList());

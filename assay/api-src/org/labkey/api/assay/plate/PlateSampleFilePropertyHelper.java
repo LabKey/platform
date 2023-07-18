@@ -74,7 +74,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     private File _metadataFile;
     private SampleMetadataInputFormat _metadataInputFormat;
 
-    public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, List<? extends DomainProperty> domainProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
+    public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, List<? extends DomainProperty> domainProperties, Plate template, SampleMetadataInputFormat inputFormat)
     {
         super(domainProperties, template);
         _container = container;
@@ -215,7 +215,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         Map<String, Map<DomainProperty, String>> allProperties = new HashMap<>();
         try (DataLoader loader = DataLoaderService.get().createLoader(metadataFile, null, true, null, ExcelLoader.FILE_TYPE))
         {
-            Map<String, WellGroupTemplate> sampleGroupNames = getSampleWellGroupNameMap();
+            Map<String, WellGroup> sampleGroupNames = getSampleWellGroupNameMap();
 
             boolean hasSampleNameCol = false;
             ColumnDescriptor[] columns = loader.getColumns();
@@ -227,7 +227,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             for (Map<String, Object> row : loader)
             {
                 String wellGroupName = (String) row.get(_wellGroupColumnName);
-                WellGroupTemplate wellgroup = wellGroupName != null ? sampleGroupNames.get(wellGroupName) : null;
+                WellGroup wellgroup = wellGroupName != null ? sampleGroupNames.get(wellGroupName) : null;
                 if (wellgroup == null)
                 {
                     throw new ExperimentException("Well group name \"" + (wellGroupName != null ? wellGroupName : "") +
@@ -264,7 +264,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         return _sampleProperties;
     }
 
-    protected void validateMetadataRow(Map<String, Object> row, String wellGroupName, WellGroupTemplate wellgroup) throws ExperimentException
+    protected void validateMetadataRow(Map<String, Object> row, String wellGroupName, WellGroup wellgroup) throws ExperimentException
     {
         String plateLocation = (String) row.get(PLATELOCATION_COLUMN);
         if (plateLocation != null && !plateLocation.equals(wellgroup.getPositionDescription()))
