@@ -146,13 +146,13 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
     public ArrayListMap()
     {
-        this(new FindMap<>(new HashMap<K, Integer>()), new ArrayList<V>());
+        this(new FindMap<>(new HashMap<>()), new ArrayList<>());
     }
 
 
     public ArrayListMap(int columnCount)
     {
-        this(new FindMap<>(new HashMap<K, Integer>(columnCount * 2)), new ArrayList<V>(columnCount));
+        this(new FindMap<>(new HashMap<>(columnCount * 2)), new ArrayList<>(columnCount));
     }
 
 
@@ -164,7 +164,7 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Iterable<V>
 
     public ArrayListMap(FindMap<K> findMap)
     {
-        this(findMap, new ArrayList<V>(findMap.size()));
+        this(findMap, new ArrayList<>(findMap.size()));
     }
 
 
