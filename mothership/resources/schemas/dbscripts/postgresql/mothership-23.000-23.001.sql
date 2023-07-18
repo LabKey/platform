@@ -39,11 +39,13 @@ INSERT INTO mothership.Dedupe (MaxId, SoftwareReleaseId)
                               (sr1.BuildTime IS NULL AND sr2.BuildTime IS NULL)
                     );
 
+-- Drop and recreate FK afterwards to speed up the DELETE constraint checking
+ALTER TABLE mothership.ServerSession DROP CONSTRAINT FK_ServerSession_SoftwareRelease;
+
+CREATE INDEX IDX_SoftwareReleaseId ON mothership.Dedupe(SoftwareReleaseId);
+
 UPDATE mothership.serversession s SET softwarereleaseid = (SELECT MaxId FROM mothership.Dedupe d
                    WHERE s.SoftwareReleaseId = d.SoftwareReleaseId);
-
--- Drop and recreate FK to speed up the DELETE constraint checking
-ALTER TABLE mothership.ServerSession DROP CONSTRAINT FK_ServerSession_SoftwareRelease;
 
 DELETE FROM mothership.softwarerelease WHERE SoftwareReleaseId NOT IN
                                              (SELECT DISTINCT MaxId FROM mothership.Dedupe);
