@@ -235,13 +235,11 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     }
 
     /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak connection
+     * parameters (such as disabling auto-commit, and never committing) to optimize memory and other resource usage. If
+     * you are, for example, invoking a stored procedure that will have side effects via a SELECT statement, you must
+     * explicitly start your own transaction and commit it.
+     * */
     public TableResultSet getResultSet(boolean cache, boolean scrollable)
     {
         SqlFactory sqlFactory = getSqlFactory(true);
