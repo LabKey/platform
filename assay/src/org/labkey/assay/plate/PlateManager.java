@@ -290,10 +290,16 @@ public class PlateManager implements PlateService
     }
 
     @Override
+    public Plate createPlate(Container container, String templateType, int rowCount, int colCount)
+    {
+        return new PlateImpl(container, null, templateType, rowCount, colCount);
+    }
+
+    @Override
     public Plate createPlateTemplate(Container container, String templateType, int rowCount, int colCount)
     {
-        PlateImpl plate = new PlateImpl(container, null, templateType, rowCount, colCount);
-        plate.setTemplate(true);
+        Plate plate = createPlate(container, templateType, rowCount, colCount);
+        ((PlateImpl)plate).setTemplate(true);
 
         return plate;
     }
@@ -1179,6 +1185,33 @@ public class PlateManager implements PlateService
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
+        }
+
+        @Test
+        public void testCreatePlateTemplates() throws Exception
+        {
+            final Container c = JunitUtil.getTestContainer();
+            final User user = TestContext.get().getUser();
+            PlateService.get().deleteAllPlateData(c);
+
+            // Verify plate service assumptions about plate templates
+            Plate plate = PlateService.get().createPlateTemplate(c, TsvPlateTypeHandler.TYPE, 16, 24);
+            int plateId = PlateService.get().save(c, user, plate);
+
+            // Assert
+            assertTrue("Expected saved plateId to be returned", plateId != 0);
+            assertTrue("Expected saved plate to have the template field set to true", PlateService.get().getPlate(c, plateId).isTemplate());
+
+            // Verify only plate templates are returned
+            plate = PlateService.get().createPlate(c, TsvPlateTypeHandler.TYPE, 8, 12);
+            PlateService.get().save(c, user, plate);
+
+            List<Plate> plates = PlateService.get().getPlateTemplates(c);
+            assertEquals("Expected only a single plate to be returned", 1, plates.size());
+            for (Plate template : plates)
+            {
+                assertTrue("Expected saved plate to have the template field set to true", template.isTemplate());
+            }
         }
     }
 }

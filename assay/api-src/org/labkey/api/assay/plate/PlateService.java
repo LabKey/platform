@@ -83,6 +83,17 @@ public interface PlateService
     @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excludedWells);
 
     /**
+     * Creates a new plate
+     * @param container The template's container.
+     * @param templateType The type of plate, if associated with a particular assay.
+     * @param rowCount The number of columns in the plate.
+     * @param columnCount The number of rows in the plate.
+     * @return A newly created plate instance
+     * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
+     */
+    Plate createPlate(Container container, String templateType, int rowCount, int columnCount);
+
+    /**
      * Creates a new plate template.
      * @param container The template's container.
      * @param templateType The type of plate template, if associated with a particular assay.
