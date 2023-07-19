@@ -1060,7 +1060,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            st.save(user);
+            st.save(user, true);
             if (hasNameChange)
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
 
@@ -1076,6 +1076,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 boolean finalHasMetricUnitChanged = hasMetricUnitChanged;
                 transaction.addCommitTask(() -> {
                     clearMaterialSourceCache(container);
+                    SampleTypeServiceImpl.get().indexSampleType(st);
 
                     if (finalHasMetricUnitChanged)
                     {
