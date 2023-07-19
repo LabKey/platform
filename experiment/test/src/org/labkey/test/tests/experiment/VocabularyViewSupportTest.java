@@ -25,6 +25,8 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.SampleTypeHelper;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -249,9 +251,8 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 
         String propertiesValue = propNameLab + "\n" + propNameLocation + "\n" +
                 propValueLab + " " + labLocation;
-        List<String> rowData = runsTable.getRowDataAsText(0);
-
-        Assert.assertTrue("Run does not contain properties property value.", rowData.contains(propertiesValue));
+        WebElement propertiesCell = runsTable.findCell(0, "Properties");
+        shortWait().until(ExpectedConditions.textToBePresentInElement(propertiesCell, propertiesValue));
 
         Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLab).get(0), propValueLab);
         Assert.assertEquals("Run does not contain " + propNameLab + " vocabulary property.", runsTable.getColumnDataAsText(domainProperty + "/" + propNameLocation).get(0), labLocation);
