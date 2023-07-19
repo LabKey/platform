@@ -998,19 +998,10 @@ public abstract class CompareType
 
     protected static Set<String> parseParams(Object value_, String separator)
     {
-        if (value_ == null)
-            return Collections.emptySet();
-        String value = value_.toString();
-        if (StringUtils.isBlank(value))
-            return Collections.emptySet();
-        // check for JSON marker
-        Set<String> values = new LinkedHashSet<>();
-        parseParams(value, separator, values);
-        return values;
+        return parseParams(value_, separator, null);
     }
 
-    // ROSALINE TODO: Refactor against above fn for modularity
-    protected static Set<String> parseParams(Object value_, String separator, String secondarySeparator)
+    protected static Set<String> parseParams(Object value_, String separator, @Nullable String secondarySeparator)
     {
         if (value_ == null)
             return Collections.emptySet();
@@ -1018,12 +1009,15 @@ public abstract class CompareType
         if (StringUtils.isBlank(value))
             return Collections.emptySet();
 
-        value = value.replace(secondarySeparator, separator);
+        if (secondarySeparator != null)
+            value = value.replace(secondarySeparator, separator);
 
         // check for JSON marker
         Set<String> values = new LinkedHashSet<>();
         parseParams(value, separator, values);
-        return values.stream().map(String::trim).collect(Collectors.toSet());
+        return (secondarySeparator != null)
+                ? values.stream().map(String::trim).collect(Collectors.toSet())
+                : values;
     }
 
     // If you don't want to squash duplicate parameter values use this method instead of parseParams
