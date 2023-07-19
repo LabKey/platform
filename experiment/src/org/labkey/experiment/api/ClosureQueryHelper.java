@@ -78,7 +78,7 @@ public class ClosureQueryHelper
 
     static final int MAX_LINEAGE_LOOKUP_DEPTH = 10;
 
-    static String pgMaterialClosureCTE = String.format("""
+    static String pgClosureCTE = String.format("""
             WITH RECURSIVE CTE_ AS (
 
                 SELECT
@@ -97,7 +97,7 @@ public class ClosureQueryHelper
             )
             """, MAX_LINEAGE_LOOKUP_DEPTH);
 
-    static String pgMaterialClosureSql = """
+    static String pgClosureSql = """
             SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
@@ -111,7 +111,7 @@ public class ClosureQueryHelper
             GROUP BY targetId, Start_
             """;
 
-    static String mssqlMaterialClosureCTE = String.format("""
+    static String mssqlClosureCTE = String.format("""
             WITH CTE_ AS (
 
                 SELECT
@@ -129,7 +129,7 @@ public class ClosureQueryHelper
             )
             """, (MAX_LINEAGE_LOOKUP_DEPTH));
 
-    static String mssqlMaterialClosureSql = """
+    static String mssqlClosureSql = """
             SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
@@ -148,8 +148,8 @@ public class ClosureQueryHelper
 
     static SQLFragment selectIntoSql(SqlDialect d, SQLFragment from, @Nullable String tempTable)
     {
-        String cte = d.isPostgreSQL() ? pgMaterialClosureCTE : mssqlMaterialClosureCTE;
-        String select = d.isPostgreSQL() ? pgMaterialClosureSql : mssqlMaterialClosureSql;
+        String cte = d.isPostgreSQL() ? pgClosureCTE : mssqlClosureCTE;
+        String select = d.isPostgreSQL() ? pgClosureSql : mssqlClosureSql;
 
         String[] cteParts = StringUtils.splitByWholeSeparator(cte,"/*FROM*/");
         assert cteParts.length == 2;
@@ -231,16 +231,16 @@ public class ClosureQueryHelper
     public static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, ExpObject target)
     {
         if (target instanceof ExpSampleType st)
-            return getValueSql(userSchema, type, sourceLSID, objectId, "m" + st.getRowId(), true);
+            return getValueSql(userSchema, type, sourceLSID, objectId, "m" + st.getRowId());
         if (target instanceof ExpDataClass dc)
-            return getValueSql(userSchema, type, sourceLSID, objectId, "d" + dc.getRowId(), false);
+            return getValueSql(userSchema, type, sourceLSID, objectId, "d" + dc.getRowId());
         throw new IllegalStateException();
     }
 
 
-    private static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, String targetId, boolean isSampleType)
+    private static SQLFragment getValueSql(UserSchema userSchema, TableType type, String sourceLSID, SQLFragment objectId, String targetId)
     {
-        var closureTableInfo = getClosureTableInfo(userSchema, type, sourceLSID, isSampleType);
+        var closureTableInfo = getClosureTableInfo(userSchema, type, sourceLSID);
         return new SQLFragment()
                 .append("(SELECT rowId FROM ")
                 .append(closureTableInfo.getFromSQL("CLOS"))
@@ -255,13 +255,13 @@ public class ClosureQueryHelper
      * We do this so that we can use the handy method UserSchema.getCachedLookupTableInfo() to reuse the same temp table
      * for multiple lookups in the same query.
      */
-    private static TableInfo getClosureTableInfo(UserSchema userSchema, TableType type, String sourceLSID, boolean isSampleType)
+    private static TableInfo getClosureTableInfo(UserSchema userSchema, TableType type, String sourceLSID)
     {
         var tx = userSchema.getDbSchema().getScope().getCurrentTransaction();
         String key = ClosureQueryHelper.class.getName() + "/" + (null == tx ? "-" : tx.getId());
         return userSchema.getCachedLookupTableInfo(key, () ->
         {
-            MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true, isSampleType));
+            MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true));
             final SQLFragment fromSQL = helper.getFromSql(ExprColumn.STR_TABLE_ALIAS, null);
             var ret = new VirtualTable<>(DbSchema.getTemp(), "--" + ClosureQueryHelper.class.getName() + "--", userSchema)
             {
@@ -285,7 +285,7 @@ public class ClosureQueryHelper
     private static void incrementalRecompute(String sourceLSID, SQLFragment from, boolean isSampleType)
     {
         // if there's nothing cached, we don't need to do incremental
-        MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false, isSampleType);
+        MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false);
         if (null == helper || !helper.isCached(null))
             return;
 
@@ -381,7 +381,7 @@ public class ClosureQueryHelper
     }
 
 
-    private static MaterializedQueryHelper getClosureHelper(TableType type, String sourceLSID, boolean computeIfAbsent, boolean isSampleType)
+    private static MaterializedQueryHelper getClosureHelper(TableType type, String sourceLSID, boolean computeIfAbsent)
     {
         ClosureTable closure;
 
@@ -397,9 +397,9 @@ public class ClosureQueryHelper
 
         closure = queryHelpers.computeIfAbsent(sourceLSID, cpasType ->
         {
-            SQLFragment from = isSampleType ? new SQLFragment(" FROM exp.Material WHERE Material.cpasType = ? ") :
-                    new SQLFragment(" FROM exp.Data WHERE Data.cpasType = ? ");
-            from.add(cpasType);
+            String tableName = type.getDbTableName();
+            SQLFragment from = new SQLFragment(" FROM exp." + tableName + " WHERE " + tableName + ".cpasType = ? ")
+                    .add(cpasType);
             SQLFragment selectInto = selectIntoSql(getScope().getSqlDialect(), from, null);
 
             var helper =  new MaterializedQueryHelper.Builder("closure", DbSchema.getTemp().getScope(), selectInto)
@@ -515,9 +515,9 @@ public class ClosureQueryHelper
     }
 
 
-    enum TableType
+    enum  TableType
     {
-        SampleType("Samples", SchemaKey.fromParts("exp", "materials") )
+        SampleType("Samples", "materials")
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -539,7 +539,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpSampleType && !((ExpSampleType) expObject).isMedia();
                     }
                 },
-        RegistryOrSourceType("RegistryAndSources", SchemaKey.fromParts("exp", "data") )
+        RegistryOrSourceType("RegistryAndSources", "data")
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -560,7 +560,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpDataClass && (((ExpDataClass) expObject).isSource() || ((ExpDataClass) expObject).isRegistry());
                     }
                 },
-        MediaData("MediaData", SchemaKey.fromParts("exp", "data") )
+        MediaData("MediaData", "data")
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -582,7 +582,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpDataClass && ((ExpDataClass) expObject).isMedia();
                     }
                 },
-        MediaSamples("MediaSamples", SchemaKey.fromParts("exp", "materials") )
+        MediaSamples("MediaSamples", "materials")
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -604,7 +604,7 @@ public class ClosureQueryHelper
                         return expObject instanceof ExpSampleType && ((ExpSampleType) expObject).isMedia();
                     }
                 },
-        DataClass("OtherData", SchemaKey.fromParts("exp", "data") )
+        DataClass("OtherData", "data")
                 {
                     @Override
                     Collection<? extends ExpObject> getInstances(Container c, User u)
@@ -628,19 +628,25 @@ public class ClosureQueryHelper
                 },
         ;
 
-
         final String lookupName;
+        final String userSchemaTableName;
         final SchemaKey schemaKey;
 
-        TableType(String lookupName, SchemaKey schemaKey)
+        TableType(String lookupName, String userSchemaTableName)
         {
             this.lookupName = lookupName;
-            this.schemaKey = schemaKey;
+            this.userSchemaTableName = userSchemaTableName;
+            this.schemaKey = SchemaKey.fromParts("exp", userSchemaTableName);
         }
 
         abstract Collection<? extends ExpObject> getInstances(Container c, User u);
         abstract ExpObject getInstance(Container c, User u, String name);
         abstract boolean isInstance(ExpObject object);
+
+        String getDbTableName()
+        {
+            return userSchemaTableName.equalsIgnoreCase("materials") ? "Material" : userSchemaTableName;
+        }
 
         static TableType fromExpObject(ExpObject object)
         {
