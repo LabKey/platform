@@ -199,7 +199,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            PlateManager.get().clearCache(container);
+            return results;
         }
 
         @Override
@@ -214,7 +216,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
-            return super.updateRow(user, container, row, oldRow);
+            Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
+            PlateManager.get().clearCache(container);
+            return newRow;
         }
 
         @Override
@@ -234,7 +238,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 PlateManager.get().beforePlateDelete(container, plateId);
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateManager.get().clearCache(), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateManager.get().clearCache(container), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
                 return returnMap;

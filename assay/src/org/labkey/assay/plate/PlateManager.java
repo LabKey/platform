@@ -33,8 +33,6 @@ import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -101,7 +99,6 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -217,50 +214,17 @@ public class PlateManager implements PlateService
         return new PositionImpl(container, row, column);
     }
 
-    private @Nullable Plate _getPlate(Container container, SimpleFilter filter)
-    {
-        filter.addCondition(FieldKey.fromParts("Container"), container);
-        filter.addCondition(FieldKey.fromParts("Template"), Boolean.TRUE);
-
-        PlateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
-        if (plate != null)
-        {
-            populatePlate(plate);
-            cache(plate);
-        }
-        return plate;
-    }
-
     @Override
     public @Nullable Plate getPlate(Container container, String plateName)
     {
-        return _getPlate(container, new SimpleFilter(FieldKey.fromParts("name"), plateName));
+        return PlateCache.getPlate(container, plateName);
     }
 
     @Override
     @NotNull
     public List<Plate> getPlateTemplates(Container container)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        filter.addCondition(FieldKey.fromParts("Template"), Boolean.TRUE);
-
-        List<Plate> plates = new ArrayList<>();
-        List<PlateImpl> templates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
-                filter, new Sort("Name")).getArrayList(PlateImpl.class);
-        for (int i = 0; i < templates.size(); i++)
-        {
-            PlateImpl template = templates.get(i);
-            PlateImpl cached = getCachedPlateTemplate(container, template.getRowId().intValue());
-            if (cached != null)
-                templates.set(i, cached);
-            else
-            {
-                populatePlate(template);
-                cache(template);
-            }
-            plates.add(template);
-        }
-        return plates;
+        return PlateCache.getPlateTemplates(container);
     }
 
     @Override
@@ -337,33 +301,18 @@ public class PlateManager implements PlateService
     @Override
     public @Nullable Plate getPlate(Container container, int rowId)
     {
-        PlateImpl plate = getCachedPlateTemplate(container, rowId);
-        if (plate != null)
-            return plate;
-        plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getObject(rowId, PlateImpl.class);
-        if (plate == null)
-            return null;
-        populatePlate(plate);
-        cache(plate);
-        return plate;
+        return PlateCache.getPlate(container, rowId);
     }
 
     @Override
     public @Nullable Plate getPlate(Container container, Lsid lsid)
     {
-        PlateImpl plate = getCachedPlateTemplate(container, lsid.toString());
-        if (plate != null)
-            return plate;
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), container)
-                .addCondition(FieldKey.fromParts("lsid"), lsid);
-        plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
-        if (plate == null)
-            return null;
-        populatePlate(plate);
-        cache(plate);
-        return plate;
+        return PlateCache.getPlate(container, lsid);
     }
 
+    /**
+     * Note that this does not use the cache nor does it return a fully materialized plate.
+     */
     public @Nullable Plate getPlate(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
@@ -418,7 +367,7 @@ public class PlateManager implements PlateService
         throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
     }
 
-    private void populatePlate(PlateImpl plate)
+    protected void populatePlate(PlateImpl plate)
     {
         // set plate properties:
         setProperties(plate.getContainer(), plate);
@@ -688,8 +637,9 @@ public class PlateManager implements PlateService
                     " (wellId, wellGroupId) VALUES (?, ?)";
             Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
 
+            transaction.addCommitTask(() -> PlateManager.get().clearCache(container), DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
-            clearCache();
+
             return plateId;
         }
     }
@@ -839,7 +789,7 @@ public class PlateManager implements PlateService
         Table.delete(schema.getTableInfoWell(), filter);
         Table.delete(schema.getTableInfoWellGroup(), filter);
         Table.delete(schema.getTableInfoPlate(), filter);
-        clearCache();
+        clearCache(container);
     }
 
     @Override
@@ -1030,39 +980,9 @@ public class PlateManager implements PlateService
         _plateTypeHandlers.put(handler.getAssayType(), handler);
     }
 
-    private String getPlateTemplateCacheKey(Container container, int rowId)
+    public void clearCache(Container c)
     {
-        return PlateImpl.class.getName() + "/Folder-" + container.getRowId() + "-" + rowId;
-    }
-
-    private String getPlateTemplateCacheKey(Container container, String idString)
-    {
-        return PlateImpl.class.getName() + "/Folder-" + container.getRowId() + "-" + idString;
-    }
-
-    private static final Cache<String, PlateImpl> PLATE_TEMPLATE_CACHE = CacheManager.getSharedCache();
-
-    private void cache(PlateImpl template)
-    {
-        if (template.getRowId() == null)
-            return;
-        PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getRowId().intValue()), template);
-        PLATE_TEMPLATE_CACHE.put(getPlateTemplateCacheKey(template.getContainer(), template.getLSID()), template);
-    }
-
-    public void clearCache()
-    {
-        PLATE_TEMPLATE_CACHE.removeUsingFilter(new Cache.StringPrefixFilter(PlateImpl.class.getName()));
-    }
-
-    private PlateImpl getCachedPlateTemplate(Container container, int rowId)
-    {
-        return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, rowId));
-    }
-
-    private PlateImpl getCachedPlateTemplate(Container container, String lsid)
-    {
-        return PLATE_TEMPLATE_CACHE.get(getPlateTemplateCacheKey(container, lsid));
+        PlateCache.uncache(c);
     }
 
     @Override

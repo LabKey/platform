@@ -202,6 +202,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return true;
     }
 
+    @JsonIgnore
     @Override
     public List<WellGroup> getWellGroups(Position position)
     {
@@ -214,6 +215,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return groups;
     }
 
+    @JsonIgnore
     @Override
     public List<WellGroup> getWellGroups()
     {
@@ -294,14 +296,12 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return _columns;
     }
 
-    @JsonIgnore
     @Override
     public String getName()
     {
         return _name;
     }
 
-    @JsonIgnore
     @Override
     public int getRows()
     {
@@ -314,7 +314,6 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return new PositionImpl(_container, row, col);
     }
 
-    @JsonIgnore
     @Override
     public Integer getRowId()
     {
@@ -429,7 +428,6 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return 0;
     }
 
-    @JsonIgnore
     @Override
     public String getType()
     {
