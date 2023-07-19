@@ -25,7 +25,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.springframework.jdbc.UncategorizedSQLException;
 
@@ -334,17 +333,14 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertFalse("Expected getCollection() with primitive to succeed with stable column ordering", stable);
         }
 
-        int columnCount = selector.getColumnCount();
-
         try
         {
             assertEquals(count, selector.getValueMap().size());
             assertTrue("Expected getValueMap() to fail with unstable column ordering", stable);
-            assertTrue("Expected getValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 0);
         }
         catch (IllegalStateException e)
         {
-            assertFalse("Expected getValueMap() to succeed with stable column ordering and " + StringUtilsLabKey.pluralize(columnCount, "column"), stable && columnCount > 1);
+            assertFalse("Expected getValueMap() to succeed with stable column ordering", stable);
         }
 
         try
@@ -353,11 +349,10 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             selector.fillValueMap(map);
             assertEquals(count, map.size());
             assertTrue("Expected fillValueMap() to fail with unstable column ordering", stable);
-            assertTrue("Expected fillValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 0);
         }
         catch (IllegalStateException e)
         {
-            assertFalse("Expected fillValueMap() to succeed with stable column ordering and " + StringUtilsLabKey.pluralize(columnCount, "column"), stable && columnCount > 1);
+            assertFalse("Expected fillValueMap() to succeed with stable column ordering", stable);
         }
 
         //noinspection UnusedDeclaration
@@ -382,6 +377,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
 
         try
         {
+            int columnCount = selector.getColumnCount();
             MutableInt forEachResultsCount = new MutableInt(0);
             selector.forEachResults(results -> {
                 assertEquals(columnCount, results.getFieldIndexMap().size());
