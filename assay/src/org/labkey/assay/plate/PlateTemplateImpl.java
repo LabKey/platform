@@ -16,6 +16,8 @@
 
 package org.labkey.assay.plate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.PlateTemplate;
@@ -24,6 +26,7 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.Transient;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
@@ -37,11 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 1:13:45 PM
- */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
 {
     private String _name;
@@ -82,10 +81,19 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
                 .addParameter("plateId", getRowId());
     }
 
+    @JsonIgnore
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
         return null;
+    }
+
+    @JsonIgnore
+    @Transient
+    @Override
+    public String getLSIDNamespacePrefix()
+    {
+        return PlateTemplate.super.getLSIDNamespacePrefix();
     }
 
     @Override
@@ -176,6 +184,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return getWellGroupTemplates(null);
     }
 
+    @JsonIgnore
     @Override
     public @Nullable WellGroupTemplateImpl getWellGroup(int rowId)
     {
@@ -186,12 +195,14 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
                 .orElse(null);
     }
 
+    @JsonIgnore
     @Override
     public List<? extends WellGroupTemplateImpl> getWellGroups(WellGroup.Type type)
     {
         return getWellGroupTemplates(type);
     }
 
+    @JsonIgnore
     @Nullable
     public WellGroupTemplateImpl getWellGroupTemplate(WellGroup.Type type, String name)
     {
@@ -203,6 +214,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return typedGroups.get(name);
     }
 
+    @JsonIgnore
     @NotNull
     public List<? extends WellGroupTemplateImpl> getWellGroupTemplates(@Nullable WellGroup.Type type)
     {
@@ -224,6 +236,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return allGroupTemplates;
     }
 
+    @JsonIgnore
     @Override
     public Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap()
     {
@@ -257,13 +270,12 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return _rows;
     }
 
-
+    @JsonIgnore
     @Override
     public PositionImpl getPosition(int row, int col)
     {
         return new PositionImpl(_container, row, col);
     }
-
 
     public boolean isTemplate()
     {
@@ -357,6 +369,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return _container.getId();
     }
 
+    @JsonIgnore
     @Override
     public int getWellGroupCount()
     {
@@ -369,6 +382,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return size;
     }
 
+    @JsonIgnore
     @Override
     public int getWellGroupCount(WellGroup.Type type)
     {
@@ -412,6 +426,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         _deletedGroups.add(wellGroup);
     }
 
+    @JsonIgnore
     @NotNull
     public List<? extends WellGroupTemplateImpl> getDeletedWellGroups()
     {

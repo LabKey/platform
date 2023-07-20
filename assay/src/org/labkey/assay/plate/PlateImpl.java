@@ -15,6 +15,8 @@
  */
 package org.labkey.assay.plate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
@@ -26,11 +28,7 @@ import org.labkey.api.view.ActionURL;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: migra
- * Date: Feb 10, 2006
- * Time: 1:57:01 PM
- */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateImpl extends PlateTemplateImpl implements Plate
 {
     //UNDONE: Really just array of ints/values in this case, but
@@ -47,11 +45,13 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         _plateNumber = 1;
     }
 
-    public PlateImpl(PlateTemplateImpl template, double[][] wellValues, @Nullable boolean[][] excluded, int runId, int plateNumber)
+    public PlateImpl(PlateTemplateImpl template, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
         super(template.getContainer(), template.getName(), template.getType(), template.getRows(), template.getColumns());
 
-        if (wellValues.length != template.getRows() && wellValues[0].length != template.getColumns())
+        if (wellValues == null)
+            wellValues = new double[template.getRows()][template.getColumns()];
+        else if (wellValues.length != template.getRows() && wellValues[0].length != template.getColumns())
             throw new IllegalArgumentException("Well values array size must match the template size");
 
         if (excluded != null && (excluded.length != template.getRows() && excluded[0].length != template.getColumns()))
@@ -73,19 +73,21 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         setContainer(template.getContainer());
     }
 
+    @JsonIgnore
     @Override
     public @Nullable ActionURL detailsURL()
     {
         return PlateManager.get().getDetailsURL(this);
     }
 
-
+    @JsonIgnore
     @Override
     public WellImpl getWell(int row, int col)
     {
         return _wells[row][col];
     }
 
+    @JsonIgnore
     @Override
     public WellGroup getWellGroup(WellGroup.Type type, String wellGroupName)
     {
@@ -95,36 +97,42 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return (WellGroupImpl) groupTemplate;
     }
 
+    @JsonIgnore
     @Override
     public List<? extends WellGroupImpl> getWellGroups(WellGroup.Type type)
     {
         return (List<? extends WellGroupImpl>)getWellGroupTemplates(type);
     }
 
+    @JsonIgnore
     @Override
     public List<WellGroupImpl> getWellGroups(Position position)
     {
         return (List<WellGroupImpl>) super.getWellGroups(position);
     }
 
+    @JsonIgnore
     @Override
     public List<WellGroupImpl> getWellGroups()
     {
         return (List<WellGroupImpl>) super.getWellGroups();
     }
 
+    @JsonIgnore
     @Override
     public @Nullable WellGroupImpl getWellGroup(int rowId)
     {
         return (WellGroupImpl)super.getWellGroup(rowId);
     }
 
+    @JsonIgnore
     @Override
     protected WellGroupTemplateImpl createWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return new WellGroupImpl(this, name, type, positions);
     }
 
+    @JsonIgnore
     @Override
     protected WellGroupImpl storeWellGroup(WellGroupTemplateImpl template)
     {
@@ -132,17 +140,20 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return (WellGroupImpl)super.storeWellGroup(template);
     }
 
+    @JsonIgnore
     @Override
     public WellImpl getPosition(int row, int col)
     {
         return _wells[row][col];
     }
 
+    @JsonIgnore
     public void setWells(WellImpl[][] wells)
     {
         _wells = wells;
     }
 
+    @JsonIgnore
     public WellImpl[][] getWells()
     {
         return _wells;
@@ -154,6 +165,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return false;
     }
 
+    @JsonIgnore
     public int getRunId()
     {
         return _runId;
@@ -164,6 +176,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return _runId == PlateService.NO_RUNID;
     }
 
+    @JsonIgnore
     @Override
     public int getPlateNumber()
     {

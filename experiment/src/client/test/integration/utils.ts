@@ -116,7 +116,7 @@ export async function getExperimentRun(server: IntegrationTestServer, runId: num
     return response.body.rows;
 }
 
-export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: [], folderOptions: RequestOptions, userOptions: RequestOptions, reRunId?: number, batchId?: number) {
+export async function importRun(server: IntegrationTestServer, assayId: number, runName: string, dataRows: any[], folderOptions: RequestOptions, userOptions: RequestOptions, reRunId?: number, batchId?: number) {
     const runResponse = await server.post('assay', 'importRun', {
         assayId: assayId,
         name: runName,
