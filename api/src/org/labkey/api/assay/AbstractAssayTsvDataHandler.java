@@ -160,6 +160,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
+            // pass through any plate metadata
+            if (context.getRawPlateMetadata() != null)
+                setRawPlateMetadata(context.getRawPlateMetadata());
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
         catch (ValidationException e)
