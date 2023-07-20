@@ -253,8 +253,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         // include uploaded data files in the runProperties.tsv and read the data rows from the file
-        for (File data : uploadedData.values())
+        for (Map.Entry<String, File> entry : uploadedData.entrySet())
         {
+            File data = entry.getValue();
             result.add(data);
             ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
             expData.setRun(run);
