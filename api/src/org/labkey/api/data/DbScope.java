@@ -631,7 +631,7 @@ public class DbScope
                             serverLocks.forEach(Lock::lock);
                             serverLockSuccess = true;
 
-                            pushThreadDumpContext("scope: " + this.getDisplayName() + " transaction started");
+                            pushThreadDumpContext("database: " + this._databaseName + " transaction started");
                         }
                         finally
                         {
