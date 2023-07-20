@@ -77,7 +77,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)
+    public void setPlateTemplate(Container container, ExpProtocol protocol, Plate template)
     {
         if (!isPlateBased())
             throw new IllegalStateException("Only plate-based assays may store a plate template.");
@@ -89,10 +89,10 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol)
+    public Plate getPlateTemplate(Container container, ExpProtocol protocol)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
-        return prop != null ? PlateService.get().getPlateTemplate(protocol.getContainer(), prop.getStringValue()) : null;
+        return prop != null ? PlateService.get().getPlate(protocol.getContainer(), prop.getStringValue()) : null;
     }
 
     public boolean isPlateBased()
@@ -207,7 +207,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     {
         // Re-use the same PlateSamplePropertyHelper so it's able to utilize member variables across calls.
         PlateSamplePropertyHelper helper = context.getSamplePropertyHelper();
-        PlateTemplate template = getPlateTemplate(context.getContainer(), context.getProtocol());
+        Plate template = getPlateTemplate(context.getContainer(), context.getProtocol());
         Domain sampleDomain = getSampleWellGroupDomain(context.getProtocol());
         List<? extends DomainProperty> allSampleProperties = sampleDomain.getProperties();
         List<? extends DomainProperty> selectedSampleProperties = allSampleProperties;
@@ -235,7 +235,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return helper;
     }
 
-    protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, List<? extends DomainProperty> sampleProperties, PlateTemplate template, SampleMetadataInputFormat inputFormat)
+    protected PlateSamplePropertyHelper createSampleFilePropertyHelper(Container c, ExpProtocol protocol, List<? extends DomainProperty> sampleProperties, Plate template, SampleMetadataInputFormat inputFormat)
     {
         if (inputFormat == SampleMetadataInputFormat.MANUAL)
             return new PlateSamplePropertyHelper(sampleProperties, template);

@@ -199,33 +199,37 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         @Override
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
-            return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+            PlateManager.get().clearCache(container);
+            return results;
         }
 
         @Override
         protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Integer plateId = (Integer) oldRow.get("RowId");
-            PlateImpl plate = PlateManager.get().getPlate(container, plateId);
+            Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
-            return super.updateRow(user, container, row, oldRow);
+            Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
+            PlateManager.get().clearCache(container);
+            return newRow;
         }
 
         @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             Integer plateId = (Integer)oldRowMap.get("RowId");
-            PlateImpl plate = PlateManager.get().getPlate(container, plateId);
+            Plate plate = PlateManager.get().getPlate(container, plateId);
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlateTemplate(container, plate);
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
@@ -234,7 +238,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 PlateManager.get().beforePlateDelete(container, plateId);
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateManager.get().clearCache(), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateManager.get().clearCache(container), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
                 return returnMap;

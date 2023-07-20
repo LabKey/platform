@@ -28,9 +28,9 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -216,7 +216,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         result.setProtocolParameters(gwtProtocolParams);
         if (provider instanceof PlateBasedAssayProvider)
         {
-            PlateTemplate plateTemplate = ((PlateBasedAssayProvider)provider).getPlateTemplate(getContainer(), protocol);
+            Plate plateTemplate = ((PlateBasedAssayProvider)provider).getPlateTemplate(getContainer(), protocol);
             if (plateTemplate != null)
                 result.setSelectedPlateTemplate(plateTemplate.getName());
             setPlateTemplateList(provider, result);
@@ -329,7 +329,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         if (provider instanceof PlateBasedAssayProvider)
         {
             List<String> plateTemplates = new ArrayList<>();
-            for (PlateTemplate template : PlateService.get().getPlateTemplates(getContainer()))
+            for (Plate template : PlateService.get().getPlateTemplates(getContainer()))
                 plateTemplates.add(template.getName());
             protocol.setAvailablePlateTemplates(plateTemplates);
         }
@@ -460,7 +460,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                     {
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
-                        PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), assay.getSelectedPlateTemplate());
+                        Plate template = PlateService.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
                         if (template != null)
                             plateProvider.setPlateTemplate(getContainer(), protocol, template);
                         else

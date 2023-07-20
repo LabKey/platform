@@ -22,12 +22,11 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.PlateTypeHandler;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
@@ -60,13 +59,13 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
     {
         try
         {
-            PlateTemplate template;
+            Plate template;
             PlateTypeHandler handler;
 
             if (templateName != null)
             {
                 // existing template
-                template = PlateService.get().getPlateTemplate(getContainer(), plateId);
+                template = PlateService.get().getPlate(getContainer(), plateId);
                 if (template == null)
                     throw new Exception("Plate " + templateName + " does not exist.");
 
@@ -85,11 +84,11 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             }
 
             // Translate PlateTemplate to GWTPlate
-            List<? extends WellGroupTemplate> groups = template.getWellGroups();
+            List<? extends WellGroup> groups = template.getWellGroups();
             List<GWTWellGroup> translated = new ArrayList<>();
             for (int i = 0; i < groups.size(); i++)
             {
-                WellGroupTemplate group = groups.get(i);
+                WellGroup group = groups.get(i);
                 List<GWTPosition> positions = new ArrayList<>(group.getPositions().size());
                 for (Position position : group.getPositions())
                     positions.add(new GWTPosition(position.getRow(), position.getColumn()));
@@ -128,7 +127,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         }
     }
 
-    private List<String> getTypeList(PlateTemplate template)
+    private List<String> getTypeList(Plate template)
     {
         List<WellGroup.Type> wellTypes = Arrays.asList(
                 WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
@@ -150,15 +149,15 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         try
         {
             boolean updateExisting = false;
-            PlateTemplateImpl template;
+            Plate template;
             if (gwtPlate.getRowId() > 0)
             {
-                template = PlateManager.get().getPlateTemplate(getContainer(), gwtPlate.getRowId());
+                template = PlateManager.get().getPlate(getContainer(), gwtPlate.getRowId());
                 if (template == null)
                     throw new Exception("Plate template not found: " + gwtPlate.getRowId());
 
                 // check another plate of the same name doesn't already exist
-                PlateTemplateImpl other = PlateManager.get().getPlateTemplate(getContainer(), gwtPlate.getName());
+                Plate other = PlateManager.get().getPlate(getContainer(), gwtPlate.getName());
                 if (other != null && other.getRowId() != template.getRowId() && !replaceIfExisting)
                     throw new Exception("A plate template with name '" + gwtPlate.getName() + "' already exists.");
 
@@ -175,7 +174,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             else
             {
                 // check another plate of the same name doesn't already exist
-                PlateTemplateImpl other = PlateManager.get().getPlateTemplate(getContainer(), gwtPlate.getName());
+                Plate other = PlateManager.get().getPlate(getContainer(), gwtPlate.getName());
                 if (other != null)
                 {
                     if (!replaceIfExisting)
@@ -193,11 +192,11 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
             // first, mark well groups not submitted for saving as deleted
             Set<GWTWellGroup> groups = gwtPlate.getGroups();
-            List<? extends WellGroupTemplateImpl> existingWellGroups = template.getWellGroups();
-            for (WellGroupTemplateImpl existingWellGroup : existingWellGroups)
+            List<WellGroup> existingWellGroups = template.getWellGroups();
+            for (WellGroup existingWellGroup : existingWellGroups)
             {
                 if (groups.stream().noneMatch(g-> g.getRowId() == existingWellGroup.getRowId()))
-                    template.markWellGroupForDeletion(existingWellGroup);
+                    ((PlateImpl)template).markWellGroupForDeletion(existingWellGroup);
             }
 
             // next, update positions on existing well groups or create new well groups
@@ -208,7 +207,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 for (GWTPosition gwtPosition : gwtGroup.getPositions())
                     positions.add(template.getPosition(gwtPosition.getRow(), gwtPosition.getCol()));
 
-                WellGroupTemplateImpl group;
+                WellGroupImpl group;
                 if (updateExisting && gwtGroup.getRowId() > 0)
                 {
                     group = findExistingWellGroup(existingWellGroups, gwtGroup.getRowId());
@@ -220,12 +219,12 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                     group.setName(gwtGroup.getName());
                     group.setPositions(positions);
 
-                    template.storeWellGroup(group);
+                    ((PlateImpl)template).storeWellGroup(group);
                 }
                 else
                 {
                     assert gwtGroup.getRowId() <= 0 : "Updating existing well group on a new template";
-                    group = template.addWellGroup(gwtGroup.getName(), groupType, positions);
+                    group = (WellGroupImpl) template.addWellGroup(gwtGroup.getName(), groupType, positions);
                 }
 
                 group.setProperties(gwtGroup.getProperties());
@@ -241,14 +240,13 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         }
     }
 
-    private WellGroupTemplateImpl findExistingWellGroup(List<? extends WellGroupTemplateImpl> wellGroups, int rowId)
+    private WellGroupImpl findExistingWellGroup(List<WellGroup> wellGroups, int rowId)
     {
-        for (WellGroupTemplateImpl wellGroup : wellGroups)
+        for (WellGroup wellGroup : wellGroups)
         {
             if (wellGroup.getRowId() != null && wellGroup.getRowId() == rowId)
-                return wellGroup;
+                return (WellGroupImpl) wellGroup;
         }
-
         return null;
     }
 }
