@@ -44,7 +44,8 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -4406,21 +4407,23 @@ public class StudyManager
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
-        SimpleFilter.OrClause lastIndexedOrClause = new SimpleFilter.OrClause();
+        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
         LastIndexedClause standardLastIndexedClause = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p");
         if (!standardLastIndexedClause.isEmpty())
-            lastIndexedOrClause.addClause(standardLastIndexedClause);
-        @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
-        if (null != aliasTable)
         {
-            // Need to reindex participants whose aliases have changed
-            SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
-                .append(aliasTable.getFromSQL("aliases"))
-                .append("WHERE aliases.Modified > p.LastIndexed)");
-            lastIndexedOrClause.addClause(new SimpleFilter.SQLClause(aliasFragment));
+            if (null != aliasTable)
+            {
+                // Also reindex participants whose aliases have changed
+                SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
+                    .append(aliasTable.getFromSQL("aliases"))
+                    .append("WHERE aliases.Modified > p.LastIndexed)");
+                filter.addClause(new OrClause(standardLastIndexedClause, new SQLClause(aliasFragment)));
+            }
+            else
+            {
+                filter.addClause(standardLastIndexedClause);
+            }
         }
-        if (!lastIndexedOrClause.getClauses().isEmpty())
-            filter.addClause(lastIndexedOrClause);
 
         baseFragment
             .append(" ")
