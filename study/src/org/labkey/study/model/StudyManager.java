@@ -4408,8 +4408,8 @@ public class StudyManager
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
         @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
-        LastIndexedClause standardLastIndexedClause = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p");
-        if (!standardLastIndexedClause.isEmpty())
+        LastIndexedClause lastIndexedClause = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p");
+        if (!lastIndexedClause.isEmpty())
         {
             if (null != aliasTable)
             {
@@ -4417,11 +4417,11 @@ public class StudyManager
                 SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
                     .append(aliasTable.getFromSQL("aliases"))
                     .append("WHERE aliases.Modified > p.LastIndexed)");
-                filter.addClause(new OrClause(standardLastIndexedClause, new SQLClause(aliasFragment)));
+                filter.addClause(new OrClause(lastIndexedClause, new SQLClause(aliasFragment)));
             }
             else
             {
-                filter.addClause(standardLastIndexedClause);
+                filter.addClause(lastIndexedClause);
             }
         }
 
