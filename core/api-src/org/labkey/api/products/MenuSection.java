@@ -145,11 +145,19 @@ public abstract class MenuSection
 
     protected String getLabel(UserSchema schema, String queryName)
     {
-        TableInfo tableInfo = getTableInfo(schema, queryName);
-        String label = tableInfo.getTitle();
-        if (label == null)
-            label = tableInfo.getName();
-        return label;
+        try
+        {
+            TableInfo tableInfo = getTableInfo(schema, queryName);
+            String label = tableInfo.getTitle();
+            if (label == null)
+                label = tableInfo.getName();
+            return label;
+        }
+        catch (Throwable e)
+        {
+            // if the domain was created using reserved names, we won't get a TableInfo, so we'll default to the queryName
+            return queryName;
+        }
     }
 
     public String getSectionKey()

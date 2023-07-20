@@ -2976,15 +2976,18 @@ public class PageFlowUtil
         JSONObject ret = new JSONObject();
 
         // Don't call getPageContextJson() implementations until all modules have started, #33401
-        if (resources != null && ModuleLoader.getInstance().isStartupComplete())
+        if (ModuleLoader.getInstance().isStartupComplete())
         {
             Container c = context.getContainer();
             User u = context.getUser();
             Set<Module> modules = new HashSet<>();
 
-            for (ClientDependency cd : resources)
+            if (resources != null)
             {
-                modules.addAll(cd.getRequiredModuleContexts(c));
+                for (ClientDependency cd : resources)
+                {
+                    modules.addAll(cd.getRequiredModuleContexts(c));
+                }
             }
 
             modules.addAll(c.getActiveModules(u));

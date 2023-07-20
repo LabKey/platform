@@ -174,7 +174,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
 
             if (result.size() > 0 && !errors.hasErrors())
-                mgr.indexList(_list, false);
+                mgr.indexList(_list);
         }
 
         return result;
@@ -245,7 +245,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     if (imported > 0)
                         ListManager.get().addAuditEvent(_list, updatedUser, "Bulk " + (insertOption.updateOnly ? "updated " : (insertOption.mergeRows ? "imported " : "inserted ")) + imported + " rows to list.");
 
-                    transaction.addCommitTask(() -> ListManager.get().indexList(_list, false), DbScope.CommitTaskOption.POSTCOMMIT);
+                    transaction.addCommitTask(() -> ListManager.get().indexList(_list), DbScope.CommitTaskOption.POSTCOMMIT);
                     transaction.commit();
 
                     return imported;
@@ -280,7 +280,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = _importRowsUsingDIB(getListUser(user, container), container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
-            ListManager.get().indexList(_list, false);
+            ListManager.get().indexList(_list);
         return count;
     }
 
@@ -294,7 +294,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, errors, configParameters, extraScriptContext);
         if (result.size() > 0)
-            ListManager.get().indexList(_list, false);
+            ListManager.get().indexList(_list);
         return result;
     }
 

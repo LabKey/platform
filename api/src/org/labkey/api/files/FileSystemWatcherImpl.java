@@ -78,11 +78,13 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 public class FileSystemWatcherImpl implements FileSystemWatcher
 {
     private static final Logger LOG = LogHelper.getLogger(FileSystemWatcherImpl.class, "Open file system handlers and listeners");
-    private static final long POLLING_PERIOD_SECONDS = 10L;
+    private static final long POLLING_PERIOD_SECONDS = 30L;
 
     private final WatchService _watcher;
     private final ConcurrentMap<Path, PathListenerManager> _listenerMap = new ConcurrentHashMap<>(1000);
     private final PathWatchService _pollingWatcher;
+
+    private volatile long _lastPollingExceptionTime = 0;
 
     FileSystemWatcherImpl() throws IOException
     {
@@ -93,7 +95,17 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         // for files system that do not support registering file watchers we will use a service that polls that watched
         // directory looking for changes since last polling. See: https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html
-        _pollingWatcher = new PollingWatchService(4, POLLING_PERIOD_SECONDS, TimeUnit.SECONDS);
+        _pollingWatcher = new PollingWatchService(2, POLLING_PERIOD_SECONDS, TimeUnit.SECONDS, throwable -> {
+            long now = System.currentTimeMillis();
+            // Don't log too often
+            if (now - _lastPollingExceptionTime > TimeUnit.MINUTES.toMillis(10))
+            {
+                _lastPollingExceptionTime = now;
+                LOG.warn("PollingFileWatcher exception", throwable);
+            }
+        },
+                l -> LOG.debug("PollingWatchService pollTime: " + l));
+
         _pollingWatcher.start();
         FileSystemWatcherThread pollingThread = new FileSystemWatcherThread("PollingFileWatcher", _pollingWatcher);
         ContextListener.addShutdownListener(pollingThread);
@@ -118,10 +130,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         if (cws != null)
         {
             cws.registerCloudListener(path, config, plm);
-//
-//            (Path filePath, Runnable callback) -> {
-//                fireCloudWatchEvent(plm, filePath, callback);
-//            });
         }
     }
 
@@ -156,10 +164,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         // Add the listener and its requested events
         plm.addListener(listener, events);
-//        if (ensureDirectoryDeleteListenerOnParent)
-//        {
-//            ensureDeleteDirectoryListener(plm, directory);
-//        }
 
         LOG.debug("Registered a file listener on " + directory);
     }
@@ -176,12 +180,12 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         boolean pollingWatcher = null != fileStoreType && (fileStoreType.startsWith("cifs") || fileStoreType.startsWith("smbfs") || fileStoreType.startsWith("nfs"));
         if (pollingWatcher)
         {
-            LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
+            LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath());
             watchKey = _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
         }
         else
         {
-            LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath().toString());
+            LOG.debug("Detected local file system type '" + fileStoreType + "'. Register path with standard watcher service for directory: " + directory.toAbsolutePath());
             watchKey = directory.register(_watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);  // Register all events (future listener might request events that current listener doesn't)
         }
 
