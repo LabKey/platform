@@ -447,5 +447,12 @@
     }%>
     <input type="hidden" name="action" value="<%=h(bean.getAction().name())%>">
     <input type="hidden" name="dirty" value="false">
+    <%
+    // ensure that issueDefName is available in the form post
+    if (context.getActionURL().getParameter("issueDefName") == null)
+    {%>
+        <input type="hidden" name="issueDefName" value="<%=h(issueListDef.getName())%>">
+    <%
+    }%>
 </labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
