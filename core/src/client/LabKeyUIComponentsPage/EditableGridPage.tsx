@@ -3,12 +3,12 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React, { FC, memo, useCallback, useEffect, useState } from 'react';
-import { List, Map } from 'immutable';
 import {
+    applyEditableGridChangesToModels,
     QueryModel,
     withQueryModels,
+    EditableGridChange,
     EditableGridPanel,
-    EditorModelProps,
     EditorModel,
     loadEditorModelData,
     InjectedQueryModels,
@@ -19,97 +19,77 @@ import {
 
 import { SchemaQueryInputContext, SchemaQueryInputProvider } from './SchemaQueryInputProvider';
 
-const defaultProps = {
-    title: 'EditableGridPanel',
-    bordered: true,
-    striped: true,
-    allowAdd: true,
-    allowBulkAdd: true,
-    allowBulkRemove: true,
-    allowBulkUpdate: true,
-    bulkAddProps: {
-        title: 'Bulk Add'
-    },
+type EditableGridModels = {
+    dataModel: QueryModel;
+    editorModel: EditorModel;
 };
 
 const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
     const { queryModels } = props;
     const { model } = queryModels;
-    const [dataModel, setDataModel] = useState<QueryModel>();
-    const [editorModel, setEditorModel] = useState<EditorModel>();
-    const [error, setError] = useState<String>();
+    const [models, setModels] = useState<EditableGridModels>();
+    const [error, setError] = useState<string>();
+    const isLoaded = !model.isLoading;
 
     useEffect(() => {
+        if (model.isLoading) return;
+
         (async () => {
-            if (!model.isLoading && !editorModel) {
-                try {
-                    const editorModelData = await loadEditorModelData(model);
-                    setEditorModel(new EditorModel({
-                        id: model.id,
-                        ...editorModelData,
-                    }));
-                    setDataModel(model);
-                } catch (err) {
-                    console.error(err);
-                    setError(resolveErrorMessage(err))
-                }
+            try {
+                const editorModelData = await loadEditorModelData(model);
+                const editorModel_ = new EditorModel({ id: model.id, ...editorModelData });
+                setModels({ dataModel: model, editorModel: editorModel_ });
+            } catch (err) {
+                console.error(err);
+                setError(resolveErrorMessage(err));
             }
         })();
-    }, [model, editorModel]);
+    }, [model]);
 
-    const onGridChange = useCallback((
-        editorModelChanges: Partial<EditorModelProps>,
-        dataKeys?: List<any>,
-        data?: Map<any, Map<string, any>>
-    ) => {
-        const orderedRows = dataKeys?.toJS();
-        const rows = data?.toJS();
-        if (orderedRows !== undefined && rows !== undefined) {
-            setDataModel((current: QueryModel) => {
-                return current.mutate({ orderedRows, rows })
-            });
-        }
+    const onGridChange = useCallback<EditableGridChange>((changes, dataKeys?, data?) => {
+        setModels(models_ => {
+            const { dataModels, editorModels } = applyEditableGridChangesToModels(
+                [models_.dataModel],
+                [models_.editorModel],
+                changes,
+                undefined,
+                dataKeys,
+                data
+            );
 
-        setEditorModel((current: EditorModel) => {
-            return current.merge(editorModelChanges) as EditorModel;
+            return { dataModel: dataModels[0], editorModel: editorModels[0] };
         });
-    },
-        // Note editorModel and dataModel are not set as deps here because we want to make sure to always use the
-        // current state object in the case when the onGridChange callback is being called back to back from the
-        // EditableGridPanel (note the use of the function param version of the setDataModel() and setEditorModel()
-        []
-    );
+    }, []);
 
-    if (model.hasLoadErrors) {
-        return <Alert>{model.loadErrors.join(' ')}</Alert>;
+    if (error || model.hasLoadErrors) {
+        return <Alert>{error ?? model.loadErrors.join(' ')}</Alert>;
     }
-    if (!editorModel || !dataModel) {
-        return <LoadingSpinner />
-    }
-    if (error) {
-        return <Alert>{error}</Alert>;
+    if (!isLoaded || !models) {
+        return <LoadingSpinner />;
     }
 
     return (
         <EditableGridPanel
-            {...defaultProps}
-            model={dataModel}
-            editorModel={editorModel}
+            allowAdd
+            allowBulkAdd
+            allowBulkRemove
+            allowBulkUpdate
+            bordered
+            bulkAddProps={{ title: 'Bulk Add' }}
+            model={models.dataModel}
+            editorModel={models.editorModel}
             onChange={onGridChange}
+            striped
+            title="EditableGridPanel"
         />
-    )
+    );
 });
 
-export const EditableGridPageWithQueryModels = withQueryModels<{}>(EditableGridPageBody);
+export const EditableGridPageWithQueryModels = withQueryModels(EditableGridPageBody);
 
-export const EditableGridPageImpl: FC<SchemaQueryInputContext> = props => {
-    const { queryConfig } = props;
-    const queryConfigs = { model: queryConfig };
-
-    if (!queryConfig)
-        return null;
-
-    return <EditableGridPageWithQueryModels autoLoad key={queryConfig.id} queryConfigs={queryConfigs} />;
-}
+export const EditableGridPageImpl: FC<SchemaQueryInputContext> = ({ queryConfig }) => {
+    if (!queryConfig) return null;
+    return <EditableGridPageWithQueryModels autoLoad key={queryConfig.id} queryConfigs={{ model: queryConfig }} />;
+};
 
 export const EditableGridPage = SchemaQueryInputProvider(EditableGridPageImpl);
