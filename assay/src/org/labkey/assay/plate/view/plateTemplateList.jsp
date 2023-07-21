@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.api.assay.plate.PlateService" %>
-<%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
+<%@ page import="org.labkey.api.assay.plate.Plate" %>
 <%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
@@ -36,17 +36,18 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.assay.plate.model.PlateType" %>
+<%@ page import="org.labkey.api.assay.plate.Plate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
     Container c = getContainer();
-    List<? extends PlateTemplate> plateTemplates = me.getModelBean().getTemplates();
-    Map<PlateTemplate, Integer> plateTemplateRunCount = new HashMap<>();
-    for (PlateTemplate template : plateTemplates)
+    List<? extends Plate> plateTemplates = me.getModelBean().getTemplates();
+    Map<Plate, Integer> plateTemplateRunCount = new HashMap<>();
+    for (Plate template : plateTemplates)
     {
-        int count = PlateService.get().getRunCountUsingPlateTemplate(c, template);
+        int count = PlateService.get().getRunCountUsingPlate(c, template);
         plateTemplateRunCount.put(template, count);
     }
 %>
@@ -115,7 +116,7 @@
 <%
     int index = 0;
     boolean isAssayDesigner = c.hasPermission(getUser(), DesignAssayPermission.class);
-    for (PlateTemplate template : plateTemplates)
+    for (Plate template : plateTemplates)
     {
         Integer runCount = plateTemplateRunCount.get(template);
 

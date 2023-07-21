@@ -44,7 +44,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException
+    public double[][] loadFile(Plate template, File dataFile) throws ExperimentException
     {
         DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
         try (DataLoader loader = factory.createLoader(dataFile, false))
@@ -58,7 +58,7 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException
+    public Map<String, double[][]> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
     {
         DataLoaderFactory factory = DataLoader.get().findFactory(dataFile, null);
         try (DataLoader loader = factory.createLoader(dataFile, false))
