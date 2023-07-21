@@ -210,7 +210,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
                       function gtag(){dataLayer.push(arguments);}
                       gtag('js', new Date());
                     
-                      gtag('config', ${MEASUREMENT_ID:jsString});
+                      gtag('config', ${MEASUREMENT_ID:jsString}, { 'send_page_view': ${SEND_PAGE_VIEW} });
                     </script>
                     """;
 
@@ -232,6 +232,14 @@ public class AnalyticsServiceImpl implements AnalyticsService
             return "";
 
         String ga4JS = "https://www.googletagmanager.com/gtag/js?id=" + getMeasurementId();
+        String controller = url.getController();
+        String action = url.getAction();
+        Boolean sendPageView = true;
+        Boolean isAppController = controller.equalsIgnoreCase("biologics") || controller.equalsIgnoreCase("sampleManager") || controller.equalsIgnoreCase("freezermanager");
+        Boolean isAppAction = action.equalsIgnoreCase("app") || action.equalsIgnoreCase("appDev");
+
+        if (isAppController && isAppAction)
+            sendPageView = false;
 
         StringBuilder sb = new StringBuilder();
         for (TrackingStatus trackingStatus : getTrackingStatus())
@@ -240,7 +248,8 @@ public class AnalyticsServiceImpl implements AnalyticsService
             sb.append(se.eval(PageFlowUtil.map(
                     "PAGE_URL", getSanitizedUrl(context),
                     "GA4_JS", ga4JS,
-                    "MEASUREMENT_ID", getMeasurementId())));
+                    "MEASUREMENT_ID", getMeasurementId(),
+                    "SEND_PAGE_VIEW", sendPageView)));
         }
         return sb.toString();
     }
