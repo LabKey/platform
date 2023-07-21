@@ -335,7 +335,6 @@ public class PlateImpl extends PropertySetImpl implements Plate
         _rows = rows;
     }
 
-    @JsonIgnore
     @Override
     public void setName(String name)
     {

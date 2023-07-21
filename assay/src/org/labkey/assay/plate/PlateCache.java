@@ -1,5 +1,7 @@
 package org.labkey.assay.plate;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class PlateCache
 {
     private static final Cache<Container, PlateCollections> PLATE_COLLECTIONS_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "Plate Cache", (c, argument) -> new PlateCollections(c));
+    private static final Logger LOG = LogManager.getLogger(PlateCache.class);
 
     private static class PlateCollections
     {
@@ -39,6 +42,10 @@ public class PlateCache
                 PlateManager.get().populatePlate(plate);
 
                 rowIdMap.put(plate.getRowId(), plate);
+                if (nameMap.containsKey(plate.getName()))
+                {
+                    LOG.error(String.format("A duplicate Plate name : %s was found in the same folder : %s. We recommend that the duplicate plate(s) are deleted.", plate.getName(), c.getPath()));
+                }
                 nameMap.put(plate.getName(), plate);
                 lsidMap.put(Lsid.parse(plate.getLSID()), plate);
                 if (plate.isTemplate())

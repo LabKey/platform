@@ -29,6 +29,7 @@ import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
@@ -36,10 +37,12 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
+import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -53,7 +56,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
-import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -99,6 +101,18 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.addColumns();
         addColumn(createPropertiesColumn());
+    }
+
+    @Override
+    public MutableColumnInfo wrapColumn(ColumnInfo col)
+    {
+        var columnInfo = super.wrapColumn(col);
+
+        // require a plate name
+        if (columnInfo.getName().equalsIgnoreCase("Name"))
+            columnInfo.setRequired(true);
+
+        return columnInfo;
     }
 
     @Override
@@ -187,7 +201,16 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                         (Supplier) () -> GUID.makeGUID());
             }
 
-            DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, lsidGenerator, container, user, context);
+            if (!nameMap.containsKey("name"))
+            {
+                context.getErrors().addRowError(new ValidationException("Name is a required field"));
+                return data;
+            }
+
+            ValidatorIterator vi = new ValidatorIterator(lsidGenerator, context, container, user);
+            vi.addValidator(nameMap.get("name"), new UniquePlateNameValidator(container));
+
+            DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, vi, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, plateTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
             dib = LoggingDataIterator.wrap(dib);
@@ -216,6 +239,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
+            String plateName = (String) oldRow.get("Name");
+            if (PlateManager.get().plateExists(container, String.valueOf(plateName)))
+                throw new QueryUpdateServiceException("Plate with name : " + plateName + " already exists in the folder.");
+
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
             PlateManager.get().clearCache(container);
             return newRow;
@@ -243,6 +270,36 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
                 return returnMap;
             }
+        }
+    }
+
+    private static class UniquePlateNameValidator implements ColumnValidator
+    {
+        private Container _container;
+
+        public UniquePlateNameValidator(Container container)
+        {
+            _container = container;
+        }
+
+        @Override
+        public String validate(int rowNum, Object value)
+        {
+            return validate(String.valueOf(value));
+        }
+
+        @Override
+        public String validate(int rowNum, Object value, ValidatorContext validatorContext)
+        {
+            return validate(String.valueOf(value));
+        }
+
+        private String validate(String name)
+        {
+            if (PlateManager.get().plateExists(_container, name))
+                return "Plate with name : " + name + " already exists in the folder.";
+            else
+                return null;
         }
     }
 }

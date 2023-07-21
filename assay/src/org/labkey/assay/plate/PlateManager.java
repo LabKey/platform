@@ -330,6 +330,17 @@ public class PlateManager implements PlateService
         return plate;
     }
 
+    /**
+     * Checks to see if there is a plate with the same name in the folder
+     */
+    public boolean plateExists(Container c, String name)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("Name"), name);
+
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getRowCount() > 0;
+    }
+
     @Override
     public WellGroup getWellGroup(Container container, int rowid)
     {
