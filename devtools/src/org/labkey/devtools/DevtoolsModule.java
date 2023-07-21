@@ -18,11 +18,9 @@ package org.labkey.devtools;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.JspTestCase;
@@ -75,13 +73,6 @@ public class DevtoolsModule extends CodeOnlyModule
     {
         // add a container listener so we'll know when our container is deleted:
         ContainerManager.addContainerListener(new DevtoolsContainerListener());
-    }
-
-    @Override
-    @NotNull
-    public Collection<String> getSummary(Container c)
-    {
-        return Collections.emptyList();
     }
 
     @Override

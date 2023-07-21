@@ -45,7 +45,7 @@ public interface PlateReader
      * @return
      * @throws ExperimentException
      */
-    double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException;
+    double[][] loadFile(Plate template, File dataFile) throws ExperimentException;
 
     /**
      * Parse the specified datafile and populate a map of array of well values. This is designed to process files
@@ -56,7 +56,7 @@ public interface PlateReader
      * @return
      * @throws ExperimentException
      */
-    Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException;
+    Map<String, double[][]> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException;
 
     /**
      * Determines whether the specified well value should be used in any analytical calculations

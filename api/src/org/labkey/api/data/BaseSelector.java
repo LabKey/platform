@@ -569,21 +569,21 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         return factory;
     }
 
-    // Unfortunately, Map and MultiValuedMap don't share an interface for the put method so we have to pass in a method reference instead.
+    // Unfortunately, Map and MultiValuedMap don't share an interface for the put method, so we have to pass in a method reference.
     private <K, V> void fillValues(BiFunction<K, V, ?> fn)
     {
         // Using a ResultSetIterator ensures that standard type conversion happens (vs. ResultSet enumeration and rs.getObject())
         getStandardResultSetFactory().handleResultSet((rs, conn) -> {
-            if (rs.getMetaData().getColumnCount() < 2)
-                throw new IllegalStateException("Must select at least two columns to use fillValueMap() or getValueMap()");
-
+            int columnCount = rs.getMetaData().getColumnCount();
             ResultSetIterator iter = new ResultSetIterator(rs);
 
             while (iter.hasNext())
             {
-                RowMap rowMap = (RowMap)iter.next();
+                RowMap<?> rowMap = (RowMap<?>)iter.next();
                 //noinspection unchecked
-                fn.apply((K)rowMap.get(1), (V)rowMap.get(2));
+                K key = (K)rowMap.get(1);
+                //noinspection unchecked
+                fn.apply(key, (V)(1 == columnCount ? key : rowMap.get(2))); // One column => treat as an identity map
             }
 
             return null;
@@ -623,8 +623,8 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
             ResultSetIterator iter = new ResultSetIterator(rs);
             while (iter.hasNext())
             {
-                RowMap rowMap = (RowMap)iter.next();
                 //noinspection unchecked
+                RowMap<K> rowMap = (RowMap<K>)iter.next();
                 fillSet.add((K)rowMap.get(1));
             }
             return null;

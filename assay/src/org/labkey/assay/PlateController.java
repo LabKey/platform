@@ -16,17 +16,21 @@
 
 package org.labkey.assay;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,6 +38,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ContainerTree;
@@ -41,6 +46,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -48,6 +54,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -59,11 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Jan 29, 2007
- * Time: 3:53:57 PM
- */
+@Marshal(Marshaller.Jackson)
 public class PlateController extends SpringActionController
 {
     private static final SpringActionController.DefaultActionResolver _actionResolver = new DefaultActionResolver(PlateController.class);
@@ -107,13 +110,13 @@ public class PlateController extends SpringActionController
 
     public static class PlateTemplateListBean
     {
-        private List<? extends PlateTemplate> _templates;
-        public PlateTemplateListBean(List<? extends PlateTemplate> templates)
+        private List<? extends Plate> _templates;
+        public PlateTemplateListBean(List<? extends Plate> templates)
         {
             _templates = templates;
         }
 
-        public List<? extends PlateTemplate> getTemplates()
+        public List<? extends Plate> getTemplates()
         {
             return _templates;
         }
@@ -126,7 +129,7 @@ public class PlateController extends SpringActionController
         public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
         {
             setHelpTopic("editPlateTemplate");
-            List<? extends PlateTemplate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
+            List<Plate> plateTemplates = PlateService.get().getPlateTemplates(getContainer());
             return new JspView<>("/org/labkey/assay/plate/view/plateTemplateList.jsp",
                     new PlateTemplateListBean(plateTemplates));
         }
@@ -216,10 +219,10 @@ public class PlateController extends SpringActionController
             properties.put("templateRowCount", "" + form.getRowCount());
             properties.put("templateColumnCount", "" + form.getColCount());
 
-            List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplates(getContainer());
+            List<Plate> templates = PlateService.get().getPlateTemplates(getContainer());
             for (int i = 0; i < templates.size(); i++)
             {
-                PlateTemplate template = templates.get(i);
+                Plate template = templates.get(i);
                 properties.put("templateName[" + i + "]", template.getName());
             }
             return new AssayGWTView(gwt.client.org.labkey.plate.designer.client.TemplateDesigner.class, properties);
@@ -233,7 +236,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    @RequiresAnyOf({DeletePermission.class, DesignAssayPermission.class})
     public class DeleteAction extends FormHandlerAction<NameForm>
     {
         @Override
@@ -244,9 +247,9 @@ public class PlateController extends SpringActionController
         @Override
         public boolean handlePost(NameForm form, BindException errors) throws Exception
         {
-            PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getPlateId());
+            Plate template = PlateService.get().getPlate(getContainer(), form.getPlateId());
             if (template != null)
-                PlateService.get().deletePlate(getContainer(), template.getRowId());
+                PlateService.get().deletePlate(getContainer(), getUser(), template.getRowId());
             return true;
         }
 
@@ -263,7 +266,7 @@ public class PlateController extends SpringActionController
         private final HtmlString _treeHtml;
         private final String _templateName;
         private final String _selectedDestination;
-        private List<? extends PlateTemplate> _destinationTemplates;
+        private List<Plate> _destinationTemplates;
 
         public CopyTemplateBean(final Container container, final User user, final String templateName, final String selectedDestination)
         {
@@ -319,7 +322,7 @@ public class PlateController extends SpringActionController
             return _templateName;
         }
 
-        public List<? extends PlateTemplate> getDestinationTemplates()
+        public List<? extends Plate> getDestinationTemplates()
         {
             return _destinationTemplates;
         }
@@ -372,7 +375,7 @@ public class PlateController extends SpringActionController
             if (destination == null || !destination.hasPermission(getUser(), InsertPermission.class))
                 errors.reject("copyForm", "Destination container does not exist or permission is denied.");
 
-            PlateTemplate destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
+            Plate destinationTemplate = PlateService.get().getPlate(destination, form.getTemplateName());
 
             if (destinationTemplate != null)
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
@@ -389,7 +392,7 @@ public class PlateController extends SpringActionController
                 return false;
             }
             // earlier validation should prevent a missing source template:
-            PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), form.getTemplateName());
+            Plate template = PlateService.get().getPlate(getContainer(), form.getTemplateName());
             if (template == null)
             {
                 errors.reject("copyForm", "Plate " + form.getTemplateName() + " does not exist in source container.");
@@ -397,13 +400,13 @@ public class PlateController extends SpringActionController
             }
 
             // earlier validation should prevent an already-existing destination template:
-            PlateTemplate destinationTemplate = PlateService.get().getPlateTemplate(destination, form.getTemplateName());
+            Plate destinationTemplate = PlateService.get().getPlate(destination, form.getTemplateName());
             if (destinationTemplate != null)
             {
                 errors.reject("copyForm", "Plate " + form.getTemplateName() + " already exists in destination container.");
                 return false;
             }
-            PlateService.get().copyPlateTemplate(template, getUser(), destination);
+            PlateService.get().copyPlate(template, getUser(), destination);
             return true;
         }
 
@@ -417,7 +420,7 @@ public class PlateController extends SpringActionController
     private String getUniqueName(Container container, String originalName)
     {
         Set<String> existing = new HashSet<>();
-        for (PlateTemplate template : PlateService.get().getPlateTemplates(container))
+        for (Plate template : PlateService.get().getPlateTemplates(container))
             existing.add(template.getName());
         String baseUniqueName;
         if (!originalName.startsWith("Copy of "))
@@ -484,6 +487,7 @@ public class PlateController extends SpringActionController
         {
             _templateType = templateType;
         }
+
         public boolean isCopy()
         {
             return _copy;
@@ -538,6 +542,87 @@ public class PlateController extends SpringActionController
         public void setTemplateName(String templateName)
         {
             _templateName = templateName;
+        }
+    }
+
+    public static class CreatePlateForm
+    {
+        private String _name;
+        private PlateType _plateType;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public PlateType getPlateType()
+        {
+            return _plateType;
+        }
+
+        public void setPlateType(PlateType plateType)
+        {
+            _plateType = plateType;
+        }
+    }
+
+    @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
+    public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
+    {
+        @Override
+        public void validateForm(CreatePlateForm form, Errors errors)
+        {
+            if (StringUtils.trimToNull(form.getName()) == null)
+                errors.reject(ERROR_GENERIC, "Plate \"name\" is required.");
+        }
+
+        @Override
+        public Object execute(CreatePlateForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName());
+                return success(plate);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create plate. An error has occurred.");
+            }
+
+            return null;
+        }
+    }
+
+    @RequiresAnyOf({ReadPermission.class, DesignAssayPermission.class})
+    public static class GetPlateTypesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return PlateManager.get().getPlateTypes();
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetPlateOperationConfirmationDataAction extends ReadOnlyApiAction<DataViewSnapshotSelectionForm>
+    {
+        @Override
+        public void validateForm(DataViewSnapshotSelectionForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+        }
+
+        @Override
+        public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
+        {
+            var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), form.getIds(false));
+            return success(results);
         }
     }
 }

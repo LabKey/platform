@@ -22,7 +22,9 @@
     <description>Contains one row per defined plate template or uploaded plate instance.</description>
     <columns>
       <column columnName="RowId"/>
-      <column columnName="LSID"/>
+      <column columnName="LSID">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="Container"/>
       <column columnName="Name">
         <description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</description>
@@ -67,6 +69,7 @@
       </column>
       <column columnName="Template">
         <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="Rows">
         <description>The number of rows in each plate.</description>
@@ -75,6 +78,7 @@
         <description>The number of columns in each plate.</description>
       </column>
       <column columnName="DataFileId">
+        <isUserEditable>false</isUserEditable>
         <description>A unique text identifier (a GUID) for the data file associated with each plate.</description>
       </column>
       <column columnName="Type">
@@ -83,10 +87,12 @@
     </columns>
   </table>
   <table tableName="Well" tableDbType="TABLE">
-    <description>Contains one row per uploaded well data or defined plate template well.</description>
+    <description>Contains one row per well in a plate.</description>
     <columns>
       <column columnName="RowId"/>
-      <column columnName="LSID"/>
+      <column columnName="LSID">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="Container"/>
       <column columnName="Value">
         <description>The data value associated with each well.</description>
@@ -96,6 +102,12 @@
       </column>
       <column columnName="PlateId">
         <description>The row ID of the plate with which each well is associated.</description>
+        <columnTitle>Plate</columnTitle>
+        <fk>
+          <fkDbSchema>plate</fkDbSchema>
+          <fkTable>Plate</fkTable>
+          <fkColumnName>rowId</fkColumnName>
+        </fk>
       </column>
       <column columnName="Row">
         <description>The zero-based row index of each well.</description>
@@ -106,11 +118,17 @@
     </columns>
   </table>
   <table tableName="WellGroup" tableDbType="TABLE">
-    <description>Contains one row per well group in uploaded plate data or plate templates.</description>
+    <description>Contains one row per well group.</description>
     <columns>
       <column columnName="RowId"/>
       <column columnName="PlateId">
         <description>The row ID of the plate with which each well group is associated.</description>
+        <columnTitle>Plate</columnTitle>
+        <fk>
+          <fkDbSchema>plate</fkDbSchema>
+          <fkTable>Plate</fkTable>
+          <fkColumnName>rowId</fkColumnName>
+        </fk>
       </column>
       <column columnName="LSID"/>
       <column columnName="Container"/>
@@ -118,6 +136,7 @@
         <description>The name of each well group.</description>
       </column>
       <column columnName="TypeName">
+        <columnTitle>Type</columnTitle>
         <description>The type of each well group.  For example, "CONTROL", "REPLICATE", or "SPECIMEN".</description>
       </column>
       <column columnName="Template">

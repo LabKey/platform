@@ -818,6 +818,11 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public void save(User user)
     {
+        save(user, false);
+    }
+
+    public void save(User user, boolean skipCleanUpTasks /* index and cache might have been called explicitly in a postcommit task*/)
+    {
         boolean isNew = _object.getRowId() == 0;
         save(user, ExperimentServiceImpl.get().getTinfoSampleType(), true);
         if (isNew)
@@ -837,11 +842,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
             }
         }
 
-        // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
-        // Just call uncache(), and let normal cache loading do its thing
-        SampleTypeServiceImpl.get().clearMaterialSourceCache(getContainer());
+        if (!skipCleanUpTasks)
+        {
+            // NOTE cacheMaterialSource() of course calls transactioncache.put(), which does not alter the shared cache! (BUG?)
+            // Just call uncache(), and let normal cache loading do its thing
+            SampleTypeServiceImpl.get().clearMaterialSourceCache(getContainer());
 
-        SampleTypeServiceImpl.get().indexSampleType(this);
+            SampleTypeServiceImpl.get().indexSampleType(this);
+        }
     }
 
     @Override

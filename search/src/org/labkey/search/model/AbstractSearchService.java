@@ -15,6 +15,7 @@
  */
 package org.labkey.search.model;
 
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.collections4.MultiValuedMap;
@@ -44,6 +45,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.URLHelper;
@@ -62,6 +64,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1105,7 +1108,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             if (success)
             {
-                i._res.setLastIndexed(i._start, i._modified);
+                // On a fast machine, _start could be less than _modified, since _start is set via HeartBeat. However,
+                // we don't ever want to set LastIndexed to a timestamp less than Modified, otherwise we'll end up
+                // reindexing this doc on the next pass.
+                i._res.setLastIndexed(Math.max(i._start, i._modified), i._modified);
                 synchronized (_commitLock)
                 {
                     String category = (String)i.getResource().getProperties().get(PROPERTY.categories.toString());
@@ -1237,6 +1243,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public IndexTask indexContainer(IndexTask in, final Container c, final Date since)
     {
+        _log.debug("Indexing container \"" + c + "\", since: " + since);
         final IndexTask task = null==in ? createTask("Index folder " + c.getPath()) : in;
 
         Runnable r = () ->
@@ -1330,20 +1337,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     public Map<String, Object> getIndexerStats()
     {
-        HashMap<String, Object> map = new HashMap<>();
-
+        Map<String, Object> map = new LinkedHashMap<>();
         ArrayList<IndexerRateAccumulator> history;
+        long initialStart;
 
         synchronized (_commitLock)
         {
             history = new ArrayList<>(_history.size() + 1);
-            history.add(new IndexerRateAccumulator(_current.getStart(), _current.getCounter()));
+            initialStart = _current.getStart();
+            history.add(new IndexerRateAccumulator(initialStart, HashMultiset.create(_current.getCounter())));
             history.addAll(_history);
         }
 
+        IndexerRateAccumulator dayAccumulator = new IndexerRateAccumulator(initialStart);
         SimpleDateFormat f = new SimpleDateFormat("h:mm a");
-        StringBuilder sb = new StringBuilder();
-        sb.append("<table>");
+        StringBuilder hourly = new StringBuilder();
+        hourly.append("<table>");
+        int hourCount = history.size();
 
         for (IndexerRateAccumulator r : history)
         {
@@ -1351,17 +1361,28 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             start -= start % (60*60*1000);
             String fStart = f.format(start);
             String fCount = Formats.commaf0.format(r.getCount());
-            sb.append("<tr><td align=right>").append(fStart).append("&nbsp;</td>");
-            sb.append("<td align=right>").append(fCount).append(getPopup(fStart + " " + fCount + " documents", r)).append("</td></tr>");
+            hourly.append("<tr><td align=right>").append(fStart).append("&nbsp;</td>");
+            hourly.append("<td align=right>").append(fCount).append(getPopup(fStart + " " + StringUtilsLabKey.pluralize(r.getCount(), "document"), r)).append("</td></tr>");
+            // If more than one hour, accumulate all history into a single counter
+            if (hourCount > 1)
+                r.getCounter().forEach(dayAccumulator::accumulate);
         }
 
-        sb.append("</table>");
-        map.put("Indexing history added/updated", sb.toString());
+        hourly.append("</table>");
+
+        long totalDocCount = dayAccumulator.getCount();
+
+        // If we've accumulated multiple hours (usually 24) of history, display it as a single roll-up
+        if (totalDocCount > 0)
+        {
+            String fCount = StringUtilsLabKey.pluralize(totalDocCount, "document");
+            map.put("Indexing history added/updated (total for " + history.size() + " hours)", fCount + getPopup(fCount, dayAccumulator));
+        }
+        map.put("Indexing history added/updated (each hour)", hourly.toString());
         map.put("Maximum allowed document size", getFileSizeLimit());
 
         return map;
     }
-    
 
     private String getPopup(String title, IndexerRateAccumulator r)
     {
@@ -1378,7 +1399,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         return PageFlowUtil.helpPopup(title, html.toString(), true);
     }
-
 
     public abstract Map<String, Double> getSearchStats();
 

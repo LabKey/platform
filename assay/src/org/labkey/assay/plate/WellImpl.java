@@ -26,7 +26,7 @@ import org.labkey.api.assay.plate.Well;
 */
 public class WellImpl extends PositionImpl implements Well
 {
-    private double _value;
+    private Double _value;
     private Double _dilution;
     protected PlateImpl _plate;
     private boolean _excluded;
@@ -37,7 +37,7 @@ public class WellImpl extends PositionImpl implements Well
         super(null, -1, -1);
     }
 
-    public WellImpl(PlateImpl plate, int row, int col, double value, boolean excluded)
+    public WellImpl(PlateImpl plate, int row, int col, Double value, boolean excluded)
     {
         super(plate.getContainer(), row, col);
         _plate = plate;
@@ -52,7 +52,7 @@ public class WellImpl extends PositionImpl implements Well
         return _value;
     }
 
-    public void setValue(double value)
+    public void setValue(Double value)
     {
         _value = value;
     }
