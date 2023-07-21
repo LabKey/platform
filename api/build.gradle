@@ -581,19 +581,6 @@ dependencies {
     )
 
     BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "com.github.jtidy:jtidy:${jtidyVersion}",
-            "Java Tidy",
-            "JTidy team",
-            "https://github.com/jtidy/jtidy",
-            "Custom",
-            "https://github.com/jtidy/jtidy/blob/master/LICENSE.txt",
-            "Validating HTML content",
-        )
-    )
-
-    BuildUtils.addExternalDependency(
             project,
             new ExternalDependency(
                     "org.jsoup:jsoup:${jsoupVersion}",

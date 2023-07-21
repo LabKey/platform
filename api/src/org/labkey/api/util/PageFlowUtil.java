@@ -101,7 +101,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -2138,7 +2137,7 @@ public class PageFlowUtil
             return html;
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
-        String xml = StringUtils.trimToEmpty(TidyUtil.tidyHTML(trimmedHtml, true, errors));
+        String xml = StringUtils.trimToEmpty(JSoupUtil.tidyHTML(trimmedHtml, true, errors));
         if (!errors.isEmpty())
         {
             if (scriptWarnings != null)
@@ -2165,7 +2164,8 @@ public class PageFlowUtil
                 parserSetFeature(parser, "http://apache.org/xml/features/continue-after-fatal-error", false);
 
                 parser.setContentHandler(new ValidateHandler(scriptWarnings));
-                parser.parse(new InputSource(new StringReader(xml)));
+                // Wrap the whole value in a parent tag so that we know there's a single root element
+                parser.parse(new InputSource(new StringReader("<p>" + xml + "</p>")));
             }
             catch (IOException | SAXException e)
             {
@@ -2179,7 +2179,7 @@ public class PageFlowUtil
             return null;
 
         // let's return html not xhtml
-        String tidy = StringUtils.trimToEmpty(TidyUtil.tidyHTML(html, false, errors));
+        String tidy = StringUtils.trimToEmpty(JSoupUtil.tidyHTML(html, false, errors));
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
         //and Word includes some when saving as HTML (even Filtered HTML).
         int beginOpenBodyIndex = tidy.indexOf("<body");
@@ -2196,12 +2196,13 @@ public class PageFlowUtil
     {
         if (html == null)
             return null;
-        if (!html.toLowerCase().contains("target=\"_blank\""))
+        // Issue 33356 - don't let users include an <a target="_blank"> without ensuring it has a rel="noopener noreferrer"
+        if (!html.toLowerCase().contains("_blank"))
             return html;
         boolean modified = false;
         try
         {
-            Document document = TidyUtil.convertHtmlToDocument(html, false, errors);
+            Document document = JSoupUtil.convertHtmlToDocument(html, false, errors);
             NodeList hrefs = document.getElementsByTagName("a");
             for(int hrefIndex = 0; hrefIndex < hrefs.getLength(); hrefIndex++)
             {

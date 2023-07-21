@@ -19,23 +19,25 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
+import org.jsoup.parser.ParseError;
+import org.jsoup.parser.ParseErrorList;
 import org.jsoup.parser.Parser;
 import org.jsoup.parser.XmlTreeBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
-import java.util.regex.Pattern;
+import java.util.List;
 
 /**
  * Helpers for using jSoup to validate and tidy up user-supplied HTML.
  * User: kevink
  * Date: 6/21/12
  */
-public class TidyUtil
+public class JSoupUtil
 {
     @Nullable
     public static Document convertHtmlToDocument(final String html, final boolean asXML, final Collection<String> errors)
@@ -61,59 +63,6 @@ public class TidyUtil
         return tidyHTML(xml, true, errors);
     }
 
-//
-//    private static Tidy configureHtmlTidy(final boolean asXML)
-//    {
-//
-//        Tidy tidy = new Tidy();
-//        if (asXML)
-//            tidy.setXHTML(true);
-//        tidy.setShowWarnings(false);
-//        tidy.setIndentContent(false);
-//        tidy.setSmartIndent(false);
-//        tidy.setInputEncoding("UTF-8");
-//        tidy.setOutputEncoding("UTF-8");
-//        tidy.setDropEmptyParas(false); // radeox wikis use <p/> -- don't remove them
-//        tidy.setTrimEmptyElements(false); // keeps tidy from converting <p/> to <br><br>
-//        tidy.setWraplen(0);
-//        tidy.setWrapAttVals(false);
-//
-//        return tidy;
-//    }
-//
-//    private static XmlTreeBuilder configureXmlTidy()
-//    {
-//        Tidy tidy = new Tidy();
-//        tidy.setXmlOut(true);
-//        tidy.setXmlTags(true);
-//        tidy.setShowWarnings(false);
-//        tidy.setIndentContent(false);
-//        tidy.setSmartIndent(false);
-//        tidy.setInputEncoding("UTF-8"); // utf8
-//        tidy.setOutputEncoding("UTF-8"); // utf8
-//
-//        return tidy;
-//    }
-
-//    private static String tidyParse(final Tidy tidy, final String content, final Collection<String> errors)
-//    {
-//        StringWriter err = new StringWriter();
-//        tidy.setErrout(new PrintWriter(err));
-//        StringWriter out = new StringWriter();
-//        try
-//        {
-//            tidy.parse(new StringReader(content), out);
-//        }
-//        catch (NullPointerException e)
-//        {
-//            errors.add("Tidy failed to parse html. Check that all html tags are valid and not malformed.");
-//        }
-//        tidy.getErrout().close();
-//
-//        collectErrors(err, errors);
-//
-//        return out.getBuffer().toString();
-//    }
 
     private static org.jsoup.nodes.Document parseXmlDOM(String content, final Collection<String> errors)
     {
@@ -121,12 +70,25 @@ public class TidyUtil
             return null;
 
         Parser parser = new Parser(new XmlTreeBuilder());
-        return parser.parseInput(content, "");
+        org.jsoup.nodes.Document result = parser.parseInput(content, "");
+        translateErrors(parser.getErrors(), errors);
+        return result;
     }
 
     private static org.jsoup.nodes.Document parseHtmlDOM(String content, final Collection<String> errors)
     {
-        return Jsoup.parse(content);
+        Parser parser = Parser.htmlParser();
+        org.jsoup.nodes.Document result = Jsoup.parse(content, parser);
+        translateErrors(parser.getErrors(), errors);
+        return result;
+    }
+
+    private static void translateErrors(ParseErrorList in, Collection<String> out)
+    {
+        for (ParseError parseError : in)
+        {
+            out.add(parseError.toString());
+        }
     }
 
     public static class TestCase extends Assert
@@ -147,6 +109,37 @@ public class TidyUtil
 
             tidyHTML("<!-- -->", true, errors);
             tidyHTML("<!-- -->", false, errors);
+        }
+
+        @Test
+        public void testSanitize()
+        {
+            List<String> errors = new ArrayList<>();
+
+            // Basic injection for "rel"
+            assertEquals("<a href=\"http://labkey.com\" rel=\"noopener noreferrer\" target=\"_blank\">Huh</a>", PageFlowUtil.sanitizeHtml("<a href=\"http://labkey.com\" target= \"_blank\">Huh</a>", errors));
+            assertEquals(0, errors.size());
+
+            // Send in some mangled HTML
+            assertEquals("<a rel=\"noopener noreferrer\" target=\"_blank\">Huh</a>", PageFlowUtil.sanitizeHtml("<a target=\"_blank\">Huh</b><p class=\"", errors));
+            assertEquals(0, errors.size());
+
+            String okShort = "<p><a href=\"http://google.com\" rel=\"noopener noreferrer\" target=\"_blank\">Test</a>";
+            assertEquals(okShort, PageFlowUtil.sanitizeHtml(okShort, errors));
+            assertEquals(0, errors.size());
+
+
+            // Try something that's OK
+            String okLong = """
+                <p>test</p>\s
+                <p><a href="http://google.com" rel="noopener noreferrer" target="_blank">Test</a>\s
+                <a href="http://google.com" rel="noopener noreferrer" target="_blank">Test2</a>\s
+                <a href="http://google.com" rel="noopener noreferrer" target="_blank">Test 3</a>\s
+                <a href="http://google.com" rel="noopener noreferrer" target="_blank">Test 66</a>\s
+                </p>\s
+                """;
+            assertEquals(okLong, PageFlowUtil.sanitizeHtml(okLong, errors));
+            assertEquals(0, errors.size());
         }
     }
 }

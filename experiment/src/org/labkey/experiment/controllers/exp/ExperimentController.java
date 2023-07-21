@@ -187,7 +187,7 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.TidyUtil;
+import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
@@ -2690,7 +2690,7 @@ public class ExperimentController extends SpringActionController
 
             // UNDONE: strip script
             List<String> tidyErrors = new ArrayList<>();
-            String tidy = TidyUtil.tidyHTML(html, false, tidyErrors);
+            String tidy = JSoupUtil.tidyHTML(html, false, tidyErrors);
 
             if (!tidyErrors.isEmpty())
             {

@@ -66,7 +66,7 @@ public class JunitUtil
     public static Document tidyAsDocument(String html) throws Exception
     {
         ArrayList<String> errors = new ArrayList<>();
-        String tidy = TidyUtil.convertHtmlToXml(html, errors);
+        String tidy = JSoupUtil.convertHtmlToXml(html, errors);
 
         DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
         fact.setValidating(false);

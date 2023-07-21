@@ -183,7 +183,7 @@ public class ImageUtil
     public static Thumbnail webThumbnail(ViewContext context, String html, URI baseURI) throws IOException
     {
         List<String> errors = new ArrayList<>();
-        Document document = TidyUtil.convertHtmlToDocument(html, true, errors);
+        Document document = JSoupUtil.convertHtmlToDocument(html, true, errors);
         if (!errors.isEmpty())
             throw new RuntimeException(errors.get(0));
         return renderThumbnail(webImage(context, document, baseURI, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT));
