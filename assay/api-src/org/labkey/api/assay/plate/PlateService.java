@@ -91,7 +91,7 @@ public interface PlateService
      * @return A newly created plate instance
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
-    Plate createPlate(Container container, String templateType, int rowCount, int columnCount);
+    @NotNull Plate createPlate(Container container, String templateType, int rowCount, int columnCount);
 
     /**
      * Creates a new plate template.
@@ -102,7 +102,7 @@ public interface PlateService
      * @return A newly created plate template instance.
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
-    Plate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount);
+    @NotNull Plate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount);
 
     /**
      * Adds a new well group to the plate

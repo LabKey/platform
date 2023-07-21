@@ -389,6 +389,16 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
     }
 
+    @Override
+    public void clearLastIndexed(List<String> parentIds)
+    {
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("Parent"), parentIds))
+            .addClause(new SimpleFilter.SQLClause("LastIndexed IS NOT NULL", null));
+        SQLFragment sql = new SQLFragment("UPDATE core.Documents SET LastIndexed = NULL ")
+            .append(filter.getSQLFragment(CoreSchema.getInstance().getSqlDialect()));
+        new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(sql);
+    }
+
     private void deleteIndexedAttachment(AttachmentParent parent, String name)
     {
         deleteIndexedAttachment(parent.getEntityId(), name);
@@ -400,7 +410,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         if (ss != null)
             ss.deleteResource(makeDocId(parent, name));
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment(
-            "UPDATE core.Documents SET LastIndexed = NULL WHERE Parent = ? and DocumentName = ?", parent, name)
+            "UPDATE core.Documents SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL AND Parent = ? AND DocumentName = ?", parent, name)
         );
     }
 

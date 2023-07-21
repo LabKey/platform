@@ -131,6 +131,8 @@ public interface AttachmentService
 
     void deleteIndexedAttachments(AttachmentParent parent);
 
+    void clearLastIndexed(List<String> parentIds);
+
     void registerAttachmentType(AttachmentType type);
 
     HttpView getAdminView(ActionURL currentUrl);

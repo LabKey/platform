@@ -38,8 +38,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 /**
  * Manages registration for links to be shown in the Admin Console, as well as experimental features that can
  * be enabled/disabled.
- * User: adam
- * Date: Jul 23, 2008
  */
 public class AdminConsole
 {
