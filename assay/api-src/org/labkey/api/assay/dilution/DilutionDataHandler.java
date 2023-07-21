@@ -339,7 +339,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         Container container = run.getContainer();
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
-        Plate nabTemplate = provider.getPlateTemplate(container, protocol);
+        Plate nabTemplate = provider.getPlate(container, protocol);
 
         Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
 
@@ -794,7 +794,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 if (value != null)
                     fit = StatsService.CurveFitType.fromLabel((String) value);
             }
-            Plate nabTemplate = provider.getPlateTemplate(run.getContainer(), protocol);
+            Plate nabTemplate = provider.getPlate(run.getContainer(), protocol);
             List<Plate> plates;
 
             if (populatePlatesFromFile)

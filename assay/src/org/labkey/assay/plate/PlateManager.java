@@ -290,12 +290,14 @@ public class PlateManager implements PlateService
     }
 
     @Override
+    @NotNull
     public Plate createPlate(Container container, String templateType, int rowCount, int colCount)
     {
         return new PlateImpl(container, null, templateType, rowCount, colCount);
     }
 
     @Override
+    @NotNull
     public Plate createPlateTemplate(Container container, String templateType, int rowCount, int colCount)
     {
         Plate plate = createPlate(container, templateType, rowCount, colCount);
@@ -317,12 +319,15 @@ public class PlateManager implements PlateService
     }
 
     /**
-     * Note that this does not use the cache nor does it return a fully materialized plate.
+     * Note that this does not use the cache.
      */
     public @Nullable Plate getPlate(String lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
+        PlateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
+        populatePlate(plate);
+
+        return plate;
     }
 
     @Override

@@ -42,11 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 4:32:11 PM
- */
 public class WellGroupImpl extends PropertySetImpl implements WellGroup
 {
     private PlateImpl _plate;

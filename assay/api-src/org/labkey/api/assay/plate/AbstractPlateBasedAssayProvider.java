@@ -17,6 +17,7 @@
 package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDataType;
@@ -77,7 +78,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public void setPlateTemplate(Container container, ExpProtocol protocol, Plate template)
+    public void setPlate(Container container, ExpProtocol protocol, Plate template)
     {
         if (!isPlateBased())
             throw new IllegalStateException("Only plate-based assays may store a plate template.");
@@ -89,7 +90,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public Plate getPlateTemplate(Container container, ExpProtocol protocol)
+    @Nullable
+    public Plate getPlate(Container container, ExpProtocol protocol)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
         return prop != null ? PlateService.get().getPlate(protocol.getContainer(), prop.getStringValue()) : null;
@@ -207,7 +209,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     {
         // Re-use the same PlateSamplePropertyHelper so it's able to utilize member variables across calls.
         PlateSamplePropertyHelper helper = context.getSamplePropertyHelper();
-        Plate template = getPlateTemplate(context.getContainer(), context.getProtocol());
+        Plate template = getPlate(context.getContainer(), context.getProtocol());
         Domain sampleDomain = getSampleWellGroupDomain(context.getProtocol());
         List<? extends DomainProperty> allSampleProperties = sampleDomain.getProperties();
         List<? extends DomainProperty> selectedSampleProperties = allSampleProperties;

@@ -50,7 +50,7 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
         Map<String, Map<DomainProperty, String>>props = form.getSampleProperties();
 
         DilutionAssayProvider provider = form.getProvider();
-        Plate template = provider.getPlateTemplate(form.getContainer(), form.getProtocol());
+        Plate template = provider.getPlate(form.getContainer(), form.getProtocol());
 
         // add in the specimen information, the data will be serialized to a tsv and the file
         // location will be added to the run properties file.
@@ -67,7 +67,7 @@ public class DilutionDataExchangeHandler extends PlateBasedDataExchangeHandler
         if (provider instanceof AbstractPlateBasedAssayProvider)
         {
             AbstractPlateBasedAssayProvider plateProvider = (AbstractPlateBasedAssayProvider)provider;
-            Plate template = plateProvider.getPlateTemplate(viewContext.getContainer(), protocol);
+            Plate template = plateProvider.getPlate(viewContext.getContainer(), protocol);
             List<? extends DomainProperty> props = plateProvider.getSampleWellGroupDomain(protocol).getProperties();
 
             Map<String, Map<DomainProperty, String>>specimens = createTestSampleProperties(props, template, WellGroup.Type.SPECIMEN);

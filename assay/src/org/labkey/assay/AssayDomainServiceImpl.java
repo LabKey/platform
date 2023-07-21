@@ -216,7 +216,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         result.setProtocolParameters(gwtProtocolParams);
         if (provider instanceof PlateBasedAssayProvider)
         {
-            Plate plateTemplate = ((PlateBasedAssayProvider)provider).getPlateTemplate(getContainer(), protocol);
+            Plate plateTemplate = ((PlateBasedAssayProvider)provider).getPlate(getContainer(), protocol);
             if (plateTemplate != null)
                 result.setSelectedPlateTemplate(plateTemplate.getName());
             setPlateTemplateList(provider, result);
@@ -462,7 +462,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
                         Plate template = PlateService.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
                         if (template != null)
-                            plateProvider.setPlateTemplate(getContainer(), protocol, template);
+                            plateProvider.setPlate(getContainer(), protocol, template);
                         else
                             throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
 
