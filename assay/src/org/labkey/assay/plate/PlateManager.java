@@ -1212,6 +1212,7 @@ public class PlateManager implements PlateService
 
             // Verify plate service assumptions about plate templates
             Plate plate = PlateService.get().createPlateTemplate(c, TsvPlateTypeHandler.TYPE, 16, 24);
+            plate.setName("my plate template");
             int plateId = PlateService.get().save(c, user, plate);
 
             // Assert
@@ -1220,6 +1221,7 @@ public class PlateManager implements PlateService
 
             // Verify only plate templates are returned
             plate = PlateService.get().createPlate(c, TsvPlateTypeHandler.TYPE, 8, 12);
+            plate.setName("non plate template");
             PlateService.get().save(c, user, plate);
 
             List<Plate> plates = PlateService.get().getPlateTemplates(c);

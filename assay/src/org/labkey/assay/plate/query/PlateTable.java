@@ -239,9 +239,14 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
-            String plateName = (String) oldRow.get("Name");
-            if (PlateManager.get().plateExists(container, String.valueOf(plateName)))
-                throw new QueryUpdateServiceException("Plate with name : " + plateName + " already exists in the folder.");
+            // if the name is changing, check for duplicates
+            String oldName = (String) oldRow.get("Name");
+            String newName = (String) row.get("Name");
+            if (!newName.equals(oldName))
+            {
+                if (PlateManager.get().plateExists(container, newName))
+                    throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists in the folder.");
+            }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
             PlateManager.get().clearCache(container);
