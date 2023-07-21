@@ -1793,6 +1793,36 @@ public class AdminController extends SpringActionController
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
+
+        public JSONObject toJSON()
+        {
+            Map<String, Object> json = new HashMap<>();
+            json.put("applicationMenuDisplayMode", getApplicationMenuDisplayMode());
+            json.put("companyName", getCompanyName());
+            json.put("customLogin", getCustomLogin());
+            json.put("customWelcome", getCustomWelcome());
+            json.put("dateParsingMode", getDateParsingMode());
+            json.put("defaultDateFormat", getDefaultDateFormat());
+            json.put("defaultDateTimeFormat", getDefaultDateTimeFormat());
+            json.put("defaultNumberFormat", getDefaultNumberFormat());
+            json.put("discussionEnabled", isDiscussionEnabled());
+            json.put("extraDateParsingPattern", getExtraDateParsingPattern());
+            json.put("extraDateTimeParsingPattern", getExtraDateTimeParsingPattern());
+            json.put("folderDisplayMode", getFolderDisplayMode());
+            json.put("helpMenuEnabled", isHelpMenuEnabled());
+            json.put("logoHref", getLogoHref());
+            json.put("reportAProblemPath", getReportAProblemPath());
+            json.put("restrictedColumnsEnabled", areRestrictedColumnsEnabled());
+            json.put("shouldInherit" ,getShouldInherit());
+            json.put("supportEmail" ,getSupportEmail());
+            json.put("systemDescription", getSystemDescription());
+            json.put("systemEmailAddress", getSystemEmailAddress());
+            json.put("systemShortName", getSystemShortName());
+            json.put("themeFont", getThemeFont());
+            json.put("themeName", getThemeName());
+
+            return JsonUtil.toJsonPreserveNulls(json);
+        }
     }
 
     public enum FileRootProp implements SafeToRenderEnum
@@ -10270,103 +10300,9 @@ public class AdminController extends SpringActionController
         public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-            boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
-
-            try
-            {
-                if (form.getThemeName() == null)
-                {
-                    if (!c.isRoot())
-                        props.clearThemeName();
-                }
-                else
-                {
-                    props.setThemeName(form.getThemeName());
-                }
-            }
-            catch (IllegalArgumentException ignored)
-            {
-            }
-
-            if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
-            {
-                SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
-            }
-
-            // a few properties on this page should be restricted to operational permissions (i.e. site admin)
-            if (hasAdminOpsPerm)
-            {
-                try
-                {
-                    // this will throw an InvalidEmailException for invalid email addresses
-                    ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
-                    props.setSystemEmailAddress(email);
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
-                            + e.getBadEmail() + "]. Please enter a valid email address.");
-                    return false;
-                }
-
-                if (!props.isValidUrl(form.getCustomLogin()))
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
-                    return false;
-                }
-                props.setCustomLogin(form.getCustomLogin());
-
-                String welcomeUrl = StringUtils.trimToNull(form.getCustomWelcome());
-                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
-                    return false;
-                }
-                props.setCustomWelcome(welcomeUrl);
-            }
-
-            props.setCompanyName(form.getCompanyName());
-            props.setSystemDescription(form.getSystemDescription());
-            props.setLogoHref(form.getLogoHref());
-            props.setSystemShortName(form.getSystemShortName());
-            props.setReportAProblemPath(form.getReportAProblemPath());
-
-            if (!isBlank(form.getSupportEmail()))
-            {
-                try
-                {
-                    // this will throw an InvalidEmailException for invalid email addresses
-                    ValidEmail email = new ValidEmail(form.getSupportEmail());
-                    props.setSupportEmail(email.toString());
-                }
-                catch (ValidEmail.InvalidEmailException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
-                            + e.getBadEmail() + "]. Please enter a valid email address.");
-                    return false;
-                }
-            }
-            else
-            {
-                props.setSupportEmail(null);
-            }
-
-            props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
-            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
-            props.setHelpMenuEnabled(form.isHelpMenuEnabled());
-            props.setDiscussionEnabled(form.isDiscussionEnabled());
-
-            DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
-            props.setDateParsingMode(dateParsingMode);
-
-            if (!saveFolderSettings(c, form, props, getUser(), errors))
-                return false;
-
-            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return true;
+            User user = getUser();
+            JSONObject json = form.toJSON();
+            return saveProjectSettings(json, user, c, errors);
         }
     }
 
@@ -10385,178 +10321,194 @@ public class AdminController extends SpringActionController
     public static class UpdateProjectSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        {
+            JSONObject json = form.getJsonObject();
+            if (json == null)
+                errors.reject(ERROR_MSG, "Empty request ");
+        }
+
+        @Override
         public Object execute(SimpleApiJsonForm form, BindException errors)
         {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("success", false);
             JSONObject json = form.getJsonObject();
             Container c = getContainer();
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-            boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
 
-            if (json.has("themeName"))
-            {
-                String themName = json.optString("themeName");
-                try
-                {
-                    if (themName == null)
-                    {
-                        if (!c.isRoot())
-                            props.clearThemeName();
-                    }
-                    else
-                    {
-                        props.setThemeName(themName);
-                    }
-                }
-                catch (IllegalArgumentException ignored)
-                {
-                }
-            }
+            boolean saved = saveProjectSettings(json, getUser(), getContainer(), errors);
 
-            if (json.has("shouldInherit"))
-            {
-                boolean shouldInherit = json.optBoolean("shouldInherit");
-                if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
-                {
-                    SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), shouldInherit);
-                }
-            }
-
-
-            // a few properties on this page should be restricted to operational permissions (i.e. site admin)
-            if (hasAdminOpsPerm)
-            {
-                if (json.has("systemEmailAddress"))
-                {
-                    String systemEmailAddress = json.optString("systemEmailAddress");
-                    try
-                    {
-                        // this will throw an InvalidEmailException for invalid email addresses
-                        ValidEmail email = new ValidEmail(systemEmailAddress);
-                        props.setSystemEmailAddress(email);
-                    }
-                    catch (ValidEmail.InvalidEmailException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
-                                + e.getBadEmail() + "]. Please enter a valid email address.");
-                        return response;
-                    }
-                }
-
-                if (json.has("customLogin"))
-                {
-                    String customLogin = json.optString("customLogin");
-                    if (!props.isValidUrl(customLogin))
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
-                        return response;
-                    }
-                    props.setCustomLogin(customLogin);
-                }
-
-                if (json.has("customWelcome"))
-                {
-                    String customWelcome = json.optString("customWelcome");
-                    String welcomeUrl = StringUtils.trimToNull(customWelcome);
-                    if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
-                        return response;
-                    }
-                    props.setCustomWelcome(welcomeUrl);
-                }
-
-            }
-
-            if (json.has("companyName"))
-                props.setCompanyName(json.optString("companyName"));
-            if (json.has("systemDescription"))
-                props.setSystemDescription(json.optString("systemDescription"));
-            if (json.has("logoHref"))
-                props.setLogoHref(json.optString("logoHref"));
-            if (json.has("systemShortName"))
-                props.setSystemShortName(json.optString("systemShortName"));
-            if (json.has("reportAProblemPath"))
-                props.setReportAProblemPath(json.optString("reportAProblemPath"));
-
-            if (json.has("supportEmail"))
-            {
-                String supportEmail = json.optString("supportEmail");
-                if (!isBlank(supportEmail))
-                {
-                    try
-                    {
-                        // this will throw an InvalidEmailException for invalid email addresses
-                        ValidEmail email = new ValidEmail(supportEmail);
-                        props.setSupportEmail(email.toString());
-                    }
-                    catch (ValidEmail.InvalidEmailException e)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
-                                + e.getBadEmail() + "]. Please enter a valid email address.");
-                        return response;
-                    }
-                }
-                else
-                {
-                    props.setSupportEmail(null);
-                }
-            }
-
-            if (json.has("folderDisplayMode"))
-                props.setFolderDisplayMode(FolderDisplayMode.fromString(json.optString("folderDisplayMode")));
-            if (json.has("applicationMenuDisplayMode"))
-                props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(json.optString("applicationMenuDisplayMode")));
-            if (json.has("helpMenuEnabled"))
-                props.setHelpMenuEnabled(json.optBoolean("helpMenuEnabled"));
-            if (json.has("discussionEnabled"))
-                props.setDiscussionEnabled(json.optBoolean("discussionEnabled"));
-
-            if (json.has("dateParsingMode"))
-            {
-                DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
-                props.setDateParsingMode(dateParsingMode);
-
-            }
-
-            if (json.has("defaultDateFormat") && !validateAndSaveFormat(json.optString("defaultDateFormat"), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
-                return response;
-            if (json.has("defaultDateTimeFormat") && !validateAndSaveFormat(json.optString("defaultDateTimeFormat"), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
-                return response;
-            if (json.has("defaultNumberFormat") && !validateAndSaveFormat(json.optString("defaultNumberFormat"), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
-                return response;
-            if (json.has("extraDateParsingPattern") && !validateAndSaveFormat(json.optString("extraDateParsingPattern"), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
-                return response;
-            if (json.has("extraDateTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraDateTimeParsingPattern"), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
-                return response;
-
-            if (json.has("restrictedColumnsEnabled"))
-            {
-                try
-                {
-                    props.setRestrictedColumnsEnabled(json.optBoolean("restrictedColumnsEnabled"));
-                }
-                catch (IllegalArgumentException e)
-                {
-                    errors.reject(ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
-                    return response;
-                }
-            }
-
-            props.save();
-            response.put("success", !errors.hasErrors());
-
-            //write an audit log event
-            props.writeAuditLogEvent(c, getUser());
-
-            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", saved && !errors.hasErrors());
             return response;
         }
     }
 
+    private static boolean saveProjectSettings(JSONObject json, User user, Container c, BindException errors)
+    {
+        WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+        boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
+
+        if (json.has("themeName"))
+        {
+            String themName = json.optString("themeName");
+            try
+            {
+                if (themName == null)
+                {
+                    if (!c.isRoot())
+                        props.clearThemeName();
+                }
+                else
+                {
+                    props.setThemeName(themName);
+                }
+            }
+            catch (IllegalArgumentException ignored)
+            {
+            }
+        }
+
+        if (json.has("shouldInherit"))
+        {
+            boolean shouldInherit = json.optBoolean("shouldInherit");
+            if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+            {
+                SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
+            }
+        }
+
+
+        // a few properties on this page should be restricted to operational permissions (i.e. site admin)
+        if (hasAdminOpsPerm)
+        {
+            if (json.has("systemEmailAddress"))
+            {
+                String systemEmailAddress = json.optString("systemEmailAddress");
+                try
+                {
+                    // this will throw an InvalidEmailException for invalid email addresses
+                    ValidEmail email = new ValidEmail(systemEmailAddress);
+                    props.setSystemEmailAddress(email);
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid System Email Address: ["
+                            + e.getBadEmail() + "]. Please enter a valid email address.");
+                    return false;
+                }
+            }
+
+            if (json.has("customLogin"))
+            {
+                String customLogin = json.optString("customLogin");
+                if (!props.isValidUrl(customLogin))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
+                    return false;
+                }
+                props.setCustomLogin(customLogin);
+            }
+
+            if (json.has("customWelcome"))
+            {
+                String customWelcome = json.optString("customWelcome");
+                String welcomeUrl = StringUtils.trimToNull(customWelcome);
+                if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
+                    return false;
+                }
+                props.setCustomWelcome(welcomeUrl);
+            }
+
+        }
+
+        if (json.has("companyName"))
+            props.setCompanyName(json.optString("companyName"));
+        if (json.has("systemDescription"))
+            props.setSystemDescription(json.optString("systemDescription"));
+        if (json.has("logoHref"))
+            props.setLogoHref(json.optString("logoHref"));
+        if (json.has("systemShortName"))
+            props.setSystemShortName(json.optString("systemShortName"));
+        if (json.has("reportAProblemPath"))
+            props.setReportAProblemPath(json.optString("reportAProblemPath"));
+
+        if (json.has("supportEmail"))
+        {
+            String supportEmail = json.optString("supportEmail");
+            if (!isBlank(supportEmail))
+            {
+                try
+                {
+                    // this will throw an InvalidEmailException for invalid email addresses
+                    ValidEmail email = new ValidEmail(supportEmail);
+                    props.setSupportEmail(email.toString());
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Invalid Support Email Address: ["
+                            + e.getBadEmail() + "]. Please enter a valid email address.");
+                    return false;
+                }
+            }
+            else
+            {
+                props.setSupportEmail(null);
+            }
+        }
+
+        if (json.has("folderDisplayMode"))
+            props.setFolderDisplayMode(FolderDisplayMode.fromString(json.optString("folderDisplayMode")));
+        if (json.has("applicationMenuDisplayMode"))
+            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(json.optString("applicationMenuDisplayMode")));
+        if (json.has("helpMenuEnabled"))
+            props.setHelpMenuEnabled(json.optBoolean("helpMenuEnabled"));
+        if (json.has("discussionEnabled"))
+            props.setDiscussionEnabled(json.optBoolean("discussionEnabled"));
+
+        if (json.has("dateParsingMode"))
+        {
+            DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
+            props.setDateParsingMode(dateParsingMode);
+
+        }
+
+        if (json.has("defaultDateFormat") && !validateAndSaveFormat(json.optString("defaultDateFormat"), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+            return false;
+        if (json.has("defaultDateTimeFormat") && !validateAndSaveFormat(json.optString("defaultDateTimeFormat"), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+            return false;
+        if (json.has("defaultNumberFormat") && !validateAndSaveFormat(json.optString("defaultNumberFormat"), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+            return false;
+        if (json.has("extraDateParsingPattern") && !validateAndSaveFormat(json.optString("extraDateParsingPattern"), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+            return false;
+        if (json.has("extraDateTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraDateTimeParsingPattern"), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+
+        if (json.has("restrictedColumnsEnabled"))
+        {
+            try
+            {
+                props.setRestrictedColumnsEnabled(json.optBoolean("restrictedColumnsEnabled"));
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
+            }
+        }
+
+        if (errors.hasErrors())
+            return false;
+
+        props.save();
+
+        //write an audit log event
+        props.writeAuditLogEvent(c, user);
+
+        // Bump the look & feel revision so browsers retrieve the new theme stylesheet
+        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+        return true;
+    }
 
     @RequiresPermission(AdminPermission.class)
     public static class ResourcesAction extends ProjectSettingsViewPostAction<Object>
