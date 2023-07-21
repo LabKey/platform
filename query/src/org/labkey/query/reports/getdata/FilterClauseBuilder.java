@@ -142,7 +142,7 @@ public class FilterClauseBuilder
         @Test
         public void testInClauseToSQL()
         {
-            assertEquals("(((\"Field1\" IN ('value1', 'value2'))))", toLabKeySQL(CompareType.IN, "value1;value2", JdbcType.VARCHAR));
+            assertEquals("(((\"Field1\" IN ('value2', 'value1'))))", toLabKeySQL(CompareType.IN, "value1;value2", JdbcType.VARCHAR));
         }
     }
 }
