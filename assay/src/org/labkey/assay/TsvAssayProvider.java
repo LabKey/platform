@@ -156,9 +156,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol)
     {
-        return new ActionURL(AssayPlateMetadataTemplateAction.class, container);
+        return new ActionURL(AssayPlateMetadataTemplateAction.class, container).addParameter("protocol", protocol.getRowId());
     }
 
     @Override
