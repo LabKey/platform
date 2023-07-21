@@ -41,14 +41,14 @@ import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 public class WarningServiceImpl implements WarningService
 {
-    private static final String EXPERIMENTAL_SHOW_ALL_WARNINGS = "experimentalShowAllWarnings";
-
     private static volatile Collection<HtmlString> STATIC_ADMIN_WARNINGS = null;
     private static volatile boolean SHOW_ALL_WARNINGS = false;
 
     // Because of dependencies between WarningService and ExperimentalService, we can't invoke these in a WarningServiceImpl static initializer
     private static class LazyInitializer
     {
+        private static final String EXPERIMENTAL_SHOW_ALL_WARNINGS = "experimentalShowAllWarnings";
+
         static
         {
             if (AppProps.getInstance().isDevMode())
@@ -58,7 +58,7 @@ public class WarningServiceImpl implements WarningService
                 SHOW_ALL_WARNINGS = ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_SHOW_ALL_WARNINGS);
                 ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_SHOW_ALL_WARNINGS, (feature, enabled) -> {
                     SHOW_ALL_WARNINGS = enabled;
-                    STATIC_ADMIN_WARNINGS = null; // Force static warnings to be recalculated since flag has changed
+                    STATIC_ADMIN_WARNINGS = null; // Force static warnings to be re-collected since flag has changed
                 });
             }
         }
