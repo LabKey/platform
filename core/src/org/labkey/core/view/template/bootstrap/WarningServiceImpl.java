@@ -105,7 +105,7 @@ public class WarningServiceImpl implements WarningService
 
         if (ModuleLoader.getInstance().isStartupComplete())
         {
-            // We should have our full list of warnings at this point, so safe to cache them
+            // We should have our full list of warnings at this point, so safe to stash them
             STATIC_ADMIN_WARNINGS = messages;
         }
 
