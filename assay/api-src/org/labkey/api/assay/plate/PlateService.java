@@ -61,7 +61,6 @@ public interface PlateService
     /**
      * Instantiates a new plate instance based on the specified plate and well data.
      * This plate is not persisted to the database.
-     * This plate is not persisted to the database.
      * @param plate The plate that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
      * @param excludedWells A two-dimensional array of wells that are excluded (can be null)
@@ -73,7 +72,6 @@ public interface PlateService
 
     /**
      * Instantiates a new plate instance based on the specified plate and well data.
-     * This plate is not persisted to the database.
      * This plate is not persisted to the database.
      * @param plate The plate that this instance is based upon.
      * @param wellValues A two-dimensional array of the machine data.
