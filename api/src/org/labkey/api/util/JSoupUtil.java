@@ -77,6 +77,10 @@ public class JSoupUtil
 
     private static org.jsoup.nodes.Document parseHtmlDOM(String content, final Collection<String> errors)
     {
+        if (StringUtils.trimToNull(content) == null)
+        {
+            return null;
+        }
         Parser parser = Parser.htmlParser();
         org.jsoup.nodes.Document result = Jsoup.parse(content, parser);
         translateErrors(parser.getErrors(), errors);
