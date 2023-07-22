@@ -596,7 +596,7 @@ function tinyMceHandleEvent(evt) {
     var setError = function(msg) {
         if (_finished)
             return;
-        $('#status').html(msg).attr('class', 'labkey-status-error').show();
+        $('#status').text(msg).attr('class', 'labkey-status-error').show();
     };
 
     var setStatus = function(msg, autoClear) {

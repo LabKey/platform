@@ -2530,7 +2530,7 @@ public class PageFlowUtil
                     if ((valueStrippedOfComments.contains("behavior") || valueStrippedOfComments.contains("url") || valueStrippedOfComments.contains("expression")) && !_reported.contains("style"))
                     {
                         _reported.add("style");
-                        _errors.add("Style attribute cannot contain behaviors, expresssions, or urls. Error on element <" + qName + ">.");
+                        _errors.add("Style attribute cannot contain behaviors, expressions, or urls. Error on element <" + qName + ">.");
                     }
                 }
             }
