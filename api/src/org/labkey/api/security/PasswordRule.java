@@ -21,54 +21,73 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * User: adam
- * Date: Jan 13, 2010
- * Time: 12:39:21 PM
- */
 public enum PasswordRule
 {
     Weak
     {
-        private final Pattern passwordPattern = Pattern.compile("^\\S{6,}$");  // At least six, non-whitespace characters
-
-        @NotNull
         @Override
-        public HtmlString getFullRuleHTML()
+        protected int getMinimumLength()
         {
-            return HtmlString.of("Passwords must be six non-whitespace characters or more and must not match your email address.");
+            return 6;
+        }
+
+        @Override
+        protected boolean isLowerCaseEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected boolean isUpperCaseEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected boolean isDigitEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected boolean isSymbolEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected int getRequiredCharacterTypeCount()
+        {
+            return 0;
+        }
+
+        @Override
+        protected boolean isPreviousPasswordForbidden()
+        {
+            return false;
         }
 
         @NotNull
         @Override
-        public HtmlString getSummaryRuleHTML()
+        public HtmlString getSummaryRuleHtml()
         {
-            return HtmlString.of("Your password must be at least six characters and cannot contain spaces or match your email address.");
-        }
-        
-        @Override
-        public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
-        {
-            return isValidToStore(password, user, messages);
+            return HtmlString.of("Your password must be at least " + getMinimumLengthText() + " characters and cannot contain spaces or match your email address.");
         }
 
         @Override
-        boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
+        protected boolean containsPersonalInfo(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
         {
-            if (!passwordPattern.matcher(password).matches())
-            {
-                if (null != messages)
-                    messages.add("Your password must be at least six characters and cannot contain spaces.");
-
-                return false;
-            }
-
             String email = user.getEmail();
 
             if (email.equalsIgnoreCase(password))
@@ -76,127 +95,188 @@ public enum PasswordRule
                 if (null != messages)
                     messages.add("Your password must not match your email address.");
 
-                return false;
-            }
-
-            return true;
-        }
-    },
-
-    Strong
-    {
-        private final Pattern passwordPattern = Pattern.compile("^\\S{8,}$");  // At least eight, non-whitespace characters
-        private final Pattern lowerCase = Pattern.compile("[A-Z]");
-        private final Pattern upperCase = Pattern.compile("[a-z]");
-        private final Pattern digit = Pattern.compile("\\d");
-        private final Pattern nonWord = Pattern.compile("[^A-Za-z\\d]");
-
-        @NotNull
-        @Override
-        public HtmlString getFullRuleHTML()
-        {
-            return DOM.createHtml(DOM.createHtmlFragment(
-                    "Passwords follow these rules:",
-                    DOM.UL(
-                            DOM.LI("Must be eight characters or more."),
-                            DOM.LI("Must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @)."),
-                            DOM.LI("Must not contain a sequence of three or more characters from your email address, display name, first name, or last name."),
-                            DOM.LI("Must not match any of your 10 previously used passwords.")
-                    )));
-        }
-
-        @NotNull
-        @Override
-        public HtmlString getSummaryRuleHTML()
-        {
-            return HtmlString.of("Your password must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address.");
-        }
-
-        @Override
-        public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
-        {
-            if (!passwordPattern.matcher(password).matches())
-            {
-                if (null != messages)
-                    messages.add("Your password must be eight characters or more.");
-
-                return false;
-            }
-
-            if (containsPersonalInfo(password, user.getEmail(), "email address", messages) ||
-                containsPersonalInfo(password, user.getFriendlyName(), "display name", messages) ||
-                containsPersonalInfo(password, StringUtils.trimToEmpty(user.getFirstName()) + StringUtils.trimToEmpty(user.getLastName()), "name", messages))
-            {
-                return false;
-            }
-
-            if (countMatches(password, lowerCase, upperCase, digit, nonWord) < 3)
-            {
-                if (null != messages)
-                    messages.add("Your password must contain three of the following: lowercase letter (a-z), uppercase letter (A-Z), digit (0-9), or symbol (e.g., ! # $ % & / < = > ? @).");
-
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
-        {
-            if (!isValidForLogin(password, user, messages))
-                return false;
-
-            if (SecurityManager.matchesPreviousPassword(password, user))
-            {
-                if (null != messages)
-                    messages.add("Your password must not match a recently used password.");
-
-                return false;
-            }
-
-            return true;
-        }
-
-        private boolean containsPersonalInfo(String password, String personalInfo, String infoType, @Nullable Collection<String> messages)
-        {
-            if (StringUtils.isBlank(personalInfo) || personalInfo.length() < 3)
-                return false;
-
-            String lcPassword = password.toLowerCase();
-            String lcInfo = personalInfo.toLowerCase();
-
-            for (int i = 0; i < lcInfo.length() - 3; i++)
-            {
-                if (lcPassword.contains(lcInfo.substring(i, i + 3)))
-                {
-                    if (null != messages)
-                        messages.add("Your password must not contain a sequence of three or more characters from your " + infoType + ".");
-
-                    return true;
-                }
+                return true;
             }
 
             return false;
         }
 
-        private int countMatches(String password, Pattern... patterns)
+        @Override
+        protected String getPersonalInfoRule()
         {
-            int count = 0;
+            return "Must not match the user's email address.";
+        }
+    },
 
-            for (Pattern pattern : patterns)
-            {
-                Matcher m = pattern.matcher(password);
+    Strong
+    {
+        @Override
+        protected int getMinimumLength()
+        {
+            return 8;
+        }
 
-                if (m.find())
-                    count++;
-            }
+        @Override
+        protected boolean isLowerCaseEnabled()
+        {
+            return true;
+        }
 
-            return count;
+        @Override
+        protected boolean isUpperCaseEnabled()
+        {
+            return true;
+        }
+
+        @Override
+        protected boolean isDigitEnabled()
+        {
+            return true;
+        }
+
+        @Override
+        protected boolean isSymbolEnabled()
+        {
+            return true;
+        }
+
+        @Override
+        protected int getRequiredCharacterTypeCount()
+        {
+            return 3;
         }
     };
 
-    public boolean isValidToStore(String password1, String password2, User user, Collection<String> messages)
+    private static final Pattern LOWER_CASE = Pattern.compile("[A-Z]");
+    private static final Pattern UPPER_CASE = Pattern.compile("[a-z]");
+    private static final Pattern DIGIT = Pattern.compile("\\d");
+    private static final Pattern NON_WORD = Pattern.compile("[^A-Za-z\\d]");
+
+    static
+    {
+        // It would be natural to init() each constant when constructed, but the statics above aren't initialized by then
+        Arrays.stream(values()).forEach(PasswordRule::init);
+    }
+
+    private Pattern _lengthPattern;
+    private Pattern[] _patternsToCheck;
+    private @Nullable String _patternRequirement = null;
+    private HtmlString _fullRuleHtml;
+    private HtmlString _summaryRuleHtml;
+
+    public void init()
+    {
+        // Build and stash the length regex & validation pattern
+        String lengthRegex = "^\\S{" + getMinimumLength() + ",}$";
+        _lengthPattern = Pattern.compile(lengthRegex);
+
+        // Collect and stash the character type validation patterns and instructions based on enabled character types
+        ArrayList<Pattern> patterns = new ArrayList<>();
+        List<String> descriptions = new LinkedList<>();
+        if (isLowerCaseEnabled())
+            addPattern(patterns, LOWER_CASE, descriptions, "lowercase letter (a-z)");
+        if (isUpperCaseEnabled())
+            addPattern(patterns, UPPER_CASE, descriptions, "uppercase letter (A-Z)");
+        if (isDigitEnabled())
+            addPattern(patterns, DIGIT, descriptions, "digit (0-9)");
+        if (isSymbolEnabled())
+            addPattern(patterns, NON_WORD, descriptions, "symbol (e.g., ! # $ % & / < = > ? @)");
+        _patternsToCheck = patterns.toArray(new Pattern[]{});
+        String shortPatternRequirement = null;
+        if (getRequiredCharacterTypeCount() > 0 && !patterns.isEmpty())
+        {
+            _patternRequirement = "contain " + StringUtilsLabKey.spellOut(getRequiredCharacterTypeCount()) + " of the following: " + StringUtils.join(descriptions, ", ") + ".";
+            List<String> shortDescriptions = descriptions.stream()
+                .map(desc -> desc.substring(0, desc.indexOf('(') - 1) + "s")
+                .toList();
+            shortPatternRequirement = StringUtilsLabKey.joinWithConjunction(shortDescriptions, "and");
+            if (shortDescriptions.size() > 1)
+                shortPatternRequirement = "a mix of " + shortPatternRequirement;
+        }
+        StringBuilder builder = new StringBuilder("Your password must be at least ").append(getMinimumLengthText()).append(" non-whitespace characters");
+        if (null != shortPatternRequirement)
+            builder.append(", include ").append(shortPatternRequirement).append(",");
+        builder.append(" and cannot include portions of your personal information.");
+        _summaryRuleHtml = HtmlString.of(builder);
+
+        _fullRuleHtml = DOM.createHtml(DOM.createHtmlFragment(
+            DOM.UL(
+                DOM.LI("Must be " + getMinimumLengthText() + " non-whitespace characters or more."),
+                _patternRequirement != null ? DOM.LI("Must " + _patternRequirement) : null,
+                DOM.LI(getPersonalInfoRule()),
+                isPreviousPasswordForbidden() ? DOM.LI("Must not match any of the user's 10 previously used passwords.") : null
+            )));
+    }
+
+    private void addPattern(List<Pattern> patterns, Pattern pattern, List<String> patternDescriptions, String patternDescription)
+    {
+        patterns.add(pattern);
+        patternDescriptions.add(patternDescription);
+    }
+
+    public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
+    {
+        if (!_lengthPattern.matcher(password).matches())
+        {
+            if (null != messages)
+                messages.add("Your password must be at least " + getMinimumLengthText() + " characters and cannot contain spaces.");
+
+            return false;
+        }
+
+        if (containsPersonalInfo(password, user, messages))
+            return false;
+
+        if (_patternsToCheck.length > 0 && getRequiredCharacterTypeCount() > 0 && countMatches(password, _patternsToCheck) < getRequiredCharacterTypeCount())
+        {
+            if (null != messages)
+                messages.add("Your password must " + _patternRequirement);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private int countMatches(String password, Pattern... patterns)
+    {
+        int count = 0;
+
+        for (Pattern pattern : patterns)
+        {
+            Matcher m = pattern.matcher(password);
+
+            if (m.find())
+                count++;
+        }
+
+        return count;
+    }
+
+    private static boolean containsPersonalInfo(String password, String personalInfo, String infoType, @Nullable Collection<String> messages)
+    {
+        if (StringUtils.isBlank(personalInfo) || personalInfo.length() < 3)
+            return false;
+
+        String lcPassword = password.toLowerCase();
+        String lcInfo = personalInfo.toLowerCase();
+
+        for (int i = 0; i < lcInfo.length() - 3; i++)
+        {
+            if (lcPassword.contains(lcInfo.substring(i, i + 3)))
+            {
+                if (null != messages)
+                    messages.add("Your password must not contain a sequence of three or more characters from your " + infoType + ".");
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public boolean isValidToStore(String password1, String password2, User user, @NotNull Collection<String> messages)
     {
         if (StringUtils.isBlank(password1) || StringUtils.isBlank(password2))
         {
@@ -216,18 +296,68 @@ public enum PasswordRule
             return false;
         }
 
-        return isValidToStore(password1, user, messages);
+        if (isPreviousPasswordForbidden() && SecurityManager.matchesPreviousPassword(password1, user))
+        {
+            messages.add("Your password must not match a recently used password.");
+            return false;
+        }
+
+        return isValidForLogin(password1, user, messages);
     }
 
-    // We check the password rule at each login and when storing in the database. These rules may differ.
+    // We check the password rules at each login and when storing in the database. The storing rules may be a superset
+    // of the login rules.
 
-    public abstract boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
+    protected abstract int getMinimumLength();
+    protected abstract boolean isLowerCaseEnabled();
+    protected abstract boolean isUpperCaseEnabled();
+    protected abstract boolean isDigitEnabled();
+    protected abstract boolean isSymbolEnabled();
+    protected abstract int getRequiredCharacterTypeCount();
+    protected boolean isPreviousPasswordForbidden()
+    {
+        return true;
+    }
 
-    abstract boolean isValidToStore(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
+    protected String getMinimumLengthText()
+    {
+        return StringUtilsLabKey.spellOut(getMinimumLength());
+    }
 
-    public abstract @NotNull HtmlString getFullRuleHTML();
+    protected boolean containsPersonalInfo(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
+    {
+        return
+            containsPersonalInfo(password, user.getEmail(), "email address", messages) &&
+            containsPersonalInfo(password, user.getFriendlyName(), "display name", messages) &&
+            containsPersonalInfo(password, StringUtils.trimToEmpty(user.getFirstName()) + StringUtils.trimToEmpty(user.getLastName()), "name", messages);
+    }
 
-    public abstract @NotNull HtmlString getSummaryRuleHTML();
+    protected String getPersonalInfoRule()
+    {
+        return "Must not contain a sequence of three or more characters from the user's email address, display name, first name, or last name.";
+    }
+
+    /**
+     * Returns HTML that describes the password rules in detail. These are presented to administrators when they
+     * configure or review the password rules, they are written in third person (e.g., "the user's email address").
+     * @return HtmlString providing a detailed description of the rules
+     */
+    @NotNull
+    public HtmlString getFullRuleHtml()
+    {
+        return _fullRuleHtml;
+    }
+
+    /**
+     * Returns HTML that describes a summary of the password rules. These are presented to individual users when they
+     * pick or change a password, so they are written in second person (e.g., "your email address").
+     * @return HtmlString providing a summary of the rules
+     */
+    @NotNull
+    public HtmlString getSummaryRuleHtml()
+    {
+        return _summaryRuleHtml;
+    }
 
     // 100 most-used passwords on RockYou
     private static final String weakPasswords = "123456\n"+
