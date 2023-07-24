@@ -30,7 +30,7 @@ import java.util.Map;
 public abstract class AbstractPlateTypeHandler implements PlateTypeHandler
 {
     @Override
-    public void validateTemplate(Container container, User user, PlateTemplate template) throws ValidationException
+    public void validateTemplate(Container container, User user, Plate template) throws ValidationException
     {
     }
 

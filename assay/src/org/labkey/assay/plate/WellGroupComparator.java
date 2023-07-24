@@ -4,10 +4,10 @@ import org.labkey.api.assay.plate.Position;
 
 import java.util.Comparator;
 
-public class WellGroupTemplateComparator implements Comparator<WellGroupTemplateImpl>
+public class WellGroupComparator implements Comparator<WellGroupImpl>
 {
     @Override
-    public int compare(WellGroupTemplateImpl first, WellGroupTemplateImpl second)
+    public int compare(WellGroupImpl first, WellGroupImpl second)
     {
         Position firstPos = first.getTopLeft();
         Position secondPos = second.getTopLeft();

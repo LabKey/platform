@@ -16,28 +16,57 @@
 
 package org.labkey.api.assay.plate;
 
-import java.util.List;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.study.PropertySet;
+import org.labkey.api.view.ActionURL;
 
-/**
- * Represents a plate for an assay run (typically 96 or 384 wells).
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 10:15:44 AM
- */
-public interface Plate extends PlateTemplate
+import java.util.List;
+import java.util.Map;
+
+public interface Plate extends PropertySet, Identifiable
 {
+    @Override
+    String getName();
+
+    void setName(String name);
+
+    int getRows();
+
+    int getColumns();
+
+    int getPlateNumber();
+
+    boolean isTemplate();
+
     Well getWell(int row, int col);
 
     WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
 
-    @Override
-    List<? extends WellGroup> getWellGroups(WellGroup.Type type);
+    @Nullable WellGroup getWellGroup(int rowId);
+
+    List<WellGroup> getWellGroups();
+
+    List<WellGroup> getWellGroups(Position position);
+
+    List<WellGroup> getWellGroups(WellGroup.Type type);
+
+    Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupTemplateMap();
+
+    WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);
+
+    WellGroup addWellGroup(String name, WellGroup.Type type, List<Position> positions);
+
+    Integer getRowId();
+
+    Position getPosition(int row, int col);
+
+    int getWellGroupCount();
+
+    int getWellGroupCount(WellGroup.Type type);
+
+    String getType();
 
     @Override
-    List<? extends WellGroup> getWellGroups(Position position);
-
-    @Override
-    List<? extends WellGroup> getWellGroups();
-
-    int getPlateNumber();
+    @Nullable ActionURL detailsURL();
 }

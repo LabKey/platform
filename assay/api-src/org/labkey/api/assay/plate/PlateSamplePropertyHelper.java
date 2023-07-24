@@ -35,15 +35,15 @@ import java.util.Set;
 public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
 {
     protected List<String> _sampleNames;
-    protected final PlateTemplate _template;
+    protected final Plate _template;
     protected WellGroup.Type _wellgroupType;
 
-    public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, PlateTemplate template)
+    public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, Plate template)
     {
         this(domainProperties, template, WellGroup.Type.SPECIMEN);
     }
 
-    public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, PlateTemplate template, WellGroup.Type wellgroupType)
+    public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, Plate template, WellGroup.Type wellgroupType)
     {
         super(domainProperties);
         _template = template;
@@ -52,7 +52,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
 
         if (template != null)
         {
-            for (WellGroupTemplate wellgroup : template.getWellGroups())
+            for (WellGroup wellgroup : template.getWellGroups())
             {
                 if (wellgroup.getType() == _wellgroupType)
                 {
@@ -62,10 +62,10 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
         }
     }
 
-    protected List<WellGroupTemplate> getSampleWellGroups()
+    protected List<WellGroup> getSampleWellGroups()
     {
-        List<WellGroupTemplate> samples = new ArrayList<>();
-        for (WellGroupTemplate wellgroup : _template.getWellGroups())
+        List<WellGroup> samples = new ArrayList<>();
+        for (WellGroup wellgroup : _template.getWellGroups())
         {
             if (wellgroup.getType() == _wellgroupType)
             {
@@ -75,11 +75,11 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
         return samples;
     }
 
-    protected Map<String, WellGroupTemplate> getSampleWellGroupNameMap()
+    protected Map<String, WellGroup> getSampleWellGroupNameMap()
     {
-        List<WellGroupTemplate> sampleGroups = getSampleWellGroups();
-        Map<String, WellGroupTemplate> sampleGroupNames = new HashMap<>(sampleGroups.size());
-        for (WellGroupTemplate sampleGroup : sampleGroups)
+        List<WellGroup> sampleGroups = getSampleWellGroups();
+        Map<String, WellGroup> sampleGroupNames = new HashMap<>(sampleGroups.size());
+        for (WellGroup sampleGroup : sampleGroups)
             sampleGroupNames.put(sampleGroup.getName(), sampleGroup);
         return sampleGroupNames;
     }
@@ -87,7 +87,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
     @Override
     protected String getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials)
     {
-        List<WellGroupTemplate> samples = getSampleWellGroups();
+        List<WellGroup> samples = getSampleWellGroups();
         if (index >= samples.size())
             throw new IndexOutOfBoundsException("Requested #" + index + " but there were only " + samples.size() + " well group templates");
         return samples.get(index).getName();
