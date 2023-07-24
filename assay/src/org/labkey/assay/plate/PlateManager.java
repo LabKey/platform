@@ -758,6 +758,13 @@ public class PlateManager implements PlateService
         qus.deleteRows(user, container, Collections.singletonList(key), null, null);
     }
 
+    // Called by the Plate Query Update Service after deleting a plate
+    public void afterPlateDelete(Container container, Lsid plateLsid)
+    {
+        clearCache(container);
+        deindexPlates(List.of(plateLsid));
+    }
+
     // Called by the Plate Query Update Service prior to deleting a plate
     public void beforePlateDelete(Container container, Integer plateId)
     {
@@ -1096,27 +1103,39 @@ public class PlateManager implements PlateService
         return null;
     }
 
-    public @NotNull Map<String, Collection<Map<String, Object>>> getPlateOperationConfirmationData(
+    public @NotNull Map<String, Collection<Integer>> getPlateOperationConfirmationData(
         @NotNull Container container,
         @NotNull Set<Integer> plateRowIds
     )
     {
-        List<Map<String, Object>> allowedRows = new ArrayList<>();
-        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+        Set<Integer> permittedIds = new HashSet<>(plateRowIds);
+        Set<Integer> notPermittedIds = new HashSet<>();
+
+        ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "plate")));
+        permittedIds.removeAll(notPermittedIds);
 
         // TODO: This is really expensive. Find a way to consolidate this check into a single query.
-        plateRowIds.forEach(plateRowId -> {
-            Map<String, Object> rowMap = Map.of("RowId", plateRowId);
+        permittedIds.forEach(plateRowId -> {
             Plate plate = getPlate(container, plateRowId);
-            if (plate == null)
-                notAllowedRows.add(rowMap);
-            else if (getRunCountUsingPlate(container, plate) > 0)
-                notAllowedRows.add(rowMap);
-            else
-                allowedRows.add(rowMap);
+            if (plate == null || getRunCountUsingPlate(container, plate) > 0)
+                notPermittedIds.add(plateRowId);
         });
+        permittedIds.removeAll(notPermittedIds);
 
-        return Map.of("allowed", allowedRows, "notAllowed", notAllowedRows);
+        return Map.of("allowed", permittedIds, "notAllowed", notPermittedIds);
+    }
+
+    private void deindexPlates(Collection<Lsid> plateLsids)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+
+        Set<String> documentIds = new HashSet<>();
+        for (Lsid lsid : plateLsids)
+            documentIds.add(PlateDocumentProvider.getDocumentId(lsid));
+        ss.deleteResources(documentIds);
     }
 
     private void indexPlate(Container c, Integer plateRowId)

@@ -45,9 +45,14 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
         return getSearchCategory().getName() + ":";
     }
 
+    public static String getDocumentId(@NotNull Lsid plateLsid)
+    {
+        return getDocumentIdPrefix() + plateLsid;
+    }
+
     public static String getDocumentId(@NotNull Plate plate)
     {
-        return getDocumentIdPrefix() + plate.getLSID();
+        return getDocumentId(new Lsid(plate.getLSID()));
     }
 
     public static WebdavResource createDocument(@NotNull Plate plate)
