@@ -231,7 +231,9 @@ public interface PlateService
      */
     DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 
-    // TODO: Add Description
+    /**
+     * Retrieve the TableInfo for the Plate table.
+     */
     TableInfo getPlateTableInfo();
 
     /**
