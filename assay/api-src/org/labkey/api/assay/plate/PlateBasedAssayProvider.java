@@ -37,8 +37,8 @@ public interface PlateBasedAssayProvider extends AssayProvider
 {
     String VIRUS_NAME_PROPERTY_NAME = "VirusName";
 
-    void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
-    PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
+    void setPlate(Container container, ExpProtocol protocol, Plate plate);
+    @Nullable Plate getPlate(Container container, ExpProtocol protocol);
     File getSampleMetadataFile(Container container, int runId);
     @Nullable PlateReader getPlateReader(String readerName);
     SampleMetadataInputFormat[] getSupportedMetadataInputFormats();

@@ -10,11 +10,11 @@ import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
-import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -22,6 +22,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -61,7 +62,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         Map<Integer, String> rowIdToLsidMap
     ) throws ExperimentException
     {
-        PlateTemplate plate = getPlate(run, provider, protocol);
+        Plate plate = getPlate(run, provider, protocol);
         if (plate == null)
             throw new ExperimentException("Unable to resolve the plate template for the run");
 
@@ -82,7 +83,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     Map<String, Object> wellProps = new CaseInsensitiveHashMap<>();
                     plateData.put(pos, wellProps);
 
-                    for (WellGroupTemplate group : plate.getWellGroups(pos))
+                    for (WellGroup group : plate.getWellGroups(pos))
                     {
                         MetadataLayer plateLayer = plateMetadata.get(group.getType().name());
                         if (plateLayer != null)
@@ -99,7 +100,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                                 // combine both properties from the metadata as well as those explicitly set on the plate template
                                 Map<String, Object> props = new HashMap<>(wellGroup.getProperties());
-                                props.putAll(((WellGroupTemplateImpl)group).getProperties());
+                                props.putAll(((WellGroupImpl)group).getProperties());
 
                                 for (Map.Entry<String, Object> entry : props.entrySet())
                                 {
@@ -183,9 +184,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Nullable
-    private PlateTemplate getPlate(ExpRun run, AssayProvider provider, ExpProtocol protocol)
+    private Plate getPlate(ExpRun run, AssayProvider provider, ExpProtocol protocol)
     {
-        PlateTemplate plate = null;
+        Plate plate = null;
         Domain runDomain = provider.getRunDomain(protocol);
         DomainProperty property = runDomain.getPropertyByName(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME);
 
@@ -193,8 +194,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             if (run.getProperty(property) instanceof String plateLsid)
             {
-                plate = PlateService.get().getPlateTemplateFromLsid(protocol.getContainer(), plateLsid);
+                plate = PlateService.get().getPlate(protocol.getContainer(), Lsid.parse(plateLsid));
                 if (plate == null)
+                    // if the lsid is actually the plate name
                     plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
             }
         }
