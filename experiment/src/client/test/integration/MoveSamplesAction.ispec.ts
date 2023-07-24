@@ -468,7 +468,7 @@ describe('ExperimentController', () => {
             await verifyDetailedAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId], auditTransactionId);
         });
 
-        it('success, move sample from parent project to subfolder, detailed audit logging with comment', async () => {
+        it('success, move sample from parent project to subfolder, detailed audit logging with comment - samples', async () => {
             // Arrange
             const sampleRowId = await createSample(server, 'top-movetosub1-3', topFolderOptions, editorUserOptions, "DETAILED");
             const userComment = "Oops! Wrong project.";
