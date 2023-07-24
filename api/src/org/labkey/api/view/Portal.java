@@ -251,7 +251,7 @@ public class Portal implements ModuleChangeListener
                 propertyMap = Collections.unmodifiableMap(propertyMap);
             if (null != copyFrom.extendedProperties)
             {
-                extendedProperties = new JSONObject(copyFrom.extendedProperties);
+                extendedProperties = new JSONObject(copyFrom.extendedProperties.toMap());
                 // Note: There's no way to make a JSONObject read-only
             }
         }

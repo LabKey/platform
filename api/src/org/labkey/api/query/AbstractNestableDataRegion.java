@@ -26,6 +26,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 
 import java.io.IOException;
@@ -34,6 +35,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * User: jeckels
@@ -72,14 +75,11 @@ public abstract class AbstractNestableDataRegion extends DataRegion
     @Override
     protected void renderExtraRecordSelectorContent(RenderContext ctx, Writer out) throws IOException
     {
+        var page = HttpView.currentPageConfig();
+        String id = page.makeId("a_");
         String value = getUniqueColumnValue(ctx);
-        out.write("<a onclick=\"return toggleNestedGrid(");
-        out.write(PageFlowUtil.jsString(getName()));
-        out.write(", ");
-        out.write(_ajaxNestedGridURL == null ? "null" : PageFlowUtil.jsString(PageFlowUtil.filter(_ajaxNestedGridURL + value)));
-        out.write(", '");
-        out.write(value);
-        out.write("');\"><img valign=\"middle\" id=\"");
+        out.write("<a id=\"" + id + "\">");
+        out.write("<img valign=\"middle\" id=\"");
         out.write(getName());
         out.write("-Handle");
         out.write(value);
@@ -88,6 +88,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         out.write("/_images/");
         out.write(_expanded ? "minus" : "plus");
         out.write(".gif\"/></a>");
+        page.addHandler(id, "click", "return toggleNestedGrid(" + jsString(getName()) + "," + (_ajaxNestedGridURL == null ? "null" : jsString(PageFlowUtil.filter(_ajaxNestedGridURL + value))) + ", " + jsString(value) + ")");
     }
 
     private String getUniqueColumnValue(RenderContext ctx)
