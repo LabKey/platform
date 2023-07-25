@@ -1260,7 +1260,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(ParticipantReportForm form, BindException errors)
         {
             form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
-            form.setExpanded(!(getViewContext().get("reportWebPart") != null));
+            form.setExpanded(getViewContext().get("reportWebPart") == null);
 
             if (StudyService.get().getStudy(getContainer()) != null)
             {

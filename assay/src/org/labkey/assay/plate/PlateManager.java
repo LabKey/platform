@@ -476,16 +476,15 @@ public class PlateManager implements PlateService
     private WellGroupImpl[] getWellGroups(Plate plate)
     {
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
-        Class<WellGroupImpl> clazz = plate.isTemplate() ? WellGroupImpl.class : WellGroupImpl.class;
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(clazz);
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(WellGroupImpl.class);
     }
 
-    private String getLsid(Plate plate, Class type, boolean instance)
+    private String getLsid(Plate plate, Class<?> type, boolean instance)
     {
         return getLsid(type, plate.getContainer(), plate.isTemplate(), instance).toString();
     }
 
-    public Lsid getLsid(Class type, Container container, boolean isTemplate, boolean isInstance)
+    public Lsid getLsid(Class<?> type, Container container, boolean isTemplate, boolean isInstance)
     {
         String nameSpace;
         if (type == Plate.class)
@@ -680,7 +679,7 @@ public class PlateManager implements PlateService
                 assert group.getRowId() != null && group.getRowId() > 0;
                 Integer wellId = position.getRowId();
                 Integer wellGroupId = group.getRowId();
-                wellGroupPositions.add(List.<Integer>of(wellId, wellGroupId));
+                wellGroupPositions.add(List.of(wellId, wellGroupId));
             }
         }
 
