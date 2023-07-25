@@ -494,10 +494,12 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         // Update the input enabled/disabled status by using the 'select' event listener on the combobox.
         // However, ComboBox doesn't fire 'select' event when changed programatically so we fire it manually.
         var store = combo.getStore();
+        var filterType = filter.getFilterType();
+        var urlSuffix = filterType.getURLSuffix();
         if (store) {
-            var rec = store.getAt(store.find('value', filter.getFilterType().getURLSuffix()));
+            var rec = store.getAt(store.find('value', urlSuffix));
             if (rec) {
-                combo.setValue(filter.getFilterType().getURLSuffix());
+                combo.setValue(urlSuffix);
                 combo.fireEvent('select', combo, rec);
             }
         }
@@ -507,6 +509,12 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         if (this.jsonType === "date" && inputValue) {
             const dateVal = Date.parseDate(inputValue, LABKEY.extDateInputFormat); // date inputs are formatted to ISO date format on server
             inputValue = dateVal.format(LABKEY.extDefaultDateFormat); // convert back to date field accepted format for render
+        }
+
+        // replace ; with \n on UI
+        if (filterType.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
+            if (typeof inputValue === 'string' && inputValue.indexOf('\n') === -1 && inputValue.indexOf(';') > 0)
+                inputValue = inputValue.replaceAll(';', '\n');
         }
 
         var inputs = this.getVisibleInputs();
