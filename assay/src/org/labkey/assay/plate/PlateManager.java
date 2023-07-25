@@ -1103,7 +1103,7 @@ public class PlateManager implements PlateService
         return null;
     }
 
-    public @NotNull Map<String, Collection<Integer>> getPlateOperationConfirmationData(
+    public @NotNull Map<String, List<Map<String, Integer>>> getPlateOperationConfirmationData(
         @NotNull Container container,
         @NotNull Set<Integer> plateRowIds
     )
@@ -1123,7 +1123,10 @@ public class PlateManager implements PlateService
         });
         permittedIds.removeAll(notPermittedIds);
 
-        return Map.of("allowed", permittedIds, "notAllowed", notPermittedIds);
+        return Map.of(
+        "allowed", permittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList(),
+            "notAllowed", notPermittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList()
+        );
     }
 
     private void deindexPlates(Collection<Lsid> plateLsids)
