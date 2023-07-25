@@ -212,7 +212,7 @@ public class PublishController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class AutoLinkRunAction extends MutatingApiAction<AutoLinkRunForm>
+    public static class AutoLinkRunAction extends MutatingApiAction<AutoLinkRunForm>
     {
         @Override
         public Object execute(AutoLinkRunForm form, BindException errors) throws Exception

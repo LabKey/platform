@@ -154,7 +154,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
 
         @Override
@@ -171,7 +171,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteAction extends FormHandlerAction
+    public static class DeleteAction extends FormHandlerAction
     {
 
         @Override
@@ -210,7 +210,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DesignerAction extends SimpleViewAction<StudyDesignForm>
+    public static class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -296,7 +296,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DefinitionServiceAction extends GWTServiceAction
+    public static class DefinitionServiceAction extends GWTServiceAction
     {
         @Override
         protected BaseRemoteService createService()
@@ -306,7 +306,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class EditTemplateAction extends SimpleRedirectAction<StudyDesignForm>
+    public static class EditTemplateAction extends SimpleRedirectAction<StudyDesignForm>
     {
         @Override
         public ActionURL getRedirectURL(StudyDesignForm studyDesignForm) throws Exception
@@ -353,7 +353,7 @@ public class DesignerController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyDesigns extends ReadOnlyApiAction<GetStudyDesignsForm>
+    public static class GetStudyDesigns extends ReadOnlyApiAction<GetStudyDesignsForm>
     {
         @Override
         public ApiResponse execute(GetStudyDesignsForm getStudyDesignsForm, BindException errors) throws Exception

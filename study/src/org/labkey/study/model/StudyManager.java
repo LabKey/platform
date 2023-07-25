@@ -1180,11 +1180,11 @@ public class StudyManager
 
                 // Scale the timepoint to be smaller if there are existing timepoints that overlap
                 // on its desired day range
-                if (previousVisit != Visit.MIN_SEQUENCE_NUM)
+                if (!Visit.MIN_SEQUENCE_NUM.equals(previousVisit))
                 {
                     visitIdMin = visitIdMin.max(previousVisit.add(BigDecimal.ONE));
                 }
-                if (nextVisit != Visit.MAX_SEQUENCE_NUM)
+                if (!Visit.MAX_SEQUENCE_NUM.equals(nextVisit))
                 {
                     visitIdMax = visitIdMax.min(nextVisit.subtract(BigDecimal.ONE));
                 }

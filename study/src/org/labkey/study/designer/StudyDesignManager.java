@@ -233,16 +233,13 @@ public class StudyDesignManager
         if (!info.isActive())
             return def;
 
-        if (info.isActive())
-        {
-            Study study = StudyManager.getInstance().getStudy(info.getContainer());
-            if (null != study.getDescription())
-                def.setDescription(study.getDescription());
-            if (null != study.getInvestigator())
-                def.setInvestigator(study.getInvestigator());
-            if (null != study.getGrant())
-                def.setGrant(study.getGrant());
-        }
+        Study study = StudyManager.getInstance().getStudy(info.getContainer());
+        if (null != study.getDescription())
+            def.setDescription(study.getDescription());
+        if (null != study.getInvestigator())
+            def.setInvestigator(study.getInvestigator());
+        if (null != study.getGrant())
+            def.setGrant(study.getGrant());
 
         return def;
     }

@@ -44,13 +44,16 @@ import java.util.Set;
  */
 public class CustomFolderType implements FolderType
 {
+
+    public static final String NAME = "None";
+
     public CustomFolderType(){}
     @Override
     public void configureContainer(Container c, User user) {  }
     @Override
     public void unconfigureContainer(Container c, User user) {  }
     @Override
-    public String getName() { return "None"; }
+    public String getName() { return NAME; }
     protected boolean forceAssayUploadIntoWorkbooks = false;
 
     @NotNull
