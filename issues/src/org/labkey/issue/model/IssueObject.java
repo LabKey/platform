@@ -549,6 +549,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return getNotifyListEmail(getNotifyList(), null);
     }
 
+    @JSONPropertyIgnore
     @Override
     public List<Pair<User, ValidEmail>> getNotifyListUserEmail()
     {
@@ -610,6 +611,7 @@ public class IssueObject extends Entity implements Serializable, Cloneable, Issu
         return ret;
     }
 
+    @Override
     public Map<String, Object> getProperties()
     {
         return _properties;

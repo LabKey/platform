@@ -3,7 +3,10 @@ package org.labkey.assay.plate.view;
 import org.json.JSONObject;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
+import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -21,6 +24,7 @@ public class AssayPlateMetadataTemplateAction extends ExportAction<AssayPlateMet
     public static class Form
     {
         private String _template;
+        private Integer _protocol;
 
         public String getTemplate()
         {
@@ -31,15 +35,26 @@ public class AssayPlateMetadataTemplateAction extends ExportAction<AssayPlateMet
         {
             _template = template;
         }
+
+        public Integer getProtocol()
+        {
+            return _protocol;
+        }
+
+        public void setProtocol(Integer protocol)
+        {
+            _protocol = protocol;
+        }
     }
 
     @Override
     public void export(AssayPlateMetadataTemplateAction.Form form, HttpServletResponse response, BindException errors) throws Exception
     {
         String template = null;
-        if (form.getTemplate() != null)
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(form.getProtocol());
+        if (form.getTemplate() != null && protocol != null)
         {
-            PlateTemplate plateTemplate = PlateService.get().getPlateTemplateFromLsid(getContainer(), form.getTemplate());
+            Plate plateTemplate = PlateService.get().getPlate(protocol.getContainer(), Lsid.parse(form.getTemplate()));
             if (plateTemplate != null)
             {
                 Random rand = new Random();

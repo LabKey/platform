@@ -219,12 +219,6 @@ public class QValuesTable extends QTable
                 RelationColumn rc = new RelationColumn()
                 {
                     @Override
-                    public String getUniqueName()
-                    {
-                        return super._defaultUniqueName(_QueryRelation.this);
-                    }
-
-                    @Override
                     public Collection<RelationColumn> gatherInvolvedSelectColumns(Collection<RelationColumn> collect)
                     {
                         // VALUES columns don't need any fix-up.  Nothing to do here.

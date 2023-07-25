@@ -603,10 +603,16 @@ public class SearchController extends SpringActionController
                 SearchResult result;
                 try
                 {
-                    //UNDONE: paging, rowlimit etc
-                    int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
-                    result = ss.search(query, ss.getCategories(form.getCategory()), getUser(), getContainer(), form.getSearchScope(),
-                        form.getSortField(), form.getOffset(), limit, form.isInvertSort());
+                    SearchService.SearchOptions.Builder options = new SearchService.SearchOptions.Builder(query, getUser(), getContainer());
+                    options.categories = ss.getCategories(form.getCategory());
+                    options.fields = form.getFields();
+                    options.invertResults = form.isInvertSort();
+                    options.limit = form.getLimit() < 0 ? 1000 : form.getLimit();
+                    options.offset = form.getOffset();
+                    options.scope = form.getSearchScope();
+                    options.sortField = form.getSortField();
+
+                    result = ss.search(options.build());
                 }
                 catch (Exception x)
                 {
@@ -619,21 +625,11 @@ public class SearchController extends SpringActionController
 
                 arr = new Object[hits.size()];
 
-                int i=0;
+                int i = 0;
                 int batchSize = 1000;
                 Map<String, Map<String, Object>> docDataMap = new HashMap<>();
                 for (int ind = 0; ind < hits.size(); ind++)
                 {
-                    if (ind % batchSize == 0)
-                    {
-                        int batchEnd = Math.min(hits.size(), ind + batchSize);
-                        List<String> docIds = new ArrayList<>();
-                        for (int j = ind; j < batchEnd; j++)
-                            docIds.add(hits.get(j).docid);
-
-                        docDataMap = ss.getCustomSearchJsonMap(getUser(), docIds);
-                    }
-
                     SearchService.SearchHit hit = hits.get(ind);
                     JSONObject o = new JSONObject();
                     String id = StringUtils.isEmpty(hit.docid) ? String.valueOf(i) : hit.docid;
@@ -649,6 +645,18 @@ public class SearchController extends SpringActionController
 
                     if (form.isExperimentalCustomJson())
                     {
+                        o.put("jsonData", hit.jsonData);
+
+                        if (ind % batchSize == 0)
+                        {
+                            int batchEnd = Math.min(hits.size(), ind + batchSize);
+                            List<String> docIds = new ArrayList<>();
+                            for (int j = ind; j < batchEnd; j++)
+                                docIds.add(hits.get(j).docid);
+
+                            docDataMap = ss.getCustomSearchJsonMap(getUser(), docIds);
+                        }
+
                         Map<String, Object> custom = docDataMap.get(hit.docid);
                         if (custom != null)
                             o.put("data", custom);
@@ -755,7 +763,15 @@ public class SearchController extends SpringActionController
         @Override
         public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit, boolean invertSort) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit, invertSort);
+            SearchService.SearchOptions.Builder options = new SearchService.SearchOptions.Builder(queryString, user, currentContainer);
+            options.categories = _ss.getCategories(category);
+            options.invertResults = invertSort;
+            options.limit = limit;
+            options.offset = offset;
+            options.scope = scope;
+            options.sortField = sortField;
+
+            return _ss.search(options.build());
         }
 
         @Override
@@ -902,6 +918,7 @@ public class SearchController extends SpringActionController
         private String _category = null;
         private String _comment = null;
         private int _textBoxWidth = 50; // default size
+        private List<String> _fields;
         private boolean _includeHelpLink = true;
         private boolean _webpart = false;
         private boolean _showAdvanced = false;
@@ -1106,6 +1123,16 @@ public class SearchController extends SpringActionController
         public void setExperimentalCustomJson(boolean experimentalCustomJson)
         {
             _experimentalCustomJson = experimentalCustomJson;
+        }
+
+        public List<String> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(List<String> fields)
+        {
+            _fields = fields;
         }
     }
 

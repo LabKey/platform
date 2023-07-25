@@ -155,7 +155,11 @@ Ext4.define('LABKEY.query.browser.cache.QueryDetails', {
                         success.call(scope || this, json);
                     }
                 },
-                failure: failure,
+                failure: function(error) {
+                    if (Ext4.isFunction(failure)) {
+                        failure.call(scope || this, error);
+                    }
+                },
                 scope: this
             });
         }

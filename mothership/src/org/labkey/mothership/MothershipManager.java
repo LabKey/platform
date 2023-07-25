@@ -38,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
+import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
@@ -65,7 +66,7 @@ public class MothershipManager
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
-    private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLock();
+    private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLockWithName(MothershipManager.class, "INSERT_EXCEPTION_LOCK");
 
     private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
 
@@ -172,6 +173,7 @@ public class MothershipManager
     {
         synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
+            // Filter on the columns that are part of the unique constraint
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             addFilter(filter,"VcsRevision", revision);
             addFilter(filter,"VcsUrl", url);
@@ -179,15 +181,14 @@ public class MothershipManager
             addFilter(filter,"VcsTag", tag);
             addFilter(filter,"BuildTime", buildTime);
 
-            if (buildNumber == null)
-            {
-                buildNumber = fabricateDescription(container, revision, url, branch, tag, buildTime);
-            }
-            filter.addCondition(FieldKey.fromString("BuildNumber"), buildNumber);
-
             SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
             if (result == null)
             {
+                if (buildNumber == null)
+                {
+                    buildNumber = fabricateDescription(container, revision, url, branch, tag, buildTime);
+                }
+
                 result = new SoftwareRelease();
                 result.setVcsUrl(url);
                 result.setVcsRevision(revision);

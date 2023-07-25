@@ -301,7 +301,7 @@ public class JSONDataLoader extends DataLoader
         }
 
         if (!(_parser.getCurrentToken() == JsonToken.START_ARRAY && _parser.getCurrentName().equals("rows")))
-            throw new JsonParseException("Expected 'rows' field", _parser.getTokenLocation());
+            throw new JsonParseException(_parser, "Expected 'rows' field", _parser.getTokenLocation());
     }
 
     /**
@@ -346,7 +346,7 @@ public class JSONDataLoader extends DataLoader
         JsonLocation loc = expectArrayStart(parser);
 
         if (isArrayEnd(parser))
-            throw new JsonParseException("Expected array of fields, got empty array", loc);
+            throw new JsonParseException(parser, "Expected array of fields, got empty array", loc);
 
         List<ColumnDescriptor> cols = new ArrayList<>();
 
@@ -408,7 +408,7 @@ public class JSONDataLoader extends DataLoader
             {
                 fieldKey = parser.readValueAs(FieldKey.class);
                 if (fieldKey == null)
-                    throw new JsonParseException("Failed to parse " + fieldName + " property", loc);
+                    throw new JsonParseException(parser, "Failed to parse " + fieldName + " property", loc);
 
                 parser.nextToken();
             }
@@ -416,7 +416,7 @@ public class JSONDataLoader extends DataLoader
             {
                 type = parser.getValueAsString();
                 if (type == null)
-                    throw new JsonParseException("Failed to parse type property", loc);
+                    throw new JsonParseException(parser, "Failed to parse type property", loc);
 
                 parser.nextToken();
             }

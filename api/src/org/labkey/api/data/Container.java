@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.json.JSONString;
 import org.labkey.api.Constants;
 import org.labkey.api.action.SpringActionController;
@@ -92,6 +93,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 /**
@@ -1684,8 +1686,16 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return isFeatureEnabled(ProductFeature.Projects, true);
     }
 
+    public boolean isAppHomeFolder()
+    {
+        if (isProject()) // if it's a project
+            return true;
+
+        return !isProductProjectsEnabled(); // if subfolder, then the folder shouldn't have Projects feature enabled
+    }
+
     /**
-     * Returns the subfolder count of the project container, if product projects feature is enabled in project
+     * Returns true if product projects feature is enabled and the subfolder count of the project container is > 0
      */
     public boolean hasProductProjects()
     {
@@ -1699,6 +1709,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         // need to exclude the notebook folders in particular here
         return project.getChildren().stream().anyMatch(c -> c.getContainerType().isInFolderNav());
+    }
+
+    public List<Container> getProductProjects()
+    {
+        if (!isProductProjectsEnabled())
+            return Collections.emptyList();
+
+        Container project = getProject();
+        if (project == null)
+            return Collections.emptyList();
+
+        return project.getChildren().stream().filter(c -> c.getContainerType().isInFolderNav()).collect(Collectors.toList());
     }
 
     public ContainerFilter getProductProjectsDataContainerFilter(User user)
@@ -1839,6 +1861,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     @Override
     public String toJSONString()
     {
-        return getId();
+        return JSONObject.quote(getId());
     }
 }

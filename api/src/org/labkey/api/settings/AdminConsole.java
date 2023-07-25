@@ -38,8 +38,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 /**
  * Manages registration for links to be shown in the Admin Console, as well as experimental features that can
  * be enabled/disabled.
- * User: adam
- * Date: Jul 23, 2008
  */
 public class AdminConsole
 {
@@ -145,7 +143,12 @@ public class AdminConsole
 
     public static void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
     {
-        _experimentalFlags.add(new ExperimentalFeatureFlag(flag, title, description, requiresRestart));
+        addExperimentalFeatureFlag(new ExperimentalFeatureFlag(flag, title, description, requiresRestart, false));
+    }
+
+    public static void addExperimentalFeatureFlag(ExperimentalFeatureFlag experimentalFeatureFlag)
+    {
+        _experimentalFlags.add(experimentalFeatureFlag);
     }
 
     public static Collection<ExperimentalFeatureFlag> getExperimentalFeatureFlags()
@@ -159,13 +162,15 @@ public class AdminConsole
         private final String _title;
         private final String _description;
         private final boolean _requiresRestart;
+        private final boolean _hidden;
 
-        public ExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
+        public ExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart, boolean hidden)
         {
             _flag = flag;
             _title = title;
             _description = description;
             _requiresRestart = requiresRestart;
+            _hidden = hidden;
         }
 
         public String getFlag()
@@ -198,6 +203,11 @@ public class AdminConsole
         public boolean isEnabled()
         {
             return AppProps.getInstance().isExperimentalFeatureEnabled(getFlag());
+        }
+
+        public boolean isHidden()
+        {
+            return _hidden;
         }
 
         // StartupProperty implementation

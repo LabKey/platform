@@ -228,7 +228,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public int loadRows(User user, Container container, DataIteratorBuilder rows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
-        if (count > 0 && Boolean.TRUE != context.getConfigParameterBoolean(Config.SkipResyncStudy))
+        if (count > 0 && !Boolean.TRUE.equals(context.getConfigParameterBoolean(Config.SkipResyncStudy)))
         {
             StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
@@ -257,7 +257,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         if (_skipAuditLogging)
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, NONE);
         else if (!isBulkLoad())
-            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, DETAILED);
+        {
+            // default to DETAILED unless there is a metadata XML override
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior,
+                    getQueryTable().getXmlAuditBehaviorType() != null ? getQueryTable().getXmlAuditBehaviorType() : DETAILED);
+        }
 
         List<Map<String, Object>> result = super._insertRowsUsingDIB(user, container, rows, context, extraScriptContext);
 
@@ -277,8 +281,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.datasetModified(_dataset, true);
-            resyncStudy(user, container);
+            if (configParameters == null || !Boolean.TRUE.equals(configParameters.get(DatasetUpdateService.Config.SkipResyncStudy)))
+            {
+                StudyManager.datasetModified(_dataset, true);
+                resyncStudy(user, container);
+            }
         }
         return result;
     }
@@ -608,7 +615,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             resetCreatedColumnsSQL.add(newLsid);
             new SqlExecutor(_dataset.getStorageTableInfo().getSchema()).execute(resetCreatedColumnsSQL);
 
-            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, null, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
+            new DatasetDefinition.DatasetAuditHandler(_dataset).addAuditEvent(user, container, target, AuditBehaviorType.DETAILED, null, QueryService.AuditAction.UPDATE,
                     List.of(mergeData), List.of(oldData));
 
             // Successfully updated

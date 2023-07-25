@@ -38,7 +38,7 @@ public interface SiteValidationProvider extends SiteValidatorDescriptor
     }
 
     /**
-     * Return tru to indicate this is a site-wide validator.
+     * Return true to indicate this is a site-wide validator.
      * False to indicate the validator should only run at container scope
      */
     default boolean isSiteScope()

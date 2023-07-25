@@ -15,6 +15,7 @@
  */
 package org.labkey.api.dataiterator;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -48,10 +49,15 @@ public class DataIteratorContext
     boolean _verbose = false;
     boolean _supportAutoIncrementKey = false;
     boolean _allowImportLookupByAlternateKey = false;
+    boolean _crossTypeImport = false;
+    boolean _allowCreateStorage = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
     private String _dataSource;
+
+    private final Map<String, Object> _responseInfo = new HashMap<>(); // information from the import/loadRows context to be passed back to the API response object
+    private Logger _logger;
 
     int _maxRowErrors = 1;
 
@@ -162,6 +168,27 @@ public class DataIteratorContext
         _allowImportLookupByAlternateKey = allowImportLookupByAlternateKey;
     }
 
+    public boolean isCrossTypeImport()
+    {
+        return _crossTypeImport;
+    }
+
+    /** when true, allows import of files with data for multiple types in the same base schema (e.g., exp.material) */
+    public void setCrossTypeImport(boolean crossTypeImport)
+    {
+        _crossTypeImport = crossTypeImport;
+    }
+
+    public boolean isAllowCreateStorage()
+    {
+        return _allowCreateStorage;
+    }
+
+    public void setAllowCreateStorage(boolean allowCreateStorage)
+    {
+        _allowCreateStorage = allowCreateStorage;
+    }
+
     /** Normally all built in columns (created, createdBy, etc) are populated with newly calculated values on writing to target.
      * This list specifies those which should pass through from source.
      */
@@ -220,5 +247,25 @@ public class DataIteratorContext
     public boolean getConfigParameterBoolean(Enum key)
     {
         return Boolean.TRUE == getConfigParameter(key);
+    }
+
+    public Map<String, Object> getResponseInfo()
+    {
+        return _responseInfo;
+    }
+
+    public void putResponseInfo(String key, Object value)
+    {
+        _responseInfo.put(key, value);
+    }
+
+    public Logger getLogger()
+    {
+        return _logger;
+    }
+
+    public void setLogger(Logger logger)
+    {
+        _logger = logger;
     }
 }

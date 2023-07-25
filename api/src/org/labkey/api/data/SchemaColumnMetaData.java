@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.logging.LogHelper;
@@ -190,7 +191,7 @@ public class SchemaColumnMetaData
 
     private void loadFromMetaData(SchemaTableInfo ti) throws SQLException
     {
-        try
+        try (var ignore = DebugInfoDumper.pushThreadDumpContext("SchemaColumnMetaData.loadFromMetaData(" + ti.getSelectName() + ")"))
         {
             // With the Microsoft JDBC driver we're seeing more deadlocks loading schema metadata so try multiple
             // times when possible

@@ -235,12 +235,10 @@
           <column columnName="LastIndexed"/>
           <column columnName="EntireListIndex"/>
           <column columnName="EntireListIndexSetting"/>
-          <column columnName="EntireListTitleSetting" />
           <column columnName="EntireListTitleTemplate"/>
           <column columnName="EntireListBodySetting" />
           <column columnName="EntireListBodyTemplate"/>
           <column columnName="EachItemIndex"/>
-          <column columnName="EachItemTitleSetting" />
           <column columnName="EachItemTitleTemplate"/>
           <column columnName="EachItemBodySetting" />
           <column columnName="EachItemBodyTemplate"/>
@@ -326,6 +324,20 @@
       </column>
       <column columnName="AliquotVolume">
           <columnTitle>Aliquot Total Amount</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AvailableAliquotCount">
+          <columnTitle>Available Aliquot Count</columnTitle>
+          <isUserEditable>false</isUserEditable>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
+      </column>
+      <column columnName="AvailableAliquotVolume">
+          <columnTitle>Available Aliquot Amount</columnTitle>
           <isUserEditable>false</isUserEditable>
           <shownInDetailsView>false</shownInDetailsView>
           <shownInInsertView>false</shownInInsertView>
@@ -1016,6 +1028,8 @@
       <column columnName="AliquotCount"/>
       <column columnName="AliquotVolume"/>
       <column columnName="AliquotUnit"/>
+      <column columnName="AvailableAliquotCount"/>
+      <column columnName="AvailableAliquotVolume"/>
       <column columnName="StoredAmount">
           <displayColumnFactory>
               <className>org.labkey.api.data.measurement.AmountDataColumn$Factory</className>
@@ -1218,6 +1232,18 @@
                 </fk>
             </column>
             <column columnName="DataRowId"/>
+            <column columnName="Created"/>
+            <column columnName="CreatedBy"/>
+            <column columnName="Modified"/>
+            <column columnName="ModifiedBy"/>
+        </columns>
+    </table>
+    <table tableName="DataTypeExclusion" tableDbType="UNKNOWN">
+        <columns>
+            <column columnName="RowId"/>
+            <column columnName="DataTypeRowId"/>
+            <column columnName="DataType"/>
+            <column columnName="ExcludedContainer" />
             <column columnName="Created"/>
             <column columnName="CreatedBy"/>
             <column columnName="Modified"/>

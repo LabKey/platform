@@ -18,7 +18,6 @@ package org.labkey.list.controllers;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -36,6 +35,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
@@ -736,7 +736,7 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable TransactionAuditProvider.TransactionAuditEvent auditEvent) throws IOException
         {
-            return _list.importListItems(getUser(), getContainer(), dl, errors, null, null, false, _importLookupByAlternateKey, _insertOption);
+            return _list.importListItems(getUser(), getContainer(), dl, errors, null, null, false, getOptionParamValue(Params.importLookupByAlternateKey), _insertOption);
         }
 
         @Override
@@ -966,12 +966,14 @@ public class ListController extends SpringActionController
                 // Issue 47289: Export List Archive if the user is an Admin of the folders of the selected Lists, else throw Permission error
                 if (!pair.second.hasPermission(getUser(), DesignListPermission.class))
                 {
-                    throw new UnauthorizedException(String.format("You do not have the permission to export List '%s' from Folder '%s'.", listName, pair.second.getPath()));
+                    errors.reject(ERROR_MSG, String.format("List archive export is only supported for Lists in folders where you are an administrator. Try filtering to select only Lists in the local folder."));
+                    throw new ExportException(new SimpleErrorView(errors, true));
                 }
                 selectedLists.add(pair);
             }
 
-            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set("lists"), "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
+            Set<String> dataTypes = PageFlowUtil.set(FolderArchiveDataTypes.LIST_DESIGN, FolderArchiveDataTypes.LIST_DATA);
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, dataTypes, "List Export", new StaticLoggerGetter(LogHelper.getLogger(ListController.class, "Export List Archive")));
             ctx.setLists(selectedLists);
             ListWriter writer = new ListWriter();
 

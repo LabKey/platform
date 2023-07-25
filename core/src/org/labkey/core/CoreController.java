@@ -1818,17 +1818,20 @@ public class CoreController extends SpringActionController
                 if (dataType != null && writer.show(getContainer()) && !excludeForDataspace && !excludeForTemplate)
                 {
                     writerMap.put("name", dataType);
-                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType()));
+                    writerMap.put("selectedByDefault", writer.selectedByDefault(form.getExportType(), form.isForTemplate()));
 
                     Collection<Writer<?, ?>> childWriters = writer.getChildren(true, form.isForTemplate());
                     if (!childWriters.isEmpty())
                     {
-                        List<String> children = new ArrayList<>();
+                        List<Map<String, Object>> children = new ArrayList<>();
                         for (Writer<?, ?> child : childWriters)
                         {
                             dataType = child.getDataType();
                             if (dataType != null)
-                                children.add(dataType);
+                            {
+                                children.add(Map.of("name", dataType,
+                                        "selectedByDefault", child.selectedByDefault(form.getExportType(), form.isForTemplate())));
+                            }
                         }
 
                         if (children.size() > 0)

@@ -85,7 +85,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
@@ -134,7 +133,7 @@ public class AssayModule extends SpringModule
         PlateService.setInstance(new PlateManager());
         addController("assay", AssayController.class);
         addController("plate", PlateController.class);
-        DefaultSchema.registerProvider(PlateSchema.SCHEMA_NAME, new PlateSchema.Provider(this));
+        PlateSchema.register(this);
         DefaultSchema.registerProvider(AssaySchemaImpl.NAME, new AssaySchemaImpl.Provider(this));
 
         PropertyService.get().registerDomainKind(new PlateBasedAssaySampleTypeDomainKind());
@@ -174,7 +173,7 @@ public class AssayModule extends SpringModule
                 result.addAll(AssayService.get().getAssayProtocols(container)
                     .stream()
                     .map(protocol -> new AssayRunType(protocol, container))
-                    .collect(Collectors.toList()));
+                    .toList());
             }
             return result;
         });
@@ -183,9 +182,15 @@ public class AssayModule extends SpringModule
 
         if (null != ss)
         {
-            ss.addSearchCategory(AssayManager.ASSAY_CATEGORY);
-            ss.addResourceResolver(AssayManager.ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
+            ss.addSearchCategory(AssayManager.get().ASSAY_CATEGORY);
+            ss.addSearchCategory(AssayManager.get().ASSAY_BATCH_CATEGORY);
+            ss.addSearchCategory(AssayManager.get().ASSAY_RUN_CATEGORY);
+            ss.addResourceResolver(AssayManager.get().ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
+            ss.addResourceResolver(AssayManager.get().ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
+            ss.addResourceResolver(AssayManager.get().ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
+            ss.addDocumentProvider(new AssayBatchDocumentProvider());
+            ss.addDocumentProvider(new AssayRunDocumentProvider());
         }
 
         // add a container listener so we'll know when our container is deleted:
@@ -228,6 +233,8 @@ public class AssayModule extends SpringModule
                 });
             }
         });
+
+        ExperimentService.get().addExperimentListener(new AssayExperimentListener());
     }
 
     @Override

@@ -288,6 +288,12 @@ public interface FileContentService
         return 0;
     }
 
+    /** Notifies all registered FileListeners that a file or directory has been replaced */
+    default void fireFileReplacedEvent(@NotNull Path replaced, @Nullable User user, @Nullable Container container){}
+
+    /** Notifies all registered FileListeners that a file or directory has been deleted */
+    default void fireFileDeletedEvent(@NotNull Path deleted, @Nullable User user, @Nullable Container container){}
+
     /** Add a listener that will be notified when files are created or are moved */
     void addFileListener(FileListener listener);
 
@@ -340,4 +346,6 @@ public interface FileContentService
      * Returns a list of DirectoryPattern objects for the active modules in the given container.
      * */
     List<DirectoryPattern> getZiploaderPatterns(Container container);
+
+    File getMoveTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer);
 }

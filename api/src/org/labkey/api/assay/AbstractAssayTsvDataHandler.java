@@ -32,6 +32,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
@@ -159,6 +160,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
+            // pass through any plate metadata
+            if (context.getRawPlateMetadata() != null)
+                setRawPlateMetadata(context.getRawPlateMetadata());
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
         catch (ValidationException e)
@@ -172,7 +176,22 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
+        boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
+        File plateMetadataFile = null;
 
+        if (plateMetadataEnabled)
+        {
+            if (context instanceof AssayUploadXarContext assayContext)
+            {
+                plateMetadataFile = (File)assayContext.getContext().getUploadedData().get(AssayDataCollector.PLATE_METADATA_FILE);
+                if (plateMetadataFile != null)
+                {
+                    // don't serialize the plate metadata file to the transform script working dir
+                    if (plateMetadataFile.getPath().equals(dataFile.getPath()))
+                        return Collections.emptyMap();
+                }
+            }
+        }
         Domain dataDomain = provider.getResultsDomain(protocol);
 
         try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings, true))
@@ -186,6 +205,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             if (!dataRows.isEmpty())
                 adjustFirstRowOrder(dataRows, loader);
 
+            // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
+            // transform scripts to perform metadata related calculations
+            if (plateMetadataEnabled && plateMetadataFile != null)
+            {
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+                if (svc != null)
+                {
+                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = svc.parsePlateMetadata(plateMetadataFile);
+                    Domain runDomain = provider.getRunDomain(protocol);
+                    DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+                    if (property != null)
+                    {
+                        Object lsid = ((AssayUploadXarContext)context).getContext().getRunProperties().get(property);
+                        dataRows = svc.mergePlateMetadata(Lsid.parse(String.valueOf(lsid)), dataRows, plateMetadata, protocol);
+                    }
+                }
+            }
             datas.put(getDataType(), dataRows);
             return datas;
         }
@@ -464,7 +500,8 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             // Insert the data into the assay's data table.
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
-            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns/* only popuate created/modified/by for results created separately from runs */);
+            // autoFillDefaultResultColumns - only populate created/modified/by for results created separately from runs
+            List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable, autoFillDefaultResultColumns);
 
             ProvenanceService pvs = ProvenanceService.get();
             Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
@@ -574,36 +611,44 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-    private void addAssayPlateMetadata(Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
-                                       ExpData resultData, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
+    private void addAssayPlateMetadata(
+        Container container,
+        User user,
+        ExpRun run,
+        AssayProvider provider,
+        ExpProtocol protocol,
+        ExpData resultData,
+        List<Map<String, Object>> inserted,
+        Map<Integer, String> rowIdToLsidMap
+    ) throws ExperimentException
     {
-        if (provider.isPlateMetadataEnabled(protocol))
+        if (!provider.isPlateMetadataEnabled(protocol))
+            return;
+
+        // find the ExpData object for the plate metadata
+        List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
+        if (datas.size() == 1)
         {
-            // find the ExpData object for the plate metadata
-            List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
-            if (datas.size() == 1)
+            ExpData plateData = datas.get(0);
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateData.getDataType());
+            if (svc != null)
             {
-                ExpData plateData = datas.get(0);
-                AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateData.getDataType());
-                if (svc != null)
-                {
-                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
+                Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
 
-                    if (plateData.getFile() != null)
-                        plateMetadata = svc.parsePlateMetadata(plateData.getFile());
-                    else if (getRawPlateMetadata() != null)
-                        plateMetadata = getRawPlateMetadata();
-                    else
-                        throw new ExperimentException("There was no plate metadata JSON available for this run");
-
-                    svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
-                }
+                if (plateData.getFile() != null)
+                    plateMetadata = svc.parsePlateMetadata(plateData.getFile());
+                else if (getRawPlateMetadata() != null)
+                    plateMetadata = getRawPlateMetadata();
                 else
-                    throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
+                    throw new ExperimentException("There was no plate metadata JSON available for this run");
+
+                svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
             }
             else
-                throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
+                throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
         }
+        else
+            throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
     }
 
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)

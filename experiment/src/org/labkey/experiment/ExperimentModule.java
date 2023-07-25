@@ -63,6 +63,7 @@ import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
@@ -128,10 +129,12 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.samples.DataClassFolderImporter;
+import org.labkey.experiment.samples.DataClassFolderWriter;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
-import org.labkey.experiment.samples.SampleTypeAndDataClassFolderImporter;
-import org.labkey.experiment.samples.SampleTypeAndDataClassFolderWriter;
+import org.labkey.experiment.samples.SampleTypeFolderImporter;
+import org.labkey.experiment.samples.SampleTypeFolderWriter;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
@@ -172,7 +175,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 23.006;
+        return 23.009;
     }
 
     @Nullable
@@ -222,8 +225,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
-        AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter expression",
-                "When withCounter is used in name expression, make sure the count increments one-by-one and does not jump.", false);
+        AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
+                "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -533,10 +536,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         if (null != folderRegistry)
         {
             folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
-            folderRegistry.addFactories(
-                    new SampleTypeAndDataClassFolderWriter.Factory(),
-                    new SampleTypeAndDataClassFolderImporter.Factory()
-            );
+            folderRegistry.addWriterFactory(new SampleTypeFolderWriter.SampleTypeDesignWriter.Factory());
+            folderRegistry.addWriterFactory(new SampleTypeFolderWriter.SampleTypeDataWriter.Factory());
+            folderRegistry.addWriterFactory(new DataClassFolderWriter.DataClassDesignWriter.Factory());
+            folderRegistry.addWriterFactory(new DataClassFolderWriter.DataClassDataWriter.Factory());
+            folderRegistry.addImportFactory(new SampleTypeFolderImporter.Factory());
+            folderRegistry.addImportFactory(new DataClassFolderImporter.Factory());
             folderRegistry.addImportFactory(new SampleStatusFolderImporter.Factory());
         }
 

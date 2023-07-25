@@ -87,9 +87,9 @@ public class PositionImpl implements Position
     @Override
     public boolean equals(Object obj)
     {
-        if (!(obj instanceof Position))
-            return false;
-        return ((Position) obj).getRow() == getRow() && ((Position) obj).getColumn() == getColumn();
+        if (obj instanceof Position pos)
+            return pos.getRow() == getRow() && pos.getColumn() == getColumn();
+        return false;
     }
 
     @Override

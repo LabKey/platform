@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -164,12 +165,20 @@ public class FileContentServiceImpl implements FileContentService
                     // check if there exists a child container that matches the next path segment
                     java.nio.file.Path top = rel.subpath(0, 1);
                     assert top != null;
-                    Container child = root.getChild(top.getFileName().toString());
+                    Container child = next.getChild(top.getFileName().toString());
                     if (child == null)
                         break;
 
                     next = child;
-                    rel = rel.subpath(1, rel.getNameCount() - 1);
+
+                    if(rel.getNameCount() > 1)
+                    {
+                        rel = rel.subpath(1, rel.getNameCount());
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
 
                 if (next != null && !next.equals(root))
@@ -1144,6 +1153,26 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
+    public void fireFileReplacedEvent(@NotNull java.nio.file.Path replaced, @Nullable User user, @Nullable Container container)
+    {
+        java.nio.file.Path absPath = FileUtil.getAbsoluteCaseSensitivePath(container, replaced);
+        for (FileListener fileListener : _fileListeners)
+        {
+            fileListener.fileReplaced(absPath, user, container);
+        }
+    }
+
+    @Override
+    public void fireFileDeletedEvent(@NotNull java.nio.file.Path deleted, @Nullable User user, @Nullable Container container)
+    {
+        java.nio.file.Path absPath = FileUtil.getAbsoluteCaseSensitivePath(container, deleted);
+        for (FileListener fileListener : _fileListeners)
+        {
+            fileListener.fileDeleted(absPath, user, container);
+        }
+    }
+
+    @Override
     public int fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container)
     {
         return fireFileMoveEvent(src.toPath(), dest.toPath(), user, container);
@@ -1565,6 +1594,38 @@ public class FileContentServiceImpl implements FileContentService
                 return true;
         }
         return false;
+    }
+
+    @Override
+    public File getMoveTargetFile(String absoluteFilePath, @NotNull Container sourceContainer, @NotNull Container targetContainer)
+    {
+        if (absoluteFilePath == null)
+            return null;
+
+        File file = new File(absoluteFilePath);
+        if (!file.exists())
+        {
+            _log.warn("File '" + absoluteFilePath + "' not found and cannot be moved");
+            return null;
+        }
+
+        File sourceFileRoot = getFileRoot(sourceContainer);
+        if (sourceFileRoot == null)
+            return null;
+
+        String sourceRootPath = sourceFileRoot.getAbsolutePath();
+        if (!absoluteFilePath.startsWith(sourceRootPath))
+        {
+            _log.warn("File '" + absoluteFilePath + "' not currently located in source folder '" + sourceRootPath + "'. Not moving.");
+            return null;
+        }
+        File targetFileRoot = getFileRoot(targetContainer);
+        if (targetFileRoot == null)
+            return null;
+
+        String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
+        File targetFile = new File(targetPath);
+        return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
     }
 
     // Cache with short-lived entries so that exp.files can perform reasonably

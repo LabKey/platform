@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -36,10 +37,10 @@ public interface PlateTypeHandler
     List<String> getTemplateTypes(Pair<Integer, Integer> size);
 
     /**
-     * createPlate will be given a null value for templateTypeName when it is creating a new template which is a 
+     * createTemplate will be given a null value for templateTypeName when it is creating a new template which is a
      * default for that assay type.
      */
-    PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
+    Plate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
 
     List<Pair<Integer, Integer>> getSupportedPlateSizes();
 
@@ -52,9 +53,8 @@ public interface PlateTypeHandler
 
     /**
      * Validate a new or edited plate template for handler specific errors.
-     * @throws ValidationException
      */
-    void validate(Container container, User user, PlateTemplate template) throws ValidationException;
+    void validateTemplate(Container container, User user, Plate template) throws ValidationException;
 
     Map<String, List<String>> getDefaultGroupsForTypes();
 

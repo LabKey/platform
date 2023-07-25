@@ -23,7 +23,6 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentParentFactory;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -175,7 +174,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
 
             if (result.size() > 0 && !errors.hasErrors())
-                mgr.indexList(_list, false);
+                mgr.indexList(_list);
         }
 
         return result;
@@ -246,8 +245,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     if (imported > 0)
                         ListManager.get().addAuditEvent(_list, updatedUser, "Bulk " + (insertOption.updateOnly ? "updated " : (insertOption.mergeRows ? "imported " : "inserted ")) + imported + " rows to list.");
 
+                    transaction.addCommitTask(() -> ListManager.get().indexList(_list), DbScope.CommitTaskOption.POSTCOMMIT);
                     transaction.commit();
-                    ListManager.get().indexList(_list, false); // TODO: Add to a post-commit task?
+
                     return imported;
                 }
 
@@ -280,7 +280,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = _importRowsUsingDIB(getListUser(user, container), container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
-            ListManager.get().indexList(_list, false);
+            ListManager.get().indexList(_list);
         return count;
     }
 
@@ -294,7 +294,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         List<Map<String, Object>> result = super.updateRows(getListUser(user, container), container, rows, oldKeys, errors, configParameters, extraScriptContext);
         if (result.size() > 0)
-            ListManager.get().indexList(_list, false);
+            ListManager.get().indexList(_list);
         return result;
     }
 
@@ -523,7 +523,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         List<AttachmentParent> attachmentParents = new ArrayList<>();
 
         // Delete Discussions
-        if (DiscussionService.get() != null)
+        if (_list.getDiscussionSetting() != ListDefinition.DiscussionSetting.None && DiscussionService.get() != null)
             DiscussionService.get().deleteDiscussions(container, user, entityIds);
 
         // Delete Attachments
@@ -538,15 +538,14 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected int truncateRows(User user, Container container)
-            throws QueryUpdateServiceException, SQLException
+    protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
     {
         int result;
         try (DbScope.Transaction transaction = getDbTable().getSchema().getScope().ensureTransaction())
         {
             deleteRelatedListData(user, container);
             result = super.truncateRows(getListUser(user, container), container);
-            ListManager.get().addAuditEvent(_list, user, "Deleted " + result + " rows from list.");
+            transaction.addCommitTask(() -> ListManager.get().addAuditEvent(_list, user, "Deleted " + result + " rows from list."), DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
         }
 
@@ -584,10 +583,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     @Nullable
     private Object getField(Map<String, Object> map, String key)
     {
+        /* TODO: this is very strange, we have a TableInfo we should be using its ColumnInfo objects to figure out aliases, we don't need to guess */
         Object value = map.get(key);
 
         if (null == value)
-            value = map.get("_" + key);
+            value = map.get(key + "_");
 
         if (null == value)
             value = map.get(AliasManager.legalNameFromName(key));

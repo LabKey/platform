@@ -27,7 +27,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LogEvent;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -172,7 +171,6 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.bootstrap.ExplodedModuleService;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.CollaborationFolderType;
@@ -235,7 +233,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -1796,6 +1793,36 @@ public class AdminController extends SpringActionController
         {
             _restrictedColumnsEnabled = restrictedColumnsEnabled;
         }
+
+        public JSONObject toJSON()
+        {
+            Map<String, Object> json = new HashMap<>();
+            json.put("applicationMenuDisplayMode", getApplicationMenuDisplayMode());
+            json.put("companyName", getCompanyName());
+            json.put("customLogin", getCustomLogin());
+            json.put("customWelcome", getCustomWelcome());
+            json.put("dateParsingMode", getDateParsingMode());
+            json.put("defaultDateFormat", getDefaultDateFormat());
+            json.put("defaultDateTimeFormat", getDefaultDateTimeFormat());
+            json.put("defaultNumberFormat", getDefaultNumberFormat());
+            json.put("discussionEnabled", isDiscussionEnabled());
+            json.put("extraDateParsingPattern", getExtraDateParsingPattern());
+            json.put("extraDateTimeParsingPattern", getExtraDateTimeParsingPattern());
+            json.put("folderDisplayMode", getFolderDisplayMode());
+            json.put("helpMenuEnabled", isHelpMenuEnabled());
+            json.put("logoHref", getLogoHref());
+            json.put("reportAProblemPath", getReportAProblemPath());
+            json.put("restrictedColumnsEnabled", areRestrictedColumnsEnabled());
+            json.put("shouldInherit" ,getShouldInherit());
+            json.put("supportEmail" ,getSupportEmail());
+            json.put("systemDescription", getSystemDescription());
+            json.put("systemEmailAddress", getSystemEmailAddress());
+            json.put("systemShortName", getSystemShortName());
+            json.put("themeFont", getThemeFont());
+            json.put("themeName", getThemeName());
+
+            return JsonUtil.toJsonPreserveNulls(json);
+        }
     }
 
     public enum FileRootProp implements SafeToRenderEnum
@@ -2503,7 +2530,7 @@ public class AdminController extends SpringActionController
             buttonHTML += PageFlowUtil.button("Export").href(getExportQueriesURL()) + "<br/><br/>";
 
             return QueryProfiler.getInstance().getReportView(form.getStat(), buttonHTML, AdminController::getQueriesURL,
-                    sql -> getQueryStackTracesURL(sql.hashCode()));
+                    AdminController::getQueryStackTracesURL);
         }
 
         @Override
@@ -2531,10 +2558,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getQueryStackTracesURL(int hashCode)
+    private static ActionURL getQueryStackTracesURL(String sqlHash)
     {
         ActionURL url = new ActionURL(QueryStackTracesAction.class, ContainerManager.getRoot());
-        url.addParameter("sqlHashCode", hashCode);
+        url.addParameter("sqlHash", sqlHash);
         return url;
     }
 
@@ -2545,7 +2572,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHashCode(), AdminController::getExecutionPlanURL);
+            return QueryProfiler.getInstance().getStackTraceView(form.getSqlHash(), AdminController::getExecutionPlanURL);
         }
 
         @Override
@@ -2557,10 +2584,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getExecutionPlanURL(String sql)
+    private static ActionURL getExecutionPlanURL(String sqlHash)
     {
         ActionURL url = new ActionURL(ExecutionPlanAction.class, ContainerManager.getRoot());
-        url.addParameter("sqlHashCode", sql.hashCode());
+        url.addParameter("sqlHash", sqlHash);
         return url;
     }
 
@@ -2568,25 +2595,25 @@ public class AdminController extends SpringActionController
     @AdminConsoleAction
     public class ExecutionPlanAction extends SimpleViewAction<QueryForm>
     {
-        private int _hashCode;
+        private String _sqlHash;
         private ExecutionPlanType _type;
 
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            _hashCode = form.getSqlHashCode();
+            _sqlHash = form.getSqlHash();
             _type = EnumUtils.getEnum(ExecutionPlanType.class, form.getType());
             if (null == _type)
                 throw new NotFoundException("Unknown execution plan type");
 
-            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHashCode(), _type);
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHash(), _type);
         }
 
         @Override
         public void addNavTrail(NavTree root)
         {
             addAdminNavTrail(root, "Queries", QueriesAction.class);
-            root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
+            root.addChild("Query Stack Traces", getQueryStackTracesURL(_sqlHash));
             root.addChild(_type.getDescription());
         }
     }
@@ -2594,18 +2621,18 @@ public class AdminController extends SpringActionController
 
     public static class QueryForm
     {
-        private int _sqlHashCode;
+        private String _sqlHash;
         private String _type = "Estimated"; // All dialects support Estimated
 
-        public int getSqlHashCode()
+        public String getSqlHash()
         {
-            return _sqlHashCode;
+            return _sqlHash;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setSqlHashCode(int sqlHashCode)
+        public void setSqlHash(String sqlHash)
         {
-            _sqlHashCode = sqlHashCode;
+            _sqlHash = sqlHash;
         }
 
         public String getType()
@@ -7876,32 +7903,17 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors)
         {
-            int eventId = 0;
+            Integer eventId = null;
             try
             {
                 String s = getViewContext().getRequest().getParameter("eventId");
                 if (null != s)
                     eventId = Integer.parseInt(s);
             }
-            catch (NumberFormatException x) {}
-            Map<LogEvent, String> events = SessionAppender.getLoggingEvents(getViewContext().getRequest());
-            ArrayList<Map<String, Object>> list = new ArrayList<>(events.size());
-            for (Map.Entry<LogEvent, String> entry : events.entrySet())
-            {
-                if (eventId==0 || eventId<Integer.parseInt(entry.getValue()))
-                {
-                    LogEvent e = entry.getKey();
-                    HashMap<String, Object> m = new HashMap<>();
-                    m.put("eventId", entry.getValue());
-                    m.put("level", e.getLevel().toString());
-                    m.put("message", e.getMessage().getFormattedMessage());
-                    m.put("timestamp", new Date(e.getTimeMillis()));
-                    list.add(m);
-                }
-            }
+            catch (NumberFormatException ignored) {}
             ApiSimpleResponse res = new ApiSimpleResponse();
             res.put("success", true);
-            res.put("events", list);
+            res.put("events", SessionAppender.getLoggingEvents(getViewContext().getRequest(), eventId));
             return res;
         }
     }
@@ -9848,17 +9860,14 @@ public class AdminController extends SpringActionController
                         ExceptionReportingLevel.valueOf(form.getLevel()), null, null, null);
             }
 
-            Map<String, Object> params = new LinkedHashMap<>();
-            if (report != null)
+            final Map<String, Object> params;
+            if (report == null)
             {
-                params.putAll(report.getParams());
-                // Hack to make the JSON more readable for preview, as the Mothership report is a String->String map
-                Object jsonMetrics = params.get(MothershipReport.JSON_METRICS_KEY);
-                if (jsonMetrics instanceof String jms)
-                {
-                    JSONObject o = new JSONObject(jms);
-                    params.put(MothershipReport.JSON_METRICS_KEY, o);
-                }
+                params = new LinkedHashMap<>();
+            }
+            else
+            {
+                params = report.getJsonFriendlyParams();
                 if (form.isSubmit())
                 {
                     report.setForwardedFor(form.getForwardedFor());
@@ -10291,37 +10300,93 @@ public class AdminController extends SpringActionController
         public boolean handlePost(ProjectSettingsForm form, BindException errors) throws Exception
         {
             Container c = getContainer();
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-            boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
+            User user = getUser();
+            JSONObject json = form.toJSON();
+            return saveProjectSettings(json, user, c, errors);
+        }
+    }
 
+    // Same as ProjectSettingsAction, but provides special admin console permissions handling
+    @AdminConsoleAction(ApplicationAdminPermission.class)
+    public static class LookAndFeelSettingsAction extends ProjectSettingsAction
+    {
+        @Override
+        protected TYPE getType()
+        {
+            return TYPE.LookAndFeelSettings;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class UpdateProjectSettingsAction extends MutatingApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public void validateForm(SimpleApiJsonForm form, Errors errors)
+        {
+            JSONObject json = form.getJsonObject();
+            if (json == null)
+                errors.reject(ERROR_MSG, "Empty request ");
+        }
+
+        @Override
+        public Object execute(SimpleApiJsonForm form, BindException errors)
+        {
+            JSONObject json = form.getJsonObject();
+            Container c = getContainer();
+
+            boolean saved = saveProjectSettings(json, getUser(), getContainer(), errors);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("success", saved && !errors.hasErrors());
+            return response;
+        }
+    }
+
+    private static boolean saveProjectSettings(JSONObject json, User user, Container c, BindException errors)
+    {
+        WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+        boolean hasAdminOpsPerm = c.hasPermission(user, AdminOperationsPermission.class);
+
+        if (json.has("themeName"))
+        {
+            String themName = json.optString("themeName");
             try
             {
-                if (form.getThemeName() == null)
+                if (themName == null)
                 {
                     if (!c.isRoot())
                         props.clearThemeName();
                 }
                 else
                 {
-                    props.setThemeName(form.getThemeName());
+                    props.setThemeName(themName);
                 }
             }
             catch (IllegalArgumentException ignored)
             {
             }
+        }
 
-            if (form.getShouldInherit() != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
+        if (json.has("shouldInherit"))
+        {
+            boolean shouldInherit = json.optBoolean("shouldInherit");
+            if (shouldInherit != SecurityManager.shouldNewSubfoldersInheritPermissions(c))
             {
-                SecurityManager.setNewSubfoldersInheritPermissions(c, getUser(), form.getShouldInherit());
+                SecurityManager.setNewSubfoldersInheritPermissions(c, user, shouldInherit);
             }
+        }
 
-            // a few properties on this page should be restricted to operational permissions (i.e. site admin)
-            if (hasAdminOpsPerm)
+
+        // a few properties on this page should be restricted to operational permissions (i.e. site admin)
+        if (hasAdminOpsPerm)
+        {
+            if (json.has("systemEmailAddress"))
             {
+                String systemEmailAddress = json.optString("systemEmailAddress");
                 try
                 {
                     // this will throw an InvalidEmailException for invalid email addresses
-                    ValidEmail email = new ValidEmail(form.getSystemEmailAddress());
+                    ValidEmail email = new ValidEmail(systemEmailAddress);
                     props.setSystemEmailAddress(email);
                 }
                 catch (ValidEmail.InvalidEmailException e)
@@ -10330,15 +10395,23 @@ public class AdminController extends SpringActionController
                             + e.getBadEmail() + "]. Please enter a valid email address.");
                     return false;
                 }
+            }
 
-                if (!props.isValidUrl(form.getCustomLogin()))
+            if (json.has("customLogin"))
+            {
+                String customLogin = json.optString("customLogin");
+                if (!props.isValidUrl(customLogin))
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid login URL. Should be in the form <module>-<name>.");
                     return false;
                 }
-                props.setCustomLogin(form.getCustomLogin());
+                props.setCustomLogin(customLogin);
+            }
 
-                String welcomeUrl = StringUtils.trimToNull(form.getCustomWelcome());
+            if (json.has("customWelcome"))
+            {
+                String customWelcome = json.optString("customWelcome");
+                String welcomeUrl = StringUtils.trimToNull(customWelcome);
                 if ("/".equals(welcomeUrl) || AppProps.getInstance().getContextPath().equalsIgnoreCase(welcomeUrl))
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid welcome URL. The url cannot equal '/' or the contextPath (" + AppProps.getInstance().getContextPath() + ")");
@@ -10347,18 +10420,28 @@ public class AdminController extends SpringActionController
                 props.setCustomWelcome(welcomeUrl);
             }
 
-            props.setCompanyName(form.getCompanyName());
-            props.setSystemDescription(form.getSystemDescription());
-            props.setLogoHref(form.getLogoHref());
-            props.setSystemShortName(form.getSystemShortName());
-            props.setReportAProblemPath(form.getReportAProblemPath());
+        }
 
-            if (!isBlank(form.getSupportEmail()))
+        if (json.has("companyName"))
+            props.setCompanyName(json.optString("companyName"));
+        if (json.has("systemDescription"))
+            props.setSystemDescription(json.optString("systemDescription"));
+        if (json.has("logoHref"))
+            props.setLogoHref(json.optString("logoHref"));
+        if (json.has("systemShortName"))
+            props.setSystemShortName(json.optString("systemShortName"));
+        if (json.has("reportAProblemPath"))
+            props.setReportAProblemPath(json.optString("reportAProblemPath"));
+
+        if (json.has("supportEmail"))
+        {
+            String supportEmail = json.optString("supportEmail");
+            if (!isBlank(supportEmail))
             {
                 try
                 {
                     // this will throw an InvalidEmailException for invalid email addresses
-                    ValidEmail email = new ValidEmail(form.getSupportEmail());
+                    ValidEmail email = new ValidEmail(supportEmail);
                     props.setSupportEmail(email.toString());
                 }
                 catch (ValidEmail.InvalidEmailException e)
@@ -10372,34 +10455,59 @@ public class AdminController extends SpringActionController
             {
                 props.setSupportEmail(null);
             }
+        }
 
-            props.setFolderDisplayMode(FolderDisplayMode.fromString(form.getFolderDisplayMode()));
-            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(form.getApplicationMenuDisplayMode()));
-            props.setHelpMenuEnabled(form.isHelpMenuEnabled());
-            props.setDiscussionEnabled(form.isDiscussionEnabled());
+        if (json.has("folderDisplayMode"))
+            props.setFolderDisplayMode(FolderDisplayMode.fromString(json.optString("folderDisplayMode")));
+        if (json.has("applicationMenuDisplayMode"))
+            props.setApplicationMenuDisplayMode(FolderDisplayMode.fromString(json.optString("applicationMenuDisplayMode")));
+        if (json.has("helpMenuEnabled"))
+            props.setHelpMenuEnabled(json.optBoolean("helpMenuEnabled"));
+        if (json.has("discussionEnabled"))
+            props.setDiscussionEnabled(json.optBoolean("discussionEnabled"));
 
-            DateParsingMode dateParsingMode = DateParsingMode.fromString(form.getDateParsingMode());
+        if (json.has("dateParsingMode"))
+        {
+            DateParsingMode dateParsingMode = DateParsingMode.fromString(json.optString("dateParsingMode"));
             props.setDateParsingMode(dateParsingMode);
 
-            if (!saveFolderSettings(c, form, props, getUser(), errors))
-                return false;
-
-            // Bump the look & feel revision so browsers retrieve the new theme stylesheet
-            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-
-            return true;
         }
-    }
 
-    // Same as ProjectSettingsAction, but provides special admin console permissions handling
-    @AdminConsoleAction(ApplicationAdminPermission.class)
-    public static class LookAndFeelSettingsAction extends ProjectSettingsAction
-    {
-        @Override
-        protected TYPE getType()
+        if (json.has("defaultDateFormat") && !validateAndSaveFormat(json.optString("defaultDateFormat"), props::clearDefaultDateFormat, props::setDefaultDateFormat, errors, "date"))
+            return false;
+        if (json.has("defaultDateTimeFormat") && !validateAndSaveFormat(json.optString("defaultDateTimeFormat"), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
+            return false;
+        if (json.has("defaultNumberFormat") && !validateAndSaveFormat(json.optString("defaultNumberFormat"), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
+            return false;
+        if (json.has("extraDateParsingPattern") && !validateAndSaveFormat(json.optString("extraDateParsingPattern"), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
+            return false;
+        if (json.has("extraDateTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraDateTimeParsingPattern"), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+
+        if (json.has("restrictedColumnsEnabled"))
         {
-            return TYPE.LookAndFeelSettings;
+            try
+            {
+                props.setRestrictedColumnsEnabled(json.optBoolean("restrictedColumnsEnabled"));
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
+            }
         }
+
+        if (errors.hasErrors())
+            return false;
+
+        props.save();
+
+        //write an audit log event
+        props.writeAuditLogEvent(c, user);
+
+        // Bump the look & feel revision so browsers retrieve the new theme stylesheet
+        WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+
+        return true;
     }
 
     @RequiresPermission(AdminPermission.class)

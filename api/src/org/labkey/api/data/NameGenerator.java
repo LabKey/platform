@@ -41,6 +41,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.UserSchema;
@@ -161,6 +162,7 @@ public class NameGenerator
         batchRandomId(3294),
         containerPath("containerPathValue"),
         contextPath("contextPathValue"),
+        rootSampleCount(124),
         dailySampleCount(14), // sample counts can both be SubstitutionValue as well as modifiers
         dataRegionName("dataRegionNameValue"),
         genId(1001),
@@ -220,6 +222,7 @@ public class NameGenerator
     private final FieldKeyStringExpression _parsedNameExpression;
 
     // extracted from name expression after parsing
+    private boolean _exprHasSampleRootCounter = false;
     private boolean _exprHasSampleCounterFormats = false;
     private boolean _exprHasLineageInputs = false;
     private boolean _exprHasLineageLookup = false;
@@ -673,6 +676,11 @@ public class NameGenerator
         return true;
     }
 
+    public static boolean isRootSampleCountToken(FieldKey token)
+    {
+        return SubstitutionFormat.rootSampleCount.name().equalsIgnoreCase(token.toString());
+    }
+
     public static boolean isLineageToken(Object token, @Nullable Map<String, String> importAliases)
     {
         String sTok = token.toString();
@@ -847,6 +855,7 @@ public class NameGenerator
         boolean hasSampleCounterFormat = false;
         boolean hasLineageInputs = false;
         boolean hasLineageLookup = false;
+        boolean hasSampleRootCounter = false;
         List<FieldKey> lookups = new ArrayList<>();
         Map<String, List<String>> lineageLookupFields = new CaseInsensitiveHashMap<>();
         Set<String> substitutionValues = new CaseInsensitiveHashSet();
@@ -932,6 +941,9 @@ public class NameGenerator
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
                     if (fieldParts.size() == 1)
                     {
+                        if (isRootSampleCountToken(fkTok))
+                            hasSampleRootCounter = true;
+
                         if (_validateSyntax)
                         {
                             String fieldName = fieldParts.get(0);
@@ -1173,6 +1185,7 @@ public class NameGenerator
             _exprLookups = fieldKeyLookup;
         }
 
+        _exprHasSampleRootCounter = hasSampleRootCounter;
         _exprHasSampleCounterFormats = hasSampleCounterFormat;
         _exprHasLineageInputs = hasLineageInputs;
         _exprHasLineageLookup = hasLineageLookup;
@@ -1336,7 +1349,7 @@ public class NameGenerator
     @NotNull
     public State createState(boolean incrementSampleCounts)
     {
-        return new State(incrementSampleCounts);
+        return new State(incrementSampleCounts, _exprHasSampleRootCounter);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
@@ -1371,11 +1384,28 @@ public class NameGenerator
         private final Map<String, ArrayList<Object>> _ancestorCache;
         private final Map<String, Map<String, DbSequence>> _prefixCounterSequences;
 
+        private final DbSequence _rootCounterSequence;
+
         private boolean _prefixCounterSequencesCleaned = false;
 
-        private State(boolean incrementSampleCounts)
+        private State(boolean incrementSampleCounts, boolean exprHasSampleRootCounter)
         {
             _incrementSampleCounts = incrementSampleCounts;
+
+            if (incrementSampleCounts) // determine if need to incrementRootSampleCount
+            {
+                DbSequence rootCountSeq = SampleTypeService.get().getRootSampleSequence();
+                if (exprHasSampleRootCounter || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
+                {
+                    _rootCounterSequence = rootCountSeq;
+                    if (rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a server
+                        _rootCounterSequence.ensureMinimum(SampleTypeService.get().getRootSampleCount());
+                }
+                else
+                    _rootCounterSequence = null;
+            }
+            else
+                _rootCounterSequence = null;
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
@@ -1388,6 +1418,16 @@ public class NameGenerator
             _prefixCounterSequences = new HashMap<>();
         }
 
+        public boolean isIncrementSampleCounts()
+        {
+            return _incrementSampleCounts;
+        }
+
+        public DbSequence getRootCounterSequence()
+        {
+            return _rootCounterSequence;
+        }
+
         public Map<String, Map<String, DbSequence>> getPrefixCounterSequences()
         {
             return _prefixCounterSequences;
@@ -1397,6 +1437,9 @@ public class NameGenerator
         {
             if (_prefixCounterSequencesCleaned)
                 return;
+
+            if (_rootCounterSequence != null)
+                _rootCounterSequence.sync();
 
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
@@ -1461,14 +1504,29 @@ public class NameGenerator
             // and put the sample counts into the context so that any sample counters not bound to a column will be replaced; e.g, "${dailySampleCount}".
             // It is important to do this even if a "name" is explicitly provided so the sample counts are accurate.
             Map<String, Long> sampleCounts = null;
-            if (_incrementSampleCounts && !_exprHasSampleCounterFormats)
+            if (_incrementSampleCounts)
             {
-                if (null == getSampleCountsFunction)
+                if (!_exprHasSampleCounterFormats)
                 {
-                    Date now = (Date)_batchExpressionContext.get("now");
-                    getSampleCountsFunction = SampleTypeService.get().getSampleCountsFunction(now);
+                    if (null == getSampleCountsFunction)
+                    {
+                        Date now = (Date)_batchExpressionContext.get("now");
+                        getSampleCountsFunction = SampleTypeService.get().getSampleCountsFunction(now);
+                    }
+                    sampleCounts = getSampleCountsFunction.apply(null);
                 }
-                sampleCounts = getSampleCountsFunction.apply(null);
+
+                if (_rootCounterSequence != null)
+                {
+                    if (sampleCounts == null)
+                        sampleCounts = new HashMap<>();
+
+                    boolean skipRootSampleCount = altExpression != null; // so far altExpression is not null only when generating aliquots
+                    if (!skipRootSampleCount)
+                        sampleCounts.put("rootSampleCount", _rootCounterSequence.next());
+                    else
+                        sampleCounts.put("rootSampleCount", _rootCounterSequence.current());
+                }
             }
 
             // Always execute the extraPropsFns, if available, to increment the ${genId} counter in the non-QueryUpdateService code path.
@@ -1903,7 +1961,7 @@ public class NameGenerator
             if (isMaterialParent || isDataParent)
             {
                 for (String parent : parentNames(value, colName))
-                    addLineageLookupContext(parts[1], parent, isMaterialParent, parentImportAliases, inputLookupValues);
+                    addLineageLookupContext(QueryKey.decodePart(parts[1]), parent, isMaterialParent, parentImportAliases, inputLookupValues);
             }
         }
 
@@ -2786,6 +2844,8 @@ public class NameGenerator
             validateNameResult("S-MaterialInputs/lookupfield", withWarnings("S-MaterialInputs/lookupfield","The 'MaterialInputs' substitution pattern starting at position 2 should be preceded by the string '${'."));
 
             validateNameResult("AliquotedFrom-001", withWarnings("AliquotedFrom-001", "The 'AliquotedFrom' substitution pattern starting at position 0 should be preceded by the string '${'."));
+
+            validateNameResult("S-rootSampleCount", withWarnings("S-rootSampleCount", "The 'rootSampleCount' substitution pattern starting at position 2 should be preceded by the string '${'."));
         }
 
         @Test

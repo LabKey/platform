@@ -135,6 +135,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
         SkipBulkRemapCache,
     }
 
+    enum DataTypeForExclusion
+    {
+        SampleType,
+        DataClass,
+        AssayDesign,
+        StorageLocation
+    }
+
     @Nullable
     ExpObject findObjectFromLSID(String lsid);
 
@@ -188,9 +196,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
 
+    /**
+     * There are subtle differences between File.toURI() and Path.toUri() so ensure you pick the correct getExpDatasUnderPath to
+     * match your use case.
+     */
     @NotNull
     List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
 
+    @NotNull
+    List<? extends ExpData> getExpDatasUnderPath(@NotNull Path path, @Nullable Container c, boolean includeExactPath);
+    
     /**
      * Get all ExpData that are members of the ExpDataClass.
      */
@@ -359,6 +374,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpExperiment getExpExperiment(int rowid);
 
     ExpExperiment getExpExperiment(String lsid);
+
+    List<? extends ExpExperiment> getExpExperiments(Collection<Integer> rowIds);
 
     List<? extends ExpExperiment> getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches);
 
@@ -656,6 +673,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoObjectLegacyNames();
 
+    TableInfo getTinfoDataTypeExclusion();
+
     /**
      * Get all runs associated with these materials, including the source runs and any derived runs
      * @param materials to get runs for
@@ -925,6 +944,20 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<QueryViewProvider<ExpRun>> getRunOutputsViewProviders();
 
+    void removeDataTypeExclusion(Collection<Integer> rowIds, DataTypeForExclusion dataType);
+
+    void removeContainerDataTypeExclusions(String containerId);
+
+    @NotNull Map<ExperimentService.DataTypeForExclusion, Set<Integer>> getContainerDataTypeExclusions(@NotNull String excludedContainerId);
+
+    Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
+
+    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
+
+    void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
+
+    String getDisabledDataTypeAuditMsg(ExperimentService.DataTypeForExclusion type, List<Integer> ids, boolean isUpdate);
+
     void registerRunInputsViewProvider(QueryViewProvider<ExpRun> provider);
 
     void registerRunOutputsViewProvider(QueryViewProvider<ExpRun> providers);
@@ -985,9 +1018,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
+    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior);
+
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
-    int updateContainer(TableInfo dataTable, String idField, List<Integer> ids, Container targetContainer, User user);
+
     Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
+
+    int moveAuditEvents(Container targetContainer, List<String> runLsids);
 
     class XarExportOptions
     {

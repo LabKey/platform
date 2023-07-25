@@ -113,7 +113,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
 
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
-        super(query, schema, StringUtils.defaultString(alias, "_select" + query.incrementAliasCounter()));
+        super(query, schema, StringUtils.defaultString(alias, "select_" + query.incrementAliasCounter()));
         _inFromClause = false;
 
         // subqueryTable is only for expr.createColumnInfo()
@@ -228,7 +228,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
                     }
                 }
                 QExpr copy = ((QExpr) gb).copyTree();
-                SelectColumn col = new SelectColumn(copy, "__gb_key__" + index);
+                SelectColumn col = new SelectColumn(copy, "gb_key__" + index);
                 _columns.put(col.getFieldKey(), col);
                 ret.put(col.getName(), col);
             }
@@ -729,7 +729,7 @@ public class QuerySelect extends AbstractQueryRelation implements Cloneable
             FieldKey aliasKey = table.getAlias();
             if (null == aliasKey)
             {
-                table.setAlias(new QIdentifier("_auto_alias_" + _tables.size() + "_"));
+                table.setAlias(new QIdentifier("auto_alias_" + _tables.size() + "_"));
                 aliasKey = table.getAlias();
                 reportWarning("Subquery in FROM clause does not have an alias", expr);
             }

@@ -77,6 +77,7 @@ import org.labkey.api.security.permissions.RestrictedReadPermission;
 import org.labkey.api.security.permissions.RestrictedUpdatePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -112,6 +113,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+
+import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 /** Wraps a DatasetSchemaTableInfo and makes it Query-ized. Represents a single dataset's data */
 public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
@@ -194,6 +197,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {
+            if (!acceptColumn(baseColumn))
+                continue;
+
             String name = baseColumn.getName();
             if (subjectColName.equalsIgnoreCase(name))
             {
@@ -410,6 +416,8 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
                 DatasetAutoJoinTable table = new DatasetAutoJoinTable(schema, cf, DatasetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
                 ColumnInfo datasetColumn = table.getColumn(displayField);
+                if (null == datasetColumn)
+                    return null;
                 MutableColumnInfo lookup = WrappedColumnInfo.wrap(datasetColumn);
                 lookup.setFieldKey(new FieldKey(parent.getFieldKey(), lookup.getName()));
                 return lookup;
@@ -474,7 +482,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 
         addFolderColumn();
 
-        if(getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
+        if(ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || getDataset().getKeyManagementType() == Dataset.KeyManagementType.None)
         {
             setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
             setAllowedInsertOption(QueryUpdateService.InsertOption.REPLACE);
@@ -482,6 +490,10 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
         }
     }
 
+    protected boolean acceptColumn(ColumnInfo column)
+    {
+        return true;
+    }
 
     @Override
     public void addContextualRole(Role contextualRole)
@@ -545,7 +557,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     @Override
     protected @NotNull String getPHILoggingComment(@NotNull Set<FieldKey> dataLoggingColumns)
     {
-        return "PHI accessed in dataset. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
+        return "PHI accessed in dataset '" + getName() + "'. Data shows " + StudyService.get().getSubjectColumnName(getContainer())+ ".";
     }
 
     @Override

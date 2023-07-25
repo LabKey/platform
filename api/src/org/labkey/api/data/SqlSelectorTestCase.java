@@ -22,6 +22,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
@@ -43,15 +44,8 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
             assertEquals(0, count.intValue());
         }
 
-        try
-        {
-            new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements").getValueMap();
-            fail("Expected getValueMap() call with a single column to fail");
-        }
-        catch (IllegalStateException e)
-        {
-            assertTrue(e.getMessage().startsWith("Must select at least two columns"));
-        }
+        Map<Integer, Integer> identityMap = new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT RowId FROM comm.Announcements").getValueMap();
+        assertTrue("Expected an identity map!", identityMap.entrySet().stream().allMatch(entry -> entry.getKey().equals(entry.getValue())));
 
         // Verify that we can generate the supported execution plans
         for (SqlDialect.ExecutionPlanType type : SqlDialect.ExecutionPlanType.values())

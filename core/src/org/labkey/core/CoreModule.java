@@ -65,7 +65,7 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.premium.PremiumService;
+import org.labkey.api.premium.AntiVirusProviderRegistry;
 import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.query.DefaultSchema;
@@ -161,8 +161,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
 import org.labkey.api.view.template.WarningService;
-import org.labkey.core.view.TableViewFormTestCase;
-import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
@@ -246,11 +244,13 @@ import org.labkey.core.user.LimitActiveUsersSettings;
 import org.labkey.core.user.UserController;
 import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
+import org.labkey.core.view.TableViewFormTestCase;
 import org.labkey.core.view.external.tools.ExternalToolsViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
+import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.webdav.UserResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
 import org.labkey.core.wiki.MarkdownServiceImpl;
@@ -282,6 +282,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.TableViewForm.EXPERIMENTAL_DESERIALIZE_BEANS;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectFolderType;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectResetPermissions;
 import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebparts;
@@ -417,10 +418,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
         AdminConsole.addExperimentalFeatureFlag(DataColumn.EXPERIMENTAL_USE_QUERYSELECT_COMPONENT, "Use QuerySelect for row insert/update form",
                 "This feature will switch the query based select inputs on the row insert/update form to use the React QuerySelect" +
-                        "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
-                        "search to find the other select values.", false);
-        AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
-                "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
+                "component. This will allow for a user to view the first 100 options in the select but then use type ahead" +
+                "search to find the other select values.", false);
+        AdminConsole.addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
+                "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1040,6 +1041,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Block malicious clients",
                 "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
                 false);
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_DESERIALIZE_BEANS,
+                "Deserialize objects from update forms",
+                "We no longer deserialize objects encoded into update forms. Turn this feature on if the removal of object deserialization is causing specific update operations to fail.",
+                false);
 
         if (null != PropertyService.get())
         {
@@ -1089,7 +1094,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
 
         if (AppProps.getInstance().isDevMode())
-            PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
+            AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
 
         FileContentService fileContentService = FileContentService.get();
         if (fileContentService != null)
@@ -1279,7 +1284,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);
-            result.add(scope.getLabKeySchema());
+            if (scope != null)
+            {
+                result.add(scope.getLabKeySchema());
+            }
         }
 
         return result;

@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,6 +93,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
     {
         super(query);
         MemTracker.getInstance().put(this);
+        setAlias("union_" + query.incrementAliasCounter());
     }
 
     QueryUnion(Query query, CommonTableExpressions.QueryTableWith tableWith)
@@ -355,18 +357,19 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             }
             col._phi = phi;
             if (null != ex)
+            {
                 col._columnLogging = ColumnLogging.error(shouldLog, sqap, ex.getMessage());
+            }
             else if (dataLoggingColumns.isEmpty())
             {
                 col._columnLogging = ColumnLogging.defaultLogging(fakeTableInfo, col.getFieldKey());
             }
             else
             {
-                // It's hard to create a good comment here. (see also FilteredTable.getPHILoggingComment())
-                // To improve this, we need to work to preserve original table names of the dataLoggingColumns for logging.
-                String loggingComment = "PHI accessed in UNION query in schema " + _query.getSchema().getName() + ". Data shows columns: ";
-                loggingComment += dataLoggingColumns.stream().map(FieldKey::toString).collect(Collectors.joining(", "));
-                col._columnLogging = new ColumnLogging(this.getSchema().getSchemaName(), "UNION", col.getFieldKey(), shouldLog, dataLoggingColumns, loggingComment, sqap);
+                Set<String> comments = new LinkedHashSet<>();
+                for (var source : col._sourceColumns)
+                    comments.addAll(source.columnLogging.getLoggingComments());
+                col._columnLogging = new ColumnLogging(this.getSchema().getSchemaName(), "UNION", col.getFieldKey(), shouldLog, dataLoggingColumns, comments, sqap);
             }
         }
     }
@@ -538,7 +541,7 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             ColumnLogging columnLogging = unionColumn.getColumnLogging();
             if (null == columnLogging.getException())
                 columnLogging = new ColumnLogging(getSchema().getName(), getParentTable().getName(), getFieldKey(),
-                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
+                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComments(), columnLogging.getSelectQueryAuditProvider());
             setColumnLogging(columnLogging);
         }
     }
@@ -725,12 +728,6 @@ public class QueryUnion extends AbstractQueryRelation implements ColumnResolving
             _name = new FieldKey(null, name);
             _first = col;
             _ordinal = ordinal;
-        }
-
-        @Override
-        public String getUniqueName()
-        {
-            return super._defaultUniqueName(QueryUnion.this);
         }
 
         private void addSourceColumn(UnionSourceColumn col)

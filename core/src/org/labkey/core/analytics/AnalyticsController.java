@@ -51,17 +51,11 @@ public class AnalyticsController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "analytics settings", new ActionURL(BeginAction.class, ContainerManager.getRoot()));
     }
 
-    static public class SettingsForm extends ViewForm
+    public static class SettingsForm extends ViewForm
     {
         public Set<AnalyticsServiceImpl.TrackingStatus> ff_trackingStatus = AnalyticsServiceImpl.get().getTrackingStatus();
-        public String ff_accountId = AnalyticsServiceImpl.get().getAccountId();
         public String ff_measurementId = AnalyticsServiceImpl.get().getMeasurementId();
         public String ff_trackingScript = AnalyticsServiceImpl.get().getSavedScript();
-
-        public void setFf_accountId(String ff_accountId)
-        {
-            this.ff_accountId = ff_accountId;
-        }
 
         public void setFf_trackingStatus(String[] statuses)
         {
@@ -88,7 +82,7 @@ public class AnalyticsController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class BeginAction extends FormViewAction<SettingsForm>
+    public static class BeginAction extends FormViewAction<SettingsForm>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -104,12 +98,6 @@ public class AnalyticsController extends SpringActionController
             {
                 errors.reject("form", "Please specify a Measurement ID when using GA4");
             }
-
-            if (target.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.enabled) &&
-                    target.ff_trackingStatus.contains(AnalyticsServiceImpl.TrackingStatus.enabledFullURL))
-            {
-                errors.reject("form", "Please choose only one Universal Google Analytics option");
-            }
         }
 
         @Override
@@ -122,7 +110,7 @@ public class AnalyticsController extends SpringActionController
         @Override
         public boolean handlePost(SettingsForm settingsForm, BindException errors)
         {
-            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_measurementId, settingsForm.ff_trackingScript, getUser());
+            AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_measurementId, settingsForm.ff_trackingScript, getUser());
             return true;
         }
 

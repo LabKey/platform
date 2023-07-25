@@ -14,20 +14,20 @@ const UNSAVED_ALERT =
     'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
 
 interface State {
-    error: string;
-    initError: string;
-    loading: boolean;
-    formConfigurations: AuthConfig[];
-    ssoConfigurations: AuthConfig[];
-    secondaryConfigurations: AuthConfig[];
-    primaryProviders: AuthConfigProvider[];
-    secondaryProviders: AuthConfigProvider[];
-    globalSettings: { [key: string]: any };
-    helpLink: string;
+    authCount: number;
     canEdit: boolean;
     dirtinessData: { [key: string]: AuthConfig[] };
     dirty: boolean;
-    authCount: number;
+    error: string;
+    formConfigurations: AuthConfig[];
+    globalSettings: { [key: string]: any };
+    helpLink: string;
+    initError: string;
+    loading: boolean;
+    primaryProviders: AuthConfigProvider[];
+    secondaryConfigurations: AuthConfig[];
+    secondaryProviders: AuthConfigProvider[];
+    ssoConfigurations: AuthConfig[];
 }
 
 export class App extends PureComponent<{}, Partial<State>> {

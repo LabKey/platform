@@ -29,7 +29,25 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiJsonForm;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasAllowBindParameter;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.DiscussionService;
@@ -50,7 +68,6 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -61,7 +78,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.AbstractDeleteDataStateAction;
 import org.labkey.api.qc.AbstractManageDataStatesForm;
 import org.labkey.api.qc.AbstractManageQCStatesAction;
@@ -106,7 +122,6 @@ import org.labkey.api.security.RequiresAllOf;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -118,6 +133,7 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.specimen.SpecimenManager;
 import org.labkey.api.specimen.importer.RequestabilityManager;
 import org.labkey.api.specimen.location.LocationImpl;
@@ -169,7 +185,6 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.MasterPatientIndexMaintenanceTask;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishConfirmAction;
 import org.labkey.study.assay.AssayPublishStartAction;
 import org.labkey.study.assay.StudyPublishManager;
@@ -233,6 +248,7 @@ import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterValue;
 import static org.labkey.study.model.QCStateSet.selectedQCStateLabelFromUrl;
+import static org.labkey.study.query.DatasetQueryView.EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS;
 
 /**
  * User: Karl Lum
@@ -1339,15 +1355,16 @@ public class StudyController extends BaseStudyController
             if (null == target.getLabel())
                 errors.reject(ERROR_MSG, "Please supply a label");
 
-            if (!StudyService.get().isValidSubjectColumnName(getContainer(), target.getSubjectColumnName()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectColumnName() + "\" is not a valid subject column name.");
+            String message;
 
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounSingular()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounSingular() + "\" is not a valid singular subject noun.");
+            if (null != (message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), target.getSubjectColumnName())))
+                errors.reject(ERROR_MSG, message);
 
-            // For now, apply the same check to the plural noun as to the singular- there rules should be exactly the same.
-            if (!StudyService.get().isValidSubjectNounSingular(getContainer(), target.getSubjectNounPlural()))
-                errors.reject(ERROR_MSG, "\"" + target.getSubjectNounPlural() + "\" is not a valid plural subject noun.");
+            if (null != (message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), target.getSubjectNounSingular())))
+                errors.reject(ERROR_MSG, message);
+
+            if (null != (message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), target.getSubjectNounPlural())))
+                errors.reject(ERROR_MSG, message);
         }
 
         @Override
@@ -1547,28 +1564,42 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateForm(TableViewForm form, Errors errors)
         {
-            // Issue 43898: Validate that the subject column name is not a user defined field in one of the datasets
-            String subjectColName = form.get("SubjectColumnName");
-            if (null != subjectColName)
+            // Skip validation if Spring binding already has an error for subject noun singular
+            if (errors.getFieldError("SubjectNounSingular") == null)
             {
-                Study study = StudyService.get().getStudy(getContainer());
-                if (null != study)
+                // Issue 47444 and Issue 47881: Validate that subject noun singular doesn't match the name of an existing
+                // study table or dataset
+                String subjectNounSingular = form.get("SubjectNounSingular");
+                if (null != subjectNounSingular)
                 {
-                    for (Dataset dataset : study.getDatasets())
-                    {
-                        Domain domain = dataset.getDomain();
-                        if (null != domain)
-                        {
-                            for (DomainProperty property : domain.getProperties())
-                            {
-                                if (property.getName().equalsIgnoreCase(subjectColName))
-                                {
-                                    errors.reject(ERROR_MSG, "Cannot set Subject Column Name to a user defined dataset field. " + subjectColName + " is already defined in " + dataset.getName() + ". ");
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                    String message = StudyService.get().getSubjectNounSingularValidationErrorMessage(getContainer(), subjectNounSingular);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
+            }
+
+            // Skip validation if Spring binding already has an error for subject noun plural
+            if (errors.getFieldError("SubjectNounPlural") == null)
+            {
+                String subjectNounPlural = form.get("SubjectNounPlural");
+                if (null != subjectNounPlural)
+                {
+                    String message = StudyService.get().getSubjectNounPluralValidationErrorMessage(getContainer(), subjectNounPlural);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
+                }
+            }
+
+            // Skip validation if Spring binding already has an error for subject column name
+            if (errors.getFieldError("SubjectColumnName") == null)
+            {
+                // Issue 43898: Validate that the subject column name is not a user-defined field in one of the datasets
+                String subjectColName = form.get("SubjectColumnName");
+                if (null != subjectColName)
+                {
+                    String message = StudyService.get().getSubjectColumnNameValidationErrorMessage(getContainer(), subjectColName);
+                    if (message != null)
+                        errors.reject(ERROR_MSG, message);
                 }
             }
         }
@@ -2467,7 +2498,7 @@ public class StudyController extends BaseStudyController
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
                 return new RequirePipelineView(_study, true, errors);
 
-            boolean showImportOptions = _def.getKeyManagementType() == Dataset.KeyManagementType.None;
+            boolean showImportOptions = ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_ALLOW_MERGE_WITH_MANAGED_KEYS) || _def.getKeyManagementType() == Dataset.KeyManagementType.None;
             setShowMergeOption(showImportOptions);
             setShowUpdateOption(showImportOptions);
             setSuccessMessageSuffix("imported");  //Works for when the merge option is selected (may include updates) vs default "inserted"
@@ -2494,14 +2525,16 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
-            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
+            Pair<List<String>, UploadLog> result = StudyPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, getOptionParamValue(Params.importLookupByAlternateKey), file, originalName, columnMap, errors, _form.getInsertOption(), auditBehaviorType);
 
             if (!result.getKey().isEmpty())
             {
-                // Log the import
+                // Log the import when SUMMARY is configured, if DETAILED is configured the DetailedAuditLogDataIterator will handle each row change.
+                // It would be nice in the future to replace the DetailedAuditLogDataIterator with a general purpose AuditLogDataIterator
+                // that can delegate the audit behavior type to the AuditDataHandler, so this code can go away
+                //
                 String comment = "Dataset data imported. " + result.getKey().size() + " rows imported";
-                StudyServiceImpl.addDatasetAuditEvent(
-                        getUser(), getContainer(), _def, comment, result.getValue());
+                new DatasetDefinition.DatasetAuditHandler(_def).addAuditEvent(getUser(), getContainer(), AuditBehaviorType.SUMMARY, comment, result.getValue());
             }
 
             return result.getKey().size();

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
+<%@ page import="org.labkey.api.assay.plate.Plate" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController.CopyTemplateBean" %>
@@ -47,7 +47,7 @@
         </td>
     </tr>
 <%
-    List<? extends PlateTemplate> templates = bean.getDestinationTemplates();
+    List<? extends Plate> templates = bean.getDestinationTemplates();
     if (templates != null)
     {
 %>
@@ -65,7 +65,7 @@
         }
         else
         {
-            for (PlateTemplate template : templates)
+            for (Plate template : templates)
             {
 %>
     <tr>

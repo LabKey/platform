@@ -435,6 +435,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
             d.setPropertyIndices(propertyIndices);
 
+            // TODO: This looks like the wrong order to me -- we should updateListProperties() (persist the indexing
+            // settings and handle potential transitions) before calling save() (which indexes the list). Since this is
+            // the create case there's no data to index, but there is meta data...
             list.save(user);
             updateListProperties(container, user, list.getListId(), listProperties);
 
@@ -695,7 +698,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         ListDefinition list = ListService.get().getList(domain);
         if (list != null)
-            ListManager.get().indexList(list, true);
+            ListManager.get().indexList(list);
     }
 
     @Override

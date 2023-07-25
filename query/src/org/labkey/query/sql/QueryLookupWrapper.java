@@ -190,7 +190,7 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             ColumnLogging columnLogging = col.getColumnLogging();
             if (null == columnLogging.getException())
                 columnLogging = new ColumnLogging(getSchema().getName(), ret.getName(), ci.getFieldKey(),
-                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComment(), columnLogging.getSelectQueryAuditProvider());
+                        columnLogging.shouldLogName(), columnLogging.getDataLoggingColumns(), columnLogging.getLoggingComments(), columnLogging.getSelectQueryAuditProvider());
             ci.setColumnLogging(columnLogging);
             ci.setKeyField(ci.getFieldKey().equals(key));
             ret.addColumn(ci);
@@ -519,7 +519,6 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         final AbstractQueryRelation _table;
         final FieldKey _key;
         final String _alias;
-        final String _uniqueName;
         ColumnLogging _columnLogging = null;
         PHI _phi;
         
@@ -528,7 +527,6 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
             _table = table;
             _key = key;
             _alias = alias;
-            _uniqueName = super._defaultUniqueName(QueryLookupWrapper.this);
         }
 
         @Override
@@ -541,12 +539,6 @@ public class QueryLookupWrapper extends AbstractQueryRelation implements QueryRe
         AbstractQueryRelation getTable()
         {
             return _table;
-        }
-
-        @Override
-        final public String getUniqueName()
-        {
-            return _uniqueName;
         }
 
         @Override

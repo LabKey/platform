@@ -21,6 +21,7 @@ import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataRow;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellData;
@@ -32,6 +33,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -39,12 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: brittp
-* Date: Oct 20, 2006
-* Time: 10:26:38 AM
-*/
-public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
+public class WellGroupImpl extends PropertySetImpl implements WellGroup
 {
     private PlateImpl _plate;
     private Double _mean = null;
@@ -55,20 +53,32 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     private List<WellData> _replicateWellData;
     private DilutionDataRow _dilutionDataRow = null;
 
+    private Integer _rowId;
+    private String _name;
+    private WellGroup.Type _type;
+    boolean _deleted;
+
+    protected Integer _plateId;
+    protected List<? extends Position> _positions;
+
     public WellGroupImpl()
     {
         // no-param constructor for reflection
     }
 
-    public WellGroupImpl(PlateImpl plate, String name, WellGroup.Type type, List<Position> positions)
+    public WellGroupImpl(PlateImpl owner, String name, WellGroup.Type type, List<? extends Position> positions)
     {
-        super(plate, name, type, positions);
-        _plate = plate;
+        super(owner.getContainer());
+        _type = type;
+        _name = name;
+        _plateId = owner.getRowId() != null ? owner.getRowId() : null;
+        _plate = owner;
+        _positions = sortPositions(positions);
     }
 
-    public WellGroupImpl(PlateImpl plate, WellGroupTemplateImpl template)
+    public WellGroupImpl(PlateImpl plate, WellGroupImpl template)
     {
-        super(plate, template.getName(), template.getType(), template.getPositions());
+        this(plate, template.getName(), template.getType(), template.getPositions());
         _plate = plate;
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());
@@ -77,10 +87,119 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     @Override
     public @Nullable ActionURL detailsURL()
     {
-        if (_plate == null)
+        if (_plateId == null)
             return null;
 
-        return PlateManager.get().getDetailsURL(_plate);
+        Plate template = PlateService.get().getPlate(getContainer(), _plateId);
+        if (template == null)
+            return null;
+
+        return template.detailsURL();
+    }
+
+
+    private static List<? extends Position> sortPositions(List<? extends Position> positions)
+    {
+        List<? extends Position> sortedPositions = new ArrayList<>(positions);
+        sortedPositions.sort((Comparator<Position>) Comparator.comparingInt(Position::getColumn).thenComparingInt(Position::getRow));
+        return sortedPositions;
+    }
+
+    @Override
+    public List<Position> getPositions()
+    {
+        return Collections.unmodifiableList(_positions);
+    }
+
+    @Override
+    public void setPositions(List<? extends Position> positions)
+    {
+        _positions = sortPositions(positions);
+    }
+
+    @Override
+    public WellGroup.Type getType()
+    {
+        return _type;
+    }
+
+    @Override
+    public String getName()
+    {
+        return _name;
+    }
+
+    public void setName(String name)
+    {
+        _name = name;
+    }
+
+    @Override
+    public boolean contains(Position position)
+    {
+        return _positions.contains(position);
+    }
+
+    @Override
+    public String getPositionDescription()
+    {
+        if (_positions == null || _positions.size() == 0)
+            return "";
+        if (_positions.size() == 1)
+            return _positions.get(0).getDescription();
+        return _positions.get(0).getDescription() + "-" + _positions.get(_positions.size() - 1).getDescription();
+    }
+
+    @Override
+    public Integer getRowId()
+    {
+        return _rowId;
+    }
+
+    public void setRowId(Integer rowId)
+    {
+        _rowId = rowId;
+    }
+
+    public String getTypeName()
+    {
+        return _type.name();
+    }
+
+    public void setTypeName(String type)
+    {
+        _type = WellGroup.Type.valueOf(type);
+    }
+
+    public Integer getPlateId()
+    {
+        return _plateId;
+    }
+
+    public void setPlateId(Integer plateId)
+    {
+        _plateId = plateId;
+    }
+
+    public boolean isTemplate()
+    {
+        return _plate != null ? _plate.isTemplate() : false;
+    }
+
+    public Position getTopLeft()
+    {
+        if (_positions.isEmpty())
+            return null;
+        return _positions.get(0);
+    }
+
+    /**
+     * Mark the well group as deleted.
+     * @see PlateImpl#markWellGroupForDeletion(WellGroup)
+     */
+    public void delete()
+    {
+        _deleted = true;
     }
 
     @Override
@@ -91,7 +210,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
             _overlappingGroups = new LinkedHashSet<>();
             for (Position position : getPositions())
             {
-                List<? extends WellGroup> groups = _plate.getWellGroups(position);
+                List<WellGroup> groups = _plate.getWellGroups(position);
                 for (WellGroup group : groups)
                 {
                     if (group != this)
@@ -263,12 +382,6 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
     public void setPlate(PlateImpl plate)
     {
         _plate = plate;
-    }
-
-    @Override
-    public boolean isTemplate()
-    {
-        return false;
     }
 
     private synchronized void computeStats()

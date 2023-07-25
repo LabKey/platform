@@ -249,8 +249,7 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
         {
             catalogName = md.getCatalogName(i);
             isAutoIncrement = md.isAutoIncrement(i);
-            // HACK to work around MySQL 5.7 bug. See #24800. Revisit once MySQL fixes https://bugs.mysql.com/bug.php?id=74723 and/or http://bugs.mysql.com/bug.php?id=79449
-            isCaseSensitive = !"com.mysql.jdbc.ResultSetMetaData".equals(md.getClass().getName()) && md.isCaseSensitive(i);
+            isCaseSensitive = md.isCaseSensitive(i);
             isSearchable = md.isSearchable(i);
             isCurrency = md.isCurrency(i);
             isNullable = md.isNullable(i);

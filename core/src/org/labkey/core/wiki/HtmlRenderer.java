@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.TidyUtil;
+import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
@@ -92,7 +92,7 @@ public class HtmlRenderer implements WikiRenderer
         boolean volatilePage = formattedHtml.isVolatile();
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>(formattedHtml.getClientDependencies());
 
-        Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml().toString()) + "</body></html>", false, errors);
+        Document doc = JSoupUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml().toString()) + "</body></html>", false, errors);
         if (!errors.isEmpty() || doc == null)
         {
             StringBuilder innerHtml = new StringBuilder("<div class=\"labkey-error\"><b>An exception occurred while generating the HTML.  Please correct this content.</b></div><br>The error message was: ");

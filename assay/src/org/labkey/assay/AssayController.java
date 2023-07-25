@@ -188,6 +188,7 @@ public class AssayController extends SpringActionController
         GetProtocolAction.class,
         ImportAction.class,
         ImportRunApiAction.class,
+        MoveAssayRunsAction.class,
         PipelineDataCollectorRedirectAction.class,
         ReimportRedirectAction.class,
         SaveAssayBatchAction.class,
@@ -335,7 +336,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("reRunSupport", provider.getReRunSupport());
         assayProperties.put("templateLink", urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider plateBased)
-            assayProperties.put("plateTemplate", plateBased.getPlateTemplate(c, protocol));
+            assayProperties.put("plateTemplate", plateBased.getPlate(c, protocol));
         assayProperties.put("requireCommentOnQCStateChange", AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocol.getContainer()));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
@@ -1248,9 +1249,9 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider)
+        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider, ExpProtocol protocol)
         {
-            return provider.getPlateMetadataTemplateURL(container);
+            return provider.getPlateMetadataTemplateURL(container, protocol);
         }
     }
 

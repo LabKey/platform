@@ -30,6 +30,7 @@ import java.util.List;
 public interface ExpRunItem extends ExpObject, Identifiable
 {
     String INPUT_PARENT = "Inputs";
+    String INPUTS_PREFIX_LC = (INPUT_PARENT + "/").toLowerCase();
     String PARENT_IMPORT_ALIAS_MAP_PROP = "parentImportAliasMap";
 
     @Nullable

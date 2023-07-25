@@ -32,9 +32,9 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public boolean selectedByDefault(ExportType type)
+    public boolean selectedByDefault(ExportType type, boolean forTemplate)
     {
-        return ExportType.ALL == type;
+        return ExportType.STUDY != type;
     }
 
     @Override
@@ -46,12 +46,6 @@ public class BaseFolderWriter implements FolderWriter
     @Override
     public void write(Container c, FolderExportContext ctx, VirtualFile vf) throws Exception
     {}
-
-    @Override
-    public boolean includeWithTemplate()
-    {
-        return true;
-    }
 
     @Override
     public void initialize(FolderExportContext context)

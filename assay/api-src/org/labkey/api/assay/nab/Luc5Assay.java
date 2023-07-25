@@ -19,12 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionSummary;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellData;
-import org.labkey.api.assay.plate.WellGroup;
 
 import java.io.File;
 import java.io.Serializable;

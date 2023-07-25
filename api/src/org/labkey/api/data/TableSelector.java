@@ -197,7 +197,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     */
     private static boolean isStableOrdered(Collection<?> collection)
     {
-        return (!(collection instanceof Set set) || CollectionUtils.isStableOrderedSet(set));
+        return (!(collection instanceof Set<?> set) || CollectionUtils.isStableOrderedSet(set));
     }
 
     @NotNull

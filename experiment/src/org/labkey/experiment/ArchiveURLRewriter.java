@@ -100,7 +100,7 @@ public class ArchiveURLRewriter extends URLRewriter
 
             if (inSubTree)
             {
-                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, path, true));
+                name = dataHandler.getFileName(data, FileUtil.relativizeUnix(rootDir, path, !Files.isSymbolicLink(path)));
             }
             else
             {

@@ -89,7 +89,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -183,7 +182,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         try
         {
-            // Whether or not we need to save batch properties
+            // Whether we need to save batch properties
             boolean forceSaveBatchProps = false;
             if (batch == null)
             {
@@ -303,8 +302,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
 
             // Check for circular inputs/outputs
-            checkForCycles(context, inputMaterials, outputMaterials);
-            checkForCycles(context, inputDatas, outputDatas);
+            checkForCycles(inputMaterials, outputMaterials);
+            checkForCycles(inputDatas, outputDatas);
 
             // Create the batch, if needed
             if (batch == null)
@@ -336,11 +335,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<>();
 
-            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm)
+            if (transformResult.getWarnings() != null && context instanceof AssayRunUploadForm<ProviderType> uploadForm)
             {
                 context.setTransformResult(transformResult);
-                ((AssayRunUploadForm)context).setName(run.getName());
-                ((AssayRunUploadForm) context).setComments(run.getComments());
+                uploadForm.setName(run.getName());
+                uploadForm.setComments(run.getComments());
                 throw new ValidationException(" ");
             }
 
@@ -410,10 +409,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 ProvenanceService pvs = ProvenanceService.get();
                 Set<String> runInputLSIDs = null;
-                if (provInputsProperty instanceof String)
+                if (provInputsProperty instanceof String provInputs)
                 {
                     // parse as a JSONArray of values or a comma-separated list of values
-                    String provInputs = (String)provInputsProperty;
                     if (provInputs.startsWith("[") && provInputs.endsWith("]"))
                         provInputsProperty = new JSONArray(provInputs);
                     else
@@ -496,7 +494,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpData, String> outputDatas,
         ViewBackgroundInfo info,
         XarContext xarContext,
-        TransformResult transformResult,
         List<ExpData> insertedDatas
     ) throws ExperimentException, ValidationException
     {
@@ -541,7 +538,13 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
+                ExperimentDataHandler dataHandler = insertedData.findDataHandler();
+
+                // Pass through raw plate metadata from assay run upload context
+                if (context.getRawPlateMetadata() != null && dataHandler instanceof AbstractAssayTsvDataHandler)
+                    ((AbstractAssayTsvDataHandler) dataHandler).setRawPlateMetadata(context.getRawPlateMetadata());
+
+                dataHandler.importFile(insertedData, insertedData.getFile(), info, logger, xarContext, context.isAllowLookupByAlternateKey(), context.shouldAutoFillDefaultResultColumns());
             }
         }
     }
@@ -559,7 +562,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         if (transformResult.getTransformedData().isEmpty())
         {
-            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
+            importStandardResultData(context, run, inputDatas, outputDatas, info, xarContext, insertedDatas);
         }
         else
         {
@@ -572,7 +575,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             ExperimentDataHandler handler = data.findDataHandler();
 
             // this should assert to always be true
-            if (handler instanceof TransformDataHandler)
+            if (handler instanceof TransformDataHandler transformDataHandler)
             {
                 for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
                 {
@@ -588,19 +591,20 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     // Add to the cached list of outputs
                     run.getDataOutputs().add(expData);
 
-                    ((TransformDataHandler)handler).importTransformDataMap(expData, context, run, entry.getValue());
+                    transformDataHandler.importTransformDataMap(expData, context, run, entry.getValue());
                 }
             }
         }
     }
 
     // See also AbstractAssayTsvDataHandler.resolveSampleNames
-    protected void addInputMaterials(AssayRunUploadContext<ProviderType> context,
-                                     Map<ExpMaterial, String> inputMaterials,
-                                     ParticipantVisitResolverType resolverType,
-                                     @NotNull RemapCache cache,
-                                     @NotNull Map<Integer, ExpMaterial> materialCache)
-            throws ExperimentException, ValidationException
+    protected void addInputMaterials(
+        AssayRunUploadContext<ProviderType> context,
+        Map<ExpMaterial, String> inputMaterials,
+        ParticipantVisitResolverType resolverType,
+        @NotNull RemapCache cache,
+        @NotNull Map<Integer, ExpMaterial> materialCache
+    ) throws ExperimentException, ValidationException
     {
         Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
         addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers, cache, materialCache);
@@ -1142,7 +1146,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     // Disallow creating a run with inputs which are also outputs
     protected void checkForCycles(
-        AssayRunUploadContext<ProviderType> context,
         Map<? extends ExpRunItem, String> inputs,
         Map<? extends ExpRunItem, String> outputs
     ) throws ExperimentException

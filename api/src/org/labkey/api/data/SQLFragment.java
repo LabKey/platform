@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
@@ -49,6 +50,8 @@ import java.util.stream.StreamSupport;
  */
 public class SQLFragment implements Appendable, CharSequence
 {
+    public static final String FEATUREFLAG_DISABLE_STRICT_CHECKS  = "sqlfragment-disable-strict-checks";
+
     private String sql;
     private StringBuilder sb = null;
     private List<Object> params;          // TODO: Should be List<?>
@@ -107,9 +110,13 @@ public class SQLFragment implements Appendable, CharSequence
 
     public SQLFragment(CharSequence charseq, @Nullable List<?> params)
     {
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        assert !StringUtils.contains(charseq, ';');
+        if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+            StringUtils.contains(charseq, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+        }
 
         // allow statement separators
         this.sql = charseq.toString();
@@ -378,9 +385,15 @@ public class SQLFragment implements Appendable, CharSequence
     {
         if (null == charseq)
             return this;
-        assert (StringUtils.countMatches(charseq, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(charseq, '\"') % 2) == 0;
-        assert !StringUtils.contains(charseq, ';');
+
+        if ((StringUtils.countMatches(charseq, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(charseq, '\"') % 2) != 0 ||
+            StringUtils.contains(charseq, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.append(String) does not allow semicolons or unmatched quotes");
+        }
+
         getStringBuilder().append(charseq);
         return this;
     }
@@ -392,9 +405,14 @@ public class SQLFragment implements Appendable, CharSequence
         if (null == charseq)
             return this;
         String identifier = charseq.toString().strip();
-        assert (StringUtils.countMatches(identifier, '\"') % 2) == 0;
+
         boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
-        assert quoted || (!StringUtils.containsWhitespace(identifier) && !StringUtils.containsAny(identifier, "*/\\'\"?;"));
+        if ((StringUtils.countMatches(identifier, '\"') % 2) != 0 || (!quoted && StringUtils.containsAny(identifier, "*/\\'\"?;- \t\n")))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to incorrectly formatted");
+        }
+
         getStringBuilder().append(charseq);
         return this;
     }
@@ -692,9 +710,13 @@ public class SQLFragment implements Appendable, CharSequence
     /** Insert into the SQL */
     public void insert(int index, String str)
     {
-        assert (StringUtils.countMatches(str, '\'') % 2) == 0;
-        assert (StringUtils.countMatches(str, '\"') % 2) == 0;
-        assert !StringUtils.contains(str, ';');
+        if ((StringUtils.countMatches(str, '\'') % 2) != 0 ||
+            (StringUtils.countMatches(str, '\"') % 2) != 0 ||
+            StringUtils.contains(str, ';'))
+        {
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                throw new IllegalArgumentException("SQLFragment.insert(int,String) does not allow semicolons or unmatched quotes");
+        }
 
         getStringBuilder().insert(index, str);
     }
@@ -1005,18 +1027,18 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'one' as s, CAST(? AS VARCHAR) as p", "parameterONE");
                 assertEquals("SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p", filterDebugString(a.toDebugString()));
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterTWO");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB = c.addCommonTableExpression(new Object(), "_B_", b);
+                String cteTokenB = c.addCommonTableExpression(new Object(), "B_", b);
                 c.append("SELECT * FROM ").append(cteTokenB).append(" WHERE i=?").add(3);
                 assertEquals("""
                         WITH
                         /*CTE*/
-                        \t_A_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
+                        \tA_ AS (SELECT 1 as i, 'one' as s, CAST('parameterONE' AS VARCHAR) as p)
                         ,/*CTE*/
-                        \t_B_ AS (SELECT * FROM _A_ WHERE p='parameterTWO')
-                        SELECT * FROM _B_ WHERE i=3""",
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterTWO')
+                        SELECT * FROM B_ WHERE i=3""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(3, params.size());
@@ -1030,21 +1052,21 @@ public class SQLFragment implements Appendable, CharSequence
                 SQLFragment a = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment a2 = new SQLFragment("SELECT 2 as i, 'Atwo' as s, CAST(? AS VARCHAR) as p", "parameterAtwo");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression(new Object(), "_A_", a);
+                String cteTokenA = b.addCommonTableExpression(new Object(), "A_", a);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
-                String cteTokenA2 = c.addCommonTableExpression(new Object(), "_A2_", a2);
-                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression(new Object(), "A2_", a2);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
                         /*CTE*/
-                        \t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        \tA_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
                         ,/*CTE*/
-                        \t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterB')
                         ,/*CTE*/
-                        \t_A2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)
-                        SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i""",
+                        \tA2_ AS (SELECT 2 as i, 'Atwo' as s, CAST('parameterAtwo' AS VARCHAR) as p)
+                        SELECT *, 4 as xyz FROM B_ B, A2_ A WHERE B.i=A.i""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
@@ -1059,21 +1081,21 @@ public class SQLFragment implements Appendable, CharSequence
             {
                 SQLFragment cf = new SQLFragment("SELECT 1 as i, 'Aone' as s, CAST(? AS VARCHAR) as p", "parameterAone");
                 SQLFragment b = new SQLFragment();
-                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "_A_", cf);
+                String cteTokenA = b.addCommonTableExpression("CTE_KEY_CF", "A_", cf);
                 b.append("SELECT * FROM ").append(cteTokenA).append(" WHERE p=?").add("parameterB");
                 SQLFragment c = new SQLFragment();
-                String cteTokenB  = c.addCommonTableExpression(new Object(), "_B_", b);
-                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "_A2_", cf);
-                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append("B,").append(cteTokenA2).append("A WHERE B.i=A.i");
+                String cteTokenB  = c.addCommonTableExpression(new Object(), "B_", b);
+                String cteTokenA2 = c.addCommonTableExpression("CTE_KEY_CF", "A2_", cf);
+                c.append("SELECT *, ? as xyz FROM ").add(4).append(cteTokenB).append(" B, ").append(cteTokenA2).append(" A WHERE B.i=A.i");
                 assertEquals("""
                         WITH
                         /*CTE*/
-                        \t_A_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        \tA_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
                         ,/*CTE*/
-                        \t_B_ AS (SELECT * FROM _A_ WHERE p='parameterB')
+                        \tB_ AS (SELECT * FROM A_ WHERE p='parameterB')
                         ,/*CTE*/
-                        \t_A2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
-                        SELECT *, 4 as xyz FROM _B_B,_A2_A WHERE B.i=A.i""",
+                        \tA2_ AS (SELECT 1 as i, 'Aone' as s, CAST('parameterAone' AS VARCHAR) as p)
+                        SELECT *, 4 as xyz FROM B_ B, A2_ A WHERE B.i=A.i""",
                         filterDebugString(c.toDebugString()));
                 List<Object> params = c.getParams();
                 assertEquals(4, params.size());
@@ -1082,6 +1104,38 @@ public class SQLFragment implements Appendable, CharSequence
                 assertEquals("parameterAone", params.get(2));
                 assertEquals(4, params.get(3));
             }
+        }
+
+
+        private void shouldFail(Runnable r)
+        {
+            try
+            {
+                r.run();
+                if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    fail("Expected IllegalArgumentException");
+            }
+            catch (IllegalArgumentException e)
+            {
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+                    fail("Did not expect IllegalArgumentException");
+            }
+        }
+
+
+        @Test
+        public void testIllegalArgument()
+        {
+            shouldFail(() -> new SQLFragment(";"));
+            shouldFail(() -> new SQLFragment().append(";"));
+            shouldFail(() -> new SQLFragment("AND name='"));
+            shouldFail(() -> new SQLFragment().append("AND name = '"));
+            shouldFail(() -> new SQLFragment().append("AND name = 'Robert'); DROP TABLE Students; --"));
+
+            shouldFail(() -> new SQLFragment().appendIdentifier("column name"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("?"));
+            shouldFail(() -> new SQLFragment().appendIdentifier(";"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("\"column\"name\""));
         }
     }
 

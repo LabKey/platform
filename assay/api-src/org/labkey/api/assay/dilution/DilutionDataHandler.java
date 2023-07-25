@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -49,11 +50,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellData;
-import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -309,12 +308,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return provider != null ? provider.getResourceName() : "Assay";
     }
 
-    protected List<Plate> createPlates(File dataFile, PlateTemplate template) throws ExperimentException
+    protected List<Plate> createPlates(File dataFile, Plate template) throws ExperimentException
     {
         return Collections.singletonList(PlateService.get().createPlate(template, getCellValues(dataFile, template), null, PlateService.NO_RUNID, 1));
     }
 
-    protected List<Plate> createPlates(ExpRun run, PlateTemplate template, boolean recalcStats) throws ExperimentException
+    protected List<Plate> createPlates(ExpRun run, Plate template, boolean recalcStats) throws ExperimentException
     {
         double[][] cellValues = new double[template.getRows()][template.getColumns()];
         boolean[][] excluded = new boolean[template.getRows()][template.getColumns()];
@@ -332,7 +331,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return Collections.singletonList(plate);
     }
 
-    protected abstract double[][] getCellValues(final File dataFile, PlateTemplate nabTemplate) throws ExperimentException;
+    protected abstract double[][] getCellValues(final File dataFile, Plate nabTemplate) throws ExperimentException;
 
     protected DilutionAssayRun getAssayResults(ExpRun run, User user, @Nullable File dataFile, @Nullable StatsService.CurveFitType fit,
                                                boolean useRunForPlates, boolean recalcStats) throws ExperimentException
@@ -340,7 +339,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
         Container container = run.getContainer();
         DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
-        PlateTemplate nabTemplate = provider.getPlateTemplate(container, protocol);
+        Plate nabTemplate = provider.getPlate(container, protocol);
 
         Map<String, DomainProperty> runProperties = getRunProperties(provider, protocol);
 
@@ -795,7 +794,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                 if (value != null)
                     fit = StatsService.CurveFitType.fromLabel((String) value);
             }
-            PlateTemplate nabTemplate = provider.getPlateTemplate(run.getContainer(), protocol);
+            Plate nabTemplate = provider.getPlate(run.getContainer(), protocol);
             List<Plate> plates;
 
             if (populatePlatesFromFile)

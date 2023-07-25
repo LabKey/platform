@@ -26,7 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
@@ -194,9 +197,21 @@ public class ExperimentJSONConverter
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings, @Nullable User user)
     {
-        JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings, user);
-        jsonObject.put(COMMENT, runGroup.getComments());
+        JSONObject jsonObject = serializeExpObject(runGroup, domain == null ? null : domain.getProperties(), settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
+
+        ExpProtocol protocol = runGroup.getBatchProtocol();
+        if (protocol != null)
+        {
+            jsonObject.put(CPAS_TYPE, protocol.getLSID());
+        }
+
+        if (settings.isIncludeProperties())
+        {
+            jsonObject.put(COMMENT, runGroup.getComments());
+            jsonObject.put(PROTOCOL, serializeProtocol(protocol, user));
+        }
+
         return jsonObject;
     }
 
@@ -204,10 +219,17 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings, user);
         jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
+
+        ExpProtocol protocol = run.getProtocol();
+        if (protocol != null)
+        {
+            jsonObject.put(CPAS_TYPE, protocol.getLSID());
+        }
+
         if (settings.isIncludeProperties())
         {
             jsonObject.put(COMMENT, run.getComments());
-            jsonObject.put(PROTOCOL, serializeProtocol(run.getProtocol(), user));
+            jsonObject.put(PROTOCOL, serializeProtocol(protocol, user));
         }
 
         if (settings.isIncludeInputsAndOutputs())
@@ -224,7 +246,6 @@ public class ExperimentJSONConverter
                 jsonObject.put(MATERIAL_INPUTS, new JSONArray());
             }
 
-
             // Inputs into the final output step are outputs of the entire run
             ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
             if (outputApp != null)
@@ -239,12 +260,6 @@ public class ExperimentJSONConverter
             }
 
             serializeRunLevelProvenanceProperties(jsonObject, run);
-        }
-
-        ExpProtocol protocol = run.getProtocol();
-        if (protocol != null)
-        {
-            jsonObject.put(CPAS_TYPE, protocol.getLSID());
         }
 
         if (settings.isIncludeRunSteps())
@@ -663,22 +678,29 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
-
+        JSONObject jsonObject = null;
         if (settings.isIncludeProperties())
         {
-            final ExpDataClass dc = data.getDataClass(user);
-            if (dc != null)
+            ExpDataClass dataClass = data.getDataClass(user);
+
+            if (dataClass != null)
             {
-                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false), user);
-                if (dc.getCategory() != null)
-                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
+                jsonObject = serializeExpObject(data, dataClass.getDomain().getProperties(), settings, user);
+
+                JSONObject dataClassJsonObject = serializeExpObject(dataClass, null, settings.withIncludeProperties(false), user);
+                if (dataClass.getCategory() != null)
+                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dataClass.getCategory());
                 jsonObject.put(DATA_CLASS, dataClassJsonObject);
             }
         }
 
+        if (jsonObject == null)
+            jsonObject = serializeExpObject(data, null, settings, user);
+
+        jsonObject.put(CPAS_TYPE, data.getCpasType());
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
+
         File f = data.getFile();
         if (f != null)
         {
@@ -689,8 +711,6 @@ public class ExperimentJSONConverter
                 jsonObject.put(PIPELINE_PATH, pipeRoot.relativePath(f));
             }
         }
-
-        jsonObject.put(CPAS_TYPE, data.getCpasType());
 
         return jsonObject;
     }
@@ -740,7 +760,12 @@ public class ExperimentJSONConverter
     }
 
     @NotNull
-    public static Map<PropertyDescriptor, Object> convertProperties(JSONObject propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties) throws ValidationException
+    public static Map<PropertyDescriptor, Object> convertProperties(
+        @NotNull JSONObject propertiesJsonObject,
+        List<? extends DomainProperty> dps,
+        Container container,
+        boolean ignoreMissingProperties
+    ) throws ValidationException
     {
         Map<PropertyDescriptor, Object> properties = new HashMap<>();
 
@@ -768,14 +793,6 @@ public class ExperimentJSONConverter
                 value = convertProperty(value, dp, container);
                 properties.put(dp.getPropertyDescriptor(), value);
             }
-//            else if (propName.equals(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
-//            {
-//                // handle inputs
-//            }
-//            else if (propName.equals(ProvenanceService.PROVENANCE_OUTPUT_PROPERTY))
-//            {
-//                // handle outputs
-//            }
             else if (URIUtil.hasURICharacters(propName))
             {
                 // resolve propName by PropertyURI if propName looks like a URI
@@ -798,7 +815,6 @@ public class ExperimentJSONConverter
                 else
                 {
                     throw new ValidationException("Property does not exist in any Vocabulary Domain in this container: " + propName);
-
                 }
             }
 
@@ -807,15 +823,16 @@ public class ExperimentJSONConverter
         return properties;
     }
 
-    private static Object convertProperty(Object value, DomainProperty dp, Container container)
+    private static Object convertProperty(Object value, @NotNull DomainProperty dp, Container container)
     {
         return convertProperty(value, dp.getPropertyDescriptor(), container);
     }
 
-    private static Object convertProperty(Object value, PropertyDescriptor pd, Container container)
+    private static Object convertProperty(Object value, @NotNull PropertyDescriptor pd, Container container)
     {
         Class javaType = pd.getPropertyType().getJavaType();
-        Object convertedValue = ConvertUtils.lookup(javaType).convert(javaType, value);
+        // Issue 48040: Process JSONObject.NULL sentinel value as null
+        Object convertedValue = ConvertUtils.lookup(javaType).convert(javaType, JSONObject.NULL.equals(value) ? null : value);
 
         // We need to special case Files to apply extra checks based on the context from which they're being
         // referenced
@@ -840,8 +857,8 @@ public class ExperimentJSONConverter
     // teach Jackson serialization to use ExperimentJSONConverter for Identifiable object instances
     public static class IdentifiableSerializer extends StdSerializer<Identifiable>
     {
-        private User _user;
-        private Settings _settings;
+        private final User _user;
+        private final Settings _settings;
 
         protected IdentifiableSerializer(Class<Identifiable> t)
         {
@@ -863,6 +880,7 @@ public class ExperimentJSONConverter
         }
     }
 
+    @Nullable
     public static String getAliasJson(Map<String, String> importAliases, String currentAliasName)
     {
         if (importAliases == null || importAliases.size() == 0)
@@ -889,11 +907,11 @@ public class ExperimentJSONConverter
             String trimmedKey = StringUtils.trimToNull(key);
             String trimmedVal = StringUtils.trimToNull(value);
 
-            //Sanity check this should be caught earlier
+            // Sanity check this should be caught earlier
             if (trimmedKey == null || trimmedVal == null)
                 throw new IllegalArgumentException("Parent aliases contain blanks");
 
-            //Substitute the currentAliasName for the placeholder value
+            // Substitute the currentAliasName for the placeholder value
             if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_TYPE_ALIAS_VALUE) ||
                     trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_TYPE_ALIAS_VALUE))
             {
@@ -909,5 +927,20 @@ public class ExperimentJSONConverter
         });
 
         return cleanAliases;
+    }
+
+    public static final class TestCase extends Assert
+    {
+        @Test
+        public void testConvertProperty()
+        {
+            final Container c = ContainerManager.createMockContainer();
+
+            PropertyDescriptor pd = new PropertyDescriptor(null, PropertyType.INTEGER, "intField", c);
+            assertNull(convertProperty(null, pd, c));
+            assertNull(convertProperty(JSONObject.NULL, pd, c));
+            assertNull(convertProperty("", pd, c));
+            assertEquals(1, convertProperty("1", pd, c));
+        }
     }
 }

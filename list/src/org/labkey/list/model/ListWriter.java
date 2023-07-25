@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -163,39 +164,47 @@ public class ListWriter
             writeSettings(settings, def);
 
             // Write data
-            Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
-
-            if (null != ctx && ctx.isAlternateIds())
+            if (includeListData(ctx))
             {
-                createAlternateIdColumns(ti, columns, ctx.getContainer());
-            }
+                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, exportPhiLevel);
 
-            if (!columns.isEmpty())
-            {
-                List<DisplayColumn> displayColumns = columns
-                        .stream()
-                        .filter(Objects::nonNull)
-                        .map(ListExportDataColumn::new)
-                        .collect(Collectors.toCollection(LinkedList::new));
-
-                // Sort the data rows by PK, #11261
-                Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
-
-                // NOTE: TSVGridWriter generates and closes Results
-                try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
+                if (null != ctx && ctx.isAlternateIds())
                 {
-                    tsvWriter.setApplyFormats(false);
-                    tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                    PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
-                    tsvWriter.write(out);
+                    createAlternateIdColumns(ti, columns, ctx.getContainer());
                 }
 
-                writeAttachments(ti, def, c, listsDir, exportPhiLevel);
+                if (!columns.isEmpty())
+                {
+                    List<DisplayColumn> displayColumns = columns
+                            .stream()
+                            .filter(Objects::nonNull)
+                            .map(ListExportDataColumn::new)
+                            .collect(Collectors.toCollection(LinkedList::new));
+
+                    // Sort the data rows by PK, #11261
+                    Sort sort = ti.getPkColumnNames().size() != 1 ? null : new Sort(ti.getPkColumnNames().get(0));
+
+                    // NOTE: TSVGridWriter generates and closes Results
+                    try (TSVGridWriter tsvWriter = new TSVGridWriter(()->QueryService.get().select(ti, columns, null, sort), displayColumns))
+                    {
+                        tsvWriter.setApplyFormats(false);
+                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                        PrintWriter out = listsDir.getPrintWriter( def.getName() + ".tsv");
+                        tsvWriter.write(out);
+                    }
+
+                    writeAttachments(ti, def, c, listsDir, exportPhiLevel);
+                }
             }
         }
 
         listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
         listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+    }
+
+    private boolean includeListData(FolderExportContext ctx)
+    {
+        return ctx.getDataTypes().contains(FolderArchiveDataTypes.LIST_DATA);
     }
 
     public boolean write(User user, VirtualFile listsDir, FolderExportContext ctx) throws Exception
@@ -245,14 +254,12 @@ public class ListWriter
         if (!def.getAllowExport()) settings.setAllowExport(def.getAllowExport());
 
         if (def.getEachItemIndex()) settings.setEachItemIndex(def.getEachItemIndex());
-        if (def.getEachItemTitleSetting().getValue() != 0) settings.setEachItemTitleSetting(def.getEachItemTitleSetting().getValue());
         if (null != def.getEachItemTitleTemplate()) settings.setEachItemTitleTemplate(def.getEachItemTitleTemplate());
         if (def.getEachItemBodySetting().getValue() != 0) settings.setEachItemBodySetting(def.getEachItemBodySetting().getValue());
         if (null != def.getEachItemBodyTemplate()) settings.setEachItemBodyTemplate(def.getEachItemBodyTemplate());
 
         if (def.getEntireListIndex()) settings.setEntireListIndex(def.getEntireListIndex());
         if (def.getEntireListIndexSetting().getValue() != 0) settings.setEntireListIndexSetting(def.getEntireListIndexSetting().getValue());
-        if (def.getEntireListTitleSetting().getValue() != 0) settings.setEntireListTitleSetting(def.getEntireListTitleSetting().getValue());
         if (null != def.getEntireListTitleTemplate()) settings.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
         if (def.getEntireListBodySetting().getValue() != 0) settings.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
         if (null != def.getEntireListBodyTemplate()) settings.setEntireListBodyTemplate(def.getEntireListBodyTemplate());

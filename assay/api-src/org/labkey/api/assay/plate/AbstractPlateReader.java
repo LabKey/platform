@@ -51,7 +51,7 @@ public abstract class AbstractPlateReader implements PlateReader
     }
 
     @Override
-    public Map<String, double[][]> loadMultiGridFile(PlateTemplate template, File dataFile) throws ExperimentException
+    public Map<String, double[][]> loadMultiGridFile(Plate template, File dataFile) throws ExperimentException
     {
         throw new UnsupportedOperationException("loading multiple grids for this reader implementation is not supported");
     }

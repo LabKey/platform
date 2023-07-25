@@ -629,6 +629,12 @@ public interface QueryService
     }
 
     /**
+     * Resolves the ContainerFilter to be used for lookups of data in product projects based on the isProductProjectsAllFolderScopeEnabled setting.
+     */
+    @Nullable
+    ContainerFilter getProductContainerFilterForLookups(Container container, User user, ContainerFilter defaultContainerFilter);
+
+    /**
      * Resolves the ContainerFilter to be used for lookups of data in product projects.
      * Defaults to null if product projects are not enabled in container scope.
      */

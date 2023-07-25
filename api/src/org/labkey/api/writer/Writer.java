@@ -17,6 +17,7 @@
 package org.labkey.api.writer;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderContext;
 
 /**
  * User: adam
@@ -28,4 +29,13 @@ public interface Writer<T, CONTEXT extends ContainerUser>
     @Nullable
     String getDataType();
     void write(T object, CONTEXT ctx, VirtualFile vf) throws Exception;
+    default boolean includeWithTemplate()
+    {
+        return true;
+    }
+    // TODO : this duplicates a method in the FolderWriter interface, we should unify the two interfaces
+    default boolean selectedByDefault(AbstractFolderContext.ExportType type, boolean forTemplate)
+    {
+        return true;
+    }
 }
