@@ -20,7 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.TidyUtil;
+import org.labkey.api.util.JSoupUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -82,7 +82,7 @@ public class HTMLDataLoader extends DataLoader
             String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET);
 
             List<String> errors = new ArrayList<>();
-            Document doc = TidyUtil.convertHtmlToDocument(s, true, errors);
+            Document doc = JSoupUtil.convertHtmlToDocument(s, true, errors);
             if (!errors.isEmpty() || doc == null)
                 return false;
 
@@ -153,8 +153,8 @@ public class HTMLDataLoader extends DataLoader
     protected Collection<String[]> parse(int limit)
     {
         List<String> errors = new LinkedList<>();
-        Document doc = TidyUtil.convertHtmlToDocument(_html, true, errors);
-        if (errors.size() > 0 || doc == null)
+        Document doc = JSoupUtil.convertHtmlToDocument(_html, true, errors);
+        if (!errors.isEmpty() || doc == null)
             return Collections.emptyList();
 
         Element table = findTable(doc);
@@ -164,6 +164,7 @@ public class HTMLDataLoader extends DataLoader
         return parseTable(table, limit);
     }
 
+    /** @return the first HTML &<lt;table> element, if present */
     protected static Element findTable(@NotNull Document doc)
     {
         Element html = doc.getDocumentElement();
@@ -175,10 +176,9 @@ public class HTMLDataLoader extends DataLoader
         {
             Element body = (Element)bodyNL.item(bodyIdx);
             NodeList tableNL = body.getElementsByTagName("table");
-            for (int tableIdx = 0, tableLen = tableNL.getLength(); tableIdx < tableLen; tableIdx++)
+            if (tableNL.getLength() > 0)
             {
-                Element table = (Element)tableNL.item(tableIdx);
-                return table;
+                return (Element)tableNL.item(0);
             }
         }
 
@@ -233,7 +233,7 @@ public class HTMLDataLoader extends DataLoader
             values.add(value);
         }
 
-        return values.toArray(new String[values.size()]);
+        return values.toArray(new String[0]);
     }
 
     // XXX: Duplicateed from FlowJoWorkspace.  Refactor into DOMUtil or XMLUtil.

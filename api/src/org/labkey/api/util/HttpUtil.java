@@ -130,7 +130,7 @@ public class HttpUtil
         URI finalURI = pair.second;
 
         ArrayList<String> errors = new ArrayList<>();
-        Document document = TidyUtil.convertHtmlToDocument(content, true, errors);
+        Document document = JSoupUtil.convertHtmlToDocument(content, true, errors);
         if (!errors.isEmpty())
         {
             LOG.warn("Error converting to XHTML document: " + uri + "\n" + errors.get(0));
