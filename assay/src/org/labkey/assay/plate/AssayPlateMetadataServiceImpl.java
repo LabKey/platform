@@ -7,7 +7,6 @@ import org.json.JSONObject;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
@@ -17,6 +16,7 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -43,7 +43,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
@@ -62,69 +61,20 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         Map<Integer, String> rowIdToLsidMap
     ) throws ExperimentException
     {
-        Plate plate = getPlate(run, provider, protocol);
-        if (plate == null)
-            throw new ExperimentException("Unable to resolve the plate template for the run");
-
-        if (plateMetadata.isEmpty())
-            throw new ExperimentException("No plate information was parsed from the JSON metadata, please check the format of the metadata.");
-
         try
         {
-            Map<Position, Map<String, Object>> plateData = new HashMap<>();
-            Domain domain = ensureDomain(protocol);
+            Domain runDomain = provider.getRunDomain(protocol);
+            DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+            Lsid plateLsid = null;
 
-            // map the metadata to the plate template
-            for (int row=0; row < plate.getRows(); row++)
-            {
-                for (int col=0; col < plate.getColumns(); col++)
-                {
-                    Position pos = plate.getPosition(row, col);
-                    Map<String, Object> wellProps = new CaseInsensitiveHashMap<>();
-                    plateData.put(pos, wellProps);
+            if (property != null)
+                plateLsid = Lsid.parse(String.valueOf(run.getProperty(property)));
 
-                    for (WellGroup group : plate.getWellGroups(pos))
-                    {
-                        MetadataLayer plateLayer = plateMetadata.get(group.getType().name());
-                        if (plateLayer != null)
-                        {
-                            // ensure the column for the plate layer that we will insert the well group name into
-                            String layerName = plateLayer.getName() + TSVProtocolSchema.PLATE_DATA_LAYER_SUFFIX;
-                            ensureDomainProperty(user, domain, layerName, JdbcType.VARCHAR);
+            Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(plateLsid, plateMetadata, user, protocol, true);
+            Domain domain = getPlateDataDomain(protocol);
 
-                            MetadataWellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
-                            if (wellGroup != null)
-                            {
-                                // insert the well group name into the layer
-                                wellProps.put(layerName, wellGroup.getName());
-
-                                // combine both properties from the metadata as well as those explicitly set on the plate template
-                                Map<String, Object> props = new HashMap<>(wellGroup.getProperties());
-                                props.putAll(((WellGroupImpl)group).getProperties());
-
-                                for (Map.Entry<String, Object> entry : props.entrySet())
-                                {
-                                    DomainProperty domainProperty = ensureDomainProperty(user, domain, entry.getKey(), JdbcType.valueOf(entry.getValue().getClass()));
-                                    if (!wellProps.containsKey(domainProperty.getName()))
-                                        wellProps.put(domainProperty.getName(), entry.getValue());
-                                    else
-                                        throw new ExperimentException("The metadata property name : " + domainProperty.getName() + " already exists from a different well group for " +
-                                                "the well location : " + pos.getDescription() + ". If well groups overlap from different layers, their metadata property names " +
-                                                "need to be unique.");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (_domainDirty)
-            {
-                domain.save(user);
-                domain = getPlateDataDomain(protocol);
-            }
-
-            Map<String, PropertyDescriptor> descriptorMap = domain.getProperties().stream().collect(Collectors.toMap(DomainProperty :: getName, DomainProperty :: getPropertyDescriptor));
+            Map<String, PropertyDescriptor> descriptorMap = new CaseInsensitiveHashMap<>();
+            domain.getProperties().forEach(dp -> descriptorMap.put(dp.getName(), dp.getPropertyDescriptor()));
             List<Map<String, Object>> jsonData = new ArrayList<>();
             Set<PropertyDescriptor> propsToInsert = new HashSet<>();
 
@@ -147,8 +97,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             plateData.get(well).forEach((k, v) -> {
                                 if (descriptorMap.containsKey(k))
                                 {
-                                    jsonRow.put(descriptorMap.get(k).getURI(), v);
-                                    propsToInsert.add(descriptorMap.get(k));
+                                    if (v != null)
+                                    {
+                                        jsonRow.put(descriptorMap.get(k).getURI(), v);
+                                        propsToInsert.add(descriptorMap.get(k));
+                                    }
                                 }
                             });
                             jsonRow.put("Lsid", rowIdToLsidMap.get(rowId));
@@ -183,25 +136,127 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
     }
 
-    @Nullable
-    private Plate getPlate(ExpRun run, AssayProvider provider, ExpProtocol protocol)
+    /**
+     * Helper to merge the plate metadata to the plate wells, producing a map of well location
+     * to metadata properties.
+     */
+    private Map<Position, Map<String, Object>> prepareMergedPlateData(
+            Lsid plateLsid,
+            Map<String, MetadataLayer> plateMetadata,
+            @Nullable User user,
+            ExpProtocol protocol,
+            boolean ensurePlateDomain           // true to create the plate domain and properties if they don't exist
+    ) throws ExperimentException
     {
-        Plate plate = null;
-        Domain runDomain = provider.getRunDomain(protocol);
-        DomainProperty property = runDomain.getPropertyByName(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME);
+        Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+        if (plate == null)
+            throw new ExperimentException("Unable to resolve the plate template for the run");
 
-        if (property != null)
+        if (plateMetadata.isEmpty())
+            throw new ExperimentException("No plate information was parsed from the JSON metadata, please check the format of the metadata.");
+
+        Map<Position, Map<String, Object>> plateData = new HashMap<>();
+        Set<String> metadataFieldNames = new HashSet<>();
+
+        Domain domain = null;
+        if (ensurePlateDomain)
+            domain = ensureDomain(protocol);
+
+        // map the metadata to the plate template
+        for (int row=0; row < plate.getRows(); row++)
         {
-            if (run.getProperty(property) instanceof String plateLsid)
+            for (int col=0; col < plate.getColumns(); col++)
             {
-                plate = PlateService.get().getPlate(protocol.getContainer(), Lsid.parse(plateLsid));
-                if (plate == null)
-                    // if the lsid is actually the plate name
-                    plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+                Position pos = plate.getPosition(row, col);
+                Map<String, Object> wellProps = new CaseInsensitiveHashMap<>();
+                plateData.put(pos, wellProps);
+
+                for (WellGroup group : plate.getWellGroups(pos))
+                {
+                    MetadataLayer plateLayer = plateMetadata.get(group.getType().name());
+                    if (plateLayer != null)
+                    {
+                        // ensure the column for the plate layer that we will insert the well group name into
+                        String layerName = plateLayer.getName() + TSVProtocolSchema.PLATE_DATA_LAYER_SUFFIX;
+                        if (ensurePlateDomain)
+                            ensureDomainProperty(user, domain, layerName, JdbcType.VARCHAR);
+
+                        MetadataWellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
+                        if (wellGroup != null)
+                        {
+                            // insert the well group name into the layer
+                            wellProps.put(layerName, wellGroup.getName());
+                            metadataFieldNames.add(layerName);
+
+                            // combine both properties from the metadata and those explicitly set on the plate template
+                            Map<String, Object> props = new HashMap<>(wellGroup.getProperties());
+                            props.putAll(((WellGroupImpl)group).getProperties());
+
+                            for (Map.Entry<String, Object> entry : props.entrySet())
+                            {
+                                String propName = entry.getKey();
+
+                                if (ensurePlateDomain)
+                                    ensureDomainProperty(user, domain, propName, JdbcType.valueOf(entry.getValue().getClass()));
+                                if (!wellProps.containsKey(propName))
+                                {
+                                    wellProps.put(propName, entry.getValue());
+                                    metadataFieldNames.add(propName);
+                                }
+                                else
+                                    throw new ExperimentException("The metadata property name : " + propName + " already exists from a different well group for " +
+                                            "the well location : " + pos.getDescription() + ". If well groups overlap from different layers, their metadata property names " +
+                                            "need to be unique.");
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        return plate;
+        if (_domainDirty && ensurePlateDomain)
+            domain.save(user);
+
+        // ensure each well position has the entire set of metadata field names (to help with merging with result data)
+        plateData.values().forEach(wellProp -> {
+            metadataFieldNames.forEach(prop -> {
+                if (!wellProp.containsKey(prop))
+                    wellProp.put(prop, null);
+            });
+        });
+
+        return plateData;
+    }
+
+    @Override
+    public List<Map<String, Object>> mergePlateMetadata(
+            Lsid plateLsid,
+            List<Map<String, Object>> rows,
+            Map<String, MetadataLayer> plateMetadata,
+            ExpProtocol protocol) throws ExperimentException
+    {
+        Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(plateLsid, plateMetadata, null, protocol, false);
+        List<Map<String, Object>> mergedRows = new ArrayList<>();
+        for (Map<String, Object> row : rows)
+        {
+            Map<String, Object> newRow = new CaseInsensitiveLinkedHashMap<>(row);
+            // ensure the result data includes a wellLocation field with values like : A1, F12, etc
+            if (newRow.containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+            {
+                PositionImpl well = new PositionImpl(null, String.valueOf(newRow.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
+                // need to adjust the column value to be 0 based to match the template locations
+                well.setColumn(well.getColumn()-1);
+
+                if (plateData.containsKey(well))
+                {
+                    newRow.putAll(plateData.get(well));
+                }
+                mergedRows.add(newRow);
+            }
+            else
+                throw new ExperimentException("Imported data must contain a WellLocation column to support plate metadata integration");
+        }
+        return mergedRows;
     }
 
     @Override

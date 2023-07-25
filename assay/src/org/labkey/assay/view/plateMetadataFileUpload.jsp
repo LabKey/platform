@@ -27,7 +27,7 @@
     JspView<PlateMetadataDataCollector> me = (JspView<PlateMetadataDataCollector>) HttpView.currentView();
     PlateMetadataDataCollector<? extends AssayRunUploadContext<? extends AssayProvider>> bean = me.getModelBean();
     AssayProvider provider = bean.getContext().getProvider();
-    ActionURL plateUrl = urlProvider(AssayUrls.class).getPlateMetadataTemplateURL(getContainer(), provider);
+    ActionURL plateUrl = urlProvider(AssayUrls.class).getPlateMetadataTemplateURL(getContainer(), provider, bean.getContext().getProtocol());
 %>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
@@ -41,6 +41,13 @@ LABKEY.Utils.onReady(function () {
 
     if (plateTemplateEl) {
         var plateUrl = <%=jsURL(plateUrl)%>;
+
+        // default value
+        if (plateTemplateEl.value) {
+            plateUrl.searchParams.set('template', plateTemplateEl.value);
+            plateMetadataExampleEl.href = plateUrl.toString();
+        }
+
         plateTemplateEl.addEventListener('change', function () {
             var templateLsid = plateTemplateEl.value;
             if (templateLsid)
