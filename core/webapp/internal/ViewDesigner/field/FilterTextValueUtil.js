@@ -7,6 +7,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterTextValueUtil', {
         var value = this.getRecordValue();
         var filter = this.createFilter(value);
         var filterType = filter.getFilterType();
+        var urlSuffix = filterType.getURLSuffix();
 
         // UGH: get the op value to set visibility on init
         this.setVisibleField(filterType);
@@ -14,6 +15,12 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterTextValueUtil', {
         // The record value may be an Array for filters that support multiple values.
         // convert the filter value into a user-editable string using filter.getURLParameterValue()
         var valueString = filter.getURLParameterValue();
+
+        // replace ; with \n on UI
+        if (filterType.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
+            if (typeof valueString === 'string' && valueString.indexOf('\n') === -1 && valueString.indexOf(';') > 0)
+                valueString = valueString.replaceAll(';', '\n');
+        }
 
         this.setValue(valueString);
         this.on('blur', function (f) {
