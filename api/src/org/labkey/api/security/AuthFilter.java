@@ -25,6 +25,7 @@ import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
@@ -249,6 +250,7 @@ public class AuthFilter implements Filter
 
             SecurityLogger.popSecurityContext();
             QueryService.get().clearEnvironment();
+            DebugInfoDumper.resetThreadDumpContext();
 
             // Clear all the request attributes that have been set. This helps memtracker.  See #10747.
             assert clearRequestAttributes(req);

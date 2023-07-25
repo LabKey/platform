@@ -589,13 +589,11 @@ public enum JdbcType
 
     private static Boolean _toBoolean(Number n)
     {
-        if (n instanceof Integer)
-        {
-            if (0 == n.longValue())
-                return Boolean.FALSE;
-            if (1 == n.longValue())
-                return Boolean.TRUE;
-        }
+        if (0 == n.intValue())
+            return Boolean.FALSE;
+        if (1 == n.intValue())
+            return Boolean.TRUE;
+
         throw new ConversionException("Expected boolean value");
     }
 
