@@ -2124,27 +2124,21 @@ public class PageFlowUtil
     /** validate an html fragment */
     public static String validateHtml(String html, Collection<String> errors, Collection<String> scriptWarnings)
     {
-        if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
+        if (!errors.isEmpty() || (null != scriptWarnings && !scriptWarnings.isEmpty()))
             throw new IllegalArgumentException("empty errors collection expected");
 
-        // NOTE: tidy is unhappy if there is nothing but comments and whitespace
-        //       and also about degenerate comments, such as "<!-->"
-        //       We will remove the degenerates from anything we return
-        String htmlWithNoDegenerates = html.replaceAll("<!--*>|<!>", "");
+        String trimmedHtml = StringUtils.trimToEmpty(html);
 
-        String trimmedHtml = StringUtils.trimToEmpty(htmlWithNoDegenerates);
-
-        if (trimmedHtml.length() == 0)
+        if (trimmedHtml.isEmpty())
             return "";
 
-        trimmedHtml = trimmedHtml.replaceAll("<!--.*?-->", "");
         trimmedHtml = StringUtils.trimToEmpty(trimmedHtml);
         if (trimmedHtml.isEmpty())
-            return htmlWithNoDegenerates;
+            return html;
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
-        String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
-        if (errors.size() > 0)
+        String xml = StringUtils.trimToEmpty(JSoupUtil.tidyHTML(trimmedHtml, true, errors));
+        if (!errors.isEmpty())
         {
             if (scriptWarnings != null)
             {
@@ -2170,7 +2164,8 @@ public class PageFlowUtil
                 parserSetFeature(parser, "http://apache.org/xml/features/continue-after-fatal-error", false);
 
                 parser.setContentHandler(new ValidateHandler(scriptWarnings));
-                parser.parse(new InputSource(new StringReader(xml)));
+                // Wrap the whole value in a parent tag so that we know there's a single root element
+                parser.parse(new InputSource(new StringReader("<p>" + xml + "</p>")));
             }
             catch (IOException | SAXException e)
             {
@@ -2180,11 +2175,11 @@ public class PageFlowUtil
             }
         }
 
-        if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
+        if (!errors.isEmpty() || (null != scriptWarnings && !scriptWarnings.isEmpty()))
             return null;
 
         // let's return html not xhtml
-        String tidy = TidyUtil.tidyHTML(htmlWithNoDegenerates, false, errors);
+        String tidy = StringUtils.trimToEmpty(JSoupUtil.tidyHTML(html, false, errors));
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
         //and Word includes some when saving as HTML (even Filtered HTML).
         int beginOpenBodyIndex = tidy.indexOf("<body");
@@ -2201,12 +2196,13 @@ public class PageFlowUtil
     {
         if (html == null)
             return null;
-        if (!html.toLowerCase().contains("target=\"_blank\""))
+        // Issue 33356 - don't let users include an <a target="_blank"> without ensuring it has a rel="noopener noreferrer"
+        if (!html.toLowerCase().contains("_blank"))
             return html;
         boolean modified = false;
         try
         {
-            Document document = TidyUtil.convertHtmlToDocument(html, false, errors);
+            Document document = JSoupUtil.convertHtmlToDocument(html, false, errors);
             NodeList hrefs = document.getElementsByTagName("a");
             for(int hrefIndex = 0; hrefIndex < hrefs.getLength(); hrefIndex++)
             {
@@ -2534,7 +2530,7 @@ public class PageFlowUtil
                     if ((valueStrippedOfComments.contains("behavior") || valueStrippedOfComments.contains("url") || valueStrippedOfComments.contains("expression")) && !_reported.contains("style"))
                     {
                         _reported.add("style");
-                        _errors.add("Style attribute cannot contain behaviors, expresssions, or urls. Error on element <" + qName + ">.");
+                        _errors.add("Style attribute cannot contain behaviors, expressions, or urls. Error on element <" + qName + ">.");
                     }
                 }
             }
@@ -2659,13 +2655,22 @@ public class PageFlowUtil
             assertHtmlParsing("<b>No script here, friends</b>", 0, 0);
             assertHtmlParsing("<p><script>alert('script');</script></p>", 0, 1);
 
+            // Spacing around the <script> element
+            assertHtmlParsing("<p>< script>alert('script');</script></p>", 0, 0);
+            assertHtmlParsing("<p>< script  >alert('script');</script></p>", 0, 0);
+            assertHtmlParsing("<p><script  >alert('script');</script></p>", 0, 1);
+
             // Bogus tag trips error reporting, so assume there might be script
-            assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 1, 1);
-            assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 1, 1);
+            assertHtmlParsing("<Bad.Tag><script>alert('script');</script></Bad.Tag>", 0, 1);
+            assertHtmlParsing("<Bad.Tag>No script here, friends</Bad.Tag>", 0, 0);
 
             // Unclosed tags - not considered an error
             assertHtmlParsing("<b><script>alert('script');</script>", 0, 1);
+            assertHtmlParsing("<b><script>alert('script')", 0, 1);
             assertHtmlParsing("<b>No script", 0, 0);
+
+            // Extra closed tags - not considered an error
+            assertHtmlParsing("</b><script>alert('script');</script>", 0, 1);
         }
 
         private void assertHtmlParsing(String html, int expectedErrors, int expectedScriptWarnings)

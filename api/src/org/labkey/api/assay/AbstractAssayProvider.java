@@ -689,7 +689,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol)
     {
         return null;
     }

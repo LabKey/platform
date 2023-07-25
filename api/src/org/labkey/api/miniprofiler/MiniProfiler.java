@@ -275,7 +275,7 @@ public class MiniProfiler
             if (fullStack.length > 0)
             {
                 // Automatically omit this method from the stack
-                int callerFramesToOmit = 1;
+                int callerFramesToOmit = 2;
                 StackTraceElement[] result = new StackTraceElement[fullStack.length - callerFramesToOmit];
                 System.arraycopy(fullStack, 1, result, 0, result.length);
                 return result;

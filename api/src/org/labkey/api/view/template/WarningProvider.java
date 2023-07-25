@@ -35,7 +35,8 @@ public interface WarningProvider
      * the context to limit who sees the warning(s); otherwise, ALL users (including guests) will see the warning(s).
      * @param warnings A @NotNull Warnings collector
      * @param context A @NotNull ViewContext that also guarantees a @NotNull getUser() and @NotNull getRequest()
-     * @param showAllWarnings A flag for testing that indicates the provider should unconditionally add all warnings
+     * @param showAllWarnings A flag for testing that indicates the provider should add all warnings if its standard
+     *                        permissions check passes.
      */
     default void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
     {

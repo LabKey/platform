@@ -59,11 +59,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Easy to use wrappers for common encryption algorithms. Also includes related helper methods for shared operations
  * such as generating salts & keys, and for retrieving & saving the labkey.xml encryption key and standard salt.
- *
  * WARNING: Do not change the core algorithms or parameters of existing implementations; changes will likely
  * render existing data irrecoverable.
- * User: adam
- * Date: 10/19/13
 */
 
 public class Encryption
@@ -82,11 +79,14 @@ public class Encryption
             @Override
             public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
             {
-                int count = DECRYPTION_EXCEPTIONS.get();
+                if (context.getUser().hasSiteAdminPermission())
+                {
+                    int count = DECRYPTION_EXCEPTIONS.get();
 
-                if (count > 0 || showAllWarnings)
-                    warnings.add(HtmlString.of("On " + StringUtilsLabKey.pluralize(count, "attempt") + " the server failed to decrypt encrypted content using the " + ENCRYPTION_KEY_CHANGED +
-                        " An administrator should change the encryption key back to the previous value or be prepared to re-enter and re-save all saved credentials."));
+                    if (count > 0 || showAllWarnings)
+                        warnings.add(HtmlString.of("On " + StringUtilsLabKey.pluralize(count, "attempt") + " the server failed to decrypt encrypted content using the " + ENCRYPTION_KEY_CHANGED +
+                                " An administrator should change the encryption key back to the previous value or be prepared to re-enter and re-save all saved credentials."));
+                }
             }
         });
     }
