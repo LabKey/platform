@@ -395,7 +395,7 @@ public abstract class CompareType
                 List<String> values = new ArrayList<>();
                 if (value != null && !value.toString().trim().equals(""))
                 {
-                    values.addAll(parseParams(value, getValueSeparator(), getSecondaryValueSeparator()));
+                    values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                 }
                 return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
             }
@@ -415,9 +415,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getSecondaryValueSeparator()
+        public boolean isNewLineSeparatorAllowed()
         {
-            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
+            return true;
         }
     };
 
@@ -433,7 +433,7 @@ public abstract class CompareType
             }
             else
             {
-                Set<String> values = parseParams(value, getValueSeparator(), getSecondaryValueSeparator());
+                Set<String> values = parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed());
 
                 return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
             }
@@ -453,9 +453,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getSecondaryValueSeparator()
+        public boolean isNewLineSeparatorAllowed()
         {
-            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
+            return true;
         }
     };
 
@@ -480,7 +480,7 @@ public abstract class CompareType
                     }
                     else
                     {
-                        values.addAll(parseParams(value, getValueSeparator(), getSecondaryValueSeparator()));
+                        values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                     }
                 }
                 return new SimpleFilter.InClause(fieldKey, values, true);
@@ -501,9 +501,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getSecondaryValueSeparator()
+        public boolean isNewLineSeparatorAllowed()
         {
-            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
+            return true;
         }
     };
 
@@ -528,7 +528,7 @@ public abstract class CompareType
                     }
                     else
                     {
-                        values.addAll(parseParams(value, getValueSeparator(), getSecondaryValueSeparator()));
+                        values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                     }
                 }
                 return new SimpleFilter.InClause(fieldKey, values, true, true);
@@ -549,9 +549,9 @@ public abstract class CompareType
         }
 
         @Override
-        public String getSecondaryValueSeparator()
+        public boolean isNewLineSeparatorAllowed()
         {
-            return SimpleFilter.InClause.SECONDARY_SEPARATOR;
+            return true;
         }
     };
 
@@ -941,7 +941,6 @@ public abstract class CompareType
     private final String _scriptName;
 
     private String _valueSeparator;
-    private String _secondaryValueSeparator;
 
     protected CompareType(String displayValue, String[] urlKeys, boolean dataValueRequired, String sql, String scriptName, OperatorType.Enum xmlType)
     {
@@ -996,12 +995,7 @@ public abstract class CompareType
         }
     }
 
-    protected static Set<String> parseParams(Object value_, String separator)
-    {
-        return parseParams(value_, separator, null);
-    }
-
-    protected static Set<String> parseParams(Object value_, String separator, @Nullable String secondarySeparator)
+    protected static Set<String> parseParams(Object value_, String separator, boolean isNewLineSeparatorAllowed)
     {
         if (value_ == null)
             return Collections.emptySet();
@@ -1009,14 +1003,14 @@ public abstract class CompareType
         if (StringUtils.isBlank(value))
             return Collections.emptySet();
 
-        if (secondarySeparator != null)
-            value = value.replace(secondarySeparator, separator);
+        if (isNewLineSeparatorAllowed && !value.startsWith(JSON_MARKER_START))
+            value = value.replace(SimpleFilter.InClause.NEWLINE_SEPARATOR, separator);
 
         // check for JSON marker
         Set<String> values = new LinkedHashSet<>();
         parseParams(value, separator, values);
-        return (secondarySeparator != null)
-                ? values.stream().map(String::trim).collect(Collectors.toSet())
+        return (isNewLineSeparatorAllowed)
+                ? values.stream().map(String::trim).collect(Collectors.toCollection(LinkedHashSet::new)) // preserve order
                 : values;
     }
 
@@ -1122,9 +1116,9 @@ public abstract class CompareType
         return _valueSeparator;
     }
 
-    public String getSecondaryValueSeparator()
+    public boolean isNewLineSeparatorAllowed()
     {
-        return _secondaryValueSeparator;
+        return false;
     }
 
     public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)

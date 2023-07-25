@@ -574,7 +574,7 @@ public class SimpleFilter implements Filter
     public static abstract class MultiValuedFilterClause extends CompareType.AbstractCompareClause
     {
         public static final String SEPARATOR = ";";
-        public static final String SECONDARY_SEPARATOR = "\n";
+        public static final String NEWLINE_SEPARATOR = "\n";
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
         private final CompareType _comparison;

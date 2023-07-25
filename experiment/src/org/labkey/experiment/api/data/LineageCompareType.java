@@ -37,7 +37,7 @@ public class LineageCompareType extends CompareType
         }
         else
         {
-            Set<String> params = parseParams(value, getValueSeparator());
+            Set<String> params = parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed());
             collection = params;
             values = params.toArray();
         }
