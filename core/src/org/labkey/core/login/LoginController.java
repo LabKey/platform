@@ -382,7 +382,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    public class SuccessAction extends SimpleViewAction<Object>
+    public static class SuccessAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -405,7 +405,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class RegisterUserAction extends MutatingApiAction<RegisterForm>
+    public static class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
         @Override
         public void validateForm(RegisterForm form, Errors errors)
@@ -701,7 +701,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetPasswordRulesInfoAction extends ReadOnlyApiAction
+    public static class GetPasswordRulesInfoAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -969,7 +969,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
+    public static class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
         public Object execute(LoginForm form, BindException errors)
@@ -990,7 +990,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetRegistrationConfigApiAction extends ReadOnlyApiAction
+    public static class GetRegistrationConfigApiAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -1006,7 +1006,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     // @AllowedDuringUpgrade
-    public class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
+    public static class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
         public Object execute(AgreeToTermsForm form, BindException errors)
@@ -1373,7 +1373,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @IgnoresForbiddenProjectCheck
-    public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
+    public static class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
         private URLHelper _redirectURL = null;
 
@@ -1412,7 +1412,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @IgnoresForbiddenProjectCheck
-    public class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
+    public static class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
     {
         @Override
         public void validateCommand(ReturnUrlForm form, Errors errors)
@@ -1507,7 +1507,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
+    public static class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
         @Override
         public ModelAndView getView(SsoRedirectForm form, BindException errors)
@@ -2246,7 +2246,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresLogin
-    public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
+    public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
@@ -2280,7 +2280,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @CSRF(CSRF.Method.NONE)
-    public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
+    public static class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
@@ -2334,7 +2334,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
     // where the caller has a secret (the authentication token).
-    public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
+    public static class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
         @Override
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
@@ -2370,7 +2370,7 @@ public class LoginController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
+    public static class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
@@ -2387,7 +2387,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
+    public static class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
     {
         @Override
         public Object execute(SaveSettingsForm form, BindException errors) throws Exception
@@ -2498,7 +2498,7 @@ public class LoginController extends SpringActionController
 
     // TODO: Turn into an API action -- tests use this as a convenience
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
+    public static class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
     {
         @Override
         public void validateCommand(AuthParameterForm form, Errors errors)
@@ -2561,7 +2561,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
+    public static class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
     {
         @Override
         public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
@@ -2572,7 +2572,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
+    public static class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
     {
         @Override
         public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
@@ -2611,7 +2611,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(TroubleShooterPermission.class)
-    public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
+    public static class GetDbLoginPropertiesAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -2633,7 +2633,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @IgnoresForbiddenProjectCheck
     @AllowedDuringUpgrade
-    public class WhoAmIAction extends ReadOnlyApiAction
+    public static class WhoAmIAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2651,7 +2651,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(TroubleShooterPermission.class)
-    public class InitialMountAction extends ReadOnlyApiAction
+    public static class InitialMountAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2755,17 +2755,17 @@ public class LoginController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new DeleteConfigurationAction(),
-                controller.new SaveDbLoginPropertiesAction(),
-                controller.new SaveSettingsAction(),
-                controller.new SetAuthenticationParameterAction()
+                    new DeleteConfigurationAction(),
+                    new SaveDbLoginPropertiesAction(),
+                    new SaveSettingsAction(),
+                    new SetAuthenticationParameterAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new ConfigureAction(),
-                controller.new InitialMountAction(),
-                controller.new GetDbLoginPropertiesAction()
+                    new ConfigureAction(),
+                    new InitialMountAction(),
+                    new GetDbLoginPropertiesAction()
             );
         }
     }

@@ -118,8 +118,8 @@ public class DataRegion extends DisplayElement
     private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
-    private long _offset = 0;
-    private List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
+    private final long _offset = 0;
+    private final List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.TOP;
     private boolean allowAsync = false;
     private ActionURL _formActionUrl = null;
@@ -138,7 +138,7 @@ public class DataRegion extends DisplayElement
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
-    private List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<>();
+    private final List<ButtonBarConfig> _buttonBarConfigs = new ArrayList<>();
     private boolean _buttonBarRendered = false;
 
     public static final int MODE_NONE = 0;
@@ -161,14 +161,14 @@ public class DataRegion extends DisplayElement
 
     private static final String[] HIDDEN_FILTER_COLUMN_SUFFIXES = {"RowId", "DisplayName", "Description", "Label", "Caption", "Value"};
 
-    private List<ContextAction> _contextActions = new ArrayList<>();
-    private List<ContextAction> _viewActions = new ArrayList<>();
+    private final List<ContextAction> _contextActions = new ArrayList<>();
+    private final List<ContextAction> _viewActions = new ArrayList<>();
     private List<Message> _messages;
-    private List<MessageSupplier> _messageSuppliers = new ArrayList<>();
+    private final List<MessageSupplier> _messageSuppliers = new ArrayList<>();
 
-    private class GroupTable
+    private static class GroupTable
     {
-        private List<DisplayColumnGroup> _groups = new ArrayList<>();
+        private final List<DisplayColumnGroup> _groups = new ArrayList<>();
         private List<String> _groupHeadings = new ArrayList<>();
 
         public List<DisplayColumnGroup> getGroups()
@@ -186,7 +186,7 @@ public class DataRegion extends DisplayElement
             _groupHeadings = groupHeadings;
         }
     }
-    private List<GroupTable> _groupTables = new ArrayList<>();
+    private final List<GroupTable> _groupTables = new ArrayList<>();
 
     /**
      * Messages that are displayed to the user and included in Query API responses.
@@ -196,9 +196,9 @@ public class DataRegion extends DisplayElement
      */
     public static class Message
     {
-        private String _area;
-        private String _content;
-        private MessageType _type;
+        private final String _area;
+        private final String _content;
+        private final MessageType _type;
 
         public Message(String content, MessageType type, String area)
         {
