@@ -13,4 +13,9 @@ public interface AntiVirusProvider
     @Nullable ActionURL getConfigurationURL();
 
     @NotNull AntiVirusService getService();
+
+    default boolean claims(String id)
+    {
+        return getId().equals(id);
+    }
 }
