@@ -5220,29 +5220,34 @@ public class DavController extends SpringActionController
         return WebdavStatus.SC_OK;
     }
 
-    private static final int BUFFER_SIZE = 8 * 1024 * 1024;  // 8MB
-    private static final int SMALL_BUFFER_SIZE = 1024 * 1024;  // 1MB
+    // Size at which we attempt to do memory-mapped I/O
+    private static final int MEMORY_MAPPED_SIZE_MINIMUM = 8 * 1024 * 1024;  // 8MB
+
+    // Size of the buffer for memory-mapped I/O. Want something pretty big as it's semi-expensive to initialize
+    private static final int MEMORY_MAPPED_BUFFER_SIZE = 1024 * 1024;  // 1MB
+    // Size of buffer for non-memory-mapped I/O
+    private static final int SMALL_BUFFER_SIZE = 64 * 1024;  // 64KB
 
     protected void copy(InputStream istream, OutputStream ostream) throws IOException
     {
         ReadableByteChannel inChannel = Channels.newChannel(istream);
         try (WritableByteChannel outChannel = Channels.newChannel(ostream))
         {
-            if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > BUFFER_SIZE)
+            if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > MEMORY_MAPPED_SIZE_MINIMUM)
             {
                 // Issue 48174 - Use memory-mapped I/O for large files for best perf
                 long position = 0;
                 long totalSize = fileInChannel.size();
                 while (position < totalSize)
                 {
-                    ByteBuffer buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, position, Math.min(totalSize - position, BUFFER_SIZE));
+                    ByteBuffer buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, position, Math.min(totalSize - position, MEMORY_MAPPED_BUFFER_SIZE));
                     outChannel.write(buffer);
                     position += buffer.position();
                 }
             }
             else
             {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+                ByteBuffer buffer = ByteBuffer.allocateDirect(SMALL_BUFFER_SIZE);
                 while (inChannel.read(buffer) != -1)
                 {
                     buffer.flip();
