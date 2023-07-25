@@ -220,7 +220,7 @@ public class ApiModule extends CodeOnlyModule
             SubfolderWriter.TestCase.class,
             SwapQueue.TestCase.class,
             TabLoader.HeaderMatchTest.class,
-            TidyUtil.TestCase.class,
+            JSoupUtil.TestCase.class,
             TSVMapWriter.Tests.class,
             TSVWriter.TestCase.class,
             ValidEmail.TestCase.class
