@@ -338,8 +338,8 @@ public enum PasswordRule
     }
 
     /**
-     * Returns HTML that describes the password rules in detail. These are presented to administrators when they
-     * configure or review the password rules, they are written in third person (e.g., "the user's email address").
+     * Returns HTML that describes the password rules in detail. This is presented to administrators when they
+     * configure or review the password rules, so it is written in third person (e.g., "the user's email address").
      * @return HtmlString providing a detailed description of the rules
      */
     @NotNull
@@ -349,8 +349,8 @@ public enum PasswordRule
     }
 
     /**
-     * Returns HTML that describes a summary of the password rules. These are presented to individual users when they
-     * pick or change a password, so they are written in second person (e.g., "your email address").
+     * Returns HTML that describes a summary of the password rules. This is presented to individual users when they
+     * pick or change a password, so it is written in second person (e.g., "your email address").
      * @return HtmlString providing a summary of the rules
      */
     @NotNull

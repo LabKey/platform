@@ -427,7 +427,7 @@ public class StringUtilsLabKey
     }
 
     /**
-     * Spell out numbers per AP stylebook: spell out numbers nine and below; use numerals for numbers above 10.
+     * Spell out numbers nine and below; use numerals for numbers 10 and above. Per AP stylebook.
      */
     public static String spellOut(int i)
     {
