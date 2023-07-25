@@ -147,10 +147,10 @@ public enum PasswordRule
         }
     };
 
-    private static final Pattern LOWER_CASE = Pattern.compile("[A-Z]");
-    private static final Pattern UPPER_CASE = Pattern.compile("[a-z]");
+    private static final Pattern LOWER_CASE = Pattern.compile("\\p{javaUpperCase}");
+    private static final Pattern UPPER_CASE = Pattern.compile("\\p{javaLowerCase}");
     private static final Pattern DIGIT = Pattern.compile("\\d");
-    private static final Pattern NON_WORD = Pattern.compile("[^A-Za-z\\d]");
+    private static final Pattern NON_WORD = Pattern.compile("\\W");
 
     static
     {
@@ -261,7 +261,7 @@ public enum PasswordRule
         String lcPassword = password.toLowerCase();
         String lcInfo = personalInfo.toLowerCase();
 
-        for (int i = 0; i < lcInfo.length() - 3; i++)
+        for (int i = 0; i < lcInfo.length() - 2; i++)
         {
             if (lcPassword.contains(lcInfo.substring(i, i + 3)))
             {
@@ -327,8 +327,8 @@ public enum PasswordRule
     protected boolean containsPersonalInfo(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
     {
         return
-            containsPersonalInfo(password, user.getEmail(), "email address", messages) &&
-            containsPersonalInfo(password, user.getFriendlyName(), "display name", messages) &&
+            containsPersonalInfo(password, user.getEmail(), "email address", messages) ||
+            containsPersonalInfo(password, user.getFriendlyName(), "display name", messages) ||
             containsPersonalInfo(password, StringUtils.trimToEmpty(user.getFirstName()) + StringUtils.trimToEmpty(user.getLastName()), "name", messages);
     }
 
