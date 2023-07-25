@@ -150,6 +150,8 @@ public enum PasswordRule
     private static final Pattern LOWER_CASE = Pattern.compile("\\p{javaUpperCase}");
     private static final Pattern UPPER_CASE = Pattern.compile("\\p{javaLowerCase}");
     private static final Pattern DIGIT = Pattern.compile("\\d");
+    // Note: This is not completely consistent with the above patterns since \W is simply "not ASCII word character",
+    // which means any non-ASCII upper-case or lower-case letter will also qualify as a "symbol".
     private static final Pattern NON_WORD = Pattern.compile("\\W");
 
     static
