@@ -995,6 +995,11 @@ public abstract class CompareType
         }
     }
 
+    protected static Set<String> parseParams(Object value_, String separator)
+    {
+        return parseParams(value_, separator, false);
+    }
+
     protected static Set<String> parseParams(Object value_, String separator, boolean isNewLineSeparatorAllowed)
     {
         if (value_ == null)
