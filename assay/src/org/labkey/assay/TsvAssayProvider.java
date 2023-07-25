@@ -31,7 +31,6 @@ import org.labkey.api.assay.AssayPipelineProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProviderSchema;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -40,6 +39,7 @@ import org.labkey.api.assay.PipelineDataCollector;
 import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.PropertyType;
@@ -156,9 +156,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol)
     {
-        return new ActionURL(AssayPlateMetadataTemplateAction.class, container);
+        return new ActionURL(AssayPlateMetadataTemplateAction.class, container).addParameter("protocol", protocol.getRowId());
     }
 
     @Override
@@ -344,9 +344,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain runDomain = getRunDomain(protocol);
             if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME)))
+                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)))
                 {
-                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
                     plateTemplate.setLookupContainer(protocol.getContainer().getId());
