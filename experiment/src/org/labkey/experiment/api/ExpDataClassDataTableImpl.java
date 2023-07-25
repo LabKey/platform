@@ -1004,20 +1004,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     dataClassTInfo = QueryService.get().getUserSchema(user, c, "exp.data").getTable(getName(), cf);
                 }
 
-                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, dataClassTInfo, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-")
+                Map<String, String> importAliasMap = null;
+                try
+                {
+                    importAliasMap = _dataClass.getImportAliasMap();
+                }
+                catch (IOException e)
+                {
+                    // do nothing
+                }
+                Map<String, String> finalImportAliasMap = importAliasMap;
+                di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, dataClassTInfo, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-", importAliasMap)
                         .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
                         .addExtraPropsFn(() -> {
                             Map<String, Object> props = new HashMap<>();
-                            try
-                            {
-                                Map<String, String> importAliasMap = _dataClass.getImportAliasMap();
-                                props.put(PARENT_IMPORT_ALIAS_MAP_PROP, importAliasMap);
-                                props.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(c)));
-                            }
-                            catch (IOException e)
-                            {
-                                // do nothing
-                            }
+                            props.put(PARENT_IMPORT_ALIAS_MAP_PROP, finalImportAliasMap);
+                            props.put(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(c)));
+
                             return props;
                         })
                 );
