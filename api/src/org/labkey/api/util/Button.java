@@ -117,7 +117,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
     public String getHref()
     {
-        return usePost ? "javascript:void(0);" : href;
+        return usePost ? null : href;
     }
 
     public String getName()
@@ -132,7 +132,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
     public String getOnClick()
     {
-        return onClick;
+            return onClick;
     }
 
     public String getIconCls()
@@ -243,7 +243,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         String submitId = page.makeId("submit_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
-        String hrefValue = (null == getHref()) ? "#" : getHref();
+        String hrefValue = StringUtils.defaultString(getHref(),  "#");
         String clickHandler = generateOnClick();
 
         var attrs = at(attributes)
@@ -261,7 +261,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .cl(iconOnly, "icon-only");
 
         if (!inlineScript)
-            page.addHandler(id, "click", generateOnClick());
+            page.addHandler(id, "click", clickHandler);
         return createHtmlFragment(
             isSubmit() ?
             INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,

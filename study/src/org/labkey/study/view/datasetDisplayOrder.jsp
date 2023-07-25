@@ -117,5 +117,5 @@ function moveDatasetItem(action) {
     <input type="hidden" name="order" value="">
     <%= button("Save").submit(true) %>
     <%= button("Cancel").href(urlFor(ManageTypesAction.class)) %>
-    <%= button("Reset Order").href("#").onClick("if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
+    <%= button("Reset Order").onClick("if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
 </labkey:form>

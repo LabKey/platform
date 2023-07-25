@@ -450,8 +450,6 @@ public class ActionButton extends DisplayElement implements Cloneable
                 button.onClick(renderDefaultScript(ctx) + getScript(ctx));
             else
                 button.onClick(getScript(ctx));
-
-            button.href("javascript:void(0);");
         }
 
         button.attributes(attributes);

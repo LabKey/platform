@@ -1402,7 +1402,7 @@ public class PageFlowUtil
 
     public static HtmlString generateBackButton(String text)
     {
-        return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
+        return button(text).onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */

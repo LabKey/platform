@@ -142,6 +142,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.CompareType.IN;
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * User: jeckels
@@ -1549,13 +1550,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
             ActionURL editURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(protocolContainer, protocol, false, context.getActionURL());
             if (editURL != null)
             {
-                String editLink = editURL.toString();
-                if (!protocolContainer.equals(contextContainer))
-                {
-                    // TODO issue with the returnURL on this editLink if it has its own params
-                    editLink = "javascript: if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
-                }
-                manageMenu.addChild("Edit assay design", editLink);
+                var child = manageMenu.addChild("Edit assay design","");
+                if (protocolContainer.equals(contextContainer))
+                    child.setHref(editURL.toString());
+                else
+                    child.setScript("if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = " + jsString(editURL.toString()) + "; }");
             }
 
             ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(protocol, protocolContainer);

@@ -50,7 +50,7 @@
             }
             else
             {
-                String href = StringUtils.defaultString(tab.getHref(), "javascript:void(0);");
+                String href = StringUtils.defaultString(tab.getHref(), "#");
                 %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%>asd</a><%
             }
             %></li><%
