@@ -36,6 +36,7 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -57,7 +58,13 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -94,6 +101,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -101,15 +109,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 10:13:08 AM
- */
 public class PlateManager implements PlateService
 {
     private static final Logger LOG = LogManager.getLogger(PlateManager.class);
     private static final String LSID_CLASS_OBJECT_ID = "objectType";
+    public static final String PLATE_WELL_DOMAIN = "PlateMetadataDomain";
 
     private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
@@ -1068,6 +1072,87 @@ public class PlateManager implements PlateService
         });
 
         return Map.of("allowed", allowedRows, "notAllowed", notAllowedRows);
+    }
+
+    /**
+     * Returns the domain attached to the Well table,
+     */
+    public @Nullable Domain getPlateMetadataDomain(Container container, User user)
+    {
+        DomainKind vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+
+        if (vocabDomainKind == null)
+            return null;
+
+        // the domain is scoped at the project level (project and subfolder scoping)
+        String domainURI = vocabDomainKind.generateDomainURI(null, PLATE_WELL_DOMAIN, container.getProject(), user);
+        return PropertyService.get().getDomain(container, domainURI);
+    }
+
+    private Container getPlateMetadataDomainContainer(Container container)
+    {
+        // scope the metadata container to the project
+        return container.isProject() ? container : container.getProject();
+    }
+
+    private @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+
+        if (vocabDomain == null)
+        {
+            DomainKind domainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+            Container domainContainer = getPlateMetadataDomainContainer(container);
+
+            if (!domainKind.canCreateDefinition(user, domainContainer))
+                throw new IllegalArgumentException("Unable to create the plate well domain in folder: " + domainContainer.getPath() + "\". Insufficient permissions.");
+
+            vocabDomain = DomainUtil.createDomain("Vocabulary", new GWTDomain(), null, domainContainer, user, PLATE_WELL_DOMAIN, null);
+        }
+        return vocabDomain;
+    }
+
+    /**
+     * Adds custom fields to the well domain
+     */
+    public @NotNull List<GWTPropertyDescriptor> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
+    {
+        Domain vocabDomain = ensurePlateMetadataDomain(container, user);
+        DomainKind domainKind = vocabDomain.getDomainKind();
+
+        if (!domainKind.canEditDefinition(user, vocabDomain))
+            throw new IllegalArgumentException("Unable to create field on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
+
+        if (!fields.isEmpty())
+        {
+            Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getName).collect(Collectors.toSet());
+            for (GWTPropertyDescriptor pd : fields)
+            {
+                if (existingProperties.contains(pd.getName()))
+                    throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists", pd.getName(), vocabDomain.getTypeURI()));
+
+                DomainUtil.addProperty(vocabDomain, pd, new HashMap<>(), new HashSet<>(), null);
+            }
+            vocabDomain.save(user);
+        }
+        return getPlateMetadataFields(container, user);
+    }
+
+    public void deletePlateMetadataDomain(Container container, User user) throws Exception
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+        if (vocabDomain != null)
+            vocabDomain.delete(user);
+    }
+
+    public @NotNull List<GWTPropertyDescriptor> getPlateMetadataFields(Container container, User user)
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+        if (vocabDomain != null)
+        {
+            return vocabDomain.getProperties().stream().map(DomainUtil::getPropertyDescriptor).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
     public static final class TestCase

@@ -34,6 +34,7 @@ import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
@@ -623,6 +624,60 @@ public class PlateController extends SpringActionController
         {
             var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), form.getIds(false));
             return success(results);
+        }
+    }
+
+    public static class CreatePlateMetadataFieldsForm
+    {
+        private List<GWTPropertyDescriptor> _fields;
+
+        public List<GWTPropertyDescriptor> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(List<GWTPropertyDescriptor> fields)
+        {
+            _fields = fields;
+        }
+    }
+
+    @RequiresPermission(DesignAssayPermission.class)
+    public class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
+    {
+        @Override
+        public void validateForm(CreatePlateMetadataFieldsForm form, Errors errors)
+        {
+            if (form.getFields().isEmpty())
+                errors.reject(ERROR_MSG, "No metadata fields were specified.");
+        }
+
+        @Override
+        public Object execute(CreatePlateMetadataFieldsForm form, BindException errors) throws Exception
+        {
+            List<GWTPropertyDescriptor> newFields = PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), form.getFields());
+            return success(newFields);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetPlateMetadataFields extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().getPlateMetadataFields(getContainer(), getUser()));
+        }
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class DeletePlateMetadataDomainAction extends MutatingApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            PlateManager.get().deletePlateMetadataDomain(getContainer(), getUser());
+            return null;
         }
     }
 }
