@@ -708,10 +708,10 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             else {
                 inputField.show();
                 inputField.enable();
-                inputField.setValue(textAreaField.getValue());
+                inputField.setValue(textAreaField && textAreaField.getValue());
                 inputField.validate();
                 inputField.focus('', 50);
-                textAreaField.hide();
+                textAreaField && textAreaField.hide();
             }
         }
 
