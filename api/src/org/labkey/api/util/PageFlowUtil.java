@@ -1339,6 +1339,18 @@ public class PageFlowUtil
         return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
+    public static String postOnClickJavaScriptEvent()
+    {
+        return """
+               const href = this.dataset['href'];
+               const confirmMessage = this.dataset['confirmMessage'];
+               if (confirmMessage)
+                LABKEY.Utils.confirmAndPost(confirmMessage, href);
+               else
+                LABKEY.Utils.postToAction(href);
+               """;
+    }
+
     public static ButtonBuilder button(String text)
     {
         return new ButtonBuilder(text);

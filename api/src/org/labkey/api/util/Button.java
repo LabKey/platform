@@ -115,11 +115,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         return dropdown;
     }
 
-    public String getHref()
-    {
-        return usePost ? null : href;
-    }
-
     public String getName()
     {
         return name;
@@ -170,10 +165,10 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         return submit;
     }
 
-    private String generateOnClick()
+    private @NotNull String generateOnClick()
     {
         // prepare onclick method and overrides
-        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href, confirmMessage) : StringUtils.defaultString(getOnClick());
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScriptEvent() : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
@@ -186,14 +181,14 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
 
         if (isDisableOnClick())
         {
-            onClickMethod += ";LABKEY.Utils.addClass(this," + qDisabledCls + ");";
+            onClickMethod += "LABKEY.Utils.addClass(this," + qDisabledCls + ");";
         }
 
         if (isSubmit())
         {
             // Grab the id of a form element vial the data.submitid attribute on the button.  This is used to navigate to the form.
             // This attribute is set in getHtmlString() using .data() in the attributes builder.
-            final String submitCode = "submitForm(document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form);return false;";
+            final String submitCode = "submitForm(document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form);";
 
             if (StringUtils.isBlank(onClick))
             {
@@ -204,13 +199,14 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
                 // we allow the onclick method to cancel the submit
                 // Question: This isn't activated when the user hits 'enter' so why support this?
                 onClickMethod += "this.form=document.getElementById(this.dataset[" + quote + "submitid" + quote + "]).form;";
-                onClickMethod += "if(isTrueOrUndefined(function(){" + onClick + "}.call(this))){" + submitCode + "}";
+                onClickMethod += "if (isTrueOrUndefined(function(){" + onClick + "}.call(this))) {" + submitCode + "}";
 
                 if (isDisableOnClick())
                 {
-                    onClickMethod += "else{LABKEY.Utils.removeClass(this," + qDisabledCls + ");}";
+                    onClickMethod += "else {LABKEY.Utils.removeClass(this," + qDisabledCls + ");}";
                 }
             }
+            onClickMethod += "return false;";
         }
         else
         {
@@ -243,13 +239,15 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         String submitId = page.makeId("submit_");
         // In the icon-only button case, use caption as tooltip. This avoids having to set both caption and tooltip
         final HtmlString tip = (null != tooltip ? HtmlString.of(tooltip) : (!iconOnly ? null : html));
-        String hrefValue = StringUtils.defaultString(getHref(),  "#");
         String clickHandler = generateOnClick();
 
         var attrs = at(attributes)
             .id(id)
-            .at(Attribute.href, hrefValue, title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .at(title, tip, Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
+            .at(!usePost, Attribute.href, StringUtils.defaultIfBlank(this.href,  "#"), "#")
             .at(inlineScript, onclick, clickHandler)
+            .data(usePost, "href", this.href)
+            .data(usePost, "confirmMessage", confirmMessage)
             .data("submitid", submitId)         // this id is used by the event handler, stash in a data attribute rather than hard-coding in the handler source
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
