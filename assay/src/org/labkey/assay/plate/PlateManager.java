@@ -71,13 +71,16 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.plate.model.WellGroupBean;
@@ -93,6 +96,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -118,6 +122,14 @@ public class PlateManager implements PlateService
     private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
     private final Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
+
+    public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
+        @Override
+        public Set<String> getPermittedContainerIds(User user, Map<String, Container> containers)
+        {
+            return getPermittedContainerIds(user, containers, ReadPermission.class);
+        }
+    };
 
     public static PlateManager get()
     {
@@ -343,6 +355,11 @@ public class PlateManager implements PlateService
         filter.addCondition(FieldKey.fromParts("Name"), name);
 
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getRowCount() > 0;
+    }
+
+    private Collection<Plate> getPlates(Container c)
+    {
+        return PlateCache.getPlates(c);
     }
 
     @Override
@@ -663,7 +680,11 @@ public class PlateManager implements PlateService
                     " (wellId, wellGroupId) VALUES (?, ?)";
             Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
 
-            transaction.addCommitTask(() -> PlateManager.get().clearCache(container), DbScope.CommitTaskOption.POSTCOMMIT);
+            final Integer plateRowId = plateId;
+            transaction.addCommitTask(() -> {
+                clearCache(container);
+                indexPlate(container, plateRowId);
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
 
             return plateId;
@@ -739,6 +760,13 @@ public class PlateManager implements PlateService
         Map<String, Object> key = Collections.singletonMap("RowId", rowid);
         QueryUpdateService qus = getPlateUpdateService(container, user);
         qus.deleteRows(user, container, Collections.singletonList(key), null, null);
+    }
+
+    // Called by the Plate Query Update Service after deleting a plate
+    public void afterPlateDelete(Container container, Lsid plateLsid)
+    {
+        clearCache(container);
+        deindexPlates(List.of(plateLsid));
     }
 
     // Called by the Plate Query Update Service prior to deleting a plate
@@ -846,10 +874,21 @@ public class PlateManager implements PlateService
     {
         return _plateTypeHandlers.get(plateTypeName);
     }
+    
+    private UserSchema getPlateUserSchema(Container container, User user)
+    {
+        return QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+    }
+
+    @Override
+    public TableInfo getPlateTableInfo()
+    {
+        return AssayDbSchema.getInstance().getTableInfoPlate();
+    }
 
     private @NotNull QueryUpdateService getPlateUpdateService(Container container, User user)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        UserSchema schema = getPlateUserSchema(container, user);
         TableInfo tableInfo = schema.getTable(PlateTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
@@ -860,7 +899,7 @@ public class PlateManager implements PlateService
 
     private @NotNull QueryUpdateService getWellGroupUpdateService(Container container, User user)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        UserSchema schema = getPlateUserSchema(container, user);
         TableInfo tableInfo = schema.getTable(WellGroupTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
@@ -871,7 +910,7 @@ public class PlateManager implements PlateService
 
     private @NotNull QueryUpdateService getWellUpdateService(Container container, User user)
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME);
+        UserSchema schema = getPlateUserSchema(container, user);
         TableInfo tableInfo = schema.getTable(WellTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
@@ -1051,27 +1090,85 @@ public class PlateManager implements PlateService
         return plateTypes;
     }
 
-    public @NotNull Map<String, Collection<Map<String, Object>>> getPlateOperationConfirmationData(
+    public PlateType getPlateType(@NotNull Plate plate)
+    {
+        for (PlateType plateType : getPlateTypes())
+        {
+            if (
+                plateType.getRows() == plate.getRows() &&
+                Objects.equals(plateType.getCols(), plateType.getCols()) &&
+                Objects.equals(plateType.getType(), plate.getType())
+            )
+            {
+                return plateType;
+            }
+        }
+
+        return null;
+    }
+
+    public @NotNull Map<String, List<Map<String, Integer>>> getPlateOperationConfirmationData(
         @NotNull Container container,
         @NotNull Set<Integer> plateRowIds
     )
     {
-        List<Map<String, Object>> allowedRows = new ArrayList<>();
-        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+        Set<Integer> permittedIds = new HashSet<>(plateRowIds);
+        Set<Integer> notPermittedIds = new HashSet<>();
+
+        ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "plate")));
+        permittedIds.removeAll(notPermittedIds);
 
         // TODO: This is really expensive. Find a way to consolidate this check into a single query.
-        plateRowIds.forEach(plateRowId -> {
-            Map<String, Object> rowMap = Map.of("RowId", plateRowId);
+        permittedIds.forEach(plateRowId -> {
             Plate plate = getPlate(container, plateRowId);
-            if (plate == null)
-                notAllowedRows.add(rowMap);
-            else if (getRunCountUsingPlate(container, plate) > 0)
-                notAllowedRows.add(rowMap);
-            else
-                allowedRows.add(rowMap);
+            if (plate == null || getRunCountUsingPlate(container, plate) > 0)
+                notPermittedIds.add(plateRowId);
         });
+        permittedIds.removeAll(notPermittedIds);
 
-        return Map.of("allowed", allowedRows, "notAllowed", notAllowedRows);
+        return Map.of(
+        "allowed", permittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList(),
+            "notAllowed", notPermittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList()
+        );
+    }
+
+    private void deindexPlates(Collection<Lsid> plateLsids)
+    {
+        SearchService ss = SearchService.get();
+        if (ss == null)
+            return;
+
+        Set<String> documentIds = new HashSet<>();
+        for (Lsid lsid : plateLsids)
+            documentIds.add(PlateDocumentProvider.getDocumentId(lsid));
+        ss.deleteResources(documentIds);
+    }
+
+    private void indexPlate(Container c, Integer plateRowId)
+    {
+        Plate plate = getPlate(c, plateRowId);
+        SearchService ss = SearchService.get();
+
+        if (ss == null || plate == null)
+            return;
+
+        indexPlate(ss.defaultTask(), plate);
+    }
+
+    private void indexPlate(SearchService.IndexTask task, @NotNull Plate plate)
+    {
+        WebdavResource resource = PlateDocumentProvider.createDocument(plate);
+        task.addResource(resource, SearchService.PRIORITY.item);
+    }
+
+    public void indexPlates(SearchService.IndexTask task, Container c, @Nullable Date modifiedSince)
+    {
+        for (Plate plate : getPlates(c))
+        {
+            if (modifiedSince == null || modifiedSince.before(((PlateImpl) plate).getModified()))
+                indexPlate(task, plate);
+        }
     }
 
     /**
