@@ -14,6 +14,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -75,6 +76,11 @@ public class PlateCache
             return _lsidMap.get(lsid);
         }
 
+        private @NotNull Collection<Plate> getPlates()
+        {
+            return _rowIdMap.values();
+        }
+
         private @NotNull List<Plate> getPlateTemplates()
         {
             return _templates;
@@ -94,6 +100,11 @@ public class PlateCache
     static @Nullable Plate getPlate(Container c, Lsid lsid)
     {
         return PLATE_COLLECTIONS_CACHE.get(c).getForLsid(lsid);
+    }
+
+    static @NotNull Collection<Plate> getPlates(Container c)
+    {
+        return PLATE_COLLECTIONS_CACHE.get(c).getPlates();
     }
 
     static @NotNull List<Plate> getPlateTemplates(Container c)

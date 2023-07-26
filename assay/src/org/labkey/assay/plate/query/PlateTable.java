@@ -267,10 +267,11 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
+                final Lsid plateLsid = new Lsid(plate.getLSID());
                 PlateManager.get().beforePlateDelete(container, plateId);
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateManager.get().clearCache(container), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateManager.get().afterPlateDelete(container, plateLsid), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
                 return returnMap;
