@@ -86,7 +86,7 @@ public class AssayBatchDocumentProvider implements SearchService.DocumentProvide
     {
         return new SearchService.ResourceResolver()
         {
-            private Integer fromDocumentId(@NotNull String resourceIdentifier)
+            private @Nullable Integer fromDocumentId(@NotNull String resourceIdentifier)
             {
                 final String prefix = getDocumentIdPrefix();
 
