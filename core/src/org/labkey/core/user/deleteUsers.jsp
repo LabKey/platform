@@ -84,7 +84,7 @@ This action cannot be undone.</p>
         }
     %>
     <p><span style="font-weight:bold">Note:</span> you may also
-    <a href="#" onclick="document.deactivateUsersForm.submit();return false;">deactivate <%=h(bean.getUsers().size() > 1 ? "these users" : "this user")%></a>
+    <%=link("deactivate " + (bean.getUsers().size() > 1 ? "these users" : "this user")).onClick("document.deactivateUsersForm.submit();return false;")%>
     instead of deleting them.
     Deactivated users may not login, but their information will be preserved
     for display purposes, and their group memberships will be preserved in case

@@ -84,6 +84,8 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var toggleRelatedFns = {};
     var toggleTimestampFns = {};
+    var hidden = true;
+    var showLess = true;
 </script>
 <%
     }
@@ -144,9 +146,6 @@
         String relatedCommentsDivClassName = "relatedIssue" + issueId;
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var hidden = true;
-    var showLess = true;
-
     /**
      * Toggle the hidden flag, set the hide button text to reflect state, and show or hide all related comments.
      */
@@ -223,22 +222,19 @@
         <div class="form-group">
 
             <div id="<%=h(recentTimeStampId)%>" title="<%=h(lastUpdatedTitleStr)%>"><%=h(lastUpdatedStr)%>
-                <a id="<%=h(timestampsToggleId)%>" onclick="toggleTimestampFns[<%=h(issueId)%>]()">
+                <a id="<%=h(timestampsToggleId)%>">
                     <i id="<%=h(stampExpandIconId)%>" title="See all" class="fa fa-caret-down" style="cursor: pointer;"></i>
-                </a>
-            </div>
+                </a><%
+                addHandler(recentTimeStampId, "click", "toggleTimestampFns[" + issueId + "]()");
+            %></div>
 
             <div id="<%=h(allTimeStampsId)%>" style="display: none;">
                 <%
                     ArrayList<IssueObject.IssueEvent> eventArray = issue.getOrderedEventArray(user);
-
                     for (int j = 1; j < eventArray.size(); j++)
                     {
                         IssueObject.IssueEvent e = eventArray.get(j);
-                        String stampString = e.toString();
-                %>
-                <div title="<%=h(e.getFullTimestamp())%>"><%=h(stampString)%></div>
-                <%
+                        %><div title="<%=h(e.getFullTimestamp())%>"><%=h(e.toString())%></div><%
                     }
                 %>
             </div>
@@ -309,11 +305,9 @@
             {
                 RelatedIssuesView view = new RelatedIssuesView(context, issue.getRelatedIssues());
                 include(view, out);
-
-        %>
-        <button class="btn btn-default btn-xs" id="<%=h(relatedCommentsToggleId)%>" onclick="toggleRelatedFns[<%=h(issueId)%>]()" style="margin-bottom: 10px">Show Related Comments</button>
-
-        <%}%>
+                %><button class="btn btn-default btn-xs" id="<%=h(relatedCommentsToggleId)%>" style="margin-bottom: 10px">Show Related Comments</button><%
+                addHandler(relatedCommentsToggleId, "click", "toggleRelatedFns[" + issueId + "]()");
+            }%>
         <labkey:panel type="portal">
 
             <%

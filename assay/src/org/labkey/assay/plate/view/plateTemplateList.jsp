@@ -52,8 +52,7 @@
     }
 %>
 
-<script type="application/javascript">
-
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($){
 
         deletePlate = function(templateName, plateId){

@@ -55,7 +55,8 @@ public class ColorPickerDisplayColumn extends DataColumn
 
         String renderId = "color-picker-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
-        out.write("<script type=\"text/javascript\">\n" +
+        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        out.write(
                 "   LABKEY.requiresExt4Sandbox(function(){\n" +
                 "      Ext4.onReady(function(){\n" +
                 "        Ext4.create('Ext.picker.Color', {\n" +
@@ -68,8 +69,8 @@ public class ColorPickerDisplayColumn extends DataColumn
                 "            }\n" +
                 "        });\n" +
                 "      });\n" +
-                "   });\n" +
-                "</script>");
+                "   });\n");
+        out.write("</script>");
         out.write("<div id='");
         out.write(PageFlowUtil.filter(renderId));
         out.write("'></div>");

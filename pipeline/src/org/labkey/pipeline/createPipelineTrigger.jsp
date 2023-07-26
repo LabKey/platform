@@ -91,7 +91,7 @@
 %>
     <div id="<%=h(appId)%>"></div>
 
-    <script type="application/javascript">
+    <script type="text/javascript" nonce="<%=getScriptNonce()%>">
         const detailsFormSchema = JSON.parse(<%=q(jsonMapper.writeValueAsString(detailsFormSchema))%>);
         const taskFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(taskFormSchemas))%>);
         const customFieldFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(customFieldFormSchemas))%>);

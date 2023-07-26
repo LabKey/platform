@@ -23,6 +23,7 @@ import org.labkey.api.data.TableViewForm;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -82,7 +83,9 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
 
         // Keep track of listeners that want to know when the resolver selection has changed
-        out.write("<script type=\"text/javascript\">var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }</script>");
+        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        out.write("var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }\n");
+        out.write("</script>");
 
         if (_resolvers.size() < 2)
         {

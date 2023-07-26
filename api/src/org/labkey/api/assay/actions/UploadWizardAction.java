@@ -1098,25 +1098,27 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
         {
             // may want to just put this in a js file and include it in all the wizard pages
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("    function showPopup(elem, txtTitle, txtMsg)\n" +
-                    "      {\n" +
-                    "        var win = new Ext.Window({\n" +
-                    "           title: txtTitle,\n" +
-                    "           border: false,\n" +
-                    "           constrain: true,\n" +
-                    "           html: txtMsg,\n" +
-                    "           closeAction:'close',\n" +
-                    "           autoScroll: true,\n" +
-                    "           modal: true,\n" +
-                    "           buttons: [{\n" +
-                    "             text: 'Close',\n" +
-                    "             id: 'btn_cancel',\n" +
-                    "             handler: function(){win.close();}\n" +
-                    "           }]\n" +
-                    "        });\n" +
-                    "        win.show(elem);\n" +
-                    "      }");
+            out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+            out.write("""
+                        function showPopup(elem, txtTitle, txtMsg)
+                          {
+                            var win = new Ext.Window({
+                               title: txtTitle,
+                               border: false,
+                               constrain: true,
+                               html: txtMsg,
+                               closeAction:'close',
+                               autoScroll: true,
+                               modal: true,
+                               buttons: [{
+                                 text: 'Close',
+                                 id: 'btn_cancel',
+                                 handler: function(){win.close();}
+                               }]
+                            });
+                            win.show(elem);
+                          }
+                    """);
             out.write("</script>\n");
 
             super._renderDataRegion(ctx, out);

@@ -24,6 +24,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -114,7 +115,6 @@ public class WarningServiceImpl implements WarningService
 
     private static final String DISMISSAL_SCRIPT_FORMAT =
         """
-        <script type="text/javascript">
             (function($) {
                 function dismissMessage() {
                     var config = {
@@ -130,7 +130,6 @@ public class WarningServiceImpl implements WarningService
                     dismissMessage();
                 });
             })(jQuery);
-        </script>
         """;
 
     @Override
@@ -166,7 +165,9 @@ public class WarningServiceImpl implements WarningService
         if (coreUrls != null)
         {
             String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
+            html.append(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n"));
             html.append(HtmlString.unsafe(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL))));
+            html.append(HtmlString.unsafe("</script>\n"));
         }
         html.append(HtmlString.unsafe("</div>"));
 

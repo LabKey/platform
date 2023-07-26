@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
@@ -50,8 +49,7 @@
             }
             else
             {
-                String href = StringUtils.defaultString(tab.getHref(), "#");
-                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%>asd</a><%
+                %><%=link(tab.getText(),tab.getHref()).onClick(tab.getScript()) %><%
             }
             %></li><%
             }

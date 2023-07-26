@@ -133,7 +133,7 @@
     <%= button("Save").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
     <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 </labkey:form>
-<script language="javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function addRow() {
         var table = document.getElementById("qcStatesTable");
         var numberOfRows = table.rows.length;  // we'll use this as an ID later too
