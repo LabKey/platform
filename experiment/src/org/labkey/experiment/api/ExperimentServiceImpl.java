@@ -2342,10 +2342,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         if (down)
         {
-            if (start instanceof ExpData)
-                runsDown.putAll(flattenPairs(getRunsAndRolesUsingDataIds(Arrays.asList(start.getRowId()))));
-            else if (start instanceof ExpMaterial)
-                runsDown.putAll(flattenPairs(getRunsAndRolesUsingMaterialIds(Arrays.asList(start.getRowId()))));
+            if (start instanceof ExpData d)
+                runsDown.putAll(flattenPairs(getRunsAndRolesUsingData(d)));
+            else if (start instanceof ExpMaterial m)
+                runsDown.putAll(flattenPairs(getRunsAndRolesUsingMaterial(m)));
 
             if (parentRun != null)
                 runsDown.remove(parentRun.getLSID());
@@ -5458,7 +5458,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     // Get a map of run LSIDs to Roles used by the Data ids.
-    public List<Pair<String, String>> getRunsAndRolesUsingDataIds(List<Integer> ids)
+    public List<Pair<String, String>> getRunsAndRolesUsingData(ExpData data)
     {
         SQLFragment sql = new SQLFragment(
                 """
@@ -5466,17 +5466,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         FROM exp.ExperimentRun r
                         INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
                         INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId
-                        LEFT OUTER JOIN exp.Data d ON pa.RowId = d.sourceApplicationID
-                        WHERE di.dataId\s""");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("OR d.RowId ");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
+                        WHERE di.dataId = ?""");
+        sql.add(data.getRowId());
+        if (data.getSourceApplication() != null)
+        {
+            sql.append(" OR pa.RowId = ?");
+            sql.add(data.getSourceApplication().getRowId());
+        }
         sql.append("ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
-        List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
+        List<Pair<String, String>> runsAndRoles = new ArrayList<>();
         new SqlSelector(getExpSchema(), sql).forEachMap(row -> {
             String runLsid = (String)row.get("lsid");
             String role = (String)row.get("role");
@@ -5484,7 +5484,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             runLsids.add(runLsid);
         });
 
-        assert checkRunsMatch(runLsids, getRunsUsingDataIds(ids));
+        assert checkRunsMatch(runLsids, getRunsUsingDataIds(Arrays.asList(data.getRowId())));
         return runsAndRoles;
     }
 
@@ -5531,7 +5531,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     // Get a map of run LSIDs to Roles used by the Material ids.
-    public List<Pair<String, String>> getRunsAndRolesUsingMaterialIds(List<Integer> ids)
+    public List<Pair<String, String>> getRunsAndRolesUsingMaterial(ExpMaterial material)
     {
         SQLFragment sql = new SQLFragment(
                 """
@@ -5539,17 +5539,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         FROM exp.ExperimentRun r
                         INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
                         INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId
-                        LEFT OUTER JOIN exp.Material m ON pa.RowId = m.sourceApplicationID
-                        WHERE mi.materialId\s""");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("OR m.RowId ");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
+                        WHERE mi.materialId = ?""");
+        sql.add(material.getRowId());
+        if (material.getSourceApplication() != null)
+        {
+            sql.append(" OR pa.RowId = ?\n");
+            sql.add(material.getSourceApplication().getRowId());
+        }
         sql.append("ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
-        List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
+        List<Pair<String, String>> runsAndRoles = new ArrayList<>();
         new SqlSelector(getExpSchema(), sql).forEachMap(row -> {
             String runLsid = (String)row.get("lsid");
             String role = (String)row.get("role");
@@ -5557,7 +5557,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             runLsids.add(runLsid);
         });
 
-        assert checkRunsMatch(runLsids, getRunsUsingMaterials(ids.stream().mapToInt(Integer::intValue).toArray()));
+        assert checkRunsMatch(runLsids, getRunsUsingMaterials(material.getRowId()));
         return runsAndRoles;
     }
 
