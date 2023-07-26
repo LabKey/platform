@@ -111,7 +111,7 @@ public interface Trigger
     default void rowTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, int rowNumber,
                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext,
-                            @Nullable Map<String, Object> existingRecord/*existing record for the row, used for merge operation to differientiate new vs existing row*/) throws ValidationException
+                            @Nullable Map<String, Object> existingRecord/*existing record for the row, used for merge operation to differentiate new vs existing row*/) throws ValidationException
     {
         if (before)
         {

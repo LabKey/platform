@@ -563,7 +563,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param newRow The new row for INSERT and UPDATE.
      * @param oldRow The previous row for UPDATE and DELETE
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
-     * @param existingRecord Optional existing record for the row, used for merge operation to differientiate new vs existing row
+     * @param existingRecord Optional existing record for the row, used for merge operation to differentiate new vs existing row
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
     void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
