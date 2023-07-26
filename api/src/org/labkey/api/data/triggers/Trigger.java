@@ -101,17 +101,24 @@ public interface Trigger
     {
     }
 
-
     default void rowTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, int rowNumber,
                             @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                             ValidationException errors, Map<String, Object> extraContext) throws ValidationException
+    {
+        rowTrigger(table, c, user, event, before, rowNumber, newRow, oldRow, errors, extraContext, null);
+    }
+
+    default void rowTrigger(TableInfo table, Container c, User user, TableInfo.TriggerType event, boolean before, int rowNumber,
+                            @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
+                            ValidationException errors, Map<String, Object> extraContext,
+                            @Nullable Map<String, Object> existingRecord/*existing record for the row, used for merge operation to differientiate new vs existing row*/) throws ValidationException
     {
         if (before)
         {
             switch (event)
             {
                 case INSERT:
-                    beforeInsert(table, c, user, newRow, errors, extraContext);
+                    beforeInsert(table, c, user, newRow, errors, extraContext, existingRecord);
                     break;
                 case UPDATE:
                     beforeUpdate(table, c, user, newRow, oldRow, errors, extraContext);
@@ -126,7 +133,7 @@ public interface Trigger
             switch (event)
             {
                 case INSERT:
-                    afterInsert(table, c, user, newRow, errors, extraContext);
+                    afterInsert(table, c, user, newRow, errors, extraContext, existingRecord);
                     break;
                 case UPDATE:
                     afterUpdate(table, c, user, newRow, oldRow, errors, extraContext);
@@ -144,6 +151,13 @@ public interface Trigger
     {
     }
 
+    default void beforeInsert(TableInfo table, Container c,
+                              User user, @Nullable Map<String, Object> newRow,
+                              ValidationException errors, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
+    {
+        beforeInsert(table, c, user, newRow, errors, extraContext);
+    }
+
     default void beforeUpdate(TableInfo table, Container c,
                               User user, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
@@ -154,6 +168,13 @@ public interface Trigger
                               User user, @Nullable Map<String, Object> oldRow,
                               ValidationException errors, Map<String, Object> extraContext) throws ValidationException
     {
+    }
+
+    default void afterInsert(TableInfo table, Container c,
+                             User user, @Nullable Map<String, Object> newRow,
+                             ValidationException errors, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord) throws ValidationException
+    {
+        afterInsert(table, c, user, newRow, errors, extraContext);
     }
 
     default void afterInsert(TableInfo table, Container c,
