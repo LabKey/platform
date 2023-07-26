@@ -5473,7 +5473,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             sql.append(" OR pa.RowId = ?");
             sql.add(data.getSourceApplication().getRowId());
         }
-        sql.append("ORDER BY r.Created DESC");
+        sql.append(" ORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
         List<Pair<String, String>> runsAndRoles = new ArrayList<>();
@@ -5543,10 +5543,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.add(material.getRowId());
         if (material.getSourceApplication() != null)
         {
-            sql.append(" OR pa.RowId = ?\n");
+            sql.append(" OR pa.RowId = ?");
             sql.add(material.getSourceApplication().getRowId());
         }
-        sql.append("ORDER BY r.Created DESC");
+        sql.append("\nORDER BY r.Created DESC");
 
         Set<String> runLsids = new HashSet<>();
         List<Pair<String, String>> runsAndRoles = new ArrayList<>();
