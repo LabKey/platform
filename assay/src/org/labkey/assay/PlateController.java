@@ -669,15 +669,4 @@ public class PlateController extends SpringActionController
             return success(PlateManager.get().getPlateMetadataFields(getContainer(), getUser()));
         }
     }
-
-    @RequiresPermission(DeletePermission.class)
-    public class DeletePlateMetadataDomainAction extends MutatingApiAction<Object>
-    {
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            PlateManager.get().deletePlateMetadataDomain(getContainer(), getUser());
-            return null;
-        }
-    }
 }

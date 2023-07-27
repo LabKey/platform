@@ -1235,13 +1235,6 @@ public class PlateManager implements PlateService
         return getPlateMetadataFields(container, user);
     }
 
-    public void deletePlateMetadataDomain(Container container, User user) throws Exception
-    {
-        Domain vocabDomain = getPlateMetadataDomain(container, user);
-        if (vocabDomain != null)
-            vocabDomain.delete(user);
-    }
-
     public @NotNull List<GWTPropertyDescriptor> getPlateMetadataFields(Container container, User user)
     {
         Domain vocabDomain = getPlateMetadataDomain(container, user);
