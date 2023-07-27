@@ -1222,15 +1222,49 @@ public class PlateManager implements PlateService
 
         if (!fields.isEmpty())
         {
-            Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getName).collect(Collectors.toSet());
-            for (GWTPropertyDescriptor pd : fields)
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
-                if (existingProperties.contains(pd.getName()))
-                    throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists", pd.getName(), vocabDomain.getTypeURI()));
+                Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getName).collect(Collectors.toSet());
+                for (GWTPropertyDescriptor pd : fields)
+                {
+                    if (existingProperties.contains(pd.getName()))
+                        throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists", pd.getName(), vocabDomain.getTypeURI()));
 
-                DomainUtil.addProperty(vocabDomain, pd, new HashMap<>(), new HashSet<>(), null);
+                    DomainUtil.addProperty(vocabDomain, pd, new HashMap<>(), new HashSet<>(), null);
+                }
+                vocabDomain.save(user);
+                tx.commit();
             }
-            vocabDomain.save(user);
+        }
+        return getPlateMetadataFields(container, user);
+    }
+
+    public @NotNull List<GWTPropertyDescriptor> deletePlateMetadataFields(Container container, User user, Set<String> fields) throws Exception
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+
+        if (vocabDomain == null)
+            throw new IllegalArgumentException("Unable to remove fields from the domain, the domain was not found.");
+
+        if (!vocabDomain.getDomainKind().canEditDefinition(user, vocabDomain))
+            throw new IllegalArgumentException("Unable to create field on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
+
+        if (!fields.isEmpty())
+        {
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                Map<String, String> existingProperties = vocabDomain.getProperties().stream().collect(Collectors.toMap(ImportAliasable::getName, ImportAliasable::getPropertyURI));
+                for (String name : fields)
+                {
+                    if (!existingProperties.containsKey(name))
+                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exists", name, vocabDomain.getTypeURI()));
+
+                    DomainProperty dp = vocabDomain.getPropertyByURI(existingProperties.get(name));
+                    dp.delete();
+                }
+                vocabDomain.save(user);
+                tx.commit();
+            }
         }
         return getPlateMetadataFields(container, user);
     }

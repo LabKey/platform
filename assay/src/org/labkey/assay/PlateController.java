@@ -669,4 +669,29 @@ public class PlateController extends SpringActionController
             return success(PlateManager.get().getPlateMetadataFields(getContainer(), getUser()));
         }
     }
+
+    public static class DeletePlateMetadataFieldsForm
+    {
+        private Set<String> _fields;
+
+        public Set<String> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(Set<String> fields)
+        {
+            _fields = fields;
+        }
+    }
+
+    @RequiresPermission(DesignAssayPermission.class)
+    public class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
+    {
+        @Override
+        public Object execute(DeletePlateMetadataFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().deletePlateMetadataFields(getContainer(), getUser(), form.getFields()));
+        }
+    }
 }
