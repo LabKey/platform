@@ -3233,20 +3233,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             timer.start();
 
             LOG.debug((verifyEdgesNoInsert ? "Verifying" : "Rebuilding") + " edges for runId " + runId);
+            Set<String> dataToCpasTypes = new HashSet<>();
             // NOTE: Originally, we just filtered exp.data by runId.  This works for most runs but includes intermediate exp.data nodes and caused the ExpTest to fail
-            SQLFragment datas = new SQLFragment()
-                    .append("SELECT d.Container, d.LSID, d.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
+            SQLFragment dataObjects = new SQLFragment()
+                    .append("SELECT d.Container, d.LSID, d.CpasType, d.ObjectId, pa.CpasType AS pa_cpas_type FROM exp.Data d\n")
                     .append("INNER JOIN exp.DataInput di ON d.rowId = di.dataId\n")
                     .append("INNER JOIN exp.ProtocolApplication pa ON di.TargetApplicationId = pa.RowId\n")
                     .append("WHERE pa.RunId = ").appendValue(runId).append(" AND pa.CpasType IN (").appendValue(ExperimentRun).append(",").appendValue(ExperimentRunOutput).append(")");
 
             Collection<Map<String, Object>> fromDataLsids = new ArrayList<>();
             Collection<Map<String, Object>> toDataLsids = new ArrayList<>();
-            new SqlSelector(getSchema(), datas).forEachMap(row -> {
+            new SqlSelector(getSchema(), dataObjects).forEachMap(row -> {
                 if (ExperimentRun.name().equals(row.get("pa_cpas_type")))
                     fromDataLsids.add(row);
                 else
+                {
+                    dataToCpasTypes.add((String)row.get("cpastype"));
                     toDataLsids.add(row);
+                }
             });
             if (LOG.isDebugEnabled())
             {
@@ -3262,7 +3266,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     .append("INNER JOIN exp.ProtocolApplication pa ON mi.TargetApplicationId = pa.RowId\n")
                     .append("WHERE pa.RunId = ").appendValue(runId).append(" AND pa.CpasType IN (").appendValue(ExperimentRun).append(",").appendValue(ExperimentRunOutput).append(")");
 
-            Set<String> toCpasTypes = new HashSet<>();
+            Set<String> materialToCpasTypes = new HashSet<>();
             Collection<Map<String, Object>> fromMaterialLsids = new ArrayList<>();
             Collection<Map<String, Object>> toMaterialLsids = new ArrayList<>();
             new SqlSelector(getSchema(), materials).forEachMap(row -> {
@@ -3273,7 +3277,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 else
                 {
                     toMaterialLsids.add(row);
-                    toCpasTypes.add((String)row.get("cpastype"));
+                    materialToCpasTypes.add((String)row.get("cpastype"));
                 }
             });
 
@@ -3415,7 +3419,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             if (!verifyEdgesNoInsert && invalidateClosureCache)
             {
-                toCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
+                materialToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateMaterialsForRun(type, runId));
+                dataToCpasTypes.forEach(type -> ClosureQueryHelper.invalidateDataObjectsForRun(type, runId));
             }
         }
     }
