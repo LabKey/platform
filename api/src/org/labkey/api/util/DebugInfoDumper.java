@@ -141,7 +141,7 @@ public class DebugInfoDumper
     record ThreadExtraContext(String context, StackTraceElement[] stack) {};
 
     /* Can't use class ThreadLocal, which is frustrating */
-    static final Map<Thread,List<ThreadExtraContext>> _threadDumpExtraContext = new WeakHashMap<>();
+    static final Map<Thread,List<ThreadExtraContext>> _threadDumpExtraContext = Collections.synchronizedMap(new WeakHashMap<>());
 
 
     /**
