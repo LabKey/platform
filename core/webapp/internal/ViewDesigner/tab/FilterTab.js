@@ -343,6 +343,14 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
                     fieldMetaStore: this.fieldMetaStore,
                     selectOnFocus: true,
                     emptyText: 'Enter filter value'
+                },{
+                    xtype: 'labkey-filterTextArea',
+                    cls: 'test-item-value',
+                    renderTarget: 'div.item-value',
+                    indexedProperty: true,
+                    fieldMetaStore: this.fieldMetaStore,
+                    selectOnFocus: true,
+                    emptyText: 'Enter filter value'
                 }]
             });
         }
