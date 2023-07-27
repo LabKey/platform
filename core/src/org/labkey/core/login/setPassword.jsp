@@ -75,7 +75,7 @@
 
         <% for (NamedObject input : bean.passwordInputs) {
             HtmlString contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
-                    ? DbLoginManager.getPasswordRule().getSummaryRuleHTML() : null;
+                    ? DbLoginManager.getPasswordRule().getSummaryRuleHtml() : null;
         %>
             <p>
                 <%=h(contextContent)%>

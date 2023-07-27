@@ -1,5 +1,6 @@
 package org.labkey.api.exp.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -7,6 +8,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+@JsonIgnoreProperties("systemFields")
 public class DataClassDomainKindProperties
 {
     private int rowId;
