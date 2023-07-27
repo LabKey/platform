@@ -109,6 +109,9 @@
           <fkColumnName>rowId</fkColumnName>
         </fk>
       </column>
+      <column columnName="SampleId">
+        <description>The sample associated with this well.</description>
+      </column>
       <column columnName="Row">
         <description>The zero-based row index of each well.</description>
       </column>

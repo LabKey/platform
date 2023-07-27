@@ -35,6 +35,7 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
@@ -43,12 +44,18 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Well";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
 
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("PlateId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Row"));
         defaultVisibleColumns.add(FieldKey.fromParts("Col"));
+
+        // for now don't surface value and dilution, we may choose to drop these fields from the
+        // db schema at some point
+        ignoredColumns.add("value");
+        ignoredColumns.add("dilution");
     }
 
     public WellTable(PlateSchema schema, @Nullable ContainerFilter cf)
@@ -69,12 +76,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
         if (domain != null)
         {
-            String colName = "PlateMetadata";
+            String colName = "Properties";
             var col = addVocabularyDomainColumns(domain, colName);
             if (col != null)
             {
-                col.setLabel(domain.getName());
-                col.setDescription("Properties from " + domain.getLabel(getContainer()));
+                col.setLabel("Plate Metadata");
+                col.setDescription("Custom properties associated with the plate well");
             }
         }
     }
@@ -92,6 +99,12 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         colProperty.setCalculated(true);
 
         return addColumn(colProperty);
+    }
+
+    @Override
+    protected boolean acceptColumn(ColumnInfo col)
+    {
+        return super.acceptColumn(col) && !ignoredColumns.contains(col.getName());
     }
 
     @Override
