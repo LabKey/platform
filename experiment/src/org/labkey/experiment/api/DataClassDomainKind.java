@@ -314,7 +314,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
             List<String> warnings = new ArrayList<>();
             List<String> previewNames = new ArrayList<>();
 
-            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), null, container);
+            NameExpressionValidationResult results = NameGenerator.getValidationMessages(domainDesign.getName(), options.getNameExpression(), domainDesign.getFields(), options.getImportAliases(), container);
             if (results.errors() != null && !results.errors().isEmpty())
                 results.errors().forEach(error -> errors.add("Name Pattern error: " + error));
             if (results.warnings() != null && !results.warnings().isEmpty())
@@ -333,7 +333,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
         if (StringUtils.isNotBlank(options.getNameExpression()))
         {
-            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), null, container);
+            ValidationException errors = getNamePatternValidationResult(name, options.getNameExpression(), updatedDomainDesign.getFields(), options.getImportAliases(), container);
             if (errors.hasErrors())
                 throw new IllegalArgumentException(errors.getMessage());
         }
