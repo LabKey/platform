@@ -243,4 +243,8 @@ public interface WebdavResource extends Resource
      */
     void setLastModified(long time) throws IOException;
 
+    default boolean isCloudResource()
+    {
+        return false;
+    }
 }

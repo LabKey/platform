@@ -5604,8 +5604,40 @@ public class DavController extends SpringActionController
     }
 
 
+    public static class DavPath extends Path
+    {
+        public DavPath(Path path)
+        {
+            super(path);
+        }
+
+        @Override
+        protected int compareName(String a, String b)
+        {
+            if (FileUtil.isCaseInsensitiveFileSystem())
+                return a.compareToIgnoreCase(b);
+
+            return a.compareTo(b);
+        }
+    }
+
+    public static class S3Path extends Path
+    {
+        public S3Path(Path path)
+        {
+            super(path);
+        }
+
+        @Override
+        protected int compareName(String a, String b)
+        {
+            return a.compareTo(b); // S3 files are always case-sensitive
+        }
+    }
+
     // per request cache
-    Map<Path, WebdavResolver.LookupResult> resourceCache = new HashMap<>();
+    Map<DavPath, WebdavResolver.LookupResult> resourceCache = new HashMap<>();
+    Map<S3Path, WebdavResolver.LookupResult> s3ResourceCache = new HashMap<>();
     WebdavResolver.LookupResult nullDavFileInfo = new WebdavResolver.LookupResult(null,null);
 
     @Nullable WebdavResource resolvePath(String path)
@@ -5627,12 +5659,28 @@ public class DavController extends SpringActionController
 
     @Nullable WebdavResolver.LookupResult resolvePathResult(Path path, boolean reload)
     {
-        WebdavResolver.LookupResult result = reload ? null : resourceCache.get(path);
+        WebdavResolver.LookupResult result = null;
+
+        if (!reload)
+        {
+            result = s3ResourceCache.get(new S3Path(path));
+            if (result == null)
+                result = resourceCache.get(new DavPath(path));
+        }
 
         if (result == null)
         {
             result = getResolver().lookupEx(path);
-            resourceCache.put(path, result == null || result.resource == null ? nullDavFileInfo : result);
+            DavPath davPath = new DavPath(path);
+            if (result == null || result.resource == null)
+                resourceCache.put(davPath, nullDavFileInfo);
+            else
+            {
+                if (result.resource.isCloudResource()) // S3 files are always case-sensitive
+                    s3ResourceCache.put(new S3Path(path), result);
+                else
+                    resourceCache.put(davPath, result); // Otherwise make a best guess based on server OS
+            }
         }
 
         if (null == result || nullDavFileInfo == result || null == result.resource)
@@ -6627,7 +6675,10 @@ public class DavController extends SpringActionController
             isFile = r.getFile().isFile();
             if (isFile)
             {
-                resourceCache.remove(r.getPath());
+                if (r.isCloudResource())
+                    s3ResourceCache.remove(new S3Path(r.getPath()));
+                else
+                    resourceCache.remove(new DavPath(r.getPath()));
                 r = resolvePath(r.getPath());
                 isFile = r.isFile();
             }
