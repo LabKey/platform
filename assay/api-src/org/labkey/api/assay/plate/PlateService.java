@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.Lsid;
@@ -230,6 +231,10 @@ public interface PlateService
      */
     DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 
+    /**
+     * Retrieve the TableInfo for the Plate table.
+     */
+    TableInfo getPlateTableInfo();
 
     /**
      * A PlateDetailsResolver implementation provides a URL where a detailed, plate-type specific

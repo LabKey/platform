@@ -4,11 +4,11 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-Ext4.define('LABKEY.internal.ViewDesigner.field.FilterTextValue', {
+Ext4.define('LABKEY.internal.ViewDesigner.field.FilterTextAreaValue', {
 
-    extend: 'Ext.form.field.Text',
+    extend: 'Ext.form.field.TextArea',
 
-    alias: 'widget.labkey-filterValue',
+    alias: 'widget.labkey-filterTextArea',
 
     mixins: {
         valueutil: 'LABKEY.internal.ViewDesigner.field.FilterTextValueUtil'
@@ -28,7 +28,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.field.FilterTextValue', {
     // UGH: get the op value to set visibility on init
     setVisibleField : function (filterType) {
         const hasValue = filterType != null && filterType.isDataValueRequired();
-        const visible = hasValue && (!filterType.isMultiValued() || (filterType.getURLSuffix().indexOf('between') > -1))
+        const visible = hasValue && filterType.isMultiValued() && (filterType.getURLSuffix().indexOf('between') === -1)
         this.setVisible(visible);
     }
 
