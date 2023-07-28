@@ -189,7 +189,7 @@ public class TableInsertUpdateDataIterator extends StatementDataIterator impleme
                 _skipColumnNames.add(col.getName());
 
             //record autoincrement key column so we can add if need to reselect
-            if (col.isAutoIncrement() && !context.supportsAutoIncrementKey())
+            if (col.isAutoIncrement() && !context.supportsAutoIncrementKey() && !col.isCalculated())
             {
                 indexAutoIncrement = index;
                 colAutoIncrement = col;
