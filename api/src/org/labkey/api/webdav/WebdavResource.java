@@ -243,8 +243,8 @@ public interface WebdavResource extends Resource
      */
     void setLastModified(long time) throws IOException;
 
-    default boolean isCloudResource()
+    default DavPath toDavPath(org.labkey.api.util.Path path)
     {
-        return false;
+        return new DavPath(getPath());
     }
 }
