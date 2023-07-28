@@ -1554,7 +1554,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 if (protocolContainer.equals(contextContainer))
                     child.setHref(editURL.toString());
                 else
-                    child.setScript("if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = " + jsString(editURL.toString()) + "; }");
+                    child.setScript("if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = " + jsString(editURL.toString()) + "; } return false;");
             }
 
             ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(protocol, protocolContainer);
