@@ -945,7 +945,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 useNull: true
             });
 
-            var values = !Ext.isEmpty(value) && value.indexOf('\n') > -1 ?  value.split('\n') : [value];
+            var values = (!Ext.isEmpty(value) && value instanceof String && value.indexOf('\n') > -1) ?  value.split('\n') : [value];
             var invalid = null;
             values.forEach(val => {
                 if (val == null)

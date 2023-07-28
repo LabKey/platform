@@ -578,11 +578,11 @@ public class StudyPublishTest extends StudyPHIExportTest
                 DataRegionTable t2 = new DataRegionTable("SpecimenDetail", this);
                 if (!alternateIDs) // we only know the IDs if they are not alternateIDs
                 {
-                    t2.setFilter("MouseId", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(ptids));
+                    t2.setFilter("MouseId", "Does Not Equal Any Of", createOneOfFilterString(ptids));
                     assertTextPresent("No data to show.");
                     t2.clearFilter("MouseId");
                 }
-                t2.setFilter("SequenceNum", "Does Not Equal Any Of (example usage: a;b;c)", createOneOfFilterString(visits));
+                t2.setFilter("SequenceNum", "Does Not Equal Any Of", createOneOfFilterString(visits));
                 assertTextPresent("No data to show.");
                 t2.clearFilter("SequenceNum");
 
