@@ -43,6 +43,14 @@ public class AncestorLookupDisplayColumn extends DataColumn
     }
 
     @Override
+    public void setFormatString(String formatString)
+    {
+        super.setFormatString(formatString);
+        if (_dc != null)
+            _dc.setFormatString(formatString);
+    }
+
+    @Override
     public @NotNull HtmlString getFormattedHtml(RenderContext ctx)
     {
         Integer lookupKey = getLookupId(ctx);
