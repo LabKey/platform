@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import com.google.common.primitives.Bytes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,25 +26,15 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.EncryptionMigrationHandler;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.view.template.WarningProvider;
-import org.labkey.api.view.template.WarningService;
-import org.labkey.api.view.template.Warnings;
 import org.springframework.beans.factory.InitializingBean;
 
-import java.security.MessageDigest;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -159,87 +148,10 @@ public class PropertyManager
         ENCRYPTED_STORE.deleteProperties(c);
     }
 
-    private static final String TEST_ENCRYPTION_CATEGORY = "encryption-test";
-    private static final String TEST_BYTES_NAME = "bytes";
-    private static final SecureRandom RAND = new SecureRandom();
-
+    // Register a handler so encrypted store can migrate property values whenever encryption key changes
     public static void registerEncryptionMigrationHandler()
     {
-        // Register a handler so encrypted store can migrate property values whenever encryption key changes
         EncryptionMigrationHandler.registerHandler(ENCRYPTED_STORE);
-
-        // This is the earliest that we can check the integrity of the encryption key
-        if (Encryption.isEncryptionPassPhraseSpecified()) // TODO: If not specified... warn? error? admin warning?
-        {
-            _log.info("Attempting an encryption key test to determine if encryption key has changed unexpectedly");
-            String failureMessage = "Decryption test using the current encryption key failed, which likely means the encryption key has changed in " +
-                AppProps.getInstance().getWebappConfigurationFilename() +
-                ". An administrator should change the encryption key back to the previous value or follow the official \"encryption key change\" process.";
-            try
-            {
-                // This will likely throw if the encryption key has changed
-                PropertyMap map = ENCRYPTED_STORE.getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
-
-                if (map.isEmpty())
-                {
-                    try
-                    {
-                        byte[] randomBytes = new byte[64];
-                        RAND.nextBytes(randomBytes);
-                        MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-                        byte[] hash = sha1.digest(randomBytes);
-                        byte[] combined = Bytes.concat(randomBytes, hash);
-                        String base64 = Base64.getEncoder().encodeToString(combined);
-                        map.put(TEST_BYTES_NAME, base64);
-                        map.save();
-                    }
-                    catch (Throwable t)
-                    {
-                        // Shouldn't happen, but we really don't want to throw at this point
-                        _log.error("Unable to save a value to test encryption", t);
-                    }
-
-                    return; // Skip the test and the admin warning
-                }
-
-                String base64 = map.get(TEST_BYTES_NAME);
-                byte[] combined = Base64.getDecoder().decode(base64);
-                byte[] storedHash = Arrays.copyOfRange(combined, 64, 84);
-                byte[] randomBytes = Arrays.copyOf(combined, 64);
-                MessageDigest sha1 = MessageDigest.getInstance("SHA1");
-                byte[] hash = sha1.digest(randomBytes);
-//                hash[0] = hash[2]; // TODO: temp for testing
-                if (Arrays.equals(storedHash, hash))
-                    _log.info("Encryption key test was successful: encryption key has not changed");
-                else
-                {
-                    _log.error(failureMessage + " SHA1 hashes did not match.");
-                    addWarning(failureMessage);
-                }
-            }
-            catch (Encryption.DecryptionException | IllegalArgumentException e)
-            {
-                _log.error(failureMessage, e);
-                addWarning(failureMessage);
-            }
-            catch (Throwable t)
-            {
-                _log.error("Unable to test the integrity of the encryption key", t);
-                addWarning("Unable to test the integrity of the encryption key; check the logs for more information");
-            }
-        }
-    }
-
-    private static void addWarning(String warning)
-    {
-        WarningService.get().register(new WarningProvider()
-        {
-            @Override
-            public void addStaticWarnings(@NotNull Warnings warnings, boolean showAllWarnings)
-            {
-                warnings.add(HtmlString.of(warning));
-            }
-        });
     }
 
     /**
