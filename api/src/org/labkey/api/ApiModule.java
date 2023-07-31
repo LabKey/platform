@@ -325,4 +325,10 @@ public class ApiModule extends CodeOnlyModule
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
     }
+
+    @Override
+    public void startBackgroundThreads()
+    {
+        Encryption.initEncryptionKeyTest();
+    }
 }
