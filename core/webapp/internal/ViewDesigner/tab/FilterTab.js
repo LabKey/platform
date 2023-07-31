@@ -228,15 +228,29 @@ Ext4.define('LABKEY.internal.ViewDesigner.tab.FilterTab', {
         var clauseIndex = combo.clauseIndex;
 
         var filterType = combo.getFilterType();
+        if (filterType === null)
+            return;
         // HACK: need to find the text field associated with this filter item
         var cs = this.getList().getComponents(combo);
         for (var i = 0; i < cs.length; i++)
         {
             var c = cs[i];
-            if (c.clauseIndex == clauseIndex && c instanceof LABKEY.internal.ViewDesigner.field.FilterTextValue)
+            if (c.clauseIndex == clauseIndex &&
+                    (c instanceof LABKEY.internal.ViewDesigner.field.FilterTextValue
+                            || c instanceof LABKEY.internal.ViewDesigner.field.FilterTextAreaValue
+                    )
+            )
             {
-                c.setVisible(filterType != null && filterType.isDataValueRequired());
-                break;
+                if (filterType.isDataValueRequired())
+                {
+                    var urlSuffix = filterType.getURLSuffix();
+                    if (filterType.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between'))
+                        c.setVisible(c instanceof LABKEY.internal.ViewDesigner.field.FilterTextAreaValue);
+                    else
+                        c.setVisible(c instanceof LABKEY.internal.ViewDesigner.field.FilterTextValue);
+                }
+                else
+                    c.setVisible(false);
             }
         }
     },
