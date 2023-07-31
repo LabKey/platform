@@ -695,6 +695,12 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             inputField.disable();
             inputField.setValue();
             inputField.blur();
+            if (textAreaField)
+            {
+                textAreaField.disable();
+                textAreaField.setValue();
+                textAreaField.blur();
+            }
         }
         else {
             if (filter.isMultiValued() && (urlSuffix !== 'notbetween' && urlSuffix !== 'between')) {
@@ -1550,7 +1556,12 @@ LABKEY.FilterDialog.View.ConceptFilter = Ext.extend(LABKEY.FilterDialog.View.Def
             onFilterChange: function(filterValue) {
                 // Inputs may be set after app load, so look it up at execution time
                 const inputs = scope.inputs;
-                const targetInput = inputs ? inputs[index]: undefined;
+                if (!inputs)
+                    return;
+
+                const textInput = inputs[index * 2]; // one text input, one textarea input
+                const textAreaInput = inputs[index * 2 + 1];
+                const targetInput = textInput && !textInput.hidden ? textInput: textAreaInput;
 
                 // push values selected in tree to the target input control
                 if (targetInput && !targetInput.disabled) {
