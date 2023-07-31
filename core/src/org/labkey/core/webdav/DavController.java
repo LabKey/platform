@@ -5636,7 +5636,7 @@ public class DavController extends SpringActionController
             if (result == null)
             {
                 result = resourceCache.get(new DavPath(path)); // then try os-based case match
-                if (result != null && result.resource != null && result.resource.toDavPath(path) instanceof CaseSensitiveDavPath)
+                if (result != null && result.resource != null && result.resource.toDavPath() instanceof CaseSensitiveDavPath)
                     result = null; // reject cache if cache key class doesn't match
             }
 
@@ -5648,7 +5648,7 @@ public class DavController extends SpringActionController
             if (result == null || result.resource == null)
                 resourceCache.put(new DavPath(path), nullDavFileInfo);
             else
-                resourceCache.put(result.resource.toDavPath(path), result);
+                resourceCache.put(result.resource.toDavPath(), result);
         }
 
         if (null == result || nullDavFileInfo == result || null == result.resource)
@@ -6643,7 +6643,7 @@ public class DavController extends SpringActionController
             isFile = r.getFile().isFile();
             if (isFile)
             {
-                resourceCache.remove(r.toDavPath(r.getPath()));
+                resourceCache.remove(r.toDavPath());
                 r = resolvePath(r.getPath());
                 isFile = r.isFile();
             }
