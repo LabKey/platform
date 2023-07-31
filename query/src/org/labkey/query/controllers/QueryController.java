@@ -225,6 +225,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
@@ -6151,6 +6152,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
         {
+            getViewContext().getResponse().setHeader("Content-Type", CONTENT_TYPE_JSON);
             if (form.getQueryName() == null)
             {
                 Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
