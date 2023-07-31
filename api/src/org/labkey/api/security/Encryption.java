@@ -75,6 +75,7 @@ public class Encryption
     private static final String SALT_KEY = "Salt";
     private static final SecureRandom SR = new SecureRandom();
     private static final String ENCRYPTION_PASS_PHRASE;
+    private static final String KEY_CHANGE_GUIDANCE = "An administrator should change the encryption key back to the previous value, follow the official encryption key change process, or be prepared to re-enter and re-save all saved credentials.";
 
     static
     {
@@ -93,8 +94,9 @@ public class Encryption
                     int count = DECRYPTION_EXCEPTIONS.get();
 
                     if (count > 0 || showAllWarnings)
-                        warnings.add(HtmlStringBuilder.of("On " + StringUtilsLabKey.pluralize(count, "attempt") + " the server failed to decrypt encrypted content using the " + ENCRYPTION_KEY_CHANGED +
-                            " An administrator should change the encryption key back to the previous value, follow the official encryption key change process, or be prepared to re-enter and re-save all saved credentials.").append(getEncryptionKeyHelpLink()));
+                        warnings.add(HtmlStringBuilder.of("On " + StringUtilsLabKey.pluralize(count, "attempt") +
+                            " the server failed to decrypt encrypted content using the " +
+                            ENCRYPTION_KEY_CHANGED + " " + KEY_CHANGE_GUIDANCE).append(getEncryptionKeyHelpLink()));
                 }
             }
 
@@ -150,6 +152,7 @@ public class Encryption
                     {
                         // Base64 decoding problem -- log it and treat as a decryption failure
                         LOG.error("Encryption key test failed: Base64 decoding failed");
+                        logFailureGuidance();
                         DECRYPTION_EXCEPTIONS.incrementAndGet();
                     }
                     else
@@ -166,6 +169,7 @@ public class Encryption
                         {
                             // Hashes didn't match -- log it and treat as a decryption failure
                             LOG.error("Encryption key test failed: SHA1 hashes did not match");
+                            logFailureGuidance();
                             DECRYPTION_EXCEPTIONS.incrementAndGet();
                         }
                     }
@@ -175,6 +179,7 @@ public class Encryption
             {
                 // getWritableProperties() has already incremented the exception count, so just log
                 LOG.error("Encryption key test failed: decryption of test property failed", de);
+                logFailureGuidance();
             }
             catch (NoSuchAlgorithmException ae)
             {
@@ -182,6 +187,11 @@ public class Encryption
                 throw new RuntimeException(ae);
             }
         }
+    }
+
+    private static void logFailureGuidance()
+    {
+        LOG.error(KEY_CHANGE_GUIDANCE + " For more information, see " + new HelpTopic("labkeyxml", "encrypt").getHelpTopicHref() + ".");
     }
 
     private Encryption()
