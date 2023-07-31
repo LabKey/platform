@@ -101,7 +101,7 @@ public class ClosureQueryHelper
             SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
-                SELECT Start_, End_,
+                SELECT DISTINCT Start_,
                     COALESCE(material.rowid, data.rowid) as rowId,
                     COALESCE('m' || CAST(materialsource.rowid AS VARCHAR), 'd' || CAST(dataclass.rowid AS VARCHAR)) as targetId
                 FROM CTE_
@@ -133,7 +133,7 @@ public class ClosureQueryHelper
             SELECT Start_, CAST(CASE WHEN COUNT(*) = 1 THEN MIN(rowId) ELSE -1 * COUNT(*) END AS INT) AS rowId, targetId
             /*INTO*/
             FROM (
-                SELECT Start_, End_,
+                SELECT DISTINCT Start_,
                     COALESCE(material.rowid, data.rowid) as rowId,
                     COALESCE('m' + CAST(materialsource.rowid AS VARCHAR), 'd' + CAST(dataclass.rowid AS VARCHAR)) as targetId
                 FROM CTE_
