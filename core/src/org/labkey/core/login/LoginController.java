@@ -701,7 +701,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public static class GetPasswordRulesInfoAction extends ReadOnlyApiAction
+    public static class GetPasswordRulesInfoAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -709,8 +709,8 @@ public class LoginController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             PasswordRule passwordRule = DbLoginManager.getPasswordRule();
 
-            response.put("full", passwordRule.getFullRuleHTML().toString());
-            response.put("summary", passwordRule.getSummaryRuleHTML().toString());
+            response.put("full", passwordRule.getFullRuleHtml().toString());
+            response.put("summary", passwordRule.getSummaryRuleHtml().toString());
             return response;
         }
     }
@@ -2457,6 +2457,7 @@ public class LoginController extends SpringActionController
             return _defaultDomain;
         }
 
+        @SuppressWarnings("unused")
         public void setDefaultDomain(String defaultDomain)
         {
             _defaultDomain = defaultDomain;
@@ -2611,7 +2612,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(TroubleShooterPermission.class)
-    public static class GetDbLoginPropertiesAction extends ReadOnlyApiAction
+    public static class GetDbLoginPropertiesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -2621,7 +2622,7 @@ public class LoginController extends SpringActionController
                     "strength", DbLoginManager.getPasswordRule(),
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
-                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHTML)),
+                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHtml)),
                 "helpLink", new HelpTopic("configDbLogin").getHelpTopicHref()
             );
             return new ApiSimpleResponse(map);
@@ -2633,7 +2634,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @IgnoresForbiddenProjectCheck
     @AllowedDuringUpgrade
-    public static class WhoAmIAction extends ReadOnlyApiAction
+    public static class WhoAmIAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2651,7 +2652,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(TroubleShooterPermission.class)
-    public static class InitialMountAction extends ReadOnlyApiAction
+    public static class InitialMountAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2726,12 +2727,12 @@ public class LoginController extends SpringActionController
 
     /**
      * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
-     * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs">HTTP Interface docs</a>
      */
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @CSRF(CSRF.Method.ALL)
-    public static class CsrfAction extends ReadOnlyApiAction
+    public static class CsrfAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2751,21 +2752,19 @@ public class LoginController extends SpringActionController
             User user = TestContext.get().getUser();
             assertTrue(user.hasSiteAdminPermission());
 
-            LoginController controller = new LoginController();
-
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                    new DeleteConfigurationAction(),
-                    new SaveDbLoginPropertiesAction(),
-                    new SaveSettingsAction(),
-                    new SetAuthenticationParameterAction()
+                new DeleteConfigurationAction(),
+                new SaveDbLoginPropertiesAction(),
+                new SaveSettingsAction(),
+                new SetAuthenticationParameterAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                    new ConfigureAction(),
-                    new InitialMountAction(),
-                    new GetDbLoginPropertiesAction()
+                new ConfigureAction(),
+                new InitialMountAction(),
+                new GetDbLoginPropertiesAction()
             );
         }
     }

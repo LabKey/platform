@@ -31,6 +31,7 @@ import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -116,6 +117,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             // Clear centrally to avoid needing to set in each job. See PipelineJobRunner for equivalent functionality
             // when running through Enterprise Pipeline
             QueryService.get().clearEnvironment();
+            DebugInfoDumper.resetThreadDumpContext();
 
             ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
             boolean removed = _running.remove(job);

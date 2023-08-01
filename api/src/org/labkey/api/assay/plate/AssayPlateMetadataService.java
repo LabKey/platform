@@ -6,6 +6,7 @@ import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 public interface AssayPlateMetadataService
 {
+    String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
     Map<AssayDataType, AssayPlateMetadataService> _handlers = new HashMap<>();
 
     static void registerService(AssayDataType dataType, AssayPlateMetadataService handler)
@@ -55,6 +57,14 @@ public interface AssayPlateMetadataService
      */
     void addAssayPlateMetadata(ExpData resultData, Map<String, MetadataLayer> plateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
                                ExpProtocol protocol, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException;
+
+    /**
+     * Merges the results data with the plate metadata to produce a single row map
+     *
+     * @return the merged rows
+     */
+    List<Map<String, Object>> mergePlateMetadata(Lsid plateLsid, List<Map<String, Object>> rows, Map<String, MetadataLayer> plateMetadata,
+                                                 ExpProtocol protocol) throws ExperimentException;
 
     /**
      * Methods to create the metadata model from either a JSON object or a file object

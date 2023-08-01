@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -78,6 +79,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -275,6 +277,44 @@ public class UserManager
         return errors;
     }
 
+    public interface UserDetailsButtonProvider
+    {
+        void addButton(ButtonBar bb, Container c, User user, ActionURL returnUrl);
+    }
+
+    public enum UserDetailsButtonCategory
+    {
+        Authentication, // Place custom button after the built-in authentication buttons ("Reset Password", "Delete Password", "Change Password", etc.)
+        Account,        // Place custom button after the built-in account buttons ("Change Email", "Deactivate", etc.)
+        Permissions     // Place custom button after the built-in permissions buttons ("View Permissions", "Clone Permissions", etc.)
+    }
+
+    private static final Map<UserDetailsButtonCategory, List<UserDetailsButtonProvider>> USER_DETAILS_BUTTON_PROVIDERS = new EnumMap<>(UserDetailsButtonCategory.class);
+
+    static
+    {
+        // Map each button category to a list of providers. This approach should be both thread-safe and performant,
+        // particularly for read operations (which is what we care about).
+        Arrays.stream(UserDetailsButtonCategory.values())
+            .forEach(cat -> USER_DETAILS_BUTTON_PROVIDERS.put(cat, new CopyOnWriteArrayList<>()));
+    }
+
+    /**
+     * Register a provider that can choose to add a button to the User Details button bar.
+     * @param category Determines where on the button bar the button will appear
+     * @param provider A UserDetailsButtonProvider that's invoked with appropriate context every time a User Details
+     *                 button bar is rendered. The provider must perform its own permissions checks on the current user
+     *                 as well as other checks to determine if showing the button is appropriate.
+     */
+    public static void registerUserDetailsButtonProvider(UserDetailsButtonCategory category, UserDetailsButtonProvider provider)
+    {
+        USER_DETAILS_BUTTON_PROVIDERS.get(category).add(provider);
+    }
+
+    public static void addCustomButtons(UserDetailsButtonCategory category, ButtonBar bb, Container c, User user, ActionURL returnUrl)
+    {
+        USER_DETAILS_BUTTON_PROVIDERS.get(category).forEach(provider -> provider.addButton(bb, c, user, returnUrl));
+    }
 
     public static @Nullable User getUser(int userId)
     {
@@ -928,7 +968,7 @@ public class UserManager
 
         List<Throwable> errors = active ? fireUserEnabled(userToAdjust) : fireUserDisabled(userToAdjust);
 
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             Throwable first = errors.get(0);
             if (first instanceof RuntimeException)

@@ -170,7 +170,7 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     {
         _type = WellGroup.Type.valueOf(type);
     }
-    
+
     public Integer getPlateId()
     {
         return _plateId;

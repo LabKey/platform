@@ -395,7 +395,7 @@ public abstract class CompareType
                 List<String> values = new ArrayList<>();
                 if (value != null && !value.toString().trim().equals(""))
                 {
-                    values.addAll(parseParams(value, getValueSeparator()));
+                    values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                 }
                 return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
             }
@@ -413,6 +413,12 @@ public abstract class CompareType
         {
             return SimpleFilter.InClause.SEPARATOR;
         }
+
+        @Override
+        public boolean isNewLineSeparatorAllowed()
+        {
+            return true;
+        }
     };
 
     public static final CompareType CONTAINS_NONE_OF = new CompareType("Does Not Contain Any Of (example usage: a;b;c)", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
@@ -427,7 +433,7 @@ public abstract class CompareType
             }
             else
             {
-                Set<String> values = parseParams(value, getValueSeparator());
+                Set<String> values = parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed());
 
                 return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
             }
@@ -444,6 +450,12 @@ public abstract class CompareType
         public String getValueSeparator()
         {
             return SimpleFilter.InClause.SEPARATOR;
+        }
+
+        @Override
+        public boolean isNewLineSeparatorAllowed()
+        {
+            return true;
         }
     };
 
@@ -468,7 +480,7 @@ public abstract class CompareType
                     }
                     else
                     {
-                        values.addAll(parseParams(value, getValueSeparator()));
+                        values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                     }
                 }
                 return new SimpleFilter.InClause(fieldKey, values, true);
@@ -486,6 +498,12 @@ public abstract class CompareType
         public String getValueSeparator()
         {
             return SimpleFilter.InClause.SEPARATOR;
+        }
+
+        @Override
+        public boolean isNewLineSeparatorAllowed()
+        {
+            return true;
         }
     };
 
@@ -510,7 +528,7 @@ public abstract class CompareType
                     }
                     else
                     {
-                        values.addAll(parseParams(value, getValueSeparator()));
+                        values.addAll(parseParams(value, getValueSeparator(), isNewLineSeparatorAllowed()));
                     }
                 }
                 return new SimpleFilter.InClause(fieldKey, values, true, true);
@@ -528,6 +546,12 @@ public abstract class CompareType
         public String getValueSeparator()
         {
             return SimpleFilter.InClause.SEPARATOR;
+        }
+
+        @Override
+        public boolean isNewLineSeparatorAllowed()
+        {
+            return true;
         }
     };
 
@@ -973,15 +997,26 @@ public abstract class CompareType
 
     protected static Set<String> parseParams(Object value_, String separator)
     {
+        return parseParams(value_, separator, false);
+    }
+
+    protected static Set<String> parseParams(Object value_, String separator, boolean isNewLineSeparatorAllowed)
+    {
         if (value_ == null)
             return Collections.emptySet();
         String value = value_.toString();
         if (StringUtils.isBlank(value))
             return Collections.emptySet();
+
+        if (isNewLineSeparatorAllowed && !value.startsWith(JSON_MARKER_START))
+            value = value.replace(SimpleFilter.InClause.NEWLINE_SEPARATOR, separator);
+
         // check for JSON marker
         Set<String> values = new LinkedHashSet<>();
         parseParams(value, separator, values);
-        return values;
+        return (isNewLineSeparatorAllowed)
+                ? values.stream().map(String::trim).collect(Collectors.toCollection(LinkedHashSet::new)) // preserve order
+                : values;
     }
 
     // If you don't want to squash duplicate parameter values use this method instead of parseParams
@@ -1084,6 +1119,11 @@ public abstract class CompareType
     public String getValueSeparator()
     {
         return _valueSeparator;
+    }
+
+    public boolean isNewLineSeparatorAllowed()
+    {
+        return false;
     }
 
     public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)

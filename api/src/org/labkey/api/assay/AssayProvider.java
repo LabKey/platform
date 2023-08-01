@@ -117,7 +117,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * to support importing of plate metadata. This will be rendered in the import wizard.
      */
     @Nullable
-    ActionURL getPlateMetadataTemplateURL(Container container);
+    ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol);
 
     /**
      * @return the name of the assay provider.

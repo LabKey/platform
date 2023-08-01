@@ -16,12 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.user.DeactivateUsersBean" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -50,7 +50,7 @@
     %>
     </ul>
 <labkey:form action="<%=urlPost%>" method="post">
-    <input type="hidden" name="redirUrl" value="<%=h(bean.getRedirUrl())%>"/>
+    <%=generateReturnUrlFormField(bean.getReturnUrl())%>
     <%
         for (User user : bean.getUsers())
         {
@@ -58,7 +58,7 @@
         }
     %>
     <%= button(bean.isActivate() ? "Reactivate" : "Deactivate").submit(true) %>
-    <%= button("Cancel").href(bean.getRedirUrl()) %>
+    <%= button("Cancel").href(bean.getReturnUrl()) %>
 </labkey:form>
 <% if (bean.isActivate()) { %>
 <p><b>Note:</b> Reactivated users will be able to login normally, and all their previous

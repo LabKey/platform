@@ -1249,9 +1249,9 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider)
+        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider, ExpProtocol protocol)
         {
-            return provider.getPlateMetadataTemplateURL(container);
+            return provider.getPlateMetadataTemplateURL(container, protocol);
         }
     }
 
