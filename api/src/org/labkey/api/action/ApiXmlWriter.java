@@ -99,9 +99,17 @@ public class ApiXmlWriter extends ApiResponseWriter
             {
                 writeJsonObjInternal((JSONObject) value);
             }
+            else if (value instanceof org.json.JSONObject)
+            {
+                writeJsonObjInternal((org.json.JSONObject) value);
+            }
             else if (value instanceof JSONArray)
             {
                 writeJsonArray((JSONArray) value);
+            }
+            else if (value instanceof org.json.JSONArray)
+            {
+                writeJsonArray((org.json.JSONArray) value);
             }
             else if (value instanceof Map)
             {
@@ -150,6 +158,17 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+    private void writeJsonArray(org.json.JSONArray jsonArray) throws XMLStreamException, IOException
+    {
+        verifyOpen();
+        for (int i = 0; i < jsonArray.length(); i++)
+        {
+            _xmlWriter.writeStartElement(ARRAY_ELEMENT_NAME);
+            writeObject(jsonArray.get(i));
+            _xmlWriter.writeEndElement();
+        }
+    }
+
 
     @Override
     public void close() throws IOException
@@ -176,6 +195,17 @@ public class ApiXmlWriter extends ApiResponseWriter
         {
             _xmlWriter.writeStartElement(escapeElementName(entry.getKey()));
             writeObject(entry.getValue());
+            _xmlWriter.writeEndElement();
+        }
+    }
+
+    protected void writeJsonObjInternal(org.json.JSONObject json) throws IOException, XMLStreamException
+    {
+        verifyOpen();
+        for (String key : json.keySet())
+        {
+            _xmlWriter.writeStartElement(escapeElementName(key));
+            writeObject(json.get(key));
             _xmlWriter.writeEndElement();
         }
     }
