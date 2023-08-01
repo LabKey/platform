@@ -53,6 +53,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
@@ -646,7 +647,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignAssayPermission.class)
+    @RequiresPermission(DesignVocabularyPermission.class)
     public class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
     {
         @Override
@@ -689,7 +690,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignAssayPermission.class)
+    @RequiresPermission(DesignVocabularyPermission.class)
     public class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
     {
         @Override
