@@ -155,4 +155,11 @@
       <column columnName="WellGroupId"/>
     </columns>
   </table>
+  <table tableName="PlateProperty" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="PlateId"/>
+      <column columnName="PropertyURI"/>
+    </columns>
+  </table>
 </tables>

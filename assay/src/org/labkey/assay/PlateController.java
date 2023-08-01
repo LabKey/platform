@@ -42,6 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -55,6 +56,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.model.PlateField;
 import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
@@ -580,6 +582,8 @@ public class PlateController extends SpringActionController
         {
             if (StringUtils.trimToNull(form.getName()) == null)
                 errors.reject(ERROR_GENERIC, "Plate \"name\" is required.");
+            if (form.getPlateType() == null)
+                errors.reject(ERROR_GENERIC, "Plate \"plateType\" is required.");
         }
 
         @Override
@@ -692,6 +696,52 @@ public class PlateController extends SpringActionController
         public Object execute(DeletePlateMetadataFieldsForm form, BindException errors) throws Exception
         {
             return success(PlateManager.get().deletePlateMetadataFields(getContainer(), getUser(), form.getFields()));
+        }
+    }
+
+    public static class CustomFieldsForm
+    {
+        private List<PlateField> _fields;
+        private Integer _plateId;
+
+        public List<PlateField> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(List<PlateField> fields)
+        {
+            _fields = fields;
+        }
+
+        public Integer getPlateId()
+        {
+            return _plateId;
+        }
+
+        public void setPlateId(Integer plateId)
+        {
+            _plateId = plateId;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class AddFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().addFields(getContainer(), getUser(), form.getPlateId(), form.getFields()));
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().getFields(getContainer(), getUser(), form.getPlateId()));
         }
     }
 }
