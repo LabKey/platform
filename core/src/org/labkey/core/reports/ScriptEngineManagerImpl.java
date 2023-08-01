@@ -132,7 +132,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         Algorithm encryptAes = ExternalScriptEngineDefinitionImpl.AES.get();
         new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
             JSONObject json = new JSONObject(configuration);
-            String oldEncryptedPassword = json.getString(PASSWORD_FIELD);
+            String oldEncryptedPassword = json.optString(PASSWORD_FIELD, null);
             if (null != oldEncryptedPassword)
             {
                 LOG.info("    Migrating script engine configuration " + rowId);
