@@ -118,7 +118,6 @@ public class DataRegion extends DisplayElement
     private String _inputPrefix = null;
     private List<String> _recordSelectorValueColumns;
     private int _maxRows = Table.ALL_ROWS;   // Display all rows by default
-    private final long _offset = 0;
     private final List<Pair<String, Object>> _hiddenFormFields = new ArrayList<>();   // Hidden params to be posted (e.g., to pass a query string along with selected grid rows)
     private ButtonBarPosition _buttonBarPosition = ButtonBarPosition.TOP;
     private boolean allowAsync = false;
@@ -458,7 +457,6 @@ public class DataRegion extends DisplayElement
     }
 
 
-    @SuppressWarnings({"AssertWithSideEffects"})
     public
     @NotNull
     LinkedHashMap<FieldKey, ColumnInfo> getSelectColumns()
@@ -543,17 +541,23 @@ public class DataRegion extends DisplayElement
     {
         switch (mode)
         {
-            case MODE_INSERT:
+            case MODE_INSERT ->
+            {
                 return _insertButtonBar;
-            case MODE_UPDATE:
+            }
+            case MODE_UPDATE, MODE_UPDATE_MULTIPLE ->
+            {
                 return _updateButtonBar;
-            case MODE_UPDATE_MULTIPLE:
-                return _updateButtonBar;
-            case MODE_GRID:
+            }
+            case MODE_GRID ->
+            {
                 return _gridButtonBar;
-            case MODE_DETAILS:
+            }
+            case MODE_DETAILS ->
+            {
                 return _detailsButtonBar;
-            default:
+            }
+            default ->
             {
                 _log.error("getting button bar for non existent mode");
                 return null;
@@ -578,20 +582,11 @@ public class DataRegion extends DisplayElement
     {
         switch (mode)
         {
-            case MODE_INSERT:
-                _insertButtonBar = buttonBar;
-                return;
-            case MODE_UPDATE:
-                _updateButtonBar = buttonBar;
-                return;
-            case MODE_GRID:
-                _gridButtonBar = buttonBar;
-                return;
-            case MODE_DETAILS:
-                _detailsButtonBar = buttonBar;
-                return;
-            default:
-                _log.error("Setting button bar for non existent mode");
+            case MODE_INSERT -> _insertButtonBar = buttonBar;
+            case MODE_UPDATE -> _updateButtonBar = buttonBar;
+            case MODE_GRID -> _gridButtonBar = buttonBar;
+            case MODE_DETAILS -> _detailsButtonBar = buttonBar;
+            default -> _log.error("Setting button bar for non existent mode");
         }
     }
 
@@ -655,7 +650,7 @@ public class DataRegion extends DisplayElement
 
     public long getOffset()
     {
-        return getSettings() != null ? getSettings().getOffset() : _offset;
+        return getSettings() != null ? getSettings().getOffset() : 0;
     }
 
     public void setSettings(QuerySettings settings)
@@ -861,7 +856,7 @@ public class DataRegion extends DisplayElement
                     List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
 
                     //Issue 14863: add null check
-                    if (result != null && result.size() > 0)
+                    if (result != null && !result.isEmpty())
                     {
                         Aggregate.Result countStarResult = result.get(0);
                         _totalRows = 0L;
@@ -905,7 +900,7 @@ public class DataRegion extends DisplayElement
             _totalRows = totalRows;
     }
 
-    public class ParameterViewBean
+    public static class ParameterViewBean
     {
         public String dataRegionDomId;
         public String dataRegionName;
@@ -1139,7 +1134,7 @@ public class DataRegion extends DisplayElement
 
     private void _renderBar(RenderContext ctx, Writer out, List<ContextAction> actions, String idSuffix) throws IOException
     {
-        boolean isEmpty = actions == null || actions.size() == 0;
+        boolean isEmpty = actions == null || actions.isEmpty();
         out.write("<div id=\"" + PageFlowUtil.filter(getDomId() + "-" + idSuffix) + "\" class=\"lk-region-bar lk-region-context-bar\"");
         if (isEmpty)
             out.write(" style=\"display:none;\">");
@@ -1290,7 +1285,7 @@ public class DataRegion extends DisplayElement
     {
         Message msg = null;
 
-        if (AppProps.getInstance().isDevMode() && _gridButtonBar.getMissingOriginalCaptions() != null && _gridButtonBar.getMissingOriginalCaptions().size() > 0)
+        if (AppProps.getInstance().isDevMode() && _gridButtonBar.getMissingOriginalCaptions() != null && !_gridButtonBar.getMissingOriginalCaptions().isEmpty())
         {
             StringBuilder content = new StringBuilder();
             content.append("\n").append("WARNING: button bar configuration contains reference to buttons that don't exist.");
@@ -1298,12 +1293,12 @@ public class DataRegion extends DisplayElement
             StringBuilder captions = new StringBuilder();
             for (String caption : _gridButtonBar.getMissingOriginalCaptions())
             {
-                if (captions.length() > 0)
+                if (!captions.isEmpty())
                     captions.append(", ");
                 captions.append(caption);
             }
             captions.append(".");
-            content.append(captions.toString());
+            content.append(captions);
 
             msg = new Message(content.toString(), MessageType.WARNING, MessagePart.header);
         }
@@ -1313,7 +1308,7 @@ public class DataRegion extends DisplayElement
 
     protected boolean shouldRenderHeader(boolean renderButtons)
     {
-        return ((renderButtons && _buttonBarPosition.atTop() && _gridButtonBar.getList().size() > 0)
+        return ((renderButtons && _buttonBarPosition.atTop() && !_gridButtonBar.getList().isEmpty())
                 || (_showPagination && _buttonBarPosition.atTop()));
     }
 
@@ -1414,7 +1409,7 @@ public class DataRegion extends DisplayElement
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
         Set<ContainerFilter.Type> allowableContainerFilterTypes = (Set<ContainerFilter.Type>) ctx.get("allowableContainerFilterTypes");
-        if (allowableContainerFilterTypes != null && allowableContainerFilterTypes.size() > 0)
+        if (allowableContainerFilterTypes != null && !allowableContainerFilterTypes.isEmpty())
         {
             JSONArray containerFiltersJSON = new JSONArray();
             dataRegionJSON.put("allowableContainerFilters", containerFiltersJSON);
@@ -1718,21 +1713,15 @@ public class DataRegion extends DisplayElement
         String actionAttr = null == getFormActionUrl() ? "" : getFormActionUrl().getLocalURIString();
         switch (mode)
         {
-            case MODE_DETAILS:
-                out.write("action=\"begin\">");
-                break;
-            case MODE_INSERT:
-            case MODE_UPDATE:
+            case MODE_DETAILS -> out.write("action=\"begin\">");
+            case MODE_INSERT, MODE_UPDATE ->
+            {
                 if (isFileUploadForm())
                     out.write("enctype=\"multipart/form-data\" action=\"" + actionAttr + "\">");
                 else
                     out.write("action=\"" + actionAttr + "\">");
-                break;
-            case MODE_GRID:
-                out.write("action=\"\">");
-                break;
-            default:
-                out.write("action=\"\">");
+            }
+            default -> out.write("action=\"\">");
         }
 
         renderHiddenFormFields(ctx, out, mode);
@@ -1835,7 +1824,7 @@ public class DataRegion extends DisplayElement
 
     protected String getRecordSelectorValue(RenderContext ctx)
     {
-        Map rowMap = ctx.getRow();
+        Map<String, Object> rowMap = ctx.getRow();
         StringBuilder checkboxValue = new StringBuilder();
         String and = "";
         if (_recordSelectorValueColumns == null)
@@ -1910,7 +1899,7 @@ public class DataRegion extends DisplayElement
 
         renderFormBegin(ctx, out, MODE_DETAILS);
 
-        RowMap rowMap = null;
+        RowMap<Object> rowMap = null;
         int rowIndex = 0;
 
         try (ResultSet rs = ctx.getResults())
@@ -1997,7 +1986,7 @@ public class DataRegion extends DisplayElement
 
     private void renderInputForm(RenderContext ctx, Writer out) throws IOException
     {
-        Map rowMap = ctx.getRow();
+        Map<String, Object> rowMap = ctx.getRow();
         //For inserts, just treat the posted strings as the rowmap
         if (null == rowMap)
         {
@@ -2022,8 +2011,8 @@ public class DataRegion extends DisplayElement
             {
                 //UNDONE: getOldValues() sometimes returns a map and sometimes a bean, this seems broken to me (MAB)
                 Object old = viewForm.getOldValues();
-                if (old instanceof Map)
-                    valueMap = (Map) old;
+                if (old instanceof Map m)
+                    valueMap = m;
                 else
                     valueMap = new BoundMap(old);
             }
@@ -2133,7 +2122,7 @@ public class DataRegion extends DisplayElement
     {
         Set<String> errors = getErrors(ctx, renderer);
 
-        out.write("<tr class=\"form-group" + (errors.size() > 0 ? " has-error" : "") + "\">");
+        out.write("<tr class=\"form-group" + (!errors.isEmpty() ? " has-error" : "") + "\">");
 
         renderer.renderDetailsCaptionCell(ctx, out, null);
 
@@ -2162,7 +2151,7 @@ public class DataRegion extends DisplayElement
                 col = renderer.getColumnInfo();
 
             String error = viewForm == null || col == null ? "" : ctx.getErrors(col).toString();
-            if (error != null && error.length() > 0)
+            if (error != null && !error.isEmpty())
             {
                 errors.add(error);
             }
@@ -2537,20 +2526,11 @@ public class DataRegion extends DisplayElement
         {
             switch (mode)
             {
-                case MODE_INSERT:
-                    renderInputForm(ctx, out);
-                    return;
-                case MODE_UPDATE:
-                    renderUpdateForm(ctx, out);
-                    return;
-                case MODE_UPDATE_MULTIPLE:
-                    renderMultipleUpdateForm(ctx, out);
-                    return;
-                case MODE_DETAILS:
-                    renderDetails(ctx, out);
-                    return;
-                default:
-                    renderTable(ctx, out);
+                case MODE_INSERT -> renderInputForm(ctx, out);
+                case MODE_UPDATE -> renderUpdateForm(ctx, out);
+                case MODE_UPDATE_MULTIPLE -> renderMultipleUpdateForm(ctx, out);
+                case MODE_DETAILS -> renderDetails(ctx, out);
+                default -> renderTable(ctx, out);
             }
         }
         catch (SQLException x)
@@ -2795,7 +2775,7 @@ public class DataRegion extends DisplayElement
         }
 
         addHeaderMessage(headerMsg, ctx);
-        if (headerMsg.length() > 0)
+        if (!headerMsg.isEmpty())
             addMessage(new Message(headerMsg.toString(), MessageType.INFO, MessagePart.header));
 
         //issue 13538: do not try to display filters if error, since this could result in a ConversionException
