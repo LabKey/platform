@@ -15,6 +15,7 @@
  */
 package org.labkey.core.user;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
@@ -22,22 +23,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/*
-* User: Dave
-* Date: Nov 3, 2008
-* Time: 11:35:35 AM
-*/
 public class DeactivateUsersBean
 {
     private final boolean _activate;
-    private final ActionURL _redirUrl;
+    private final ActionURL _returnUrl;
 
-    private List<User> _users = new ArrayList<>();
+    private final List<User> _users = new ArrayList<>();
 
-    public DeactivateUsersBean(boolean activate, ActionURL redirUrl)
+    public DeactivateUsersBean(boolean activate, @NotNull ActionURL returnUrl)
     {
         _activate = activate;
-        _redirUrl = null != redirUrl ? redirUrl : new UserController.UserUrlsImpl().getSiteUsersURL();
+        _returnUrl = returnUrl;
     }
 
     public boolean isActivate()
@@ -56,8 +52,8 @@ public class DeactivateUsersBean
             _users.add(user);
     }
 
-    public ActionURL getRedirUrl()
+    public ActionURL getReturnUrl()
     {
-        return _redirUrl;
+        return _returnUrl;
     }
 }
