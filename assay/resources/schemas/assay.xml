@@ -160,6 +160,7 @@
       <column columnName="RowId"/>
       <column columnName="PlateId"/>
       <column columnName="PropertyURI"/>
+      <column columnName="PropertyId"/>
     </columns>
   </table>
 </tables>

@@ -1,6 +1,7 @@
 package org.labkey.assay.plate.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.labkey.api.exp.property.DomainProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateField
@@ -8,16 +9,20 @@ public class PlateField
     private String _label;
     private String _name;
     private String _propertyURI;
+    private String _rangeURI;
+    private String _container;
 
     public PlateField()
     {
     }
 
-    public PlateField(String name, String label, String propertyURI)
+    public PlateField(DomainProperty prop)
     {
-        _name = name;
-        _label = label;
-        _propertyURI = propertyURI;
+        _name = prop.getName();
+        _label = prop.getLabel();
+        _propertyURI = prop.getPropertyURI();
+        _rangeURI = prop.getRangeURI();
+        _container = prop.getContainer().getId();
     }
 
     public String getLabel()
@@ -48,5 +53,25 @@ public class PlateField
     public void setPropertyURI(String propertyURI)
     {
         _propertyURI = propertyURI;
+    }
+
+    public String getRangeURI()
+    {
+        return _rangeURI;
+    }
+
+    public void setRangeURI(String rangeURI)
+    {
+        _rangeURI = rangeURI;
+    }
+
+    public String getContainer()
+    {
+        return _container;
+    }
+
+    public void setContainer(String container)
+    {
+        _container = container;
     }
 }

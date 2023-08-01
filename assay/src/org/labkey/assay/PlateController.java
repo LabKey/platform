@@ -660,7 +660,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(CreatePlateMetadataFieldsForm form, BindException errors) throws Exception
         {
-            List<GWTPropertyDescriptor> newFields = PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), form.getFields());
+            List<PlateField> newFields = PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), form.getFields());
             return success(newFields);
         }
     }
@@ -677,14 +677,14 @@ public class PlateController extends SpringActionController
 
     public static class DeletePlateMetadataFieldsForm
     {
-        private Set<String> _fields;
+        private List<PlateField> _fields;
 
-        public Set<String> getFields()
+        public List<PlateField> getFields()
         {
             return _fields;
         }
 
-        public void setFields(Set<String> fields)
+        public void setFields(List<PlateField> fields)
         {
             _fields = fields;
         }
@@ -743,6 +743,16 @@ public class PlateController extends SpringActionController
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
         {
             return success(PlateManager.get().getFields(getContainer(), getUser(), form.getPlateId()));
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class RemoveFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().removeFields(getContainer(), getUser(), form.getPlateId(), form.getFields()));
         }
     }
 }

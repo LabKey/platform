@@ -1243,10 +1243,13 @@ public class PlateManager implements PlateService
     /**
      * Adds custom fields to the well domain
      */
-    public @NotNull List<GWTPropertyDescriptor> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
+    public @NotNull List<PlateField> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
     {
         Domain vocabDomain = ensurePlateMetadataDomain(container, user);
         DomainKind domainKind = vocabDomain.getDomainKind();
+
+        if (vocabDomain == null)
+            throw new IllegalArgumentException("Unable to create fields on the domain, the domain was not found.");
 
         if (!domainKind.canEditDefinition(user, vocabDomain))
             throw new IllegalArgumentException("Unable to create field on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
@@ -1270,7 +1273,7 @@ public class PlateManager implements PlateService
         return getPlateMetadataFields(container, user);
     }
 
-    public @NotNull List<GWTPropertyDescriptor> deletePlateMetadataFields(Container container, User user, Set<String> fields) throws Exception
+    public @NotNull List<PlateField> deletePlateMetadataFields(Container container, User user, List<PlateField> fields) throws Exception
     {
         Domain vocabDomain = getPlateMetadataDomain(container, user);
 
@@ -1278,19 +1281,38 @@ public class PlateManager implements PlateService
             throw new IllegalArgumentException("Unable to remove fields from the domain, the domain was not found.");
 
         if (!vocabDomain.getDomainKind().canEditDefinition(user, vocabDomain))
-            throw new IllegalArgumentException("Unable to create field on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
+            throw new IllegalArgumentException("Unable to remove fields on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
 
         if (!fields.isEmpty())
         {
+            List<String> propertyURIs = new ArrayList<>();
+            for (PlateField field : fields)
+            {
+                if (field.getPropertyURI() == null)
+                    throw new IllegalStateException("Unable to remove fields, the property URI must be specified");
+
+                propertyURIs.add(field.getPropertyURI());
+            }
+
+            // validate in use fields
+            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT(PlateId)) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                    .append(" WHERE PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
+            int inUsePlates = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+            if (inUsePlates > 0)
+                throw new IllegalArgumentException(String.format("Unable to remove fields from domain, there are %d plates that are referencing these fields. Fields need to be removed from the plates first.", inUsePlates));
+
             try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
             {
-                Map<String, String> existingProperties = vocabDomain.getProperties().stream().collect(Collectors.toMap(ImportAliasable::getName, ImportAliasable::getPropertyURI));
-                for (String name : fields)
+                Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getPropertyURI).collect(Collectors.toSet());
+                for (PlateField field : fields)
                 {
-                    if (!existingProperties.containsKey(name))
-                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exists", name, vocabDomain.getTypeURI()));
+                    if (field.getPropertyURI() == null)
+                        throw new IllegalStateException(String.format("Unable to remove fields, the property URI must be specified"));
 
-                    DomainProperty dp = vocabDomain.getPropertyByURI(existingProperties.get(name));
+                    if (!existingProperties.contains(field.getPropertyURI()))
+                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exists", field.getName(), vocabDomain.getTypeURI()));
+
+                    DomainProperty dp = vocabDomain.getPropertyByURI(field.getPropertyURI());
                     dp.delete();
                 }
                 vocabDomain.save(user);
@@ -1300,12 +1322,15 @@ public class PlateManager implements PlateService
         return getPlateMetadataFields(container, user);
     }
 
-    public @NotNull List<GWTPropertyDescriptor> getPlateMetadataFields(Container container, User user)
+    public @NotNull List<PlateField> getPlateMetadataFields(Container container, User user)
     {
         Domain vocabDomain = getPlateMetadataDomain(container, user);
         if (vocabDomain != null)
         {
-            return vocabDomain.getProperties().stream().map(DomainUtil::getPropertyDescriptor).collect(Collectors.toList());
+            List<PlateField> fields = vocabDomain.getProperties().stream().map(PlateField::new).toList();
+            return fields.stream()
+                    .sorted(Comparator.comparing(PlateField::getName))
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
@@ -1387,12 +1412,46 @@ public class PlateManager implements PlateService
             if (dp == null)
                 throw new IllegalArgumentException("Failed to get plate custom field. \"" + uri + "\" does not exist on domain.");
 
-            fields.add(new PlateField(dp.getName(), dp.getLabel(), dp.getPropertyURI()));
+            fields.add(new PlateField(dp));
         }
 
         return fields.stream()
                 .sorted(Comparator.comparing(PlateField::getName))
                 .collect(Collectors.toList());
+    }
+
+    public List<PlateField> removeFields(Container container, User user, Integer plateId, List<PlateField> fields)
+    {
+        Plate plate = getPlate(container, plateId);
+        if (plate == null)
+            throw new IllegalArgumentException("Failed to remove plate custom fields. Plate id \"" + plateId + "\" not found.");
+
+        Domain domain = getPlateMetadataDomain(container, user);
+        if (domain == null)
+            throw new IllegalArgumentException("Failed to remove plate custom fields. Custom fields domain does not exist. Try creating fields first.");
+
+        List<DomainProperty> fieldsToRemove = new ArrayList<>();
+        // validate fields
+        for (PlateField field : fields)
+        {
+            DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
+            if (dp == null)
+                throw new IllegalArgumentException("Failed to remove plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
+
+            fieldsToRemove.add(dp);
+        }
+
+        if (!fieldsToRemove.isEmpty())
+        {
+            List<String> propertyURIs = fieldsToRemove.stream().map(DomainProperty::getPropertyURI).collect(Collectors.toList());
+
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                    .append(" WHERE PlateId = ? ").add(plateId)
+                    .append(" AND PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
+
+            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+        }
+        return getFields(container, user, plateId);
     }
 
     public static final class TestCase
