@@ -99,17 +99,17 @@ public class ApiXmlWriter extends ApiResponseWriter
             {
                 writeJsonObjInternal((JSONObject) value);
             }
-            else if (value instanceof org.json.JSONObject)
+            else if (value instanceof org.json.JSONObject jo)
             {
-                writeJsonObjInternal((org.json.JSONObject) value);
+                writeJsonObjInternal(jo);
             }
             else if (value instanceof JSONArray)
             {
                 writeJsonArray((JSONArray) value);
             }
-            else if (value instanceof org.json.JSONArray)
+            else if (value instanceof org.json.JSONArray ja)
             {
-                writeJsonArray((org.json.JSONArray) value);
+                writeJsonArray(ja);
             }
             else if (value instanceof Map)
             {
