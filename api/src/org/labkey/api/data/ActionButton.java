@@ -54,7 +54,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         /** Run a JavaScript snippet */
         SCRIPT("script");
 
-        private String _description;
+        private final String _description;
 
         Action(String desc)
         {

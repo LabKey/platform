@@ -180,6 +180,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -2342,10 +2343,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
         if (down)
         {
-            if (start instanceof ExpData)
-                runsDown.putAll(flattenPairs(getRunsAndRolesUsingDataIds(Arrays.asList(start.getRowId()))));
-            else if (start instanceof ExpMaterial)
-                runsDown.putAll(flattenPairs(getRunsAndRolesUsingMaterialIds(Arrays.asList(start.getRowId()))));
+            if (start instanceof ExpData d)
+                runsDown.putAll(flattenPairs(getRunsAndRolesUsingData(d)));
+            else if (start instanceof ExpMaterial m)
+                runsDown.putAll(flattenPairs(getRunsAndRolesUsingMaterial(m)));
 
             if (parentRun != null)
                 runsDown.remove(parentRun.getLSID());
@@ -5462,26 +5463,32 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
-    // Get a map of run LSIDs to Roles used by the Data ids.
-    public List<Pair<String, String>> getRunsAndRolesUsingDataIds(List<Integer> ids)
+    private List<Pair<String, String>> getRunsAndRolesUsingInput(ExpRunItem item, TableInfo inputTable, String inputColumn, Supplier<List<ExpRunImpl>> runSupplier)
     {
-        SQLFragment sql = new SQLFragment(
-                """
-                        SELECT r.LSID, di.Role
-                        FROM exp.ExperimentRun r
-                        INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
-                        INNER JOIN exp.DataInput di ON di.targetApplicationId = pa.RowId
-                        LEFT OUTER JOIN exp.Data d ON pa.RowId = d.sourceApplicationID
-                        WHERE di.dataId\s""");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("OR d.RowId ");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("ORDER BY r.Created DESC");
+        SQLFragment coreSql = new SQLFragment("""
+                    SELECT r.LSID, i.Role, r.Created
+                    FROM exp.ExperimentRun r
+                    INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
+                    INNER JOIN\s""");
+        coreSql.append(inputTable, "i");
+        coreSql.append(" ON i.targetApplicationId = pa.RowId\nWHERE ");
+
+        SQLFragment sql = new SQLFragment("SELECT LSID, Role FROM (");
+        sql.append(coreSql);
+        sql.append("i.").append(inputColumn).append(" = ?\n");
+        sql.add(item.getRowId());
+        if (item.getSourceApplication() != null)
+        {
+            // Issue 46427 - speed up query by avoiding OR clause across two tables
+            sql.append("UNION \n");
+            sql.append(coreSql);
+            sql.append("pa.RowId = ?\n");
+            sql.add(item.getSourceApplication().getRowId());
+        }
+        sql.append(") x ORDER BY Created DESC");
 
         Set<String> runLsids = new HashSet<>();
-        List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
+        List<Pair<String, String>> runsAndRoles = new ArrayList<>();
         new SqlSelector(getExpSchema(), sql).forEachMap(row -> {
             String runLsid = (String)row.get("lsid");
             String role = (String)row.get("role");
@@ -5489,8 +5496,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             runLsids.add(runLsid);
         });
 
-        assert checkRunsMatch(runLsids, getRunsUsingDataIds(ids));
+        assert checkRunsMatch(runLsids, runSupplier.get());
         return runsAndRoles;
+    }
+
+    // Get a map of run LSIDs to Roles used by the Data ids.
+    public List<Pair<String, String>> getRunsAndRolesUsingData(ExpData data)
+    {
+        return getRunsAndRolesUsingInput(data, getTinfoDataInput(), "DataId", () -> getRunsUsingDataIds(Arrays.asList(data.getRowId())));
     }
 
     private boolean checkRunsMatch(Set<String> lsids, List<ExpRunImpl> runs)
@@ -5504,7 +5517,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (materials.isEmpty())
             return Collections.emptyList();
 
-        var ids = materials.stream().map(ExpMaterial::getRowId).collect(Collectors.toList());
+        var ids = materials.stream().map(ExpMaterial::getRowId).toList();
         return getRunsUsingMaterials(ids);
     }
 
@@ -5536,36 +5549,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     // Get a map of run LSIDs to Roles used by the Material ids.
-    public List<Pair<String, String>> getRunsAndRolesUsingMaterialIds(List<Integer> ids)
+    public List<Pair<String, String>> getRunsAndRolesUsingMaterial(ExpMaterial material)
     {
-        SQLFragment sql = new SQLFragment(
-                """
-                        SELECT r.LSID, mi.Role
-                        FROM exp.ExperimentRun r
-                        INNER JOIN exp.ProtocolApplication pa ON pa.RunId = r.RowId
-                        INNER JOIN exp.MaterialInput mi ON mi.targetApplicationId = pa.RowId
-                        LEFT OUTER JOIN exp.Material m ON pa.RowId = m.sourceApplicationID
-                        WHERE mi.materialId\s""");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("OR m.RowId ");
-        getExpSchema().getSqlDialect().appendInClauseSql(sql, ids);
-        sql.append("\n");
-        sql.append("ORDER BY r.Created DESC");
-
-        Set<String> runLsids = new HashSet<>();
-        List<Pair<String, String>> runsAndRoles = new ArrayList<>(ids.size());
-        new SqlSelector(getExpSchema(), sql).forEachMap(row -> {
-            String runLsid = (String)row.get("lsid");
-            String role = (String)row.get("role");
-            runsAndRoles.add(Pair.of(runLsid, role));
-            runLsids.add(runLsid);
-        });
-
-        assert checkRunsMatch(runLsids, getRunsUsingMaterials(ids.stream().mapToInt(Integer::intValue).toArray()));
-        return runsAndRoles;
+        return getRunsAndRolesUsingInput(material, getTinfoMaterialInput(), "MaterialId", () -> getRunsUsingMaterials(material.getRowId()));
     }
-
 
     @Override
     public List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs)
@@ -5577,12 +5564,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (protocol != null)
             {
                 ProtocolImplementation impl = protocol.getImplementation();
-                if (impl != null)
+                if (impl != null && !impl.deleteRunWhenInputDeleted())
                 {
-                    if (!impl.deleteRunWhenInputDeleted())
-                    {
-                        continue;
-                    }
+                    continue;
                 }
             }
             ret.add(run);
@@ -5593,7 +5577,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public List<ExpRunImpl> getRunsUsingDataClasses(Collection<ExpDataClass> dataClasses)
     {
-        List<Integer> rowIds = dataClasses.stream().map(ExpObject::getRowId).collect(toList());
+        List<Integer> rowIds = dataClasses.stream().map(ExpObject::getRowId).toList();
 
         SQLFragment sql = new SQLFragment("IN (SELECT RowId FROM ");
         sql.append(getTinfoData(), "d");
@@ -5772,7 +5756,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * Delete all exp.Data from the DataClass.  If container is not provided,
      * all rows from the DataClass will be deleted regardless of container.
      */
-    public int truncateDataClass(ExpDataClass dataClass, User user, @Nullable Container c)
+    public int truncateDataClass(ExpDataClassImpl dataClass, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -5838,7 +5822,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SearchService ss = SearchService.get();
         if (null != ss)
         {
-            try (Timing t = MiniProfiler.step("search docs"))
+            try (Timing ignored = MiniProfiler.step("search docs"))
             {
                 ss.deleteResource(dataClass.getDocumentId());
             }
@@ -5863,24 +5847,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private void truncateDataClassAttachments(ExpDataClass dataClass)
+    private void truncateDataClassAttachments(ExpDataClassImpl dataClass)
     {
-        if (dataClass instanceof ExpDataClassImpl)
+        if (dataClass.getDomain() != null)
         {
-            if (dataClass.getDomain() != null)
-            {
-                TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
+            TableInfo table = dataClass.getTinfo();
 
-                SQLFragment sql = new SQLFragment()
-                        .append("SELECT t.lsid FROM ").append(getTinfoData(), "d")
-                        .append(" LEFT OUTER JOIN ").append(table, "t")
-                        .append(" ON d.lsid = t.lsid")
-                        .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
-                        .append(" AND d.ClassId = ?").add(dataClass.getRowId());
+            SQLFragment sql = new SQLFragment()
+                    .append("SELECT t.lsid FROM ").append(getTinfoData(), "d")
+                    .append(" LEFT OUTER JOIN ").append(table, "t")
+                    .append(" ON d.lsid = t.lsid")
+                    .append(" WHERE d.Container = ?").add(dataClass.getContainer().getEntityId())
+                    .append(" AND d.ClassId = ?").add(dataClass.getRowId());
 
-                List<String> lsids = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(String.class);
-                deleteDataClassAttachments(dataClass.getContainer(), lsids);
-            }
+            List<String> lsids = new SqlSelector(table.getSchema().getScope(), sql).getArrayList(String.class);
+            deleteDataClassAttachments(dataClass.getContainer(), lsids);
         }
     }
 
