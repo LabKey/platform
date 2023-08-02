@@ -44,12 +44,14 @@ public class NameExpressionDataIterator extends WrapperDataIterator
     private String _counterSeqPrefix;
     private boolean _allowUserSpecifiedNames = true;        // whether manual names specification is allowed or only name expression generation
     private List<Supplier<Map<String, Object>>> _extraPropsFns = new ArrayList<>();
+    private Map<String, String> _importAliases = null;
 
-    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix)
+    public NameExpressionDataIterator(DataIterator di, DataIteratorContext context, @Nullable TableInfo parentTable, @Nullable Container container, Function<String, Long> getNonConflictCountFn, String counterSeqPrefix, @Nullable Map<String, String> importAliases)
     {
         super(DataIteratorUtil.wrapMap(di, false));
         _context = context;
         _parentTable = parentTable;
+        _importAliases = importAliases;
 
         Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
         _nameCol = map.get("name");
@@ -87,7 +89,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
 
     private void addNameGenerator(String nameExpression)
     {
-        NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false, _container, _getNonConflictCountFn, _counterSeqPrefix);
+        NameGenerator nameGen = new NameGenerator(nameExpression, _parentTable, false, _importAliases, _container, _getNonConflictCountFn, _counterSeqPrefix);
         NameGenerator.State state = nameGen.createState(false);
         _nameGeneratorMap.put(nameExpression, Pair.of(nameGen, state));
     }
@@ -108,7 +110,7 @@ public class NameExpressionDataIterator extends WrapperDataIterator
         for (Map.Entry<String, Pair<NameGenerator, NameGenerator.State>> nameGenerator: _nameGeneratorMap.entrySet())
         {
             NameGenerator.State state = nameGenerator.getValue().second;
-            state.cleanUp(); // explictly call state.cleanUp so DB sequence gets cleaned up in transaction
+            state.cleanUp(); // explicitly call state.cleanUp so DB sequence gets cleaned up in transaction
         }
     }
 

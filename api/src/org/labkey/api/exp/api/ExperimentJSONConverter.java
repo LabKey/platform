@@ -75,6 +75,7 @@ public class ExperimentJSONConverter
     public static final String ID = "id";
     public static final String ROW_ID = "rowId";
     public static final String CONTAINER = "container";
+    public static final String CONTAINER_PATH = "containerPath";
     public static final String CREATED = "created";
     public static final String CREATED_BY = "createdBy";
     public static final String MODIFIED = "modified";
@@ -521,6 +522,7 @@ public class ExperimentJSONConverter
             json.put(URL, url);
 
         json.put(CONTAINER, obj.getContainer().getId());
+        json.put(CONTAINER_PATH, obj.getContainer().getId());
 
         QueryRowReference rowRef = obj.getQueryRowReference(user);
         if (rowRef != null)
