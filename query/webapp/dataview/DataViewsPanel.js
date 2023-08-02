@@ -12,6 +12,7 @@ Ext4.define('TreeFilter', {
 
     collapseOnClear: true,       // collapse all nodes when clearing/resetting the filter
     allowParentFolders: false,   // allow nodes not designated as 'leaf' (and their child items) to  be matched by the filter
+    loadFailure: null,
 
     init: function (tree) {
         var me = this;
@@ -273,6 +274,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             // The TreeStore does not async load properly when there are multiple outbound/inbound
             // requests that need to be handled.
             this.LOCK_FULL_STORE = false;
+            let panel = this;
 
             this.fullStore = Ext4.create('Ext.data.TreeStore', {
                 pageSize: 100,
@@ -287,7 +289,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         returnUrl   : this.returnUrl,
                         manageView  : this.manageView
                     },
-                    reader : 'json'
+                    reader : 'json',
+                    listeners: {
+                        exception: function (me, response) {
+                            LABKEY.Utils.getCallbackWrapper(function(json, response, options) {
+                                panel.loadFailure = json.exception;
+                            })(response, me, true);
+                        }
+                    }
                 },
                 listeners: {
                     beforeload: function() {
@@ -305,9 +314,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             this.getCenter().getEl().mask('Loading...');
                         }
                     },
-                    load: function() {
+                    load: function(me, operation, records, success) {
                         this.LOCK_FULL_STORE = false;
                         this.getCenter().getEl().unmask();
+                        if (!success) {
+                            let message = "Failed to load views. " + (this.loadFailure || '');
+                            this.getCenter().getEl().setHTML(LABKEY.Utils.encodeHtml(message));
+                        }
                     },
                     scope: this
                 },
