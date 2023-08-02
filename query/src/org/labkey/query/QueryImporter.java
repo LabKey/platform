@@ -113,9 +113,8 @@ public class QueryImporter implements FolderImporter
                     XmlObject metaXml = queriesDir.getXmlBean(fileName);
                     try
                     {
-                        if (metaXml instanceof QueryDocument)
+                        if (metaXml instanceof QueryDocument queryDoc)
                         {
-                            QueryDocument queryDoc = (QueryDocument)metaXml;
                             XmlBeansUtil.validateXmlDocument(queryDoc, fileName);
                             metaFilesMap.put(fileName, queryDoc);
                         }
