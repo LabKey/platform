@@ -99,18 +99,24 @@ public class ApiXmlWriter extends ApiResponseWriter
             {
                 writeJsonObjInternal((JSONObject) value);
             }
+            // --------------------------------
+            // DO NOT MERGE THIS FORWARD
             else if (value instanceof org.json.JSONObject jo)
             {
                 writeJsonObjInternal(jo);
             }
+            //---------------------------------
             else if (value instanceof JSONArray)
             {
                 writeJsonArray((JSONArray) value);
             }
+            // --------------------------------
+            // DO NOT MERGE THIS FORWARD
             else if (value instanceof org.json.JSONArray ja)
             {
                 writeJsonArray(ja);
             }
+            //---------------------------------
             else if (value instanceof Map)
             {
                 writeJsonObjInternal(new JSONObject((Map) value));
@@ -158,6 +164,8 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+    // --------------------------------
+    // DO NOT MERGE THIS FORWARD
     private void writeJsonArray(org.json.JSONArray jsonArray) throws XMLStreamException, IOException
     {
         verifyOpen();
@@ -168,7 +176,7 @@ public class ApiXmlWriter extends ApiResponseWriter
             _xmlWriter.writeEndElement();
         }
     }
-
+    // --------------------------------
 
     @Override
     public void close() throws IOException
@@ -199,6 +207,8 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+    // --------------------------------
+    // DO NOT MERGE THIS FORWARD
     protected void writeJsonObjInternal(org.json.JSONObject json) throws IOException, XMLStreamException
     {
         verifyOpen();
@@ -209,7 +219,7 @@ public class ApiXmlWriter extends ApiResponseWriter
             _xmlWriter.writeEndElement();
         }
     }
-
+    // --------------------------------
 
     @Override
     public void startResponse()
