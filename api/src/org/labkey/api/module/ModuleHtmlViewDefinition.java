@@ -24,13 +24,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MinorConfigurationException;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
@@ -54,8 +52,6 @@ import java.util.function.Supplier;
 /**
  * Metadata for a file-based html view in a module, supplied by a .view.xml file in a module's ./resources/views directory.
  * This is separate from ModuleHtmlView so that it can be cached
- * User: Dave
- * Date: Jan 26, 2009
  */
 public class ModuleHtmlViewDefinition
 {
@@ -82,7 +78,7 @@ public class ModuleHtmlViewDefinition
             if (is != null)
             {
                 String html = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
-                char ch = html.length() > 0 ? html.charAt(0) : 0;
+                char ch = !html.isEmpty() ? html.charAt(0) : 0;
                 if (ch == 0xfffe || ch == 0xfeff)
                     html = html.substring(1);
                 _html = HtmlString.unsafe(html);
@@ -114,17 +110,7 @@ public class ModuleHtmlViewDefinition
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
                 ViewDocument viewDoc = ViewDocument.Factory.parse(r.getInputStream(), xmlOptions);
-                if (AppProps.getInstance().isDevMode())
-                {
-                    try
-                    {
-                        XmlBeansUtil.validateXmlDocument(viewDoc, r.toString());
-                    }
-                    catch (XmlValidationException e)
-                    {
-                        _log.error("View XML file failed validation", e);
-                    }
-                }
+                XmlBeansUtil.validateXmlDocument(viewDoc, r.toString());
                 _viewDef = viewDoc.getView();
                 if (null != _viewDef)
                 {
@@ -138,9 +124,11 @@ public class ModuleHtmlViewDefinition
             catch(Exception e)
             {
                 _log.error("Error trying to read and parse the metadata XML content from " + r, e);
-                _html = HtmlString.unsafe("<p class='labkey-error'>The following exception occurred while attempting to load view metadata from "
-                         + PageFlowUtil.filter(r.toString()) + ": "
-                         + e.getMessage() + "</p>");
+                _html = HtmlStringBuilder.of(HtmlString.unsafe("<p class='labkey-error'>"))
+                    .append("The following exception occurred while attempting to load view metadata from ")
+                    .append(r.toString()).append(": ").append(e.getMessage())
+                    .endTag("p")
+                    .getHtmlString();
             }
         }
     }

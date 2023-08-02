@@ -67,10 +67,10 @@ public class StudyViewsImporter implements InternalStudyImporter
             if (settingsFileName != null)
             {
                 XmlObject doc = folder.getXmlBean(settingsFileName);
-                if (doc instanceof ViewsDocument)
+                if (doc instanceof ViewsDocument viewsDocument)
                 {
-                    XmlBeansUtil.validateXmlDocument(doc, "Validating ViewsDocument during study import");
-                    ViewsDocument.Views views = ((ViewsDocument) doc).getViews();
+                    XmlBeansUtil.validateXmlDocument(viewsDocument, "Validating ViewsDocument during study import");
+                    ViewsDocument.Views views = viewsDocument.getViews();
                     if (views != null)
                     {
                         ViewsDocument.Views.ParticipantView participantView = views.getParticipantView();
