@@ -797,14 +797,14 @@ public class PlateManager implements PlateService
 
         // delete any plate metadata values
         SQLFragment sql = new SQLFragment("SELECT Lsid FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoWell(), "AW")
+                .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                 .append(" WHERE PlateId = ?")
                 .add(plateId);
         OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container, false);
 
         // delete PlateProperty mappings
         SQLFragment sql2 = new SQLFragment("DELETE FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
                 .append(" WHERE PlateId = ?")
                 .add(plateId);
         new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
@@ -864,7 +864,7 @@ public class PlateManager implements PlateService
 
         // delete PlateProperty mappings
         SQLFragment sql2 = new SQLFragment("DELETE FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
                 .append(" WHERE PlateId IN (SELECT RowId FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "AP")
                 .append(" WHERE Container = ? )")
                 .add(container);
