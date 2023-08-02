@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -131,7 +132,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         String styleMapName = "styleMap" + _uid;
         String lockedStylesName = "lockedStyles" + _uid;
 
-        out.write("<script type=\"text/javascript\">\n");
+        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
 
         out.write(
             "// Code to support dynamic highlighting for \"" + getName() + "\" column\n" +

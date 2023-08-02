@@ -459,6 +459,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return link(text).href(url);
     }
 
+    public LinkBuilder link(String text, @NotNull String url)
+    {
+        return link(text).href(url);
+    }
+
+    public LinkBuilder link(HtmlString html, @NotNull String url)
+    {
+        return new LinkBuilder(html).href(url);
+    }
+
     public InputBuilder<?> input()
     {
         return new InputBuilder();

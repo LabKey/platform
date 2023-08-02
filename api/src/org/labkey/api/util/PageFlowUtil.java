@@ -1339,6 +1339,18 @@ public class PageFlowUtil
         return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
+    public static String postOnClickJavaScriptEvent()
+    {
+        return """
+               const href = this.dataset['href'];
+               const confirmMessage = this.dataset['confirmMessage'];
+               if (confirmMessage)
+                LABKEY.Utils.confirmAndPost(confirmMessage, href);
+               else
+                LABKEY.Utils.postToAction(href);
+               """;
+    }
+
     public static ButtonBuilder button(String text)
     {
         return new ButtonBuilder(text);
@@ -1402,7 +1414,7 @@ public class PageFlowUtil
 
     public static HtmlString generateBackButton(String text)
     {
-        return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
+        return button(text).onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */

@@ -96,7 +96,7 @@
     </i></td>
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
-    <tr><td><%= button("Start Job").href("javascript:void(0)").onClick("javascript:startJob()") %></td></tr>
+    <tr><td><%= button("Start Job").onClick("startJob()") %></td></tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr><td colspan="2"><div class="start-job-success" style="display: none">The pipeline job has been successfully queued, to view the status <a href="<%=h(urlProvider(PipelineUrls.class).urlBegin(getContainer()))%>">click here</a>.
         </div></td></tr>

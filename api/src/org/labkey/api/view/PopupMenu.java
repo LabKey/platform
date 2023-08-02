@@ -148,7 +148,6 @@ public class PopupMenu extends DisplayElement
 
             Button.ButtonBuilder bldr = PageFlowUtil.button(_navTree.getText())
                     .dropdown(true)
-                    .href("javascript:void(0)")
                     .onClick(onClickScript)
                     .attributes(attributes);
 
@@ -166,13 +165,13 @@ public class PopupMenu extends DisplayElement
             assert !requiresSelection : "Only button-style popups can require selection.";
             if (_navTree.getImageCls() != null && _navTree.getImageCls().length() > 0)
             {
-                out.append(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "javascript:void(0)",
+                out.append(PageFlowUtil.generateDropDownFontIconImage(_navTree.getText(), "#",
                         onClickScript, _navTree.getImageCls(), _imageId, attributes).toString());
             }
             else
             {
                 assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source or image cls for image based popups.";
-                out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "javascript:void(0)",
+                out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "#",
                         onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes).toString());
             }
 
@@ -185,7 +184,7 @@ public class PopupMenu extends DisplayElement
         if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "javascript:void(0)",
+            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "#",
                     onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes).toString());
         }
 

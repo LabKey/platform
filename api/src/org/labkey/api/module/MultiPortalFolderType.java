@@ -307,7 +307,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         if (portalPage.isHidden())
         {
-            menu.addChild(new NavTree("Show", "javascript:LABKEY.Portal.showTab(" + portalTabParams + ")"));
+            menu.addChild("Show").setScript("LABKEY.Portal.showTab(" + portalTabParams + ");");
         }
         else
         {
@@ -324,11 +324,11 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
 
         NavTree moveMenu = new NavTree("Move");
-        moveMenu.addChild(new NavTree("Left", "javascript:LABKEY.Portal.moveTabLeft(" + portalTabParams + ");"));
-        moveMenu.addChild(new NavTree("Right", "javascript:LABKEY.Portal.moveTabRight(" + portalTabParams + ");"));
+        moveMenu.addChild("Left").setScript("LABKEY.Portal.moveTabLeft(" + portalTabParams + ");");
+        moveMenu.addChild("Right", "LABKEY.Portal.moveTabRight(" + portalTabParams + ");");
         menu.addChild(moveMenu);
 
-        menu.addChild(new NavTree("Rename", "javascript:LABKEY.Portal.renameTab(" + portalTabParams + ");"));
+        menu.addChild("Rename", "LABKEY.Portal.renameTab(" + portalTabParams + ");");
 
         if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
         {

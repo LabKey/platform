@@ -455,4 +455,4 @@
     <%
     }%>
 </labkey:form>
-<script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>

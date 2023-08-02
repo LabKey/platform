@@ -809,7 +809,7 @@ LABKEY.Utils = new function(impl, $) {
     impl.collapseExpand = function(elem, notify, targetTagName)
     {
         var collapse = false;
-        var url = elem.href;
+        var url = elem.dataset.href ? elem.dataset.href : elem.href;
         if (targetTagName)
         {
             while (elem.tagName != targetTagName)
