@@ -1213,7 +1213,7 @@ public class PlateManager implements PlateService
             return null;
 
         // the domain is scoped at the project level (project and subfolder scoping)
-        String domainURI = vocabDomainKind.generateDomainURI(null, PLATE_WELL_DOMAIN, container.getProject(), user);
+        String domainURI = vocabDomainKind.generateDomainURI(null, PLATE_WELL_DOMAIN, getPlateMetadataDomainContainer(container), user);
         return PropertyService.get().getDomain(container, domainURI);
     }
 
@@ -1306,11 +1306,8 @@ public class PlateManager implements PlateService
                 Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getPropertyURI).collect(Collectors.toSet());
                 for (PlateField field : fields)
                 {
-                    if (field.getPropertyURI() == null)
-                        throw new IllegalStateException(String.format("Unable to remove fields, the property URI must be specified"));
-
                     if (!existingProperties.contains(field.getPropertyURI()))
-                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exists.", field.getName(), vocabDomain.getTypeURI()));
+                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exist.", field.getName(), vocabDomain.getTypeURI()));
 
                     DomainProperty dp = vocabDomain.getPropertyByURI(field.getPropertyURI());
                     dp.delete();
@@ -1341,7 +1338,7 @@ public class PlateManager implements PlateService
             throw new IllegalArgumentException("Failed to add plate custom fields. Invalid plateId provided.");
 
         if (fields == null || fields.size() == 0)
-            throw new IllegalArgumentException("Unable to add plate custom fields. No fields specified.");
+            throw new IllegalArgumentException("Failed to add plate custom fields. No fields specified.");
 
         Plate plate = getPlate(container, plateId);
         if (plate == null)

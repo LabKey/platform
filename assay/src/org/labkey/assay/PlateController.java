@@ -694,26 +694,22 @@ public class PlateController extends SpringActionController
     public class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
     {
         @Override
+        public void validateForm(DeletePlateMetadataFieldsForm form, Errors errors)
+        {
+            if (form.getFields().isEmpty())
+                errors.reject(ERROR_MSG, "No metadata fields were specified to be deleted.");
+        }
+
+        @Override
         public Object execute(DeletePlateMetadataFieldsForm form, BindException errors) throws Exception
         {
             return success(PlateManager.get().deletePlateMetadataFields(getContainer(), getUser(), form.getFields()));
         }
     }
 
-    public static class CustomFieldsForm
+    public static class CustomFieldsForm extends DeletePlateMetadataFieldsForm
     {
-        private List<PlateField> _fields;
         private Integer _plateId;
-
-        public List<PlateField> getFields()
-        {
-            return _fields;
-        }
-
-        public void setFields(List<PlateField> fields)
-        {
-            _fields = fields;
-        }
 
         public Integer getPlateId()
         {
@@ -746,7 +742,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class RemoveFieldsAction extends MutatingApiAction<CustomFieldsForm>
     {
         @Override
