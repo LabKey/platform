@@ -325,10 +325,10 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         NavTree moveMenu = new NavTree("Move");
         moveMenu.addChild("Left").setScript("LABKEY.Portal.moveTabLeft(" + portalTabParams + ");");
-        moveMenu.addChild("Right", "LABKEY.Portal.moveTabRight(" + portalTabParams + ");");
+        moveMenu.addChild("Right").setScript("LABKEY.Portal.moveTabRight(" + portalTabParams + ");");
         menu.addChild(moveMenu);
 
-        menu.addChild("Rename", "LABKEY.Portal.renameTab(" + portalTabParams + ");");
+        menu.addChild("Rename").setScript("LABKEY.Portal.renameTab(" + portalTabParams + ");");
 
         if (folderTab.getTabType() == FolderTab.TAB_TYPE.Container)
         {

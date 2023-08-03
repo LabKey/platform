@@ -247,7 +247,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .at(!usePost, Attribute.href, StringUtils.defaultIfBlank(this.href,  "#"), "#")
             .at(inlineScript, onclick, clickHandler)
             .data(usePost, "href", this.href)
-            .data(usePost, "confirmMessage", confirmMessage)
+            .data(usePost, "confirmmessage", confirmMessage)
             .data("submitid", submitId)         // this id is used by the event handler, stash in a data attribute rather than hard-coding in the handler source
             .data("tt", (HtmlString.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
