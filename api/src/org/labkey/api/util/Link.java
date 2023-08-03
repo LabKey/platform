@@ -76,7 +76,7 @@ public class Link extends DisplayElement implements HasHtmlString
                 .id(lb.id)
                 .at(!lb.usePost, href,  defaultIfBlank(lb.href, "#"), "#")
                 .data(lb.usePost, "href", lb.href)
-                .data(lb.usePost, "confirmMessage", trimToNull(lb.confirmMessage))
+                .data(lb.usePost, "confirmmessage", trimToNull(lb.confirmMessage))
                 .at(target, lb.target)
                 .at(rel, lb.rel)
                 .at(title, lb.title)

@@ -1343,7 +1343,7 @@ public class PageFlowUtil
     {
         return """
                const href = this.dataset['href'];
-               const confirmMessage = this.dataset['confirmMessage'];
+               const confirmMessage = this.dataset['confirmmessage'];
                if (confirmMessage)
                 LABKEY.Utils.confirmAndPost(confirmMessage, href);
                else
