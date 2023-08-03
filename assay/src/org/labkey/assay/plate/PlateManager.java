@@ -1262,7 +1262,7 @@ public class PlateManager implements PlateService
                 for (GWTPropertyDescriptor pd : fields)
                 {
                     if (existingProperties.contains(pd.getName()))
-                        throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists", pd.getName(), vocabDomain.getTypeURI()));
+                        throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists.", pd.getName(), vocabDomain.getTypeURI()));
 
                     DomainUtil.addProperty(vocabDomain, pd, new HashMap<>(), new HashSet<>(), null);
                 }
