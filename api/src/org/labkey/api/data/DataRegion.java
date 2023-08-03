@@ -1269,7 +1269,7 @@ public class DataRegion extends DisplayElement
             if (!scripts.isEmpty())
             {
                 StringWriter out = new StringWriter();
-                out.write("<script type=\"text/javascript\">\n");
+                out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
                 for (String script : scripts)
                 {
                     out.write(script + "\n");
@@ -2344,7 +2344,7 @@ public class DataRegion extends DisplayElement
                     }
                 }
 
-                out.write("<script type=\"text/javascript\">");
+                out.write("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">");
                 for (DisplayColumnGroup group : groups)
                     group.writeCopyableJavaScript(ctx, out);
                 out.write("</script>");

@@ -68,7 +68,7 @@
                 %><option value="<%=h(p.second)%>"><%=h(p.first)%></option><%
             }
             %></select>
-            <%= button("Download").href("javascript:void(0);").onClick("window.location = document.getElementById('importTemplate').value;") %><br>&nbsp;<br>
+            <%= button("Download").onClick("window.location = document.getElementById('importTemplate').value;") %><br>&nbsp;<br>
             <%
         }
     }%>
@@ -89,7 +89,7 @@
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Upload file (.xlsx, .xls, .csv, .txt)</h3>
         <span class="lk-import-expando pull-right">
-            <%= button("+").href("#").id(uploadFileDivId + "Expando") %>
+            <%= button("+").id(uploadFileDivId + "Expando") %>
         </span>
         <div class="clearfix"></div>
     </div>
@@ -101,7 +101,7 @@
     <div class="panel-heading">
         <h3 class="panel-title pull-left">Copy/paste text</h3>
         <span class="lk-import-expando pull-right">
-            <%=button(NDASH).href("#").id(copyPasteDivId + "Expando") %>
+            <%=button(NDASH).id(copyPasteDivId + "Expando") %>
         </span>
         <div class="clearfix"></div>
     </div>

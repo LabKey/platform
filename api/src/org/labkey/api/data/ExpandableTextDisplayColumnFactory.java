@@ -80,8 +80,8 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
             {
                 outputTxt = "<div class='expandable-text-collapsed'>" + outputTxt
                         + "<div class='expandable-text-overflow'></div>"
-                        + "<div class='expandable-text-showmore'><div class='labkey-wp-text-buttons'><a href='javascript:;' onclick=\"LABKEY.ExpandableTextDisplayColumn.showMore(this);\">Show More&#9660;</a></div></div>"
-                        + "<div class='expandable-text-showless'><div class='labkey-wp-text-buttons'><a href='javascript:;' onclick=\"LABKEY.ExpandableTextDisplayColumn.showLess(this);\">Show Less&#9650;</a></div></div>"
+                        + "<div class='expandable-text-showmore'><div class='labkey-wp-text-buttons'><a href='#' onclick=\"LABKEY.ExpandableTextDisplayColumn.showMore(this);\">Show More&#9660;</a></div></div>"
+                        + "<div class='expandable-text-showless'><div class='labkey-wp-text-buttons'><a href='#' onclick=\"LABKEY.ExpandableTextDisplayColumn.showLess(this);\">Show Less&#9650;</a></div></div>"
                         + "</div>";
             }
 

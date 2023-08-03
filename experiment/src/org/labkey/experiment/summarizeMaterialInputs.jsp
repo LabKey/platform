@@ -68,22 +68,19 @@
                     Map<DomainProperty, DisplayColumnGroup> groups = helper.getGroups();
                     for (int i = 0; i < helper.getSampleNames().size(); i++)
                     {
-                        %><%=h(separator)%>
-                        <a href="#" onclick="{<%
+                        StringBuilder handler = new StringBuilder();
                         for (Map.Entry<PropertyDescriptor, Object> propEntry : entry.getKey().getPropertyValues().entrySet())
                         {
                             DisplayColumnGroup group = groups.get(propEntry.getKey());
                             if (group != null && group.isCopyable())
                             {
                                 String propName = group.getColumns().get(i).getColumnInfo().getPropertyName();
-                                %>document.getElementsByName(<%=q(propName)%>)[0].value = '<%=h(propEntry.getValue())%>';
-                                if (document.getElementsByName(<%=q(propName)%>)[0].onchange != null)
-                                {
-                                    document.getElementsByName(<%=q(propName)%>)[0].onchange();
-                                } <%
+                                String propValue = String.valueOf(propEntry.getValue());
+                                handler.append("summarize_setProperty(" + q(propName) + "," + q(propValue) + ");\n");
                             }
                         }
-                        %>return false; }"><%= h(helper.getSampleNames().get(i)) %></a><%
+                        handler.append("return false;");
+                        %><%=h(separator)%><%=link(helper.getSampleNames().get(i)).onClick(handler.toString())%><%
                         separator = ",";
                     } %>
                 </td>
@@ -94,3 +91,12 @@
     }
 %>
 </table>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
+function summarize_setProperty(name,value)
+{
+    const el = document.getElementsByName(name)[0];
+    el .value = value;
+    if (el.onchange)
+        el.onchange();
+}
+</script>

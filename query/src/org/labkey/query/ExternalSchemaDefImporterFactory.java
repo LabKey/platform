@@ -121,9 +121,8 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
                 form.setTypedValue("indexable", schemaXml.getIndexable());
                 form.setTypedValue("fastCacheRefresh", schemaXml.getFastCacheRefresh());
             }
-            else if (schemaXmlFile instanceof LinkedSchemaDocument)
+            else if (schemaXmlFile instanceof LinkedSchemaDocument schemaDoc)
             {
-                LinkedSchemaDocument schemaDoc = (LinkedSchemaDocument)schemaXmlFile;
                 XmlBeansUtil.validateXmlDocument(schemaDoc, relativePath);
 
                 LinkedSchemaType schemaXml = schemaDoc.getLinkedSchema();

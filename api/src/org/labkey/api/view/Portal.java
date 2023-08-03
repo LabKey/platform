@@ -251,7 +251,7 @@ public class Portal implements ModuleChangeListener
                 propertyMap = Collections.unmodifiableMap(propertyMap);
             if (null != copyFrom.extendedProperties)
             {
-                extendedProperties = new JSONObject(copyFrom.extendedProperties);
+                extendedProperties = new JSONObject(copyFrom.extendedProperties.toMap());
                 // Note: There's no way to make a JSONObject read-only
             }
         }
@@ -1424,25 +1424,25 @@ public class Portal implements ModuleChangeListener
                     if (showCustomize)
                     {
                         if (index > 0)
-                            navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-fa-portal-nav");
+                            navTree.addChild("Move Up", "#", null, "fa fa-caret-square-o-up labkey-fa-portal-nav").setScript(getMoveScript(context, part, MOVE_UP));
                         else
-                            navTree.addChild("Move Up", getMoveURL(context, part, MOVE_UP), null, "fa fa-caret-square-o-up labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
+                            navTree.addChild("Move Up", "#", null, "fa fa-caret-square-o-up labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav").setScript(getMoveScript(context, part, MOVE_UP));
 
                         if (index < partsForLocation.size() - 1)
-                            navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-fa-portal-nav");
+                            navTree.addChild("Move Down", "#", null, "fa fa-caret-square-o-down labkey-fa-portal-nav").setScript(getMoveScript(context, part, MOVE_DOWN));
                         else
-                            navTree.addChild("Move Down", getMoveURL(context, part, MOVE_DOWN), null, "fa fa-caret-square-o-down labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav");
+                            navTree.addChild("Move Down", "#", null, "fa fa-caret-square-o-down labkey-btn-default-toolbar-small-disabled labkey-fa-portal-nav").setScript(getMoveScript(context, part, MOVE_DOWN));
 
                         if (!part.isPermanent())
-                            navTree.addChild("Remove From Page", getDeleteURL(context, part), null, "fa fa-times");
+                            navTree.addChild("Remove From Page", "#", null, "fa fa-times").setScript(getDeleteScript(context, part));
 
                         // Only display Show/Hide frame options if the view is a PORTAL view when not being customized
                         if (allowHideFrame && WebPartView.FrameType.PORTAL.equals(view.getFrame()))
                         {
                             if (part.hasFrame())
-                                navTree.addChild("Hide Frame", getToggleFrameURL(context, part), null, "fa fa-eye-slash");
+                                navTree.addChild("Hide Frame", "#", null, "fa fa-eye-slash").setScript(getToggleFrameScript(context, part));
                             else
-                                navTree.addChild("Show Frame", getToggleFrameURL(context, part), null, "fa fa-eye");
+                                navTree.addChild("Show Frame", "#", null, "fa fa-eye").setScript(getToggleFrameScript(context, part));
                         }
                     }
                 }
@@ -1511,12 +1511,12 @@ public class Portal implements ModuleChangeListener
 
 
     private static final boolean USE_ASYNC_PORTAL_ACTIONS = true;
-    public static String getMoveURL(ViewContext context, Portal.WebPart webPart, int direction)
+    public static String getMoveScript(ViewContext context, Portal.WebPart webPart, int direction)
     {
         if (USE_ASYNC_PORTAL_ACTIONS)
         {
             String methodName = direction == MOVE_UP ? "moveWebPartUp" : "moveWebPartDown";
-            return "javascript:LABKEY.Portal." + methodName + "({" +
+            return "LABKEY.Portal." + methodName + "({" +
                     "webPartId:" + webPart.getRowId() + "," +
                     "updateDOM:true" +
                     "})";
@@ -1526,11 +1526,11 @@ public class Portal implements ModuleChangeListener
     }
 
 
-    public static String getDeleteURL(ViewContext context, Portal.WebPart webPart)
+    public static String getDeleteScript(ViewContext context, Portal.WebPart webPart)
     {
         if (USE_ASYNC_PORTAL_ACTIONS)
         {
-            return "javascript:LABKEY.Portal.removeWebPart({" +
+            return "LABKEY.Portal.removeWebPart({" +
                     "webPartId:" + webPart.getRowId() + "," +
                     "updateDOM:true" +
                     "})";
@@ -1539,9 +1539,9 @@ public class Portal implements ModuleChangeListener
             return urlProvider().getDeleteWebPartURL(context.getContainer(), webPart, context.getActionURL()).getLocalURIString();
     }
 
-    public static String getToggleFrameURL(ViewContext context, Portal.WebPart webPart)
+    public static String getToggleFrameScript(ViewContext context, Portal.WebPart webPart)
     {
-        return "javascript:LABKEY.Portal.toggleWebPartFrame({" +
+        return "LABKEY.Portal.toggleWebPartFrame({" +
                 "webPartId:" + webPart.getRowId() + "," +
                 "updateDOM:false," +
                 "success:function(){window.location.reload();}" +

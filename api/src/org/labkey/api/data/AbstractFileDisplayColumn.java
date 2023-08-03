@@ -289,7 +289,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
 
         out.write("<div id=\"" + divId + "\">");
         renderIconAndFilename(ctx, out, filename, false, false);
-        out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
+        out.write("&nbsp;[<a href=\"#\" onClick=\"");
         out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
         out.write(">remove");
         out.write("</a>]");

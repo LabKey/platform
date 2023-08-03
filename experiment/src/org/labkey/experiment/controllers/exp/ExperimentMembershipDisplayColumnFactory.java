@@ -29,6 +29,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -109,7 +110,8 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             if (!_renderedFunction)
             {
                 ActionURL url = new ActionURL(ExperimentController.ToggleRunExperimentMembershipAction.class, ctx.getContainer());
-                out.write("<script language=\"javascript\">\n" +
+                out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+                out.write(
                         "function toggleRunExperimentMembership(expId, runId, included, dataRegionName)\n" +
                         "{\n" +
                         "    var config = { \n" +
@@ -119,8 +121,8 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                         "        method: 'POST'\n" +
                         "    }\n" +
                         "    LABKEY.Ajax.request(config); \n" +
-                        "};\n" +
-                        "</script>");
+                        "};\n");
+                out.write("</script>");
                 _renderedFunction = true;
             }
 
