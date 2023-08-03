@@ -1374,7 +1374,7 @@ public class PlateManager implements PlateService
             List<String> existingProps = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getArrayList(String.class);
             if (!existingProps.isEmpty())
             {
-                throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields \"" + String.join(",", existingProps) + "\" already are associated with this plate");
+                throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields \"" + String.join(",", existingProps) + "\" already are associated with this plate.");
             }
 
             List<List<?>> insertedValues = new LinkedList<>();
