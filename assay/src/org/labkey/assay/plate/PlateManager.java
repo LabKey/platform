@@ -1289,7 +1289,7 @@ public class PlateManager implements PlateService
             for (PlateField field : fields)
             {
                 if (field.getPropertyURI() == null)
-                    throw new IllegalStateException("Unable to remove fields, the property URI must be specified");
+                    throw new IllegalStateException("Unable to remove fields, the property URI must be specified.");
 
                 propertyURIs.add(field.getPropertyURI());
             }
