@@ -1310,7 +1310,7 @@ public class PlateManager implements PlateService
                         throw new IllegalStateException(String.format("Unable to remove fields, the property URI must be specified"));
 
                     if (!existingProperties.contains(field.getPropertyURI()))
-                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exists", field.getName(), vocabDomain.getTypeURI()));
+                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exists.", field.getName(), vocabDomain.getTypeURI()));
 
                     DomainProperty dp = vocabDomain.getPropertyByURI(field.getPropertyURI());
                     dp.delete();
