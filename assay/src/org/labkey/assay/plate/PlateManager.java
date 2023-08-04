@@ -36,6 +36,7 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -57,7 +58,13 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
@@ -75,6 +82,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.plate.model.PlateField;
 import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.plate.model.WellGroupBean;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -98,6 +106,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -105,15 +114,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * User: brittp
- * Date: Oct 20, 2006
- * Time: 10:13:08 AM
- */
 public class PlateManager implements PlateService
 {
     private static final Logger LOG = LogManager.getLogger(PlateManager.class);
     private static final String LSID_CLASS_OBJECT_ID = "objectType";
+    public static final String PLATE_WELL_DOMAIN = "PlateMetadataDomain";
 
     private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
@@ -789,6 +794,21 @@ public class PlateManager implements PlateService
 
         OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
         deleteWellGroupPositions(plate);
+
+        // delete any plate metadata values
+        SQLFragment sql = new SQLFragment("SELECT Lsid FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                .append(" WHERE PlateId = ?")
+                .add(plateId);
+        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container, false);
+
+        // delete PlateProperty mappings
+        SQLFragment sql2 = new SQLFragment("DELETE FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
+                .append(" WHERE PlateId = ?")
+                .add(plateId);
+        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
+
         Table.delete(schema.getTableInfoWell(), plateIdFilter);
         Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
     }
@@ -834,6 +854,21 @@ public class PlateManager implements PlateService
         new SqlExecutor(schema.getScope()).execute("" +
                 "DELETE FROM " + schema.getTableInfoWellGroupPositions() + " WHERE wellId IN " +
                 "(SELECT rowId FROM " + schema.getTableInfoWell() + " WHERE container=?)", container.getId());
+
+        // delete any plate metadata values
+        SQLFragment sql = new SQLFragment("SELECT Lsid FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWell(), "AW")
+                .append(" WHERE Container = ?")
+                .add(container);
+        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container, false);
+
+        // delete PlateProperty mappings
+        SQLFragment sql2 = new SQLFragment("DELETE FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
+                .append(" WHERE PlateId IN (SELECT RowId FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "AP")
+                .append(" WHERE Container = ? )")
+                .add(container);
+        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         Table.delete(schema.getTableInfoWell(), filter);
@@ -1165,6 +1200,255 @@ public class PlateManager implements PlateService
             if (modifiedSince == null || modifiedSince.before(((PlateImpl) plate).getModified()))
                 indexPlate(task, plate);
         }
+    }
+
+    /**
+     * Returns the domain attached to the Well table,
+     */
+    public @Nullable Domain getPlateMetadataDomain(Container container, User user)
+    {
+        DomainKind vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+
+        if (vocabDomainKind == null)
+            return null;
+
+        // the domain is scoped at the project level (project and subfolder scoping)
+        String domainURI = vocabDomainKind.generateDomainURI(null, PLATE_WELL_DOMAIN, getPlateMetadataDomainContainer(container), user);
+        return PropertyService.get().getDomain(container, domainURI);
+    }
+
+    private Container getPlateMetadataDomainContainer(Container container)
+    {
+        // scope the metadata container to the project
+        return container.isProject() ? container : container.getProject();
+    }
+
+    private @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+
+        if (vocabDomain == null)
+        {
+            DomainKind domainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+            Container domainContainer = getPlateMetadataDomainContainer(container);
+
+            if (!domainKind.canCreateDefinition(user, domainContainer))
+                throw new IllegalArgumentException("Unable to create the plate well domain in folder: " + domainContainer.getPath() + "\". Insufficient permissions.");
+
+            vocabDomain = DomainUtil.createDomain("Vocabulary", new GWTDomain(), null, domainContainer, user, PLATE_WELL_DOMAIN, null);
+        }
+        return vocabDomain;
+    }
+
+    /**
+     * Adds custom fields to the well domain
+     */
+    public @NotNull List<PlateField> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
+    {
+        Domain vocabDomain = ensurePlateMetadataDomain(container, user);
+        DomainKind domainKind = vocabDomain.getDomainKind();
+
+        if (vocabDomain == null)
+            throw new IllegalArgumentException("Unable to create fields on the domain, the domain was not found.");
+
+        if (!domainKind.canEditDefinition(user, vocabDomain))
+            throw new IllegalArgumentException("Unable to create field on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
+
+        if (!fields.isEmpty())
+        {
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getName).collect(Collectors.toSet());
+                for (GWTPropertyDescriptor pd : fields)
+                {
+                    if (existingProperties.contains(pd.getName()))
+                        throw new IllegalStateException(String.format("Unable to create field: %s on domain: %s. The field already exists.", pd.getName(), vocabDomain.getTypeURI()));
+
+                    DomainUtil.addProperty(vocabDomain, pd, new HashMap<>(), new HashSet<>(), null);
+                }
+                vocabDomain.save(user);
+                tx.commit();
+            }
+        }
+        return getPlateMetadataFields(container, user);
+    }
+
+    public @NotNull List<PlateField> deletePlateMetadataFields(Container container, User user, List<PlateField> fields) throws Exception
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+
+        if (vocabDomain == null)
+            throw new IllegalArgumentException("Unable to remove fields from the domain, the domain was not found.");
+
+        if (!vocabDomain.getDomainKind().canEditDefinition(user, vocabDomain))
+            throw new IllegalArgumentException("Unable to remove fields on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
+
+        if (!fields.isEmpty())
+        {
+            List<String> propertyURIs = new ArrayList<>();
+            for (PlateField field : fields)
+            {
+                if (field.getPropertyURI() == null)
+                    throw new IllegalStateException("Unable to remove fields, the property URI must be specified.");
+
+                propertyURIs.add(field.getPropertyURI());
+            }
+
+            // validate in use fields
+            SQLFragment sql = new SQLFragment("SELECT COUNT(DISTINCT(PlateId)) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                    .append(" WHERE PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
+            int inUsePlates = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+            if (inUsePlates > 0)
+                throw new IllegalArgumentException(String.format("Unable to remove fields from domain, there are %d plates that are referencing these fields. Fields need to be removed from the plates first.", inUsePlates));
+
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                Set<String> existingProperties = vocabDomain.getProperties().stream().map(ImportAliasable::getPropertyURI).collect(Collectors.toSet());
+                for (PlateField field : fields)
+                {
+                    if (!existingProperties.contains(field.getPropertyURI()))
+                        throw new IllegalStateException(String.format("Unable to remove field: %s on domain: %s. The field does not exist.", field.getName(), vocabDomain.getTypeURI()));
+
+                    DomainProperty dp = vocabDomain.getPropertyByURI(field.getPropertyURI());
+                    dp.delete();
+                }
+                vocabDomain.save(user);
+                tx.commit();
+            }
+        }
+        return getPlateMetadataFields(container, user);
+    }
+
+    public @NotNull List<PlateField> getPlateMetadataFields(Container container, User user)
+    {
+        Domain vocabDomain = getPlateMetadataDomain(container, user);
+        if (vocabDomain != null)
+        {
+            List<PlateField> fields = vocabDomain.getProperties().stream().map(PlateField::new).toList();
+            return fields.stream()
+                    .sorted(Comparator.comparing(PlateField::getName))
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
+    }
+
+    public @NotNull List<PlateField> addFields(Container container, User user, Integer plateId, List<PlateField> fields) throws SQLException
+    {
+        if (plateId == null)
+            throw new IllegalArgumentException("Failed to add plate custom fields. Invalid plateId provided.");
+
+        if (fields == null || fields.size() == 0)
+            throw new IllegalArgumentException("Failed to add plate custom fields. No fields specified.");
+
+        Plate plate = getPlate(container, plateId);
+        if (plate == null)
+            throw new IllegalArgumentException("Failed to add plate custom fields. Plate id \"" + plateId + "\" not found.");
+
+        Domain domain = getPlateMetadataDomain(container, user);
+        if (domain == null)
+            throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields domain does not exist. Try creating fields first.");
+
+        List<DomainProperty> fieldsToAdd = new ArrayList<>();
+        // validate fields
+        for (PlateField field : fields)
+        {
+            DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
+            if (dp == null)
+                throw new IllegalArgumentException("Failed to add plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
+
+            fieldsToAdd.add(dp);
+        }
+
+        if (!fieldsToAdd.isEmpty())
+        {
+            List<String> propertyURIs = fieldsToAdd.stream().map(DomainProperty::getPropertyURI).collect(Collectors.toList());
+
+            // verify fields aren't already associated with the plate
+            SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                    .append(" WHERE PlateId = ? ").add(plateId)
+                    .append(" AND PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
+
+            List<String> existingProps = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getArrayList(String.class);
+            if (!existingProps.isEmpty())
+            {
+                throw new IllegalArgumentException("Failed to add plate custom fields. Custom fields \"" + String.join(",", existingProps) + "\" already are associated with this plate.");
+            }
+
+            List<List<?>> insertedValues = new LinkedList<>();
+            for (DomainProperty dp : fieldsToAdd)
+            {
+                insertedValues.add(List.of(plateId,
+                        dp.getPropertyId(),
+                        dp.getPropertyURI()));
+            }
+            String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateProperty() +
+                    " (plateId, propertyId, propertyURI)" +
+                    " VALUES (?, ?, ?)";
+            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, insertedValues);
+        }
+        return getFields(container, user, plateId);
+    }
+
+    public List<PlateField> getFields(Container container, User user, Integer plateId)
+    {
+        Plate plate = getPlate(container, plateId);
+        if (plate == null)
+            throw new IllegalArgumentException("Failed to get plate custom fields. Plate id \"" + plateId + "\" not found.");
+
+        Domain domain = getPlateMetadataDomain(container, user);
+        if (domain == null)
+            throw new IllegalArgumentException("Failed to get plate custom fields. Custom fields domain does not exist. Try creating fields first.");
+
+        SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                .append(" WHERE PlateId = ?").add(plateId);
+
+        List<PlateField> fields = new ArrayList<>();
+        for (String uri : new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getArrayList(String.class))
+        {
+            DomainProperty dp = domain.getPropertyByURI(uri);
+            if (dp == null)
+                throw new IllegalArgumentException("Failed to get plate custom field. \"" + uri + "\" does not exist on domain.");
+
+            fields.add(new PlateField(dp));
+        }
+
+        return fields.stream()
+                .sorted(Comparator.comparing(PlateField::getName))
+                .collect(Collectors.toList());
+    }
+
+    public List<PlateField> removeFields(Container container, User user, Integer plateId, List<PlateField> fields)
+    {
+        Plate plate = getPlate(container, plateId);
+        if (plate == null)
+            throw new IllegalArgumentException("Failed to remove plate custom fields. Plate id \"" + plateId + "\" not found.");
+
+        Domain domain = getPlateMetadataDomain(container, user);
+        if (domain == null)
+            throw new IllegalArgumentException("Failed to remove plate custom fields. Custom fields domain does not exist. Try creating fields first.");
+
+        List<DomainProperty> fieldsToRemove = new ArrayList<>();
+        // validate fields
+        for (PlateField field : fields)
+        {
+            DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
+            if (dp == null)
+                throw new IllegalArgumentException("Failed to remove plate custom field. \"" + field.getPropertyURI() + "\" does not exist on domain.");
+
+            fieldsToRemove.add(dp);
+        }
+
+        if (!fieldsToRemove.isEmpty())
+        {
+            List<String> propertyURIs = fieldsToRemove.stream().map(DomainProperty::getPropertyURI).collect(Collectors.toList());
+
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                    .append(" WHERE PlateId = ? ").add(plateId)
+                    .append(" AND PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
+
+            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+        }
+        return getFields(container, user, plateId);
     }
 
     public static final class TestCase
