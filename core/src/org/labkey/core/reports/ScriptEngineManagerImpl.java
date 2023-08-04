@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +50,6 @@ import org.labkey.api.reports.report.r.RDockerScriptEngineFactory;
 import org.labkey.api.reports.report.r.RScriptEngineFactory;
 import org.labkey.api.reports.report.r.RemoteRNotEnabledException;
 import org.labkey.api.reports.report.r.RserveScriptEngineFactory;
-import org.labkey.core.script.RhinoScriptEngine;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Encryption.Algorithm;
@@ -64,6 +62,8 @@ import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.script.RhinoScriptEngine;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -82,14 +82,9 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.unmodifiableList;
 
-/*
-* User: Karl Lum
-* Date: Dec 12, 2008
-* Time: 12:52:28 PM
-*/
 public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabKeyScriptEngineManager
 {
-    private static final Logger LOG = LogManager.getLogger(ScriptEngineManagerImpl.class);
+    private static final Logger LOG = LogHelper.getLogger(ScriptEngineManagerImpl.class, "Script engine anomalies");
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
     private static final String ALL_ENGINES = "ALL";
     private static final String SCOPE_SCRIPT_ENGINE_DEFINITION = "ScriptEngineDefinition";
@@ -132,7 +127,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements LabK
         Algorithm encryptAes = ExternalScriptEngineDefinitionImpl.AES.get();
         new TableSelector(tinfo, PageFlowUtil.set("RowId", "Configuration")).<Integer, String>getValueMap().forEach((rowId, configuration) -> {
             JSONObject json = new JSONObject(configuration);
-            String oldEncryptedPassword = json.getString(PASSWORD_FIELD);
+            String oldEncryptedPassword = json.optString(PASSWORD_FIELD, null);
             if (null != oldEncryptedPassword)
             {
                 LOG.info("    Migrating script engine configuration " + rowId);
