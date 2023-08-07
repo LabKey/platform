@@ -132,7 +132,9 @@ public class Encryption
                 // This will likely throw if the encryption key has changed
                 PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
 
-                if (map.isEmpty())
+                // Second check is important for trial deployments, where encryption key can change between initial
+                // bootstrap and the "new install" startup. See Issue 48346.
+                if (map.isEmpty() || ModuleLoader.getInstance().isNewInstall())
                 {
                     byte[] randomBytes = generateRandomBytes(TEST_BYTES_LENGTH);
                     MessageDigest sha1 = MessageDigest.getInstance("SHA1");
