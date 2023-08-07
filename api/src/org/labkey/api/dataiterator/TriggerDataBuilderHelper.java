@@ -143,11 +143,11 @@ public class TriggerDataBuilderHelper
                 isNewFolderImport = (boolean) _extraContext.get(IS_NEW_FOLDER_IMPORT_KEY);
             }
 
-            boolean includeAllColumns = !context.getInsertOption().allowUpdate || mergeKeys == null || isNewFolderImport;
-            DataIterator coerce = new CoerceDataIterator(pre, context, _target, includeAllColumns);
+            boolean skipExistingRecord = !context.getInsertOption().allowUpdate || mergeKeys == null || isNewFolderImport;
+            DataIterator coerce = new CoerceDataIterator(pre, context, _target, !context.getInsertOption().updateOnly);
             coerce = LoggingDataIterator.wrap(coerce);
 
-            if (includeAllColumns)
+            if (skipExistingRecord)
                 return LoggingDataIterator.wrap(new BeforeIterator(new CachingDataIterator(coerce), context));
             else if (context.getInsertOption().mergeRows && !_target.supportsInsertOption(QueryUpdateService.InsertOption.MERGE))
                 return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
