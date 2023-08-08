@@ -129,6 +129,11 @@ public class Encryption
 
             try
             {
+                // On trial deployments, encryption key can change between initial bootstrap and the "new install"
+                // startup, so always delete if "newinstall" file is present. See Issue 48346.
+                if (ModuleLoader.getInstance().isNewInstall())
+                    PropertyManager.getEncryptedStore().deletePropertySet(TEST_ENCRYPTION_CATEGORY);
+
                 // This will likely throw if the encryption key has changed
                 PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
 
