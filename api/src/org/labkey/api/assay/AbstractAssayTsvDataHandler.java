@@ -659,17 +659,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     /** Insert the data into the database.  Transaction is active. */
     protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider,Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo, boolean autoFillDefaultColumns)
-            throws SQLException, ValidationException
+            throws SQLException, ValidationException, ExperimentException
     {
+        OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data);
+        if (provider.isPlateMetadataEnabled(protocol))
+        {
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                importHelper = svc.getImportHelper(container, user, run, data, protocol, provider);
+            }
+        }
+
         if (tableInfo instanceof UpdateableTableInfo)
         {
-            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, autoFillDefaultColumns, LOG);
+            return OntologyManager.insertTabDelimited(tableInfo, container, user, importHelper, fileData, autoFillDefaultColumns, LOG);
         }
         else
         {
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
             List<String> lsids = OntologyManager.insertTabDelimited(container, user, id,
-                    new SimpleAssayDataImportHelper(data), dataDomain, fileData, false);
+                    importHelper, dataDomain, fileData, false);
             // TODO: Add LSID values into return value rows
             return fileData;
         }

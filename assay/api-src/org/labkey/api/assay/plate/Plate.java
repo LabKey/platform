@@ -41,6 +41,8 @@ public interface Plate extends PropertySet, Identifiable
 
     Well getWell(int row, int col);
 
+    Well getWell(int rowId);
+
     WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
 
     @Nullable WellGroup getWellGroup(int rowId);

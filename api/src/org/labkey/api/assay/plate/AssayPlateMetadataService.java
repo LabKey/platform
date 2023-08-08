@@ -7,6 +7,7 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -71,6 +72,12 @@ public interface AssayPlateMetadataService
      */
     Map<String, MetadataLayer> parsePlateMetadata(JSONObject json) throws ExperimentException;
     Map<String, MetadataLayer> parsePlateMetadata(File jsonData) throws ExperimentException;
+
+    /**
+     * Returns an import helper to help join assay results data to well data and metadata that is associated
+     * with the plate used in the assay run import
+     */
+    OntologyManager.UpdateableTableImportHelper getImportHelper(Container container, User user, ExpRun run, ExpData data, ExpProtocol protocol, AssayProvider provider) throws ExperimentException;
 
     interface MetadataLayer
     {

@@ -8,6 +8,7 @@ import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
@@ -19,10 +20,14 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -32,17 +37,24 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.TSVProtocolSchema;
+import org.labkey.assay.plate.model.Well;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
@@ -367,6 +379,68 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             });
         });
         return layers;
+    }
+
+    @Override
+    public OntologyManager.UpdateableTableImportHelper getImportHelper(
+            Container container,
+            User user,
+            ExpRun run,
+            ExpData data,
+            ExpProtocol protocol,
+            AssayProvider provider) throws ExperimentException
+    {
+        // get the plate associated with this run
+        Domain runDomain = provider.getRunDomain(protocol);
+        DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+        Lsid plateLsid = null;
+
+        if (property != null)
+            plateLsid = Lsid.parse(String.valueOf(run.getProperty(property)));
+
+        Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+        if (plate == null)
+            throw new ExperimentException(String.format("Unable to resolve the plate : %s for the run", plateLsid));
+
+        // create the map of well locations to the well table lsid
+        Map<Position, Lsid> positionToWellLsid = new HashMap<>();
+
+        SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
+        filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+        for (Well well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(Well.class))
+            positionToWellLsid.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), Lsid.parse(well.getLsid()));
+
+        return new PlateMetadataImportHelper(plate.getContainer(), data, Collections.unmodifiableMap(positionToWellLsid));
+    }
+
+    private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
+    {
+        private Map<Position, Lsid> _wellPositionMap;
+        private Container _container;
+
+        public PlateMetadataImportHelper(Container container, ExpData data, Map<Position, Lsid> wellPositionMap)
+        {
+            super(data);
+            _wellPositionMap = wellPositionMap;
+            _container = container;
+        }
+
+        @Override
+        public void bindAdditionalParameters(Map<String, Object> map, ParameterMapStatement target) throws ValidationException
+        {
+            super.bindAdditionalParameters(map, target);
+
+            // to join plate based metadata to assay results we need to line up the incoming assay results with the
+            // corresponding well on the plate used in the import
+            if (map.containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+            {
+                PositionImpl pos = new PositionImpl(_container, String.valueOf(map.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
+                // need to adjust the column value to be 0 based to match the template locations
+                pos.setCol(pos.getColumn() - 1);
+                if (_wellPositionMap.containsKey(pos))
+                    target.put(WELL_LSID_COLUMN_NAME, _wellPositionMap.get(pos));
+            }
+        }
     }
 
     private static class MetadataLayerImpl implements MetadataLayer
