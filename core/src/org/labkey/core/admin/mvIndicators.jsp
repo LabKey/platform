@@ -139,7 +139,7 @@
                         %>
                         <tr>
                             <td>&nbsp;</td>
-                            <td><%= button("Add").href("#").onClick("addRowToTable();") %>
+                            <td><%= button("Add").onClick("addRowToTable();") %>
                             </td>
                             <td>&nbsp;</td>
                         </tr>

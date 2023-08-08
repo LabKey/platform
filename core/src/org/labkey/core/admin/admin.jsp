@@ -142,22 +142,24 @@
             <%=link("Module Details", AdminController.ModulesAction.class)%>
             <br/><br/>
             <table><%
-
                 for (Module module : AdminBean.modules)
                 {
-                    String guid = GUID.makeGUID();
+                    String guid = makeId("m_");
+                    String toggleScript = "return LABKEY.Utils.toggleLink(document.getElementById(" + q(guid) + "), false);";
             %>
                 <tr class="labkey-header">
                     <td valign="middle" width="15">
-                        <a id="<%= h(guid) %>" onclick="return LABKEY.Utils.toggleLink(this, false);">
+                        <a id="<%= h(guid) %>">
                             <img src="<%=getWebappURL("_images/plus.gif")%>">
-                        </a>
-                    </td>
+                        </a><%
+                        addHandler(guid, "click", toggleScript);
+                    %></td>
                     <td style="padding: 3px;">
-                    <span onclick="return LABKEY.Utils.toggleLink(document.getElementById('<%= h(guid) %>'), false);">
+                    <span id="<%=h(guid+"span")%>">
                         <%=h(module.getName())%>
-                    </span>
-                        <span style="color: #333;">
+                    </span><%
+                        addHandler(guid+"span", "click", toggleScript);
+                        %><span style="color: #333;">
                         <%=h(module.getReleaseVersion())%> <%=h(StringUtils.isEmpty(module.getLabel()) ? "" : "- " + module.getLabel())%>
                     </span>
                     </td>

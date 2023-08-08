@@ -302,15 +302,15 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
     %>
     </table>
     <%=button("Save").submit(true)%>
-    <%=button("Set all to Reader").href("#").onClick("return setAllSelections('Reader');")%>
+    <%=button("Set all to Reader").onClick("return setAllSelections('Reader');")%>
     <%
     if (study.getSecurityType() == SecurityType.ADVANCED_WRITE)
     {
     %>
-        <%=button("Set all to Editor").href("#").onClick("return setAllSelections('Editor');")%><%
+        <%=button("Set all to Editor").onClick("return setAllSelections('Editor');")%><%
     }
     %>
-    <%=button("Clear All").href("#").onClick("return setAllSelections('None');")%>
+    <%=button("Clear All").onClick("return setAllSelections('None');")%>
     <%=button("Cancel").href(urlFor(ManageStudyAction.class)).onClick("LABKEY.setSubmit(true);")%>
 </labkey:form>
 

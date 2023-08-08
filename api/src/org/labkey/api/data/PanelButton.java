@@ -67,7 +67,7 @@ public class PanelButton extends ActionButton
 
         String btn = PageFlowUtil.button(getCaption())
                 .dropdown(true)
-                .href("javascript:void(0)")
+                .href("#")
                 .iconCls(getIconCls())
                 .onClick("(function(el) { " + DataRegion.getJavaScriptObjectReference(_dataRegionName) + ".toggleButtonPanelHandler(el); })(this);")
                 .attributes(attributes)

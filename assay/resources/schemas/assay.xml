@@ -109,6 +109,9 @@
           <fkColumnName>rowId</fkColumnName>
         </fk>
       </column>
+      <column columnName="SampleId">
+        <description>The sample associated with this well.</description>
+      </column>
       <column columnName="Row">
         <description>The zero-based row index of each well.</description>
       </column>
@@ -150,6 +153,14 @@
       <column columnName="RowId"/>
       <column columnName="WellId"/>
       <column columnName="WellGroupId"/>
+    </columns>
+  </table>
+  <table tableName="PlateProperty" tableDbType="TABLE">
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="PlateId"/>
+      <column columnName="PropertyURI"/>
+      <column columnName="PropertyId"/>
     </columns>
   </table>
 </tables>

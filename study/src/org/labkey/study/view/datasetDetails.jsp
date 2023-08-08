@@ -148,7 +148,7 @@ if (permissions.contains(AdminPermission.class) && !isDatasetInherited)
     }
     else if(dataset.getType().equals(Dataset.TYPE_PLACEHOLDER))
     {
-        buttons.add(button("Link or Define Dataset").href("#").onClick("showLinkDialog();"));
+        buttons.add(button("Link or Define Dataset").onClick("showLinkDialog();"));
     }
 }
 %><br/>

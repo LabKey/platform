@@ -36,5 +36,5 @@ directory where uploaded data will be stored.<br><br>
     }
 
     if (null == HttpView.currentModel() || (Boolean) HttpView.currentModel())
-        out.print(link("Go Back").href("#").onClick("window.history.back();return false;").id("goback"));
+        out.print(link("Go Back").onClick("window.history.back();return false;").id("goback"));
 %>

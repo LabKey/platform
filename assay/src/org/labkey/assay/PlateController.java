@@ -34,6 +34,7 @@ import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
@@ -41,6 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -51,9 +53,11 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.model.PlateField;
 import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
@@ -579,6 +583,8 @@ public class PlateController extends SpringActionController
         {
             if (StringUtils.trimToNull(form.getName()) == null)
                 errors.reject(ERROR_GENERIC, "Plate \"name\" is required.");
+            if (form.getPlateType() == null)
+                errors.reject(ERROR_GENERIC, "Plate \"plateType\" is required.");
         }
 
         @Override
@@ -623,6 +629,126 @@ public class PlateController extends SpringActionController
         {
             var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), form.getIds(false));
             return success(results);
+        }
+    }
+
+    public static class CreatePlateMetadataFieldsForm
+    {
+        private List<GWTPropertyDescriptor> _fields;
+
+        public List<GWTPropertyDescriptor> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(List<GWTPropertyDescriptor> fields)
+        {
+            _fields = fields;
+        }
+    }
+
+    @RequiresPermission(DesignVocabularyPermission.class)
+    public class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
+    {
+        @Override
+        public void validateForm(CreatePlateMetadataFieldsForm form, Errors errors)
+        {
+            if (form.getFields().isEmpty())
+                errors.reject(ERROR_MSG, "No metadata fields were specified.");
+        }
+
+        @Override
+        public Object execute(CreatePlateMetadataFieldsForm form, BindException errors) throws Exception
+        {
+            List<PlateField> newFields = PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), form.getFields());
+            return success(newFields);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetPlateMetadataFields extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().getPlateMetadataFields(getContainer(), getUser()));
+        }
+    }
+
+    public static class DeletePlateMetadataFieldsForm
+    {
+        private List<PlateField> _fields;
+
+        public List<PlateField> getFields()
+        {
+            return _fields;
+        }
+
+        public void setFields(List<PlateField> fields)
+        {
+            _fields = fields;
+        }
+    }
+
+    @RequiresPermission(DesignVocabularyPermission.class)
+    public class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
+    {
+        @Override
+        public void validateForm(DeletePlateMetadataFieldsForm form, Errors errors)
+        {
+            if (form.getFields().isEmpty())
+                errors.reject(ERROR_MSG, "No metadata fields were specified to be deleted.");
+        }
+
+        @Override
+        public Object execute(DeletePlateMetadataFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().deletePlateMetadataFields(getContainer(), getUser(), form.getFields()));
+        }
+    }
+
+    public static class CustomFieldsForm extends DeletePlateMetadataFieldsForm
+    {
+        private Integer _plateId;
+
+        public Integer getPlateId()
+        {
+            return _plateId;
+        }
+
+        public void setPlateId(Integer plateId)
+        {
+            _plateId = plateId;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class AddFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().addFields(getContainer(), getUser(), form.getPlateId(), form.getFields()));
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public class GetFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().getFields(getContainer(), getUser(), form.getPlateId()));
+        }
+    }
+
+    @RequiresPermission(DeletePermission.class)
+    public class RemoveFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().removeFields(getContainer(), getUser(), form.getPlateId(), form.getFields()));
         }
     }
 }

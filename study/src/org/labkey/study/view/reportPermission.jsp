@@ -206,8 +206,8 @@
     <br/>
     <%= button("Save").submit(true) %>
     <span id="selectionButtons">
-        <%= button("Select All").href("#").onClick("setSelection(true); return false;") %>
-        <%= button("Select None").href("#").onClick("setSelection(false); return false;") %>
+        <%= button("Select All").onClick("setSelection(true); return false;") %>
+        <%= button("Select None").onClick("setSelection(false); return false;") %>
     </span>
     </labkey:form>&nbsp;
 

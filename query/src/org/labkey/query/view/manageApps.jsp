@@ -227,7 +227,7 @@
     <tr data-name="<%=h(contextName)%>">
         <td><%=h(contextName)%></td>
         <td><%=link("edit", urlFor(OlapController.EditAppAction.class).addParameter("contextName", contextName))%></td>
-        <td><%=link("delete").href("#").onClick("confirmDeleteApp(" + q(contextName) + ");return false;")%></td>
+        <td><%=link("delete").onClick("confirmDeleteApp(" + q(contextName) + ");return false;")%></td>
     </tr>
 <% } %>
 </table>

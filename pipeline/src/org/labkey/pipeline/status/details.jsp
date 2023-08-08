@@ -260,7 +260,7 @@
     </div>
 </labkey:panel>
 
-<script type="application/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     let createdEl = document.getElementById('created');
     let modifiedEl = document.getElementById('modified');
     let emailEl = document.getElementById('email');
@@ -371,7 +371,7 @@ ended very recently. --%>
     long diffMin = diffTime / (60 * 1000);
 
     if (status.active || status.log == null || !status.log.success || diffMin < 1) { %>
-<script type="application/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function () {
 
         let active = <%=status.active%>;

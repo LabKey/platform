@@ -74,6 +74,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ page import="static org.labkey.api.util.PageFlowUtil.jsString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -485,15 +486,17 @@
     }
     if (rowCount == 0)
         continue;
+
+    var toggleId = makeId("toggle_");
 %>
 <tr class="labkey-header">
     <th nowrap align="left" class="labkey-expandable-row-header">
-        <a title="Click to expand/collapse"
-            href="<%=h(new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>"
-            onclick="return LABKEY.ParticipantViewToggleIfReady(this, true, <%=datasetId%>);">
+        <a id="<%=unsafe(toggleId)%>" title="Click to expand/collapse" href="#"
+            data-href="<%=h(new ActionURL(ExpandStateNotifyAction.class, study.getContainer()).addParameter("datasetId", Integer.toString(datasetId)).addParameter("id", Integer.toString(bean.getDatasetId())))%>">
             <img src="<%=getWebappURL("_images/" + (expanded ? "minus.gif" : "plus.gif"))%>" alt="Click to expand/collapse">
             <%=h(dataset.getDisplayString())%>
         </a><%
+        addHandler(toggleId, "click", "event.preventDefault(); return LABKEY.ParticipantViewToggleIfReady(this, true, " + datasetId + ");");
         if (null != StringUtils.trimToNull(dataset.getDescription()))
         {
     %><%=helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
@@ -714,14 +717,15 @@
 <%
                     for (String reportId: reportsToRender.keySet())
                     {
-                        String divId1 = "labkey-ptid-chart-" + getRequestScopedUID();
+                        String divId1 = makeId("labkey-ptid-chart-");
+                        String anchorId = makeId("a_");
 %>
                         <div id="<%=h(divId1)%>" class="labkey-ptid-chart labkey-ptid-chart-dataset<%=datasetId%>" report-id="<%=h(reportId)%>"></div>
 <%
                         if (updateAccess) {
 %>
-                            <a class="labkey-text-link labkey-ptid-remove" onclick="LABKEY.ParticipantViewRemoveChart('<%=h(reportId)%>')">Remove Chart</a>
-<%
+                            <a <%=h(anchorId)%> class="labkey-text-link labkey-ptid-remove">Remove Chart</a>
+<%                          addHandler(anchorId, "click", "LABKEY.ParticipantViewRemoveChart(" + jsString(reportId) + ")");
                         }
                     }
 %>
@@ -733,18 +737,21 @@
         // saved chart and click on submit to render the chart inline into the participant view.
         if (updateAccess && reportIdWithNames.size() > 0)
         {
+            String anchorId = makeId("a_");
 %>
             <tr style="<%=text(expanded ? "" : "display:none")%>">
                 <td colspan="<%=totalSeqKeyCount+1%>">
-                    <a class="labkey-text-link labkey-ptid-add" onclick="LABKEY.ParticipantViewUnhideSelect(this)" dataset-id="<%=datasetId%>">Add Chart</a>
-
-                    <select id="addChartSelect-<%=datasetId%>" style="display: none" onchange="document.getElementById('addButton-<%=datasetId%>').style.display = 'inline-block';">
+                    <a id=<%=unsafe(anchorId)%> class="labkey-text-link labkey-ptid-add" dataset-id="<%=datasetId%>">Add Chart</a>
+                    <% addHandler(anchorId, "click", "LABKEY.ParticipantViewUnhideSelect(this)"); %>
+                    <select id="addChartSelect-<%=datasetId%>" style="display: none">
+                    <% addHandler("addChartSelect-" + datasetId, "change", "document.getElementById('addButton-" + datasetId + "').style.display = 'inline-block';"); %>
                         <option>Select a chart...</option>
                         <% for (Map.Entry<String, String> reportEntry : reportIdWithNames.entrySet()) { %>
                         <option value="<%=h(reportEntry.getKey())%>"><%=h(reportEntry.getValue())%></option>
                         <% } %>
                     </select>
-                    <button id="addButton-<%=datasetId%>" onclick="LABKEY.ParticipantViewShowSelectedChart(this)" dataset-id="<%=datasetId%>" style="display: none">Submit</button>
+                    <button id="addButton-<%=datasetId%>" dataset-id="<%=datasetId%>" style="display: none">Submit</button>
+                    <% addHandler("addButton-" + datasetId, "click", "LABKEY.ParticipantViewShowSelectedChart(this)"); %>
                 </td>
             </tr>
     <%
