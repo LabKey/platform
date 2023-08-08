@@ -2367,26 +2367,29 @@ public class ExpDataIterators
                     _context.setCrossTypeImport(false);
                     // process the individual files
                     importOrderKeys.forEach(key -> {
-                        TypeData typeData = _fileDataMap.get(key);
-                        writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-                        var updateService = typeData.tableInfo.getUpdateService();
-                        if (updateService == null)
+                        if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
                         {
-                            _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
-                        }
-                        else
-                        {
-                            try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                            TypeData typeData = _fileDataMap.get(key);
+                            writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+                            var updateService = typeData.tableInfo.getUpdateService();
+                            if (updateService == null)
                             {
-                                // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                                configureLoader(loader, typeData.tableInfo, null, true);
-                                updateService.loadRows(_user, _container, loader, _context, null);
+                                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
                             }
-                            catch (SQLException | IOException e)
+                            else
                             {
-                                String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
-                                LOG.error(msg, e);
-                                _context.getErrors().addRowError(new ValidationException(msg));
+                                try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                                {
+                                    // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
+                                    configureLoader(loader, typeData.tableInfo, null, true);
+                                    updateService.loadRows(_user, _container, loader, _context, null);
+                                }
+                                catch (SQLException | IOException e)
+                                {
+                                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                                    LOG.error(msg, e);
+                                    _context.getErrors().addRowError(new ValidationException(msg));
+                                }
                             }
                         }
                     });
