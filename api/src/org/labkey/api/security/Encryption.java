@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.EncryptedPropertyStore;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.PropertyStore;
@@ -131,8 +133,9 @@ public class Encryption
             {
                 // On trial deployments, encryption key can change between initial bootstrap and the "new install"
                 // startup, so always delete if "newinstall" file is present. See Issue 48346.
+                // Use low-level deleteSetDirectly() method to skip decryption attempt and resulting admin warnings.
                 if (ModuleLoader.getInstance().isNewInstall())
-                    PropertyManager.getEncryptedStore().deletePropertySet(TEST_ENCRYPTION_CATEGORY);
+                    PropertyManager.deleteSetDirectly(PropertyManager.SHARED_USER, ContainerManager.getRoot().getId(), TEST_ENCRYPTION_CATEGORY, (EncryptedPropertyStore)PropertyManager.getEncryptedStore());
 
                 // This will likely throw if the encryption key has changed
                 PropertyMap map = PropertyManager.getEncryptedStore().getWritableProperties(TEST_ENCRYPTION_CATEGORY, true);
