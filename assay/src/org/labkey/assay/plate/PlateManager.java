@@ -1427,6 +1427,9 @@ public class PlateManager implements PlateService
             throw new IllegalArgumentException("Failed to get well custom fields. Well id \"" + wellId   + "\" not found.");
 
         Map<String, Object> properties = OntologyManager.getProperties(container, well.getLsid());
+        for (WellCustomField field : fields)
+            field.setValue(properties.get(field.getPropertyURI()));
+
         return fields.stream()
                 .sorted(Comparator.comparing(PlateCustomField::getName))
                 .collect(Collectors.toList());

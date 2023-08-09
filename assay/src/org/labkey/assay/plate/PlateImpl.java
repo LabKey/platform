@@ -515,7 +515,10 @@ public class PlateImpl extends PropertySetImpl implements Plate
         // create a rowId to well map
         _wellMap = new HashMap<>();
         Arrays.stream(_wells).toList().forEach(w -> {
-            Arrays.stream(w).toList().forEach(well -> _wellMap.put(well.getRowId(), well));
+            Arrays.stream(w).toList().forEach(well -> {
+                if (well != null)
+                    _wellMap.put(well.getRowId(), well);
+            });
         });
     }
 
