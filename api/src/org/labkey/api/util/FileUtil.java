@@ -1177,6 +1177,8 @@ quickScan:
 
     public static boolean isCaseInsensitiveFileSystem()
     {
+        // FileSystem case sensitivity cannot be inferred from OS, for example mac os defaults to case-insensitive but can be configured to be case-sensitive
+        // Additionally, file root can be mounted to location on a different OS, or it can use S3
         String osName = System.getProperty("os.name").toLowerCase();
         return (osName.startsWith("windows") || osName.startsWith("mac os"));
     }

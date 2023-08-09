@@ -37,77 +37,11 @@ import java.util.List;
 public class SpecimenSearchBean
 {
     private boolean _detailsView;
-    private List<DisplayColumn> _displayColumns;
     private ActionURL _baseViewURL;
     private String _dataRegionName;
     private boolean _inWebPart;
     private int _webPartId = 0;
     private boolean _advancedExpanded;
-
-    private static class DisplayColumnInfo
-    {
-        private final boolean _displayByDefault;
-        private final boolean _displayAsPickList;
-        private final boolean _forceDistinctQuery;
-        private final boolean _obfuscate;
-        private final @Nullable TableInfo _tableInfo;
-
-        private String _orderBy;
-
-        public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList)
-        {
-            this(displayByDefault, displayAsPickList, false);
-        }
-
-        public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery)
-        {
-            this(displayByDefault, displayAsPickList, forceDistinctQuery, false, null);
-        }
-
-        public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery, boolean obfuscate, @Nullable TableInfo tableInfo)
-        {
-            _displayByDefault = displayByDefault;
-            _displayAsPickList = displayAsPickList;
-            _forceDistinctQuery = forceDistinctQuery;
-            _obfuscate = obfuscate;
-            _tableInfo = tableInfo;
-        }
-
-        public boolean isDisplayAsPickList()
-        {
-            return _displayAsPickList;
-        }
-
-        public boolean isDisplayByDefault()
-        {
-            return _displayByDefault;
-        }
-
-        public boolean isForceDistinctQuery()
-        {
-            return _forceDistinctQuery;
-        }
-
-        public boolean shouldObfuscate()
-        {
-            return _obfuscate;
-        }
-
-        public String getOrderBy()
-        {
-            return _orderBy;
-        }
-
-        public void setOrderBy(String orderBy)
-        {
-            _orderBy = orderBy;
-        }
-
-        public @Nullable TableInfo getTableInfo()
-        {
-            return _tableInfo;
-        }
-    }
 
     public SpecimenSearchBean()
     {
@@ -125,24 +59,8 @@ public class SpecimenSearchBean
         SpecimenQueryView view = SpecimenQueryView.createView(context, detailsView ? SpecimenQueryView.ViewType.VIALS :
                 SpecimenQueryView.ViewType.SUMMARY);
 
-        _displayColumns = new ArrayList<>();
-        for (DisplayColumn dc : view.getDisplayColumns())
-            if (dc.getColumnInfo() != null)
-                _displayColumns.add(dc);
         _dataRegionName = view.getDataRegionName();
         _baseViewURL = view.getBaseViewURL();
-
-        DisplayColumnInfo visitInfo = new DisplayColumnInfo(true, true);
-        visitInfo.setOrderBy("DisplayOrder");
-        UserSchema schema = SpecimenQuerySchema.get(StudyService.get().getStudy(context.getContainer()), context.getUser());
-        TableInfo simpleSpecimenTable = schema.getTable(SpecimenQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
-        DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, DemoMode.isDemoMode(context), simpleSpecimenTable);
-        participantColInfo.setOrderBy("PTID");
-    }
-
-    public List<DisplayColumn> getDisplayColumns()
-    {
-        return _displayColumns;
     }
 
     public boolean isDetailsView()

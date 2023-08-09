@@ -515,7 +515,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (availableStatuses == null || availableStatuses.isEmpty())
             return false;
 
-        if (oldStatus == newStatus)
+        if (Objects.equals(oldStatus, newStatus))
             return false;
 
         if (availableStatuses.contains(oldStatus) && !availableStatuses.contains(newStatus))

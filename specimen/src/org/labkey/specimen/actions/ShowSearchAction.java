@@ -78,10 +78,10 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         ActionURL url = SpecimenController.getSpecimensURL(getContainer(), form.isShowVials());
         for (ShowSearchAction.SearchForm.SearchParam param : form.getSearchParams())
         {
-            if (param.getCompareType() != null && param.getCompareType().length() > 0)
+            if (param.getCompareType() != null && !param.getCompareType().isEmpty())
             {
                 CompareType compare = CompareType.valueOf(param.getCompareType());
-                if (!compare.isDataValueRequired() || (param.getValue() != null && param.getValue().length() > 0))
+                if (compare != null && (!compare.isDataValueRequired() || (param.getValue() != null && !param.getValue().isEmpty())))
                     url.addParameter(param.getColumnName() + "~" + compare.getPreferredUrlKey(), param.getValue());
             }
         }

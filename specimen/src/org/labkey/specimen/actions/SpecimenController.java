@@ -770,7 +770,7 @@ public class SpecimenController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class OverviewAction extends SimpleViewAction
+    public class OverviewAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)

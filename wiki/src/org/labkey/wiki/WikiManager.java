@@ -89,6 +89,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -257,7 +258,7 @@ public class WikiManager implements WikiService
             boolean rename = !wikiOld.getName().equals(wikiNew.getName());
 
             uncacheAllContent = rename
-                    || wikiOld.getParent() != wikiNew.getParent()
+                    || !Objects.equals(wikiOld.getParent(), wikiNew.getParent())
                     || wikiOld.getDisplayOrder() != wikiNew.getDisplayOrder()
                     || (null != versionNew && !oldTitle.equals(versionNew.getTitle()));
 
