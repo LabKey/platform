@@ -129,6 +129,7 @@ import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -314,7 +315,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    abstract class BaseStylesheetAction extends ExportAction
+    abstract static class BaseStylesheetAction extends ExportAction
     {
         @Override
         public void checkPermissions() throws UnauthorizedException
@@ -351,7 +352,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ProjectsAction extends SimpleViewAction
+    public static class ProjectsAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -371,7 +372,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadFileLinkAction extends SimpleViewAction<DownloadFileLinkForm>
+    public static class DownloadFileLinkAction extends SimpleViewAction<DownloadFileLinkForm>
     {
         @Override
         public ModelAndView getView(DownloadFileLinkForm form, BindException errors) throws Exception
@@ -675,7 +676,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class GetAttachmentIconAction extends SimpleViewAction<GetAttachmentIconForm>
+    public static class GetAttachmentIconAction extends SimpleViewAction<GetAttachmentIconForm>
     {
         @Override
         public ModelAndView getView(GetAttachmentIconForm form, BindException errors) throws Exception
@@ -720,7 +721,7 @@ public class CoreController extends SpringActionController
 
     // Requires at least insert permission. Will check for admin if needed
     @RequiresPermission(InsertPermission.class)
-    public class CreateContainerAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class CreateContainerAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
@@ -825,7 +826,7 @@ public class CoreController extends SpringActionController
 
     // Requires at least delete permission. Will check for admin if needed
     @RequiresPermission(DeletePermission.class)
-    public class DeleteContainerAction extends MutatingApiAction<DeleteContainerForm>
+    public static class DeleteContainerAction extends MutatingApiAction<DeleteContainerForm>
     {
         private Container target;
 
@@ -855,7 +856,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveContainerAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class MoveContainerAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         private Container target;
         private Container parent;
@@ -975,7 +976,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookBean>
+    public static class CreateWorkbookAction extends SimpleViewAction<CreateWorkbookBean>
     {
         @Override
         public ModelAndView getView(CreateWorkbookBean bean, BindException errors)
@@ -1013,7 +1014,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateDescriptionAction extends MutatingApiAction<UpdateDescriptionForm>
+    public static class UpdateDescriptionAction extends MutatingApiAction<UpdateDescriptionForm>
     {
         @Override
         public ApiResponse execute(UpdateDescriptionForm form, BindException errors) throws Exception
@@ -1040,7 +1041,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateTitleAction extends MutatingApiAction<UpdateTitleForm>
+    public static class UpdateTitleAction extends MutatingApiAction<UpdateTitleForm>
     {
         @Override
         public ApiResponse execute(UpdateTitleForm form, BindException errors) throws Exception
@@ -1052,7 +1053,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveWorkbooksAction extends SimpleViewAction
+    public static class MoveWorkbooksAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1161,7 +1162,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetExtContainerTreeAction extends ReadOnlyApiAction<ExtContainerTreeForm>
+    public static class GetExtContainerTreeAction extends ReadOnlyApiAction<ExtContainerTreeForm>
     {
         protected Class<? extends Permission> _reqPerm = ReadPermission.class;
         protected boolean _move = false;
@@ -1374,7 +1375,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class GetContainerTreeRootInfoAction extends ReadOnlyApiAction<Object>
+    public static class GetContainerTreeRootInfoAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -1429,7 +1430,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class MoveWorkbookAction extends MutatingApiAction<MoveWorkbookForm>
+    public static class MoveWorkbookAction extends MutatingApiAction<MoveWorkbookForm>
     {
         @Override
         public ApiResponse execute(MoveWorkbookForm form, BindException errors) throws Exception
@@ -1465,7 +1466,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFolderTypesAction extends ReadOnlyApiAction<Object>
+    public static class GetFolderTypesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -1509,7 +1510,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class) @RequiresLogin
-    public class GetModulePropertiesAction extends ReadOnlyApiAction<ModulePropertiesForm>
+    public static class GetModulePropertiesAction extends ReadOnlyApiAction<ModulePropertiesForm>
     {
         @Override
         public ApiResponse execute(ModulePropertiesForm form, BindException errors)
@@ -1648,7 +1649,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class GetModuleSummaryAction extends ReadOnlyApiAction<Object>
+    public static class GetModuleSummaryAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -1667,7 +1668,7 @@ public class CoreController extends SpringActionController
 
     //Note: ModuleProperty.saveValue() performs additional permissions check
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class SaveModulePropertiesAction extends MutatingApiAction<SaveModulePropertiesForm>
+    public static class SaveModulePropertiesAction extends MutatingApiAction<SaveModulePropertiesForm>
     {
         @Override
         public ApiResponse execute(SaveModulePropertiesForm form, BindException errors)
@@ -1745,7 +1746,7 @@ public class CoreController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @IgnoresTermsOfUse  // Used by folder management, which is used to configure important terms/compliance settings (e.g., active modules)
-    public class GetContainerInfoAction extends ReadOnlyApiAction<ContainerInfoForm>
+    public static class GetContainerInfoAction extends ReadOnlyApiAction<ContainerInfoForm>
     {
         @Override
         public ApiResponse execute(ContainerInfoForm form, BindException errors)
@@ -1794,7 +1795,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetRegisteredFolderWritersAction extends ReadOnlyApiAction<FolderWriterForm>
+    public static class GetRegisteredFolderWritersAction extends ReadOnlyApiAction<FolderWriterForm>
     {
         @Override
         public ApiResponse execute(FolderWriterForm form, BindException errors)
@@ -2072,7 +2073,7 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @IgnoresForbiddenProjectCheck // Skip the "forbidden project" check since it disallows root. See #43278.
-    public class LoadLibraryAction extends ReadOnlyApiAction<LoadLibraryForm>
+    public static class LoadLibraryAction extends ReadOnlyApiAction<LoadLibraryForm>
     {
         @Override
         public void validateForm(LoadLibraryForm form, Errors errors)
@@ -2147,7 +2148,7 @@ public class CoreController extends SpringActionController
 
     //@RequiresLogin
     @RequiresSiteAdmin
-    public class PreUploadAction extends FormApiAction<Object>
+    public static class PreUploadAction extends FormApiAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -2225,7 +2226,7 @@ public class CoreController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class StyleGuideAction extends SimpleViewAction
+    public static class StyleGuideAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2241,7 +2242,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ConfigureReportsAndScriptsAction extends SimpleViewAction
+    public static class ConfigureReportsAndScriptsAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2258,7 +2259,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSummaryAction extends ReadOnlyApiAction
+    public static class ScriptEnginesSummaryAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2333,7 +2334,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSaveAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
+    public static class ScriptEnginesSaveAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
         @Override
         public void validateForm(ExternalScriptEngineDefinitionImpl def, Errors errors)
@@ -2424,7 +2425,7 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class DismissWarningsAction extends MutatingApiAction
+    public static class DismissWarningsAction extends MutatingApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -2437,7 +2438,7 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class DisplayWarningsAction extends MutatingApiAction
+    public static class DisplayWarningsAction extends MutatingApiAction
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2464,7 +2465,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresLogin
-    public class WebSocketConnectionAction extends MutatingApiAction<WebSocketConnectionForm>
+    public static class WebSocketConnectionAction extends MutatingApiAction<WebSocketConnectionForm>
     {
         @Override
         public Object execute(WebSocketConnectionForm form, BindException errors)
@@ -2490,7 +2491,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesDeleteAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
+    public static class ScriptEnginesDeleteAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
         @Override
         public ApiResponse execute(ExternalScriptEngineDefinitionImpl def, BindException errors)
@@ -2522,43 +2523,43 @@ public class CoreController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                controller.new ProjectsAction(),
-                controller.new DownloadFileLinkAction(),
-                controller.new GetExtContainerTreeAction(),
+                    new ProjectsAction(),
+                    new DownloadFileLinkAction(),
+                    new GetExtContainerTreeAction(),
                 controller.new GetExtSecurityContainerTreeAction(),
                 controller.new GetExtMWBContainerTreeAction(),
                 controller.new GetExtContainerAdminTreeAction(),
-                controller.new GetFolderTypesAction(),
-                controller.new SaveModulePropertiesAction(),
-                controller.new GetContainerInfoAction(),
-                controller.new GetRegisteredFolderWritersAction(),
+                    new GetFolderTypesAction(),
+                    new SaveModulePropertiesAction(),
+                    new GetContainerInfoAction(),
+                    new GetRegisteredFolderWritersAction(),
                 controller.new GetRegisteredFolderImportersAction()
             );
 
             // @RequiresPermission(InsertPermission.class)
             assertForInsertPermission(user,
-                controller.new CreateContainerAction(),
-                controller.new CreateWorkbookAction()
+                    new CreateContainerAction(),
+                    new CreateWorkbookAction()
             );
 
             // @RequiresPermission(UpdatePermission.class)
             assertForUpdateOrDeletePermission(user,
-                controller.new UpdateDescriptionAction(),
-                controller.new UpdateTitleAction(),
-                controller.new GetModulePropertiesAction()
+                    new UpdateDescriptionAction(),
+                    new UpdateTitleAction(),
+                    new GetModulePropertiesAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,
-                controller.new DeleteContainerAction()
+                    new DeleteContainerAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new MoveContainerAction(),
-                controller.new MoveWorkbooksAction(),
-                controller.new GetContainerTreeRootInfoAction(),
-                controller.new MoveWorkbookAction()
+                    new MoveContainerAction(),
+                    new MoveWorkbooksAction(),
+                    new GetContainerTreeRootInfoAction(),
+                    new MoveWorkbookAction()
             );
         }
     }
@@ -2688,7 +2689,7 @@ public class CoreController extends SpringActionController
             }
             else
             {
-                return new HtmlView("An Assay QC provider is not configured for this server.");
+                return new HtmlView(HtmlString.of("An Assay QC provider is not configured for this server."));
             }
         }
 
@@ -2773,7 +2774,7 @@ public class CoreController extends SpringActionController
 
     @SuppressWarnings("unused") // Called from JavaScript: discuss.js, wikiEdit.js
     @RequiresNoPermission
-    public class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
+    public static class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
     {
         @Override
         public ApiResponse execute(TransformWikiForm form, BindException errors)
@@ -2796,7 +2797,7 @@ public class CoreController extends SpringActionController
     }
 
     @RequiresLogin
-    public class IncrementClientSideMetricCountAction extends MutatingApiAction<ClientSideMetricForm>
+    public static class IncrementClientSideMetricCountAction extends MutatingApiAction<ClientSideMetricForm>
     {
         @Override
         public void validateForm(ClientSideMetricForm form, Errors errors)

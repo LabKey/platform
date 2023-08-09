@@ -41,7 +41,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class PipelineJobStoreImpl extends PipelineJobMarshaller
 {
-    private static Logger _log = LogManager.getLogger(PipelineJobStoreImpl.class);
+    private static final Logger _log = LogManager.getLogger(PipelineJobStoreImpl.class);
 
     @Override
     public PipelineJob deserializeFromJSON(String json, Class<? extends PipelineJob> cls)
@@ -106,7 +106,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     @Nullable
     private PipelineJob fromStatus(String xml)
     {
-        if (xml == null || xml.length() == 0)
+        if (xml == null || xml.isEmpty())
             return null;
 
         PipelineJob job = PipelineJob.deserializeJob(xml);
@@ -134,7 +134,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     // to work, but it is not totally clear that the resulting complexity is
     // worth the savings, especially now that all splitting and joining is
     // synchronized to avoid SQL deadlocks.
-    private ThreadLocal<SplitRecord> _splitRecord = new ThreadLocal<>();
+    private final ThreadLocal<SplitRecord> _splitRecord = new ThreadLocal<>();
 
     @Override
     public void split(PipelineJob job) throws IOException
@@ -227,8 +227,8 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     private static class SplitRecord
     {
-        private PipelineJob _joinJob;
-        private List<PipelineJob> _splitJobs;
+        private final PipelineJob _joinJob;
+        private final List<PipelineJob> _splitJobs;
 
         public SplitRecord(PipelineJob job, List<PipelineJob> splitJobs)
         {
@@ -265,7 +265,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
     private void endSplit()
     {
-        _splitRecord.set(null);
+        _splitRecord.remove();
     }
 
     @Nullable

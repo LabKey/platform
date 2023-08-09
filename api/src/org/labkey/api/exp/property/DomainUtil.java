@@ -1240,10 +1240,8 @@ public class DomainUtil
                 String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
-                continue;
             }
-
-            if (!namePropertyIdMap.containsKey(name))
+            else
             {
                 namePropertyIdMap.put(name, field.getPropertyId());
             }

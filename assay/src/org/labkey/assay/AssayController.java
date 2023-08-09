@@ -212,7 +212,7 @@ public class AssayController extends SpringActionController
      * This method represents the point of entry into the pageflow
      */
     @RequiresPermission(AssayReadPermission.class)
-    public class BeginAction extends BaseAssayAction<ProtocolIdForm>
+    public static class BeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         @Override
         public ModelAndView getView(ProtocolIdForm o, BindException errors)
@@ -233,7 +233,7 @@ public class AssayController extends SpringActionController
     // which keeps the tests happy. Assay refactor necessitated this. We might want to update the tests to click the tab,
     // then remove this hack.
     @RequiresPermission(AssayReadPermission.class)
-    public class TabAction extends BeginAction
+    public static class TabAction extends BeginAction
     {
     }
 
@@ -490,7 +490,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class ChooseCopyDestinationAction extends BaseAssayAction<ProtocolIdForm>
+    public static class ChooseCopyDestinationAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
 
@@ -542,7 +542,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
+    public static class SummaryRedirectAction extends BaseAssayAction<ProtocolIdForm>
     {
         @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors)
@@ -558,7 +558,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class AssayBeginAction extends BaseAssayAction<ProtocolIdForm>
+    public static class AssayBeginAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
         private boolean _hasCustomView = false;
@@ -623,7 +623,7 @@ public class AssayController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(DesignAssayPermission.class)
-    public class GetAssayTypeSelectOptionsAction extends ReadOnlyApiAction<Object>
+    public static class GetAssayTypeSelectOptionsAction extends ReadOnlyApiAction<Object>
     {
         private List<AssayProviderBean> getProviders()
         {
@@ -679,7 +679,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(DesignAssayPermission.class)
-    public class ChooseAssayTypeAction extends SimpleViewAction<Object>
+    public static class ChooseAssayTypeAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -698,7 +698,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(DesignAssayPermission.class)
-    public class ServiceAction extends GWTServiceAction
+    public static class ServiceAction extends GWTServiceAction
     {
         @Override
         protected BaseRemoteService createService()
@@ -708,7 +708,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class AssayFileDuplicateCheckAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class AssayFileDuplicateCheckAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -780,7 +780,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
+    public static class AssayFileUploadAction extends AbstractFileUploadAction<AssayFileUploadForm>
     {
         @Override
         protected File getTargetFile(String filename) throws IOException
@@ -868,7 +868,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
+    public static class DownloadSampleQCDataAction extends SimpleViewAction<ProtocolIdForm>
     {
         @Override
         public ModelAndView getView(ProtocolIdForm form, BindException errors) throws Exception
@@ -1256,7 +1256,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(DesignAssayPermission.class)
-    public class AssayImportServiceAction extends GWTServiceAction
+    public static class AssayImportServiceAction extends GWTServiceAction
     {
         @Override
         protected BaseRemoteService createService()
@@ -1267,7 +1267,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class ShowUploadJobsAction extends BaseAssayAction<ProtocolIdForm>
+    public static class ShowUploadJobsAction extends BaseAssayAction<ProtocolIdForm>
     {
         private ExpProtocol _protocol;
 
@@ -1376,7 +1376,7 @@ public class AssayController extends SpringActionController
      * and we store flag directly in the materialized table
      */
     @RequiresPermission(UpdatePermission.class)
-    public class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
+    public static class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
     {
         @Override
         protected @NotNull SetResultFlagForm getCommand(HttpServletRequest request)
@@ -1431,7 +1431,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class GetQCStateAction extends ReadOnlyApiAction<Object>
+    public static class GetQCStateAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object form, BindException errors) throws Exception
@@ -1501,7 +1501,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class QCStateAction extends SimpleViewAction<UpdateQCStateForm>
+    public static class QCStateAction extends SimpleViewAction<UpdateQCStateForm>
     {
         @Override
         public ModelAndView getView(UpdateQCStateForm form, BindException errors) throws Exception
@@ -1564,7 +1564,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(QCAnalystPermission.class)
-    public class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
+    public static class UpdateQCStateAction extends MutatingApiAction<UpdateQCStateForm>
     {
         ExpRun _firstRun;
 
@@ -1610,7 +1610,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
+    public static class ModuleAssayUploadAction extends BaseAssayAction<AssayRunUploadForm>
     {
         private ExpProtocol _protocol;
 
@@ -1642,7 +1642,7 @@ public class AssayController extends SpringActionController
     }
 
     @RequiresPermission(AssayReadPermission.class)
-    public class GetValidPublishTargetsAction extends ReadOnlyApiAction
+    public static class GetValidPublishTargetsAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
