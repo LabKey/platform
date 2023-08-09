@@ -82,7 +82,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.CaseSensitiveDavPath;
 import org.labkey.api.webdav.DavException;
+import org.labkey.api.webdav.DavPath;
 import org.labkey.api.webdav.DirectRequest;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -5603,9 +5605,8 @@ public class DavController extends SpringActionController
         return resolvePath(path, reload);
     }
 
-
     // per request cache
-    Map<Path, WebdavResolver.LookupResult> resourceCache = new HashMap<>();
+    Map<DavPath, WebdavResolver.LookupResult> resourceCache = new HashMap<>();
     WebdavResolver.LookupResult nullDavFileInfo = new WebdavResolver.LookupResult(null,null);
 
     @Nullable WebdavResource resolvePath(String path)
@@ -5627,12 +5628,27 @@ public class DavController extends SpringActionController
 
     @Nullable WebdavResolver.LookupResult resolvePathResult(Path path, boolean reload)
     {
-        WebdavResolver.LookupResult result = reload ? null : resourceCache.get(path);
+        WebdavResolver.LookupResult result = null;
+
+        if (!reload)
+        {
+            result = resourceCache.get(new CaseSensitiveDavPath(path)); // first try to find by strict case match
+            if (result == null)
+            {
+                result = resourceCache.get(new DavPath(path)); // then try os-based case match
+                if (result != null && result.resource != null && result.resource.toDavPath() instanceof CaseSensitiveDavPath)
+                    result = null; // reject cache if cache key class doesn't match
+            }
+
+        }
 
         if (result == null)
         {
             result = getResolver().lookupEx(path);
-            resourceCache.put(path, result == null || result.resource == null ? nullDavFileInfo : result);
+            if (result == null || result.resource == null)
+                resourceCache.put(new DavPath(path), nullDavFileInfo);
+            else
+                resourceCache.put(result.resource.toDavPath(), result);
         }
 
         if (null == result || nullDavFileInfo == result || null == result.resource)
@@ -6627,7 +6643,7 @@ public class DavController extends SpringActionController
             isFile = r.getFile().isFile();
             if (isFile)
             {
-                resourceCache.remove(r.getPath());
+                resourceCache.remove(r.toDavPath());
                 r = resolvePath(r.getPath());
                 isFile = r.isFile();
             }
