@@ -1219,6 +1219,8 @@ public class PlateManager implements PlateService
     private Container getPlateMetadataDomainContainer(Container container)
     {
         // scope the metadata container to the project
+        if (container.isRoot())
+            return container;
         return container.isProject() ? container : container.getProject();
     }
 
