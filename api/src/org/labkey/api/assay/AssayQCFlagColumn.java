@@ -31,6 +31,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
@@ -41,6 +43,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * User: jeckels
@@ -84,17 +89,18 @@ public class AssayQCFlagColumn extends ExprColumn
                     @Override
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
-                        if (null != getValue(ctx))
+                        String strValue = (String)getValue(ctx);
+                        if (isNotBlank(strValue))
                         {
-                            String[] values = ((String)getValue(ctx)).split(",");
+                            String[] values = strValue.split(",");
                             Boolean[] enabled = parseBooleans(values, ctx.get(getEnabledFieldKey(), String.class));
                             Integer runId = ctx.get(getRunRowIdFieldKey(), Integer.class);
 
                             // add onclick handler to call the QCFlag toggle window creation function
                             // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                            out.write("<a onclick=\"showQCFlagToggleWindow('" + _schemaName + "', " + runId + "," + _editable + ");\">");
-                            out.write(getCollapsedQCFlagOutput(values, enabled));
-                            out.write("</a>");
+                            Link.LinkBuilder linkBuilder = new Link.LinkBuilder(getCollapsedQCFlagOutput(values, enabled).toString())
+                                    .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
+                            out.write(linkBuilder.toString());
                         }
                         else
                         {
@@ -159,10 +165,10 @@ public class AssayQCFlagColumn extends ExprColumn
      * @param enabled Boolean[] of values for QC Flags for a given run indicating which are enabled (ex. t, f, t, t)
      * @return String with the collapsed grid cell contents to be written to the QC Flag column
      */
-    public static String getCollapsedQCFlagOutput(String[] values, Boolean[] enabled)
+    public static HtmlString getCollapsedQCFlagOutput(String[] values, Boolean[] enabled)
     {
         if (values.length == 0 || values.length != enabled.length)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         StringBuilder sb = new StringBuilder();
         // Keep track of which ones we've already rendered so we can eliminate dupes
@@ -186,7 +192,7 @@ public class AssayQCFlagColumn extends ExprColumn
                 separator = ", ";
             }
         }
-        return sb.toString();
+        return HtmlString.unsafe(sb.toString());
     }
 
     public static SQLFragment createSQLFragment(SqlDialect sqlDialect, String selectColumn)
@@ -208,32 +214,32 @@ public class AssayQCFlagColumn extends ExprColumn
 
             // single flag, enabled
             expected = "AUC";
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{true}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{true}).toString());
             // single flag, disabled
             expected = disabledFlag("AUC");
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{false}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{false}).toString());
             // multiple enabled flags, unique
             expected = "AUC, EC50, HMFI";
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50", "HMFI"}, new Boolean[]{true, true, true}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50", "HMFI"}, new Boolean[]{true, true, true}).toString());
             // multiple enabled flags, duplicates
             expected = "AUC, HMFI";
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "AUC", "HMFI"}, new Boolean[]{true, true, true}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "AUC", "HMFI"}, new Boolean[]{true, true, true}).toString());
             // multiple disabled flags, unique
             expected = disabledFlag("AUC") + ", " + disabledFlag("EC50");
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50"}, new Boolean[]{false, false}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50"}, new Boolean[]{false, false}).toString());
             // multiple disabled flags, duplicates
             expected = disabledFlag("AUC") + ", " + disabledFlag("EC50");
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50", "EC50"}, new Boolean[]{false, false, false}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50", "EC50"}, new Boolean[]{false, false, false}).toString());
             // enabled and disabled flags, unique
             expected = "AUC, " + disabledFlag("EC50");
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50"}, new Boolean[]{true, false}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "EC50"}, new Boolean[]{true, false}).toString());
             // enabled and disabled flags, duplicates
             expected = "AUC, " + disabledFlag("AUC") + ", EC50, " + disabledFlag("EC50");
-            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "AUC", "AUC", "EC50", "EC50", "EC50"}, new Boolean[]{true, true, false, true, false, false}));
+            assertEquals("QC Flags not collapsed as expected", expected, getCollapsedQCFlagOutput(new String[]{"AUC", "AUC", "AUC", "EC50", "EC50", "EC50"}, new Boolean[]{true, true, false, true, false, false}).toString());
             // empty list of flags
-            assertEquals("QC Flags not collapsed as expected", "", getCollapsedQCFlagOutput(new String[]{}, new Boolean[]{}));
+            assertEquals("QC Flags not collapsed as expected", "", getCollapsedQCFlagOutput(new String[]{}, new Boolean[]{}).toString());
             // unequal array length
-            assertEquals("QC Flags not collapsed as expected", "", getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{true, true}));
+            assertEquals("QC Flags not collapsed as expected", "", getCollapsedQCFlagOutput(new String[]{"AUC"}, new Boolean[]{true, true}).toString());
         }
 
         private String disabledFlag(String value)

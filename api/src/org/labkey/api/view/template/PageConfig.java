@@ -107,7 +107,7 @@ public class PageConfig
 
         public String getKey()
         {
-            return null!=id ? ("id:" + id + "." + event) : ("selector:" + id + "." + event);
+            return null!=id ? ("id:" + id + "." + event) : ("selector:" + selector + "." + event);
         }
     }
 
