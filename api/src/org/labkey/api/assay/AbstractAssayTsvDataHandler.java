@@ -63,6 +63,7 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -648,7 +649,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
         }
         else
-            throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
+        {
+            // plate metadata is optional if the experimental plate flag is enabled
+            if (!ExperimentalFeatureService.get().isFeatureEnabled("experimental-app-plate-support"))
+                throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
+        }
     }
 
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
