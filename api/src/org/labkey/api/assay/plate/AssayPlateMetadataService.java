@@ -13,6 +13,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.ExperimentalFeatureService;
 
 import java.io.File;
 import java.util.HashMap;
@@ -32,6 +33,11 @@ public interface AssayPlateMetadataService
         }
         else
             throw new RuntimeException("The specified assay data type is null");
+    }
+
+    static boolean isExperimentalAppPlateEnabled()
+    {
+        return ExperimentalFeatureService.get().isFeatureEnabled("experimental-app-plate-support");
     }
 
     @Nullable
@@ -64,7 +70,7 @@ public interface AssayPlateMetadataService
      *
      * @return the merged rows
      */
-    List<Map<String, Object>> mergePlateMetadata(Lsid plateLsid, List<Map<String, Object>> rows, Map<String, MetadataLayer> plateMetadata,
+    List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
                                                  ExpProtocol protocol) throws ExperimentException;
 
     /**

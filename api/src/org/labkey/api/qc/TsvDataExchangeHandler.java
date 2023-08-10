@@ -306,21 +306,18 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             File runData = new File(scriptDir, RUN_DATA_FILE);
             result.add(runData);
 
-            if (rawPlateMetadata != null)
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
             {
-                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-                if (svc != null)
-                {
-                    ExpProtocol protocol = run.getProtocol();
-                    AssayProvider provider = AssayService.get().getProvider(protocol);
+                ExpProtocol protocol = run.getProtocol();
+                AssayProvider provider = AssayService.get().getProvider(protocol);
 
-                    Domain runDomain = provider.getRunDomain(protocol);
-                    DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
-                    if (property != null)
-                    {
-                        Object lsid = context.getRunProperties().get(property);
-                        rawData = svc.mergePlateMetadata(Lsid.parse(String.valueOf(lsid)), rawData, rawPlateMetadata, protocol);
-                    }
+                Domain runDomain = provider.getRunDomain(protocol);
+                DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+                if (property != null)
+                {
+                    Object lsid = context.getRunProperties().get(property);
+                    rawData = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), rawData, rawPlateMetadata, protocol);
                 }
             }
             addToMergedMap(mergedDataMap, Map.of(dataType, rawData));

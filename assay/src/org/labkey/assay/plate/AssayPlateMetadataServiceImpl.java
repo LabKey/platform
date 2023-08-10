@@ -43,6 +43,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.Well;
+import org.labkey.assay.plate.model.WellCustomField;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
@@ -242,31 +243,70 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     @Override
     public List<Map<String, Object>> mergePlateMetadata(
+            Container container,
+            User user,
             Lsid plateLsid,
             List<Map<String, Object>> rows,
-            Map<String, MetadataLayer> plateMetadata,
+            @Nullable Map<String, MetadataLayer> plateMetadata,
             ExpProtocol protocol) throws ExperimentException
     {
-        Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(plateLsid, plateMetadata, null, protocol, false);
         List<Map<String, Object>> mergedRows = new ArrayList<>();
         for (Map<String, Object> row : rows)
         {
             Map<String, Object> newRow = new CaseInsensitiveLinkedHashMap<>(row);
             // ensure the result data includes a wellLocation field with values like : A1, F12, etc
-            if (newRow.containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+            if (!newRow.containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+                throw new ExperimentException("Imported data must contain a WellLocation column to support plate metadata integration");
+            mergedRows.add(newRow);
+        }
+
+        if (plateMetadata != null)
+        {
+            Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(plateLsid, plateMetadata, null, protocol, false);
+            for (Map<String, Object> row : mergedRows)
             {
-                PositionImpl well = new PositionImpl(null, String.valueOf(newRow.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
+                PositionImpl well = new PositionImpl(null, String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
                 // need to adjust the column value to be 0 based to match the template locations
                 well.setColumn(well.getColumn()-1);
 
                 if (plateData.containsKey(well))
-                {
-                    newRow.putAll(plateData.get(well));
-                }
-                mergedRows.add(newRow);
+                    row.putAll(plateData.get(well));
             }
-            else
-                throw new ExperimentException("Imported data must contain a WellLocation column to support plate metadata integration");
+        }
+
+        if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
+        {
+            // include metadata that may have been applied directly to the plate
+            Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+            if (plate == null)
+                throw new ExperimentException("Unable to resolve the plate for the run");
+
+            // if there are metadata fields configured for this plate
+            if (!PlateManager.get().getFields(container, user, plate.getRowId()).isEmpty())
+            {
+                // create the map of well locations to the well
+                Map<Position, Well> positionToWell = new HashMap<>();
+
+                SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
+                filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+                for (Well well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(Well.class))
+                    positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
+
+                for (Map<String, Object> row : mergedRows)
+                {
+                    PositionImpl well = new PositionImpl(null, String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
+                    // need to adjust the column value to be 0 based to match the template locations
+                    well.setColumn(well.getColumn()-1);
+
+                    if (positionToWell.containsKey(well))
+                    {
+                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(container, user, plate.getRowId(), positionToWell.get(well).getRowId()))
+                        {
+                            row.put(customField.getName(), customField.getValue());
+                        }
+                    }
+                }
+            }
         }
         return mergedRows;
     }

@@ -483,7 +483,6 @@ public class PlateManager implements PlateService
         SimpleFilter plateFilter = new SimpleFilter(FieldKey.fromParts("PlateId"), plate.getRowId());
         Sort sort = new Sort("Col,Row");
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), plateFilter, sort).getArray(WellImpl.class);
-
     }
 
     private WellGroupImpl[] getWellGroups(Plate plate)
@@ -1417,7 +1416,7 @@ public class PlateManager implements PlateService
         return fields;
     }
 
-    private List<WellCustomField> getWellCustomFields(Container container, User user, Integer plateId, Integer wellId)
+    public List<WellCustomField> getWellCustomFields(Container container, User user, Integer plateId, Integer wellId)
     {
         List<WellCustomField> fields = _getFields(container, user, plateId).stream().map(WellCustomField::new).toList();
 
