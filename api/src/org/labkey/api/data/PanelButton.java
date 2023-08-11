@@ -69,7 +69,7 @@ public class PanelButton extends ActionButton
                 .dropdown(true)
                 .href("#")
                 .iconCls(getIconCls())
-                .onClick("(function(el) { " + DataRegion.getJavaScriptObjectReference(_dataRegionName) + ".toggleButtonPanelHandler(el); })(this);")
+                .onClick("(function(el) { " + DataRegion.getJavaScriptObjectReference(_dataRegionName) + ".toggleButtonPanelHandler(el);})(this); return false;")
                 .attributes(attributes)
                 .toString();
 
