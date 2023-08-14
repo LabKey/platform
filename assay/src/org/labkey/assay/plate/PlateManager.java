@@ -672,7 +672,10 @@ public class PlateManager implements PlateService
 
             final Integer plateRowId = plateId;
             transaction.addCommitTask(() -> {
-                clearCache(container);
+                if (updateExisting)
+                {
+                    clearCache(container, plate);
+                }
                 indexPlate(container, plateRowId);
             }, DbScope.CommitTaskOption.POSTCOMMIT);
             transaction.commit();
@@ -753,10 +756,10 @@ public class PlateManager implements PlateService
     }
 
     // Called by the Plate Query Update Service after deleting a plate
-    public void afterPlateDelete(Container container, Lsid plateLsid)
+    public void afterPlateDelete(Container container, Plate plate)
     {
-        clearCache(container);
-        deindexPlates(List.of(plateLsid));
+        clearCache(container, plate);
+        deindexPlates(List.of(Lsid.parse(plate.getLSID())));
     }
 
     // Called by the Plate Query Update Service prior to deleting a plate
@@ -1063,6 +1066,11 @@ public class PlateManager implements PlateService
             throw new IllegalArgumentException(handler.getAssayType());
         }
         _plateTypeHandlers.put(handler.getAssayType(), handler);
+    }
+
+    public void clearCache(Container c, Plate plate)
+    {
+        PlateCache.uncache(c, plate);
     }
 
     public void clearCache(Container c)
