@@ -29,6 +29,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
@@ -37,9 +38,11 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.util.CachingSupplier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 
 /**
@@ -76,7 +79,7 @@ public class PropertyColumn extends LookupColumn
         _pd = pd;
         _container = container;
 
-        copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey(), containerFilter);
+        copyAttributes(user, this, pd, container, null, null, null, lsidColumn.getFieldKey(), containerFilter);
     }
 
     /**
@@ -91,32 +94,42 @@ public class PropertyColumn extends LookupColumn
 
     // We must have a DomainProperty in order to retrieve the default values. TODO: Transition more callers to pass in DomainProperty
     // TODO handle pd.copyTo(MutableColumnInfo)
-    public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, @Nullable FieldKey lsidColumnFieldKey)
+    public static Supplier<Map<DomainProperty, Object>> copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, @Nullable FieldKey lsidColumnFieldKey, @Nullable Supplier<Map<DomainProperty, Object>> defaultsSupplier)
     {
-        copyAttributes(user, to, dp, container, lsidColumnFieldKey, null);
+        return copyAttributes(user, to, dp, container, lsidColumnFieldKey, null, defaultsSupplier);
     }
 
-    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey, @Nullable ContainerFilter containerFilter)
-    {
-        copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey, containerFilter);
-    }
-
-    public static void copyAttributes(
+    /** Takes and returns a supplier that knows how to fetch and cache the default values for the property's domain */
+    public static Supplier<Map<DomainProperty, Object>> copyAttributes(
         User user,
         MutableColumnInfo to,
         DomainProperty dp,
         Container container,
         @Nullable FieldKey lsidColumnFieldKey,
-        @Nullable final ContainerFilter cf
+        @Nullable final ContainerFilter cf,
+        @Nullable Supplier<Map<DomainProperty, Object>> defaultsSupplier
     )
     {
         copyAttributes(user, to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey, cf);
-        Map<DomainProperty, Object> map = DefaultValueService.get().getDefaultValues(container, dp.getDomain(), user);
 
-        Object value = map.get(dp);
+        if (defaultsSupplier == null)
+        {
+            defaultsSupplier = createDefaultsSupplier(container, dp.getDomain(), user);
+        }
+
+        Map<DomainProperty, Object> defaults = defaultsSupplier.get();
+        Object value = defaults.get(dp);
 
         if (null != value)
             to.setDefaultValue(value);
+
+        return defaultsSupplier;
+    }
+
+    /** Makes it easier to query for default values once and use across multiple properties within the domain */
+    public static Supplier<Map<DomainProperty, Object>> createDefaultsSupplier(Container container, Domain domain, User user)
+    {
+        return new CachingSupplier<>(() -> DefaultValueService.get().getDefaultValues(container, domain, user));
     }
 
     public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)
@@ -124,19 +137,9 @@ public class PropertyColumn extends LookupColumn
         copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey, null);
     }
 
-    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, SchemaKey schemaKey, String queryName, FieldKey pkFieldKey)
-    {
-        copyAttributes(user, to, pd, container, schemaKey, queryName, pkFieldKey, null, null);
-    }
-
-    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, SchemaKey schemaKey, String queryName, FieldKey pkFieldKey, @Nullable ContainerFilter cf)
-    {
-        copyAttributes(user, to, pd, container, schemaKey, queryName, pkFieldKey, null, cf);
-    }
-
     // TODO handle pd.copyTo(MutableColumnInfo)
     // TODO: Refactor to builder pattern
-    private static void copyAttributes(
+    public static void copyAttributes(
         User user,
         @NotNull MutableColumnInfo to,
         @NotNull final PropertyDescriptor pd,

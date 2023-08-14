@@ -965,7 +965,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),
-                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"), getLookupContainerFilter());
+                    SchemaKey.fromParts("samples"), st.getName(), FieldKey.fromParts("RowId"), null, getLookupContainerFilter());
 
                 if (idCols.contains(dp))
                 {
