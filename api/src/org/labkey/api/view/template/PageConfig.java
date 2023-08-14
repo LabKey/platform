@@ -655,7 +655,7 @@ public class PageConfig
             Set<String> eventIds = new HashSet<>();
             for (EventHandler h : _eventHandlers.values())
             {
-                final String eventId = h.id + "#" + h.event;
+                final String eventId = h.getKey();
 
                 if (!eventIds.add(eventId))
                 {
