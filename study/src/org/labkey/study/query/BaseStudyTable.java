@@ -75,6 +75,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
@@ -841,6 +842,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)
     {
         SqlDialect dialect = getSqlDialect();
+        Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
         for (DomainProperty domainProperty : optionalProperties)
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
@@ -848,7 +850,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             String legalName = property.getLegalSelectName(dialect);
             sql.append(".").append(legalName);
             var column = new ExprColumn(this, legalName, sql, property.getJdbcType());
-            PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null);
+            defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null, defaultsSupplier);
             if (editable)
             {
                 // Make editable, but some should be read only

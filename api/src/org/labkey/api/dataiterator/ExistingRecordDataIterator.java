@@ -387,11 +387,15 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 _unwrapped.reset(); // unwrapped _delegate
                 _delegate.next();
             }
+            catch (InvalidKeyException x)
+            {
+                _context.getErrors().addRowError(new ValidationException(x.getMessage()));
+            }
             catch (SQLException sqlx)
             {
                 throw new RuntimeSQLException(sqlx);
             }
-            catch (QueryUpdateServiceException|InvalidKeyException x)
+            catch (QueryUpdateServiceException x)
             {
                 throw UnexpectedException.wrap(x);
             }
