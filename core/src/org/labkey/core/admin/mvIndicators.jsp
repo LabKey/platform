@@ -71,7 +71,7 @@
                         // Only show the link to an enclosing container if there is one.
                         addHandler("inherit", "click", "return toggleInherited(this);");
                 %>
-                <input type="checkbox" id="inherit" name="inheritMvIndicators"<%=checked(inherited)%>">
+                <input type="checkbox" id="inherit" name="inheritMvIndicators"<%=checked(inherited)%>>
                 Inherit settings (from
                 <%
                         if (hasLinkPermission)
