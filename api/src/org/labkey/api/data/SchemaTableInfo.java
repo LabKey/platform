@@ -882,7 +882,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext)
+    public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, Map<String, Object> newRow, Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
     {
         throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
     }
