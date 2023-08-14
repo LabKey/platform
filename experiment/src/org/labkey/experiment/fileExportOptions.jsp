@@ -61,8 +61,9 @@ LABKEY.FileExportOptions = {};
 
 <table cellspacing="4" class="lk-fields-table" style="overflow-y: visible;">
     <tr>
-        <% addHandler("fileExportTypeAll", "click", "LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById(" + q(guid) + ").checked, " + q(guid) + ");"); %>
-        <td valign="middle"><input type="radio" id="fileExportTypeAll" name="fileExportType" value="all" checked /></td>
+        <%
+            addHandler(guid+"All", "click", "LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById(" + q(guid) + ").checked, " + q(guid) + ");"); %>
+        <td valign="middle"><input type="radio" id="<%=h(guid+"All")%>>" name="fileExportType" value="all" checked /></td>
         <td valign="middle">Include all files</td>
     </tr>
     <% if (!bean.getRoles().isEmpty()) { %>
