@@ -1761,7 +1761,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     @Override
     public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
+                               @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
             throws ValidationException
     {
         ValidationException errors = new ValidationException();
@@ -1774,7 +1774,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         for (Trigger script : triggers)
         {
-            script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext);
+            script.rowTrigger(this, c, user, type, before, rowNumber, newRow, oldRow, errors, extraContext, existingRecord);
             if (errors.hasErrors())
                 break;
         }

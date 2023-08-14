@@ -183,16 +183,9 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setAlias(rsmd.getColumnName(col));
     }
 
-    @Deprecated
-    public BaseColumnInfo(String name, TableInfo parentTable)
-    {
-//        assert -1 == name.indexOf('/');
-        this(new FieldKey(null, name), parentTable);
-    }
-
     public BaseColumnInfo(String name, TableInfo parentTable, JdbcType type)
     {
-        this(new FieldKey(null, name), parentTable, type);
+        this(FieldKey.fromParts(name), parentTable, type);
     }
 
     public BaseColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
@@ -209,7 +202,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     public BaseColumnInfo(ColumnInfo from, TableInfo parent)
     {
-        this(from.getFieldKey(), parent);
+        this(from.getFieldKey(), parent, from.getJdbcType());
         copyAttributesFrom(from);
         copyURLFrom(from, null, null);
     }

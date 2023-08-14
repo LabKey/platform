@@ -32,6 +32,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.model.DatasetDefinition;
@@ -326,7 +327,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
 
         for (String name : COLUMN_NAMES)
         {
-            var ci = new BaseColumnInfo(name, this);
+            var ci = new BaseColumnInfo(FieldKey.fromParts(name), this);
             ColumnInfo t = template.getColumn(name);
             if (null != t)
             {
@@ -338,7 +339,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
 
         for (PropertyDescriptor pd : sharedProperties)
         {
-            var ci = new BaseColumnInfo(pd.getName(), this);
+            var ci = new BaseColumnInfo(FieldKey.fromParts(pd.getName()), this, pd.getJdbcType());
             PropertyColumn.copyAttributes(_user, ci, pd, _study.getContainer(), null);
             ci.setSqlTypeName(StudySchema.getInstance().getSqlDialect().getSqlTypeName(pd.getJdbcType()));
             safeAddColumn(ci);
@@ -371,7 +372,7 @@ public class StudyUnionTableInfo extends VirtualTable<StudyQuerySchema>
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return super.hasPermission(user, perm);
     }

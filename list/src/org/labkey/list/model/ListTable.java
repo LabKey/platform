@@ -78,7 +78,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public class ListTable extends FilteredTable<ListQuerySchema> implements UpdateableTableInfo
 {
@@ -122,9 +124,11 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         _list = listDef;
         List<ColumnInfo> defaultColumnsCandidates = new ArrayList<>();
 
-        assert getRealTable().getColumns().size() > 0 : "ListTable has not been provisioned properly. The real table does not exist.";
+        assert !getRealTable().getColumns().isEmpty() : "ListTable has not been provisioned properly. The real table does not exist.";
 
         MutableColumnInfo colKey = null;
+
+        Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
 
         // We can have a ListDef that has been saved before the domain has been saved (urg)
         if (!domain.getProperties().isEmpty())
@@ -139,7 +143,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 String propertyURI = baseColumn.getPropertyURI();
                 DomainProperty dp = null==propertyURI ? null : domain.getPropertyByURI(propertyURI);
                 PropertyDescriptor pd = null==dp ? null : dp.getPropertyDescriptor();
-                BuiltInColumnTypes builtin = null;
+                BuiltInColumnTypes builtin;
 
                 if (listDef.getKeyName().equalsIgnoreCase(name))
                 {
@@ -154,7 +158,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     }
                     else
                     {
-                        LOG.warn("" + _list.getName() + "." + _list.getKeyName() + " (primary key) " + "has not yet been provisioned.");
+                        LOG.warn(_list.getName() + "." + _list.getKeyName() + " (primary key) " + "has not yet been provisioned.");
                     }
 
                     colKey.setKeyField(true);
@@ -231,7 +235,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     if (null != pd)
                     {
                         col.setFieldKey(new FieldKey(null,pd.getName()));
-                        PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), getContainerFilter());
+                        defaultsSupplier = PropertyColumn.copyAttributes(schema.getUser(), col, dp, schema.getContainer(), FieldKey.fromParts("EntityId"), getContainerFilter(), defaultsSupplier);
 
                         if (pd.isMvEnabled())
                         {
