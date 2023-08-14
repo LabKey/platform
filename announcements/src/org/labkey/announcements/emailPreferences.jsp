@@ -54,7 +54,8 @@
     <input type="radio" value="<%=EmailOption.MESSAGES_DAILY_DIGEST.getValue()%>" name="notificationType"<%=checked(notificationType == EmailOption.MESSAGES_DAILY_DIGEST.getValue())%>>
     <b>Daily Digest</b> - send one email each day that summarizes all posts<br>
 
-   <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault" onclick="toggleOptions();"><b> Reset</b> - Reset to folder default setting<br>
+   <br><input type=checkbox id="resetFolderDefault" name="resetFolderDefault"><b> Reset</b> - Reset to folder default setting<br>
+    <% addHandler("resetFolderDefault", "click", "toggleOption();"); %>
 
     <br><%=generateReturnUrlFormField(returnUrl)%>
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>

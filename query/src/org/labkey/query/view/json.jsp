@@ -51,8 +51,10 @@
         </tr>
         <tr>
             <td colspan="2">
-                <input type="button" id="submitbtn" onclick="executeQuery()" value="submit">
-                <input type="button" id="clearbtn" onclick="resetForm()" value="clear">
+                <% addHandler("submitbtn", "click", "return executeQuery();"); %>
+                <input type="button" id="submitbtn" value="submit">
+                <% addHandler("clearbtn", "click", "return resetForm();"); %>
+                <input type="button" id="clearbtn" value="clear">
             </td>
         </tr>
     </table>

@@ -119,7 +119,8 @@
         <tr>
             <td>
                 <label>
-                    <input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" onclick="return updateControls(this, false);"<%=checked(HtmlString.isBlank(displaySuccess))%>>Send email notifications if the pipeline job succeeds
+                    <% addHandler("notifyOnSuccess", "click", "return updateControls(this, false);"); %>
+                    <input type=checkbox id="notifyOnSuccess" name="notifyOnSuccess" <%=checked(HtmlString.isBlank(displaySuccess))%>>Send email notifications if the pipeline job succeeds
                 </label>
             </td>
         </tr>
@@ -169,7 +170,8 @@
         <tr>
             <td>
                 <label>
-                    <input type=checkbox id="notifyOnError" name="notifyOnError" onclick="return updateControls(this, false);"<%=checked(HtmlString.isBlank(displayError))%>>Send email notification(s) if the pipeline job fails
+                    <% addHandler("notifyOnError", "click", "return updateControls(this, false);"); %>
+                    <input type=checkbox id="notifyOnError" name="notifyOnError" <%=checked(HtmlString.isBlank(displayError))%>>Send email notification(s) if the pipeline job fails
                 </label>
             </td>
         </tr>

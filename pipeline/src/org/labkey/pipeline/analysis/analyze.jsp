@@ -104,6 +104,7 @@
 Choose an existing protocol or define a new one.<br />
 <labkey:form id="analysis_form">
     <div id="pipeline-analyze-form"></div>
-    <labkey:button text="Analyze" id="submitButton" onclick="startAnalysis(); return false;" />
+    <% addHandler("submitButton", "click", "startAnalysis(); return false;"); %>
+    <labkey:button text="Analyze" id="submitButton" />
     <%=button("Cancel").href(cancelURL)%>
 </labkey:form>

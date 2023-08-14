@@ -144,12 +144,14 @@ if (settings.hasExpires())
             <tbody>
                 <%
                     int x = -1;
+                    String id;
                     for (Attachment att : ann.getAttachments())
                 {
                     x++;
+                    id = makeId("remove_");
                     %><tr id="attach-<%=x%>">
                         <td><img src="<%=getWebappURL(att.getFileIcon())%>" alt="logo"/>&nbsp;<%= h(att.getName()) %></td>
-                        <td><a onclick="LABKEY.discuss.removeAttachment(<%=q(ann.getEntityId())%>, <%=hq(att.getName())%>, 'attach-<%=x%>'); ">remove</a></td>
+                        <td><%= link("remove").onClick("LABKEY.discuss.removeAttachment(" + q(ann.getEntityId()) + "," + q(att.getName()) + "," +  q("attach-"+x) + ");") %></td>
                     </tr><%
                 }
                 %>
@@ -157,7 +159,8 @@ if (settings.hasExpires())
         </table>
         <table>
             <tbody>
-                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
+                <tr><td><a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
+                <% addHandler("filePickerLink", "click", "addFilePicker('filePickerTable','filePickerLink'); return false;"); %>
             </tbody>
         </table>
 	</td>
