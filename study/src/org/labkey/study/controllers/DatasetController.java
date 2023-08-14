@@ -63,7 +63,7 @@ public class DatasetController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class UpdateAction extends InsertUpdateAction
+    public static class UpdateAction extends InsertUpdateAction
     {
         public UpdateAction()
         {
@@ -84,7 +84,7 @@ public class DatasetController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class InsertAction extends InsertUpdateAction
+    public static class InsertAction extends InsertUpdateAction
     {
         public InsertAction()
         {
@@ -168,7 +168,7 @@ public class DatasetController extends BaseStudyController
             return view;
         }
 
-        private class NoRecordView extends HttpView
+        private static class NoRecordView extends HttpView
         {
             @Override
             protected void renderInternal(Object model, PrintWriter out)

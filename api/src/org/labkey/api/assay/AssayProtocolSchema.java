@@ -130,7 +130,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
-    private Set<Role> _contextualRoles = new HashSet<>();
+    private final Set<Role> _contextualRoles = new HashSet<>();
 
     public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
     {
@@ -236,8 +236,8 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         return _provider;
     }
 
-    @Override
     /** NOTE: Subclasses should override to add any additional provider specific tables. */
+    @Override
     public Set<String> getTableNames()
     {
         Set<String> names = new HashSet<>();
@@ -248,12 +248,6 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
 
         return names;
     }
-
-//    @Override
-//    public TableInfo createTable(String name)
-//    {
-//        throw new IllegalStateException();
-//    }
 
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
@@ -488,7 +482,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         }
     }
 
-    private void addPropertyColumn(ExpTable table, Domain domain, String columnName, @Nullable ContainerFilter containerFilter)
+    private void addPropertyColumn(ExpTable<?> table, Domain domain, String columnName, @Nullable ContainerFilter containerFilter)
     {
         var propsCol = table.addColumns(domain, columnName, containerFilter);
         if (propsCol != null)
@@ -896,7 +890,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         return result;
     }
 
-    private class ParticipantVisitResolverColumn extends DataColumn
+    private static class ParticipantVisitResolverColumn extends DataColumn
     {
         public ParticipantVisitResolverColumn(ColumnInfo colInfo)
         {

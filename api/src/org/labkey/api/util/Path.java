@@ -102,6 +102,16 @@ public class Path implements Serializable, Comparable, Iterable<String>
         this(getNames(nioPath));
     }
 
+    protected Path(Path anotherPath)
+    {
+        _hash = anotherPath._hash;
+        _path = anotherPath._path;
+        _length = anotherPath._length;
+        _isAbsolute = anotherPath._isAbsolute;
+        _isDirectory = anotherPath._isAbsolute;
+        _parent = anotherPath._parent;
+    }
+
     private static Collection<String> getNames(Iterable<java.nio.file.Path> it)
     {
         return StreamSupport.stream(it.spliterator(), false)

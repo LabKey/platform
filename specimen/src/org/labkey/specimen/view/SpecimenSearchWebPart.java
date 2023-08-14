@@ -24,11 +24,6 @@ import org.labkey.api.view.JspView;
  */
 public class SpecimenSearchWebPart extends JspView<SpecimenSearchBean>
 {
-    public SpecimenSearchWebPart()
-    {
-        this(true);
-    }
-
     public SpecimenSearchWebPart(boolean showVials)
     {
         super("/org/labkey/specimen/view/search.jsp", new SpecimenSearchBean());

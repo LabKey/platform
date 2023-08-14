@@ -67,10 +67,10 @@ import java.util.TreeSet;
  */
 public class EPipelineQueueImpl extends AbstractPipelineQueue
 {
-    private static Logger _log = LogManager.getLogger(EPipelineQueueImpl.class);
+    private static final Logger _log = LogManager.getLogger(EPipelineQueueImpl.class);
     private static final String PIPELINE_QUEUE_NAME = "PipelineQueue";
 
-    private static ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<>();
+    private static final ThreadLocal<List<PipelineJob>> _outboundJobs = new ThreadLocal<>();
 
     public static List<PipelineJob> getOutboundJobs()
     {
@@ -79,10 +79,10 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
 
     public static void resetOutboundJobs()
     {
-        _outboundJobs.set(null);
+        _outboundJobs.remove();
     }
 
-    private ConnectionFactory _factoryJms;
+    private final ConnectionFactory _factoryJms;
     private boolean _local;
     private boolean _transient;
 

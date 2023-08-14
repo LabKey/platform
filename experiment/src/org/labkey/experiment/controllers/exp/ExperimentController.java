@@ -441,7 +441,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -1284,7 +1284,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDataClassPropertiesAction extends ReadOnlyApiAction<DataClassForm>
+    public static class GetDataClassPropertiesAction extends ReadOnlyApiAction<DataClassForm>
     {
         @Override
         public Object execute(DataClassForm form, BindException errors) throws Exception
@@ -1298,7 +1298,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignDataClassPermission.class)
-    public class EditDataClassAction extends SimpleViewAction<DataClassForm>
+    public static class EditDataClassAction extends SimpleViewAction<DataClassForm>
     {
         private ExpDataClassImpl _dataClass;
 
@@ -1331,7 +1331,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignDataClassPermission.class)
-    public class CreateDataClassFromTemplateAction extends FormViewAction<CreateDataClassFromTemplateForm>
+    public static class CreateDataClassFromTemplateAction extends FormViewAction<CreateDataClassFromTemplateForm>
     {
         private ActionURL _successUrl;
         private Map<String, DomainTemplate> _domainTemplates;
@@ -1472,7 +1472,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RemoveConceptMappingAction extends MutatingApiAction<ConceptURIForm>
+    public static class RemoveConceptMappingAction extends MutatingApiAction<ConceptURIForm>
     {
         @Override
         public void validateForm(ConceptURIForm form, Errors errors)
@@ -1490,7 +1490,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class RunAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
+    public static class RunAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
         @Nullable
         @Override
@@ -1517,7 +1517,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DataClassAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
+    public static class DataClassAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
         @Nullable
         @Override
@@ -1584,7 +1584,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
+    public static class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
     {
         @Override
         public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
@@ -1775,7 +1775,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ToggleRunExperimentMembershipAction extends FormHandlerAction<ToggleRunExperimentMembershipForm>
+    public static class ToggleRunExperimentMembershipAction extends FormHandlerAction<ToggleRunExperimentMembershipForm>
     {
         @Override
         public boolean handlePost(ToggleRunExperimentMembershipForm form, BindException errors)
@@ -2126,7 +2126,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CheckDataFileAction extends MutatingApiAction<DataFileForm>
+    public static class CheckDataFileAction extends MutatingApiAction<DataFileForm>
     {
         private ExpDataImpl _data;
 
@@ -2474,7 +2474,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
+    public static class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
         @Override
         public void validate(ConvertArraysToExcelForm form, BindException errors)
@@ -2535,7 +2535,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
+    public static class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
     {
         @Override
         public void validate(ConvertArraysToExcelForm form, BindException errors)
@@ -3235,7 +3235,7 @@ public class ExperimentController extends SpringActionController
      * Separate delete action from the client API
      */
     @RequiresAnyOf({DeletePermission.class, SampleWorkflowDeletePermission.class})
-    public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
+    public static class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
         @Override
         public ApiResponse execute(DeleteRunForm form, BindException errors)
@@ -3296,7 +3296,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private abstract class AbstractDeleteAPIAction extends MutatingApiAction<CascadeDeleteForm>
+    private abstract static class AbstractDeleteAPIAction extends MutatingApiAction<CascadeDeleteForm>
     {
         @Override
         public void validateForm(CascadeDeleteForm form, Errors errors)
@@ -3342,7 +3342,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
+    private abstract static class AbstractDeleteAction extends FormViewAction<DeleteForm>
     {
         @Override
         public void validateCommand(DeleteForm target, Errors errors)
@@ -3475,7 +3475,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
+    public static class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
     {
         @Override
         public void validateForm(DataOperationConfirmationForm form, Errors errors)
@@ -3871,7 +3871,7 @@ public class ExperimentController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @ActionNames("getSampleType,getSampleTypeApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate getSampleTypeApi -> getSampleType
-    public class GetSampleTypeAction extends ReadOnlyApiAction<SampleTypeForm>
+    public static class GetSampleTypeAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
         public void validateForm(SampleTypeForm form, Errors errors)
@@ -3909,7 +3909,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(DesignSampleTypePermission.class)
-    public class EditSampleTypeAction extends SimpleViewAction<SampleTypeForm>
+    public static class EditSampleTypeAction extends SimpleViewAction<SampleTypeForm>
     {
         private ExpSampleTypeImpl _sampleType;
 
@@ -4089,7 +4089,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public abstract class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
+    public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
     {
         protected QueryForm _form;
 
@@ -4249,7 +4249,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateAction extends FormHandlerAction<ExperimentForm>
+    public static class UpdateAction extends FormHandlerAction<ExperimentForm>
     {
         private Experiment _exp;
 
@@ -4581,7 +4581,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public abstract class AbstractExportAction extends FormViewAction<ExportOptionsForm>
+    public abstract static class AbstractExportAction extends FormViewAction<ExportOptionsForm>
     {
         protected ActionURL _resultURL;
 
@@ -4839,7 +4839,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class RemoveSelectedExpRunsAction extends FormHandlerAction<ExperimentRunListForm>
+    public static class RemoveSelectedExpRunsAction extends FormHandlerAction<ExperimentRunListForm>
     {
         @Override
         public void validateCommand(ExperimentRunListForm target, Errors errors)
@@ -4887,7 +4887,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class ResolveLSIDAction extends SimpleViewAction<LsidForm>
+    public static class ResolveLSIDAction extends SimpleViewAction<LsidForm>
     {
         @Override
         public ModelAndView getView(LsidForm form, BindException errors)
@@ -4989,7 +4989,7 @@ public class ExperimentController extends SpringActionController
      * Check for update on the object itself
      */
     @RequiresNoPermission
-    public class SetFlagAction extends FormHandlerAction<SetFlagForm>
+    public static class SetFlagAction extends FormHandlerAction<SetFlagForm>
     {
         @Override
         public void validateCommand(SetFlagForm target, Errors errors)
@@ -5509,7 +5509,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(InsertPermission.class)
-    public class DeriveAction extends MutatingApiAction<DerivationForm>
+    public static class DeriveAction extends MutatingApiAction<DerivationForm>
     {
         @Override
         public void validateForm(DerivationForm form, Errors errors)
@@ -6152,7 +6152,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
+    public static class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
     {
         @Override
         public ModelAndView getView(ShowExternalDocsForm form, BindException errors) throws Exception
@@ -6196,7 +6196,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
+    public static class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
         private ExperimentRunForm _form;
 
@@ -6842,7 +6842,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ResolveAction extends BaseResolveLsidApiAction<ResolveLsidsForm>
+    public static class ResolveAction extends BaseResolveLsidApiAction<ResolveLsidsForm>
     {
         @Override
         public Object execute(ResolveLsidsForm form, BindException errors)
@@ -6855,7 +6855,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
+    public static class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
     {
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
@@ -6868,7 +6868,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
+    public static class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override
         public Object execute(ExperimentRunForm form, BindException errors)
@@ -6907,7 +6907,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class VerifyEdgesAction extends ReadOnlyApiAction<VerifyEdgesForm>
+    public static class VerifyEdgesAction extends ReadOnlyApiAction<VerifyEdgesForm>
     {
         @Override
         public Object execute(VerifyEdgesForm form, BindException errors)
@@ -6930,7 +6930,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class CheckDataClassesIndexedAction extends ReadOnlyApiAction
+    public static class CheckDataClassesIndexedAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -6966,7 +6966,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class CheckEdgesAction extends ReadOnlyApiAction
+    public static class CheckEdgesAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -7558,7 +7558,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
+    public static class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
     {
         @Override
         public void validateForm(CrossFolderSelectionForm form, Errors errors)

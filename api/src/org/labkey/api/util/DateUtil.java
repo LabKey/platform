@@ -552,7 +552,7 @@ validNum:       {
                 } // validNum: end of number handling
                 prevc = 0;
             }
-            else if (c == '/' || c == ':' || c == '+' || c == '-' || c == '.')
+            else if (c == '/' || c == ':' || c == '+' || c == '.')
             {
                 prevc = c;
             }

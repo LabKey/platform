@@ -32,6 +32,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.module.CustomFolderType" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -281,7 +282,7 @@ function validate()
     %>
     </td>
     <td width="30%" valign="top">
-        <div id="defaultTabDiv" style="display:<%=text("None".equals(h(folderType.getName())) ? "" : "none")%>">
+        <div id="defaultTabDiv" style="display:<%=h(CustomFolderType.NAME.equals(folderType.getName()) ? "" : "none")%>">
             <%
                 FrameFactoryClassic.startTitleFrame(out, "Default Tab", null, "100%", null);
             %>

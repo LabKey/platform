@@ -1019,12 +1019,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
         Map<String, Set<String>> domainMap = new HashMap<>();
-        Set<String> batchProperties = domainMap.get(ExpProtocol.ASSAY_DOMAIN_BATCH);
-        if (batchProperties == null)
-        {
-            batchProperties = new HashSet<>();
-            domainMap.put(ExpProtocol.ASSAY_DOMAIN_BATCH, batchProperties);
-        }
+        Set<String> batchProperties = new HashSet<>();
+        domainMap.put(ExpProtocol.ASSAY_DOMAIN_BATCH, batchProperties);
         batchProperties.add(PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME);
         return domainMap;
     }

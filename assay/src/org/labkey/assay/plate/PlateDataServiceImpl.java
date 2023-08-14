@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -158,7 +159,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
                 // check another plate of the same name doesn't already exist
                 Plate other = PlateManager.get().getPlate(getContainer(), gwtPlate.getName());
-                if (other != null && other.getRowId() != template.getRowId() && !replaceIfExisting)
+                if (other != null && !Objects.equals(other.getRowId(), template.getRowId()) && !replaceIfExisting)
                     throw new Exception("A plate template with name '" + gwtPlate.getName() + "' already exists.");
 
                 if (!template.getType().equals(gwtPlate.getType()))
