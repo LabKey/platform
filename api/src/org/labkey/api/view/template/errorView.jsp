@@ -37,7 +37,7 @@
     }
 %>
 
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     /*
          This error page may be invoked without the themes having been loaded for this container.
          We load the theme artifact for this container here to ensure the correct theme is loaded

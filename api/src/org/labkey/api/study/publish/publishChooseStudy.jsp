@@ -111,7 +111,7 @@
         margin-left: 270px;
     }
 </style>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     (function($){
 

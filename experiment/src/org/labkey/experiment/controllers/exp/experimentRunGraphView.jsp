@@ -116,7 +116,7 @@
         <div id="<%=h(appId)%>"></div>
     </div>
 </div>
-<script type="text/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         $(function() {
             var nextIdx = <%=isBetaViewEnabled ? 0 : 1%>;
