@@ -574,7 +574,7 @@ public class SecurityController extends SpringActionController
         GroupAuditEvent event = new GroupAuditEvent(group.getContainer(), message);
 
         event.setGroup(group.getUserId());
-        Container c = ContainerManager.getForId(group.getContainer());
+        Container c = null==group.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(group.getContainer());
         if (c != null && c.getProject() != null)
             event.setProjectId(c.getProject().getId());
         else
