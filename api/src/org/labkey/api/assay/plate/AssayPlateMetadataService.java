@@ -1,5 +1,6 @@
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.AssayDataType;
@@ -83,6 +84,7 @@ public interface AssayPlateMetadataService
      * Returns an import helper to help join assay results data to well data and metadata that is associated
      * with the plate used in the assay run import
      */
+    @NotNull
     OntologyManager.UpdateableTableImportHelper getImportHelper(Container container, User user, ExpRun run, ExpData data, ExpProtocol protocol, AssayProvider provider) throws ExperimentException;
 
     interface MetadataLayer
