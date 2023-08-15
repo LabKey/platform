@@ -35,8 +35,8 @@
     </endpoint-identifiers>
 
     <transformers>
-        <transformer name="StatusToXML" className="org.mule.transformers.xml.ObjectToXml"
-            returnClass="java.lang.String"/>
+        <transformer name="StatusToXML" className="org.labkey.pipeline.mule.transformers.ObjectToXml"
+                     returnClass="java.lang.String"/>
         <transformer name="XMLToJMSMessage" className="org.mule.providers.jms.transformers.ObjectToJMSMessage"
             returnClass="javax.jms.TextMessage" />
     </transformers>
