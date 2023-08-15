@@ -2,6 +2,7 @@ package org.labkey.assay.plate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.AssayProtocolSchema;
@@ -422,6 +423,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
+    @NotNull
     public OntologyManager.UpdateableTableImportHelper getImportHelper(
             Container container,
             User user,

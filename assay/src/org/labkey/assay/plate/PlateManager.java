@@ -1491,14 +1491,14 @@ public class PlateManager implements PlateService
         if (domain == null)
             throw new IllegalArgumentException("Failed to set plate custom field values. Custom fields domain does not exist. Try creating fields first.");
 
-        // verify the fields have been configured for the plate
-        Set<String> configuredProps = new HashSet<>();
-        SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
-                .append(" WHERE PlateId = ?").add(plateId);
-        new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).forEach(String.class, configuredProps::add);
-
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
+            // verify the fields have been configured for the plate
+            Set<String> configuredProps = new HashSet<>();
+            SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
+                    .append(" WHERE PlateId = ?").add(plateId);
+            new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).forEach(String.class, configuredProps::add);
+
             for (WellCustomField field : fields)
             {
                 if (!configuredProps.contains(field.getPropertyURI()))
