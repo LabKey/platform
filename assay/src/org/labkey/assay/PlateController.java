@@ -57,8 +57,9 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
-import org.labkey.assay.plate.model.PlateField;
+import org.labkey.assay.plate.model.PlateCustomField;
 import org.labkey.assay.plate.model.PlateType;
+import org.labkey.assay.plate.model.WellCustomField;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -660,7 +661,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(CreatePlateMetadataFieldsForm form, BindException errors) throws Exception
         {
-            List<PlateField> newFields = PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), form.getFields());
+            List<PlateCustomField> newFields = PlateManager.get().createPlateMetadataFields(getContainer(), getUser(), form.getFields());
             return success(newFields);
         }
     }
@@ -677,14 +678,14 @@ public class PlateController extends SpringActionController
 
     public static class DeletePlateMetadataFieldsForm
     {
-        private List<PlateField> _fields;
+        private List<PlateCustomField> _fields;
 
-        public List<PlateField> getFields()
+        public List<PlateCustomField> getFields()
         {
             return _fields;
         }
 
-        public void setFields(List<PlateField> fields)
+        public void setFields(List<PlateCustomField> fields)
         {
             _fields = fields;
         }
@@ -749,6 +750,42 @@ public class PlateController extends SpringActionController
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
         {
             return success(PlateManager.get().removeFields(getContainer(), getUser(), form.getPlateId(), form.getFields()));
+        }
+    }
+
+    public static class SetFieldsForm extends CustomFieldsForm
+    {
+        private Integer _wellId;
+        private List<WellCustomField> _wellFields;
+
+        public Integer getWellId()
+        {
+            return _wellId;
+        }
+
+        public void setWellId(Integer wellId)
+        {
+            _wellId = wellId;
+        }
+
+        public List<WellCustomField> getWellFields()
+        {
+            return _wellFields;
+        }
+
+        public void setWellFields(List<WellCustomField> wellFields)
+        {
+            _wellFields = wellFields;
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class SetFieldsAction extends MutatingApiAction<SetFieldsForm>
+    {
+        @Override
+        public Object execute(SetFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().setFields(getContainer(), getUser(), form.getPlateId(), form.getWellId(), form.getWellFields()));
         }
     }
 }

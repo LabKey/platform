@@ -24,6 +24,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Transient;
@@ -33,6 +34,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -59,6 +61,8 @@ public class PlateImpl extends PropertySetImpl implements Plate
     private List<WellGroupImpl> _deletedGroups;
 
     private WellImpl[][] _wells;
+    private Map<Integer, WellImpl> _wellMap;
+
     private int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private int _plateNumber;
 
@@ -480,6 +484,13 @@ public class PlateImpl extends PropertySetImpl implements Plate
         }
     }
 
+    @Override
+    @Nullable
+    public Well getWell(int rowId)
+    {
+        return _wellMap != null ? _wellMap.get(rowId) : null;
+    }
+
     @JsonIgnore
     @Override
     public WellGroup getWellGroup(WellGroup.Type type, String wellGroupName)
@@ -500,6 +511,15 @@ public class PlateImpl extends PropertySetImpl implements Plate
     public void setWells(WellImpl[][] wells)
     {
         _wells = wells;
+
+        // create a rowId to well map
+        _wellMap = new HashMap<>();
+        Arrays.stream(_wells).forEach(w -> {
+            Arrays.stream(w).forEach(well -> {
+                if (well != null)
+                    _wellMap.put(well.getRowId(), well);
+            });
+        });
     }
 
     @JsonIgnore

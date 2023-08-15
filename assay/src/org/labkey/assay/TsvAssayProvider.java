@@ -85,6 +85,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: brittp
@@ -364,15 +365,29 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain resultsDomain = getResultsDomain(protocol);
             if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)))
+                ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
+                Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
+
+                if (!existingFields.contains(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
                 {
                     GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     wellLocation.setShownInUpdateView(false);
 
-                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
                     newFields.add(wellLocation);
-                    newFields.addAll(update.getFields());
+                }
 
+                if (!existingFields.contains(AssayResultDomainKind.WELL_LSID_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLsid.setShownInUpdateView(false);
+                    wellLsid.setHidden(true);
+
+                    newFields.add(wellLsid);
+                }
+
+                if (!newFields.isEmpty())
+                {
+                    newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
             }
