@@ -22,6 +22,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.PopupMenuView;
@@ -395,14 +396,15 @@ public class ViewServiceImpl implements ViewService
                 out.print("\">");
 
                 if (StringUtils.isEmpty(linkHref))
-                    linkHref = "javascript:void(0);";
+                    linkHref = "#";
 
-                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
+                var id = HttpView.currentPageConfig().makeId("button");
+                out.print("<a id=\"" + filter(id) + "\" href=\"" + PageFlowUtil.filter(linkHref) + "\"");
                 if (current.isNoFollow())
                     out.print(" rel=\"nofollow\"");
-                if (StringUtils.isNotEmpty(script))
-                    out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
                 out.print(">");
+                if (StringUtils.isNotEmpty(script))
+                    HttpView.currentPageConfig().addHandler(id, "click", script);
             }
 
             if (null != current.getImageCls())
@@ -488,8 +490,9 @@ public class ViewServiceImpl implements ViewService
                 // Wrapped in immediately invoke function expression because of Issue 16953
                 if (PageFlowUtil.isPageAdminMode(getContext()))
                 {
-                    NavTree permissionsNav = new NavTree("Permissions",
-                            "javascript:LABKEY.Portal._showPermissions(" +
+                    NavTree permissionsNav = new NavTree("Permissions");
+                    permissionsNav.setScript(
+                            "LABKEY.Portal._showPermissions(" +
                                     config._webpart.getRowId() + "," +
                                     permissionString + "," +
                                     containerPathString + ");"
