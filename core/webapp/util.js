@@ -13,7 +13,7 @@ function getHelpDiv()
     if (!_helpDiv)
     {
         LABKEY.addMarkup(
-                '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
+                '<div id="helpDiv"' +
                 '   style="display:none;">'+
                 '  <table id="helpDivTable">'+
                 '    <tr class="labkey-wp-header" width="100%">'+
@@ -21,7 +21,7 @@ function getHelpDiv()
                 '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
                 '      </td>'+
                 '      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
-                '      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
+                '      <img id="helpDivClose" alt="close" src="' + LABKEY.imagePath + '/partdelete.png">'+
                 '      </td>'+
                 '     </tr>'+
                 '    <tr>'+
@@ -37,6 +37,11 @@ function getHelpDiv()
             _helpDiv = helpDiv;
             document.addEventListener('keyup', helpDivHideHandler);
             document.addEventListener('click', helpDivHideHandler);
+            helpDiv['onmouseover'] = mouseEnteredHelpDiv;
+            helpDiv['onmouseout'] = mouseExitedHelpDiv;
+            const close = document.getElementById("helpDivClose");
+            if (close)
+                close['onclick'] = function(){hideHelpDiv(true);};
         }
     }
     return _helpDiv;

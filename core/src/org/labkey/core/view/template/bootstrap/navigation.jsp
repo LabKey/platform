@@ -261,7 +261,7 @@
     </div>
 </nav>
 <% if (model.getCustomMenus().size() > 0) { %>
-<script type="application/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     var __menus = {};
     LABKEY.Utils.onReady(function() {
         <%

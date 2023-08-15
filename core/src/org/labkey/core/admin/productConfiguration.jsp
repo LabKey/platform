@@ -66,7 +66,7 @@
 <% } %>
 
 </div>
-<script type="application/javascript" nonce="<%=getScriptNonce()%>">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function () {
         let inputList = document.querySelectorAll('div.product-group-item input');
         inputList.forEach(function (input) {

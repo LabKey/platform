@@ -116,8 +116,8 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
                     view.setCustomize(customize);
                 }
 
-                String editScript = "editDataViews(" + webPart.getRowId() + ");";
-                NavTree edit = new NavTree("Edit", "javascript:" + editScript, null, "fa fa-pencil");
+                NavTree edit = new NavTree("Edit", null, null, "fa fa-pencil");
+                edit.setScript("editDataViews(" + webPart.getRowId() + ");");
                 view.addCustomMenu(edit);
             }
 

@@ -17,7 +17,6 @@ package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 
@@ -46,7 +45,8 @@ public class TextArea extends Input
     @Override
     protected void doInput(Appendable sb) throws IOException
     {
-        sb.append("<textarea name=\"").append(h(getName())).append("\"");
+        var id = generateId("textarea");
+        sb.append("<textarea id=\"").append(h(id)).append("\" name=\"").append(h(getName())).append("\"");
 
         if (getColumns() != -1)
             sb.append(" cols=\"").append(h(getColumns())).append("\"");
@@ -60,7 +60,7 @@ public class TextArea extends Input
         if (StringUtils.isNotEmpty(getPlaceholder()))
             sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
 
-        doInputEvents(sb);
+        doInputEvents(id, sb);
 
         if (isDisabled())
             sb.append(" disabled");

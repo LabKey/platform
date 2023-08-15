@@ -54,7 +54,7 @@
     }
 %>
 
-<script type="application/javascript">
+<script type="text/javascript">
 
     (function($){
         testConnection = function(){

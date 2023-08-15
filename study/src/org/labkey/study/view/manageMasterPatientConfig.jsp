@@ -67,7 +67,7 @@
     }
 %>
 
-<script type="application/javascript" nonce="<%=getScriptNonce()%>">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     (function($){
         var datasetMap = <%=text(jsonMapper.writeValueAsString(datasetMap))%>;
@@ -225,7 +225,7 @@ else
 <%  }
 %>
 
-<script type="application/javascript" nonce="<%=getScriptNonce()%>">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     LABKEY.Query.schemaSelectInput({renderTo: 'schemaNameInput', initValue: <%=q(!StringUtils.isBlank(settings.getSchema()) ? settings.getSchema() : "study")%>});
     LABKEY.Query.querySelectInput({renderTo: 'queryNameInput', schemaInputId: 'schemaNameInput', initValue: <%=q(!StringUtils.isBlank(settings.getQuery()) ? settings.getQuery() : "empty")%>});
 </script>

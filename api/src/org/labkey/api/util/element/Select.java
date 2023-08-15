@@ -57,8 +57,9 @@ public class Select extends Input
     @Override
     protected void doInput(Appendable sb) throws IOException
     {
-        sb.append("<select")
-                .append(" name=\"").append(h(getName())).append("\"");
+        var id = generateId("select");
+
+        sb.append("<select").append(" id=\"").append(h(id)).append("\" name=\"").append(h(getName())).append("\"");
 
         if (StringUtils.isNotEmpty(getId()))
             sb.append(" id=\"").append(h(getId())).append("\"");
@@ -73,7 +74,7 @@ public class Select extends Input
 
         doStyles(sb);
 
-        doInputEvents(sb);
+        doInputEvents(id, sb);
 
         if (isDisabled())
             sb.append(" disabled");
