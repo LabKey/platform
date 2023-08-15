@@ -25,6 +25,8 @@ public interface Position
 {
     Integer getRowId();
 
+    String getLsid();
+
     int getColumn();
 
     int getRow();

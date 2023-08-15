@@ -583,6 +583,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
+                    assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
 
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
