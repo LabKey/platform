@@ -115,7 +115,7 @@
     else
         commentTextStr += ".";
 
-    StringBuilder relatedIssues = new StringBuilder("javascript:createRelatedIssue(");
+    StringBuilder relatedIssues = new StringBuilder("createRelatedIssue(");
     relatedIssues.append(q(issueDef.getName())).append(",");
 
     relatedIssues.append("{");
@@ -202,7 +202,7 @@
                 }
                 if (!getUser().isGuest())
                 {
-                    navTree.addChild("Create related " + names.singularName.toLowerCase(), relatedIssues.toString());
+                    navTree.addChild("Create related " + names.singularName.toLowerCase()).setScript(relatedIssues.toString());
                     navTree.addChild("Email preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
                 }
                 if ( IssueManager.hasRelatedIssues(issue, user))

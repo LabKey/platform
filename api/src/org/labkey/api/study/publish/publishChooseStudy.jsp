@@ -267,8 +267,7 @@
         }
     %>
 
-    <% addHandler("next-btn", "click", "return handleNext();"); %>
-    <labkey:button text="Next" id="next-btn" submit="false" enabled="<%=!exceedsMaxRows || !bean.getBatchIds().isEmpty()%>"/>
+    <labkey:button text="Next" onclick="handleNext();" id="next-btn" submit="false" enabled="<%=!exceedsMaxRows || !bean.getBatchIds().isEmpty()%>"/>
     <labkey:button text="Cancel" href="<%=bean.getReturnURL()%>"/>
 
     <%

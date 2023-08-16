@@ -159,7 +159,8 @@ if (settings.hasFormatPicker())
             <table id="filePickerTable"></table>
             <table>
                 <tbody>
-                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
+                <% addHandler("filePickerLink", "click", "addFilePicker('filePickerTable','filePickerLink'); return false;"); %>
+                <tr><td><a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
                 </tbody>
             </table>
         </td>

@@ -117,7 +117,8 @@
             </ul>
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
-                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;" onChange="LABKEY.setDirty(true);"><%=h(form.get("body"))%></textarea>
+                    <% addHandler("textAreaMessageTabsContent", "change", "LABKEY.setDirty(true);"); %>
+                    <textarea id="textAreaMessageTabsContent" cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
@@ -129,7 +130,8 @@
     if (settings.hasFormatPicker())
     {
         %><tr><td class="labkey-form-label">Render As</td><td colspan="2">
-        <select name="rendererType" id="rendererType" onChange="LABKEY.setDirty(true);"><%
+        <% addHandler("selectRendererType", "change", "LABKEY.setDirty(true);"); %>
+        <select id="selectRendererType" name="rendererType" id="rendererType"><%
             for (WikiRendererType type : bean.renderers)
             {
                 String displayName = type.getDisplayName();
@@ -145,7 +147,8 @@
             <table id="filePickerTable"></table>
             <table>
                 <tbody>
-                <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
+                <% addHandler("filePickerLink", "click", "addFilePicker('filePickerTable','filePickerLink'); return false;"); %>
+                <tr><td><a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a></td></tr>
                 </tbody>
             </table>
         </td>

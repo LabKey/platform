@@ -337,8 +337,8 @@
     if (study.allowExport(getUser()))
     {
 %>
-        <%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showCreateStudyWizard('ancillary')") %>
-        <%= button("Publish Study").href("javascript:void(0)").onClick("showCreateStudyWizard('publish')") %>
+        <%= button("Create Ancillary Study").onClick("showCreateStudyWizard('ancillary'); return false;") %>
+        <%= button("Publish Study").onClick("showCreateStudyWizard('publish'); return false;") %>
 <%
     }
 %>
