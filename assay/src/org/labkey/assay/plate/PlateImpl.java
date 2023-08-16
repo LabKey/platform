@@ -61,7 +61,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
     private List<WellGroupImpl> _deletedGroups;
 
     private WellImpl[][] _wells;
-    private Map<Integer, WellImpl> _wellMap;
+    private Map<Integer, Well> _wellMap;
 
     private int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private int _plateNumber;
@@ -523,9 +523,10 @@ public class PlateImpl extends PropertySetImpl implements Plate
     }
 
     @JsonIgnore
-    public WellImpl[][] getWells()
+    @Override
+    public List<Well> getWells()
     {
-        return _wells;
+        return _wellMap.values().stream().toList();
     }
 
     @Override

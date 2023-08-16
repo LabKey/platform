@@ -35,6 +35,7 @@ import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
@@ -336,16 +337,17 @@ public class PlateManager implements PlateService
         return PlateCache.getPlate(container, lsid);
     }
 
-    /**
-     * Note that this does not use the cache.
-     */
-    public @Nullable Plate getPlate(String lsid)
+    public @Nullable Plate getPlate(Lsid lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsid);
-        PlateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateImpl.class);
-        populatePlate(plate);
-
-        return plate;
+        String container = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), Collections.singleton("Container"), filter, null).getObject(String.class);
+        if (container != null)
+        {
+            Container c = ContainerManager.getForId(container);
+            if (c != null)
+                return PlateCache.getPlate(c, lsid);
+        }
+        return null;
     }
 
     /**
@@ -353,10 +355,7 @@ public class PlateManager implements PlateService
      */
     public boolean plateExists(Container c, String name)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("Name"), name);
-
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getRowCount() > 0;
+        return PlateCache.getPlate(c, name) != null;
     }
 
     private Collection<Plate> getPlates(Container c)
@@ -395,7 +394,6 @@ public class PlateManager implements PlateService
         assert false : "Unbound well group was not found: bound group should always be present.";
         return null;
     }
-
 
     private void setProperties(Container container, PropertySetImpl propertySet)
     {
@@ -609,9 +607,9 @@ public class PlateManager implements PlateService
             Map<Pair<Integer, Integer>, PositionImpl> existingPositionMap = new HashMap<>();
             if (updateExisting)
             {
-                for (PositionImpl existingPosition : getWells(plate))
+                for (Well existingPosition : plate.getWells())
                 {
-                    existingPositionMap.put(Pair.of(existingPosition.getRow(), existingPosition.getCol()), existingPosition);
+                    existingPositionMap.put(Pair.of(existingPosition.getRow(), existingPosition.getColumn()), (PositionImpl) existingPosition);
                 }
             }
             else
@@ -767,18 +765,12 @@ public class PlateManager implements PlateService
     {
         final AssayDbSchema schema = AssayDbSchema.getInstance();
 
-        SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
-        plateFilter.addCondition(FieldKey.fromParts("RowId"), plateId);
-        PlateImpl plate = new TableSelector(schema.getTableInfoPlate(),
-                plateFilter, null).getObject(PlateImpl.class);
-        WellGroupImpl[] wellgroups = getWellGroups(plate);
-        WellImpl[] wells = getWells(plate);
-
+        Plate plate = PlateCache.getPlate(container, plateId);
         List<String> lsids = new ArrayList<>();
         lsids.add(plate.getLSID());
-        for (WellGroupImpl wellgroup : wellgroups)
+        for (WellGroup wellgroup : plate.getWellGroups())
             lsids.add(wellgroup.getLSID());
-        for (WellImpl well : wells)
+        for (Well well : plate.getWells())
             lsids.add(well.getLsid());
 
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
@@ -960,7 +952,7 @@ public class PlateManager implements PlateService
             if (lsid == null)
                 return null;
 
-            return PlateManager.get().getPlate(lsid.toString());
+            return PlateManager.get().getPlate(lsid);
         }
 
         @Override
@@ -1038,10 +1030,10 @@ public class PlateManager implements PlateService
     public Plate copyPlate(Plate source, User user, Container destContainer)
             throws Exception
     {
-        Plate destination = PlateService.get().getPlate(destContainer, source.getName());
+        Plate destination = getPlate(destContainer, source.getName());
         if (destination != null)
             throw new PlateService.NameConflictException(source.getName());
-        destination = PlateService.get().createPlateTemplate(destContainer, source.getType(), source.getRows(), source.getColumns());
+        destination = createPlateTemplate(destContainer, source.getType(), source.getRows(), source.getColumns());
         destination.setName(source.getName());
         for (String property : source.getPropertyNames())
             destination.setProperty(property, source.getProperty(property));
@@ -1055,7 +1047,7 @@ public class PlateManager implements PlateService
                 copyGroup.setProperty(property, originalGroup.getProperty(property));
         }
         save(destContainer, user, destination);
-        return this.getPlate(destContainer, destination.getName());
+        return getPlate(destContainer, destination.getName());
     }
 
     @Override

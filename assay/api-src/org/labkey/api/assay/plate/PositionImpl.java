@@ -143,11 +143,6 @@ public class PositionImpl implements Position
         setColumn(column);
     }
 
-    public int getCol()
-    {
-        return getColumn();
-    }
-
     public Integer getPlateId()
     {
         return _plateId;
