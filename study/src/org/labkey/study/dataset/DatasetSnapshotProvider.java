@@ -700,6 +700,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     SnapshotDependency.SourceDataType data = QUEUE.take();
                     try
                     {
+                        // Issue 48388 - set the environment for compliance logging purposes
+                        QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, data.getContainer());
+                        QueryService.get().setEnvironment(QueryService.Environment.USER, User.getSearchUser());
                         List<QuerySnapshotDefinition> dependencies = getDependencies(data);
                         for (QuerySnapshotDefinition snapshotDef : dependencies)
                         {
@@ -711,6 +714,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     {
                         LOG.error(e);
                         ExceptionUtil.logExceptionToMothership(null, e);
+                    }
+                    finally
+                    {
+                        QueryService.get().clearEnvironment();
                     }
                 }
             }
