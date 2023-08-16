@@ -117,8 +117,8 @@
             </ul>
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
-                    <% addHandler("textAreaMessageTabsContent", "change", "LABKEY.setDirty(true);"); %>
-                    <textarea id="textAreaMessageTabsContent" cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
+                    <% addHandler("body", "change", "LABKEY.setDirty(true);"); %>
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
