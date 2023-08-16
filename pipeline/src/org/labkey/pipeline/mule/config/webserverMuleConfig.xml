@@ -137,7 +137,7 @@
             returnClass="org.labkey.api.pipeline.PipelineJob"/>
         <transformer name="JMSMessageToXML" className="org.mule.providers.jms.transformers.JMSMessageToObject"
             returnClass="java.lang.String"/>
-        <transformer name="XMLToStatus" className="org.mule.transformers.xml.XmlToObject"
+        <transformer name="XMLToStatus" className="org.labkey.pipeline.mule.transformers.XmlToObject"
             returnClass="org.labkey.pipeline.mule.StatusRequest"/>
 
         <transformer name="StatusToXML" className="org.labkey.pipeline.mule.transformers.ObjectToXml"
