@@ -3,8 +3,11 @@ package org.labkey.assay.plate.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.exp.property.DomainProperty;
 
+/**
+ * Represents a custom field that is configured for a specific plate
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PlateField
+public class PlateCustomField
 {
     private String _label;
     private String _name;
@@ -12,11 +15,11 @@ public class PlateField
     private String _rangeURI;
     private String _container;
 
-    public PlateField()
+    public PlateCustomField()
     {
     }
 
-    public PlateField(DomainProperty prop)
+    public PlateCustomField(DomainProperty prop)
     {
         _name = prop.getName();
         _label = prop.getLabel();

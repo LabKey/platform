@@ -18,6 +18,7 @@ package org.labkey.assay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayResultTable;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWellExclusionService;
@@ -155,40 +156,58 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             }
 
             List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
-            Domain plateDataDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(getProtocol());
-            if (plateDataDomain != null)
+            if (getProvider().isPlateMetadataEnabled(getProtocol()))
             {
-                List<FieldKey> plateDefaultColumns = new ArrayList<>();
-                ColumnInfo lsidCol = getColumn("Lsid");
-                if (lsidCol != null)
+                // legacy standard assay plate metadata support
+                Domain plateDataDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(getProtocol());
+                if (plateDataDomain != null)
                 {
-                    BaseColumnInfo col = new AliasedColumn("PlateData", lsidCol);
-                    col.setFk(QueryForeignKey
+                    List<FieldKey> plateDefaultColumns = new ArrayList<>();
+                    ColumnInfo lsidCol = getColumn("Lsid");
+                    if (lsidCol != null)
+                    {
+                        BaseColumnInfo col = new AliasedColumn("PlateData", lsidCol);
+                        col.setFk(QueryForeignKey
                                 .from(getUserSchema(), getContainerFilter())
                                 .to(PLATE_DATA_TABLE, "Lsid", null)
+                        );
+                        col.setUserEditable(false);
+                        col.setCalculated(true);
+                        addColumn(col);
+
+                        for (DomainProperty prop : plateDataDomain.getProperties())
+                        {
+                            plateDefaultColumns.add(FieldKey.fromParts("PlateData", prop.getName()));
+                        }
+
+                        // show the layer columns first
+                        plateDefaultColumns.sort((o1, o2) -> {
+                            if (o1.toString().toLowerCase().endsWith(PLATE_DATA_LAYER_SUFFIX))
+                                return -1;
+                            else if (o2.toString().toLowerCase().endsWith(PLATE_DATA_LAYER_SUFFIX))
+                                return 1;
+                            else
+                                return o1.toString().compareTo(o2.toString());
+                        });
+                        defaultColumns.addAll(plateDefaultColumns);
+                    }
+                }
+                setDefaultVisibleColumns(defaultColumns);
+
+                // join to the well table which may have plate metadata
+                ColumnInfo wellLsidCol = getColumn(AssayResultDomainKind.WELL_LSID_COLUMN_NAME);
+                if (wellLsidCol != null)
+                {
+                    BaseColumnInfo col = new AliasedColumn("Well", wellLsidCol);
+                    col.setFk(QueryForeignKey
+                            .from(getUserSchema(), getContainerFilter())
+                            .schema("plate").table("well").key("Lsid")
                     );
                     col.setUserEditable(false);
                     col.setCalculated(true);
                     addColumn(col);
-
-                    for (DomainProperty prop : plateDataDomain.getProperties())
-                    {
-                        plateDefaultColumns.add(FieldKey.fromParts("PlateData", prop.getName()));
-                    }
-
-                    // show the layer columns first
-                    plateDefaultColumns.sort((o1, o2) -> {
-                        if (o1.toString().toLowerCase().endsWith(PLATE_DATA_LAYER_SUFFIX))
-                            return -1;
-                        else if (o2.toString().toLowerCase().endsWith(PLATE_DATA_LAYER_SUFFIX))
-                            return 1;
-                        else
-                            return o1.toString().compareTo(o2.toString());
-                    });
-                    defaultColumns.addAll(plateDefaultColumns);
                 }
             }
-            setDefaultVisibleColumns(defaultColumns);
         }
     }
 
