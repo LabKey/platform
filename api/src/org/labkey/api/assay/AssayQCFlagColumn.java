@@ -98,7 +98,7 @@ public class AssayQCFlagColumn extends ExprColumn
 
                             // add onclick handler to call the QCFlag toggle window creation function
                             // users with update perm will be able to change enabled state and edit comment, others will only be able to read flag details
-                            Link.LinkBuilder linkBuilder = new Link.LinkBuilder(getCollapsedQCFlagOutput(values, enabled).toString())
+                            Link.LinkBuilder linkBuilder = new Link.LinkBuilder(getCollapsedQCFlagOutput(values, enabled))
                                     .onClick("showQCFlagToggleWindow(" + jsString(_schemaName) + ", " + runId + "," + _editable + "); return false;");
                             out.write(linkBuilder.toString());
                         }
