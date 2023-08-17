@@ -263,6 +263,10 @@
             <rtexprvalue>true</rtexprvalue>
         </attribute>
         <attribute>
+            <name>onClick</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
             <name>onChange</name>
             <rtexprvalue>true</rtexprvalue>
         </attribute>

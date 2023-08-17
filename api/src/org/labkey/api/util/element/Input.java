@@ -104,6 +104,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final boolean _multiple;
     private final String _name;
     private final boolean _needsWrapping;
+    private final String _onClick;
     private final String _onChange;
     private final String _onKeyUp;
     private final String _placeholder;
@@ -148,6 +149,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         _min = builder._min;
         _multiple = builder._multiple == null ? false : builder._multiple;
         _name = builder._name;
+        _onClick = builder._onClick;
         _onChange = builder._onChange;
         _onKeyUp = builder._onKeyUp;
         _placeholder = builder._placeholder;
@@ -243,6 +245,11 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     public String getName()
     {
         return _name;
+    }
+
+    public String getOnClick()
+    {
+        return _onClick;
     }
 
     public String getOnChange()
@@ -590,6 +597,8 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     protected void doInputEvents(String id, Appendable sb) throws IOException
     {
         var pageConfig = HttpView.currentPageConfig();
+        if (StringUtils.isNotEmpty(getOnClick()))
+            pageConfig.addHandler(id, "click", getOnClick());
         if (StringUtils.isNotEmpty(getOnChange()))
             pageConfig.addHandler(id, "change", getOnChange());
         if (StringUtils.isNotEmpty(getOnKeyUp()))
@@ -713,6 +722,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         private String _min;
         private Boolean _multiple;
         private String _name;
+        private String _onClick;
         private String _onChange;
         private String _onKeyUp;
         private String _placeholder;
@@ -811,6 +821,12 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         public T name(String name)
         {
             _name = name;
+            return (T)this;
+        }
+
+        public T onClick(String onClick)
+        {
+            _onClick = onClick;
             return (T)this;
         }
 

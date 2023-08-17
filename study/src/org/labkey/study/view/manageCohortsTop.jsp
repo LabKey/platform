@@ -131,8 +131,8 @@
                                 "If set, cohort assignments will be reloaded for all " + subjectNounPlural + " every time this dataset is re-imported.")%>
             </th>
             <td>
-                <select name="participantCohortDatasetId"
-                        onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
+                <% addHandler("participantCohortDatasetId", "change", "document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()"); %>
+                <select id="participantCohortDatasetId" name="participantCohortDatasetId">
                     <option value="-1">[None]</option>
                     <%
                         for (Dataset dataset : manager.getDatasetDefinitions(study))

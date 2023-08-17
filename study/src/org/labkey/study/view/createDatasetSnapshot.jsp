@@ -77,12 +77,14 @@
                     <tr>
                         <td style="padding-right: 10px">Manual&nbsp;Refresh</td>
                         <td>
-                            <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() == 0)%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();">
+                            <% addHandler("manualUpdate", "click", "onAutoUpdate();"); %>
+                            <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() == 0)%> type="radio" name="updateType" value="manual" id="manualUpdate">
                         </td>
                     </tr>
                     <tr>
                         <td style="padding-right: 10px">Automatic&nbsp;Refresh</td><td>
-                            <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" onclick="onAutoUpdate();">
+                        <% addHandler("updateType", "click", "onAutoUpdate();"); %>
+                        <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" id="updateType">
                             <select name="updateDelay" id="updateDelay" style="display:<%= HtmlString.unsafe(bean.getUpdateDelay() == 0 ? "none" : "block") %>">
                                 <labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options>
                             </select>
