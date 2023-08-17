@@ -170,14 +170,14 @@ function setElementDisplayByCheckbox(checkbox, element)
                     <labkey:input type='checkbox' value='true' id='ccCheckbox'
                             name='ccCheckbox'
                             onClick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
-                            checked="<%(ccChecked)%>" />Always Send CC
+                            checked="<%=(ccChecked)%>" />Always Send CC
                 </label>
             </td>
 
         </tr>
 
         <tr id="ccArea" style="display:<%= text(ccChecked ? "" : "none")%>">
-            <th align="right"class="labkey-form-label local-left-label-width-th">Always CC<br>(one per line):</th>
+            <th align="right" class="labkey-form-label local-left-label-width-th">Always CC<br>(one per line):</th>
             <td>
                 <labkey:autoCompleteTextArea name="cc"
                                              id="cc"
