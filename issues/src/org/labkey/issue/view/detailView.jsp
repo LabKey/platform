@@ -207,12 +207,16 @@
                 }
                 if ( IssueManager.hasRelatedIssues(issue, user))
                 {
-                    NavTree child = new NavTree("Show related comments", "javascript:void(0);");
-                    child.setScript("javascript:toggleComments(this)");
+                    NavTree child = new NavTree("Show related comments");
+                    child.setScript("toggleComments(this); return false;");
                     navTree.addChild(child);
                 }
                 if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
-                    navTree.addChild("Move", "javascript:moveIssue()");
+                {
+                    var move = new NavTree("Move");
+                    move.setScript("moveIssue(); return false;");
+                    navTree.addChild(move);
+                }
                 navTree.addChild("Print", context.cloneActionURL().replaceParameter("_print", "1"));
                 navTree.addChildren(additionalHeaderLinks);
                 PopupMenuView.renderTree(navTree, out); %>
