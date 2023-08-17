@@ -16,12 +16,10 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
@@ -190,7 +188,7 @@ public class ViewServiceImpl implements ViewService
                 out.print("<tr>");
 
                 String rootId = config._rootId;
-                String expandCollapseGifId = HttpView.currentPageConfig().makeId("expandCollapse-");
+                String expandCollapseGifId = "expandCollapse-" + rootId;
 
                 boolean isCollapsible = config._isCollapsible;
                 if (isCollapsible)
@@ -646,7 +644,7 @@ public class ViewServiceImpl implements ViewService
 
         public void renderCollapsiblePortalTitle(PrintWriter out)
         {
-            String expandCollapseGifId = HttpView.currentPageConfig().makeId("expand");
+            String expandCollapseGifId = "expandCollapse-" + getConfig()._rootId;
 
             if (getConfig()._rootId == null)
                 throw new IllegalArgumentException("pathToHere or rootId not provided");
