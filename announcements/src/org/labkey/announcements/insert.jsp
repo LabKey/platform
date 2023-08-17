@@ -130,8 +130,8 @@
     if (settings.hasFormatPicker())
     {
         %><tr><td class="labkey-form-label">Render As</td><td colspan="2">
-        <% addHandler("selectRendererType", "change", "LABKEY.setDirty(true);"); %>
-        <select id="selectRendererType" name="rendererType" id="rendererType"><%
+        <% addHandler("rendererType", "change", "LABKEY.setDirty(true);"); %>
+        <select name="rendererType" id="rendererType"><%
             for (WikiRendererType type : bean.renderers)
             {
                 String displayName = type.getDisplayName();
