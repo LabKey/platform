@@ -57,7 +57,7 @@
                 { %>
                     <tr class="<%=h(roleIndex % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
                         <td><input type="hidden" name="rowIds" value="<%= material.getRowId()%>" /><%= h(material.getName())%></td>
-                        <% addHandler("inputRole" + roleIndex, "change", "document.getElementById('customRole" + roleIndex + "').disabled = this.value != " + q(DeriveSamplesChooseTargetBean.CUSTOM_ROLE + ";")); %>
+                        <% addHandler("inputRole" + roleIndex, "change", "document.getElementById('customRole" + roleIndex + "').disabled = this.value !== " + q(DeriveSamplesChooseTargetBean.CUSTOM_ROLE) + ";"); %>
                         <td><select id="inputRole<%= roleIndex %>" name="inputRole<%= roleIndex %>">
                             <option value=""></option>
                             <% for (String inputRole : bean.getInputRoles())
