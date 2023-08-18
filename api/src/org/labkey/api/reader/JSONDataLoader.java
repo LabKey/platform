@@ -36,6 +36,7 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.ExtendedApiQueryResponse.ColMapEntry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.iterator.CloseableIterator;
@@ -412,11 +413,31 @@ public class JSONDataLoader extends DataLoader
 
                 parser.nextToken();
             }
-            else if (fieldName.equals("type"))
+//            else if (fieldName.equals("type"))
+//            {
+//                type = parser.getValueAsString();
+////                if (type.equals("float"))
+////                {
+////                    type = "double";
+////                }
+//                if (type == null)
+//                    throw new JsonParseException("Failed to parse type property", loc);
+//
+//                parser.nextToken();
+//            }
+            else if (fieldName.equals("jdbcType"))
             {
-                type = parser.getValueAsString();
-                if (type == null)
-                    throw new JsonParseException("Failed to parse type property", loc);
+                String value = parser.getValueAsString();
+
+                if (value == null)
+                    throw new JsonParseException("Failed to parse jdbc type property", loc);
+
+                JdbcType jdbcType = JdbcType.valueOf(type);
+
+                if (jdbcType == null)
+                    throw new JsonParseException("Failed to parse jdbc type property", loc);
+
+                type = jdbcType.getJavaClass().getName();
 
                 parser.nextToken();
             }
