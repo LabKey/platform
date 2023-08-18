@@ -70,7 +70,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
@@ -608,22 +607,26 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
-                    try
-                    {
-                        if (!_derivativeKeys.isEmpty())
-                            StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
+                StudyPublishService sps = StudyPublishService.get();
+                if (sps != null)
+                {
+                    _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                        try
+                        {
+                            if (!_derivativeKeys.isEmpty())
+                                sps.autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
 
-                        if (!_rows.isEmpty())
-                            StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
-                    }
-                    catch (ExperimentException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
+                            if (!_rows.isEmpty())
+                                sps.autoLinkSamples(_sampleType, _rows, _container, _user);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                return false;
+                    return false;
+                }
             }
             boolean isDerivative = false;
             if (_hasParentInput)
