@@ -321,8 +321,8 @@ public class AuthenticationManager
             Arrays.stream(rowIds)
                 .filter(id->id > 0)
                 .forEach(id->{
-                    count.increment();
-                    Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Table.update() requires mutable map
+                    int countInt = count.incrementAndGet();
+                    Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", countInt)), id); // Table.update() requires mutable map
                 });
             AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(name + " configurations were reordered");
             event.setChanges("reordered");

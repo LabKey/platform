@@ -168,7 +168,11 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             _unwrapped.mark();  // unwrapped _delegate
         boolean ret = super.next();
         if (!_context.getErrors().hasErrors() && ret && !pkColumns.isEmpty())
+        {
             prefetchExisting();
+            if (_context.getErrors().hasErrors())
+                return false;
+        }
         return ret;
     }
 
@@ -387,11 +391,15 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
                 _unwrapped.reset(); // unwrapped _delegate
                 _delegate.next();
             }
+            catch (InvalidKeyException x)
+            {
+                _context.getErrors().addRowError(new ValidationException(x.getMessage()));
+            }
             catch (SQLException sqlx)
             {
                 throw new RuntimeSQLException(sqlx);
             }
-            catch (QueryUpdateServiceException|InvalidKeyException x)
+            catch (QueryUpdateServiceException x)
             {
                 throw UnexpectedException.wrap(x);
             }

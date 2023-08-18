@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -119,9 +120,9 @@ public class SchemaColumnMetaData
                 }
 
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
-                    colInfo = new VirtualColumnInfo(xmlColumn.getColumnName(), tinfo);
+                    colInfo = new VirtualColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 else
-                    colInfo = new BaseColumnInfo(xmlColumn.getColumnName(), tinfo);
+                    colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
                 addColumn(colInfo);
@@ -538,11 +539,11 @@ public class SchemaColumnMetaData
 
 
     /** On upgrade there may be columns in .xml that are not in the database */
-    private class VirtualColumnInfo extends NullColumnInfo
+    private static class VirtualColumnInfo extends NullColumnInfo
     {
-        VirtualColumnInfo(String name, TableInfo tinfo)
+        VirtualColumnInfo(FieldKey fieldKey, TableInfo tinfo)
         {
-            super(tinfo, name, (String)null);
+            super(tinfo, fieldKey, (String)null);
             setIsUnselectable(true);    // minor hack, to indicate to other code that wants to detect this
         }
     }

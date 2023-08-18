@@ -87,6 +87,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
@@ -1160,7 +1161,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
             c.setName(s.getName());
         }
 
-        HashSet<String> seenProperties = new HashSet<>();
+        Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
+        Set<String> seenProperties = new HashSet<>();
         for (DomainProperty p : domain.getProperties())
         {
             if (kind.hasPropertiesIncludeBaseProperties() && basePropertyNames.contains(p.getName().toLowerCase()))
@@ -1193,7 +1195,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
             // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
             // wants them based on its current property order
             ti.setColumnIndex(c, index++);
-            PropertyColumn.copyAttributes(null, c, p, p.getContainer(), null);
+            defaultsSupplier = PropertyColumn.copyAttributes(null, c, p, p.getContainer(), null, defaultsSupplier);
 
             if (p.isMvEnabled())
             {

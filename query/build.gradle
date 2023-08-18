@@ -43,7 +43,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "eigenbase:eigenbase-properties:${eigenbasePropertiesVersion}",
+            "net.hydromatic:eigenbase-properties:${eigenbasePropertiesVersion}",
             "Mondrian",
             "Pentaho",
             "http://mondrian.pentaho.com/",
@@ -56,7 +56,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "eigenbase:eigenbase-resgen:${eigenbaseResgenVersion}",
+            "net.hydromatic:eigenbase-resgen:${eigenbaseResgenVersion}",
             "Mondrian",
             "Pentaho",
             "http://mondrian.pentaho.com/",

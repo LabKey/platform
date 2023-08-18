@@ -39,13 +39,6 @@ public class NullColumnInfo extends BaseColumnInfo
         setReadOnly(true);
     }
 
-    public NullColumnInfo(TableInfo parent, String name, String sqlType)
-    {
-        super(name, parent);
-        setSqlTypeName(sqlType);
-        setReadOnly(true);
-    }
-
     public NullColumnInfo(TableInfo parent, String name, JdbcType jdbcType)
     {
         super(name, parent, jdbcType);

@@ -125,6 +125,7 @@ public class PositionImpl implements Position
         _row = row;
     }
 
+    @Override
     public String getLsid()
     {
         return _lsid;
