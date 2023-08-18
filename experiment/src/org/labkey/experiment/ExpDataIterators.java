@@ -2616,6 +2616,7 @@ public class ExpDataIterators
             try (FileWriter writer = new FileWriter(typeData.dataFile, true))
             {
                 writer.write(StringUtils.join(typeData.dataRows, System.lineSeparator()));
+                writer.write(System.lineSeparator()); // Issue 48442: add a new line to the end so the next written rows start on a new line
                 typeData.dataRows.clear();
             }
             catch (IOException e)
