@@ -1,5 +1,4 @@
 import org.labkey.gradle.util.BuildUtils
-import org.labkey.gradle.util.ExternalDependency
 
 plugins {
     id 'org.labkey.build.module'
@@ -85,6 +84,11 @@ dependencies {
                 exclude group: "log4j", module:"log4j"
                 // Avoid classloader conflicts with Tomcat's copy
                 exclude group: 'javax.activation', module: 'javax.activation-api'
+
+                // Avoid conflicts with declared dependencies on the newer versions from 'net.hydromatic'
+                exclude group: 'eigenbase', module: 'eigenbase-properties'
+                exclude group: 'eigenbase', module: 'eigenbase-resgen'
+                exclude group: 'eigenbase', module: 'eigenbase-xom'
             }
     )
 
