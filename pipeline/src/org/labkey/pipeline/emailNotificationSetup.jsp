@@ -148,7 +148,8 @@
         <tr style="display:<%=displaySuccess%>">
             <td style="padding-left: 20px;">
                 <%=getTitle(PipelineEmailPreferences.PREF_SUCCESS_INTERVAL, c, "Notification frequency:")%>&nbsp;
-                <select id="successNotifyInterval" name="successNotifyInterval" onchange="updateSuccessNotifyInterval();">
+                <% addHandler("successNotifyInterval", "change", "updateSuccessNotifyInterval();"); %>
+                <select id="successNotifyInterval" name="successNotifyInterval">
                     <option value="0"<%=selected("0",successNotifyInterval)%>>every job</option>
                     <option value="1"<%=selected("1",successNotifyInterval)%>>1 hour</option>
                     <option value="2"<%=selected("2",successNotifyInterval)%>>2 hours</option>
@@ -199,7 +200,8 @@
         <tr style="display:<%=displayError%>">
             <td style="padding-left: 20px;">
                 <%=getTitle(PipelineEmailPreferences.PREF_FAILURE_INTERVAL, c, "Notification frequency:")%>&nbsp;
-                <select id="failureNotifyInterval" name="failureNotifyInterval" onchange="updateFailureNotifyInterval();">
+                <% addHandler("failureNotifyInterval", "change", "updateFailureNotifyInterval();"); %>
+                <select id="failureNotifyInterval" name="failureNotifyInterval">
                     <option value="0"<%=selected("0".equals(failureNotifyInterval))%>>every job</option>
                     <option value="1"<%=selected("1".equals(failureNotifyInterval))%>>1 hour</option>
                     <option value="2"<%=selected("2".equals(failureNotifyInterval))%>>2 hours</option>
