@@ -78,6 +78,12 @@ public class PositionImpl implements Position
         return _column;
     }
 
+    // needed for DB serialization
+    public int getCol()
+    {
+        return getColumn();
+    }
+
     @Override
     public int getRow()
     {

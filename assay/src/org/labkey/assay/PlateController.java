@@ -57,9 +57,9 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
-import org.labkey.assay.plate.model.PlateCustomField;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.assay.plate.model.PlateType;
-import org.labkey.assay.plate.model.WellCustomField;
+import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -739,7 +739,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
         {
-            return success(PlateManager.get().getFields(getContainer(), getUser(), form.getPlateId()));
+            return success(PlateManager.get().getFields(getContainer(), form.getPlateId()));
         }
     }
 

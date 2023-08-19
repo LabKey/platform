@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
@@ -65,6 +66,7 @@ public class PlateImpl extends PropertySetImpl implements Plate
 
     private int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private int _plateNumber;
+    private List<PlateCustomField> _customFields = Collections.emptyList();
 
     public PlateImpl()
     {
@@ -526,7 +528,10 @@ public class PlateImpl extends PropertySetImpl implements Plate
     @Override
     public List<Well> getWells()
     {
-        return _wellMap.values().stream().toList();
+        if (_wellMap != null)
+            return _wellMap.values().stream().toList();
+        else
+            return Collections.emptyList();
     }
 
     @Override
@@ -556,5 +561,17 @@ public class PlateImpl extends PropertySetImpl implements Plate
     public int getPlateNumber()
     {
         return _plateNumber;
+    }
+
+    @JsonIgnore
+    @Override
+    public @NotNull List<PlateCustomField> getCustomFields()
+    {
+        return _customFields;
+    }
+
+    public void setCustomFields(List<PlateCustomField> customFields)
+    {
+        _customFields = customFields;
     }
 }

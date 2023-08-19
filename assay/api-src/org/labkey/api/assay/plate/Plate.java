@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
@@ -73,4 +74,9 @@ public interface Plate extends PropertySet, Identifiable
 
     @Override
     @Nullable ActionURL detailsURL();
+
+    /**
+     * The list of metadata fields that are configured for this plate
+     */
+    @NotNull List<PlateCustomField> getCustomFields();
 }

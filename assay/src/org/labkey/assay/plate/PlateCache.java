@@ -163,7 +163,8 @@ public class PlateCache
         // uncache all plates for this container
         if (_loader._rowIdMap.containsKey(c))
         {
-            for (Plate plate : _loader._rowIdMap.get(c).values())
+            List<Plate> plates = new ArrayList<>(_loader._rowIdMap.get(c).values());
+            for (Plate plate : plates)
             {
                 uncache(c, plate);
             }
