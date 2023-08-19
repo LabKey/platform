@@ -42,7 +42,6 @@
 <%@ page import="org.labkey.api.exp.Lsid" %>
 <%@ page import="org.labkey.api.exp.OntologyManager" %>
 <%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineage" %>
 <%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
@@ -1164,33 +1163,21 @@ public void testInsertOptionUpdate() throws Exception
     // update a sample that doesn't exist should throw error
     rowsToUpdate = new ArrayList<>();
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-absent", "intVal", 100));
-    boolean hasError = false;
-    try
-    {
-        qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
-    }
-    catch (Exception e)
-    {
-        hasError = true;
-        assertTrue(e.getMessage().contains("Sample does not exist: S-1-absent."));
-    }
-    assertTrue(hasError);
+    qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    assertTrue(context.getErrors().hasErrors());
+    String msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
+    assertTrue(msg.contains("Sample does not exist: S-1-absent."));
 
+    context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     // with detailed audit turned on, checking for existing record should still work
     Map<Enum, Object> auditOptions = new HashMap<>();
     auditOptions.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, AuditBehaviorType.DETAILED);
     context.setConfigParameters(auditOptions);
-    hasError = false;
-    try
-    {
-        qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
-    }
-    catch (Exception e)
-    {
-        hasError = true;
-        assertTrue(e.getMessage().contains("Sample does not exist: S-1-absent."));
-    }
-    assertTrue(hasError);
+    qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
+    assertTrue(context.getErrors().hasErrors());
+    msg = context.getErrors().getRowErrors().size() > 0 ? context.getErrors().getRowErrors().get(0).toString() : "no message";
+    assertTrue(msg.contains("Sample does not exist: S-1-absent."));
 
     // AliquotedFrom is supplied but doesn't match the current aliquot status / parents should get ignored
     rowsToUpdate = new ArrayList<>();
@@ -1198,8 +1185,9 @@ public void testInsertOptionUpdate() throws Exception
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-1-1", "intVal", null, "AliquotedFrom", "S-2"));
     rowsToUpdate.add(CaseInsensitiveHashMap.of("name", "S-2", "intVal", 200, "AliquotedFrom", "S-1"));
 
+    context = new DataIteratorContext();
+    context.setInsertOption(QueryUpdateService.InsertOption.UPDATE);
     qus.loadRows(user, c, new ListofMapsDataIterator(rowsToUpdate.get(0).keySet(), rowsToUpdate), context, null);
-
     assertFalse(context.getErrors().hasErrors());
     assertEquals(count,3);
     rows = getSampleRows(sampleTypeName);
