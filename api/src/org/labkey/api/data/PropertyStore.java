@@ -21,15 +21,12 @@ import org.labkey.api.security.User;
 
 import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: 10/11/13
- * Time: 4:55 PM
- */
 public interface PropertyStore
 {
     /** @return a read-only copy of the properties */
     @NotNull PropertyMap getProperties(User user, Container container, String category);
+    /** @return a read-only copy of the properties */
+    @NotNull PropertyMap getProperties(User user, String category);
     /** @return a read-only copy of the properties */
     @NotNull PropertyMap getProperties(Container container, String category);
     /** @return a read-only copy of the properties */
@@ -37,10 +34,12 @@ public interface PropertyStore
 
     // If create == true, then never returns null. If create == false, will return null if property set doesn't exist.
     PropertyMap getWritableProperties(User user, Container container, String category, boolean create);
+    PropertyMap getWritableProperties(User user, String category, boolean create);
     PropertyMap getWritableProperties(Container container, String category, boolean create);
     PropertyMap getWritableProperties(String category, boolean create);
 
     void deletePropertySet(User user, Container container, String category);
+    void deletePropertySet(User user, String category);
     void deletePropertySet(Container container, String category);
     void deletePropertySet(String category);
 
