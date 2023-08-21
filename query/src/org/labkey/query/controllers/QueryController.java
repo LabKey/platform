@@ -1375,6 +1375,7 @@ public class QueryController extends SpringActionController
                             }
                             catch (XMLStreamException ignored)
                             {
+                                // Let other XML validation and error feedback handle malformed XML
                             }
                         }
 
