@@ -79,4 +79,12 @@ public interface Plate extends PropertySet, Identifiable
      * The list of metadata fields that are configured for this plate
      */
     @NotNull List<PlateCustomField> getCustomFields();
+
+    Plate copy();
+
+    /**
+     * Returns the domain ID for the plate metadata domain.
+     */
+    @Nullable
+    Integer getMetadataDomainId();
 }

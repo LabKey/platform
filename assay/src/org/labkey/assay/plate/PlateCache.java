@@ -119,17 +119,22 @@ public class PlateCache
 
     public static @Nullable Plate getPlate(Container c, int rowId)
     {
-        return PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId));
+        Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId));
+        // We allow plates to be mutated, return a copy of the cached object which still references the
+        // original wells and well groups
+        return plate != null ? plate.copy() : null;
     }
 
     public static @Nullable Plate getPlate(Container c, String name)
     {
-        return PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, name));
+        Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, name));
+        return plate != null ? plate.copy() : null;
     }
 
     public static @Nullable Plate getPlate(Container c, Lsid lsid)
     {
-        return PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, lsid));
+        Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, lsid));
+        return plate != null ? plate.copy() : null;
     }
 
     public static @NotNull Collection<Plate> getPlates(Container c)

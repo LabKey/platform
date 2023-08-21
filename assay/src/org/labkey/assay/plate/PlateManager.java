@@ -483,6 +483,7 @@ public class PlateManager implements PlateService
         Domain domain = getPlateMetadataDomain(plate.getContainer(), null);
         if (domain != null)
         {
+            plate.setMetadataDomainId(domain.getTypeId());
             SQLFragment sqlPlateProps = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
                     .append(" WHERE PlateId = ?").add(plate.getRowId());
 
@@ -1247,7 +1248,8 @@ public class PlateManager implements PlateService
         return container.isProject() ? container : container.getProject();
     }
 
-    private @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException
+    @Override
+    public @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException
     {
         Domain vocabDomain = getPlateMetadataDomain(container, user);
 
