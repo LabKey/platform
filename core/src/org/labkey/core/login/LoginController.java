@@ -2721,6 +2721,7 @@ public class LoginController extends SpringActionController
             if (null != testLink)
                 m.put("testLink", testLink);
             m.put("settingsFields", ap.getSettingsFields());
+            m.put("allowInsert", ap.allowInsert());  // TODO: Update client to gray out disallowed providers
             return m;
         }
     }
