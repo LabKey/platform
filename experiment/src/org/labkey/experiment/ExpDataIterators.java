@@ -2345,7 +2345,7 @@ public class ExpDataIterators
                 if (map.get(name) != null)
                 {
                     if (_fileNameColIndex != null)
-                        _context.getErrors().addRowError(new ValidationException("Only one of " + SAMPLE_TYPE_FIELD_NAMES + " allowed for import."));
+                        _context.getErrors().addRowError(new ValidationException("Only one of [" + SAMPLE_TYPE_FIELD_NAMES.stream().sorted().collect(Collectors.joining(", ")) + "] allowed for import."));
                     _fileNameColIndex = map.get(name);
                     _fileNameColName = di.getColumnInfo(_fileNameColIndex).getName();
                 }
