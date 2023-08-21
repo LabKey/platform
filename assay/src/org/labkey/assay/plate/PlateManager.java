@@ -1516,45 +1516,6 @@ public class PlateManager implements PlateService
         return getFields(container, plateId);
     }
 
-    public List<WellCustomField> setFields(Container container, User user, Integer plateId, Integer wellId, List<WellCustomField> fields) throws ValidationException
-    {
-        Plate plate = getPlate(container, plateId);
-        if (plate == null)
-            throw new IllegalArgumentException("Failed to set plate custom field values. Plate id \"" + plateId + "\" not found.");
-
-        WellImpl well = (WellImpl) plate.getWell(wellId);
-        if (well == null)
-            throw new IllegalArgumentException("Failed to set plate custom field values. Well id \"" + wellId + "\" not found.");
-
-        Domain domain = getPlateMetadataDomain(container, user);
-        if (domain == null)
-            throw new IllegalArgumentException("Failed to set plate custom field values. Custom fields domain does not exist. Try creating fields first.");
-
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
-        {
-            // verify the fields have been configured for the plate
-            Set<String> configuredProps = new HashSet<>();
-            SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
-                    .append(" WHERE PlateId = ?").add(plateId);
-            new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).forEach(String.class, configuredProps::add);
-
-            for (WellCustomField field : fields)
-            {
-                if (!configuredProps.contains(field.getPropertyURI()))
-                    throw new IllegalArgumentException("Failed to set plate custom field value. Custom field \"" + field.getPropertyURI() + "\" is not configured for this plate.");
-
-                DomainProperty dp = domain.getPropertyByURI(field.getPropertyURI());
-                if (dp == null)
-                    throw new IllegalArgumentException("Failed to set plate custom field values. Custom field \"" + field.getPropertyURI() + "\" not found.");
-
-                OntologyManager.updateObjectProperty(user, container, dp.getPropertyDescriptor(), well.getLsid(), field.getValue(), null, true);
-            }
-            transaction.commit();
-        }
-
-        return getWellCustomFields(container, user, plateId, wellId);
-    }
-
     public static final class TestCase
     {
         @Test
@@ -1752,7 +1713,7 @@ public class PlateManager implements PlateService
             // assign custom fields to the plate
             assertTrue("Expected custom fields to be added to the plate", PlateManager.get().addFields(c, user, plateId, fields).size() == 3);
 
-            // verification when adding custom fields t the plate
+            // verification when adding custom fields to the plate
             try
             {
                 PlateManager.get().addFields(c, user, plateId, fields);

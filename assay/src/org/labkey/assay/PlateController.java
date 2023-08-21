@@ -30,10 +30,12 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
@@ -57,9 +59,7 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
-import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.assay.plate.model.PlateType;
-import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -734,7 +734,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    public class GetFieldsAction extends ReadOnlyApiAction<CustomFieldsForm>
     {
         @Override
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
@@ -753,39 +753,18 @@ public class PlateController extends SpringActionController
         }
     }
 
-    public static class SetFieldsForm extends CustomFieldsForm
-    {
-        private Integer _wellId;
-        private List<WellCustomField> _wellFields;
-
-        public Integer getWellId()
-        {
-            return _wellId;
-        }
-
-        public void setWellId(Integer wellId)
-        {
-            _wellId = wellId;
-        }
-
-        public List<WellCustomField> getWellFields()
-        {
-            return _wellFields;
-        }
-
-        public void setWellFields(List<WellCustomField> wellFields)
-        {
-            _wellFields = wellFields;
-        }
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public class SetFieldsAction extends MutatingApiAction<SetFieldsForm>
+    /**
+     * Returns the Domain ID for the plate metadata configured for this container. If the domain has
+     * not been created then null will be returned.
+     */
+    @RequiresPermission(ReadPermission.class)
+    public class GetPlateMetadataDomainAction extends ReadOnlyApiAction<Object>
     {
         @Override
-        public Object execute(SetFieldsForm form, BindException errors) throws Exception
+        public Object execute(Object form, BindException errors) throws Exception
         {
-            return success(PlateManager.get().setFields(getContainer(), getUser(), form.getPlateId(), form.getWellId(), form.getWellFields()));
+            Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
+            return success(domain != null ? domain.getTypeId() : null);
         }
     }
 }
