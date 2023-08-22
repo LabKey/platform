@@ -19,7 +19,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -27,6 +29,7 @@ import java.util.regex.Pattern;
 
 public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
 {
+
     @Override
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
@@ -35,6 +38,8 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
 
     static class ExpandableTextDataColumn extends DataColumn
     {
+        boolean handlersAdded = false;
+
         ExpandableTextDataColumn(ColumnInfo col)
         {
             super(col, false);
@@ -64,6 +69,13 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
 
         protected HtmlString getFormattedOutputText(String value, @Nullable Integer maxLineCount, @Nullable Integer maxCharCount)
         {
+            if (!handlersAdded)
+            {
+                PageConfig config = HttpView.currentPageConfig();
+                config.addHandlerForQuerySelector("DIV.expandable-text-showmore A", "click", "LABKEY.ExpandableTextDisplayColumn.showMore(this); return false;");
+                config.addHandlerForQuerySelector("DIV.expandable-text-showless A", "click", "LABKEY.ExpandableTextDisplayColumn.showLess(this); return false;");
+                handlersAdded = true;
+            }
             // Too bad there's no way to configure EOL characters for the Jackson pretty printer.
             // It seems to use system defaults.
             String filteredValue = PageFlowUtil.filter(value, true);
@@ -78,10 +90,10 @@ public class ExpandableTextDisplayColumnFactory implements DisplayColumnFactory
             boolean exceedsMaxCharCount = maxCharCount != null && value.length() > maxCharCount;
             if (exceedsMaxLineCount || exceedsMaxCharCount)
             {
-                outputTxt = "<div class='expandable-text-collapsed'>" + outputTxt
+                outputTxt = "<div class=\"expandable-text-collapsed\">" + outputTxt
                         + "<div class='expandable-text-overflow'></div>"
-                        + "<div class='expandable-text-showmore'><div class='labkey-wp-text-buttons'><a href='#' onclick=\"LABKEY.ExpandableTextDisplayColumn.showMore(this);\">Show More&#9660;</a></div></div>"
-                        + "<div class='expandable-text-showless'><div class='labkey-wp-text-buttons'><a href='#' onclick=\"LABKEY.ExpandableTextDisplayColumn.showLess(this);\">Show Less&#9650;</a></div></div>"
+                        + "<div class='expandable-text-showmore'><div class='labkey-wp-text-buttons'><a href='#'>Show More&#9660;</a></div></div>"
+                        + "<div class='expandable-text-showless'><div class='labkey-wp-text-buttons'><a href='#'>Show Less&#9650;</a></div></div>"
                         + "</div>";
             }
 

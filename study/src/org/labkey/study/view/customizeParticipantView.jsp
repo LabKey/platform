@@ -54,17 +54,17 @@
 %>
         <tr>
             <td>
-                <input type="radio" name="useCustomView"
+                <% addHandler("radioUseCustomViewFalse", "click", "return setCustomScriptState(!this.selected);"); %>
+                <input id="radioUseCustomViewFalse" type="radio" name="useCustomView"
                        value="false"
-                       onclick="return setCustomScriptState(!this.selected)"
                        <%=checked(useCustomView)%>>Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
             <td>
-                <input type="radio" name="useCustomView"
+                <% addHandler("radioUseCustomViewTrue", "click", "return setCustomScriptState(this.selected);"); %>
+                <input id="radioUseCustomViewTrue" type="radio" name="useCustomView"
                        value="true"
-                       onclick="return setCustomScriptState(this.selected)"
                        <%=checked(useCustomView)%>>Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>

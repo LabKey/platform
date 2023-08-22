@@ -37,7 +37,8 @@
 <labkey:errors/>
 <labkey:form action="#">
     query: <textarea cols=80 rows=25 id=query name=query style='font-size:10pt; font-family: Andale Monaco, monospace;'><%=h(request.getParameter("query"))%></textarea><br>
-    <input type=button onclick="executeQuery(Ext4.get('query').getValue())" value=submit>
+    <% addHandler("executeMdx", "click", "return executeQuery(Ext4.get('query').getValue());" ); %>
+    <input id="executeMdx" type=button value=submit>
 </labkey:form>
 <p>&nbsp;</p>
 <div id=cellset></div>

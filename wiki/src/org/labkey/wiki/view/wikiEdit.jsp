@@ -209,7 +209,8 @@
                             <table id="wiki-existing-attachments"></table>
                             <br>
                             <table id="wiki-new-attachments"></table>
-                            <a href="javascript:addFilePicker('wiki-new-attachments','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a>
+                            <% addHandler("filePickerLink", "click", "addFilePicker('wiki-new-attachments','filePickerLink'); return false;"); %>
+                            <a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a>
                         </labkey:form>
                     </td>
                 </tr>

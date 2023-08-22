@@ -98,8 +98,8 @@
                         subjectNounSingle.toLowerCase() + ". The dataset selected must be a demographics dataset.")%>
             </th>
             <td>
-                <select name="participantCommentDatasetId" id="participantCommentDatasetId"
-                        onchange="document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
+                <% addHandler("participantCommentDatasetId", "change", "document.manageComments.participantCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()"); %>
+                <select name="participantCommentDatasetId" id="participantCommentDatasetId">
                     <option value="-1">[None]</option>
                     <%
                         for (Dataset dataset : datasets)
@@ -160,8 +160,8 @@
                         subjectNounSingle.toLowerCase() + "/visit combination. The dataset selected cannot be a demographics dataset.")%>
             </th>
             <td>
-                <select name="participantVisitCommentDatasetId" id="participantVisitCommentDatasetId"
-                        onchange="document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()">
+                <% addHandler("participantVisitCommentDatasetId", "change", "document.manageComments.participantVisitCommentProperty.value=''; document.manageComments.method='get'; document.manageComments.submit()"); %>
+                <select name="participantVisitCommentDatasetId" id="participantVisitCommentDatasetId">
                     <option value="-1">[None]</option>
                     <%
                         for (Dataset dataset : datasets)

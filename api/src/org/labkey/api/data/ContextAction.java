@@ -16,6 +16,8 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.PageConfig;
 
 public class ContextAction
 {
@@ -69,27 +71,30 @@ public class ContextAction
     @Override
     public String toString()
     {
+        PageConfig config = HttpView.currentPageConfig();
+        String id = config.makeId("action_");
+
         String cssClass = "lk-region-context-action";
 
         if (getOnClick() != null)
             cssClass += " selectable";
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"").append(cssClass).append("\"");
+        sb.append("<div id=\"" + id + "\" class=\"").append(cssClass).append("\"");
 
         if (getTooltip() != null)
             sb.append(" data-tt=\"tooltip\" data-placement=\"top\" title=\"").append(PageFlowUtil.filter(getTooltip())).append("\"");
 
         if (getOnClick() != null)
-            sb.append(" onclick=\"").append(getOnClick()).append("\"");
+            config.addHandler(id, "click", getOnClick());
 
         sb.append(">"); // end of <div> start tag
 
         if (getOnClose() != null)
         {
-            sb.append("<i class=\"fa fa-close\"");
+            sb.append("<i id=\"" + id + "_close\" class=\"fa fa-close\"");
             if (getOnClose() != null)
-                sb.append(" onclick=\"").append(getOnClose()).append("\"");
+                config.addHandler(id + "_close", "click", getOnClose());
             sb.append("></i>");
         }
 

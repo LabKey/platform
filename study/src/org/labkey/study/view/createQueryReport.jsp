@@ -112,7 +112,8 @@
     <tr>
         <th align="right">Base Dataset</th>
         <td>
-            <select id="datasetSelection" name="params" onchange="onUpdateDataset();">
+            <% addHandler("datasetSelection", "change", "onUpdateDataset();"); %>
+            <select id="datasetSelection" name="params">
                 <%
                     Map<String, DatasetDefinition> datasetMap = bean.getDatasetDefinitions();
                     for (String name : bean.getTableAndQueryNames())

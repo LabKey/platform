@@ -50,7 +50,9 @@ These permissions control whether pipeline files can be downloaded and updated v
 <p />
 <labkey:form id="permissionsForm" action="<%=urlFor(UpdateRootPermissionsAction.class)%>" method="POST">
 <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(getViewContext().getActionURL())%>" />
-<input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
+<% addHandler("enabledCheckbox", "click", "toggleEnableFTP(this)"); %>
+<% addHandler("enabledCheckbox", "change", "toggleEnableFTP(this)"); %>
+<input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%>> Share files via website<br>
     <%
     List<Group> groups = SecurityManager.getGroups(c.getProject(), true);
     Pair[] optionsFull = new Pair[]

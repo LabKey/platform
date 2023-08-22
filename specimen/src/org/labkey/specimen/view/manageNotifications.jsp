@@ -95,8 +95,8 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td>
                 <label>
-                    <input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true'<%=checked(replyToCurrentUser)%>
-                            onclick="document.getElementById('replyTo').value = '<%= h(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');">
+                    <labkey:input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true' checked="<%=(replyToCurrentUser)%>"
+                            onClick="document.getElementById('replyTo').value = '<%= h(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');" />
                     The administrator who generated each notification
                 </label>
             </td>
@@ -143,10 +143,10 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td colspan="2">
                 <label>
-                <input type='checkbox' value='true' id='newRequestNotifyCheckbox'
-                        name='newRequestNotifyCheckbox'
-                        onclick="setElementDisplayByCheckbox('newRequestNotifyCheckbox', 'newRequestNotifyArea');"
-                        <%=checked(newRequestNotifyChecked)%>>Send Notification of New Requests
+                <labkey:input type="checkbox" value="true" id="newRequestNotifyCheckbox"
+                        name="newRequestNotifyCheckbox"
+                        onClick="setElementDisplayByCheckbox('newRequestNotifyCheckbox', 'newRequestNotifyArea');"
+                        checked="<%=(newRequestNotifyChecked)%>"/>Send Notification of New Requests
                 </label>
             </td>
         </tr>
@@ -167,17 +167,17 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td colspan="2">
                 <label>
-                    <input type='checkbox' value='true' id='ccCheckbox'
+                    <labkey:input type='checkbox' value='true' id='ccCheckbox'
                             name='ccCheckbox'
-                            onclick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
-                            <%=checked(ccChecked)%>>Always Send CC
+                            onClick="setElementDisplayByCheckbox('ccCheckbox', 'ccArea');"
+                            checked="<%=(ccChecked)%>" />Always Send CC
                 </label>
             </td>
 
         </tr>
 
         <tr id="ccArea" style="display:<%= text(ccChecked ? "" : "none")%>">
-            <th align="right"class="labkey-form-label local-left-label-width-th">Always CC<br>(one per line):</th>
+            <th align="right" class="labkey-form-label local-left-label-width-th">Always CC<br>(one per line):</th>
             <td>
                 <labkey:autoCompleteTextArea name="cc"
                                              id="cc"

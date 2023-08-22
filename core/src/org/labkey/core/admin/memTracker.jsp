@@ -182,7 +182,8 @@
                         HtmlString secondLine = split.length >= 2 ? HtmlString.unsafe(split[2]) : HtmlString.EMPTY_STRING;
             %>
                 <tr class="<%=getShadeRowClass(counter + 1)%>">
-                    <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
+                    <td valign=top><img id="toggleImg<%=counter%>" data-counter="<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse"></td>
+                    <% addHandler("toggleImg" + counter, "click", "return toggle(this);"); %>
                     <td class='objectClass' valign=top><%=h(reference.getClassName())%></td>
                     <td class='objectToString' valign=top>
             <%
@@ -221,9 +222,9 @@
     }
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-
-function toggle(i)
+function toggle(el)
 {
+    const i = parseInt(el.dataset['counter']);
     image = document.getElementById("toggleImg" + i);
     descriptionPanel = document.getElementById("descriptionPanel" + i);
     summaryTogglePanel = document.getElementById("summaryTogglePanel" + i);

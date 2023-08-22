@@ -29,9 +29,9 @@
     ActionURL userLink = context.cloneActionURL();
 %>
 <%= link("All User Requests", userLink.deleteParameter(ViewRequestsHeaderBean.PARAM_CREATEDBY)) %>
-<%= link("My Requests", userLink.replaceParameter(ViewRequestsHeaderBean.PARAM_CREATEDBY,
-        getUser().getDisplayName(getUser()))) %>
-Filter by status: <select onChange="document.location=options[selectedIndex].value;">
+<%= link("My Requests", userLink.replaceParameter(ViewRequestsHeaderBean.PARAM_CREATEDBY, getUser().getDisplayName(getUser()))) %>
+<% addHandler("viewRequestsSelect", "change", "document.location=options[selectedIndex].value;"); %>
+Filter by status: <select id="viewRequestsSelect">
 <%
     ActionURL current = context.cloneActionURL();
     current.deleteParameter(ViewRequestsHeaderBean.PARAM_STATUSLABEL);

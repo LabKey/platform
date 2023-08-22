@@ -334,7 +334,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         if (context != null)
         {
             String serverGUID = context.getInitParameter(SERVER_GUID_XML_PARAMETER_NAME);
-            if (serverGUID != null)
+            if (StringUtils.isNotBlank(serverGUID))
             {
                 return serverGUID;
             }

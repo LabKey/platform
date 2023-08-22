@@ -24,16 +24,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.DisplayElement;
-import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
-// TODO: Need handling for checkbox, file, and radio types
 public class Input extends DisplayElement implements HasHtmlString, SafeToRender
 {
     public enum Layout
@@ -107,6 +104,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final boolean _multiple;
     private final String _name;
     private final boolean _needsWrapping;
+    private final String _onClick;
     private final String _onChange;
     private final String _onKeyUp;
     private final String _placeholder;
@@ -151,6 +149,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         _min = builder._min;
         _multiple = builder._multiple == null ? false : builder._multiple;
         _name = builder._name;
+        _onClick = builder._onClick;
         _onChange = builder._onChange;
         _onKeyUp = builder._onKeyUp;
         _placeholder = builder._placeholder;
@@ -246,6 +245,11 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     public String getName()
     {
         return _name;
+    }
+
+    public String getOnClick()
+    {
+        return _onClick;
     }
 
     public String getOnChange()
@@ -505,8 +509,9 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
 
         sb.append(" name=\"").append(h(getName())).append("\"");
 
-        if (StringUtils.isNotEmpty(getId()))
-            sb.append(" id=\"").append(h(getId())).append("\"");
+        var id = generateId("input");
+
+        sb.append(" id=\"").append(h(id)).append("\"");
         if (StringUtils.isNotEmpty(getPlaceholder()))
             sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
         if (getSize() != null)
@@ -547,7 +552,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         doStyles(sb);
         if (!HtmlString.isBlank(getValue()))
             sb.append(" value=\"").append(h(getValue())).append("\"");
-        doInputEvents(sb);
+        doInputEvents(id);
 
         if (isRequired())
             sb.append(" required");
@@ -570,6 +575,15 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         sb.append(">");
     }
 
+    protected String generateId(String prefix)
+    {
+        var id = getId();
+        if (null != id)
+            return id;
+        var pageConfig = HttpView.currentPageConfig();
+        return pageConfig.makeId(StringUtils.defaultIfBlank(getName(), prefix));
+    }
+
     protected void doStyles(Appendable sb) throws IOException
     {
         if (!getStyles().isEmpty())
@@ -580,12 +594,15 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         }
     }
 
-    protected void doInputEvents(Appendable sb) throws IOException
+    protected void doInputEvents(String id) throws IOException
     {
+        var pageConfig = HttpView.currentPageConfig();
+        if (StringUtils.isNotEmpty(getOnClick()))
+            pageConfig.addHandler(id, "click", getOnClick());
         if (StringUtils.isNotEmpty(getOnChange()))
-            sb.append(" onchange=\"").append(h(getOnChange())).append("\"");
+            pageConfig.addHandler(id, "change", getOnChange());
         if (StringUtils.isNotEmpty(getOnKeyUp()))
-            sb.append(" onkeyup=\"").append(h(getOnKeyUp())).append("\"");
+            pageConfig.addHandler(id, "keyup", getOnKeyUp());
     }
 
     protected void doLabel(Appendable sb) throws IOException
@@ -705,6 +722,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         private String _min;
         private Boolean _multiple;
         private String _name;
+        private String _onClick;
         private String _onChange;
         private String _onKeyUp;
         private String _placeholder;
@@ -803,6 +821,12 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         public T name(String name)
         {
             _name = name;
+            return (T)this;
+        }
+
+        public T onClick(String onClick)
+        {
+            _onClick = onClick;
             return (T)this;
         }
 

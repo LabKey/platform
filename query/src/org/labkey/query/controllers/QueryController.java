@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -194,6 +195,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -202,6 +206,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1340,17 +1345,48 @@ public class QueryController extends SpringActionController
                 }
 
                 String metadataText = StringUtils.trimToNull(form.ff_metadataText);
-                if (queryDef.isMetadataEditable())
+                if (!Objects.equals(metadataText, queryDef.getMetadataXml()))
                 {
-                    if (!Objects.equals(metadataText, queryDef.getMetadataXml()) && !queryDef.canEditMetadata(getUser()))
-                        throw new UnauthorizedException("Edit metadata permissions are required.");
+                    if (queryDef.isMetadataEditable())
+                    {
+                        if (!queryDef.canEditMetadata(getUser()))
+                            throw new UnauthorizedException("Edit metadata permissions are required.");
 
-                    queryDef.setMetadataXml(metadataText);
-                }
-                else
-                {
-                    if (metadataText != null)
-                        throw new UnsupportedOperationException("Query metadata is not editable.");
+                        if (!getUser().isTrustedBrowserDev())
+                        {
+                            try
+                            {
+                                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+                                XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
+                                while (reader.hasNext())
+                                {
+                                    reader.next();
+                                    if (reader.isStartElement())
+                                    {
+                                        String localPath = reader.getName().getLocalPart();
+                                        // These three elements directly include JavaScript or pointers to script files
+                                        if ("onClick".equalsIgnoreCase(localPath) ||
+                                                "onRender".equalsIgnoreCase(localPath) ||
+                                                "includeScript".equalsIgnoreCase(localPath))
+                                        {
+                                            throw new UnauthorizedException("Illegal element <" + localPath + ">. For permissions to use this element, contact your system administrator");
+                                        }
+                                    }
+                                }
+                            }
+                            catch (XMLStreamException ignored)
+                            {
+                                // Let other XML validation and error feedback handle malformed XML
+                            }
+                        }
+
+                        queryDef.setMetadataXml(metadataText);
+                    }
+                    else
+                    {
+                        if (metadataText != null)
+                            throw new UnsupportedOperationException("Query metadata is not editable.");
+                    }
                 }
 
                 queryDef.save(getUser(), getContainer());
@@ -6903,8 +6939,12 @@ public class QueryController extends SpringActionController
             List<QueryParseException> qpe = new ArrayList<>();
             String expr = getViewContext().getRequest().getParameter("q");
             ArrayList<String> html = new ArrayList<>();
-            html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input type=submit onclick='Ext.getBody().mask();'></form>\n" +
-                    "<script>" +
+            PageConfig config = getPageConfig();
+            var inputId = config.makeId("submit_");
+            config.addHandler(inputId, "click", "Ext.getBody().mask();");
+            html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input id=\"" + inputId + "\" type=submit></form>\n" +
+                    "<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
+
                     "    var resizer = new (Ext4||Ext).Resizable(\"expression\", {\n" +
                             "        handles: 'se',\n" +
                             "        minWidth: 200,\n" +

@@ -13,7 +13,7 @@ function getHelpDiv()
     if (!_helpDiv)
     {
         LABKEY.addMarkup(
-                '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
+                '<div id="helpDiv"' +
                 '   style="display:none;">'+
                 '  <table id="helpDivTable">'+
                 '    <tr class="labkey-wp-header" width="100%">'+
@@ -21,7 +21,7 @@ function getHelpDiv()
                 '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
                 '      </td>'+
                 '      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
-                '      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
+                '      <img id="helpDivClose" alt="close" src="' + LABKEY.imagePath + '/partdelete.png">'+
                 '      </td>'+
                 '     </tr>'+
                 '    <tr>'+
@@ -37,6 +37,11 @@ function getHelpDiv()
             _helpDiv = helpDiv;
             document.addEventListener('keyup', helpDivHideHandler);
             document.addEventListener('click', helpDivHideHandler);
+            helpDiv['onmouseover'] = mouseEnteredHelpDiv;
+            helpDiv['onmouseout'] = mouseExitedHelpDiv;
+            const close = document.getElementById("helpDivClose");
+            if (close)
+                close['onclick'] = function(){hideHelpDiv(true);};
         }
     }
     return _helpDiv;
@@ -185,11 +190,13 @@ function addFilePicker(tblId, linkId)
     newRow.style.minHeight = '20px';
     var filePickerCell = newRow.insertCell(0);
     var filePickerId = "formFile" + twoDigit(filePickerIndex);
-    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + twoDigit(filePickerIndex) + ']" size="45" onChange="showPathname(this, \'filename' + twoDigit(filePickerIndex) + '\')" style="border: none; background-color: transparent;">';
+    filePickerCell.innerHTML = '<input type="file" id="' + filePickerId + '" name="formFiles[' + twoDigit(filePickerIndex) + ']" size="45" style="border: none; background-color: transparent;">';
     var removePathnameCell = newRow.insertCell(1);
-    removePathnameCell.innerHTML = '<table><tr><td><a href="javascript:removeFilePicker(\'' + tblId + '\', \'' + linkId + '\', \'' + newRow.id + '\')">&nbsp;remove</a></td>' +
-        '<td><span id="filename' + twoDigit(filePickerIndex) + '"></span></td></tr></table>';
+    removePathnameCell.innerHTML = '<table><tr><td><a id="remove' + filePickerId + '" href="#">&nbsp;remove</a></td><td><span id="filename' + twoDigit(filePickerIndex) + '"></span></td></tr></table>';
     updateInstructions(document.getElementById(linkId), table.rows.length);
+
+    document.getElementById(filePickerId)['onchange'] = function() { showPathname(this, 'filename' + twoDigit(filePickerIndex)); };
+    document.getElementById('remove' + filePickerId)['onclick'] = function() { removeFilePicker(tblId, linkId, newRow.id); return false; };
 }
 
 function removeFilePicker(tblId, linkId, rowId)
