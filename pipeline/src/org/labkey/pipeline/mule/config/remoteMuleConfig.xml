@@ -53,8 +53,8 @@
             returnClass="javax.jms.TextMessage"/>
         <transformer name="JMSMessageToJob" className="org.labkey.pipeline.mule.transformers.JMSMessageToPipelineJob"
             returnClass="org.labkey.api.pipeline.PipelineJob"/>
-        <transformer name="StatusToXML" className="org.mule.transformers.xml.ObjectToXml"
-            returnClass="java.lang.String"/>
+        <transformer name="StatusToXML" className="org.labkey.pipeline.mule.transformers.ObjectToXml"
+                     returnClass="java.lang.String"/>
         <transformer name="XMLToJMSMessage" className="org.mule.providers.jms.transformers.ObjectToJMSMessage"
             returnClass="javax.jms.TextMessage" />
         <transformer name="NoOpTransformer" className="org.labkey.pipeline.mule.transformers.NoOpTransformer"
