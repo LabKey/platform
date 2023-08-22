@@ -3,7 +3,7 @@
     <div id="success-content" class="auth-form-body"></div>
 </div>
 
-<script type="application/javascript">
+<script type="text/javascript" nonce="<%=scriptNonce%>">
     var type = LABKEY.ActionURL.getParameter('type');
     var product = LABKEY.ActionURL.getParameter('product');
     var startHref = LABKEY.ActionURL.buildURL('project', 'start');

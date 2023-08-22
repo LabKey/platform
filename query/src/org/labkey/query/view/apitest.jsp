@@ -70,20 +70,21 @@
 <table width="100%">
     <tr>
         <td width="1%">Get&nbsp;Url:</td>
-        <td width="98%"><input type="text" id="txtUrlGet" style="width:100%"
-                               value="" onkeydown="onGetUrlKeyDown(event)"/>
+        <% addHandler("txtUrlGet", "keydown", "return onGetUrlKeyDown(event);" ); %>
+        <td width="98%"><input type="text" id="txtUrlGet" style="width:100%" value=""/>
         </td>
         <td width="1%">
-            <input type="button" value="Get" id="btnGet" onclick="getUrl()"/>
+            <% addHandler("btnGet", "click", "return getUrl();" ); %>
+            <input type="button" value="Get" id="btnGet"/>
         </td>
     </tr>
     <tr>
         <td width="1%">Post&nbsp;Url:</td>
-        <td width="98%"><input type="text" id="txtUrlPost" style="width:100%"
-                               value=""/>
+        <td width="98%"><input type="text" id="txtUrlPost" style="width:100%" value=""/>
         </td>
         <td width="1%">
-            <input type="button" value="Post" id="btnPost" onclick="postUrl()"/>
+            <% addHandler("btnPost", "click", "return postUrl();" ); %>
+            <input type="button" value="Post" id="btnPost"/>
         </td>
     </tr>
     <tr>
@@ -105,8 +106,10 @@
     </tr>
     <tr>
         <td width="100%">
-            <input type="button" id="btnEval" value="Validate JSON Response" onclick="evalResponse()"/>&nbsp;
-            <input type="button" id="btnSaveTest" value="Record Test" onclick="recordTest()"/></td>
+            <% addHandler("btnEval", "click", "return evalResponse();" ); %>
+            <input type="button" id="btnEval" value="Validate JSON Response"/>&nbsp;
+            <% addHandler("btnSaveTest", "click", "return recordTest();" ); %>
+            <input type="button" id="btnSaveTest" value="Record Test" /></td>
     </tr>
 </table>
 

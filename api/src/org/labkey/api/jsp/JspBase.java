@@ -447,6 +447,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return new LinkBuilder(text);
     }
 
+    public LinkBuilder link(HtmlString html)
+    {
+        return new LinkBuilder(html);
+    }
+
     // Link to another action in the current container
     public LinkBuilder link(String text, @NotNull Class<? extends Controller> actionClass)
     {

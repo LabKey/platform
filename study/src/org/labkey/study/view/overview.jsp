@@ -169,7 +169,9 @@
         for (VisitStatistic stat : VisitStatistic.values())
         {
             boolean checked = bean.stats.contains(stat);
-            out.print(text("<label><input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "</label>\n"));
+            var id = makeId("visitStatistic");
+            addHandler(id, "click", "document.changeFilterForm.submit();" );
+            out.print(text("<label><input id=\"" + id + "\" name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + ">" + h(stat.getDisplayString(study)) + "</label>\n"));
         }
     %>
 </labkey:form>

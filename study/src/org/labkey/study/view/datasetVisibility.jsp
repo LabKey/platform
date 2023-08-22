@@ -165,13 +165,13 @@
     <%= button("Save").submit(true) %>&nbsp;
     <%= button("Cancel").href(ManageTypesAction.class, getContainer()) %>&nbsp;
     <% if (sharedStudy == null) { %>
-    <%= button("Manage Categories").href("javascript:void(0);").onClick("onManageCategories()") %>
+    <%= button("Manage Categories").onClick("onManageCategories(); return false;") %>
     <% } %>
     <% if (!emptyDatasets.isEmpty()) { %>
-    <%= button("Hide empty datasets").href("javascript:void(0);").onClick("onHideEmptyDatasets()") %>
+    <%= button("Hide empty datasets").onClick("onHideEmptyDatasets(); return false;") %>
     <% } %>
     <% if (sharedStudy != null /*&& overrides exist in this container*/) { %>
-    <%= button("Reset Overrides").href("javascript:void(0);").onClick("onResetOverrides()") %>
+    <%= button("Reset Overrides").onClick("onResetOverrides(); return false;") %>
     <% } %>
 </labkey:form>
 <%

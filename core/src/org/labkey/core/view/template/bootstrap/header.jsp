@@ -133,8 +133,8 @@
                         <input type="text" class="search-box" name="q" placeholder="<%=h(SearchUtils.getPlaceholder(c))%>" value="">
                         <input type="submit" hidden>
                         <a id="a_header_search" href="#" class="btn-search fa fa-search"></a>
-                        <% pageConfig.addHandler("a_header_search","click","document.getElementById('global-search-form').submit(); return false;"); %>
                     </labkey:form>
+                    <% pageConfig.addHandler("a_header_search","click","document.getElementById('global-search-form').submit(); return false;"); %>
                 </div>
             </li>
             <li id="global-search-xs" class="dropdown visible-xs">

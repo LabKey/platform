@@ -103,6 +103,7 @@ function orderModule(down)
 function reorderDisabled()
 {
     var radios = document.reorder.resetToAlphabetical;
+    var radios = document.reorder.resetToAlphabetical;
 
     for (var i = 0; i < radios.length; i++)
     {
@@ -124,8 +125,12 @@ function toggleItemSelector()
 </script>
 <labkey:form action="<%=urlFor(ReorderFoldersAction.class)%>" name="reorder" method="POST" onsubmit="saveList()">
 <p>
-    <label><input type="radio" name="resetToAlphabetical" value="true"<%=checked(!isCustomOrder)%> onChange="toggleItemSelector();"/> Sort <%= h(reorderingProjects ? "projects" : "folders") %> alphabetically</label><br>
-    <label><input type="radio" name="resetToAlphabetical" value="false"<%=checked(isCustomOrder)%> onChange="toggleItemSelector();" /> Use custom <%= h(reorderingProjects ? "project" : "folder") %> order </label>
+    <%
+    addHandler("resetToAlphabeticalTrue", "click", "toggleItemSelector()");
+    addHandler("resetToAlphabeticalFalse", "click", "toggleItemSelector()");
+    %>
+    <label><input id="resetToAlphabeticalTrue" type="radio" name="resetToAlphabetical" value="true"<%=checked(!isCustomOrder)%> /> Sort <%= h(reorderingProjects ? "projects" : "folders") %> alphabetically</label><br>
+    <label><input id="resetToAlphabeticalFalse" type="radio" name="resetToAlphabetical" value="false"<%=checked(isCustomOrder)%> /> Use custom <%= h(reorderingProjects ? "project" : "folder") %> order </label>
 </p>
 <p>
     <table>

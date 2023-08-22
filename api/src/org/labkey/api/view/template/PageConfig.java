@@ -107,7 +107,7 @@ public class PageConfig
 
         public String getKey()
         {
-            return null!=id ? ("id:" + id + "." + event) : ("selector:" + id + "." + event);
+            return null!=id ? ("id:" + id + "." + event) : ("selector:" + selector + "." + event);
         }
     }
 
@@ -419,11 +419,7 @@ public class PageConfig
 
     public HtmlString getPreloadTags()
     {
-        final List<String> fonts = List.of(
-                "/fonts/Roboto/Roboto-Regular.ttf",
-                "/fonts/TitilliumWeb/TitilliumWeb-Regular.ttf",
-                "/fonts/TitilliumWeb/TitilliumWeb-Bold.ttf",
-                "/fonts/Roboto/Roboto-Bold.ttf");
+        final List<String> fonts = List.of();
         HtmlStringBuilder sb = HtmlStringBuilder.of();
         fonts.stream().map(PageFlowUtil::staticResourceUrl).forEach(url->
                 sb.append(HtmlString.unsafe("<link rel=\"preload\" as=\"font\" type=\"font/ttf\" crossorigin href=\"")).append(url).append(HtmlString.unsafe("\">")));
@@ -652,15 +648,13 @@ public class PageConfig
 
         if (AppProps.getInstance().isDevMode())
         {
-            Set<String> eventIds = new HashSet<>();
+            Map<String, EventHandler> eventMap = new HashMap<>();
             for (EventHandler h : _eventHandlers.values())
             {
-                final String eventId = h.id + "#" + h.event;
-
-                if (!eventIds.add(eventId))
-                {
+                final String eventId = h.getKey();
+                EventHandler prev = eventMap.put(eventId, h);
+                if (null != prev && !StringUtils.equals(prev.handler, h.handler))
                     LOG.error("Malformed page. Multiple JavaScript handlers defined for the same '<element_id>#<event>': " + eventId);
-                }
             }
         }
 
@@ -670,12 +664,12 @@ public class PageConfig
         {
             out.write("const A = function(a,b,c){LABKEY.Utils.attachEventHandler(a,b,c,1);}\n");
             // NOTE: there can be lots of handlers, this is simple de-duping
-            HashMap<String, Integer> map = new HashMap<>();
+            HashMap<String, Integer> codeMap = new HashMap<>();
             for (var l : _eventHandlers.values())
             {
-                var index = map.size();
+                var index = codeMap.size();
                 var handler = StringUtils.appendIfMissing(l.handler, ";");
-                var prev = map.putIfAbsent(handler, index);
+                var prev = codeMap.putIfAbsent(handler, index);
                 if (null == prev)
                     out.write("const h" + index + "=function (){\n" + handler + "\n};\n"); // newlines make it easier to set breakpoints
                 index = requireNonNullElse(prev, index);

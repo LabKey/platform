@@ -301,9 +301,9 @@ public class QuerySnapshotTest extends StudyBaseTest
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         log("edit the snapshot");
         table.goToView("Edit Snapshot");
-        checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]"));
+        checkCheckbox(Locator.xpath("//input[@type='radio' and @id='updateType']"));
         clickButton("Save");
-        assertTrue(isChecked(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]")));
+        assertTrue(isChecked(Locator.xpath("//input[@type='radio' and @name='updateType' and @id='updateType']")));
         doAndWaitForPageToLoad(() ->
         {
             clickButton("Update Snapshot", 0);
@@ -437,7 +437,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         setFormElement(Locator.name("snapshotName"), snapshotName);
         if (autoUpdate)
-            checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and not (@id)]"));
+            checkCheckbox(Locator.xpath("//input[@type='radio' and @name='updateType' and @id='updateType']"));
 
         if (keyField != null)
         {

@@ -85,9 +85,11 @@
                         }
                         else
                         {
+                            String id = makeId("deleteQC");
+                            addHandler(id, "click", "return LABKEY.Utils.confirmAndPost(" + q("Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.") + "," + q(baseDeleteStateURL.clone().addParameter("id", state.getRowId())) + ");" );
                     %>
                     <span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span>
-                    <span style="cursor:pointer; color:red;" class="fa fa-times" onclick="LABKEY.Utils.confirmAndPost(<%=q("Delete this QC state? No additional " + bean.getDataNoun() + " data will be deleted.")%>, <%=q(baseDeleteStateURL.clone().addParameter("id", state.getRowId()))%>)"></span>
+                    <span id="<%=h(id)%>" style="cursor:pointer; color:red;" class="fa fa-times"></span>
                     <%
                         }
                     %>
@@ -97,7 +99,8 @@
                 }
             %>
         </table>
-        <span style="cursor:pointer;color:green" class="fa fa-plus-circle" onclick="addRow()"></span>&nbsp<span>Add State</span>
+        <% addHandler("qcStateAddRow", "click", "return addRow();"); %>
+        <span id="qcStateAddRow" style="cursor:pointer;color:green" class="fa fa-plus-circle"></span>&nbsp<span>Add State</span>
             &nbsp&nbsp&nbsp&nbsp
             <%= button("Delete Unused QC States")
                     .onClick("return LABKEY.Utils.confirmAndPost('Delete all unused QC states? No additional "+ bean.getDataNoun() + " data will be deleted.', " + q(baseDeleteStateURL.clone().addParameter("all", "true")) + ")") %>

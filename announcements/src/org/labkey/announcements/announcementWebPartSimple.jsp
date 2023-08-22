@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -182,8 +183,8 @@ for (AnnouncementModel a : bean.announcementModels)
             <div class="message-text"><%=a.translateBody()%></div><%
             if (!bean.isPrint)
             {
-                %><div class="message-overflow"><div class="message-more"><div class="labkey-wp-text-buttons"><a href="#more" style="font-weight:normal;" onclick="return messageMore(this);">more&#9660;</a></div></div></div><%
-                %><table width="100%"><tr><td align="right"><div class="message-less"><div class="labkey-wp-text-buttons"><a href="#less" style="font-weight:normal;" onclick="return messageLess(this);">less&#9650;</a></div></div></td></tr></table><%
+                %><div class="message-overflow"><div class="message-more"><div class="labkey-wp-text-buttons"><%=link(HtmlString.unsafe("more&#9660;")).style("font-weight:normal;").onClick("return messageMore(this);")%></div></div></div><%
+                %><table width="100%"><tr><td align="right"><div class="message-less"><div class="labkey-wp-text-buttons"><%=link(HtmlString.unsafe("less&#9650;")).style("font-weight:normal;").onClick("return messageLess(this);")%></div></div></td></tr></table><%
             }            
         %></div>
     </tr><%

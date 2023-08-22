@@ -52,7 +52,7 @@
     </tr>
 </table>
 <script type="text/javascript" nonce="<%=scriptNonce%>">
-    +function($) {
+    (function($) {
         $(function() {
             function showPopulateButton(isShow) {
                 var btn = $('#populatedata');
@@ -78,7 +78,7 @@
                 showPopulateButton(true);
             }, 'Samples', 'sampleDataTest1');
         });
-    }(jQuery);
+    })(jQuery);
 </script>
 <br><br>
 <div id="populatemessage" style="display:none; color:green;">
@@ -86,7 +86,12 @@
 </div>
 <div id="populatedata" style="display:none; color:red;">
     <b>Test data is not populated!</b><br>
-    <button class="btn btn-primary" onclick="setUpDomains()">Populate test data</button><br>
+    <button id="btnPopulateTestData" class="btn btn-primary">Populate test data</button><br>
 </div>
 <br>
-<button class="btn btn-default" onclick="dropDomains()">Drop schema and clear test data</button>
+<button id="btnDropSchema" class="btn btn-default">Drop schema and clear test data</button>
+
+<script type="text/javascript" nonce="<%=scriptNonce%>">
+    document.getElementById("btnPopulateTestData")['onclick'] = setUpDomains;
+    document.getElementById("btnDropSchema")['onclick'] = dropDomains;
+</script>
