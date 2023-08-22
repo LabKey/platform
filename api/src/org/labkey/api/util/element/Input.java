@@ -594,7 +594,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         }
     }
 
-    protected void doInputEvents(String id, Appendable sb) throws IOException
+    protected void doInputEvents(String id) throws IOException
     {
         var pageConfig = HttpView.currentPageConfig();
         if (StringUtils.isNotEmpty(getOnClick()))

@@ -6907,7 +6907,8 @@ public class QueryController extends SpringActionController
             var inputId = config.makeId("submit_");
             config.addHandler(inputId, "click", "Ext.getBody().mask();");
             html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input id=\"" + inputId + "\" type=submit></form>\n" +
-                    "<script type=\"application/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
+                    "<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
+
                     "    var resizer = new (Ext4||Ext).Resizable(\"expression\", {\n" +
                             "        handles: 'se',\n" +
                             "        minWidth: 200,\n" +

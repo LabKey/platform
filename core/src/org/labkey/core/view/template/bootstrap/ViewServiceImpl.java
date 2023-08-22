@@ -490,7 +490,7 @@ public class ViewServiceImpl implements ViewService
                             "LABKEY.Portal._showPermissions(" +
                                     config._webpart.getRowId() + "," +
                                     permissionString + "," +
-                                    containerPathString + ");"
+                                    containerPathString + "); return false;"
                     );
 
                     permissionsNav.setId("permissions_" + webPart.getRowId());

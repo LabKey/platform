@@ -202,7 +202,8 @@
                 }
                 if (!getUser().isGuest())
                 {
-                    navTree.addChild("Create related " + names.singularName.toLowerCase()).setScript(relatedIssues.toString());
+                    navTree.addChild("Create related " + names.singularName.toLowerCase()).setScript(relatedIssues.toString() + "; return false;");
+
                     navTree.addChild("Email preferences", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId));
                 }
                 if ( IssueManager.hasRelatedIssues(issue, user))
