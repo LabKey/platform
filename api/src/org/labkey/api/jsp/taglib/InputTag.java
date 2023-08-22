@@ -52,6 +52,7 @@ public class InputTag extends SimpleTagBase
     private Integer maxLength;
     private String min;
     private String name;
+    private String onClick;
     private String onChange;
     private String onKeyUp;
     private String placeholder;
@@ -244,6 +245,11 @@ public class InputTag extends SimpleTagBase
         setValue(null != o ? o.toString() : null);
     }
 
+    public void setOnClick(String onClick)
+    {
+        this.onClick = onClick;
+    }
+
     public void setOnChange(String onChange)
     {
         this.onChange = onChange;
@@ -307,6 +313,7 @@ public class InputTag extends SimpleTagBase
             .label(label)
             .stateMessage(stateMessage)
             .name(name)
+            .onClick(onClick)
             .onChange(onChange)
             .onKeyUp(onKeyUp)
             .placeholder(placeholder)

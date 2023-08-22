@@ -171,7 +171,11 @@ public class FormTag extends BodyTagSupport
     @Override
     public int doStartTag() throws JspException
     {
-        var formAttributes = DOM.at(DOM.Attribute.id, getId());
+        var pageConfig = HttpView.currentPageConfig();
+        var id = getId();
+        if (null == id)
+            id = pageConfig.makeId("form");
+        var formAttributes = DOM.at(DOM.Attribute.id, id);
         if (isNotBlank(name))
             formAttributes.at(DOM.Attribute.name, name);
         if (isNotBlank(method))
@@ -183,7 +187,7 @@ public class FormTag extends BodyTagSupport
         if (isNotBlank(target))
             formAttributes.at(DOM.Attribute.target, target);
         if (isNotBlank(onsubmit))
-            formAttributes.at(DOM.Attribute.onsubmit, onsubmit);
+            pageConfig.addHandler(id, "submit", onsubmit);
         if (isNotBlank(style))
             formAttributes.at(DOM.Attribute.style, style);
         if (isNotBlank(autoComplete))

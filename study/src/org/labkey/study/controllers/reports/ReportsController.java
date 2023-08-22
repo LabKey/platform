@@ -1269,8 +1269,9 @@ public class ReportsController extends BaseStudyController
                 view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
-                String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
-                NavTree edit = new NavTree("Edit", script, null, "fa fa-pencil");
+                NavTree edit = new NavTree("Edit", null, null, "fa fa-pencil");
+                edit.setScript(String.format("customizeParticipantReport('%s'); return false;", form.getComponentId()));
+
                 view.addCustomMenu(edit);
 
                 if (getViewContext().hasPermission(InsertPermission.class))

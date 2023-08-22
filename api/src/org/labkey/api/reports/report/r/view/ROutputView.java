@@ -133,8 +133,10 @@ public class ROutputView extends HttpView
 
         if (_showHeader)
         {
+            var id = HttpView.currentPageConfig().makeId("r_output_view_header");
+            HttpView.currentPageConfig().addHandler(id, "click", "LABKEY.Utils.toggleLink(this, false);");
             sb.append("<tr class=\"labkey-wp-header\"><th colspan=2 align=left>");
-            sb.append("   <a href=\"#\" onclick=\"return LABKEY.Utils.toggleLink(this, false);\">");
+            sb.append("   <a id =\"" + id + "\" href=\"#\">");
             sb.append("   <img src=\"");
             sb.append(getViewContext().getContextPath());
             sb.append("/_images/");

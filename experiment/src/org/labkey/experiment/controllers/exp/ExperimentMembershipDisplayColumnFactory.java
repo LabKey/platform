@@ -126,7 +126,8 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                 _renderedFunction = true;
             }
 
-            out.write("<input type=\"checkbox\" name=\"experimentMembership\" ");
+            String id = HttpView.currentPageConfig().makeId("checkbox");
+            out.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"experimentMembership\" ");
             int currentExpId = getExpId(ctx);
             int currentExpRunId = getRunId(ctx);
             ExpExperiment exp = ExperimentService.get().getExpExperiment(currentExpId);
@@ -136,7 +137,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
                     exp.getContainer().hasPermission(ctx.getViewContext().getUser(), ReadPermission.class) &&
                     run.getContainer().hasPermission(ctx.getViewContext().getUser(), UpdatePermission.class))
             {
-                out.write(" onclick=\"javascript:toggleRunExperimentMembership(" + currentExpId + ", " + getRunId(ctx) + ", this.checked, '" + PageFlowUtil.filter(ctx.getCurrentRegion().getName()) + "');\"");
+                HttpView.currentPageConfig().addHandler(id, "click", "toggleRunExperimentMembership(" + currentExpId + ", " + getRunId(ctx) + ", this.checked, " + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + ");");
             }
             else
             {

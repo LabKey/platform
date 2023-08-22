@@ -37,7 +37,8 @@
 <labkey:form action="<%=urlFor(BulkDatasetDeleteAction.class)%>" name="bulkDatasetDelete" method="POST">
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <td class="labkey-column-header"><input type="checkbox" onchange="toggleAllRows(this);"></td>
+        <% addHandler("toggleAllRows", "change", "toggleAllRows(this);"); %>
+        <td class="labkey-column-header"><input id="toggleAllRows" type="checkbox"></td>
         <td class="labkey-column-header">ID</td>
         <td class="labkey-column-header">Label</td>
         <td class="labkey-column-header">Category</td>

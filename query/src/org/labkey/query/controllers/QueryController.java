@@ -6939,8 +6939,12 @@ public class QueryController extends SpringActionController
             List<QueryParseException> qpe = new ArrayList<>();
             String expr = getViewContext().getRequest().getParameter("q");
             ArrayList<String> html = new ArrayList<>();
-            html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input type=submit onclick='Ext.getBody().mask();'></form>\n" +
-                    "<script>" +
+            PageConfig config = getPageConfig();
+            var inputId = config.makeId("submit_");
+            config.addHandler(inputId, "click", "Ext.getBody().mask();");
+            html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input id=\"" + inputId + "\" type=submit></form>\n" +
+                    "<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
+
                     "    var resizer = new (Ext4||Ext).Resizable(\"expression\", {\n" +
                             "        handles: 'se',\n" +
                             "        minWidth: 200,\n" +

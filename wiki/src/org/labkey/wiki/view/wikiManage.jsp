@@ -107,7 +107,7 @@
     }
 </script>
 
-<labkey:form method="post" name="manage" action="<%=urlFor(ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
+<labkey:form method="post" name="manage" action="<%=urlFor(ManageAction.class)%>" enctype="multipart/form-data" onsubmit="return checkWikiName(this.name.value)">
 
 <table>
 <tr><td>
@@ -146,7 +146,7 @@
                     .name("parent")
                     .id("parent")
                     .addStyle("width:420px")
-                    .onChange("document.manage.nextAction.value = " + q(NextAction.manage.name()) + "; submit();");
+                    .onChange("document.manage.nextAction.value = " + q(NextAction.manage.name()) + "; this.form.submit();");
                 parentBuilder.addOption(new OptionBuilder().value("").label("[none]").selected(wiki.getParent() == null).build());
                 bean.possibleParents.forEach(pp->{
                     StringBuilder indent = new StringBuilder();

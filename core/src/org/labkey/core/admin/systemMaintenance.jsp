@@ -87,7 +87,7 @@
                 {
             %>
             <tr>
-                <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenance tasks now: <%=link("Run all tasks").href("javascript:submitSystemMaintenance()")%></td>
+                <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenance tasks now: <%=link("Run all tasks").onClick("submitSystemMaintenance()")%></td>
             </tr>
 
             <tr>
@@ -108,7 +108,7 @@
                         {
                             SafeToRender description;
                             if (hasAdminOpsPerms)
-                                description = link(task.getDescription()).href("javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
+                                description = link(task.getDescription()).onClick("submitSystemMaintenance(" + q(task.getName()) + ")");
                             else
                                 description = HtmlStringBuilder
                                     .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))
@@ -169,7 +169,7 @@
             {
                 SafeToRender description;
                 if (hasAdminOpsPerms)
-                    description = link(task.getDescription()).href("javascript:submitSystemMaintenance(" + q(task.getName()) + ")");
+                    description = link(task.getDescription()).onClick("submitSystemMaintenance(" + q(task.getName()) + ")");
                 else
                     description = HtmlStringBuilder
                         .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))

@@ -460,9 +460,10 @@ public class NavTree implements Collapsible
         return script;
    }
 
-    public void setScript(String script)
+    public NavTree setScript(String script)
     {
         _script = script;
+        return this;
     }
 
     public boolean isDisabled()

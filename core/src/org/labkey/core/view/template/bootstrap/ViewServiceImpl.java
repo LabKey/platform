@@ -16,12 +16,11 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.PopupMenuView;
@@ -189,7 +188,6 @@ public class ViewServiceImpl implements ViewService
                 out.print("<tr>");
 
                 String rootId = config._rootId;
-                ActionURL expandCollapseUrl = null;
                 String expandCollapseGifId = "expandCollapse-" + rootId;
 
                 boolean isCollapsible = config._isCollapsible;
@@ -197,16 +195,14 @@ public class ViewServiceImpl implements ViewService
                 {
                     if (rootId == null)
                         isCollapsible = false;
-                    else
-                        expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(context.getContainer(), "", rootId);
                 }
 
                 out.print("<td class=\"labkey-expand-collapse-area\"><div>");
 
                 if (isCollapsible)
                 {
-                    out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s);\" id=\"%s\">",
-                            filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
+                    HttpView.currentPageConfig().addHandler(expandCollapseGifId, "click", "LABKEY.Utils.toggleLink(this, true); return false;");
+                    out.printf("<a class=\"labkey-header\" id=\"%s\">", expandCollapseGifId);
                     String image = config._collapsed ? "plus.gif" : "minus.gif";
                     out.printf("<img src=\"%s/_images/%s\" width=9 height=9></a>", context.getContextPath(), image);
                 }
@@ -220,8 +216,8 @@ public class ViewServiceImpl implements ViewService
                 else if (isCollapsible)
                 {
                     // print title with expand/collapse link:
-                    out.printf("<a class=\"labkey-header\" href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s);\">",
-                            filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");
+                    HttpView.currentPageConfig().addHandler(expandCollapseGifId+"Title", "click", "LABKEY.Utils.toggleLink(document.getElementById("+ jsString(expandCollapseGifId) +"), true); return false;");
+                    out.printf("<a id=\"%s\" class=\"labkey-header\">", expandCollapseGifId + "Title");
                     out.print(PageFlowUtil.filter(title));
                     out.print("</a>");
                 }
@@ -395,14 +391,15 @@ public class ViewServiceImpl implements ViewService
                 out.print("\">");
 
                 if (StringUtils.isEmpty(linkHref))
-                    linkHref = "javascript:void(0);";
+                    linkHref = "#";
 
-                out.print("<a href=\"" + PageFlowUtil.filter(linkHref) + "\"");
+                var id = HttpView.currentPageConfig().makeId("button");
+                out.print("<a id=\"" + filter(id) + "\" href=\"" + PageFlowUtil.filter(linkHref) + "\"");
                 if (current.isNoFollow())
                     out.print(" rel=\"nofollow\"");
-                if (StringUtils.isNotEmpty(script))
-                    out.print(" onclick=\"" + PageFlowUtil.filter(script) + "\"");
                 out.print(">");
+                if (StringUtils.isNotEmpty(script))
+                    HttpView.currentPageConfig().addHandler(id, "click", script);
             }
 
             if (null != current.getImageCls())
@@ -488,11 +485,12 @@ public class ViewServiceImpl implements ViewService
                 // Wrapped in immediately invoke function expression because of Issue 16953
                 if (PageFlowUtil.isPageAdminMode(getContext()))
                 {
-                    NavTree permissionsNav = new NavTree("Permissions",
-                            "javascript:LABKEY.Portal._showPermissions(" +
+                    NavTree permissionsNav = new NavTree("Permissions");
+                    permissionsNav.setScript(
+                            "LABKEY.Portal._showPermissions(" +
                                     config._webpart.getRowId() + "," +
                                     permissionString + "," +
-                                    containerPathString + ");"
+                                    containerPathString + "); return false;"
                     );
 
                     permissionsNav.setId("permissions_" + webPart.getRowId());
@@ -612,12 +610,12 @@ public class ViewServiceImpl implements ViewService
                 out.print(PageFlowUtil.filter(title));
                 out.print("\"");
             }
-            out.print("><a name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
+            out.print("><span name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
             if (getConfig()._isCollapsible)
                 renderCollapsiblePortalTitle(out);
             else
                 renderNonCollapsiblePortalTitle(out);
-            out.print("</a></h3>");
+            out.print("</span></h3>");
         }
 
         public void renderWebpartHeaderEnd(PrintWriter out)
@@ -646,21 +644,18 @@ public class ViewServiceImpl implements ViewService
 
         public void renderCollapsiblePortalTitle(PrintWriter out)
         {
-            ActionURL expandCollapseUrl;
             String expandCollapseGifId = "expandCollapse-" + getConfig()._rootId;
 
             if (getConfig()._rootId == null)
                 throw new IllegalArgumentException("pathToHere or rootId not provided");
-            expandCollapseUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getExpandCollapseURL(getContext().getContainer(), "", getConfig()._rootId);
 
-
-            out.printf("<a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(this, %s, %s);\" id=\"%s\">",
-                    filter(expandCollapseUrl.getLocalURIString()), "true", jsString("DIV"), expandCollapseGifId);
+            HttpView.currentPageConfig().addHandler(expandCollapseGifId, "click", "LABKEY.Utils.toggleLink(this, true, 'DIV'); return false;");
+            out.printf("<a id=\"%s\">", expandCollapseGifId);
             String image = getConfig()._collapsed ? "plus.gif" : "minus.gif";
             out.printf("<img width=9 height=9 style=\"margin-bottom: 0\" src=\"%s/_images/%s\"></a>", getContext().getContextPath(), image);
 
-            out.printf(" <a href=\"%s\" onclick=\"return LABKEY.Utils.toggleLink(document.getElementById(%s), %s, %s);\">",
-                    filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true", jsString("DIV"));
+            HttpView.currentPageConfig().addHandler(expandCollapseGifId+"Title", "click", "LABKEY.Utils.toggleLink(document.getElementById(" + jsString(expandCollapseGifId) + "), true, 'DIV'); return false;");
+            out.printf(" <a id=\"%s\">", expandCollapseGifId+"Title");
             if (getConfig()._showTitle)
             {
                 out.print("<span class=\"labkey-wp-title-text\">");

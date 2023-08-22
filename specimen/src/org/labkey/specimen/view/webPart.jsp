@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.specimen.actions.SpecimenController.AutoReportListAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ShowCreateSpecimenRequestAction" %>
 <%@ page import="org.labkey.specimen.actions.SpecimenController.ViewRequestsAction" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -48,29 +47,35 @@
     String group2 = "group2-" + time;
     String groupControl1 = "groupControl1-" + time;
     String groupControl2 = "groupControl2-" + time;
+
+    getPageConfig().addHandlerForQuerySelector("A.webPart_toggleLink","click","return LABKEY.Utils.toggleLink(this, false);");
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
-    function populateGroupingContent(grouping)
+    function populateGroupingContent(grouping, innerHTML)
     {
         var values = grouping.values;
-        var innerHTML = '<table width="100%" class="labkey-study-expandable-nav">';
+        innerHTML.push('<table width="100%" class="labkey-study-expandable-nav">');
         for (var i = 0; i < values.length; i++)
         {
             var details = values[i];
-            innerHTML += '<tr class="labkey-header">';
+            innerHTML.push('<tr class="labkey-header">');
             if (details.group)
-                innerHTML += '<td class="labkey-nav-tree-node"><a onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" width=9 height=9></a></td>';
+                innerHTML.push('<td class="labkey-nav-tree-node"><a class="webPart_toggleLink" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" width=9 height=9></a></td>');
             else
-                innerHTML += '<td class="labkey-nav-tree-node"><img src="<%=getWebappURL("_.gif")%>" width=9 height=1></td>';
+                innerHTML.push('<td class="labkey-nav-tree-node"><img src="<%=getWebappURL("_.gif")%>" width=9 height=1></td>');
 
             var nextByGroup = '';
-            innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
-                    details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td></tr>';
+            innerHTML.push('<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
+                    details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td></tr>');
             if (details.group)
-                innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateGroupingContent(details.group) + '</td></tr>';
+            {
+                innerHTML.push('<tr style="display:none;"><td></td><td colspan="2">');
+                populateGroupingContent(details.group, innerHTML);
+                innerHTML.push('</td></tr>');
+            }
         }
-        innerHTML += '</table>';
+        innerHTML.push('</table>');
         return innerHTML;
     }
 
@@ -82,9 +87,9 @@
         else
             document.getElementById(names.heading2).innerHTML = 'Vials by ' + groupingName;
 
-        var innerHTML;
-        innerHTML = populateGroupingContent(grouping);
-        document.getElementById(elementId).innerHTML = innerHTML;
+        var innerHTML = populateGroupingContent(grouping, []);
+        document.getElementById(elementId).innerHTML = innerHTML.join('');
+        LABKEY.Utils.attachEventHandlerForQuerySelector('A.webPart_toggleLink','click',function(){return LABKEY.Utils.toggleLink(this, false);});
     }
 
     function handleGroupings(resp, names)
@@ -140,8 +145,8 @@
             <table class="labkey-nav-tree" style="width: 100%;">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
-                    <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;width:auto" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
+                    <td class="labkey-nav-tree-text" align="left" nowrap="true">
+                        <a style="color:#000000;width:auto; class="webPart_toggleLink" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
                             <span>View All Specimens</span></a><%= helpPopup("Vial Viewing Options", HtmlString.of("Vials may be viewed individually, with one row per vial, or by vial group, with one row per subject, time point, and sample type combination.")) %>
                     </td>
                 </tr>
@@ -167,7 +172,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
+                        <a style="color:#000000;" class="webPart_toggleLink" href="#"><img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
                             <span>Search Specimens</span>
                         </a>
                     </td>
@@ -203,7 +208,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
+                        <a style="color:#000000;" class="webPart_toggleLink" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span>Specimen Reports</span>
                         </a>
                     </td>
@@ -230,7 +235,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
+                        <a  style="color:#000000;" class="webPart_toggleLink" href="#">
                             <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span>Specimen Requests</span>
                         </a>
@@ -273,7 +278,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
+                        <a  style="color:#000000;" class="webPart_toggleLink" href="#">
                             <img src="<%=getWebappURL("_images/minus.gif")%>" alt="" width=9 height=9>
                             <span id="<%=h(groupHeading1)%>"></span>
                         </a>
@@ -292,7 +297,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
+                        <a  style="color:#000000;" class="webPart_toggleLink" href="#">
                             <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span id="<%=h(groupHeading2)%>"></span>
                         </a>
@@ -314,7 +319,7 @@
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
-                        <a style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
+                        <a style="color:#000000;" class="webPart_toggleLink" href="#"><img src="<%=getWebappURL("_images/plus.gif")%>" alt="" width=9 height=9>
                             <span>Administration</span>
                         </a>
                     </td>
