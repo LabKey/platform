@@ -18,7 +18,6 @@ package org.labkey.api.util.element;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option.OptionBuilder;
 
 import java.io.IOException;
@@ -74,7 +73,7 @@ public class Select extends Input
 
         doStyles(sb);
 
-        doInputEvents(id, sb);
+        doInputEvents(id);
 
         if (isDisabled())
             sb.append(" disabled");

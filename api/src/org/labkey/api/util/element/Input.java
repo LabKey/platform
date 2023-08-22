@@ -552,7 +552,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         doStyles(sb);
         if (!HtmlString.isBlank(getValue()))
             sb.append(" value=\"").append(h(getValue())).append("\"");
-        doInputEvents(id, sb);
+        doInputEvents(id);
 
         if (isRequired())
             sb.append(" required");

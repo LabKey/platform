@@ -60,7 +60,7 @@ public class TextArea extends Input
         if (StringUtils.isNotEmpty(getPlaceholder()))
             sb.append(" placeholder=\"").append(h(getPlaceholder())).append("\"");
 
-        doInputEvents(id, sb);
+        doInputEvents(id);
 
         if (isDisabled())
             sb.append(" disabled");
