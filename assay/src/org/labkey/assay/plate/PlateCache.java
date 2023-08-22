@@ -59,6 +59,7 @@ public class PlateCache
             {
                 PlateImpl plate = plates.get(0);
                 PlateManager.get().populatePlate(plate);
+                LOG.info(String.format("Caching plate %s for folder %s", plate.getName(), cacheKey._container.getPath()));
 
                 // add to internal collections
                 addToCollections(cacheKey, plate);
@@ -165,6 +166,8 @@ public class PlateCache
 
     public static void uncache(Container c)
     {
+        LOG.info(String.format("Clearing cache for folder %s", c.getPath()));
+
         // uncache all plates for this container
         if (_loader._rowIdMap.containsKey(c))
         {
@@ -178,6 +181,8 @@ public class PlateCache
 
     public static void uncache(Container c, Plate plate)
     {
+        LOG.info(String.format("Un-caching plate %s for folder %s", plate.getName(), c.getPath()));
+
         if (plate.getName() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, name is null");
         if (plate.getRowId() == null)
