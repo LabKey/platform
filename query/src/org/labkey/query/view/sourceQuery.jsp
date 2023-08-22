@@ -129,14 +129,14 @@
 
         var setError = function(msg) {
             var elem = Ext4.get('status');
-            elem.update(msg);
+            elem.update(LABKEY.Utils.encodeHtml(msg));
             elem.dom.className = 'labkey-status-error';
             elem.setVisible(true);
         };
 
         var setStatus = function(msg, autoClear) {
             var elem = Ext4.get('status');
-            elem.update(msg);
+            elem.update(LABKEY.Utils.encodeHtml(msg));
             elem.dom.className = 'labkey-status-info';
             elem.setDisplayed(true);
             elem.setVisible(true);
