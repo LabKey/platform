@@ -565,7 +565,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         return _plateNumber;
     }
 
-    @JsonIgnore
     @Override
     public @NotNull List<PlateCustomField> getCustomFields()
     {

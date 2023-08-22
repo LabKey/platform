@@ -767,4 +767,36 @@ public class PlateController extends SpringActionController
             return success(domain != null ? domain.getTypeId() : null);
         }
     }
+
+    public static class GetPlateForm
+    {
+        private Integer _rowId;
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetPlateAction extends ReadOnlyApiAction<GetPlateForm>
+    {
+        @Override
+        public void validateForm(GetPlateForm form, Errors errors)
+        {
+            if (form.getRowId() == null)
+                errors.reject(ERROR_GENERIC, "Plate \"rowId\" is required.");
+        }
+
+        @Override
+        public Object execute(GetPlateForm form, BindException errors) throws Exception
+        {
+            return PlateManager.get().getPlate(getContainer(), form.getRowId());
+        }
+    }
 }
