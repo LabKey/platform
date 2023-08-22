@@ -34,20 +34,13 @@ public class PlateCache
 
     private static class PlateLoader implements CacheLoader<String, Plate>
     {
-        private Map<Container, Map<Object, Plate>> _rowIdMap = new HashMap<>();
-        private Map<Container, Map<Object, Plate>> _nameMap = new HashMap<>();
-        private Map<Container, Map<Object, Plate>> _lsidMap = new HashMap<>();
+        private Map<Container, List<Plate>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
 
         @Override
         public Plate load(@NotNull String key, @Nullable Object argument)
         {
             // parse the cache key
             PlateCacheKey cacheKey = new PlateCacheKey(key);
-
-            // check our internal caches
-            Plate cachedPlate = getFromCollections(cacheKey);
-            if (cachedPlate != null)
-                return cachedPlate;
 
             SimpleFilter filter = SimpleFilter.createContainerFilter(cacheKey._container);
             filter.addCondition(FieldKey.fromParts(cacheKey._type.name()), cacheKey._identifier);
@@ -61,29 +54,14 @@ public class PlateCache
                 PlateManager.get().populatePlate(plate);
                 LOG.info(String.format("Caching plate \"%s\" for folder %s", plate.getName(), cacheKey._container.getPath()));
 
-                // add to internal collections
-                addToCollections(cacheKey, plate);
+                // add all cache keys for this plate
+                addCacheKeys(cacheKey, plate);
                 return plate;
             }
             return null;
         }
 
-        @Nullable
-        private Plate getFromCollections(PlateCacheKey cacheKey)
-        {
-            Map<Container, Map<Object, Plate>> map = switch (cacheKey._type)
-            {
-                case lsid -> _lsidMap;
-                case name -> _nameMap;
-                case rowId -> _rowIdMap;
-            };
-
-            if (map.containsKey(cacheKey._container))
-                return map.get(cacheKey._container).get(cacheKey._identifier);
-            return null;
-        }
-
-        private void addToCollections(PlateCacheKey cacheKey, Plate plate)
+        private void addCacheKeys(PlateCacheKey cacheKey, Plate plate)
         {
             if (plate != null)
             {
@@ -94,26 +72,15 @@ public class PlateCache
                 if (plate.getLSID() == null)
                     throw new IllegalArgumentException("Plate cannot be cached, LSID is null");
 
-                _lsidMap.computeIfAbsent(cacheKey._container, k -> new HashMap<>()).put(plate.getLSID(), plate);
-                _nameMap.computeIfAbsent(cacheKey._container, k -> new HashMap<>()).put(plate.getName(), plate);
-                _rowIdMap.computeIfAbsent(cacheKey._container, k -> new HashMap<>()).put(plate.getRowId(), plate);
-            }
-        }
+                // add the plate for the other key types
+                if (cacheKey._type != PlateCacheKey.Type.rowId)
+                    PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getRowId()), plate);
+                if (cacheKey._type != PlateCacheKey.Type.lsid)
+                    PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), Lsid.parse(plate.getLSID())), plate);
+                if (cacheKey._type != PlateCacheKey.Type.name)
+                    PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getName()), plate);
 
-        private void removeFromCollections(Container c, Plate plate)
-        {
-            if (plate != null)
-            {
-                if (plate.getName() == null)
-                    throw new IllegalArgumentException("Plate cannot be uncached, name is null");
-                if (plate.getRowId() == null)
-                    throw new IllegalArgumentException("Plate cannot be uncached, rowId is null");
-                if (plate.getLSID() == null)
-                    throw new IllegalArgumentException("Plate cannot be uncached, LSID is null");
-
-                if (_lsidMap.containsKey(c)) _lsidMap.get(c).remove(plate.getLSID());
-                if (_nameMap.containsKey(c)) _nameMap.get(c).remove(plate.getName());
-                if (_rowIdMap.containsKey(c)) _rowIdMap.get(c).remove(plate.getRowId());
+                _containerPlateMap.computeIfAbsent(cacheKey._container, k -> new ArrayList<>()).add(plate);
             }
         }
     }
@@ -169,13 +136,14 @@ public class PlateCache
         LOG.info(String.format("Clearing cache for folder %s", c.getPath()));
 
         // uncache all plates for this container
-        if (_loader._rowIdMap.containsKey(c))
+        if (_loader._containerPlateMap.containsKey(c))
         {
-            List<Plate> plates = new ArrayList<>(_loader._rowIdMap.get(c).values());
+            List<Plate> plates = new ArrayList<>(_loader._containerPlateMap.get(c));
             for (Plate plate : plates)
             {
                 uncache(c, plate);
             }
+            _loader._containerPlateMap.remove(c);
         }
     }
 
@@ -194,7 +162,8 @@ public class PlateCache
         PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, plate.getRowId()));
         PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, Lsid.parse(plate.getLSID())));
 
-        _loader.removeFromCollections(c, plate);
+        if (_loader._containerPlateMap.containsKey(c))
+            _loader._containerPlateMap.get(c).remove(plate);
     }
 
     public static void clearCache()
