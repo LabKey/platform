@@ -399,7 +399,7 @@ public class JSONDataLoader extends DataLoader
 
         FieldKey fieldKey = null;
         String type = null;
-        Class jdbcType = null;
+        Class jdbcTypeClass = null;
         Boolean mvEnabled = Boolean.FALSE;
 
         while (parser.getCurrentToken() == JsonToken.FIELD_NAME)
@@ -431,11 +431,11 @@ public class JSONDataLoader extends DataLoader
                 if (value == null)
                     throw new JsonParseException("Failed to find jdbc type property", loc);
 
-                JdbcType jdbc = JdbcType.valueOf(value);
+                JdbcType jdbcType = JdbcType.valueOf(value);
 
-                if (jdbc != null)
+                if (jdbcType != null)
                 {
-                    jdbcType = jdbc.getJavaClass();
+                    jdbcTypeClass = jdbcType.getJavaClass();
                 }
                 else
                 {
@@ -461,9 +461,9 @@ public class JSONDataLoader extends DataLoader
         {
             col = new ColumnDescriptor(fieldKey.toString());
 
-            if (jdbcType != null)
+            if (jdbcTypeClass != null)
             {
-                col.clazz = jdbcType;
+                col.clazz = jdbcTypeClass;
             }
             else
             {
