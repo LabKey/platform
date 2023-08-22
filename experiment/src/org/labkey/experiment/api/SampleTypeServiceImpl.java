@@ -33,25 +33,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AuditConfigurable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.ParameterMapStatement;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
@@ -101,11 +83,13 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -155,6 +139,7 @@ import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
+    public static final String SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:sampleCount";
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
 
     // columns that may appear in a row when only the sample status is updating.
@@ -968,22 +953,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             counts.put("yearlySampleCount",  yearlySampleCount.next());
             return counts;
         };
-    }
-
-    @Override
-    public DbSequence getRootSampleSequence()
-    {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
-            return DbSequenceManager.getReclaimable(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0);
-
-        return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0, 100);
-    }
-
-    @Override
-    public long getRootSampleCount()
-    {
-        return new SqlSelector(ExperimentService.get().getSchema(),
-                "SELECT COUNT(*) FROM exp.material WHERE AliquotedFromLsid IS NULL").getObject(Long.class).longValue();
     }
 
     @Override
@@ -2121,5 +2090,104 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return true;
+    }
+
+    @Override
+    @Nullable
+    public DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly)
+    {
+        return getSampleCountSequence(container, isRootSampleOnly, true);
+    }
+
+    public DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly, boolean create)
+    {
+        Container seqContainer = container.getProject();
+        if (seqContainer == null)
+            return null;
+
+       String seqName = isRootSampleOnly ? ROOT_SAMPLE_COUNT_SEQ_NAME : SAMPLE_COUNT_SEQ_NAME;
+
+       if (!create)
+       {
+           // check if sequence already exist so we don't create one just for querying
+           Integer seqRowId = DbSequenceManager.getRowId(seqContainer, seqName, 0);
+           if (null == seqRowId)
+               return null;
+       }
+
+       if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+            return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
+
+       return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);
+
+    }
+
+    @Override
+    public void ensureMinSampleCount(long newSeqValue, NameGenerator.EntityCounter counterType, Container container) throws ExperimentException
+    {
+        boolean isRootOnly = counterType == NameGenerator.EntityCounter.rootSampleCount;
+
+        DbSequence seq = getSampleCountSequence(container, isRootOnly, newSeqValue >= 1);
+        if (seq == null)
+            return;
+
+        long current = seq.current();
+        if (newSeqValue < current)
+        {
+            if ((isRootOnly ? getProjectRootSampleCount(container) : getProjectSampleCount(container)) > 0)
+                throw new ExperimentException("Unable to set " + counterType.name() + " to " + newSeqValue + " due to conflict with existing samples.");
+
+            if (newSeqValue <= 0)
+            {
+                String seqName = isRootOnly ? ROOT_SAMPLE_COUNT_SEQ_NAME : SAMPLE_COUNT_SEQ_NAME;
+                Container seqContainer = container.getProject();
+                DbSequenceManager.delete(seqContainer, seqName);
+                DbSequenceManager.invalidatePreallocatingSequence(container, seqName, 0);
+                return;
+            }
+        }
+
+        seq.ensureMinimum(newSeqValue);
+        seq.sync();
+    }
+
+    @Override
+    public long getProjectSampleCount(Container container)
+    {
+        return getProjectSampleCount(container, false);
+    }
+
+    @Override
+    public long getProjectRootSampleCount(Container container)
+    {
+        return getProjectSampleCount(container, true);
+    }
+
+    private long getProjectSampleCount(Container container, boolean isRootOnly)
+    {
+        User searchUser = User.getSearchUser();
+        ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
+        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, null);
+        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
+        sql.append(tableInfo);
+        sql.append(" WHERE ");
+        if (isRootOnly)
+            sql.append(" AliquotedFromLsid IS NULL AND ");
+        sql.append("Container ");
+        sql.appendInClause(validContainerIds, tableInfo.getSqlDialect());
+        return new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Long.class).longValue();
+    }
+
+    @Override
+    public long getCurrentCount(NameGenerator.EntityCounter counterType, Container container)
+    {
+        boolean isRootOnly = counterType == NameGenerator.EntityCounter.rootSampleCount;
+        DbSequence seq = getSampleCountSequence(container, isRootOnly, false);
+        if (seq != null)
+            return seq.current();
+        else
+            return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
+
     }
 }

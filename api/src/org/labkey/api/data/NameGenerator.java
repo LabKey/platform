@@ -116,9 +116,9 @@ public class NameGenerator
      * Examples:
      *  ${genId:minValue(100)}
      *  ${genId:minValue('100')}
+     *  ${sampleCount:minValue(10)}
      */
-    public static final String GENID_WITH_START_IND_REGEX = ".*\\$\\{genId:minValue\\('?(\\d*)?'?\\)}.*";
-    public static final Pattern GENID_WITH_START_IND_PATTERN = Pattern.compile(GENID_WITH_START_IND_REGEX);
+    public static final String WITH_START_IND_REGEX = ".*\\$\\{%s:minValue\\('?(\\d*)?'?\\)}.*";
 
     /**
      * Ancestor lookup example:
@@ -153,6 +153,13 @@ public class NameGenerator
 
     public static final String COUNTER_SEQ_PREFIX = "NameGenCounter-";
 
+    public enum EntityCounter
+    {
+       genId,
+       rootSampleCount,
+       sampleCount
+    }
+
     public enum SubstitutionValue
     {
         AliquotedFrom("Sample112"),
@@ -162,6 +169,7 @@ public class NameGenerator
         batchRandomId(3294),
         containerPath("containerPathValue"),
         contextPath("contextPathValue"),
+        sampleCount(240),
         rootSampleCount(124),
         dailySampleCount(14), // sample counts can both be SubstitutionValue as well as modifiers
         dataRegionName("dataRegionNameValue"),
@@ -221,11 +229,10 @@ public class NameGenerator
 
     private final FieldKeyStringExpression _parsedNameExpression;
 
+    record ExpressionSummary(boolean hasProjectSampleCounter, boolean hasProjectSampleRootCounter, boolean hasDateBasedSampleCounter, boolean hasLineageInputs, boolean hasLineageLookup) {};
+
     // extracted from name expression after parsing
-    private boolean _exprHasSampleRootCounter = false;
-    private boolean _exprHasSampleCounterFormats = false;
-    private boolean _exprHasLineageInputs = false;
-    private boolean _exprHasLineageLookup = false;
+    private ExpressionSummary _expressionSummary;
     private Map<FieldKey, TableInfo> _exprLookups = Collections.emptyMap();
     private Map<String, List<String>> _expLineageLookupFields = new CaseInsensitiveHashMap<>();
     private Map<String/*part field key*/, NameExpressionAncestorPartOption> _partAncestorOptions;
@@ -676,7 +683,12 @@ public class NameGenerator
         return true;
     }
 
-    public static boolean isRootSampleCountToken(FieldKey token)
+    public static boolean isProjectSampleCountToken(FieldKey token)
+    {
+        return SubstitutionFormat.sampleCount.name().equalsIgnoreCase(token.toString());
+    }
+
+    public static boolean isProjectRootSampleCountToken(FieldKey token)
     {
         return SubstitutionFormat.rootSampleCount.name().equalsIgnoreCase(token.toString());
     }
@@ -852,10 +864,11 @@ public class NameGenerator
     {
         assert _parsedNameExpression != null;
 
-        boolean hasSampleCounterFormat = false;
+        boolean hasDateBasedSampleCounterFormat = false;
         boolean hasLineageInputs = false;
         boolean hasLineageLookup = false;
-        boolean hasSampleRootCounter = false;
+        boolean hasProjectSampleCounter = false;
+        boolean hasProjectSampleRootCounter = false;
         List<FieldKey> lookups = new ArrayList<>();
         Map<String, List<String>> lineageLookupFields = new CaseInsensitiveHashMap<>();
         Set<String> substitutionValues = new CaseInsensitiveHashSet();
@@ -918,7 +931,7 @@ public class NameGenerator
                 for (SubstitutionFormat format : formats)
                 {
                     if (format == dailySampleCount || format == weeklySampleCount || format == monthlySampleCount || format == yearlySampleCount)
-                        hasSampleCounterFormat = true;
+                        hasDateBasedSampleCounterFormat = true;
                 }
 
                 String sTok = token.toString().toLowerCase();
@@ -941,8 +954,11 @@ public class NameGenerator
                     // for simple token with no lookups, e.g. ${genId}, don't need to do anything special
                     if (fieldParts.size() == 1)
                     {
-                        if (isRootSampleCountToken(fkTok))
-                            hasSampleRootCounter = true;
+                        if (isProjectSampleCountToken(fkTok))
+                            hasProjectSampleCounter = true;
+
+                        if (isProjectRootSampleCountToken(fkTok))
+                            hasProjectSampleRootCounter = true;
 
                         if (_validateSyntax)
                         {
@@ -1185,10 +1201,7 @@ public class NameGenerator
             _exprLookups = fieldKeyLookup;
         }
 
-        _exprHasSampleRootCounter = hasSampleRootCounter;
-        _exprHasSampleCounterFormats = hasSampleCounterFormat;
-        _exprHasLineageInputs = hasLineageInputs;
-        _exprHasLineageLookup = hasLineageLookup;
+        _expressionSummary = new ExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, hasDateBasedSampleCounterFormat, hasLineageInputs, hasLineageLookup);
         _expLineageLookupFields = lineageLookupFields;
         _partAncestorOptions = partAncestorOptions;
         if (_validateSyntax && _syntaxErrors.isEmpty())
@@ -1288,16 +1301,18 @@ public class NameGenerator
         return pt.getPreviewValue(prefix);
     }
 
-    public static long getGenIdStartValue(@Nullable String nameExpression)
+    public static long getCounterStartValue(@Nullable String nameExpression, EntityCounter counterType)
     {
         long startInd = 0;
         if (StringUtils.isEmpty(nameExpression))
             return startInd;
 
-        Matcher genIdMatcher = GENID_WITH_START_IND_PATTERN.matcher(nameExpression);
-        if (genIdMatcher.find())
+        Pattern pattern = Pattern.compile(String.format(WITH_START_IND_REGEX, counterType.name()));
+
+        Matcher matcher = pattern.matcher(nameExpression);
+        if (matcher.find())
         {
-            String startIndStr = genIdMatcher.group(1);
+            String startIndStr = matcher.group(1);
             if (!StringUtils.isEmpty(startIndStr))
             {
                 try
@@ -1311,6 +1326,21 @@ public class NameGenerator
             }
         }
         return startInd;
+    }
+
+    public static long getGenIdStartValue(@Nullable String nameExpression)
+    {
+        return getCounterStartValue(nameExpression, EntityCounter.genId);
+    }
+
+    public static long getRootSampleCountStartValue(@Nullable String nameExpression)
+    {
+        return getCounterStartValue(nameExpression, EntityCounter.rootSampleCount);
+    }
+
+    public static long getSampleCountStartValue(@Nullable String nameExpression)
+    {
+        return getCounterStartValue(nameExpression, EntityCounter.sampleCount);
     }
 
     public void generateNames(@NotNull State state,
@@ -1349,7 +1379,7 @@ public class NameGenerator
     @NotNull
     public State createState(boolean incrementSampleCounts)
     {
-        return new State(incrementSampleCounts, _exprHasSampleRootCounter);
+        return new State(incrementSampleCounts, _expressionSummary, _container);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
@@ -1371,6 +1401,17 @@ public class NameGenerator
         return state.nextName(rowMap, parentDatas, parentSamples, extraPropsFns, altExpression);
     }
 
+    record ProjectSampleCounters(DbSequence sampleCounterSequence, DbSequence rootCounterSequence)
+    {
+        public void sync()
+        {
+            if (sampleCounterSequence != null)
+                sampleCounterSequence.sync();
+            if (rootCounterSequence != null)
+                rootCounterSequence.sync();
+        }
+    }
+
     public class State implements AutoCloseable
     {
         private final boolean _incrementSampleCounts;
@@ -1384,28 +1425,47 @@ public class NameGenerator
         private final Map<String, ArrayList<Object>> _ancestorCache;
         private final Map<String, Map<String, DbSequence>> _prefixCounterSequences;
 
-        private final DbSequence _rootCounterSequence;
+        private final ProjectSampleCounters _sampleCounters;
+        private boolean _counterSequencesCleaned = false;
+        private Container _counterContainer;
 
-        private boolean _prefixCounterSequencesCleaned = false;
-
-        private State(boolean incrementSampleCounts, boolean exprHasSampleRootCounter)
+        private State(boolean incrementSampleCounts, ExpressionSummary expressionSummary, Container container)
         {
             _incrementSampleCounts = incrementSampleCounts;
+            _counterContainer = container;
+
+            DbSequence sampleCounterSequence;
+            DbSequence rootCounterSequence;
 
             if (incrementSampleCounts) // determine if need to incrementRootSampleCount
             {
-                DbSequence rootCountSeq = SampleTypeService.get().getRootSampleSequence();
-                if (exprHasSampleRootCounter || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
+                DbSequence sampleCountSeq = SampleTypeService.get().getSampleCountSequence(_counterContainer, false);
+                if (expressionSummary.hasProjectSampleCounter || sampleCountSeq.current() > 0) // if ${sampleCount} is present, or if ${sampleCount} was previously evaluated
                 {
-                    _rootCounterSequence = rootCountSeq;
-                    if (rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a server
-                        _rootCounterSequence.ensureMinimum(SampleTypeService.get().getRootSampleCount());
+                    sampleCounterSequence = sampleCountSeq;
+                    if (sampleCounterSequence != null && sampleCounterSequence.current() == 0) // initialize existing count when ${sampleCount} is first encountered for a project
+                        sampleCounterSequence.ensureMinimum(SampleTypeService.get().getProjectSampleCount(_counterContainer));
                 }
                 else
-                    _rootCounterSequence = null;
+                    sampleCounterSequence = null;
+
+                DbSequence rootCountSeq = SampleTypeService.get().getSampleCountSequence(_counterContainer, true);
+                if (expressionSummary.hasProjectSampleRootCounter || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
+                {
+                    rootCounterSequence = rootCountSeq;
+                    if (rootCounterSequence != null && rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a project
+                        rootCounterSequence.ensureMinimum(SampleTypeService.get().getProjectRootSampleCount(_counterContainer));
+                }
+                else
+                    rootCounterSequence = null;
             }
             else
-                _rootCounterSequence = null;
+            {
+                sampleCounterSequence = null;
+                rootCounterSequence = null;
+            }
+
+            _sampleCounters = new ProjectSampleCounters(sampleCounterSequence, rootCounterSequence);
 
             // Create the name expression context shared for the entire batch of rows
             Map<String, Object> batchContext = new CaseInsensitiveHashMap<>();
@@ -1423,11 +1483,6 @@ public class NameGenerator
             return _incrementSampleCounts;
         }
 
-        public DbSequence getRootCounterSequence()
-        {
-            return _rootCounterSequence;
-        }
-
         public Map<String, Map<String, DbSequence>> getPrefixCounterSequences()
         {
             return _prefixCounterSequences;
@@ -1435,11 +1490,10 @@ public class NameGenerator
 
         public void cleanUp()
         {
-            if (_prefixCounterSequencesCleaned)
+            if (_counterSequencesCleaned)
                 return;
 
-            if (_rootCounterSequence != null)
-                _rootCounterSequence.sync();
+            _sampleCounters.sync();
 
             for (Map<String, DbSequence> counterSequences : _prefixCounterSequences.values())
             {
@@ -1448,7 +1502,7 @@ public class NameGenerator
                         seq.sync();
             }
 
-            _prefixCounterSequencesCleaned = true;
+            _counterSequencesCleaned = true;
         }
 
         @Override
@@ -1506,7 +1560,7 @@ public class NameGenerator
             Map<String, Long> sampleCounts = null;
             if (_incrementSampleCounts)
             {
-                if (!_exprHasSampleCounterFormats)
+                if (!_expressionSummary.hasDateBasedSampleCounter)
                 {
                     if (null == getSampleCountsFunction)
                     {
@@ -1516,16 +1570,24 @@ public class NameGenerator
                     sampleCounts = getSampleCountsFunction.apply(null);
                 }
 
-                if (_rootCounterSequence != null)
+                if (_sampleCounters.sampleCounterSequence != null)
+                {
+                    if (sampleCounts == null)
+                        sampleCounts = new HashMap<>();
+
+                    sampleCounts.put("sampleCount", _sampleCounters.sampleCounterSequence.next());
+                }
+
+                if (_sampleCounters.rootCounterSequence != null)
                 {
                     if (sampleCounts == null)
                         sampleCounts = new HashMap<>();
 
                     boolean skipRootSampleCount = altExpression != null; // so far altExpression is not null only when generating aliquots
                     if (!skipRootSampleCount)
-                        sampleCounts.put("rootSampleCount", _rootCounterSequence.next());
+                        sampleCounts.put("rootSampleCount", _sampleCounters.rootCounterSequence.next());
                     else
-                        sampleCounts.put("rootSampleCount", _rootCounterSequence.current());
+                        sampleCounts.put("rootSampleCount", _sampleCounters.rootCounterSequence.current());
                 }
             }
 
@@ -1718,7 +1780,7 @@ public class NameGenerator
                                              @Nullable Map<String, String> parentImportAliases,
                                              Map<String, ArrayList<Object>> inputLookupValues)
         {
-            if (!_exprHasLineageLookup || StringUtils.isEmpty(parentTypeName) || StringUtils.isEmpty(parentName))
+            if (!_expressionSummary.hasLineageLookup || StringUtils.isEmpty(parentTypeName) || StringUtils.isEmpty(parentName))
                 return;
 
             boolean hasTypeLookup = _expLineageLookupFields.containsKey(INPUT_PARENT);
@@ -1797,7 +1859,7 @@ public class NameGenerator
             }
 
             // If needed, add the parent names to the replacement map
-            if (_exprHasLineageInputs || _exprHasLineageLookup)
+            if (_expressionSummary.hasLineageLookup || _expressionSummary.hasLineageInputs)
             {
                 Map<String, Set<String>> inputs = new HashMap<>();
                 Map<String, ArrayList<Object>> inputLookupValues = new CaseInsensitiveHashMap<>();
@@ -1810,7 +1872,7 @@ public class NameGenerator
 
                 if (parentDatas != null)
                 {
-                    if (_exprHasLineageInputs)
+                    if (_expressionSummary.hasLineageInputs)
                     {
                         parentDatas.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
                             inputs.get(INPUT_PARENT).add(parentName);
@@ -1818,7 +1880,7 @@ public class NameGenerator
                         });
                     }
 
-                    if (_exprHasLineageLookup)
+                    if (_expressionSummary.hasLineageLookup)
                     {
                         for (ExpData parentObject : parentDatas)
                         {
@@ -1830,14 +1892,14 @@ public class NameGenerator
 
                 if (parentSamples != null)
                 {
-                    if (_exprHasLineageInputs)
+                    if (_expressionSummary.hasLineageInputs)
                     {
                         parentSamples.stream().map(ExpObject::getName).forEachOrdered(parentName -> {
                             inputs.get(INPUT_PARENT).add(parentName);
                             inputs.get(ExpMaterial.MATERIAL_INPUT_PARENT).add(parentName);
                         });
                     }
-                    if (_exprHasLineageLookup)
+                    if (_expressionSummary.hasLineageLookup)
                     {
                         for (ExpMaterial parentObject : parentSamples)
                         {
@@ -1857,18 +1919,18 @@ public class NameGenerator
 
                     if (parts.length == 2)
                     {
-                        if (_exprHasLineageInputs)
+                        if (_expressionSummary.hasLineageInputs)
                             addInputs(parts, colName, value, inputs, parentImportAliases);
-                        if (_exprHasLineageLookup)
+                        if (_expressionSummary.hasLineageLookup)
                             addLineageLookupInput(parts, colName, value, parentImportAliases, inputLookupValues);
                     }
                     else if (parentImportAliases != null && parentImportAliases.containsKey(colName))
                     {
                         String colNameForAlias = parentImportAliases.get(colName);
                         parts = colNameForAlias.split("/", 2);
-                        if (_exprHasLineageInputs)
+                        if (_expressionSummary.hasLineageInputs)
                             addInputs(parts, colNameForAlias, value, inputs, parentImportAliases);
-                        if (_exprHasLineageLookup)
+                        if (_expressionSummary.hasLineageLookup)
                             addLineageLookupInput(parts, colName, value, parentImportAliases, inputLookupValues);
                     }
                 }
@@ -2829,6 +2891,8 @@ public class NameGenerator
             validateNameResult("${genId:minValue}", withErrors("No starting parentheses found for the 'minValue' substitution pattern starting at index 7.", "No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
 
             validateNameResult("${genId:minValue(}", withErrors("No ending parentheses found for the 'minValue' substitution pattern starting at index 7."));
+
+            validateNameResult("${sampleCount:minValue(}", withErrors("No ending parentheses found for the 'minValue' substitution pattern starting at index 13."));
         }
 
         @Test

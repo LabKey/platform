@@ -492,9 +492,14 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
      */
     public long getMinGenId()
     {
-        long nameGenMin = NameGenerator.getGenIdStartValue(_object.getNameExpression());
-        long aliquotGenMin = NameGenerator.getGenIdStartValue(_object.getAliquotNameExpression());
-        return Math.max(nameGenMin, aliquotGenMin);
+        return getMinCounterValue(NameGenerator.EntityCounter.genId);
+    }
+
+    private long getMinCounterValue(NameGenerator.EntityCounter type)
+    {
+        long nameMin = NameGenerator.getCounterStartValue(_object.getNameExpression(), type);
+        long aliquotNameMin = NameGenerator.getCounterStartValue(_object.getAliquotNameExpression(), type);
+        return Math.max(nameMin, aliquotNameMin);
     }
 
     @Override
