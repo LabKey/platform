@@ -22,6 +22,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -35,12 +36,12 @@ import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URIUtil;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +54,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public static final String NAME = "Well";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
+    private Map<FieldKey, DomainProperty> _vocabularyFieldMap = new HashMap<>();
 
     static
     {
@@ -91,6 +93,13 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 col.setLabel("Plate Metadata");
                 col.setDescription("Custom properties associated with the plate well");
             }
+
+            for (DomainProperty field : domain.getProperties())
+            {
+                // resolve vocabulary fields by property URI and field key
+                _vocabularyFieldMap.put(FieldKey.fromParts("properties", field.getName()), field);
+                _vocabularyFieldMap.put(FieldKey.fromParts(field.getPropertyURI()), field);
+            }
         }
     }
 
@@ -126,16 +135,18 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         if (lsidCol != null)
         {
             // Attempt to resolve the column name as a property URI if it looks like a URI
-            if (URIUtil.hasURICharacters(name))
+            FieldKey fieldKey = FieldKey.decode(name);
+            if (_vocabularyFieldMap.containsKey(fieldKey))
             {
+                DomainProperty field = _vocabularyFieldMap.get(fieldKey);
+
                 // mark vocab propURI col as Voc column
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(field.getPropertyURI(), getContainer());
                 if (pd != null)
                 {
                     PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
-                    // use the property URI as the column's FieldKey name
                     String label = pc.getLabel();
-                    pc.setFieldKey(FieldKey.fromParts(name));
+                    pc.setFieldKey(fieldKey);
                     pc.setLabel(label);
 
                     return pc;

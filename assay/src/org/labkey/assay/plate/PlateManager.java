@@ -1503,7 +1503,7 @@ public class PlateManager implements PlateService
                         throw new IllegalArgumentException(String.format("Failed to remove plate custom fields. Custom field \"%s\" is not currently associated with this plate.", dp.getName()));
                 }
 
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
                         .append(" WHERE PlateId = ? ").add(plateId)
                         .append(" AND PropertyURI ").appendInClause(propertyURIs, AssayDbSchema.getInstance().getSchema().getSqlDialect());
 
@@ -1743,6 +1743,7 @@ public class PlateManager implements PlateService
             QueryUpdateService qus = wellTable.getUpdateService();
             BatchValidationException errors = new BatchValidationException();
 
+            // verify metadata update works for Property URI as well as field key
             org.labkey.assay.plate.model.Well well = wells.get(0);
             List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of(
                     "rowid", well.getRowId(),
@@ -1754,8 +1755,19 @@ public class PlateManager implements PlateService
             if (errors.hasErrors())
                 fail(errors.getMessage());
 
-            ColumnInfo colConcentration =wellTable.getColumn(fields.get(0).getPropertyURI());
-            ColumnInfo colNegControl =wellTable.getColumn(fields.get(1).getPropertyURI());
+            well = wells.get(1);
+            rows = List.of(CaseInsensitiveHashMap.of(
+                    "rowid", well.getRowId(),
+                    "properties/concentration", 2.25,
+                    "properties/negativeControl", 6.25
+            ));
+
+            qus.updateRows(user, c, rows, null, errors, null, null);
+            if (errors.hasErrors())
+                fail(errors.getMessage());
+
+            ColumnInfo colConcentration = wellTable.getColumn("properties/concentration");
+            ColumnInfo colNegControl = wellTable.getColumn("properties/negativeControl");
 
             // verify vocab property updates
             try (Results r = QueryService.get().select(wellTable, List.of(colConcentration, colNegControl), filter, new Sort("Col")))
@@ -1765,14 +1777,19 @@ public class PlateManager implements PlateService
                 {
                     if (row == 0)
                     {
-                        assertEquals(1.25, r.getDouble(FieldKey.fromParts(colConcentration.getName())), 0);
-                        assertEquals(5.25, r.getDouble(FieldKey.fromParts(colNegControl.getName())), 0);
+                        assertEquals(1.25, r.getDouble(colConcentration.getFieldKey()), 0);
+                        assertEquals(5.25, r.getDouble(colNegControl.getFieldKey()), 0);
+                    }
+                    else if (row == 1)
+                    {
+                        assertEquals(2.25, r.getDouble(colConcentration.getFieldKey()), 0);
+                        assertEquals(6.25, r.getDouble(colNegControl.getFieldKey()), 0);
                     }
                     else
                     {
                         // the remainder should be null
-                        assertEquals(0, r.getDouble(FieldKey.fromParts(colConcentration.getName())), 0);
-                        assertEquals(0, r.getDouble(FieldKey.fromParts(colNegControl.getName())), 0);
+                        assertEquals(0, r.getDouble(colConcentration.getFieldKey()), 0);
+                        assertEquals(0, r.getDouble(colNegControl.getFieldKey()), 0);
                     }
                     row++;
                 }
