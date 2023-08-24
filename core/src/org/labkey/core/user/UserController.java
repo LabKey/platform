@@ -1564,8 +1564,8 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserQueryForm form, BindException errors)
         {
-            User user = getUser();
-            int userId = user.getUserId();
+            User currentUser = getUser();
+            int userId = currentUser.getUserId();
             _detailsUserId = form.getUserId();
             User detailsUser = getModifiableUser(_detailsUserId);
 
@@ -1577,11 +1577,11 @@ public class UserController extends SpringActionController
 
             Container c = getContainer();
             ActionURL currentUrl = getViewContext().getActionURL();
-            boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
+            boolean isUserManager = currentUser.hasRootPermission(UserManagementPermission.class);
             boolean isProjectAdminOrBetter = isUserManager || isProjectAdmin();
 
             // don't let a non-site admin manage certain parts of a site-admin's account
-            boolean canManageDetailsUser = user.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
+            boolean canManageDetailsUser = currentUser.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
 
             ValidEmail detailsEmail = null;
             boolean loginExists = false;
@@ -1601,7 +1601,7 @@ public class UserController extends SpringActionController
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
             // for the root container or if the user is site/app admin, use the site users table
-            String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
+            String userTableName = c.isRoot() || c.hasPermission(currentUser, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             // use getTable(forWrite=true) because we hack on this TableInfo
             // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
             TableInfo table = schema.getTable(userTableName, null, true, true);
@@ -1617,7 +1617,7 @@ public class UserController extends SpringActionController
                         ((AbstractTableInfo)table).removeColumn(col);
                 }
 
-                if (!c.hasPermission(user, AdminPermission.class))
+                if (!c.hasPermission(currentUser, AdminPermission.class))
                 {
                     ColumnInfo col = table.getColumn(FieldKey.fromParts("Groups"));
                     if (col != null)
@@ -1639,7 +1639,7 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
-                ActionButton changePasswordButton = new ActionButton(urlProvider(LoginUrls.class).getChangePasswordURL(c, user, currentUrl, null), "Change Password");
+                ActionButton changePasswordButton = new ActionButton(urlProvider(LoginUrls.class).getChangePasswordURL(c, currentUser, currentUrl, null), "Change Password");
                 changePasswordButton.setActionType(ActionButton.Action.LINK);
                 changePasswordButton.addContextualRole(OwnerRole.class);
                 bb.add(changePasswordButton);
@@ -1672,7 +1672,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            UserManager.addCustomButtons(Authentication, bb, c, user, currentUrl);
+            UserManager.addCustomButtons(Authentication, bb, c, currentUser, detailsUser, currentUrl);
 
             if (isUserManager)
             {
@@ -1713,7 +1713,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            UserManager.addCustomButtons(Account, bb, c, user, currentUrl);
+            UserManager.addCustomButtons(Account, bb, c, currentUser, detailsUser, currentUrl);
 
             if (isProjectAdminOrBetter)
             {
@@ -1734,7 +1734,7 @@ public class UserController extends SpringActionController
                 bb.add(cloneButton);
             }
 
-            UserManager.addCustomButtons(Permissions, bb, c, user, currentUrl);
+            UserManager.addCustomButtons(Permissions, bb, c, currentUser, detailsUser, currentUrl);
 
             if (isProjectAdminOrBetter)
             {
@@ -1758,10 +1758,10 @@ public class UserController extends SpringActionController
                     Container doneContainer = c.getProject();
 
                     // Root or no permission means redirect to home, #12947
-                    if (null == doneContainer || !doneContainer.hasPermission(user, ReadPermission.class))
+                    if (null == doneContainer || !doneContainer.hasPermission(currentUser, ReadPermission.class))
                         doneContainer = ContainerManager.getHomeContainer();
 
-                    ActionURL doneURL = doneContainer.getStartURL(user);
+                    ActionURL doneURL = doneContainer.getStartURL(currentUser);
                     doneButton = new ActionButton(doneURL, "Go to " + doneContainer.getName());
                     doneButton.setActionType(ActionButton.Action.LINK);
                 }

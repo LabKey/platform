@@ -3,7 +3,6 @@ package org.labkey.api.security;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +13,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public class AuthenticationConfigurationCache
 {
-    private static final Logger LOG = LogManager.getLogger(AuthenticationConfigurationCache.class);
+    private static final Logger LOG = LogHelper.getLogger(AuthenticationConfigurationCache.class, "Authentication configuration warnings");
 
     // We have just a single object to cache (a global AuthenticationConfigurationCollections), but use standard cache (blocking cache wrapping the
     // shared cache) for convenience and to ensure that configuration changes will get propagated once multiple application servers are supported.
@@ -158,9 +158,9 @@ public class AuthenticationConfigurationCache
     }
 
     /**
-     * Get all configurations (whether active or not) that implement the specified interface
-     * @param clazz The interface to use as a filter
-     * @param <T> The interface type
+     * Get all configurations (whether active or not) that implement the specified class or interface
+     * @param clazz The class or interface to use as a filter
+     * @param <T> The class or interface type
      * @return A collection of the requested configurations
      */
     public static @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getConfigurations(Class<T> clazz)
@@ -169,9 +169,9 @@ public class AuthenticationConfigurationCache
     }
 
     /**
-     * Get all active providers that implement the specified interface
-     * @param clazz The interface to use as a filter
-     * @param <T> The interface type
+     * Get all active configurations that implement the specified class or interface
+     * @param clazz The class or interface to use as a filter
+     * @param <T> The class or interface type
      * @return A collection of the requested configurations
      */
     static @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getActive(Class<T> clazz)
@@ -180,9 +180,9 @@ public class AuthenticationConfigurationCache
     }
 
     /**
-     * Get the active configuration with the specified name that implements the specified interface
-     * @param clazz The interface to use as a filter
-     * @param <T> The interface type
+     * Get the active configuration with the specified rowId that implements the specified class or interface
+     * @param clazz The class or interface to use as a filter
+     * @param <T> The class or interface type
      * @return The requested configuration or null if not found
      */
     public static @Nullable <T extends AuthenticationConfiguration<?>> T getActiveConfiguration(Class<T> clazz, int rowId)
@@ -195,9 +195,9 @@ public class AuthenticationConfigurationCache
     }
 
     /**
-     * Get the configuration (whether active or not) with the specified name that implements the specified interface
-     * @param clazz The interface to use as a filter
-     * @param <T> The interface type
+     * Get the configuration (whether active or not) with the specified rowId that implements the specified class or interface
+     * @param clazz The class or interface to use as a filter
+     * @param <T> The class or interface type
      * @return The requested configuration or null if not found
      */
     public static @Nullable <T extends AuthenticationConfiguration<?>> T getConfiguration(Class<T> clazz, int rowId)

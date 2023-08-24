@@ -106,6 +106,11 @@ public interface AuthenticationProvider
         return false;
     }
 
+    default boolean allowInsert()
+    {
+        return true;
+    }
+
     /**
      * Override to retrieve and save startup properties intended for this provider. Invoked after every server startup.
      */

@@ -74,7 +74,7 @@ public class AuthenticationProviderCache
     }
 
     /**
-     * Get all registered providers (whether active or not) that implement the specified interface
+     * Get all registered providers that implement the specified interface
      * @param clazz The interface to use as a filter
      * @param <T> The interface type
      * @return A collection of the requested providers
