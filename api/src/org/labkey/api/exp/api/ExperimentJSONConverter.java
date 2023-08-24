@@ -678,15 +678,14 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = null;
+        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
+
         if (settings.isIncludeProperties())
         {
             ExpDataClass dataClass = data.getDataClass(user);
 
             if (dataClass != null)
             {
-                jsonObject = serializeExpObject(data, dataClass.getDomain().getProperties(), settings, user);
-
                 JSONObject dataClassJsonObject = serializeExpObject(dataClass, null, settings.withIncludeProperties(false), user);
                 if (dataClass.getCategory() != null)
                     dataClassJsonObject.put(DATA_CLASS_CATEGORY, dataClass.getCategory());
@@ -694,11 +693,8 @@ public class ExperimentJSONConverter
             }
         }
 
-        if (jsonObject == null)
-            jsonObject = serializeExpObject(data, null, settings, user);
-
         jsonObject.put(CPAS_TYPE, data.getCpasType());
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
+        jsonObject.put(EXP_TYPE, "Data");
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
 
         File f = data.getFile();
@@ -720,16 +716,11 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @Nullable User user, @NotNull Settings settings)
     {
-        ExpSampleType sampleType = material.getSampleType();
+        JSONObject jsonObject = serializeExpObject(material, null, settings, user);
 
-        JSONObject jsonObject;
-        if (sampleType == null)
+        ExpSampleType sampleType = material.getSampleType();
+        if (sampleType != null)
         {
-            jsonObject = serializeExpObject(material, null, settings, user);
-        }
-        else
-        {
-            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings, user);
             if (sampleType.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
