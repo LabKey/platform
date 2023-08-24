@@ -3496,7 +3496,7 @@ public class QueryController extends SpringActionController
 
         public void setSql(String sql)
         {
-            _sql = sql;
+            _sql = PageFlowUtil.wafDecode(StringUtils.trim(sql));
         }
 
         public Integer getMaxRows()
@@ -3569,8 +3569,8 @@ public class QueryController extends SpringActionController
             String schemaName = StringUtils.trimToNull(form.getQuerySettings().getSchemaName());
             if (null == schemaName)
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
-            String sql = StringUtils.trimToNull(form.getSql());
-            if (null == sql)
+            String sql = form.getSql();
+            if (StringUtils.isBlank(sql))
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
 
             //create a temp query settings object initialized with the posted LabKey SQL

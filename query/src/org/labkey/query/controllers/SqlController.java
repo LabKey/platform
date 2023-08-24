@@ -35,6 +35,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.springframework.beans.PropertyValue;
@@ -120,7 +121,7 @@ public class SqlController extends SpringActionController
 
         public void setSql(String sql)
         {
-            this.sql = sql;
+            this.sql = PageFlowUtil.wafDecode(sql);
         }
 
         public Parameters getParameters()

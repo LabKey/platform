@@ -492,6 +492,16 @@ LABKEY.Utils = new function(impl, $) {
         }
     };
 
+    /**
+     * Obfuscates content that's often intercepted by web application firewalls that are scanning for likely
+     * SQL or script injection. We have a handful of endpoints that intentionally accept SQL or script, so we
+     * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
+     * WAF scan for and reject malicious content on all other parameters. See issue 48509.
+     */
+    impl.wafEncode = function(value) {
+        return !value ? value : '/*{{base64/x-www-form-urlencoded/wafText}}*/' + btoa(encodeURIComponent(value));
+    }
+
     impl.addClass = function(element, cls)
     {
         if (LABKEY.Utils.isDefined(element))
