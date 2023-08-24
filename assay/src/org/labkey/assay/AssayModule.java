@@ -54,6 +54,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -89,6 +90,7 @@ import java.util.Set;
 
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
+import static org.labkey.api.assay.plate.AssayPlateMetadataService.EXPERIMENTAL_APP_PLATE_SUPPORT;
 
 public class AssayModule extends SpringModule
 {
@@ -246,6 +248,9 @@ public class AssayModule extends SpringModule
         });
 
         ExperimentService.get().addExperimentListener(new AssayExperimentListener());
+
+        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
+                "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false, true));
     }
 
     @Override

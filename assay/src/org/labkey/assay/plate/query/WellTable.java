@@ -2,6 +2,7 @@ package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -17,14 +18,20 @@ import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -32,7 +39,9 @@ import org.labkey.api.security.User;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +54,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public static final String NAME = "Well";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
+    private Map<FieldKey, DomainProperty> _vocabularyFieldMap = new HashMap<>();
 
     static
     {
@@ -83,6 +93,13 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 col.setLabel("Plate Metadata");
                 col.setDescription("Custom properties associated with the plate well");
             }
+
+            for (DomainProperty field : domain.getProperties())
+            {
+                // resolve vocabulary fields by property URI and field key
+                _vocabularyFieldMap.put(FieldKey.fromParts("properties", field.getName()), field);
+                _vocabularyFieldMap.put(FieldKey.fromParts(field.getPropertyURI()), field);
+            }
         }
     }
 
@@ -105,6 +122,38 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
     protected boolean acceptColumn(ColumnInfo col)
     {
         return super.acceptColumn(col) && !ignoredColumns.contains(col.getName());
+    }
+
+    /**
+     * Override to resolve Property URIs for vocabulary columns during update. Consider adding the
+     * capability to resolve vocabulary columns by field key or name.
+     */
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo lsidCol = getColumn("LSID", false);
+        if (lsidCol != null)
+        {
+            // Attempt to resolve the column name as a property URI if it looks like a URI
+            FieldKey fieldKey = FieldKey.decode(name);
+            if (_vocabularyFieldMap.containsKey(fieldKey))
+            {
+                DomainProperty field = _vocabularyFieldMap.get(fieldKey);
+
+                // mark vocab propURI col as Voc column
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(field.getPropertyURI(), getContainer());
+                if (pd != null)
+                {
+                    PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
+                    String label = pc.getLabel();
+                    pc.setFieldKey(fieldKey);
+                    pc.setLabel(label);
+
+                    return pc;
+                }
+            }
+        }
+        return super.resolveColumn(name);
     }
 
     @Override
@@ -202,6 +251,23 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+        }
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            // enforce no updates if the plate has been imported in an assay run
+            if (oldRow.containsKey("plateId"))
+            {
+                Plate plate = PlateManager.get().getPlate(container, (Integer)oldRow.get("plateId"));
+                if (plate != null)
+                {
+                    int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+                    if (runsInUse > 0)
+                        throw new QueryUpdateServiceException(String.format("This %s is used by %d runs and its wells cannot be modified.", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+                }
+            }
+            return super.updateRow(user, container, row, oldRow);
         }
     }
 }

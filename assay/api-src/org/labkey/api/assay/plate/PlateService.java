@@ -25,6 +25,8 @@ import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
@@ -235,6 +237,11 @@ public interface PlateService
      * Retrieve the TableInfo for the Plate table.
      */
     TableInfo getPlateTableInfo();
+
+    /**
+     * Create the plate metadata domain for this container.
+     */
+    @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException;
 
     /**
      * A PlateDetailsResolver implementation provides a URL where a detailed, plate-type specific

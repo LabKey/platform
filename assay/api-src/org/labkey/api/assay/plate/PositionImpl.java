@@ -78,6 +78,12 @@ public class PositionImpl implements Position
         return _column;
     }
 
+    // needed for DB serialization
+    public int getCol()
+    {
+        return getColumn();
+    }
+
     @Override
     public int getRow()
     {
@@ -141,11 +147,6 @@ public class PositionImpl implements Position
     public void setCol(int column)
     {
         setColumn(column);
-    }
-
-    public int getCol()
-    {
-        return getColumn();
     }
 
     public Integer getPlateId()

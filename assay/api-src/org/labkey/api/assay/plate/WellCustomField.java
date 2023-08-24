@@ -1,4 +1,4 @@
-package org.labkey.assay.plate.model;
+package org.labkey.api.assay.plate;
 
 import org.labkey.api.exp.property.DomainProperty;
 

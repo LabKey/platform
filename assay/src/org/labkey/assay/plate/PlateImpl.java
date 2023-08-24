@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
@@ -30,6 +31,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Transient;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 
@@ -43,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PlateImpl extends PropertySetImpl implements Plate
+public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
     private String _name;
     private Integer _rowId;
@@ -61,10 +63,12 @@ public class PlateImpl extends PropertySetImpl implements Plate
     private List<WellGroupImpl> _deletedGroups;
 
     private WellImpl[][] _wells;
-    private Map<Integer, WellImpl> _wellMap;
+    private Map<Integer, Well> _wellMap;
 
     private int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private int _plateNumber;
+    private List<PlateCustomField> _customFields = Collections.emptyList();
+    private Integer _metadataDomainId;
 
     public PlateImpl()
     {
@@ -523,9 +527,13 @@ public class PlateImpl extends PropertySetImpl implements Plate
     }
 
     @JsonIgnore
-    public WellImpl[][] getWells()
+    @Override
+    public List<Well> getWells()
     {
-        return _wells;
+        if (_wellMap != null)
+            return _wellMap.values().stream().toList();
+        else
+            return Collections.emptyList();
     }
 
     @Override
@@ -555,5 +563,40 @@ public class PlateImpl extends PropertySetImpl implements Plate
     public int getPlateNumber()
     {
         return _plateNumber;
+    }
+
+    @Override
+    public @NotNull List<PlateCustomField> getCustomFields()
+    {
+        return _customFields;
+    }
+
+    public void setCustomFields(List<PlateCustomField> customFields)
+    {
+        _customFields = customFields;
+    }
+
+    public PlateImpl copy()
+    {
+        try
+        {
+            return (PlateImpl)super.clone();
+        }
+        catch (CloneNotSupportedException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
+    @Nullable
+    @Override
+    public Integer getMetadataDomainId()
+    {
+        return _metadataDomainId;
+    }
+
+    public void setMetadataDomainId(Integer metadataDomainId)
+    {
+        _metadataDomainId = metadataDomainId;
     }
 }

@@ -44,7 +44,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.Well;
-import org.labkey.assay.plate.model.WellCustomField;
+import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
@@ -283,7 +283,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 throw new ExperimentException("Unable to resolve the plate for the run");
 
             // if there are metadata fields configured for this plate
-            if (!PlateManager.get().getFields(container, user, plate.getRowId()).isEmpty())
+            if (!PlateManager.get().getFields(container, plate.getRowId()).isEmpty())
             {
                 // create the map of well locations to the well
                 Map<Position, Well> positionToWell = new HashMap<>();

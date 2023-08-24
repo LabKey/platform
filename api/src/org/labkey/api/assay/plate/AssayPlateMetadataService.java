@@ -25,6 +25,7 @@ public interface AssayPlateMetadataService
 {
     String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
     Map<AssayDataType, AssayPlateMetadataService> _handlers = new HashMap<>();
+    String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
 
     static void registerService(AssayDataType dataType, AssayPlateMetadataService handler)
     {
@@ -38,7 +39,7 @@ public interface AssayPlateMetadataService
 
     static boolean isExperimentalAppPlateEnabled()
     {
-        return ExperimentalFeatureService.get().isFeatureEnabled("experimental-app-plate-support");
+        return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_APP_PLATE_SUPPORT);
     }
 
     @Nullable
