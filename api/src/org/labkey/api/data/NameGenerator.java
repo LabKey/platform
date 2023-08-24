@@ -2994,6 +2994,8 @@ public class NameGenerator
             verifyPreview("S-${now:date('yyyy.MM.dd')}", "S-2021.04.28");
             verifyPreview("S-${AliquotedFrom}", "S-Sample112");
             verifyPreview("S-${sampleCount}", "S-240");
+            verifyPreview("S-${sampleCount:minValue(500)}", "S-500");
+            verifyPreview("S-${rootSampleCount:minValue(800)}", "S-800");
 
             // withCounter
             verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");
