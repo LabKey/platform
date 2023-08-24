@@ -603,9 +603,17 @@ public class ExperimentJSONConverter
 
     /**
      * Serialize the custom ontology properties associated with the object.
+     * NOTE: If properties of the object are explicitly passed into this method then the value of
+     * those properties will only be sourced from the ontology store. Conversely, if values for those properties
+     * are persisted somewhere else (e.g. a provisioned table) then those values will be ignored. You're most likely
+     * better off passing in null for properties unless you are wanting to ignore other value sources for some reason.
      */
     @NotNull
-    private static JSONObject serializeOntologyProperties(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull ExperimentJSONConverter.Settings settings)
+    private static JSONObject serializeOntologyProperties(
+        @NotNull ExpObject object,
+        @Nullable List<? extends DomainProperty> properties,
+        @NotNull ExperimentJSONConverter.Settings settings
+    )
     {
         Set<String> seenPropertyURIs = new HashSet<>();
         JSONObject propertiesObject = new JSONObject();
@@ -626,9 +634,13 @@ public class ExperimentJSONConverter
         return propertiesObject;
     }
 
-    private static void serializeOntologyProperties(JSONObject json, Container c,
-                                                    Set<String> seenPropertyURIs, Map<String, ObjectProperty> objectProps,
-                                                    Settings settings)
+    private static void serializeOntologyProperties(
+        JSONObject json,
+        Container c,
+        Set<String> seenPropertyURIs,
+        Map<String, ObjectProperty> objectProps,
+        Settings settings
+    )
     {
         for (var propPair : objectProps.entrySet())
         {
