@@ -4027,7 +4027,7 @@ public class QueryController extends SpringActionController
 
         public void setSql(String sql)
         {
-            _sql = sql;
+            _sql = PageFlowUtil.wafDecode(sql);
         }
 
         public String getSchemaName()
