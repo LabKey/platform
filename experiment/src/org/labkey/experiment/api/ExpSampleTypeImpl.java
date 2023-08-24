@@ -502,6 +502,16 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         return Math.max(nameMin, aliquotNameMin);
     }
 
+    public long getMinSampleCounter()
+    {
+        return getMinCounterValue(NameGenerator.EntityCounter.sampleCount);
+    }
+
+    public long getMinRootSampleCounter()
+    {
+        return getMinCounterValue(NameGenerator.EntityCounter.rootSampleCount);
+    }
+
     @Override
     public void createSampleNames(@NotNull List<Map<String, Object>> maps,
                                   @Nullable StringExpressionFactory.FieldKeyStringExpression expr,

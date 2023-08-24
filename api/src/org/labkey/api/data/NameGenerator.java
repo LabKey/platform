@@ -229,7 +229,10 @@ public class NameGenerator
 
     private final FieldKeyStringExpression _parsedNameExpression;
 
-    record ExpressionSummary(boolean hasProjectSampleCounter, boolean hasProjectSampleRootCounter, boolean hasDateBasedSampleCounter, boolean hasLineageInputs, boolean hasLineageLookup) {};
+
+    public record SampleNameExpressionSummary(boolean hasProjectSampleCounter, boolean hasProjectSampleRootCounter, long minProjectSampleCounter, long minProjectSampleRootCounter) {};
+
+    public record ExpressionSummary(SampleNameExpressionSummary sampleSummary, boolean hasDateBasedSampleCounter, boolean hasLineageInputs, boolean hasLineageLookup) {};
 
     // extracted from name expression after parsing
     private ExpressionSummary _expressionSummary;
@@ -302,6 +305,16 @@ public class NameGenerator
     public NameGenerator(@NotNull FieldKeyStringExpression nameExpression, @Nullable TableInfo parentTable)
     {
         this(nameExpression, parentTable, null);
+    }
+
+    public ExpressionSummary getExpressionSummary()
+    {
+        return _expressionSummary;
+    }
+
+    public void setExpressionSummary(ExpressionSummary expressionSummary)
+    {
+        _expressionSummary = expressionSummary;
     }
 
     public List<String> getSyntaxErrors()
@@ -1201,7 +1214,8 @@ public class NameGenerator
             _exprLookups = fieldKeyLookup;
         }
 
-        _expressionSummary = new ExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, hasDateBasedSampleCounterFormat, hasLineageInputs, hasLineageLookup);
+        SampleNameExpressionSummary sampleSummary = new SampleNameExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, 0/*min value will be set by _GenerateNamesDataIterator*/, 0);
+        _expressionSummary = new ExpressionSummary(sampleSummary, hasDateBasedSampleCounterFormat, hasLineageInputs, hasLineageLookup);
         _expLineageLookupFields = lineageLookupFields;
         _partAncestorOptions = partAncestorOptions;
         if (_validateSyntax && _syntaxErrors.isEmpty())
@@ -1328,21 +1342,6 @@ public class NameGenerator
         return startInd;
     }
 
-    public static long getGenIdStartValue(@Nullable String nameExpression)
-    {
-        return getCounterStartValue(nameExpression, EntityCounter.genId);
-    }
-
-    public static long getRootSampleCountStartValue(@Nullable String nameExpression)
-    {
-        return getCounterStartValue(nameExpression, EntityCounter.rootSampleCount);
-    }
-
-    public static long getSampleCountStartValue(@Nullable String nameExpression)
-    {
-        return getCounterStartValue(nameExpression, EntityCounter.sampleCount);
-    }
-
     public void generateNames(@NotNull State state,
                               @NotNull List<Map<String, Object>> maps,
                               @Nullable Set<ExpData> parentDatas, @Nullable Set<ExpMaterial> parentSamples,
@@ -1379,7 +1378,7 @@ public class NameGenerator
     @NotNull
     public State createState(boolean incrementSampleCounts)
     {
-        return new State(incrementSampleCounts, _expressionSummary, _container);
+        return new State(incrementSampleCounts, _expressionSummary.sampleSummary, _container);
     }
 
     public String generateName(@NotNull State state, @NotNull Map<String, Object> rowMap) throws NameGenerationException
@@ -1429,7 +1428,7 @@ public class NameGenerator
         private boolean _counterSequencesCleaned = false;
         private Container _counterContainer;
 
-        private State(boolean incrementSampleCounts, ExpressionSummary expressionSummary, Container container)
+        private State(boolean incrementSampleCounts, SampleNameExpressionSummary expressionSummary, Container container)
         {
             _incrementSampleCounts = incrementSampleCounts;
             _counterContainer = container;
@@ -1443,8 +1442,14 @@ public class NameGenerator
                 if (expressionSummary.hasProjectSampleCounter || sampleCountSeq.current() > 0) // if ${sampleCount} is present, or if ${sampleCount} was previously evaluated
                 {
                     sampleCounterSequence = sampleCountSeq;
-                    if (sampleCounterSequence != null && sampleCounterSequence.current() == 0) // initialize existing count when ${sampleCount} is first encountered for a project
-                        sampleCounterSequence.ensureMinimum(SampleTypeService.get().getProjectSampleCount(_counterContainer));
+                    if (sampleCounterSequence != null)
+                    {
+                        long expressionMin = expressionSummary.minProjectSampleCounter - 1;
+                        if (sampleCounterSequence.current() == 0) // initialize existing count when ${sampleCount} is first encountered for a project
+                            sampleCounterSequence.ensureMinimum(Math.max(expressionMin, SampleTypeService.get().getProjectSampleCount(_counterContainer)));
+                        else if (sampleCountSeq.current() < expressionMin)
+                            sampleCounterSequence.ensureMinimum(expressionMin);
+                    }
                 }
                 else
                     sampleCounterSequence = null;
@@ -1453,8 +1458,14 @@ public class NameGenerator
                 if (expressionSummary.hasProjectSampleRootCounter || rootCountSeq.current() > 0) // if ${rootSampleCount} is present, or if ${rootSampleCount} was previously evaluated
                 {
                     rootCounterSequence = rootCountSeq;
-                    if (rootCounterSequence != null && rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a project
-                        rootCounterSequence.ensureMinimum(SampleTypeService.get().getProjectRootSampleCount(_counterContainer));
+                    if (rootCounterSequence != null)
+                    {
+                        long expressionMin = expressionSummary.minProjectSampleRootCounter - 1;
+                        if (rootCountSeq.current() == 0) // initialize existing count when ${rootSampleCount} is first encountered for a project
+                            rootCounterSequence.ensureMinimum(Math.max(expressionMin, SampleTypeService.get().getProjectRootSampleCount(_counterContainer)));
+                        else if (rootCounterSequence.current() < expressionMin)
+                            rootCounterSequence.ensureMinimum(expressionMin);
+                    }
                 }
                 else
                     rootCounterSequence = null;
@@ -2982,6 +2993,7 @@ public class NameGenerator
             verifyPreview("S-${weeklySampleCount:number('00000')}", "S-00025");
             verifyPreview("S-${now:date('yyyy.MM.dd')}", "S-2021.04.28");
             verifyPreview("S-${AliquotedFrom}", "S-Sample112");
+            verifyPreview("S-${sampleCount}", "S-240");
 
             // withCounter
             verifyPreview("${${AliquotedFrom}-:withCounter}", "Sample112-1");
