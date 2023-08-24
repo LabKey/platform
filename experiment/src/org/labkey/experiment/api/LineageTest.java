@@ -64,6 +64,7 @@ import org.labkey.api.writer.DefaultContainerUser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -711,6 +712,87 @@ public class LineageTest extends ExpProvisionedTableTestHelper
             var lineage = expSvc.getLineage(c, user, ee.identifiable, lineageOptions);
             assertEquals("Unexpected number of objects from SQL injection #2", 0, lineage.getObjects().size());
         }
+    }
+
+    @Test
+    public void testPropertySerialization() throws Exception
+    {
+        // Issue 48551: Ensure values in provisioned tables for Exp Data and Exp Materials are
+        // provided as properties when requested via lineage.
+        // Arrange
+        var expSvc = ExperimentService.get();
+
+        // Create a Data Class
+        var dataClassName = "Roster";
+        var dcProps = new ArrayList<GWTPropertyDescriptor>();
+        dcProps.add(new GWTPropertyDescriptor("number", "int"));
+        dcProps.add(new GWTPropertyDescriptor("position", "string"));
+        var dataClass = expSvc.createDataClass(c, user, dataClassName, null, dcProps, emptyList(), null);
+
+        // Create a Sample Type
+        var sampleTypeName = "Games";
+        List<GWTPropertyDescriptor> sampleProps = new ArrayList<>();
+        sampleProps.add(new GWTPropertyDescriptor("name", "string"));
+        sampleProps.add(new GWTPropertyDescriptor("home", "string"));
+        sampleProps.add(new GWTPropertyDescriptor("away", "string"));
+        sampleProps.add(new GWTPropertyDescriptor("date", "date"));
+        var sampleType = SampleTypeService.get().createSampleType(c, user, sampleTypeName, null, sampleProps, emptyList(), -1, -1, -1, -1, null, null);
+
+        // Add Data Class data
+        var dad = "Ken Griffey Sr";
+        var son = "Ken Griffey Jr";
+        List<Map<String, Object>> dataClassRows = new ArrayList<>();
+        dataClassRows.add(CaseInsensitiveHashMap.of("name", dad, "position", "OF"));
+        dataClassRows.add(CaseInsensitiveHashMap.of(
+            "name", son,
+            "number", 24,
+            "position", "CF",
+            "DataInputs/" + dataClassName, dad
+        ));
+
+        insertRows(c, dataClassRows, dataClassName, QueryService.get().getUserSchema(user, c, expDataSchemaKey));
+        var dadExpData = expSvc.getExpData(dataClass, dad);
+        var sonExpData = expSvc.getExpData(dataClass, son);
+
+        // Add Sample Type data
+        List<Map<String, Object>> sampleRows = new ArrayList<>();
+        Date gameDate = new Date(653295600000L); // Sept. 14, 1990
+        sampleRows.add(CaseInsensitiveHashMap.of(
+            "name", "Father/Son Game",
+            "home", "Seattle Mariners",
+            "away", "California Angels",
+            "date", gameDate,
+            "DataInputs/" + dataClassName, List.of(dad, son)
+        ));
+        var rows = insertRows(c, sampleRows, sampleTypeName, QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples")));
+        var gameSample = expSvc.getExpMaterial((Integer) rows.get(0).get("RowId"));
+
+        // Request lineage including all rows
+        var lineage = expSvc.getLineage(c, user, dadExpData, new ExpLineageOptions(false, true, 2));
+
+        // Act
+        var json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(true, false, false));
+
+        // Assert
+        assertEquals(dadExpData.getLSID(), json.getString("seed"));
+        var nodes = json.getJSONObject("nodes");
+
+        var numberProperty = dataClass.getDomain().getPropertyByName("number");
+        var positionProperty = dataClass.getDomain().getPropertyByName("position");
+
+        var dadProperties = nodes.getJSONObject(dadExpData.getLSID()).getJSONObject("properties");
+        assertEquals("OF", dadProperties.getString(positionProperty.getPropertyURI()));
+        assertFalse("Expected null values to not be serialized", dadProperties.has(numberProperty.getPropertyURI()));
+
+        var sonProperties = nodes.getJSONObject(sonExpData.getLSID()).getJSONObject("properties");
+        assertEquals("CF", sonProperties.getString(positionProperty.getPropertyURI()));
+        assertEquals(24, sonProperties.getNumber(numberProperty.getPropertyURI()));
+
+        var homeProperty = sampleType.getDomain().getPropertyByName("home");
+        var dateProperty = sampleType.getDomain().getPropertyByName("date");
+        var gameProperties = nodes.getJSONObject(gameSample.getLSID()).getJSONObject("properties");
+        assertEquals("Seattle Mariners", gameProperties.getString(homeProperty.getPropertyURI()));
+        assertEquals(gameDate, gameProperties.get(dateProperty.getPropertyURI()));
     }
 
     private List<String> getLineageObjectNames(ExpLineage lineage)
