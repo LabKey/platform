@@ -91,7 +91,7 @@ public class QueryWebPart extends VBox
             {
                 if ("xml".equalsIgnoreCase(metadata.getString("type")))
                 {
-                    _metadata = metadata.getString("value");
+                    _metadata = PageFlowUtil.wafDecode(metadata.getString("value"));
                 }
             }
         }
@@ -106,6 +106,8 @@ public class QueryWebPart extends VBox
                 String sql = null==_extendedProperties ? null : _extendedProperties.optString("sql", null);
                 if (null == sql)
                     sql = _properties.get("sql");
+
+                sql = PageFlowUtil.wafDecode(sql);
 
                 // execute arbitrary sql
                 if (sql != null)

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -130,6 +131,7 @@ import java.lang.reflect.Proxy;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -637,6 +639,53 @@ public class PageFlowUtil
         return s;
     }
 
+
+    // mime type concatenation, but ignoring "application/"
+    // Text that is first urlencoded to flatten UNICODE to ASCII then base64 encoded to avoid WAF rejection
+    public static final String WAF_PREFIX = "/*{{base64/x-www-form-urlencoded/wafText}}*/";
+
+    /**
+     * De-obfuscates content that's often intercepted by web application firewalls that are scanning for likely
+     * SQL or script injection. We have a handful of endpoints that intentionally accept SQL or script, so we
+     * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
+     * WAF scan for and reject malicious content on all other parameters. See issue 48509.
+     */
+    @Nullable
+    public static String wafDecode(@Nullable String encoded)
+    {
+        if (StringUtils.isBlank(encoded))
+            return null;
+
+        if (StringUtils.startsWith(encoded, WAF_PREFIX))
+        {
+            encoded = encoded.substring(WAF_PREFIX.length());
+            if (!Pattern.matches("[A-Za-z0-9+/=]*", encoded))
+                throw new ConversionException("Bad parameter encoding");
+            var step1 = java.util.Base64.getDecoder().decode(encoded);
+            var step2 = new String(step1, StandardCharsets.US_ASCII);
+            return PageFlowUtil.decode(step2);
+        }
+
+        return encoded;
+    }
+
+    /**
+     * Obfuscates content that's often intercepted by web application firewalls that are scanning for likely
+     * SQL or script injection. We have a handful of endpoints that intentionally accept SQL or script, so we
+     * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
+     * WAF scan for and reject malicious content on all other parameters. See issue 48509.
+     */
+    @Nullable
+    public static String wafEncode(@Nullable String plain)
+    {
+        if (StringUtils.isBlank(plain))
+        {
+            return null;
+        }
+        var step1 = PageFlowUtil.encodeURIComponent(plain);
+        var step2 = step1.getBytes(StandardCharsets.US_ASCII);
+        return WAF_PREFIX + java.util.Base64.getEncoder().encodeToString(step2);
+    }
 
     /**
      * URL Encode string.
@@ -2721,6 +2770,27 @@ public class PageFlowUtil
             assertEquals(filter("<>\"&"), "&lt;&gt;&quot;&amp;");
         }
 
+        @Test
+        public void testWafEncode()
+        {
+            var sb = new StringBuilder(0xFFFF);
+            for (int ch = 0 ; ch <= 0xFFFF ; ch++)
+            {
+                if (ch >= 0xD800 && ch <= 0xDFFF)   // surrogate characters (emojis etc)
+                    continue;
+                sb.append((char)ch);
+            }
+            String sql = sb.toString();
+            String enc = PageFlowUtil.wafEncode(sql);
+            String dec = PageFlowUtil.wafDecode(enc);
+            assertEquals(sql, dec);
+
+            String uri = PageFlowUtil.encodeURIComponent(sql);
+            byte[] bytes = uri.getBytes(StandardCharsets.US_ASCII);
+            assert(bytes.length == uri.length());
+            for (int i=0 ; i<uri.length() ; i++)
+                assertEquals("failed at index " + i, uri.charAt(i), bytes[i]);
+        }
 
         @Test
         public void testEncode()

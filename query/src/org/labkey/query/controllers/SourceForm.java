@@ -20,7 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.json.XML;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.springframework.beans.MutablePropertyValues;
@@ -75,12 +77,12 @@ public class SourceForm extends ViewForm implements HasBindParameters
 
     public void setFf_queryText(String text)
     {
-        ff_queryText = text;
+        ff_queryText = PageFlowUtil.wafDecode(text);
     }
 
     public void setFf_metadataText(String text)
     {
-        ff_metadataText = text;
+        ff_metadataText = PageFlowUtil.wafDecode(text);
     }
     public void setFf_redirect(String action)
     {

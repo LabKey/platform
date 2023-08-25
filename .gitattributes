@@ -3014,7 +3014,6 @@ query/webapp/query/ColumnSummaryStatistics.js -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
 query/webapp/query/testquery.js -text
-query/webapp/QWPDemoBar.js -text
 query/webapp/reports/r_logo.svg -text
 query/webapp/reports/rowExpander.js -text
 query/webapp/reports/ScriptReportPanel.css -text

@@ -18,6 +18,7 @@ package org.labkey.query.reports.getdata;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
 /**
  * JSON deserialization target for GetData APIs using a LabKey SQL query as the root data source.
@@ -37,7 +38,7 @@ public class LabKeySQLReportDataSourceBuilder extends AbstractReportDataSourceBu
 
     public void setSql(String sql)
     {
-        _sql = sql;
+        _sql = PageFlowUtil.wafDecode(sql);
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -83,7 +84,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
 
     public void setScript(String script)
     {
-        _script = script;
+        _script = PageFlowUtil.wafDecode(script);
     }
 
     public boolean isSourceTabVisible()

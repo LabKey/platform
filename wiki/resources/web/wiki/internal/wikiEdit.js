@@ -254,6 +254,9 @@ function tinyMceHandleEvent(evt) {
             }
 
             if (val !== undefined) {
+                if (propName === 'body') {
+                    val = LABKEY.Utils.wafEncode(val);
+                }
                 ret[_editableProps[i]] = val;
             }
         }
