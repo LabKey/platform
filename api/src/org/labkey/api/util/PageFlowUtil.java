@@ -650,7 +650,8 @@ public class PageFlowUtil
      * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
      * WAF scan for and reject malicious content on all other parameters. See issue 48509.
      */
-    public static String wafDecode(String encoded)
+    @Nullable
+    public static String wafDecode(@Nullable String encoded)
     {
         if (StringUtils.isBlank(encoded))
             return null;
@@ -674,7 +675,8 @@ public class PageFlowUtil
      * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
      * WAF scan for and reject malicious content on all other parameters. See issue 48509.
      */
-    public static String wafEncode(String plain)
+    @Nullable
+    public static String wafEncode(@Nullable String plain)
     {
         if (StringUtils.isBlank(plain))
         {
