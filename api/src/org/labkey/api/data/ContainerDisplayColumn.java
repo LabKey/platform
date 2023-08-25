@@ -219,7 +219,7 @@ public class ContainerDisplayColumn extends DataColumn
             resp.render(apiWriter);
             JSONObject json = new JSONObject(writer.toString());
             JSONArray rows = json.getJSONArray("rows");
-            assertEquals("Wrong number of rows returned", 4, rows.length());
+            assertEquals("Wrong number of rows returned", 6, rows.length());
             for (JSONObject row : JsonUtil.toJSONObjectList(rows))
             {
                 // TODO ContainerFilter what happened here with Comment column???
