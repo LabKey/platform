@@ -233,6 +233,12 @@ public class ContainerManager
 
     // TODO: Make private and force callers to use ensureContainer instead?
     // TODO: Handle root creation here?
+    public static Container createContainer(Container parent, String name)
+    {
+        return createContainer(parent, name, null, null, NormalContainerType.NAME, User.getAdminServiceUser());
+    }
+
+
     public static Container createContainer(Container parent, String name, @NotNull User user)
     {
         return createContainer(parent, name, null, null, NormalContainerType.NAME, user);
