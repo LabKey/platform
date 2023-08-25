@@ -713,7 +713,7 @@ public class PipelineController extends SpringActionController
                 }
 
                 // UNDONE: move setACL() to PipelineManager
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, getUser());
                 ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                         c, ContainerManager.Property.PipelineRoot, pipeRoot, pipeRoot);
                 ContainerManager.firePropertyChangeEvent(evt);

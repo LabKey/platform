@@ -130,7 +130,7 @@ public class MothershipModule extends DefaultModule
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
         policy.addRoleAssignment(mothershipGroup, projAdminRole);
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
 
         try
         {

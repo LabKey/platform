@@ -8027,7 +8027,7 @@ public class QueryController extends SpringActionController
 
             MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(project1));
             securityPolicy.addRoleAssignment(withoutPermissions, EditorRole.class);
-            SecurityPolicyManager.savePolicy(securityPolicy);
+            SecurityPolicyManager.savePolicy(securityPolicy, TestContext.get().getUser());
 
             assertTrue("Should have insert permission", project1.hasPermission(withoutPermissions, InsertPermission.class));
             assertFalse("Should not have insert permission", project2.hasPermission(withoutPermissions, InsertPermission.class));

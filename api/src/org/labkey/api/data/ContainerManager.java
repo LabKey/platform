@@ -327,7 +327,7 @@ public class ContainerManager
 
         // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (c.isContainerFor(ContainerType.DataType.permissions))
-            SecurityManager.setAdminOnlyPermissions(c);
+            SecurityManager.setAdminOnlyPermissions(c, user);
 
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
@@ -336,7 +336,7 @@ public class ContainerManager
 
         if (c.isProject())
         {
-            SecurityManager.createNewProjectGroups(c);
+            SecurityManager.createNewProjectGroups(c, user);
         }
         else
         {
@@ -681,12 +681,12 @@ public class ContainerManager
 
     public static Container ensureContainer(String path)
     {
-        return ensureContainer(Path.parse(path), null);
+        return ensureContainer(Path.parse(path), User.getAdminServiceUser());
     }
 
     public static Container ensureContainer(Path path)
     {
-        return ensureContainer(path, null);
+        return ensureContainer(path, User.getAdminServiceUser());
     }
 
     public static Container ensureContainer(Path path, User user)
@@ -1598,7 +1598,7 @@ public class ContainerManager
 
             // this could be done in the trigger, but I prefer to put it in the transaction
             if (changedProjects)
-                SecurityManager.changeProject(c, oldProject, newProject);
+                SecurityManager.changeProject(c, oldProject, newProject, user);
 
             clearCache();
 
@@ -2655,7 +2655,7 @@ public class ContainerManager
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
             if (devRole != null)
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
-            SecurityPolicyManager.savePolicy(policy);
+            SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
         }
 
         return c;

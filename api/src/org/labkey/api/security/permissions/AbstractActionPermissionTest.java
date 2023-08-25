@@ -97,7 +97,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         policy.addRoleAssignment(users.get(SUBMITTER_EMAIL), SubmitterRole.class);
         policy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), EditorRole.class);
         policy.addRoleAssignment(users.get(TRUSTED_AUTHOR_EMAIL), AuthorRole.class);
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
 
         MutableSecurityPolicy projectPolicy = new MutableSecurityPolicy(c.getProject(), c.getProject().getPolicy());
         projectPolicy.addRoleAssignment(users.get(PROJECT_ADMIN_EMAIL), ProjectAdminRole.class);
@@ -110,7 +110,7 @@ public abstract class AbstractActionPermissionTest extends Assert
             rootPolicy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
             rootPolicy.addRoleAssignment(users.get(TRUSTED_AUTHOR_EMAIL), TRUSTED_ANALYST_ROLE);
         }
-        SecurityPolicyManager.savePolicy(rootPolicy);
+        SecurityPolicyManager.savePolicy(rootPolicy, TestContext.get().getUser());
         return users;
     }
 
@@ -127,7 +127,7 @@ public abstract class AbstractActionPermissionTest extends Assert
             rootPolicy.removeRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
             rootPolicy.removeRoleAssignment(_users.get(TRUSTED_AUTHOR_EMAIL), TRUSTED_ANALYST_ROLE);
         }
-        SecurityPolicyManager.savePolicy(rootPolicy);
+        SecurityPolicyManager.savePolicy(rootPolicy, TestContext.get().getUser());
 
         cleanupUsers(LKS_ROLE_EMAILS);
     }

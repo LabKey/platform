@@ -129,21 +129,7 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
     {
         MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(this));
         securityPolicy.addRoleAssignment(user, roleClass);
-        SecurityPolicyManager.savePolicy(securityPolicy);
-    }
-
-    public void addRoleAssignments(@NotNull Class<? extends Role> roleClass, @NotNull Class<? extends Permission> permissionClass)
-    {
-        // add role assignment for all users with permission to have roleClass role in container
-        MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(this));
-        for (User activeUser : UserManager.getActiveUsers())
-        {
-            if (getResourceContainer().hasPermission(activeUser, permissionClass))
-            {
-                securityPolicy.addRoleAssignment(activeUser, roleClass);
-            }
-        }
-        SecurityPolicyManager.savePolicy(securityPolicy);
+        SecurityPolicyManager.savePolicy(securityPolicy, user);
     }
 
     @Override

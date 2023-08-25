@@ -1418,7 +1418,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             // reset the home project permissions to remove the default assignments given at server install
             MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
-            SecurityPolicyManager.savePolicy(homePolicy);
+            SecurityPolicyManager.savePolicy(homePolicy, User.getAdminServiceUser());
             // remove the guest role assignment from the support subfolder
             Group guests = SecurityManager.getGroup(Group.groupGuests);
             if (null != guests)
@@ -1429,7 +1429,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(supportFolder.getPolicy());
                     for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
                         supportPolicy.removeRoleAssignment(guests, assignedRole);
-                    SecurityPolicyManager.savePolicy(supportPolicy);
+                    SecurityPolicyManager.savePolicy(supportPolicy, User.getAdminServiceUser());
                 }
             }
         }

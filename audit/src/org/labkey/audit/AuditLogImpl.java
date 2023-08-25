@@ -116,12 +116,12 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     }
 
     @Override
-    public <K extends AuditTypeEvent> void addEvents(User user, List<K> events)
+    public <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events)
     {
         _addEvents(user, events, false);
     }
 
-    private <K extends AuditTypeEvent> K _addEvents(User user, List<K> events, boolean reselectEvent)
+    private <K extends AuditTypeEvent> K _addEvents(@Nullable User user, List<K> events, boolean reselectEvent)
     {
         assert !reselectEvent || events.size() == 1;
 

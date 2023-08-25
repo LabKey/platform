@@ -131,7 +131,7 @@ public class ShortURLServiceImpl implements ShortURLService
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(newRecord));
                 // By default, the user who created it can manage it
                 policy.addRoleAssignment(user, EditorRole.class);
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, user);
                 transaction.commit();
                 return newRecord;
             }
