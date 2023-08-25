@@ -65,7 +65,7 @@
         c = ContainerManager.getForPath("_testMultiValue");
         if (c != null)
             ContainerManager.deleteAll(c, TestContext.get().getUser());
-        c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testMultiValue");
+        c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testMultiValue", TestContext.get().getUser());
     }
 
     @After

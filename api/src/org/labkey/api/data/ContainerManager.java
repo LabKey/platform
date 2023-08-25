@@ -233,32 +233,32 @@ public class ContainerManager
 
     // TODO: Make private and force callers to use ensureContainer instead?
     // TODO: Handle root creation here?
-    public static Container createContainer(Container parent, String name)
+    public static Container createContainer(Container parent, String name, @NotNull User user)
     {
-        return createContainer(parent, name, null, null, NormalContainerType.NAME, null);
+        return createContainer(parent, name, null, null, NormalContainerType.NAME, user);
     }
 
     public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
 
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user)
     {
         return createContainer(parent, name, title, description, type, user, null);
     }
 
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user, @Nullable String auditMsg)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user, @Nullable String auditMsg)
     {
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
         return createContainer(parent, name, title, description, user, properties, auditMsg);
     }
 
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties)
     {
         return createContainer(parent, name, title, description, user, properties, null);
     }
 
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties, @Nullable String auditMsg)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties, @Nullable String auditMsg)
     {
         String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);
@@ -684,11 +684,6 @@ public class ContainerManager
         return ensureContainer(Path.parse(path), User.getAdminServiceUser());
     }
 
-    public static Container ensureContainer(Path path)
-    {
-        return ensureContainer(path, User.getAdminServiceUser());
-    }
-
     public static Container ensureContainer(Path path, User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
@@ -723,7 +718,7 @@ public class ContainerManager
     }
 
 
-    public static Container ensureContainer(Container parent, String name)
+    public static Container ensureContainer(Container parent, String name, User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
 //        if (CORE.getSchema().getScope().isTransactionActive())
@@ -742,7 +737,7 @@ public class ContainerManager
 
         if (null == c)
         {
-            c = createContainer(parent, name);
+            c = createContainer(parent, name, user);
         }
         return c;
     }
@@ -884,7 +879,7 @@ public class ContainerManager
     @NotNull
     public static Container getSharedContainer()
     {
-        return ensureContainer(SHARED_CONTAINER_PATH);
+        return ensureContainer(Path.parse(SHARED_CONTAINER_PATH), User.getAdminServiceUser());
     }
 
     public static List<Container> getChildren(Container parent)
@@ -2693,7 +2688,7 @@ public class ContainerManager
             if (null == _testRoot)
             {
                 Container junit = JunitUtil.getTestContainer();
-                _testRoot = ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
+                _testRoot = ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID(), TestContext.get().getUser());
                 addContainerListener(this);
             }
         }
@@ -2715,7 +2710,7 @@ public class ContainerManager
             {
                 try
                 {
-                    Container c = createContainer(_testRoot, name);
+                    Container c = createContainer(_testRoot, name, TestContext.get().getUser());
                     try
                     {
                         assertTrue(delete(c, TestContext.get().getUser()));
@@ -2761,24 +2756,24 @@ public class ContainerManager
             assertEquals(0, _containers.size());
             assertEquals(0, getChildren(_testRoot).size());
 
-            Container one = createContainer(_testRoot, "one");
+            Container one = createContainer(_testRoot, "one", TestContext.get().getUser());
             assertEquals(1, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(0, getChildren(one).size());
 
-            Container oneA = createContainer(one, "A");
+            Container oneA = createContainer(one, "A", TestContext.get().getUser());
             assertEquals(2, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(1, getChildren(one).size());
             assertEquals(0, getChildren(oneA).size());
 
-            Container oneB = createContainer(one, "B");
+            Container oneB = createContainer(one, "B", TestContext.get().getUser());
             assertEquals(3, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(2, getChildren(one).size());
             assertEquals(0, getChildren(oneB).size());
 
-            Container deleteme = createContainer(one, "deleteme");
+            Container deleteme = createContainer(one, "deleteme", TestContext.get().getUser());
             assertEquals(4, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(3, getChildren(one).size());
@@ -2789,7 +2784,7 @@ public class ContainerManager
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(2, getChildren(one).size());
 
-            Container oneC = createContainer(one, "C");
+            Container oneC = createContainer(one, "C", TestContext.get().getUser());
             assertEquals(4, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(3, getChildren(one).size());
@@ -2822,7 +2817,7 @@ public class ContainerManager
         private void testOneFolderType(FolderType folderType)
         {
             LOG.info("testOneFolderType(" + folderType.getName() + "): creating container");
-            Container newFolder = createContainer(_testRoot, "folderTypeTest");
+            Container newFolder = createContainer(_testRoot, "folderTypeTest", TestContext.get().getUser());
             FolderType ft = newFolder.getFolderType();
             assertEquals(ft, FolderType.NONE);
 
@@ -2857,7 +2852,7 @@ public class ContainerManager
 
             for (String childName : nodes)
             {
-                Container child = createContainer(parent, childName);
+                Container child = createContainer(parent, childName, TestContext.get().getUser());
                 createContainers(mm, childName, child);
             }
         }

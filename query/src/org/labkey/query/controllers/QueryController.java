@@ -7912,8 +7912,8 @@ public class QueryController extends SpringActionController
         {
             doCleanup();
 
-            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1);
-            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2);
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1, TestContext.get().getUser());
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2, TestContext.get().getUser());
 
             //disable search so we dont get conflicts when deleting folder quickly
             ContainerManager.updateSearchable(project1, false, TestContext.get().getUser());

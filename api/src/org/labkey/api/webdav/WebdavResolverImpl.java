@@ -237,7 +237,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertFalse("login before running this test", user.isGuest());
             
             Container junitContainer = JunitUtil.getTestContainer();
-            testContainer = ContainerManager.createContainer(junitContainer, "c" + StringUtilsLabKey.getPaddedUniquifier(9));
+            testContainer = ContainerManager.createContainer(junitContainer, "c" + StringUtilsLabKey.getPaddedUniquifier(9), TestContext.get().getUser());
             Container c = testContainer;
 
             WebdavResolver resolver = WebdavResolverImpl.get();

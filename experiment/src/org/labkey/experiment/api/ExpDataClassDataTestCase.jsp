@@ -118,7 +118,7 @@ public void setUp()
     c = ContainerManager.getForPath("_testDataClass");
     if (c != null)
         ContainerManager.deleteAll(c, TestContext.get().getUser());
-    c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testDataClass");
+    c = ContainerManager.createContainer(ContainerManager.getRoot(), "_testDataClass", TestContext.get().getUser());
 }
 
 @After
@@ -192,7 +192,7 @@ public void nameExpressionScale() throws Exception
 public void testDataClass() throws Exception
 {
     final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub");
+    final Container sub = ContainerManager.createContainer(c, "sub", TestContext.get().getUser());
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));
@@ -480,7 +480,7 @@ public void testDataClassFromTemplate() throws Exception
     }
 
     final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub2");
+    final Container sub = ContainerManager.createContainer(c, "sub2", TestContext.get().getUser());
     final String domainName = "mydataclass";
 
     Set<Module> activeModules = new HashSet<>(c.getActiveModules());
@@ -570,7 +570,7 @@ public void testDomainTemplate() throws Exception
     }
 
     final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub3");
+    final Container sub = ContainerManager.createContainer(c, "sub3", user);
 
     Set<Module> activeModules = new HashSet<>(c.getActiveModules());
     Module m = ModuleLoader.getInstance().getModule("simpletest");
@@ -667,7 +667,7 @@ public void testDomainTemplate() throws Exception
 public void testContainerDelete() throws Exception
 {
     final User user = TestContext.get().getUser();
-    final Container sub = ContainerManager.createContainer(c, "sub");
+    final Container sub = ContainerManager.createContainer(c, "sub", user);
 
     List<GWTPropertyDescriptor> props = new ArrayList<>();
     props.add(new GWTPropertyDescriptor("aa", "int"));

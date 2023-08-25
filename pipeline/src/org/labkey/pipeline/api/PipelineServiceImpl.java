@@ -1163,7 +1163,7 @@ public class PipelineServiceImpl implements PipelineService
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // create a subfolder of this project
-            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME, TestContext.get().getUser());
 
             // obtain the customized file root of the project
             File projectFileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
@@ -1210,7 +1210,7 @@ public class PipelineServiceImpl implements PipelineService
             PipelineService.get().setPipelineRoot(_user, _project, PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
 
             // create a subfolder of this project
-            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME, TestContext.get().getUser());
 
             // obtain the customized file root of the project
             File projectFileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);

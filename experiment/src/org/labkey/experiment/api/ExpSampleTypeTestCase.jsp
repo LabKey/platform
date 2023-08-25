@@ -109,7 +109,7 @@ public void setUp()
     c = ContainerManager.getForPath(PROJECT_NAME);
     if (c != null)
         ContainerManager.deleteAll(c, TestContext.get().getUser());
-    c = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME);
+    c = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, TestContext.get().getUser());
 }
 
 @After

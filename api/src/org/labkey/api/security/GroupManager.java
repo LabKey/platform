@@ -574,7 +574,7 @@ public class GroupManager
             if (newProject != null)
                 assertTrue(ContainerManager.delete(newProject, getUser()));
 
-            newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath);
+            newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath, TestContext.get().getUser());
 
             Group newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject);
             Group newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
