@@ -196,7 +196,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
         var script = this.codeMirror ? this.codeMirror.getValue() : this.reportConfig.script;
 
-        data.script = script;
+        data.script = LABKEY.Utils.wafEncode(script);
         data.dataRegionName = this.reportConfig.dataRegionName;
 
         // save previous values
@@ -737,7 +737,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 data.redirectUrl = null; // force redirect back to the newly saved report
             }
 
-            data.script = this.codeMirror.getValue();
+            data.script = LABKEY.Utils.wafEncode(this.codeMirror.getValue());
 
             if (initExternalWindow)
                 this.initExternalWindow();

@@ -613,10 +613,10 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
         if (!this.query.userDefined || !this.query.canEdit)
             json.ff_queryText = null;
         else
-            json.ff_queryText = this.getSourceEditor().getValue();
+            json.ff_queryText = LABKEY.Utils.wafEncode(this.getSourceEditor().getValue());
 
         if (this.query.canEditMetadata)
-            json.ff_metadataText = this.getMetadataEditor().getValue();
+            json.ff_metadataText = LABKEY.Utils.wafEncode(this.getMetadataEditor().getValue());
 
         Ext4.Ajax.request(
         {
