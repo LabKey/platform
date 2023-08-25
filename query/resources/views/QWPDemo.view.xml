@@ -1,7 +1,0 @@
-<view xmlns="http://labkey.org/data/xml/view" title="Test Query Web Part" frame="portal">
-    <dependencies>
-        <dependency path="internal/jQuery"/>
-        <dependency path="QWPDemoData.js"/>
-        <dependency path="QWPDemo.js"/>
-    </dependencies>
-</view>
