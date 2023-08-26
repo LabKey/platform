@@ -222,60 +222,27 @@ public class ContainerDisplayColumn extends DataColumn
             assertEquals("Wrong number of rows returned", 6, rows.length());
             for (JSONObject row : JsonUtil.toJSONObjectList(rows))
             {
+                assertEquals("Incorrect display value for ProjectId column", project.getName(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("displayValue"));
+                assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("value"));
+                assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
+
                 // TODO ContainerFilter what happened here with Comment column???
                 // TODO ContainerFilter and what happened to ProjectId column???
                 String comment = row.getJSONObject(row.has("Comment")?"Comment":"comment").getString("value");
                 if (comment.contains(project.getName() + " was created"))
                 {
-                    assertEquals("Incorrect display value for ProjectId column", project.getName(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("displayValue"));
-                    assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("value"));
-                    assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
-
-                    assertEquals("Incorrect json value for ContainerId column", project.getEntityId().toString(), row.getJSONObject("ContainerId").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", project.getName(), row.getJSONObject("ContainerId").getString("displayValue"));
-
-                    assertEquals("Incorrect json value for ContainerId column", project.getName(), row.getJSONObject("ContainerId/Name").getString("value"));
-
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("value", null));
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("displayValue", null));
-
+                    validateContainerRow(project, row);
                 }
                 else if (comment.contains(subFolder1.getName() + " was created"))
                 {
-                    assertEquals("Incorrect display value for ProjectId column", subFolder1.getName(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("displayValue"));
-                    assertEquals("Incorrect json value for for ProjectId column", subFolder1.getEntityId().toString(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("value"));
-                    assertEquals("Incorrect json value for ProjectId/Name column", subFolder1.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
-
-                    assertEquals("Incorrect json value for ContainerId column", subFolder1.getEntityId().toString(), row.getJSONObject("ContainerId").getString("value"));
-                    assertEquals("Incorrect json value for ContainerId column", subFolder1.getName(), row.getJSONObject("ContainerId").getString("displayValue"));
-
-                    assertEquals("Incorrect json value for ContainerId column", subFolder1.getName(), row.getJSONObject("ContainerId/Name").getString("value"));
-
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("value", null));
-                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
-
+                    validateContainerRow(subFolder1, row);
                 }
-                else if (comment.contains(workbook1.getName() + " was created") || comment.contains(workbook1.getName() + " was deleted"))
+                else if (comment.contains(workbook1.getName() + " was created") ||
+                            comment.contains(workbook1.getName() + " was deleted") ||
+                            comment.contains(subFolder2.getName() + " was deleted") ||
+                            comment.contains(subFolder2.getName() + " was created"))
                 {
-                    assertEquals("Incorrect display value for ProjectId column", project.getName(), row.getJSONObject(row.has("ProjectId") ? "ProjectId" : "projectid").getString("displayValue"));
-                    assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("value"));
-                    assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
-
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").optString("value", null));
-                    assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
-
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").optString("value", null));
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").optString("displayValue", null));
-
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("value", null));
-                    assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("displayValue", null));
-                }
-                else if (comment.contains(subFolder2.getName() + " was deleted"))
-                {
-                    assertEquals("Incorrect display value for ProjectId column", project.getName(), row.getJSONObject(row.has("ProjectId") ? "ProjectId" : "projectid").getString("displayValue"));
-                    assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject(row.has("ProjectId")?"ProjectId":"projectid").getString("value"));
-                    assertEquals("Incorrect json value for ProjectId/Name column", project.getName(), row.getJSONObject("ProjectId/Name").getString("value"));
-
+                    // These are all containers that have since been deleted, so we can't join to the container row for details
                     assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").optString("value", null));
                     assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
 
@@ -291,6 +258,17 @@ public class ContainerDisplayColumn extends DataColumn
                 }
             }
             ContainerManager.deleteAll(project, _user);
+        }
+
+        private void validateContainerRow(Container project, JSONObject row)
+        {
+            assertEquals("Incorrect json value for ContainerId column", project.getEntityId().toString(), row.getJSONObject("ContainerId").getString("value"));
+            assertEquals("Incorrect json value for ContainerId column", project.getName(), row.getJSONObject("ContainerId").getString("displayValue"));
+
+            assertEquals("Incorrect json value for ContainerId column", project.getName(), row.getJSONObject("ContainerId/Name").getString("value"));
+
+            assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("value", null));
+            assertNull("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").optString("displayValue", null));
         }
     }
 }
