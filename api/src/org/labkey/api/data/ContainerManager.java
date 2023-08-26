@@ -233,12 +233,7 @@ public class ContainerManager
 
     // TODO: Make private and force callers to use ensureContainer instead?
     // TODO: Handle root creation here?
-    public static Container createContainer(Container parent, String name)
-    {
-        return createContainer(parent, name, null, null, NormalContainerType.NAME, User.getAdminServiceUser());
-    }
-
-
+    @NotNull
     public static Container createContainer(Container parent, String name, @NotNull User user)
     {
         return createContainer(parent, name, null, null, NormalContainerType.NAME, user);
@@ -247,11 +242,13 @@ public class ContainerManager
     public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
 
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
+    @NotNull
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user)
     {
         return createContainer(parent, name, title, description, type, user, null);
     }
 
+    @NotNull
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user, @Nullable String auditMsg)
     {
         Map<String, Object> properties = new HashMap<>();
@@ -259,11 +256,13 @@ public class ContainerManager
         return createContainer(parent, name, title, description, user, properties, auditMsg);
     }
 
+    @NotNull
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties)
     {
         return createContainer(parent, name, title, description, user, properties, null);
     }
 
+    @NotNull
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties, @Nullable String auditMsg)
     {
         String type = (String) properties.get("type");
@@ -349,12 +348,9 @@ public class ContainerManager
             // If current user does NOT have admin permission on this container or the project has been
             // explicitly set to have new subfolders inherit permissions, then inherit permissions
             // (otherwise they would not be able to see the folder)
-            if (user != null)
-            {
-                boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
-                if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
-                    SecurityManager.setInheritPermissions(c);
-            }
+            boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
+            if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
+                SecurityManager.setInheritPermissions(c);
         }
 
         // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
@@ -685,12 +681,14 @@ public class ContainerManager
         return tabName + "-TABDELETED-FOLDER-" + folderTypeName;
     }
 
-    public static Container ensureContainer(String path)
+    @NotNull
+    public static Container ensureContainer(@NotNull String path, @NotNull User user)
     {
-        return ensureContainer(Path.parse(path), User.getAdminServiceUser());
+        return ensureContainer(Path.parse(path), user);
     }
 
-    public static Container ensureContainer(Path path, User user)
+    @NotNull
+    public static Container ensureContainer(@NotNull Path path, @NotNull User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
 //        if (CORE.getSchema().getScope().isTransactionActive())
@@ -709,14 +707,12 @@ public class ContainerManager
 
         if (null == c)
         {
-            if (0 == path.size())
+            if (path.isEmpty())
                 c = createRoot();
             else
             {
                 Path parentPath = path.getParent();
                 c = ensureContainer(parentPath, user);
-                if (null == c)
-                    return null;
                 c = createContainer(c, path.getName(), null, null, NormalContainerType.NAME, user);
             }
         }
@@ -724,6 +720,7 @@ public class ContainerManager
     }
 
 
+    @NotNull
     public static Container ensureContainer(Container parent, String name, User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
@@ -2608,12 +2605,13 @@ public class ContainerManager
      * and set permissions. If the container does exist, permissions
      * are only set if there is no explicit ACL for the container.
      * This prevents us from resetting permissions if all users
-     * are dropped.
+     * are dropped. Implicitly done as an admin-level service user.
      */
     @NotNull
     public static Container bootstrapContainer(String path, Role userRole, @Nullable Role guestRole, @Nullable Role devRole)
     {
         Container c = null;
+        User user = User.getAdminServiceUser();
 
         try
         {
@@ -2629,7 +2627,7 @@ public class ContainerManager
         {
             LOG.debug("Creating new container for path '" + path + "'");
             newContainer = true;
-            c = ensureContainer(path);
+            c = ensureContainer(path, user);
         }
 
         if (c == null)
@@ -2656,7 +2654,7 @@ public class ContainerManager
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
             if (devRole != null)
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
-            SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
+            SecurityPolicyManager.savePolicy(policy, user);
         }
 
         return c;

@@ -258,7 +258,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertTrue(junit.isCollection());
 
             Path pathTest = c.getParsedPath().append("dav");
-            Container cTest = ContainerManager.ensureContainer(pathTest.toString());
+            Container cTest = ContainerManager.ensureContainer(pathTest, TestContext.get().getUser());
 
             MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
             policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);

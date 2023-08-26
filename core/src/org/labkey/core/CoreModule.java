@@ -758,7 +758,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
     }
 
-
     private void bootstrap()
     {
         // Create the initial groups
@@ -780,7 +779,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
             policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
-            SecurityPolicyManager.savePolicy(policy, false);
+            SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser(), false);
         }
 
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type

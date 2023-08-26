@@ -115,7 +115,7 @@ public class MothershipModule extends DefaultModule
 
     private void bootstrap(ModuleContext moduleContext)
     {
-        Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
+        Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH, User.getAdminServiceUser());
         final Group mothershipGroup;
         Integer groupId = SecurityManager.getGroupId(c, NAME, false);
         // Group will exist in the case where mothership module is deleted and re-added to a deployment

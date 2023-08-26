@@ -455,7 +455,7 @@ public class NotificationServiceImpl extends AbstractContainerListener implement
             assertNotNull("Should have access to a user", _user);
 
             deleteTestContainer();
-            _container = ContainerManager.ensureContainer(_testDirName);
+            _container = ContainerManager.ensureContainer(_testDirName, _user);
 
             _notif1 = new Notification("objectId1", "type1", _user);
             _notif1.setActionLinkText("actionLinkText1");

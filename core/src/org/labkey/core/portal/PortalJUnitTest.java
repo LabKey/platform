@@ -55,8 +55,8 @@ public class PortalJUnitTest extends Assert
         if (null != ContainerManager.getForPath(_testDirName))
             ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
 
-        Container proj = ContainerManager.ensureContainer(_testDirName);
-        Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
+        Container proj = ContainerManager.ensureContainer(_testDirName, user);
+        Container folder = ContainerManager.ensureContainer(_testDirName + "/Test", user);
 
         List<WebPart> defaultWebParts = Portal.getParts(folder);
         assertTrue(defaultWebParts.isEmpty());

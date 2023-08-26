@@ -1740,8 +1740,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (null != ContainerManager.getForPath(_testDirName))
                 ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
 
-            Container proj = ContainerManager.ensureContainer(_testDirName);
-            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
+            Container proj = ContainerManager.ensureContainer(_testDirName, TestContext.get().getUser());
+            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test", TestContext.get().getUser());
 
             FileContentService fileService = FileContentService.get();
             AttachmentService svc = AttachmentService.get();
