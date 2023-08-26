@@ -134,13 +134,13 @@ public class SecurityPolicyManager
         return policy.getResourceId();
     }
 
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy)
+    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user)
     {
-        savePolicy(policy, true);
+        return savePolicy(policy, user, true);
     }
 
-    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
-    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, User user)
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user, boolean validateUsers)
     {
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null == c)
@@ -178,13 +178,13 @@ public class SecurityPolicyManager
             }
         }
 
-        savePolicy(policy, true);
+        savePolicyToDBAndValidate(policy, validateUsers);
         writeToAuditLog(c, user, resource, oldPolicy, policy);
 
         return !changedRoles.isEmpty();
     }
 
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
+    private static void savePolicyToDBAndValidate(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
     {
         DbScope scope = core.getSchema().getScope();
 
