@@ -67,6 +67,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CreateProjectPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -332,7 +333,16 @@ public class ContainerManager
 
         // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (c.isContainerFor(ContainerType.DataType.permissions))
-            SecurityManager.setAdminOnlyPermissions(c, user);
+        {
+            User savePolicyUser = user;
+            if (!c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
+            {
+                // Special case for project creators who don't necessarily yet have permission to save the policy of
+                // the project they just created
+                savePolicyUser = User.getAdminServiceUser();
+            }
+            SecurityManager.setAdminOnlyPermissions(c, savePolicyUser);
+        }
 
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
