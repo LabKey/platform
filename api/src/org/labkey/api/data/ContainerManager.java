@@ -163,6 +163,8 @@ public class ContainerManager
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
     public static final String TABFOLDER_CHILDREN_DELETED = "tabChildrenDeleted";
 
+    private static final List<ContainerSecurableResourceProvider> _resourceProviders = new CopyOnWriteArrayList<>();
+
     /** enum of properties you can see in property change events */
     public enum Property
     {
@@ -372,6 +374,16 @@ public class ContainerManager
         fireCreateContainer(c, user, auditMsg);
 
         return c;
+    }
+
+    public static void addSecurableResourceProvider(ContainerSecurableResourceProvider provider)
+    {
+        _resourceProviders.add(provider);
+    }
+
+    public static List<ContainerSecurableResourceProvider> getSecurableResourceProviders()
+    {
+        return Collections.unmodifiableList(_resourceProviders);
     }
 
     public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, User user, FolderExportContext exportCtx, Consumer<Container> afterCreateHandler) throws Exception

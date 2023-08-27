@@ -58,8 +58,11 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.FolderArchiveSource;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
@@ -145,6 +148,17 @@ public class PipelineServiceImpl implements PipelineService
         registerPipelineProviderSupplier(new StandardPipelineProviderSupplier());
 
         registerPipelineJobNotificationProvider(new PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider());
+
+        ContainerManager.addSecurableResourceProvider((c, u) -> {
+            PipeRoot root = findPipelineRoot(c);
+            if (null != root)
+            {
+                SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
+                if (policy.hasPermission(u, AdminPermission.class))
+                    return Collections.singleton(root);
+            }
+            return Collections.emptyList();
+        });
 
         ConnectionFactory factory = null;
         try

@@ -17,6 +17,7 @@ package org.labkey.core.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -41,6 +42,7 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -52,6 +54,17 @@ public class ShortURLServiceImpl implements ShortURLService
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<ShortURLListener> _listeners = new CopyOnWriteArrayList<>();
+
+    public ShortURLServiceImpl()
+    {
+        ContainerManager.addSecurableResourceProvider((c, u) -> {
+            if (c.isRoot())
+            {
+                return getAllShortURLs();
+            }
+            return Collections.emptyList();
+        });
+    }
 
     @Override @Nullable
     public ShortURLRecord resolveShortURL(@NotNull String shortURL)
