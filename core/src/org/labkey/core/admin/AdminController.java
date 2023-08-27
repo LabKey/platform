@@ -7126,7 +7126,15 @@ public class AdminController extends SpringActionController
                 return c -> {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
                     policy.addRoleAssignment(getUser(), ProjectAdminRole.class);
-                    SecurityPolicyManager.savePolicy(policy, getUser());
+                    User savePolicyUser = getUser();
+                    if (c.isProject() && !c.hasPermission(savePolicyUser, AdminPermission.class) && ContainerManager.getRoot().hasPermission(savePolicyUser, CreateProjectPermission.class))
+                    {
+                        // Special case for project creators who don't necessarily yet have permission to save the policy of
+                        // the project they just created
+                        savePolicyUser = User.getAdminServiceUser();
+                    }
+
+                    SecurityPolicyManager.savePolicy(policy, savePolicyUser);
                 };
             }
             else

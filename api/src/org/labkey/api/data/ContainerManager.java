@@ -331,16 +331,17 @@ public class ContainerManager
                 throw new RuntimeException("Container for path '" + path + "' was not created properly.");
         }
 
+        User savePolicyUser = user;
+        if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
+        {
+            // Special case for project creators who don't necessarily yet have permission to save the policy of
+            // the project they just created
+            savePolicyUser = User.getAdminServiceUser();
+        }
+
         // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (c.isContainerFor(ContainerType.DataType.permissions))
         {
-            User savePolicyUser = user;
-            if (!c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
-            {
-                // Special case for project creators who don't necessarily yet have permission to save the policy of
-                // the project they just created
-                savePolicyUser = User.getAdminServiceUser();
-            }
             SecurityManager.setAdminOnlyPermissions(c, savePolicyUser);
         }
 
@@ -351,7 +352,7 @@ public class ContainerManager
 
         if (c.isProject())
         {
-            SecurityManager.createNewProjectGroups(c, user);
+            SecurityManager.createNewProjectGroups(c, savePolicyUser);
         }
         else
         {
