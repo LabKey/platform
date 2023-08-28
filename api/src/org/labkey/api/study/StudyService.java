@@ -139,8 +139,6 @@ public interface StudyService
 
     void addStudyAuditEvent(Container container, User user, String comment);
 
-    List<SecurableResource> getSecurableResources(Container container, User user);
-
     String getSubjectNounSingular(Container container);
 
     String getSubjectNounPlural(Container container);
