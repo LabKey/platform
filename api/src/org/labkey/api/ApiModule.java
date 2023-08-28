@@ -85,7 +85,7 @@ import org.labkey.api.security.AvatarType;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.NestedGroupsTest;
-import org.labkey.api.security.PasswordEntropy;
+import org.labkey.api.security.EntropyPasswordValidator;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
@@ -169,10 +169,11 @@ public class ApiModule extends CodeOnlyModule
             DatabaseCache.TestCase.class,
             DataIteratorUtil.TestCase.class,
             DateUtil.TestCase.class,
-            DetailsURL.TestCase.class,
             DbScope.DialectTestCase.class,
+            DetailsURL.TestCase.class,
             DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
+            EntropyPasswordValidator.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
             ExistingRecordDataIterator.TestCase.class,
@@ -190,18 +191,19 @@ public class ApiModule extends CodeOnlyModule
             JSONDataLoader.RowTest.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            JSoupUtil.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
-            Measurement.Unit.TestCase.class,
             Measurement.TestCase.class,
+            Measurement.Unit.TestCase.class,
             MemTracker.TestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
+            NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
-            PasswordEntropy.TestCase.class,
             PasswordExpiration.TestCase.class,
             Path.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
@@ -217,12 +219,10 @@ public class ApiModule extends CodeOnlyModule
             SQLFragment.UnitTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
-            NameGenerator.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
             SwapQueue.TestCase.class,
             TabLoader.HeaderMatchTest.class,
-            JSoupUtil.TestCase.class,
             TSVMapWriter.Tests.class,
             TSVWriter.TestCase.class,
             ValidEmail.TestCase.class

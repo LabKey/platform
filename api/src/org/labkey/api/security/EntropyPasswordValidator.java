@@ -1,18 +1,39 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.util.TestContext;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class PasswordEntropy
+public abstract class EntropyPasswordValidator implements PasswordValidator
 {
+    protected abstract int getRequiredBitsOfEntropy();
+
+    protected int getCharacterEstimate()
+    {
+        return (int)Math.ceil(getRequiredBitsOfEntropy() / (Math.log(26) / BASE2_LOG));
+    }
+
+    @Override
+    public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
+    {
+        return calculateEntropy(filter(password, user)) >= getRequiredBitsOfEntropy();
+    }
+
+    @Override
+    public boolean isPreviousPasswordForbidden()
+    {
+        return true;
+    }
+
     private static final double BASE2_LOG = Math.log(2);
 
     // Calculate bits of entropy based on https://www.omnicalculator.com/other/password-entropy
@@ -72,7 +93,7 @@ public class PasswordEntropy
         {
             // Remove duplicate substrings of 3+ characters
             segments = removeDuplicateSubstringsWithinEachSegment(segments);
-            segments = removeDuplicateSubstringsInbetweenSegments(segments);
+            segments = removeDuplicateSubstringsBetweenSegments(segments);
 
             // Replace all repeated characters with a single character
             segments = replaceRepeatedCharacters(segments);
@@ -122,11 +143,11 @@ public class PasswordEntropy
         return ret;
     }
 
-    private static List<char[]> removeDuplicateSubstringsInbetweenSegments(List<char[]> segments)
+    private static List<char[]> removeDuplicateSubstringsBetweenSegments(List<char[]> segments)
     {
         char[] firstSegment = segments.get(0);
         List<char[]> filtered = remove(segments.subList(1, segments.size()), firstSegment);
-        List<char[]> ret = filtered.size() > 1 ? removeDuplicateSubstringsInbetweenSegments(filtered) : filtered;
+        List<char[]> ret = filtered.size() > 1 ? removeDuplicateSubstringsBetweenSegments(filtered) : filtered;
         ret.add(0, firstSegment);
 
         return ret;
@@ -243,7 +264,7 @@ public class PasswordEntropy
 
     private static final Handler REMOVE_HANDLER = (ret, segment, idx, length) -> {};
     private static final Handler REPLACE_HANDLER = (ret, segment, idx, length) -> {
-        char[] replacement = Arrays.copyOfRange(segment, idx, 1);
+        char[] replacement = Arrays.copyOfRange(segment, idx, idx + 1);
         ret.add(replacement);
     };
 
@@ -280,24 +301,28 @@ public class PasswordEntropy
         @Test
         public void testEntropy()
         {
-            User user = TestContext.get().getUser();
+            User user = new User();
+            user.setEmail("auth@labkey.test");
+            user.setDisplayName("StrongAuthTest");
+            user.setFirstName("First");
+            user.setLastName("Last");
 
             assertEquals(42.3, calculateEntropy("incorrect"), 0.01);
             assertEquals(51.3, calculateEntropy("Incorrect"), 0.01);
             assertEquals(65.5, calculateEntropy("IncoRRect77"), 0.01);
             assertEquals(91.76, calculateEntropy("IncoRRect77$%&"), 0.01);
 
-            assertEquals("", filter("adam@rauch.comadarau", user));
-            assertEquals("wxyz", filter("wadam@rauch.comxadayrauz", user));
-            assertEquals("adam", filter("aducham", user));
+            assertEquals("", filter("auth@labkey.testFirLast", user));
+            assertEquals("wxyz", filter("wauth@labkey.testxLasyrstz", user));
+            assertEquals("adam", filter("adutham", user));
 
             assertEquals("bugcatdogratfox", filter("bugcatdogratfoxcatdogfoxratbug", user));
-            assertEquals("bug", filter("bugadam@rauch.combug", user));
+            assertEquals("bug", filter("bugauth@labkey.testbug", user));
 
             assertEquals("incorect", filter("incorrect", user));
             assertEquals("abcd", filter("aaabbbcccddd", user));
-            assertEquals("ab", filter("aaraucbb", user));
-            assertEquals("aaa", filter("araucaadaa", user));
+            assertEquals("ab", filter("aaFirstbb", user));
+            assertEquals("aaa", filter("aLastaFira", user));
             assertEquals("a", filter("aaa", user));
             assertEquals("ax", filter("aaaaax", user));
             assertEquals("xa", filter("xaa", user));
@@ -306,10 +331,7 @@ public class PasswordEntropy
             assertEquals("Q", filter("QWERTYUIOP", user));
             assertEquals("v", filter("vbnm,", user));
             assertEquals("`", filter("`12", user));
-
-//            System.out.println(filter("Incorrect", null));
-//            System.out.println(filter("IncoRRect77", null));
-//            System.out.println(filter("IncoRRect77$%&", null));
+            assertEquals("a1x7", filter("abc123xyz789", user));
         }
     }
 }
