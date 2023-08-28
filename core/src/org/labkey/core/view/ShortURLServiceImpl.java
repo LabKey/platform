@@ -32,6 +32,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
@@ -144,7 +145,7 @@ public class ShortURLServiceImpl implements ShortURLService
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(newRecord));
                 // By default, the user who created it can manage it
                 policy.addRoleAssignment(user, EditorRole.class);
-                SecurityPolicyManager.savePolicy(policy, user);
+                SecurityPolicyManager.savePolicy(policy, ContainerManager.getRoot().hasPermission(user, AdminPermission.class) ? user : User.getAdminServiceUser());
                 transaction.commit();
                 return newRecord;
             }
