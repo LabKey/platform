@@ -223,7 +223,6 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-            PlateManager.get().clearCache(container);
             return results;
         }
 
@@ -249,7 +248,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
-            PlateManager.get().clearCache(container);
+            PlateManager.get().clearCache(container, plate);
             return newRow;
         }
 
@@ -267,11 +266,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
-                final Lsid plateLsid = new Lsid(plate.getLSID());
                 PlateManager.get().beforePlateDelete(container, plateId);
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateManager.get().afterPlateDelete(container, plateLsid), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateManager.get().afterPlateDelete(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
                 return returnMap;

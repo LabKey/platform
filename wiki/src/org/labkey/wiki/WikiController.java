@@ -2094,7 +2094,7 @@ public class WikiController extends SpringActionController
         @SuppressWarnings({"UnusedDeclaration"})
         public void setBody(String body)
         {
-            _body = body;
+            _body = PageFlowUtil.wafDecode(body);
         }
 
         public boolean isNew()

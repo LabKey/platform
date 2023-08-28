@@ -30,10 +30,12 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
@@ -57,9 +59,7 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
-import org.labkey.assay.plate.model.PlateCustomField;
 import org.labkey.assay.plate.model.PlateType;
-import org.labkey.assay.plate.model.WellCustomField;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -734,12 +734,12 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    public class GetFieldsAction extends ReadOnlyApiAction<CustomFieldsForm>
     {
         @Override
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
         {
-            return success(PlateManager.get().getFields(getContainer(), getUser(), form.getPlateId()));
+            return success(PlateManager.get().getFields(getContainer(), form.getPlateId()));
         }
     }
 
@@ -753,39 +753,50 @@ public class PlateController extends SpringActionController
         }
     }
 
-    public static class SetFieldsForm extends CustomFieldsForm
+    /**
+     * Returns the Domain ID for the plate metadata configured for this container. If the domain has
+     * not been created then null will be returned.
+     */
+    @RequiresPermission(ReadPermission.class)
+    public class GetPlateMetadataDomainAction extends ReadOnlyApiAction<Object>
     {
-        private Integer _wellId;
-        private List<WellCustomField> _wellFields;
-
-        public Integer getWellId()
+        @Override
+        public Object execute(Object form, BindException errors) throws Exception
         {
-            return _wellId;
-        }
-
-        public void setWellId(Integer wellId)
-        {
-            _wellId = wellId;
-        }
-
-        public List<WellCustomField> getWellFields()
-        {
-            return _wellFields;
-        }
-
-        public void setWellFields(List<WellCustomField> wellFields)
-        {
-            _wellFields = wellFields;
+            Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
+            return success(domain != null ? domain.getTypeId() : null);
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class SetFieldsAction extends MutatingApiAction<SetFieldsForm>
+    public static class GetPlateForm
+    {
+        private Integer _rowId;
+
+        public Integer getRowId()
+        {
+            return _rowId;
+        }
+
+        public void setRowId(Integer rowId)
+        {
+            _rowId = rowId;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetPlateAction extends ReadOnlyApiAction<GetPlateForm>
     {
         @Override
-        public Object execute(SetFieldsForm form, BindException errors) throws Exception
+        public void validateForm(GetPlateForm form, Errors errors)
         {
-            return success(PlateManager.get().setFields(getContainer(), getUser(), form.getPlateId(), form.getWellId(), form.getWellFields()));
+            if (form.getRowId() == null)
+                errors.reject(ERROR_GENERIC, "Plate \"rowId\" is required.");
+        }
+
+        @Override
+        public Object execute(GetPlateForm form, BindException errors) throws Exception
+        {
+            return PlateManager.get().getPlate(getContainer(), form.getRowId());
         }
     }
 }

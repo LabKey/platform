@@ -97,7 +97,6 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
         return template.detailsURL();
     }
 
-
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {
         List<? extends Position> sortedPositions = new ArrayList<>(positions);
@@ -312,6 +311,10 @@ public class WellGroupImpl extends PropertySetImpl implements WellGroup
     @Override
     public Plate getPlate()
     {
+        if (_plate == null && _plateId != null)
+        {
+            _plate = (PlateImpl) PlateCache.getPlate(getContainer(), _plateId);
+        }
         return _plate;
     }
 

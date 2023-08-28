@@ -17,6 +17,7 @@
 package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -50,6 +51,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -181,11 +183,19 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 Integer wellGroupId = (Integer)oldRowMap.get("RowId");
                 if (wellGroupId != null)
                 {
-                    PlateManager.get().beforeDeleteWellGroup(container, wellGroupId);
-                    Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
-                    transaction.commit();
+                    WellGroup wellGroup = PlateManager.get().getWellGroup(container, wellGroupId);
+                    if (wellGroup != null)
+                    {
+                        Plate plate = wellGroup.getPlate();
+                        PlateManager.get().beforeDeleteWellGroup(container, wellGroupId);
+                        Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                    return returnMap;
+                        if (plate != null)
+                            transaction.addCommitTask(() -> PlateCache.uncache(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
+                        transaction.commit();
+
+                        return returnMap;
+                    }
                 }
                 return Collections.emptyMap();
             }

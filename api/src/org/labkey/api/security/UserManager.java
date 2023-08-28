@@ -279,7 +279,7 @@ public class UserManager
 
     public interface UserDetailsButtonProvider
     {
-        void addButton(ButtonBar bb, Container c, User user, ActionURL returnUrl);
+        void addButton(ButtonBar bb, Container c, User currentUser, User detailsUser, ActionURL returnUrl);
     }
 
     public enum UserDetailsButtonCategory
@@ -311,9 +311,9 @@ public class UserManager
         USER_DETAILS_BUTTON_PROVIDERS.get(category).add(provider);
     }
 
-    public static void addCustomButtons(UserDetailsButtonCategory category, ButtonBar bb, Container c, User user, ActionURL returnUrl)
+    public static void addCustomButtons(UserDetailsButtonCategory category, ButtonBar bb, Container c, User currentUser, User detailsUser, ActionURL returnUrl)
     {
-        USER_DETAILS_BUTTON_PROVIDERS.get(category).forEach(provider -> provider.addButton(bb, c, user, returnUrl));
+        USER_DETAILS_BUTTON_PROVIDERS.get(category).forEach(provider -> provider.addButton(bb, c, currentUser, detailsUser, returnUrl));
     }
 
     public static @Nullable User getUser(int userId)

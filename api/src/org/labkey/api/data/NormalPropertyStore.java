@@ -19,9 +19,6 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A PropertyStore that does not encrypt its values when persisted in the database.
- *
- * User: adam
- * Date: 10/11/13
  */
 public class NormalPropertyStore extends AbstractPropertyStore
 {

@@ -109,7 +109,7 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
             private @Nullable Plate getPlate(@NotNull String resourceIdentifier)
             {
                 Lsid lsid = fromDocumentId(resourceIdentifier);
-                return PlateManager.get().getPlate(lsid.toString());
+                return PlateManager.get().getPlate(lsid);
             }
 
             @Override

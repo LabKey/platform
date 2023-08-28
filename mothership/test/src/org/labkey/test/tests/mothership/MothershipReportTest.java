@@ -131,6 +131,11 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
         );
 
         Date lastPing = _mothershipHelper.getLastPing("localhost");
+
+        // These values only have second-level granularity, so wait 1.5 seconds to make sure that the old and
+        // new timestamps are different enough for us to notice
+        Thread.sleep(1500);
+
         // Self-report so that we have some metrics to verify
         beginAt(WebTestHelper.buildRelativeUrl("mothership", "selfReportMetrics"));
         assertTextPresent("success");
