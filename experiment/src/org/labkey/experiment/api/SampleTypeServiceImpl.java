@@ -2139,16 +2139,28 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (newSeqValue <= 0)
             {
-                String seqName = isRootOnly ? ROOT_SAMPLE_COUNT_SEQ_NAME : SAMPLE_COUNT_SEQ_NAME;
-                Container seqContainer = container.getProject();
-                DbSequenceManager.delete(seqContainer, seqName);
-                DbSequenceManager.invalidatePreallocatingSequence(container, seqName, 0);
+                deleteSampleCounterSequence(container, isRootOnly);
                 return;
             }
         }
 
         seq.ensureMinimum(newSeqValue);
         seq.sync();
+    }
+
+    public void deleteSampleCounterSequences(Container container)
+    {
+        deleteSampleCounterSequence(container, false);
+        deleteSampleCounterSequence(container, true);
+    }
+
+    private void deleteSampleCounterSequence(Container container, boolean isRootOnly)
+    {
+        String seqName = isRootOnly ? ROOT_SAMPLE_COUNT_SEQ_NAME : SAMPLE_COUNT_SEQ_NAME;
+        Container seqContainer = container.getProject();
+        DbSequenceManager.delete(seqContainer, seqName);
+        DbSequenceManager.invalidatePreallocatingSequence(container, seqName, 0);
+        return;
     }
 
     @Override
@@ -2185,9 +2197,12 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         boolean isRootOnly = counterType == NameGenerator.EntityCounter.rootSampleCount;
         DbSequence seq = getSampleCountSequence(container, isRootOnly, false);
         if (seq != null)
-            return seq.current();
-        else
-            return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
+        {
+            long current = seq.current();
+            if (current > 0)
+                return current;
+        }
 
+        return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 }
