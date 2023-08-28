@@ -36,7 +36,7 @@ public class LineageHelper
 
         List<String> lsidsToInvestigate = new ArrayList<>();
         lsidsToInvestigate.add(start.getLSID());
-//        lsidsToInvestigate.addAll(svc.collectRunsToInvestigate(start, options));
+        lsidsToInvestigate.addAll(svc.collectRunsToInvestigate(start, options));
 
         return svc.generateExperimentTreeSQLLsidSeeds(lsidsToInvestigate, options);
     }
