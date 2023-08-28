@@ -85,6 +85,7 @@ import org.labkey.api.security.AvatarType;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.NestedGroupsTest;
+import org.labkey.api.security.PasswordEntropy;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.ValidEmail;
@@ -200,6 +201,7 @@ public class ApiModule extends CodeOnlyModule
             NumberUtilsLabKey.TestCase.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
+            PasswordEntropy.TestCase.class,
             PasswordExpiration.TestCase.class,
             Path.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,

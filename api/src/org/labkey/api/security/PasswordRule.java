@@ -108,7 +108,7 @@ public enum PasswordRule
         }
     },
 
-    Strong
+    Good
     {
         @Override
         protected int getMinimumLength()
@@ -144,6 +144,56 @@ public enum PasswordRule
         protected int getRequiredCharacterTypeCount()
         {
             return 3;
+        }
+    },
+
+    Strong
+    {
+        @Override
+        public void init()
+        {
+        }
+
+        @Override
+        public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
+        {
+            return PasswordEntropy.calculateEntropy(PasswordEntropy.filter(password, user)) >= 60.0;
+        }
+
+        @Override
+        protected int getMinimumLength()
+        {
+            return 0;
+        }
+
+        @Override
+        protected boolean isLowerCaseEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected boolean isUpperCaseEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected boolean isDigitEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected boolean isSymbolEnabled()
+        {
+            return false;
+        }
+
+        @Override
+        protected int getRequiredCharacterTypeCount()
+        {
+            return 0;
         }
     };
 
@@ -476,7 +526,7 @@ public enum PasswordRule
             if (Weak.isValidForLogin(password, user, null))
                 weak++;
 
-            if (Strong.isValidForLogin(password, user, null))
+            if (Good.isValidForLogin(password, user, null))
                 strong++;
         }
 
