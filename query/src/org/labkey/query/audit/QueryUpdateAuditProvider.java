@@ -212,7 +212,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         private String _rowPk;
         private String _schemaName;
         private String _queryName;
-        private Long _transactionId;
 
         public QueryUpdateAuditEvent()
         {
@@ -252,16 +251,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
-        }
-
-        public Long getTransactionId()
-        {
-            return _transactionId;
-        }
-
-        public void setTransactionId(Long transactionId)
-        {
-            _transactionId = transactionId;
         }
 
         @Override
