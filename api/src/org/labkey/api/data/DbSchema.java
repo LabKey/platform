@@ -817,7 +817,7 @@ public class DbSchema
             // create a recovered objects project
             String cName = "/_RecoveredObjects" +  StringUtilsLabKey.getUniquifier(4);
 
-            final Container recovered = ContainerManager.ensureContainer(cName);
+            final Container recovered = ContainerManager.ensureContainer(cName, user);
             final Set<Module> modulesOfOrphans = new HashSet<>();
 
             String selectSql = "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName

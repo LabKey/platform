@@ -978,7 +978,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             Container project = ContainerManager.getForPath(projectName);
             if (project == null)
             {
-                ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
+                ContainerManager.createContainer(ContainerManager.getRoot(), projectName, TestContext.get().getUser());
             }
         }
 

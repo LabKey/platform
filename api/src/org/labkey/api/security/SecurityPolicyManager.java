@@ -134,13 +134,13 @@ public class SecurityPolicyManager
         return policy.getResourceId();
     }
 
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy)
+    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user)
     {
-        savePolicy(policy, true);
+        return savePolicy(policy, user, true);
     }
 
-    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
-    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, User user)
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user, boolean validateUsers)
     {
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null == c)
@@ -178,13 +178,13 @@ public class SecurityPolicyManager
             }
         }
 
-        savePolicy(policy, true);
+        savePolicyToDBAndValidate(policy, validateUsers);
         writeToAuditLog(c, user, resource, oldPolicy, policy);
 
         return !changedRoles.isEmpty();
     }
 
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
+    private static void savePolicyToDBAndValidate(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
     {
         DbScope scope = core.getSchema().getScope();
 
@@ -246,18 +246,12 @@ public class SecurityPolicyManager
         Removed
     }
 
-    private static void writeToAuditLog(Container c, User user, SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
+    private static void writeToAuditLog(Container c, @Nullable User user, SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
     {
         //if moving from inherited to not-inherited, just log the new role assignments
         if (null == oldPolicy || !(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
         {
-            SecurableResource parent = resource.getParentResource();
-            String parentName = parent != null ? parent.getResourceName() : "root";
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(),
-                    "A new security policy was established for " +
-                            resource.getResourceName() + ". It will no longer inherit permissions from " +
-                            parentName);
-            event.setResourceEntityId(resource.getResourceId());
+            GroupAuditProvider.GroupAuditEvent event = getGroupAuditEvent(c, resource);
             AuditLogService.get().addEvent(user, event);
 
             for (RoleAssignment newAsgn : newPolicy.getAssignments())
@@ -328,6 +322,19 @@ public class SecurityPolicyManager
         }
     }
 
+    @NotNull
+    private static GroupAuditProvider.GroupAuditEvent getGroupAuditEvent(Container c, SecurableResource resource)
+    {
+        SecurableResource parent = resource.getParentResource();
+        String parentName = parent != null ? parent.getResourceName() : "root";
+        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(),
+                "A new security policy was established for " +
+                        resource.getResourceName() + ". It will no longer inherit permissions from " +
+                        parentName);
+        event.setResourceEntityId(resource.getResourceId());
+        return event;
+    }
+
     protected static void writeAuditEvent(Container c, User user, int principalId, Role role, RoleModification mod, SecurableResource resource)
     {
         UserPrincipal principal = SecurityManager.getPrincipal(principalId);
@@ -396,7 +403,7 @@ public class SecurityPolicyManager
      */
     public static void clearRoleAssignments(@NotNull Set<SecurableResource> resources, @NotNull Set<UserPrincipal> principals)
     {
-        if (resources.size() == 0 || principals.size() == 0)
+        if (resources.isEmpty() || principals.isEmpty())
             return;
 
         SQLFragment sql = new SQLFragment("DELETE FROM ");
@@ -579,6 +586,6 @@ public class SecurityPolicyManager
                 ctx.getLogger().warn(x.getMessage());
             }
         }
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, ctx.getUser());
     }
 }

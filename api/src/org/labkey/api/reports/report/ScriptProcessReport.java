@@ -121,39 +121,6 @@ public abstract class ScriptProcessReport extends ScriptReport implements Report
         return super._generateResults(context, allowAsyncQuery);
     }
 
-
-    protected boolean validateScript(String text, List<String> errors)
-    {
-        if (StringUtils.isEmpty(text))
-        {
-            errors.add("Empty script, a script must be provided.");
-            return false;
-        }
-
-        return ParamReplacementSvc.get().isScriptWithValidReplacements(text, errors);
-    }
-
-
-    /*
-     * Create the .tsv associated with the data grid for this report.
-     */
-    public File createInputDataFile(@NotNull ViewContext context) throws SQLException, IOException, ValidationException
-    {
-        File resultFile = new File(getReportDir(context.getContainer().getId()), DATA_INPUT);
-        ResultsFactory factory = ()-> {
-            try
-            {
-                return generateResults(context, true);
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException(e);
-            }
-        };
-        return _createInputDataFile(context, factory, resultFile);
-    }
-
-
     /**
      *
      * @param executingContainerId id of the container in which the report is running

@@ -229,7 +229,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             String name = String.format("%s%04d", namePrefix, i);
             if (!currentChildren.contains(name))
             {
-                ContainerManager.createContainer(getContainer(), name);
+                ContainerManager.createContainer(getContainer(), name, _job.getUser());
                 numCreated++;
             }
             i++;

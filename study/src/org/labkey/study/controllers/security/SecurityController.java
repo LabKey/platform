@@ -522,11 +522,11 @@ public class SecurityController extends SpringActionController
 
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))
             {
-                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, getUser());
+                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, getUser(), getUser());
             }
             else if (form.getPermissionType().equals(PermissionType.defaultPermission.toString()))
             {
-                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, null);
+                ReportUtil.resetReportSecurityPolicy(getViewContext(), report, null, getUser());
             }
             else
             {

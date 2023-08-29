@@ -17,6 +17,7 @@ package org.labkey.core.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -31,6 +32,7 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
@@ -41,6 +43,7 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -52,6 +55,17 @@ public class ShortURLServiceImpl implements ShortURLService
 {
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<ShortURLListener> _listeners = new CopyOnWriteArrayList<>();
+
+    public ShortURLServiceImpl()
+    {
+        ContainerManager.addSecurableResourceProvider((c, u) -> {
+            if (c.isRoot())
+            {
+                return getAllShortURLs();
+            }
+            return Collections.emptyList();
+        });
+    }
 
     @Override @Nullable
     public ShortURLRecord resolveShortURL(@NotNull String shortURL)
@@ -131,7 +145,7 @@ public class ShortURLServiceImpl implements ShortURLService
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(newRecord));
                 // By default, the user who created it can manage it
                 policy.addRoleAssignment(user, EditorRole.class);
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, ContainerManager.getRoot().hasPermission(user, AdminPermission.class) ? user : User.getAdminServiceUser());
                 transaction.commit();
                 return newRecord;
             }

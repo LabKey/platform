@@ -36,6 +36,7 @@ import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.ExtendedApiQueryResponse.ColMapEntry;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.iterator.CloseableIterator;
@@ -47,6 +48,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -397,6 +399,7 @@ public class JSONDataLoader extends DataLoader
 
         FieldKey fieldKey = null;
         String type = null;
+        Class jdbcTypeClass = null;
         Boolean mvEnabled = Boolean.FALSE;
 
         while (parser.getCurrentToken() == JsonToken.FIELD_NAME)
@@ -415,8 +418,29 @@ public class JSONDataLoader extends DataLoader
             else if (fieldName.equals("type"))
             {
                 type = parser.getValueAsString();
+
                 if (type == null)
                     throw new JsonParseException(parser, "Failed to parse type property", loc);
+
+                parser.nextToken();
+            }
+            else if (fieldName.equals("jdbcType"))
+            {
+                String value = parser.getValueAsString();
+
+                if (value == null)
+                    throw new JsonParseException("Failed to find jdbc type property", loc);
+
+                JdbcType jdbcType = JdbcType.valueOf(value);
+
+                if (jdbcType != null)
+                {
+                    jdbcTypeClass = jdbcType.getJavaClass();
+                }
+                else
+                {
+                    LogManager.getLogger(JSONDataLoader.class).warn("Failed to find jdbc type for " + value);
+                }
 
                 parser.nextToken();
             }
@@ -436,7 +460,15 @@ public class JSONDataLoader extends DataLoader
         if (fieldKey != null)
         {
             col = new ColumnDescriptor(fieldKey.toString());
-            col.clazz = DisplayColumn.getClassFromJsonTypeName(type);
+
+            if (jdbcTypeClass != null)
+            {
+                col.clazz = jdbcTypeClass;
+            }
+            else
+            {
+                col.clazz = DisplayColumn.getClassFromJsonTypeName(type);
+            }
             if (mvEnabled)
                 col.setMvEnabled(mvIndicatorContainer);
         }
@@ -1029,10 +1061,17 @@ public class JSONDataLoader extends DataLoader
         public void fields() throws IOException
         {
             JsonParser parser = createParser("""
-                    [{ "fieldKey": ["A"], "type": "int" }, { "fieldKey": ["B"], "type": "unknown" }, { "fieldKey": ["C"] } ]"""
-            );
+                    [
+                        { "fieldKey": ["A"], "type": "int" },
+                        { "fieldKey": ["B"], "type": "unknown" },
+                        { "fieldKey": ["C"] },
+                        { "fieldKey": ["D"], "type": "float", "jdbcType": "DOUBLE" },
+                        { "fieldKey": ["E"], "type": "float", "jdbcType": "DECIMAL" },
+                        { "fieldKey": ["F"], "type": "int", "jdbcType": "BIGINT" }
+                    ]
+            """);
             ColumnDescriptor[] cols = JSONDataLoader.parseFields(parser, null);
-            assertEquals(3, cols.length);
+            assertEquals(6, cols.length);
 
             assertEquals(cols[0].name, "A");
             assertEquals(cols[0].clazz, Integer.class);
@@ -1042,6 +1081,15 @@ public class JSONDataLoader extends DataLoader
 
             assertEquals(cols[2].name, "C");
             assertEquals(cols[2].clazz, String.class);
+
+            assertEquals(cols[3].name, "D");
+            assertEquals(cols[3].clazz, Double.class);
+
+            assertEquals(cols[4].name, "E");
+            assertEquals(cols[4].clazz, BigDecimal.class);
+
+            assertEquals(cols[5].name, "F");
+            assertEquals(cols[5].clazz, Long.class);
         }
 
         @Test
@@ -1053,7 +1101,10 @@ public class JSONDataLoader extends DataLoader
                       "fields": [
                         { "fieldKey": ["A"], "type": "int" },
                         { "fieldKey": ["B"], "type": "unknown" },
-                        { "fieldKey": ["C"] }
+                        { "fieldKey": ["C"] },
+                        { "fieldKey": ["D"], "type": "float", "jdbcType": "DOUBLE" },
+                        { "fieldKey": ["E"], "type": "float", "jdbcType": "DECIMAL" },
+                        { "fieldKey": ["F"], "type": "int", "jdbcType": "BIGINT" }
                       ],
                       "other": "test"
                     }"""
@@ -1063,7 +1114,7 @@ public class JSONDataLoader extends DataLoader
             loader.parseMetadataContents();
 
             ColumnDescriptor[] cols = loader._columns;
-            assertEquals(3, cols.length);
+            assertEquals(6, cols.length);
 
             assertEquals(cols[0].name, "A");
             assertEquals(cols[0].clazz, Integer.class);
@@ -1073,6 +1124,15 @@ public class JSONDataLoader extends DataLoader
 
             assertEquals(cols[2].name, "C");
             assertEquals(cols[2].clazz, String.class);
+
+            assertEquals(cols[3].name, "D");
+            assertEquals(cols[3].clazz, Double.class);
+
+            assertEquals(cols[4].name, "E");
+            assertEquals(cols[4].clazz, BigDecimal.class);
+
+            assertEquals(cols[5].name, "F");
+            assertEquals(cols[5].clazz, Long.class);
         }
 
         @Test

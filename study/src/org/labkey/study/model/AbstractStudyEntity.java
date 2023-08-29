@@ -213,7 +213,7 @@ public abstract class AbstractStudyEntity<T>
     {
         if (!supportsPolicyUpdate())
             throw new IllegalArgumentException("unexpected class " + this.getClass().getName());
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, user);
     }
 
     protected boolean supportsPolicyUpdate()

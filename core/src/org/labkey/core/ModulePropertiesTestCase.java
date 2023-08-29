@@ -79,7 +79,7 @@ public class ModulePropertiesTestCase extends Assert
         }
 
         _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, NormalContainerType.NAME, _user);
-        _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+        _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME, TestContext.get().getUser());
 
         Map<String, ModuleProperty> props = _module.getModuleProperties();
         ModuleProperty prop2 = props.get(PROP2);

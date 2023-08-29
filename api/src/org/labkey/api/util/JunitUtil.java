@@ -87,7 +87,7 @@ public class JunitUtil
 
     public static Container getTestContainer()
     {
-        return ContainerManager.ensureContainer(getTestContainerPath());
+        return ContainerManager.ensureContainer(getTestContainerPath(), TestContext.get().getUser());
     }
 
     public static void deleteTestContainer()

@@ -7912,8 +7912,8 @@ public class QueryController extends SpringActionController
         {
             doCleanup();
 
-            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1);
-            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2);
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1, TestContext.get().getUser());
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2, TestContext.get().getUser());
 
             //disable search so we dont get conflicts when deleting folder quickly
             ContainerManager.updateSearchable(project1, false, TestContext.get().getUser());
@@ -8027,7 +8027,7 @@ public class QueryController extends SpringActionController
 
             MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(project1));
             securityPolicy.addRoleAssignment(withoutPermissions, EditorRole.class);
-            SecurityPolicyManager.savePolicy(securityPolicy);
+            SecurityPolicyManager.savePolicy(securityPolicy, TestContext.get().getUser());
 
             assertTrue("Should have insert permission", project1.hasPermission(withoutPermissions, InsertPermission.class));
             assertFalse("Should not have insert permission", project2.hasPermission(withoutPermissions, InsertPermission.class));

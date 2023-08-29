@@ -222,7 +222,7 @@ public class WorkbookContainerType implements ContainerType
         {
             doCleanup(projectName);
 
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName, TestContext.get().getUser());
 
             //create two workbooks, auto-named by system
             _workbooks.add(ContainerManager.createContainer(_project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
@@ -425,8 +425,8 @@ public class WorkbookContainerType implements ContainerType
             String subfolderName = "sub1";
             String subfolderName2 = "sub2";
 
-            Container parent = ContainerManager.createContainer(_project, subfolderName);
-            Container sub = ContainerManager.createContainer(parent, subfolderName2);
+            Container parent = ContainerManager.createContainer(_project, subfolderName, TestContext.get().getUser());
+            Container sub = ContainerManager.createContainer(parent, subfolderName2, TestContext.get().getUser());
 
             Container wbOverride = ContainerManager.createContainer(parent, "WorkbookOverride", "WorkbookOverride", null, WorkbookContainerType.NAME, TestContext.get().getUser());
             Container wbDefaultRoot = ContainerManager.createContainer(parent, "WorkbookNoOverride", "WorkbookNoOverride", null, WorkbookContainerType.NAME, TestContext.get().getUser());

@@ -974,7 +974,7 @@ public class ExcelColumn extends RenderColumn
             Container project = ContainerManager.getForPath(projectName);
             if (project == null)
             {
-                project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
+                project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName, TestContext.get().getUser());
             }
 
             //create list:
