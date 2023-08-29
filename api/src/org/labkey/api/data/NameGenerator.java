@@ -118,7 +118,7 @@ public class NameGenerator
      *  ${genId:minValue('100')}
      *  ${sampleCount:minValue(10)}
      */
-    public static final String WITH_START_IND_REGEX = ".*\\$\\{%s:minValue\\('?(\\d*)?'?\\)}.*";
+    public static final String WITH_START_IND_REGEX = ".*\\$\\{%s:minValue\\('?(\\d*)?'?\\).*";
 
     /**
      * Ancestor lookup example:
