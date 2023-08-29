@@ -3454,7 +3454,7 @@ public class SecurityManager
             {
                 password = createTempPassword() + "Az9!";
             }
-            while (!PasswordRule.Good.isValidForLogin(password, user, null));
+            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
 
             return password;
         }
