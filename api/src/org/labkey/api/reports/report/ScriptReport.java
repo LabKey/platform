@@ -27,6 +27,7 @@ import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -102,6 +103,7 @@ public abstract class ScriptReport extends AbstractReport
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
         final String viewName = descriptor.getProperty(QueryParam.viewName.toString());
         final String dataRegionName = descriptor.getProperty(QueryParam.dataRegionName.toString());
+        final String containerFilter = context.cloneActionURL().getParameter("containerFilter");
 
         if (context != null && schemaName != null)
         {
@@ -115,6 +117,12 @@ public abstract class ScriptReport extends AbstractReport
                 settings.setViewName(viewName);
                 // need to reset the report id since we want to render the data grid, not the report
                 settings.setReportId(null);
+
+                if (containerFilter != null)
+                {
+                    final ContainerFilter.Type containerFilterType = ContainerFilter.Type.valueOf(containerFilter);
+                    settings.setContainerFilterName(containerFilterType.name());
+                }
 
                 UserSchema schema = base.createView(context, settings).getSchema();
                 return new ReportQueryView(schema, settings);
