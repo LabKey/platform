@@ -768,12 +768,6 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         }
     }
 
-    public void updatePolicy(ViewContext context, MutableSecurityPolicy policy)
-    {
-        assert policy.getResourceId().equalsIgnoreCase(this.getResourceId());
-        SecurityPolicyManager.savePolicy(policy);
-    }
-
     public boolean isNew()
     {
         return getReportId() == null;

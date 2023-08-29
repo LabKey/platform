@@ -704,30 +704,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //add all sub-containers the user is allowed to read
         List<SecurableResource> ret = new ArrayList<>(ContainerManager.getChildren(this, user, ReadPermission.class));
 
-        // TODO: Shouldn't each module register a provider to add their securable resources? This knowledge about study,
-        // reports, and pipeline roots shouldn't be hard-coded in Container.
-
-        //add resources from study
-        StudyService sts = StudyService.get();
-        if (null != sts)
-            ret.addAll(sts.getSecurableResources(this, user));
-
-        //add report descriptors
-        //this seems much more cumbersome than it should be
-        for (Report report : ReportService.get().getReports(user, this))
+        for (ContainerSecurableResourceProvider p : ContainerManager.getSecurableResourceProviders())
         {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
-            if (policy.hasPermission(user, AdminPermission.class))
-                ret.add(report.getDescriptor());
-        }
-
-        //add pipeline root
-        PipeRoot root = PipelineService.get().findPipelineRoot(this);
-        if (null != root)
-        {
-            SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
-            if (policy.hasPermission(user, AdminPermission.class))
-                ret.add(root);
+            ret.addAll(p.getSecurableResources(this, user));
         }
 
         return ret;

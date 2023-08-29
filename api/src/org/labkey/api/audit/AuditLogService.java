@@ -96,9 +96,11 @@ public interface AuditLogService
      */
     boolean isViewable();
 
-    <K extends AuditTypeEvent> K addEvent(User user, K event);
+    /** If user is null, default to the Guest user */
+    <K extends AuditTypeEvent> K addEvent(@Nullable User user, K event);
 
-    <K extends AuditTypeEvent> void addEvents(User user, List<K> events);
+    /** If user is null, default to the Guest user */
+    <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events);
 
     @Nullable
     <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);

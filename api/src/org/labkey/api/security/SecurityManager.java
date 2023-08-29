@@ -2541,7 +2541,7 @@ public class SecurityManager
     }
 
 
-    public static void createNewProjectGroups(Container project)
+    public static void createNewProjectGroups(Container project, User user)
     {
         /*
         this check doesn't work well when moving container
@@ -2558,10 +2558,10 @@ public class SecurityManager
         MutableSecurityPolicy policy = new MutableSecurityPolicy(project);
         policy.addRoleAssignment(getGroup(Group.groupGuests), noPermsRole);
         
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, user);
     }
 
-    public static void setAdminOnlyPermissions(Container c)
+    public static void setAdminOnlyPermissions(Container c, User user)
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
 
@@ -2587,7 +2587,7 @@ public class SecurityManager
         if (policy.isEmpty())
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
 
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, user);
     }
 
     public static void setInheritPermissions(Container c)
@@ -2625,7 +2625,7 @@ public class SecurityManager
     }
 
 
-    public static void changeProject(Container c, Container oldProject, Container newProject)
+    public static void changeProject(Container c, Container oldProject, Container newProject, User user)
     {
         assert core.getSchema().getScope().isTransactionActive();
 
@@ -2646,7 +2646,7 @@ public class SecurityManager
         /* when promoting a folder to a project, create default project groups */
         if (newProject == c)
         {
-            createNewProjectGroups(c);
+            createNewProjectGroups(c, user);
         }
     }
 
@@ -3001,7 +3001,7 @@ public class SecurityManager
                         policy.addRoleAssignment(group, role);
                     }
                 }
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
             });
         }
     }
@@ -3054,7 +3054,7 @@ public class SecurityManager
                         policy.addRoleAssignment(user, role);
                     }
                 }
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
             });
         }
     }

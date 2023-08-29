@@ -67,6 +67,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CreateProjectPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -162,6 +163,8 @@ public class ContainerManager
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
     public static final String TABFOLDER_CHILDREN_DELETED = "tabChildrenDeleted";
 
+    private static final List<ContainerSecurableResourceProvider> _resourceProviders = new CopyOnWriteArrayList<>();
+
     /** enum of properties you can see in property change events */
     public enum Property
     {
@@ -233,32 +236,37 @@ public class ContainerManager
 
     // TODO: Make private and force callers to use ensureContainer instead?
     // TODO: Handle root creation here?
-    public static Container createContainer(Container parent, String name)
+    @NotNull
+    public static Container createContainer(Container parent, String name, @NotNull User user)
     {
-        return createContainer(parent, name, null, null, NormalContainerType.NAME, null);
+        return createContainer(parent, name, null, null, NormalContainerType.NAME, user);
     }
 
     public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
 
     // TODO: Pass in FolderType (separate from the container type of workbook, etc) and transact it with container creation?
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user)
+    @NotNull
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user)
     {
         return createContainer(parent, name, title, description, type, user, null);
     }
 
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, User user, @Nullable String auditMsg)
+    @NotNull
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user, @Nullable String auditMsg)
     {
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
         return createContainer(parent, name, title, description, user, properties, auditMsg);
     }
 
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties)
+    @NotNull
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties)
     {
         return createContainer(parent, name, title, description, user, properties, null);
     }
 
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, User user, Map<String, Object> properties, @Nullable String auditMsg)
+    @NotNull
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties, @Nullable String auditMsg)
     {
         String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);
@@ -325,9 +333,19 @@ public class ContainerManager
                 throw new RuntimeException("Container for path '" + path + "' was not created properly.");
         }
 
+        User savePolicyUser = user;
+        if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
+        {
+            // Special case for project creators who don't necessarily yet have permission to save the policy of
+            // the project they just created
+            savePolicyUser = User.getAdminServiceUser();
+        }
+
         // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (c.isContainerFor(ContainerType.DataType.permissions))
-            SecurityManager.setAdminOnlyPermissions(c);
+        {
+            SecurityManager.setAdminOnlyPermissions(c, savePolicyUser);
+        }
 
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
@@ -336,19 +354,16 @@ public class ContainerManager
 
         if (c.isProject())
         {
-            SecurityManager.createNewProjectGroups(c);
+            SecurityManager.createNewProjectGroups(c, savePolicyUser);
         }
         else
         {
             // If current user does NOT have admin permission on this container or the project has been
             // explicitly set to have new subfolders inherit permissions, then inherit permissions
             // (otherwise they would not be able to see the folder)
-            if (user != null)
-            {
-                boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
-                if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
-                    SecurityManager.setInheritPermissions(c);
-            }
+            boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
+            if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
+                SecurityManager.setInheritPermissions(c);
         }
 
         // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
@@ -359,6 +374,16 @@ public class ContainerManager
         fireCreateContainer(c, user, auditMsg);
 
         return c;
+    }
+
+    public static void addSecurableResourceProvider(ContainerSecurableResourceProvider provider)
+    {
+        _resourceProviders.add(provider);
+    }
+
+    public static List<ContainerSecurableResourceProvider> getSecurableResourceProviders()
+    {
+        return Collections.unmodifiableList(_resourceProviders);
     }
 
     public static Container createContainerFromTemplate(Container parent, String name, String title, Container templateContainer, User user, FolderExportContext exportCtx, Consumer<Container> afterCreateHandler) throws Exception
@@ -679,17 +704,14 @@ public class ContainerManager
         return tabName + "-TABDELETED-FOLDER-" + folderTypeName;
     }
 
-    public static Container ensureContainer(String path)
+    @NotNull
+    public static Container ensureContainer(@NotNull String path, @NotNull User user)
     {
-        return ensureContainer(Path.parse(path), null);
+        return ensureContainer(Path.parse(path), user);
     }
 
-    public static Container ensureContainer(Path path)
-    {
-        return ensureContainer(path, null);
-    }
-
-    public static Container ensureContainer(Path path, User user)
+    @NotNull
+    public static Container ensureContainer(@NotNull Path path, @NotNull User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
 //        if (CORE.getSchema().getScope().isTransactionActive())
@@ -708,14 +730,12 @@ public class ContainerManager
 
         if (null == c)
         {
-            if (0 == path.size())
+            if (path.isEmpty())
                 c = createRoot();
             else
             {
                 Path parentPath = path.getParent();
                 c = ensureContainer(parentPath, user);
-                if (null == c)
-                    return null;
                 c = createContainer(c, path.getName(), null, null, NormalContainerType.NAME, user);
             }
         }
@@ -723,7 +743,8 @@ public class ContainerManager
     }
 
 
-    public static Container ensureContainer(Container parent, String name)
+    @NotNull
+    public static Container ensureContainer(Container parent, String name, User user)
     {
         // NOTE: Running outside a tx doesn't seem to be necessary.
 //        if (CORE.getSchema().getScope().isTransactionActive())
@@ -742,7 +763,7 @@ public class ContainerManager
 
         if (null == c)
         {
-            c = createContainer(parent, name);
+            c = createContainer(parent, name, user);
         }
         return c;
     }
@@ -884,7 +905,7 @@ public class ContainerManager
     @NotNull
     public static Container getSharedContainer()
     {
-        return ensureContainer(SHARED_CONTAINER_PATH);
+        return ensureContainer(Path.parse(SHARED_CONTAINER_PATH), User.getAdminServiceUser());
     }
 
     public static List<Container> getChildren(Container parent)
@@ -1598,7 +1619,7 @@ public class ContainerManager
 
             // this could be done in the trigger, but I prefer to put it in the transaction
             if (changedProjects)
-                SecurityManager.changeProject(c, oldProject, newProject);
+                SecurityManager.changeProject(c, oldProject, newProject, user);
 
             clearCache();
 
@@ -2607,12 +2628,13 @@ public class ContainerManager
      * and set permissions. If the container does exist, permissions
      * are only set if there is no explicit ACL for the container.
      * This prevents us from resetting permissions if all users
-     * are dropped.
+     * are dropped. Implicitly done as an admin-level service user.
      */
     @NotNull
     public static Container bootstrapContainer(String path, Role userRole, @Nullable Role guestRole, @Nullable Role devRole)
     {
         Container c = null;
+        User user = User.getAdminServiceUser();
 
         try
         {
@@ -2628,7 +2650,7 @@ public class ContainerManager
         {
             LOG.debug("Creating new container for path '" + path + "'");
             newContainer = true;
-            c = ensureContainer(path);
+            c = ensureContainer(path, user);
         }
 
         if (c == null)
@@ -2655,7 +2677,7 @@ public class ContainerManager
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
             if (devRole != null)
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
-            SecurityPolicyManager.savePolicy(policy);
+            SecurityPolicyManager.savePolicy(policy, user);
         }
 
         return c;
@@ -2693,7 +2715,7 @@ public class ContainerManager
             if (null == _testRoot)
             {
                 Container junit = JunitUtil.getTestContainer();
-                _testRoot = ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID());
+                _testRoot = ensureContainer(junit, "ContainerManager$TestCase-" + GUID.makeGUID(), TestContext.get().getUser());
                 addContainerListener(this);
             }
         }
@@ -2715,7 +2737,7 @@ public class ContainerManager
             {
                 try
                 {
-                    Container c = createContainer(_testRoot, name);
+                    Container c = createContainer(_testRoot, name, TestContext.get().getUser());
                     try
                     {
                         assertTrue(delete(c, TestContext.get().getUser()));
@@ -2761,24 +2783,24 @@ public class ContainerManager
             assertEquals(0, _containers.size());
             assertEquals(0, getChildren(_testRoot).size());
 
-            Container one = createContainer(_testRoot, "one");
+            Container one = createContainer(_testRoot, "one", TestContext.get().getUser());
             assertEquals(1, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(0, getChildren(one).size());
 
-            Container oneA = createContainer(one, "A");
+            Container oneA = createContainer(one, "A", TestContext.get().getUser());
             assertEquals(2, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(1, getChildren(one).size());
             assertEquals(0, getChildren(oneA).size());
 
-            Container oneB = createContainer(one, "B");
+            Container oneB = createContainer(one, "B", TestContext.get().getUser());
             assertEquals(3, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(2, getChildren(one).size());
             assertEquals(0, getChildren(oneB).size());
 
-            Container deleteme = createContainer(one, "deleteme");
+            Container deleteme = createContainer(one, "deleteme", TestContext.get().getUser());
             assertEquals(4, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(3, getChildren(one).size());
@@ -2789,7 +2811,7 @@ public class ContainerManager
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(2, getChildren(one).size());
 
-            Container oneC = createContainer(one, "C");
+            Container oneC = createContainer(one, "C", TestContext.get().getUser());
             assertEquals(4, _containers.size());
             assertEquals(1, getChildren(_testRoot).size());
             assertEquals(3, getChildren(one).size());
@@ -2822,7 +2844,7 @@ public class ContainerManager
         private void testOneFolderType(FolderType folderType)
         {
             LOG.info("testOneFolderType(" + folderType.getName() + "): creating container");
-            Container newFolder = createContainer(_testRoot, "folderTypeTest");
+            Container newFolder = createContainer(_testRoot, "folderTypeTest", TestContext.get().getUser());
             FolderType ft = newFolder.getFolderType();
             assertEquals(ft, FolderType.NONE);
 
@@ -2857,7 +2879,7 @@ public class ContainerManager
 
             for (String childName : nodes)
             {
-                Container child = createContainer(parent, childName);
+                Container child = createContainer(parent, childName, TestContext.get().getUser());
                 createContainers(mm, childName, child);
             }
         }

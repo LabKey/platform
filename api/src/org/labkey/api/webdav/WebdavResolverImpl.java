@@ -237,7 +237,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertFalse("login before running this test", user.isGuest());
             
             Container junitContainer = JunitUtil.getTestContainer();
-            testContainer = ContainerManager.createContainer(junitContainer, "c" + StringUtilsLabKey.getPaddedUniquifier(9));
+            testContainer = ContainerManager.createContainer(junitContainer, "c" + StringUtilsLabKey.getPaddedUniquifier(9), TestContext.get().getUser());
             Container c = testContainer;
 
             WebdavResolver resolver = WebdavResolverImpl.get();
@@ -258,12 +258,12 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
             assertTrue(junit.isCollection());
 
             Path pathTest = c.getParsedPath().append("dav");
-            Container cTest = ContainerManager.ensureContainer(pathTest.toString());
+            Container cTest = ContainerManager.ensureContainer(pathTest, TestContext.get().getUser());
 
             MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
             policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
             policyNone.addRoleAssignment(user, ReaderRole.class);
-            SecurityPolicyManager.savePolicy(policyNone);
+            SecurityPolicyManager.savePolicy(policyNone, TestContext.get().getUser());
 
             WebdavResource rTest = resolver.lookup(rootPath.append(pathTest));
             assertNotNull(rTest);
@@ -279,7 +279,7 @@ public class WebdavResolverImpl extends AbstractWebdavResolver
 
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
-            SecurityPolicyManager.savePolicy(policyRead);
+            SecurityPolicyManager.savePolicy(policyRead, TestContext.get().getUser());
             rTest = resolver.lookup(rootPath.append(pathTest));
             assertTrue(rTest.canRead(guest,true));
 

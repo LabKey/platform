@@ -896,7 +896,7 @@ public class TreatmentManager
             Container junit = JunitUtil.getTestContainer();
 
             String name = GUID.makeHash();
-            Container c = ContainerManager.createContainer(junit, name);
+            Container c = ContainerManager.createContainer(junit, name, _context.getUser());
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.VISIT);
             s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));

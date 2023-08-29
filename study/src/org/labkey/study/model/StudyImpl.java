@@ -1331,7 +1331,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             Container junit = JunitUtil.getTestContainer();
 
             String name = GUID.makeHash();
-            Container c = ContainerManager.createContainer(junit, name);
+            Container c = ContainerManager.createContainer(junit, name, _context.getUser());
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.DATE);
             s.setStartDate(new Date(DateUtil.parseISODateTime("2001-01-01")));

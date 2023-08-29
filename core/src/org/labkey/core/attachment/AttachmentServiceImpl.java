@@ -30,7 +30,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
-import org.labkey.api.attachments.SecureDocumentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
@@ -40,7 +39,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -1742,8 +1740,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (null != ContainerManager.getForPath(_testDirName))
                 ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
 
-            Container proj = ContainerManager.ensureContainer(_testDirName);
-            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
+            Container proj = ContainerManager.ensureContainer(_testDirName, TestContext.get().getUser());
+            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test", TestContext.get().getUser());
 
             FileContentService fileService = FileContentService.get();
             AttachmentService svc = AttachmentService.get();
@@ -1822,75 +1820,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             // clean up
             ContainerManager.deleteAll(proj, user);
         }
-
-        @Test
-        public void testSecureDocuments() throws IOException
-        {
-            User user = TestContext.get().getUser();
-            assertNotNull("Should have access to a user", user);
-
-            // clean up if anything was left over from last time
-            if (null != ContainerManager.getForPath(_testDirName))
-                ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
-
-            Container proj = ContainerManager.ensureContainer(_testDirName);
-            Container container = ContainerManager.ensureContainer(_testDirName + "/Test");
-            AttachmentService service = AttachmentService.get();
-
-            String entityId = GUID.makeGUID();
-            SecureDocumentParent secureDocumentParent = new SecureDocumentParent(entityId, container, ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
-            secureDocumentParent.addRoleAssignment(user, ReaderRole.class);
-
-            MultipartFile f = new MockMultipartFile("file.txt", "file.txt", "text/plain", "Hello World".getBytes());
-            Map<String, MultipartFile> fileMap = new HashMap<>();
-            fileMap.put("file.txt", f);
-            List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
-            service.addAttachments(secureDocumentParent, files, user);
-
-            Attachment attachment = service.getAttachment(secureDocumentParent, "file.txt");
-            assertNotNull("Attachment not found", attachment);
-
-            ViewContext context = HttpView.currentContext();
-            if (null != context)
-            {
-                User guest = UserManager.getGuestUser();
-                context.setUser(guest);
-                boolean guestDenied = false;
-                try
-                {
-                    service.getAttachment(secureDocumentParent, "file.txt");
-                }
-                catch (UnauthorizedException e)
-                {
-                    guestDenied = true;     // We expect this
-                }
-                assertTrue("Guest should not have access to attachment", guestDenied);
-
-                context.setUser(user);
-
-                // TODO: Would like to impersonate to test accessing the attachment when user is not SiteAdmin, but stopImpersonating
-                //       requires a factory object that you can't really get without getting a session attribute whose name you can't get from here
-/*                SecurityManager.impersonateRoles(context, Collections.singletonList(new ReaderRole()), null);
-                attachment = service.getAttachment(secureDocumentParent, "file.txt");
-                assertNotNull("Attachment not found", attachment);
-                User authenticatedUser = SecurityManager.getAuthenticatedUser(context.getRequest());
-                assertNotNull("Could not get authenticated user", authenticatedUser);
-                SecurityManager.stopImpersonating(context.getRequest(), authenticatedUser.getImpersonationContext().getFactory());
-*/
-            }
-
-            service.deleteAttachments(secureDocumentParent);
-            attachment = service.getAttachment(secureDocumentParent, "file.txt");
-            assertNull("Attachment should no longer exist", attachment);
-
-            SecurityPolicyManager.deletePolicy(secureDocumentParent);
-            SecurityPolicy policy = secureDocumentParent.getSecurityPolicy();
-            assertTrue("Security policy object should be returned empty", policy != null && policy.isEmpty());
-
-            // clean up
-            ContainerManager.deleteAll(proj, user);
-        }
-
 
         private void assertSameFile(File a, File b)
         {

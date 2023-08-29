@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,7 @@ import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -99,6 +101,35 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             return true;
         }
     };
+
+    private static User adminServiceUser;
+
+    /** Returns an App Admin user suitable for operational processes (bootstrapping servers, for example). */
+    public static synchronized User getAdminServiceUser()
+    {
+        if (adminServiceUser == null)
+        {
+            adminServiceUser = new AdminServiceUser();
+        }
+        return adminServiceUser;
+    }
+
+    private static class AdminServiceUser extends LimitedUser
+    {
+        AdminServiceUser()
+        {
+            super(new User("@serviceUserAdmin", User.guest.getUserId()), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), true);
+            setPrincipalType(PrincipalType.SERVICE);
+        }
+
+        @Override
+        @JsonIgnore
+        public Set<Role> getContextualRoles(SecurityPolicy policy)
+        {
+            return super.getContextualRoles(policy);
+        }
+    }
+
 
     // Search user is guest plus Reader everywhere
     private static User search;

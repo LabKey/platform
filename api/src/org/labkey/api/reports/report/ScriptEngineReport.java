@@ -179,7 +179,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected boolean validateScript(String text, List<String> errors)
     {
-        if (StringUtils.isEmpty(text))
+        if (StringUtils.isBlank(text))
         {
             errors.add("Empty script, a script must be provided.");
             return false;

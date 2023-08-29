@@ -1659,19 +1659,19 @@ public class FileContentServiceImpl implements FileContentService
             FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
-            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1, TestContext.get().getUser());
             _expectedPaths.put(project1, null);
 
-            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2);
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2, TestContext.get().getUser());
             _expectedPaths.put(project2, null);
 
-            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1);
+            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1, TestContext.get().getUser());
             _expectedPaths.put(subfolder1, null);
 
-            Container subfolder2 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER2);
+            Container subfolder2 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER2, TestContext.get().getUser());
             _expectedPaths.put(subfolder2, null);
 
-            Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER);
+            Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER, TestContext.get().getUser());
             _expectedPaths.put(subsubfolder, null);
 
             //set custom root on project, then expect children to inherit
@@ -1737,20 +1737,20 @@ public class FileContentServiceImpl implements FileContentService
             FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
-            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1, TestContext.get().getUser());
             _expectedPaths.put(project1, null);
 
-            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2);
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT2, TestContext.get().getUser());
             _expectedPaths.put(project2, null);
 
-            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1);
+            Container subfolder1 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER1, TestContext.get().getUser());
             _expectedPaths.put(subfolder1, null);
 
-            Container subfolder2 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER2);
+            Container subfolder2 = ContainerManager.createContainer(project1, PROJECT1_SUBFOLDER2, TestContext.get().getUser());
             _expectedPaths.put(subfolder2, null);
 
-            Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER);
-            Container subsubfolderSibling = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER_SIBLING);
+            Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER, TestContext.get().getUser());
+            Container subsubfolderSibling = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER_SIBLING, TestContext.get().getUser());
             _expectedPaths.put(subsubfolder, null);
 
             //create a test file that we will follow
@@ -1820,7 +1820,7 @@ public class FileContentServiceImpl implements FileContentService
             FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
-            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1);
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT1, TestContext.get().getUser());
 
             Container workbook = ContainerManager.createContainer(project1, null, null, null, WorkbookContainerType.NAME, TestContext.get().getUser());
             File expectedWorkbookRoot = new File(svc.getFileRoot(project1), workbook.getName());

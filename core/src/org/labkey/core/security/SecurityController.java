@@ -1290,7 +1290,7 @@ public class SecurityController extends SpringActionController
                     }
                 });
 
-                SecurityPolicyManager.savePolicy(newPolicy);
+                SecurityPolicyManager.savePolicy(newPolicy, getUser());
             }
             return true;
         }
