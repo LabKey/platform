@@ -103,6 +103,8 @@ public class PageConfig
         public EventHandler {
             // exactly one of id or selector must be non-null
             assert (null==id) != (null==selector);
+            // id cannot contain any spaces
+            assert id == null || !id.contains(" ");
             // event shouldn't include the "on" prefix
             assert !event.startsWith("on");
         }
