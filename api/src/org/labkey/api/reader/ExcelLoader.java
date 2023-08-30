@@ -124,6 +124,10 @@ public class ExcelLoader extends DataLoader
     private String sheetName;
     private Integer sheetIndex;
 
+    // For Excel sheets that don't have column headers as the first line, the column types can all be seen as Strings.
+    // In that case, the cell contents in readFields() might not get the expected values for numeric columns.
+    private boolean useColumnFormats = true;
+
     // keep track if we created a temp file
     private boolean shouldDeleteFile = false;
 
@@ -290,6 +294,11 @@ public class ExcelLoader extends DataLoader
     {
         this.sheetName = null;
         this.sheetIndex = index;
+    }
+
+    public void setUseColumnFormats(boolean useColumnFormats)
+    {
+        this.useColumnFormats = useColumnFormats;
     }
 
 
@@ -613,7 +622,7 @@ public class ExcelLoader extends DataLoader
                             {
                                 contents = "";
                             }
-                            else if (column.clazz.equals(String.class))
+                            else if (useColumnFormats && column.clazz.equals(String.class))
                             {
                                 contents = ExcelFactory.getCellStringValue(cell);
                             }
