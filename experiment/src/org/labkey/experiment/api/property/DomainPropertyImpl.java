@@ -51,6 +51,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1113,7 +1114,7 @@ public class DomainPropertyImpl implements DomainProperty
         @Test
         public void testUpdateDomainPropertyFromDescriptor()
         {
-            Container c = ContainerManager.ensureContainer("/_DomainPropertyImplTest");
+            Container c = ContainerManager.ensureContainer("/_DomainPropertyImplTest", TestContext.get().getUser());
             String domainURI = new Lsid("Junit", "DD", "Domain1").toString();
             Domain d = PropertyService.get().createDomain(c, domainURI, "Domain1");
 

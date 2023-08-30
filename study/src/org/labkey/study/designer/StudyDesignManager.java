@@ -399,7 +399,7 @@ public class StudyDesignManager
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)
-            studyFolder = ContainerManager.createContainer(parent, folderName);
+            studyFolder = ContainerManager.createContainer(parent, folderName, user);
         if (null != StudyManager.getInstance().getStudy(studyFolder))
             throw new IllegalStateException("Study already exists in folder");
 

@@ -7126,7 +7126,15 @@ public class AdminController extends SpringActionController
                 return c -> {
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c.getPolicy());
                     policy.addRoleAssignment(getUser(), ProjectAdminRole.class);
-                    SecurityPolicyManager.savePolicy(policy);
+                    User savePolicyUser = getUser();
+                    if (c.isProject() && !c.hasPermission(savePolicyUser, AdminPermission.class) && ContainerManager.getRoot().hasPermission(savePolicyUser, CreateProjectPermission.class))
+                    {
+                        // Special case for project creators who don't necessarily yet have permission to save the policy of
+                        // the project they just created
+                        savePolicyUser = User.getAdminServiceUser();
+                    }
+
+                    SecurityPolicyManager.savePolicy(policy, savePolicyUser);
                 };
             }
             else
@@ -7203,7 +7211,7 @@ public class AdminController extends SpringActionController
                     MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
                     Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
                     policy.addRoleAssignment(getUser(), role);
-                    SecurityPolicyManager.savePolicy(policy);
+                    SecurityPolicyManager.savePolicy(policy, getUser());
                 }
                 case "Inherit" -> SecurityManager.setInheritPermissions(c);
                 case "CopyExistingProject" -> {
@@ -7250,7 +7258,7 @@ public class AdminController extends SpringActionController
                             np.addRoleAssignment(p, r, false);
                         }
                     }
-                    SecurityPolicyManager.savePolicy(np);
+                    SecurityPolicyManager.savePolicy(np, getUser());
                 }
                 default -> throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);
             }
@@ -9598,7 +9606,7 @@ public class AdminController extends SpringActionController
                 // Add a role assignment to let another group manage the URL. This grants permission to the journal
                 // to change where the URL redirects you to after they copy the data
 //                policy.addRoleAssignment(org.labkey.api.security.SecurityManager.getGroupId(c, "SomeGroup"));
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, getUser());
             }
             return true;
         }

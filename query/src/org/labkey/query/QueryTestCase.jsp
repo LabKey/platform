@@ -1109,7 +1109,7 @@ d,seven,twelve,day,month,date,duration,guid
 
     Container getSubfolder()
     {
-        return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest");
+        return ContainerManager.ensureContainer(JunitUtil.getTestContainer().getPath() + "/qtest", TestContext.get().getUser());
     }
 
 

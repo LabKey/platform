@@ -790,7 +790,7 @@ public class PropertyManager
 
             try
             {
-                child = ContainerManager.ensureContainer(parent, "Properties");
+                child = ContainerManager.ensureContainer(parent, "Properties", user);
 
                 test.runTest(store, user, child);
             }

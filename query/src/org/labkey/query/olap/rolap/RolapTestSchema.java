@@ -199,7 +199,7 @@ public class RolapTestSchema extends UserSchema
             new _ColumnInfo("assay", JdbcType.VARCHAR, new AssayForeignKey()),
             new _ColumnInfo("positivity", JdbcType.INTEGER, null)
         };
-        String junit = JunitUtil.getTestContainer().getId();
+        String junit = getContainer().getId();
         Object[][] data = new Object[][]
         {
             row(junit, "P001001", "S001", "V0", "mRNA", 0),

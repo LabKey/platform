@@ -2985,7 +2985,7 @@ public class OntologyManager
         @Test
         public void testBasicPropertiesObject() throws ValidationException
         {
-            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
             User user = TestContext.get().getUser();
             String parentObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
@@ -3067,7 +3067,7 @@ public class OntologyManager
         @Test
         public void testContainerDelete() throws ValidationException
         {
-            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
             //Clean up last time's mess
             deleteAllObjects(c, TestContext.get().getUser());
             assertEquals(0L, getObjectCount(c));
@@ -3148,18 +3148,18 @@ public class OntologyManager
         {
             deleteMoveTestContainers();
 
-            Container proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1");
-            Container proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2");
+            Container proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1", TestContext.get().getUser());
+            Container proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2", TestContext.get().getUser());
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
 
-            proj1 = ContainerManager.ensureContainer("/");
-            proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2");
+            proj1 = ContainerManager.ensureContainer("/", TestContext.get().getUser());
+            proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2", TestContext.get().getUser());
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
 
-            proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1");
-            proj2 = ContainerManager.ensureContainer("/");
+            proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1", TestContext.get().getUser());
+            proj2 = ContainerManager.ensureContainer("/", TestContext.get().getUser());
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
         }
@@ -3171,11 +3171,11 @@ public class OntologyManager
             if (p1Path.equals("//")) p1Path = "/_ontMgrDemotePromote";
             if (p2Path.equals("//")) p2Path = "/_ontMgrDemotePromote";
 
-            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa");
-            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb");
-            ContainerManager.ensureContainer(p2Path + "Fc");
-            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa");
-            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa");
+            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa", TestContext.get().getUser());
+            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb", TestContext.get().getUser());
+            ContainerManager.ensureContainer(p2Path + "Fc", TestContext.get().getUser());
+            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa", TestContext.get().getUser());
+            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa", TestContext.get().getUser());
 
             defineCrossFolderProperties(fldr1a, fldr1b);
             //defineCrossFolderProperties(fldr1a, fldr2c);
@@ -3251,13 +3251,13 @@ public class OntologyManager
             deleteMoveTestContainers();
 
             String projectName = "_ontMgrTestP1";
-            Container proj1 = ContainerManager.ensureContainer(projectName);
+            Container proj1 = ContainerManager.ensureContainer(projectName, TestContext.get().getUser());
             String p1Path = proj1.getPath() + "/";
 
-            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa");
-            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb");
-            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa");
-            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa");
+            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa", TestContext.get().getUser());
+            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb", TestContext.get().getUser());
+            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa", TestContext.get().getUser());
+            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa", TestContext.get().getUser());
 
             defineCrossFolderProperties(fldr1a, fldr1b);
             defineCrossFolderProperties(fldr1aa, fldr1b);
@@ -3298,7 +3298,7 @@ public class OntologyManager
         {
             try
             {
-                Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+                Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
                 //Clean up last time's mess
                 deleteAllObjects(c, TestContext.get().getUser());
                 assertEquals(0L, getObjectCount(c));
@@ -3377,7 +3377,7 @@ public class OntologyManager
         @Test
         public void testDomains() throws Exception
         {
-            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
             //Clean up last time's mess
             deleteAllObjects(c, TestContext.get().getUser());
             assertEquals(0L, getObjectCount(c));

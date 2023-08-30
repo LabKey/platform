@@ -624,7 +624,9 @@ public class DbSequenceManager
             final int threads = 5;
             final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 
-            JunitUtil.createRaces(() -> DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0), threads, 1, 60);
+            Container c = JunitUtil.getTestContainer();
+
+            JunitUtil.createRaces(() -> DbSequenceManager.ensure(c, name, 0), threads, 1, 60);
         }
 
         @Test
