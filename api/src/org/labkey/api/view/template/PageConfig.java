@@ -103,11 +103,13 @@ public class PageConfig
         public EventHandler {
             // exactly one of id or selector must be non-null
             assert (null==id) != (null==selector);
+            // event shouldn't include the "on" prefix
+            assert !event.startsWith("on");
         }
 
         public String getKey()
         {
-            return null!=id ? ("id:" + id + "." + event) : ("selector:" + selector + "." + event);
+            return null!=id ? ("#" + id + "." + event) : (selector + "." + event);
         }
     }
 
