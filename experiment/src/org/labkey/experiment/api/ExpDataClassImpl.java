@@ -448,7 +448,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
     public long getMinGenId()
     {
-        return NameGenerator.getGenIdStartValue(_object.getNameExpression());
+        return NameGenerator.getCounterStartValue(_object.getNameExpression(), NameGenerator.EntityCounter.genId);
     }
 
     @Override

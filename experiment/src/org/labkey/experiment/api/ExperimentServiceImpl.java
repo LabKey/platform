@@ -5304,6 +5304,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 sampleType.delete(user);
             }
 
+            // delete project level sample counters
+            if (c.isProject())
+                SampleTypeServiceImpl.get().deleteSampleCounterSequences(c);
+
             // Delete all the experiments/run groups/batches
             for (ExpExperimentImpl exp : exps)
             {

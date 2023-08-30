@@ -476,6 +476,7 @@ public class SubstitutionFormat
     public static SampleCountSubstitutionFormat yearlySampleCount = new SampleCountSubstitutionFormat("yearlySampleCount", NameGenerator.SubstitutionValue.yearlySampleCount.getPreviewValue());
 
     public static SampleCountSubstitutionFormat rootSampleCount = new SampleCountSubstitutionFormat("rootSampleCount", NameGenerator.SubstitutionValue.rootSampleCount.getPreviewValue());
+    public static SampleCountSubstitutionFormat sampleCount = new SampleCountSubstitutionFormat("sampleCount", NameGenerator.SubstitutionValue.sampleCount.getPreviewValue());
 
     final String _name;
     final String _shortName;
