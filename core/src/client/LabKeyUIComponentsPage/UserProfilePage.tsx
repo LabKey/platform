@@ -7,7 +7,6 @@ import { Map, fromJS } from 'immutable';
 import { Alert, getUserProperties, LoadingSpinner, Section, UserProfile } from '@labkey/components';
 
 const noop = (): void => {};
-const returnFalse = (): boolean => false;
 
 interface State {
     message: string;
@@ -43,11 +42,6 @@ export class UserProfilePage extends React.Component<any, State> {
         }
     };
 
-    onCancel = () => {
-        console.log('Cancel click on UserProfile.');
-        this.setMessage();
-    };
-
     setMessage(message?: string) {
         this.setState(() => ({ message }));
     }
@@ -67,8 +61,6 @@ export class UserProfilePage extends React.Component<any, State> {
                     user={user}
                     userProperties={userProperties}
                     onSuccess={this.onSuccess}
-                    onCancel={this.onCancel}
-                    getIsDirty={returnFalse}
                     setIsDirty={noop}
                 />
             </Section>
