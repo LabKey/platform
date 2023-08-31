@@ -118,11 +118,6 @@ import static org.labkey.api.security.AuthenticationManager.DEFAULT_DOMAIN;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
-/**
- * User: adam
- * Date: Nov 25, 2007
- * Time: 8:22:37 PM
- */
 public class LoginController extends SpringActionController
 {
     private static final Logger _log = LogManager.getLogger(LoginController.class);
@@ -1675,8 +1670,8 @@ public class LoginController extends SpringActionController
     private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
-        String password = request.getParameter("password");
-        String password2 = request.getParameter("password2");
+        String password = StringUtils.trimToEmpty(request.getParameter("password"));
+        String password2 = StringUtils.trimToEmpty(request.getParameter("password2"));
 
         Collection<String> messages = new LinkedList<>();
         User user = UserManager.getUser(email);
@@ -2744,6 +2739,31 @@ public class LoginController extends SpringActionController
         }
     }
 
+    public static class PasswordForm
+    {
+        private String _password;
+
+        public String getPassword()
+        {
+            return _password;
+        }
+
+        public void setPassword(String password)
+        {
+            _password = password;
+        }
+    }
+
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    public static class GetPasswordScoreAction extends ReadOnlyApiAction<PasswordForm>
+    {
+        @Override
+        public Object execute(PasswordForm form, BindException errors) throws Exception
+        {
+            return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), getUser()));
+        }
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {

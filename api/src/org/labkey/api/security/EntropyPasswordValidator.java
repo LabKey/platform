@@ -17,7 +17,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 {
     protected abstract int getRequiredBitsOfEntropy();
 
-    protected int getCharacterEstimate()
+    protected int getCharacterCountEstimate()
     {
         return (int)Math.ceil(getRequiredBitsOfEntropy() / (Math.log(26) / BASE2_LOG));
     }
@@ -25,7 +25,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     @Override
     public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
     {
-        return calculateEntropy(filter(password, user)) >= getRequiredBitsOfEntropy();
+        return score(password, user) >= getRequiredBitsOfEntropy();
     }
 
     @Override
@@ -36,15 +36,20 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 
     private static final double BASE2_LOG = Math.log(2);
 
+    public static double score(String password, User user)
+    {
+        return calculateEntropy(filter(password.toCharArray(), user));
+    }
+
     // Calculate bits of entropy based on https://www.omnicalculator.com/other/password-entropy
-    public static double calculateEntropy(String password)
+    private static double calculateEntropy(char[] password)
     {
         boolean hasLowerCase = false;
         boolean hasUpperCase = false;
         boolean hasDigit = false;
         boolean hasSymbol = false;
 
-        for (char c : password.toCharArray())
+        for (char c : password)
         {
             if (Character.isLowerCase(c))
                 hasLowerCase = true;
@@ -58,7 +63,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 
         int poolSize = (hasLowerCase ? 26 : 0) + (hasUpperCase ? 26 : 0) + (hasDigit ? 10 : 0) + (hasSymbol ? 32 : 0);
 
-        return password.length() * Math.log(poolSize) / BASE2_LOG;
+        return poolSize > 0 ? password.length * Math.log(poolSize) / BASE2_LOG : 0;
     }
 
     private static final char[][] COMMON_SEQUENCES;
@@ -76,7 +81,6 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             "ZXCVBNM<>?",       // first keyboard row + shift
             "abcdefghijklmnopqrstuvwxyz",
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
         )
             .sorted(Comparator.comparingInt(String::length)) // Shortest to longest
             .map(String::toCharArray)
@@ -84,25 +88,25 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     }
 
     // Incoming password should be trimmed of whitespace
-    public static String filter(String password, User user)
+    private static char[] filter(char[] password, User user)
     {
         // Remove all personal information sequences of 3+ characters
-        List<char[]> segments = removePersonalInformation(List.of(password.toCharArray()), user);
+        List<char[]> segments = removePersonalInformation(List.of(password), user);
 
         if (!segments.isEmpty())
         {
+            // Replace all repeated characters with a single character
+            segments = replaceRepeatedCharacters(segments);
+
             // Remove duplicate substrings of 3+ characters
             segments = removeDuplicateSubstringsWithinEachSegment(segments);
             segments = removeDuplicateSubstringsBetweenSegments(segments);
-
-            // Replace all repeated characters with a single character
-            segments = replaceRepeatedCharacters(segments);
 
             // Replace all substrings of common sequences of 3+ characters with the first character of that substring
             segments = replace(segments, COMMON_SEQUENCES);
         }
 
-        return new String(segments.size() == 1 ? segments.get(0) : concatenate(segments));
+        return segments.size() == 1 ? segments.get(0) : concatenate(segments);
     }
 
     private static List<char[]> removePersonalInformation(List<char[]> segments, User user)
@@ -332,6 +336,18 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             assertEquals("v", filter("vbnm,", user));
             assertEquals("`", filter("`12", user));
             assertEquals("a1x7", filter("abc123xyz789", user));
+        }
+
+        // Convenience method that works with strings
+        private double calculateEntropy(String password)
+        {
+            return EntropyPasswordValidator.calculateEntropy(password.toCharArray());
+        }
+
+        // Convenience method that works with strings
+        private String filter(String password, User user)
+        {
+            return new String(EntropyPasswordValidator.filter(password.toCharArray(), user));
         }
     }
 }

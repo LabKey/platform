@@ -63,6 +63,7 @@ public enum PasswordRule
      */
     public boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)
     {
+        assert password.equals(password.trim()) : "Caller should have trimmed password";
         return _validator.isValidForLogin(password, user, messages);
     }
 
