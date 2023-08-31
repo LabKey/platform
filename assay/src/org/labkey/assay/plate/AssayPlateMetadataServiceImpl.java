@@ -2,6 +2,7 @@ package org.labkey.assay.plate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -15,6 +16,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -44,12 +46,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.TSVProtocolSchema;
 import org.labkey.assay.plate.model.Well;
-import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +63,7 @@ import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 {
     private boolean _domainDirty;
+    private Map<String, Set<Object>> _propValues = new HashMap<>();
 
     @Override
     public void addAssayPlateMetadata(
@@ -162,6 +165,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             boolean ensurePlateDomain           // true to create the plate domain and properties if they don't exist
     ) throws ExperimentException
     {
+        _domainDirty = false;
+        _propValues.clear();
+
         Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
         if (plate == null)
             throw new ExperimentException("Unable to resolve the plate template for the run");
@@ -193,7 +199,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                         // ensure the column for the plate layer that we will insert the well group name into
                         String layerName = plateLayer.getName() + TSVProtocolSchema.PLATE_DATA_LAYER_SUFFIX;
                         if (ensurePlateDomain)
-                            ensureDomainProperty(user, domain, layerName, JdbcType.VARCHAR);
+                            ensureDomainProperty(domain, layerName, group.getName());
 
                         MetadataWellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
                         if (wellGroup != null)
@@ -211,7 +217,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 String propName = entry.getKey();
 
                                 if (ensurePlateDomain)
-                                    ensureDomainProperty(user, domain, propName, JdbcType.valueOf(entry.getValue().getClass()));
+                                    ensureDomainProperty(domain, propName, entry.getValue());
                                 if (!wellProps.containsKey(propName))
                                 {
                                     wellProps.put(propName, entry.getValue());
@@ -229,7 +235,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         if (_domainDirty && ensurePlateDomain)
+        {
+            createNewDomainProperties(user, domain);
             domain.save(user);
+        }
 
         // ensure each well position has the entire set of metadata field names (to help with merging with result data)
         plateData.values().forEach(wellProp -> {
@@ -336,7 +345,53 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return domain;
     }
 
-    private DomainProperty ensureDomainProperty(User user, Domain domain, String name, JdbcType type) throws ExperimentException
+    /**
+     * Check if the field name exists in the domain. If not save the value being assigned to the field. We will
+     * collect all values, so we can later determine the type of the field to create.
+     */
+    private void ensureDomainProperty(Domain domain, String name, Object value)
+    {
+        DomainProperty domainProperty = domain.getPropertyByName(name);
+        if (domainProperty == null)
+        {
+            _domainDirty = true;
+            _propValues.computeIfAbsent(name, f -> new HashSet<>()).add(value);
+        }
+    }
+
+    // classes to test from most to least specific
+    private final static List<Class> CONVERT_CLASSES = List.of(Date.class, Integer.class, Double.class, Boolean.class, String.class);
+
+    private void createNewDomainProperties(User user, Domain domain) throws ExperimentException
+    {
+        for (Map.Entry<String, Set<Object>> entry : _propValues.entrySet())
+        {
+            // test all values for the domain property finding the most appropriate type for
+            // the property
+            int classIdx = 0;
+            for (Object val : entry.getValue())
+            {
+                for (int i = classIdx; i < CONVERT_CLASSES.size(); i++)
+                {
+                    try
+                    {
+                        Object convertedVal = ConvertUtils.convert(String.valueOf(val), CONVERT_CLASSES.get(i));
+                        // found a class that we can convert to
+                        if (convertedVal != null && i > classIdx)
+                            classIdx = i;
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        // no match, keep going
+                    }
+                }
+            }
+            createDomainProperty(user, domain, entry.getKey(), JdbcType.valueOf(CONVERT_CLASSES.get(classIdx)));
+        }
+    }
+
+    private void createDomainProperty(User user, Domain domain, String name, JdbcType type) throws ExperimentException
     {
         DomainProperty domainProperty = domain.getPropertyByName(name);
         if (domainProperty == null)
@@ -346,11 +401,9 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (!domain.getContainer().hasPermission(user, DesignAssayPermission.class))
                 throw new ExperimentException("This import will create a new plate metadata field : " + name + ". Only users with the AssayDesigner role are allowed to do this.");
 
-            _domainDirty = true;
             PropertyStorageSpec spec = new PropertyStorageSpec(name, type);
-            return domain.addProperty(spec);
+            domain.addProperty(spec);
         }
-        return domainProperty;
     }
 
     @Override
