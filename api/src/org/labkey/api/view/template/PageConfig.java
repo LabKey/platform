@@ -102,8 +102,9 @@ public class PageConfig
     private record EventHandler(String id, String selector, @NotNull String event, @NotNull String handler) {
         public EventHandler {
             assert (null==id) != (null==selector) : "exactly one of id or selector must be non-null";
-            assert id == null || !id.contains(" ") : "id cannot contain any spaces";
-            assert !event.startsWith("on") : "event shouldn't include the 'on' prefix";
+            assert !StringUtils.containsWhitespace(id) : "id should not contain any whitespace";
+            assert !StringUtils.containsWhitespace(event) : "event name should not contain any whitespace";
+            assert !event.startsWith("on") : "event name should not include the 'on' prefix";
         }
 
         public String getKey()
