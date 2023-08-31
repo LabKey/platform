@@ -42,28 +42,35 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     }
 
     // Calculate bits of entropy based on https://www.omnicalculator.com/other/password-entropy
-    private static double calculateEntropy(char[] password)
+    private static double calculateEntropy(List<char[]> segments)
     {
         boolean hasLowerCase = false;
         boolean hasUpperCase = false;
         boolean hasDigit = false;
         boolean hasSymbol = false;
 
-        for (char c : password)
+        int length = 0;
+
+        for (char[] segment : segments)
         {
-            if (Character.isLowerCase(c))
-                hasLowerCase = true;
-            else if (Character.isUpperCase(c))
-                hasUpperCase = true;
-            else if (Character.isDigit(c))
-                hasDigit = true;
-            else
-                hasSymbol = true;
+            length += segment.length;
+
+            for (char c : segment)
+            {
+                if (Character.isLowerCase(c))
+                    hasLowerCase = true;
+                else if (Character.isUpperCase(c))
+                    hasUpperCase = true;
+                else if (Character.isDigit(c))
+                    hasDigit = true;
+                else
+                    hasSymbol = true;
+            }
         }
 
         int poolSize = (hasLowerCase ? 26 : 0) + (hasUpperCase ? 26 : 0) + (hasDigit ? 10 : 0) + (hasSymbol ? 32 : 0);
 
-        return poolSize > 0 ? password.length * Math.log(poolSize) / BASE2_LOG : 0;
+        return poolSize > 0 ? length * Math.log(poolSize) / BASE2_LOG : 0;
     }
 
     private static final char[][] COMMON_SEQUENCES;
@@ -88,7 +95,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     }
 
     // Incoming password should be trimmed of whitespace
-    private static char[] filter(char[] password, User user)
+    private static List<char[]> filter(char[] password, User user)
     {
         // Remove all personal information sequences of 3+ characters
         List<char[]> segments = removePersonalInformation(List.of(password), user);
@@ -106,7 +113,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             segments = replace(segments, COMMON_SEQUENCES);
         }
 
-        return segments.size() == 1 ? segments.get(0) : concatenate(segments);
+        return segments;
     }
 
     private static List<char[]> removePersonalInformation(List<char[]> segments, User user)
@@ -189,24 +196,6 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             }
 
             ret.add(segment);
-        }
-
-        return ret;
-    }
-
-    private static char[] concatenate(List<char[]> arrays)
-    {
-        int finalLength = 0;
-        for (char[] array: arrays)
-            finalLength += array.length;
-
-        char[] ret = new char[finalLength];
-        int destPos = 0;
-
-        for (char[] array: arrays)
-        {
-            System.arraycopy(array, 0, ret, destPos, array.length);
-            destPos += array.length;
         }
 
         return ret;
@@ -341,13 +330,31 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         // Convenience method that works with strings
         private double calculateEntropy(String password)
         {
-            return EntropyPasswordValidator.calculateEntropy(password.toCharArray());
+            return EntropyPasswordValidator.calculateEntropy(List.of(password.toCharArray()));
         }
 
         // Convenience method that works with strings
         private String filter(String password, User user)
         {
-            return new String(EntropyPasswordValidator.filter(password.toCharArray(), user));
+            return new String(concatenate(EntropyPasswordValidator.filter(password.toCharArray(), user)));
+        }
+
+        private static char[] concatenate(List<char[]> arrays)
+        {
+            int finalLength = 0;
+            for (char[] array: arrays)
+                finalLength += array.length;
+
+            char[] ret = new char[finalLength];
+            int destPos = 0;
+
+            for (char[] array: arrays)
+            {
+                System.arraycopy(array, 0, ret, destPos, array.length);
+                destPos += array.length;
+            }
+
+            return ret;
         }
     }
 }
