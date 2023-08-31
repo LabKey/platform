@@ -101,12 +101,9 @@ public class PageConfig
 
     private record EventHandler(String id, String selector, @NotNull String event, @NotNull String handler) {
         public EventHandler {
-            // exactly one of id or selector must be non-null
-            assert (null==id) != (null==selector);
-            // id cannot contain any spaces
-            assert id == null || !id.contains(" ");
-            // event shouldn't include the "on" prefix
-            assert !event.startsWith("on");
+            assert (null==id) != (null==selector) : "exactly one of id or selector must be non-null";
+            assert id == null || !id.contains(" ") : "id cannot contain any spaces";
+            assert !event.startsWith("on") : "event shouldn't include the 'on' prefix";
         }
 
         public String getKey()
