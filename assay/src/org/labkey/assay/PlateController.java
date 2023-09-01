@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.labkey.assay;
 
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +34,6 @@ import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
@@ -583,9 +581,9 @@ public class PlateController extends SpringActionController
         public void validateForm(CreatePlateForm form, Errors errors)
         {
             if (StringUtils.trimToNull(form.getName()) == null)
-                errors.reject(ERROR_GENERIC, "Plate \"name\" is required.");
+                errors.reject(ERROR_REQUIRED, "Plate \"name\" is required.");
             if (form.getPlateType() == null)
-                errors.reject(ERROR_GENERIC, "Plate \"plateType\" is required.");
+                errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
         }
 
         @Override
@@ -649,13 +647,13 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(DesignVocabularyPermission.class)
-    public class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
+    public static class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
     {
         @Override
         public void validateForm(CreatePlateMetadataFieldsForm form, Errors errors)
         {
             if (form.getFields().isEmpty())
-                errors.reject(ERROR_MSG, "No metadata fields were specified.");
+                errors.reject(ERROR_REQUIRED, "No metadata fields were specified.");
         }
 
         @Override
@@ -667,7 +665,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetPlateMetadataFields extends ReadOnlyApiAction<Object>
+    public static class GetPlateMetadataFields extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -692,13 +690,13 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(DesignVocabularyPermission.class)
-    public class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
+    public static class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
     {
         @Override
         public void validateForm(DeletePlateMetadataFieldsForm form, Errors errors)
         {
             if (form.getFields().isEmpty())
-                errors.reject(ERROR_MSG, "No metadata fields were specified to be deleted.");
+                errors.reject(ERROR_REQUIRED, "No metadata fields were specified to be deleted.");
         }
 
         @Override
@@ -724,7 +722,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class AddFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    public static class AddFieldsAction extends MutatingApiAction<CustomFieldsForm>
     {
         @Override
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
@@ -734,7 +732,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetFieldsAction extends ReadOnlyApiAction<CustomFieldsForm>
+    public static class GetFieldsAction extends ReadOnlyApiAction<CustomFieldsForm>
     {
         @Override
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
@@ -744,7 +742,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class RemoveFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    public static class RemoveFieldsAction extends MutatingApiAction<CustomFieldsForm>
     {
         @Override
         public Object execute(CustomFieldsForm form, BindException errors) throws Exception
@@ -753,18 +751,13 @@ public class PlateController extends SpringActionController
         }
     }
 
-    /**
-     * Returns the Domain ID for the plate metadata configured for this container. If the domain has
-     * not been created then null will be returned.
-     */
-    @RequiresPermission(ReadPermission.class)
-    public class GetPlateMetadataDomainAction extends ReadOnlyApiAction<Object>
+    @RequiresPermission(DesignVocabularyPermission.class)
+    public static class EnsurePlateMetadataDomainAction extends MutatingApiAction<Object>
     {
         @Override
         public Object execute(Object form, BindException errors) throws Exception
         {
-            Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
-            return success(domain != null ? domain.getTypeId() : null);
+            return success(PlateManager.get().ensurePlateMetadataDomain(getContainer(), getUser()).getTypeId());
         }
     }
 
@@ -790,7 +783,7 @@ public class PlateController extends SpringActionController
         public void validateForm(GetPlateForm form, Errors errors)
         {
             if (form.getRowId() == null)
-                errors.reject(ERROR_GENERIC, "Plate \"rowId\" is required.");
+                errors.reject(ERROR_REQUIRED, "Plate \"rowId\" is required.");
         }
 
         @Override
