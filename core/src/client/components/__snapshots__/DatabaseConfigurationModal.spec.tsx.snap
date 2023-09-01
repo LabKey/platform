@@ -51,63 +51,27 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
       <span
         className="database-modal__field"
       >
-        <ButtonGroup
-          block={false}
-          bsClass="btn-group"
-          justified={false}
-          onClick={[Function]}
-          vertical={false}
-        >
-          <Button
-            active={false}
-            block={false}
-            bsClass="btn"
-            bsStyle="default"
-            disabled={false}
-            name="strength"
-            value="Weak"
-          >
-            Weak
-          </Button>
-          <Button
-            active={false}
-            block={false}
-            bsClass="btn"
-            bsStyle="default"
-            disabled={false}
-            name="strength"
-            value="Strong"
-          >
-            Strong
-          </Button>
-        </ButtonGroup>
+        <FormControl
+          bsClass="form-control"
+          componentClass="select"
+          disabled={false}
+          name="strength"
+          onChange={[Function]}
+          value=""
+        />
       </span>
     </div>
     <div
       className="bold-text"
     >
-       Weak 
+       
+       
     </div>
     <div>
       <div
         dangerouslySetInnerHTML={
           {
-            "__html": "",
-          }
-        }
-      />
-    </div>
-    <br />
-    <div
-      className="bold-text"
-    >
-       Strong 
-    </div>
-    <div>
-      <div
-        dangerouslySetInnerHTML={
-          {
-            "__html": "",
+            "__html": undefined,
           }
         }
       />
@@ -256,63 +220,27 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
       <span
         className="database-modal__field"
       >
-        <ButtonGroup
-          block={false}
-          bsClass="btn-group"
-          justified={false}
-          onClick={[Function]}
-          vertical={false}
-        >
-          <Button
-            active={false}
-            block={false}
-            bsClass="btn"
-            bsStyle="default"
-            disabled={true}
-            name="strength"
-            value="Weak"
-          >
-            Weak
-          </Button>
-          <Button
-            active={false}
-            block={false}
-            bsClass="btn"
-            bsStyle="default"
-            disabled={true}
-            name="strength"
-            value="Strong"
-          >
-            Strong
-          </Button>
-        </ButtonGroup>
+        <FormControl
+          bsClass="form-control"
+          componentClass="select"
+          disabled={true}
+          name="strength"
+          onChange={[Function]}
+          value=""
+        />
       </span>
     </div>
     <div
       className="bold-text"
     >
-       Weak 
+       
+       
     </div>
     <div>
       <div
         dangerouslySetInnerHTML={
           {
-            "__html": "",
-          }
-        }
-      />
-    </div>
-    <br />
-    <div
-      className="bold-text"
-    >
-       Strong 
-    </div>
-    <div>
-      <div
-        dangerouslySetInnerHTML={
-          {
-            "__html": "",
+            "__html": undefined,
           }
         }
       />
