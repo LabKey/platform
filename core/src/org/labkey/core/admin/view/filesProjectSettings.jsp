@@ -146,7 +146,7 @@
                                 <%  } %>
                             </select>
                         </td>
-                        <% addHandler("optionCloudRoot", "onclick", "return updateSelection(" + !FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) + ");"); %>
+                        <% addHandler("optionCloudRoot", "click", "return updateSelection(" + !FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) + ");"); %>
                     </tr>
                     <% } %>
                     <tr style="height: 1.75em" id="migrateFilesRow">

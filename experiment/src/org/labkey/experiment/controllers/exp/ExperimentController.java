@@ -58,28 +58,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractMoveEntitiesAction;
 import org.labkey.api.exp.AbstractParameter;
@@ -7413,65 +7392,85 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    static void validateEntitySequenceForm(EntitySequenceForm form, Errors errors)
+    {
+        String kindName = form.getKindName();
+        if (StringUtils.isEmpty(kindName) || form.getSeqType() == null)
+        {
+            errors.reject(ERROR_REQUIRED, "KindName and SeqType must be provided");
+            return;
+        }
+
+        if (form.getSeqType() == NameGenerator.EntityCounter.genId)
+        {
+            if (form.getRowId() == null)
+                errors.reject(ERROR_REQUIRED, "Data type RowId must be provided for genId");
+        }
+        else if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName))
+        {
+            errors.reject(ERROR_MSG, form.getSeqType() + " is not supported for " + kindName);
+        }
+
+        if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
+            errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
+
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public static class GetGenIdAction extends ReadOnlyApiAction<GenIdForm>
+    public static class GetEntitySequenceAction extends ReadOnlyApiAction<EntitySequenceForm>
     {
         @Override
-        public void validateForm(GenIdForm form, Errors errors)
+        public void validateForm(EntitySequenceForm form, Errors errors)
         {
-            String kindName = form.getKindName();
-
-            if (form.getRowId() == null || StringUtils.isEmpty(kindName))
-                errors.reject(ERROR_REQUIRED, "RowId and KindName must be provided");
-
-            if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
-                errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
+            validateEntitySequenceForm(form, errors);
         }
 
         @Override
-        public Object execute(GenIdForm form, BindException errors) throws Exception
+        public Object execute(EntitySequenceForm form, BindException errors) throws Exception
         {
-            long genId = -1;
+            long value = -1;
             if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
             {
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
-                if (sampleType != null)
-                    genId = sampleType.getCurrentGenId();
+                if (form.getSeqType() == NameGenerator.EntityCounter.genId)
+                {
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                    if (sampleType != null)
+                        value = sampleType.getCurrentGenId();
+                }
+                else
+                {
+                    value = SampleTypeService.get().getCurrentCount(form.getSeqType(), getContainer());
+                }
+
             }
             else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                 if (dataClass != null)
-                    genId = dataClass.getCurrentGenId();
+                    value = dataClass.getCurrentGenId();
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("success", genId > -1);
-            resp.put("genId", genId);
+            resp.put("success", value > -1);
+            resp.put("value", value);
             return resp;
         }
     }
 
     @RequiresPermission(ReadPermission.class) // actual permission checked later
-    public static class SetGenIdAction extends MutatingApiAction<GenIdForm>
+    public static class SetEntitySequenceAction extends MutatingApiAction<EntitySequenceForm>
     {
         @Override
-        public void validateForm(GenIdForm form, Errors errors)
+        public void validateForm(EntitySequenceForm form, Errors errors)
         {
-            String kindName = form.getKindName();
+            validateEntitySequenceForm(form, errors);
 
-            if (form.getRowId() == null || StringUtils.isEmpty(kindName))
-                errors.reject(ERROR_REQUIRED, "RowId or KindName must be provided");
-
-            if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
-                errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
-
-            if (form.getGenId() == null || form.getGenId() < 0)
-                errors.reject(ERROR_MSG, "Invalid GenId.");
+            if (form.getNewValue() == null || form.getNewValue() < 0)
+                errors.reject(ERROR_MSG, "Invalid newValue.");
         }
 
         @Override
-        public Object execute(GenIdForm form, BindException errors)
+        public Object execute(EntitySequenceForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -7480,17 +7479,26 @@ public class ExperimentController extends SpringActionController
             {
                 if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
                 {
-                    if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
-                        throw new UnauthorizedException("Insufficient permissions.");
+                    if (form.getSeqType() == NameGenerator.EntityCounter.genId)
+                    {
+                        if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                            throw new UnauthorizedException("Insufficient permissions.");
 
-
-                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
-                    if (sampleType != null)
-                        sampleType.ensureMinGenId(form.getGenId());
+                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                        if (sampleType != null)
+                            sampleType.ensureMinGenId(form.getNewValue());
+                        else
+                        {
+                            resp.put("success", false);
+                            resp.put("error", "Sample type does not exist.");
+                        }
+                    }
                     else
                     {
-                        resp.put("success", false);
-                        resp.put("error", "Sample type does not exist.");
+                        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                            throw new UnauthorizedException("Insufficient permissions.");
+
+                        SampleTypeService.get().ensureMinSampleCount(form.getNewValue(), form.getSeqType(), getContainer());
                     }
                 }
                 else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
@@ -7500,7 +7508,7 @@ public class ExperimentController extends SpringActionController
 
                     ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                     if (dataClass != null)
-                        dataClass.ensureMinGenId(form.getGenId(), getContainer());
+                        dataClass.ensureMinGenId(form.getNewValue(), getContainer());
                     else
                     {
                         resp.put("success", false);
@@ -7518,11 +7526,12 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class GenIdForm
+    public static class EntitySequenceForm
     {
-        private Integer _rowId;
         private String _kindName;
-        private Long _genId;
+        private NameGenerator.EntityCounter _seqType;
+        private Integer _rowId;
+        private Long _newValue;
 
         public Integer getRowId()
         {
@@ -7544,14 +7553,24 @@ public class ExperimentController extends SpringActionController
             _kindName = kindName;
         }
 
-        public Long getGenId()
+        public Long getNewValue()
         {
-            return _genId;
+            return _newValue;
         }
 
-        public void setGenId(Long genId)
+        public void setNewValue(Long newValue)
         {
-            _genId = genId;
+            this._newValue = newValue;
+        }
+
+        public NameGenerator.EntityCounter getSeqType()
+        {
+            return _seqType;
+        }
+
+        public void setSeqType(String seqType)
+        {
+            _seqType = NameGenerator.EntityCounter.valueOf(seqType);
         }
 
     }

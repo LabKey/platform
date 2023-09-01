@@ -1480,6 +1480,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
             nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
             aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
+
+            // check for project scoped counter in both name and aliquot name to decide if they need to be included
+            NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
+            if (sampleNameExpressionSummary != null)
+            {
+                NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
+                nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasLineageInputs(), expressionSummary.hasLineageLookup()));
+            }
             nameState = nameGen != null ? nameGen.createState(true) : null;
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
@@ -1515,6 +1523,36 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         void onFirst()
         {
             first = false;
+        }
+
+        private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@NotNull NameGenerator nameGen, @NotNull NameGenerator aliquotNameGen)
+        {
+            if (sampleType == null)
+                return null;
+
+            boolean hasProjectSampleCounter = false;
+            long minProjectSampleCounter = 0;
+            boolean hasProjectSampleRootCounter = false;
+            long minProjectSampleRootCounter = 0;
+
+            NameGenerator.SampleNameExpressionSummary nameSummary = nameGen.getExpressionSummary().sampleSummary();
+            NameGenerator.SampleNameExpressionSummary aliquotSummary = aliquotNameGen.getExpressionSummary().sampleSummary();
+            if (nameSummary.hasProjectSampleCounter() || aliquotSummary.hasProjectSampleCounter())
+            {
+                hasProjectSampleCounter = true;
+                minProjectSampleCounter = sampleType.getMinSampleCounter();
+            }
+
+            if (nameSummary.hasProjectSampleRootCounter() || aliquotSummary.hasProjectSampleRootCounter())
+            {
+                hasProjectSampleRootCounter = true;
+                minProjectSampleRootCounter = sampleType.getMinRootSampleCounter();
+            }
+
+            if (hasProjectSampleCounter || hasProjectSampleRootCounter)
+                return new NameGenerator.SampleNameExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, minProjectSampleCounter, minProjectSampleRootCounter);
+
+            return null;
         }
 
         @Override

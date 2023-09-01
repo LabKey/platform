@@ -581,7 +581,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         if (null != id)
             return id;
         var pageConfig = HttpView.currentPageConfig();
-        return pageConfig.makeId(StringUtils.defaultIfBlank(getName(), prefix));
+        return pageConfig.makeId(prefix);
     }
 
     protected void doStyles(Appendable sb) throws IOException

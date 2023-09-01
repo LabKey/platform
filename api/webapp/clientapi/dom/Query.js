@@ -358,7 +358,12 @@ LABKEY.Query = new function(impl, $) {
         LABKEY.Query.getSchemas({
             includeHidden: false,
             success: function(data) {
-                populateSelect(SCHEMA_SELECT, data.schemas.sort(), null, null, config.initValue, config.isRequired, config.includeBlankOption);
+                var schemas = data.schemas.sort();
+                if (config.filterFn instanceof Function) {
+                    schemas = schemas.filter(config.filterFn);
+                }
+
+                populateSelect(SCHEMA_SELECT, schemas, null, null, config.initValue, config.isRequired, config.includeBlankOption);
 
                 // if there is a selected schema, fire the change event
                 if (SCHEMA_SELECT.val()) {
