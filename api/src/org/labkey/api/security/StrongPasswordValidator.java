@@ -25,7 +25,7 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
             )
         ));
 
-        _summaryRuleHtml = HtmlString.of("Your password should be long and use multiple character types");
+        _summaryRuleHtml = HtmlString.of("Your password should be long and use multiple character types.");
     }
 
     @Override

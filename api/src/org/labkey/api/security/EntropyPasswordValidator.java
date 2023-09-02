@@ -27,7 +27,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     {
         boolean success = score(password, user) >= getRequiredBitsOfEntropy();
         if (!success && messages != null)
-            messages.add("Your password is not complex enough");
+            messages.add("Your password is not complex enough.");
 
         return success;
     }
