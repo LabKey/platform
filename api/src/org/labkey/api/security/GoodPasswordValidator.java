@@ -43,4 +43,10 @@ public class GoodPasswordValidator extends RuleBasedPasswordValidator
     {
         return true;
     }
+
+    @Override
+    protected boolean isInappropriateForProduction()
+    {
+        return false;
+    }
 }

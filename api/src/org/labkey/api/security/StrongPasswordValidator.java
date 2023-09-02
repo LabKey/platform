@@ -16,8 +16,9 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
                 DOM.LI("Evaluate passwords using a modern scoring approach based on entropy, a measure of the password's " +
                     "inherent randomness. Long passwords that use multiple character types (upper case, lower case, digits, " +
                     "symbols) result in higher scores. Repeated characters, repeated sequences, trivial sequences, and personal " +
-                    "information result in lower scores, since they are easier to guess. A visual gauge shows the strength of the " +
-                    "characters entered so far, encouraging users to choose strong passwords."),
+                    "information result in lower scores since they are easier to guess."),
+//                    "A visual gauge shows the strength of the " +
+//                    "characters entered so far, encouraging users to choose strong passwords."),
                 DOM.LI("This option requires " + getRequiredBitsOfEntropy() + " bits of entropy, which typically requires " +
                     getCharacterCountEstimate() + " or more characters without any easy-to-guess sequences."),
                 PREVIOUS_PASSWORD_BULLET

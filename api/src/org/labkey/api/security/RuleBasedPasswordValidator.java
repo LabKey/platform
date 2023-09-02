@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.labkey.api.util.DOM.cl;
+
 abstract class RuleBasedPasswordValidator implements PasswordValidator
 {
     private final Pattern _lengthPattern;
@@ -69,8 +71,10 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
                 DOM.LI("Must be " + getMinimumLengthText() + " non-whitespace characters or more."),
                 _patternRequirement != null ? DOM.LI("Must " + _patternRequirement) : null,
                 DOM.LI(getPersonalInfoRule()),
-                isPreviousPasswordForbidden() ? PREVIOUS_PASSWORD_BULLET : null
-            )));
+                isPreviousPasswordForbidden() ? PREVIOUS_PASSWORD_BULLET : null,
+                isInappropriateForProduction() ? DOM.LI(cl("labkey-error"), "This password strength is not appropriate for production deployments") : null
+            )
+        ));
     }
 
     private void addPattern(List<Pattern> patterns, Pattern pattern, List<String> patternDescriptions, String patternDescription)
@@ -170,6 +174,8 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
     protected abstract boolean isSymbolEnabled();
 
     protected abstract int getRequiredCharacterTypeCount();
+
+    protected abstract boolean isInappropriateForProduction();
 
     @Override
     @NotNull

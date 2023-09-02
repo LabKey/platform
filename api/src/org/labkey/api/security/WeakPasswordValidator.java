@@ -50,6 +50,12 @@ public class WeakPasswordValidator extends RuleBasedPasswordValidator
         return false;
     }
 
+    @Override
+    protected boolean isInappropriateForProduction()
+    {
+        return true;
+    }
+
     @NotNull
     @Override
     public HtmlString getSummaryRuleHtml()
