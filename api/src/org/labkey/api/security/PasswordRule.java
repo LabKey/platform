@@ -26,7 +26,7 @@ public enum PasswordRule
 {
     Weak(new WeakPasswordValidator()),
     Good(new GoodPasswordValidator()),
-    NewStrong(new StrongPasswordValidator());
+    Strong(new StrongPasswordValidator());
 
     private final PasswordValidator _validator;
 
