@@ -2618,6 +2618,7 @@ public class LoginController extends SpringActionController
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
                 "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHtml)),
+                // TODO: Change to array to maintain order: "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHtml)),
                 "helpLink", new HelpTopic("configDbLogin").getHelpTopicHref()
             );
             return new ApiSimpleResponse(map);

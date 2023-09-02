@@ -3448,13 +3448,13 @@ public class SecurityManager
             String password;
 
             // Check and loop until password is valid for this user. These randomly generated passwords will often
-            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
+            // (about 1% of the time) contain a three-character sequence from the email address, which the "Good"
             // rules disallow.
             do
             {
                 password = createTempPassword() + "Az9!";
             }
-            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
+            while (!PasswordRule.Good.isValidForLogin(password, user, null));
 
             return password;
         }
