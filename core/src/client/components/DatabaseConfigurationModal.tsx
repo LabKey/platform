@@ -23,7 +23,7 @@ interface State {
     error: string;
     helpLink: string;
     initError: string;
-    passwordRules: { [key: string]: string }; // Maintained server-side, so we are permissive here of key name changes
+    passwordRules: Array<{ [key: string]: string }>; // Maintained server-side, so we are permissive in our typing here
 }
 
 export default class DatabaseConfigurationModal extends PureComponent<Props, State> {
@@ -32,7 +32,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         this.state = {
             error: undefined,
             initError: undefined,
-            passwordRules: {},
+            passwordRules: [],
             helpLink: null,
             currentSettings: { strength: '', expiration: '' },
         };
@@ -99,6 +99,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         const { strength, expiration } = currentSettings;
         const hasError = error !== undefined || initError !== undefined;
         const allowEdit = canEdit && initError === undefined;
+        const strengthText = strength !== '' && passwordRules.find(o => Object.keys(o)[0] === strength)[strength];
 
         return (
             <Modal backdrop="static" show={true} onHide={this.props.closeModal}>
@@ -120,9 +121,9 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                 value={strength}
                                 disabled={!allowEdit}
                             >
-                                {Object.keys(passwordRules).map(option => (
-                                    <option value={option} key={option}>
-                                        {option}
+                                {passwordRules.map(option => (
+                                    <option value={Object.keys(option)[0]} key={Object.keys(option)[0]}>
+                                        {Object.keys(option)[0]}
                                     </option>
                                 ))}
                             </FormControl>
@@ -132,7 +133,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                     {/* this.state.passwordRules values are safe server-generated HTML */}
                     <div className="bold-text"> {strength} </div>
                     <div>
-                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules[strength] }} />
+                        <div dangerouslySetInnerHTML={{ __html: strengthText }} />
                     </div>
 
                     <br />

@@ -71,7 +71,7 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
       <div
         dangerouslySetInnerHTML={
           {
-            "__html": undefined,
+            "__html": false,
           }
         }
       />
@@ -240,7 +240,7 @@ exports[`<DatabaseConfigurationModal/> View-only 1`] = `
       <div
         dangerouslySetInnerHTML={
           {
-            "__html": undefined,
+            "__html": false,
           }
         }
       />
