@@ -109,7 +109,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
@@ -2617,8 +2616,7 @@ public class LoginController extends SpringActionController
                     "strength", DbLoginManager.getPasswordRule(),
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
-                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHtml)),
-                // TODO: Change to array to maintain order: "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHtml)),
+                "passwordRules", Arrays.stream(PasswordRule.values()).map(rule->Map.of(rule.name(), rule.getFullRuleHtml())).toArray(),
                 "helpLink", new HelpTopic("configDbLogin").getHelpTopicHref()
             );
             return new ApiSimpleResponse(map);
