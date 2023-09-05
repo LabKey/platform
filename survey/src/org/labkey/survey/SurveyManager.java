@@ -610,6 +610,7 @@ public class SurveyManager
         return null;
     }
 
+    @Nullable
     public TableInfo getSurveyResponsesTableInfo(Container container, User user, SurveyDesign survey, AuditBehaviorType abt)
     {
         if (container != null)
@@ -619,10 +620,13 @@ public class SurveyManager
             if (schema != null)
             {
                 TableInfo table = schema.getTable(survey.getQueryName(), null, true, true);
-                if (table.supportsAuditTracking())
-                    ((AuditConfigurable)table).setAuditBehavior(AuditBehaviorType.DETAILED);
-                table.setLocked(true);
-                return table;
+                if (table != null)
+                {
+                    if (table.supportsAuditTracking())
+                        ((AuditConfigurable)table).setAuditBehavior(AuditBehaviorType.DETAILED);
+                    table.setLocked(true);
+                    return table;
+                }
             }
         }
         return null;
