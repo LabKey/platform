@@ -301,7 +301,7 @@ public class UserManager
 
     /**
      * Register a provider that can choose to add a button to the User Details button bar.
-     * @param category Determines where on the button bar the button will appear
+     * @param category A UserDetailsButtonCategory that determines where on the button bar the button will appear
      * @param provider A UserDetailsButtonProvider that's invoked with appropriate context every time a User Details
      *                 button bar is rendered. The provider must perform its own permissions checks on the current user
      *                 as well as other checks to determine if showing the button is appropriate.

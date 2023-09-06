@@ -26,6 +26,7 @@ import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.StartupProperty;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
@@ -33,11 +34,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Jan 13, 2010
- * Time: 5:04:48 PM
- */
 public class DbLoginManager
 {
     // TODO: Move Logins table operations here
@@ -107,5 +103,10 @@ public class DbLoginManager
     static @NotNull Map<String, String> getProperties()
     {
         return PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+    }
+
+    public static UsageMetricsProvider getMetricsProvider()
+    {
+        return () -> Map.of("databaseAuthentication", getProperties());
     }
 }

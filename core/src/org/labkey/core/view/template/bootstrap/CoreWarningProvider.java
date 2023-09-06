@@ -27,6 +27,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -43,6 +44,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.metrics.WebSocketConnectionManager;
 import org.labkey.core.user.LimitActiveUsersSettings;
 
@@ -121,6 +123,8 @@ public class CoreWarningProvider implements WarningProvider
 
             getDbSchemaWarnings(warnings, showAllWarnings);
 
+            getPasswordRuleWarnings(warnings, showAllWarnings);
+
             //upgrade message--show to admins
             HtmlString upgradeMessage = UsageReportingLevel.getUpgradeMessage();
 
@@ -183,6 +187,12 @@ public class CoreWarningProvider implements WarningProvider
         {
             addStandardWarning(warnings, (count - MAX_SCHEMA_PROBLEMS_TO_SHOW) + " additional schema problems.", "View full consistency check", new ActionURL(AdminController.DoCheckAction.class, ContainerManager.getRoot()));
         }
+    }
+
+    private void getPasswordRuleWarnings(Warnings warnings, boolean showAllWarnings)
+    {
+        if (showAllWarnings || (!AppProps.getInstance().isDevMode() && DbLoginManager.getPasswordRule() == PasswordRule.Weak))
+            warnings.add(HtmlString.of("Database authentication is configured with \"Weak\" strength, which is not appropriate for a production deployment."));
     }
 
     private void getHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)

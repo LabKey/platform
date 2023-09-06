@@ -18,8 +18,6 @@ package org.labkey.api.usageMetrics;
 import java.util.Map;
 
 /**
- * Created by Tony on 2/14/2017.
- *
  * Functional interface for modules to report their own usage metrics.
  * Register an implementation with UsageMetricsService at module startup.
  */

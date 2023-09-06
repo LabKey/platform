@@ -42,11 +42,6 @@ export interface InputFieldProps extends AuthConfigField {
     value?: any;
 }
 
-export interface DatabasePasswordRules {
-    Strong: string;
-    Weak: string;
-}
-
 export interface DatabasePasswordSettings {
     expiration: string;
     strength: string;

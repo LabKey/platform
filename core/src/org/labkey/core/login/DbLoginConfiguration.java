@@ -16,7 +16,7 @@ public class DbLoginConfiguration extends BaseAuthenticationConfiguration<DbLogi
     protected DbLoginConfiguration(DbLoginAuthenticationProvider provider, Map<String, String> stringProperties, Map<String, Object> properties)
     {
         super(provider, properties);
-        _passwordRule = PasswordRule.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Strength.toString(), PasswordRule.Weak.toString()));
+        _passwordRule = PasswordRule.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Strength.toString(), PasswordRule.Strong.toString()));
         _expiration = PasswordExpiration.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
     }
 

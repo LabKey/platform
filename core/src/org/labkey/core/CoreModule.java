@@ -205,6 +205,7 @@ import org.labkey.core.dialect.PostgreSqlInClauseTest;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
@@ -1091,6 +1092,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
+        UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
