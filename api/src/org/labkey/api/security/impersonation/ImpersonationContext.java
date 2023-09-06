@@ -31,9 +31,6 @@ import java.util.Set;
 /**
  * Context that describes the way in which a user is operating within the system. They may be logged in normally,
  * or they may be impersonating a specific user or a group, depending on the implementation.
- *
- * User: adam
- * Date: 11/8/11
  */
 public interface ImpersonationContext extends Serializable
 {

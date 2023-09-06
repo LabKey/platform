@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 /*
-    Simple wrapper around int[] that limits the ability to mutate the array and ensures it's sorted, searched quickly, etc.
-    Can represent a list of groups to which a user (or group) belongs OR a list of members of a group.
+    Simple wrapper that limits the ability to mutate the int[] and ensures it's sorted, searched efficiently, etc.
+    Can represent a group's membership list OR user's list of group memberships.
  */
 public class PrincipalArray
 {
@@ -29,7 +29,7 @@ public class PrincipalArray
         return Arrays.binarySearch(_principals, groupId) >= 0;
     }
 
-    // Package private: for now, allow security classes to access underlying int[] for performance
+    // Package private: for now, security classes can access underlying int[] for performance
     int[] getPrincipals()
     {
         return _principals;
