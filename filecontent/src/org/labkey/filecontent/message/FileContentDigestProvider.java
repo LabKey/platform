@@ -88,7 +88,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     {
         Set<Container> containers = new HashSet<>();
 
-        User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
+        User user = new LimitedUser(UserManager.getGuestUser(), Collections.singleton(RoleManager.getRole(ReaderRole.class)));
         UserSchema userSchema = AuditLogService.getAuditLogSchema(user, ContainerManager.getSharedContainer());
         FilteredTable table = (FilteredTable)userSchema.getTable(FileSystemAuditProvider.EVENT_TYPE);
 
@@ -114,7 +114,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         HashSet<Role> roles = new HashSet<>();
         roles.add(RoleManager.getRole(ReaderRole.class));
         roles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-        return new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
+        return new LimitedUser(UserManager.getGuestUser(), roles);
     }
 
     private List<FileSystemAuditEvent> getAuditEvents(Container container, Date start, Date end)

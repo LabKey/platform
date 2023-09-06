@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -230,7 +231,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public int[] getGroups(User user)
+        public PrincipalArray getGroups(User user)
         {
             return GroupManager.getAllGroupsForPrincipal(user);
         }

@@ -85,7 +85,7 @@ public class QueryDriver implements Driver
 
         // NOTE: This code is only accessible from within LabKey Server when using components that require their own
         //JDBC Connection (e.g. Mondrian). The user must currently be a limited service user that cannot update
-        User user = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+        User user = new LimitedUser(User.guest, Collections.singleton(RoleManager.getRole(ReaderRole.class)));
         user.setPrincipalType(PrincipalType.SERVICE);
         user.setDisplayName("Internal JDBC Service User");
         user.setEmail("internaljdbc@labkey.org");

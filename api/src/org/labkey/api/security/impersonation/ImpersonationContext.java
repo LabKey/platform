@@ -17,6 +17,7 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
@@ -46,7 +47,7 @@ public interface ImpersonationContext extends Serializable
     String getCacheKey();  // Caching permission-related state is very tricky with impersonation; context provides a cache key suffix that captures the current impersonation state
     /** @return the URL to which the user should be returned when impersonation is over */
     ActionURL getReturnURL();
-    int[] getGroups(User user);
+    PrincipalArray getGroups(User user);
     Set<Role> getContextualRoles(User user, SecurityPolicy policy);
     ImpersonationContextFactory getFactory();
     /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */

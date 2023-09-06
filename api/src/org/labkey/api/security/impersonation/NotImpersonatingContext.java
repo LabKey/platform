@@ -17,6 +17,7 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.SecurityPolicy;
@@ -32,9 +33,6 @@ import java.util.Set;
 /**
  * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
  * as themselves.
- *
- * User: adam
- * Date: 11/9/11
  */
 public class NotImpersonatingContext implements ImpersonationContext
 {
@@ -92,7 +90,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public int[] getGroups(User user)
+    public PrincipalArray getGroups(User user)
     {
         return GroupManager.getAllGroupsForPrincipal(user);
     }

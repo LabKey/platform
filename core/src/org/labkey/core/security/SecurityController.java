@@ -120,6 +120,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -1565,15 +1566,10 @@ public class SecurityController extends SpringActionController
 
     private void handleGroups(User user, Consumer<Group> consumer)
     {
-        for (int groupId : GroupMembershipCache.getGroupMemberships(user.getUserId()))
-        {
-            final Group group = SecurityManager.getGroup(groupId);
-
-            if (group != null)
-            {
-                consumer.accept(group);
-            }
-        }
+        GroupMembershipCache.getGroupMemberships(user.getUserId()).stream()
+            .map(SecurityManager::getGroup)
+            .filter(Objects::nonNull)
+            .forEach(consumer);
     }
 
     private void handleDirectRoleAssignments(User user, BiConsumer<MutableSecurityPolicy, Collection<Role>> consumer)

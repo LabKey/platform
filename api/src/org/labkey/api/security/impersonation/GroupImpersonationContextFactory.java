@@ -22,6 +22,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -43,10 +44,6 @@ import java.util.Set;
 /**
  * Used to indicate that a user is impersonating a specific group (site or project), and are not operating as their
  * normal logged-in self.
- *
- * User: adam
- * Date: 11/9/11
- * Time: 10:23 PM
  */
 public class GroupImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
@@ -180,14 +177,14 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     private static class GroupImpersonationContext extends AbstractImpersonationContext
     {
         private final Group _group;
-        private final int[] _groups;
+        private final PrincipalArray _groups;
 
         @JsonCreator
         protected GroupImpersonationContext(
                 @JsonProperty("_project") @Nullable Container project,
                 @JsonProperty("_adminUser") User adminUser,
                 @JsonProperty("_group") Group group,
-                @JsonProperty("_groups") int[] groups,
+                @JsonProperty("_groups") PrincipalArray groups,
                 @JsonProperty("_returnURL") ActionURL returnURL,
                 @JsonProperty("_factory") ImpersonationContextFactory factory)
 
@@ -236,7 +233,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public int[] getGroups(User user)
+        public PrincipalArray getGroups(User user)
         {
             return _groups;
         }

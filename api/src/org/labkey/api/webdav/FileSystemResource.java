@@ -27,13 +27,9 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -73,7 +69,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,12 +83,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
-* User: matthewb
-* Date: Oct 21, 2008
-* Time: 10:00:49 AM
-*
-*   Base class for file-system based resources
-*/
+ *  Base class for file-system based resources
+ */
 public class FileSystemResource extends AbstractWebdavResource
 {
     private static final Logger _log = LogManager.getLogger(FileSystemResource.class);
@@ -619,7 +610,7 @@ public class FileSystemResource extends AbstractWebdavResource
         HashSet<Role> roles = new HashSet<>();
         roles.add(RoleManager.getRole(ReaderRole.class));
         roles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-        User user = new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
+        User user = new LimitedUser(UserManager.getGuestUser(), roles);
 
         List<AuditTypeEvent> logs = AuditLogService.get().getAuditEvents(getContainer(), user, FileSystemAuditProvider.EVENT_TYPE, filter, null);
         if (null == logs)
@@ -627,8 +618,8 @@ public class FileSystemResource extends AbstractWebdavResource
 
         List<WebdavResolver.History> history = new ArrayList<>(logs.size());
         history.addAll(logs.stream()
-                .map(e -> new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null))
-                .collect(Collectors.toList()));
+            .map(e -> new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null))
+            .toList());
         return history;
     }
 

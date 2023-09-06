@@ -223,8 +223,9 @@ public class SecurityPolicy
 
     /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
     @NotNull
-    private Set<Class<? extends Permission>> getOwnPermissions(@NotNull int[] principals)
+    private Set<Class<? extends Permission>> getOwnPermissions(PrincipalArray principalArray)
     {
+        int[] principals = principalArray.getPrincipals();
         Set<Class<? extends Permission>> perms = new HashSet<>();
 
         //role assignments are sorted by user id,
@@ -254,8 +255,9 @@ public class SecurityPolicy
 
 
     @NotNull
-    protected Set<Role> getRoles(@NotNull int[] principals)
+    protected Set<Role> getRoles(PrincipalArray principalArray)
     {
+        int[] principals = principalArray.getPrincipals();
         Set<Role> roles = new HashSet<>();
 
         //role assignments are sorted by user id,
@@ -395,7 +397,7 @@ public class SecurityPolicy
 
     public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
     {
-        for (Role role : getRoles(new int[]{principal.getUserId()}))
+        for (Role role : getRoles(new PrincipalArray(List.of(principal.getUserId()))))
         {
             if (role.getPermissions().contains(perm))
                 return true;
