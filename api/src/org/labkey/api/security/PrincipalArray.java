@@ -24,6 +24,12 @@ public class PrincipalArray
         Arrays.sort(_principals);
     }
 
+    // Needed for pipeline deserialization
+    public PrincipalArray()
+    {
+        _principals = null;
+    }
+
     public boolean contains(int groupId)
     {
         return Arrays.binarySearch(_principals, groupId) >= 0;
