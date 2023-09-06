@@ -194,7 +194,7 @@ public class SecurityPolicy
      */
     public boolean isEmpty()
     {
-        return _assignments.size() == 0;
+        return _assignments.isEmpty();
     }
 
 
