@@ -69,7 +69,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
-    private static final Set<String> ADDITIONAL_SOURES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name");
+    private static final Set<String> ADDITIONAL_SOURCES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name");
 
     public enum NestedSchemas
     {
@@ -120,8 +120,6 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                SamplesSchema schema = new SamplesSchema(expSchema.getPath(), expSchema.getUser(), expSchema.getContainer());
-                schema.setContainerFilter(expSchema._containerFilter);
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), expSchema, cf);
                 ret.populate(null, true);
                 return ret;
@@ -406,7 +404,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         registry(null, null),
         media(null, null),
-        sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURES_AUDIT_FIELDS);
+        sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURCES_AUDIT_FIELDS);
 
         public AuditBehaviorType defaultBehavior;
         public Set<String> additionalAuditFields;
