@@ -72,15 +72,18 @@ public class IssueServiceImpl implements IssueService
                         issueObject.open(container, user);
                         prevIssue.open(container, user);
                     }
-                    case update -> issueObject.change(user);
-                    case resolve -> {
+                    case update, resolve -> {
+                        if (action == Issue.action.update)
+                            issueObject.change(user);
+                        else
+                            issueObject.resolve(user);
+
                         if (resolution.equals("Duplicate") &&
                                 issueObject.getDuplicate() != null &&
                                 !issueObject.getDuplicate().equals(prevIssue.getDuplicate()))
                         {
                             duplicateOf = IssueManager.getIssue(null, user, issueObject.getDuplicate());
                         }
-                        issueObject.resolve(user);
                     }
                     case reopen -> {
                         // issue 46952 ensure resolution is cleared on reopen
@@ -245,9 +248,8 @@ public class IssueServiceImpl implements IssueService
             issueObject.beforeReOpen(container);
         }
 
-        if (action == Issue.action.resolve)
+        if (action == Issue.action.resolve || action == Issue.action.update)
         {
-            //IssueObject issue = form.getBean();
             String resolution = issueObject.getResolution() != null ? issueObject.getResolution() : "Fixed";
 
             if (resolution.equals("Duplicate"))
