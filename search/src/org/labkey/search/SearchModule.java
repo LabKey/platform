@@ -187,7 +187,7 @@ public class SearchModule extends DefaultModule
         UsageMetricsService.get().registerUsageMetrics(getName(), () ->
         {
             // Report the total number of search entries in the audit log
-            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            User user = new LimitedUser(User.getSearchUser(), Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)));
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.EVERYTHING);
 

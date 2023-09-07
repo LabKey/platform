@@ -17,16 +17,11 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -34,13 +29,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
- * as themselves.  This class can be used to grant a user a contextual role for the duration of a request.
- * This should not be first tool to reach for.  It is usually better to find a way to provide the additional contextual
- * roles in a more limited scope.
- *
- * User: adam
- * Date: 11/9/11
+ * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating as
+ * themselves. This class can be used to grant a user a contextual role for the duration of a request. This should not
+ * be first tool to reach for. It is usually better to find a way to provide the additional contextual roles in a more
+ * limited scope.
  */
 public class WrappedImpersonationContext implements ImpersonationContext
 {
@@ -97,7 +89,7 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public int[] getGroups(User user)
+    public PrincipalArray getGroups(User user)
     {
         return delegate.getGroups(user);
     }

@@ -82,7 +82,7 @@ public class AssayUpgradeCode implements UpgradeCode
                 protocolsByContainer.get(container).add(new Pair<>(protocol, resultsDomain));
             }
 
-            User upgradeUser = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), false);
+            User upgradeUser = new LimitedUser(UserManager.getGuestUser(), Collections.singleton(RoleManager.getRole(SiteAdminRole.class)));
             for (Container container : protocolsByContainer.keySet())
             {
                 List<Pair<ExpProtocol, Domain>> protocolDomains = protocolsByContainer.get(container);

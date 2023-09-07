@@ -16,24 +16,36 @@
 
 package org.labkey.api.security;
 
+import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * A wrapper around another user that limits the permissions associated that that user, and thus
  * the operations that the user is allowed to perform.
- * User: adam
- * Date: Sep 10, 2011
  */
 public class LimitedUser extends User
 {
-    private final int[] _groups;
+    private final PrincipalArray _groups;
     private final Set<Role> _roles;
     private final boolean _allowedGlobalRoles;
 
+    // LimitedUser with no groups, only a set of explicit roles. Presence of any site role determines if global roles are allowed.
+    public LimitedUser(User user, Set<Role> roles)
+    {
+        this(user, PrincipalArray.getEmptyPrincipalArray(), roles, roles.stream().anyMatch(r -> r instanceof AbstractRootContainerRole));
+    }
+
+    @Deprecated // Leave in place temporarily until the many uses in other repos have been converted
     public LimitedUser(User user, int[] groups, Set<Role> roles, boolean allowedGlobalRoles)
+    {
+        this(user, new PrincipalArray(Arrays.stream(groups).boxed().toList()), roles, allowedGlobalRoles);
+    }
+
+    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles, boolean allowedGlobalRoles)
     {
         super(user.getEmail(), user.getUserId());
         setFirstName(user.getFirstName());
@@ -54,7 +66,7 @@ public class LimitedUser extends User
     }
 
     @Override
-    public int[] getGroups()
+    public PrincipalArray getGroups()
     {
         return _groups;
     }

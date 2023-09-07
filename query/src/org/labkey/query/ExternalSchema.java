@@ -80,9 +80,9 @@ public class ExternalSchema extends SimpleUserSchema
     // Adaptor for DbSchema and UserSchema.
     protected interface TableSource
     {
-        public Collection<String> getTableNames();
-        public Collection<String> getQueryNames();
-        public boolean isTableAvailable(String tableName);
+        Collection<String> getTableNames();
+        Collection<String> getQueryNames();
+        boolean isTableAvailable(String tableName);
     }
 
     protected final AbstractExternalSchemaDef _def;

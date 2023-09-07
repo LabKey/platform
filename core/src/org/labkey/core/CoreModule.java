@@ -1076,7 +1076,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
 
             // Report the total number of login entries in the audit log
-            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            User user = new LimitedUser(User.getSearchUser(), Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)));
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
             results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());

@@ -23,7 +23,6 @@ import org.labkey.api.security.permissions.Permission;
 
 /**
  * A base class for Roles that are only available in the root container.
- * Created by Josh on 1/25/2016.
  */
 public abstract class AbstractRootContainerRole extends AbstractRole
 {
