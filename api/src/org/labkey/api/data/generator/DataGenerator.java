@@ -402,7 +402,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         if (_config.getMaxAliquotsPerParent() <= 0)
         {
-            _log.info(String.format("Generating no aliquots because maxAliquotsPerParent is %d", _config.getMaxAliquotsPerParent()));
+            _log.info(String.format("Generating no aliquots because %s is %d", Config.MAX_ALIQUOTS_PER_SAMPLE, _config.getMaxAliquotsPerParent()));
             return 0;
         }
 
@@ -427,6 +427,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity / 100)));
             numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()), sampleStatuses);
             totalAliquots += numGenerated;
+            _log.info("... " + totalAliquots);
             iterations++;
         }
         while (totalAliquots < quantity && numGenerated > 0);
@@ -479,7 +480,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             if (errors.hasErrors())
                 throw errors;
         }
-        _log.info(String.format("... %d (generation %d)", (numGenerated + generatedCount), generation));
+//        _log.info(String.format("... %d (generation %d)", (numGenerated + generatedCount), generation));
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
