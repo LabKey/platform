@@ -24,6 +24,8 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -50,7 +52,6 @@ import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -74,14 +75,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     // Cache the audit events associated with transaction ids. We currently use these for interacting with objects
     // that were created immediately after they were created, so the cache size does not need to be very large.
-    private final Map<Long, List<AuditTypeEvent>> _transactionEventCache = new LinkedHashMap<>()
-    {
-        @Override
-        public boolean removeEldestEntry(Map.Entry eldest)
-        {
-            return size() > 50;
-        }
-    };
+    private static final Cache<Long, List<AuditTypeEvent>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.DAY,
+            "Transaction Audit Event Cache",
+            (key, argument) -> new ArrayList<>()
+    );
 
     public static AuditLogImpl get()
     {
@@ -154,7 +151,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 user = UserManager.getGuestUser();
             }
             if (event.getTransactionId() != null)
-                _transactionEventCache.computeIfAbsent(event.getTransactionId(), (k) -> new ArrayList<>()).add(event);
+            {
+                List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(event.getTransactionId());
+                transactionEvents.add(event);
+            }
 
             // ensure some standard fields
             if (event.getCreated() == null)
@@ -252,10 +252,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     public List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container)
     {
-        if (_transactionEventCache.containsKey(transactionAuditId))
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId);
+        if (!transactionEvents.isEmpty())
         {
             List<Integer> ids = new ArrayList<>();
-            _transactionEventCache.get(transactionAuditId).forEach(event -> {
+            transactionEvents.forEach(event -> {
                 if (event instanceof SampleTimelineAuditEvent stEvent)
                     ids.add(stEvent.getSampleId());
             });
@@ -273,9 +274,10 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     {
         List<String> lsids = new ArrayList<>();
         List<Integer> sourceIds = new ArrayList<>();
-        if (_transactionEventCache.containsKey(transactionAuditId))
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId);
+        if (!transactionEvents.isEmpty())
         {
-            _transactionEventCache.get(transactionAuditId).forEach(event -> {
+            transactionEvents.forEach(event -> {
                 if (event instanceof DetailedAuditTypeEvent detailedEvent)
                 {
                     if (detailedEvent.getNewRecordMap() != null)
