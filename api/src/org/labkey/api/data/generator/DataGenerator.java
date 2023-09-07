@@ -323,6 +323,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             return;
         }
         List<String> parentTypes = new ArrayList<>(config.getSampleTypeParents());
+        boolean hasParentTypes = !parentTypes.isEmpty();
         List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
         for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
@@ -334,7 +335,8 @@ public class DataGenerator<T extends DataGenerator.Config>
             _log.info(String.format("Generating %d samples for sample type '%s' took %s.", numGenerated, sampleType.getName(), timer.getDuration()));
 
             numSamples = Math.min(numSamples + sampleIncrement, config.getMaxSamples());
-            parentTypes.add(sampleType.getName());
+            if (!hasParentTypes)
+                parentTypes.add(sampleType.getName());
         }
     }
 
