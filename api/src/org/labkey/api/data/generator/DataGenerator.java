@@ -198,16 +198,16 @@ public class DataGenerator<T extends DataGenerator.Config>
         _config = config;
     }
 
-    public List<? extends ExpSampleType> getSampleTypes()
+    public List<? extends ExpSampleType> getSampleTypes(List<String> sampleTypeNames)
     {
         if (_sampleTypes.isEmpty())
         {
             SampleTypeService service = SampleTypeService.get();
-            if (_config.getSampleTypeNames().isEmpty())
+            if (sampleTypeNames.isEmpty())
                 _sampleTypes.addAll(service.getSampleTypes(getContainer(), getUser(), false));
             else
             {
-                _config.getSampleTypeNames().forEach(typeName -> {
+                sampleTypeNames.forEach(typeName -> {
                     _sampleTypes.add(service.getSampleType(getContainer(), getUser(), typeName));
                 });
             }
@@ -324,7 +324,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
         List<String> parentTypes = new ArrayList<>(config.getSampleTypeParents());
         List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
-        for (ExpSampleType sampleType : getSampleTypes())
+        for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
             _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
             CPUTimer timer = addTimer(String.format("%d '%s' samples", numSamples, sampleType.getName()));
