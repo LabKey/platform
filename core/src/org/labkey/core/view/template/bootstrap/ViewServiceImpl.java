@@ -610,12 +610,12 @@ public class ViewServiceImpl implements ViewService
                 out.print(PageFlowUtil.filter(title));
                 out.print("\"");
             }
-            out.print("><span name=\"" + PageFlowUtil.filter(title) + "\" class=\"labkey-anchor-disabled\">");
+            out.print("><a id=\"" + PageFlowUtil.makeHtmlId(title) + "\" class=\"labkey-anchor-disabled\">");
             if (getConfig()._isCollapsible)
                 renderCollapsiblePortalTitle(out);
             else
                 renderNonCollapsiblePortalTitle(out);
-            out.print("</span></h3>");
+            out.print("</a></h3>");
         }
 
         public void renderWebpartHeaderEnd(PrintWriter out)
