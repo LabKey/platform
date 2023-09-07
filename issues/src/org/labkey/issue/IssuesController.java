@@ -1024,9 +1024,12 @@ public class IssuesController extends SpringActionController
 
             switch (action)
             {
-                case update, resolve, close, reopen -> {
+                case update, resolve, close -> {
                     visible.add("resolution");
                     visible.add("duplicate");
+                }
+                case reopen -> {
+                    visible.add("resolution");
                 }
             }
 
@@ -1044,7 +1047,6 @@ public class IssuesController extends SpringActionController
             {
                 case update, reopen -> {
                     readOnly.add("resolution");
-                    readOnly.add("duplicate");
                 }
                 case close -> {
                     readOnly.add("resolution");
