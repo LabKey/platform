@@ -72,7 +72,7 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
                 _patternRequirement != null ? DOM.LI("Must " + _patternRequirement) : null,
                 DOM.LI(getPersonalInfoRule()),
                 isPreviousPasswordForbidden() ? PREVIOUS_PASSWORD_BULLET : null,
-                isInappropriateForProduction() ? DOM.LI(cl("labkey-error"), "This password strength is not appropriate for production deployments") : null
+                isDeprecated() ? DOM.LI(cl("labkey-error"), "This password strength is not appropriate for production deployments and will be removed shortly.") : null
             )
         ));
     }
@@ -175,7 +175,7 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
 
     protected abstract int getRequiredCharacterTypeCount();
 
-    protected abstract boolean isInappropriateForProduction();
+    protected abstract boolean isDeprecated();
 
     @Override
     @NotNull

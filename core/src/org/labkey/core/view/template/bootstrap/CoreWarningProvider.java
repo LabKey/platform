@@ -192,7 +192,7 @@ public class CoreWarningProvider implements WarningProvider
     private void getPasswordRuleWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (showAllWarnings || (!AppProps.getInstance().isDevMode() && DbLoginManager.getPasswordRule() == PasswordRule.Weak))
-            warnings.add(HtmlString.of("Database authentication is configured with \"Weak\" strength, which is not appropriate for a production deployment."));
+            warnings.add(HtmlString.of("Database authentication is configured with \"Weak\" strength, which is not appropriate for a production deployment. This option will be removed shortly."));
     }
 
     private void getHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)

@@ -85,14 +85,11 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             "`1234567890-=",    // fourth keyboard row
             "~!@#$%^&*()_+",    // fourth keyboard row + shift
             "qwertyuiop[]\\",   // third keyboard row
-            "QWERTYUIOP{}|",    // third keyboard row + shift
             "asdfghjkl;’",      // second keyboard row
-            "ASDFGHJKL:\"",     // second keyboard row + shift
             "zxcvbnm,./",       // first keyboard row
-            "ZXCVBNM<>?",       // first keyboard row + shift
-            "abcdefghijklmnopqrstuvwxyz",
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz"
         )
+            .flatMap(s -> Stream.of(s, new StringBuilder(s).reverse().toString())) // Forward and reverse
             .sorted(Comparator.comparingInt(String::length)) // Shortest to longest
             .map(String::toCharArray)
             .toArray(char[][]::new);
@@ -180,7 +177,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             {
                 for (int i = 0; i < length - 1; i++)
                 {
-                    if (segment[i] == segment[i + 1])
+                    if (equals(segment[i], segment[i + 1]))
                     {
                         if (i > 0)
                             ret.add(Arrays.copyOf(segment, i));
@@ -191,7 +188,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
                         {
                             i++;
                         }
-                        while (i < length && prev == segment[i]);
+                        while (i < length && equals(prev, segment[i]));
 
                         ret.addAll(replaceRepeatedCharacters(List.of(Arrays.copyOfRange(segment, i, length))));
                         continue segments;
@@ -203,6 +200,12 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         }
 
         return ret;
+    }
+
+    // Case-insensitive equals
+    private static boolean equals(char a, char b)
+    {
+        return Character.toLowerCase(a) == Character.toLowerCase(b);
     }
 
     private static List<char[]> remove(List<char[]> segments, char[]... searchSource)
@@ -287,7 +290,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     private static boolean equals(char[] array1, int start1, char[] array2, int start2, int length)
     {
         for (int i = 0; i < length; i++)
-            if (array1[start1 + i] != array2[start2 + i])
+            if (!equals(array1[start1 + i], array2[start2 + i]))
                 return false;
 
         return true;
@@ -296,7 +299,16 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     public static class TestCase extends Assert
     {
         @Test
-        public void testEntropy()
+        public void testEntropyScoring()
+        {
+            assertEquals(42.3, calculateEntropy("incorrect"), 0.01);
+            assertEquals(51.3, calculateEntropy("Incorrect"), 0.01);
+            assertEquals(65.5, calculateEntropy("IncoRRect77"), 0.01);
+            assertEquals(91.76, calculateEntropy("IncoRRect77$%&"), 0.01);
+        }
+
+        @Test
+        public void testFiltering()
         {
             User user = new User();
             user.setEmail("auth@labkey.test");
@@ -304,18 +316,12 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             user.setFirstName("First");
             user.setLastName("Last");
 
-            assertEquals(42.3, calculateEntropy("incorrect"), 0.01);
-            assertEquals(51.3, calculateEntropy("Incorrect"), 0.01);
-            assertEquals(65.5, calculateEntropy("IncoRRect77"), 0.01);
-            assertEquals(91.76, calculateEntropy("IncoRRect77$%&"), 0.01);
-
+            // Personal info
             assertEquals("", filter("auth@labkey.testFirLast", user));
             assertEquals("wxyz", filter("wauth@labkey.testxLasyrstz", user));
             assertEquals("adam", filter("adutham", user));
 
-            assertEquals("bugcatdogratfox", filter("bugcatdogratfoxcatdogfoxratbug", user));
-            assertEquals("bug", filter("bugauth@labkey.testbug", user));
-
+            // Repeated characters
             assertEquals("incorect", filter("incorrect", user));
             assertEquals("abcd", filter("aaabbbcccddd", user));
             assertEquals("ab", filter("aaFirstbb", user));
@@ -324,11 +330,23 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             assertEquals("ax", filter("aaaaax", user));
             assertEquals("xa", filter("xaa", user));
 
+            // Repeated substrings
+            assertEquals("bugcatdogratfox", filter("bugcatdogratfoxcatdogfoxratbug", user));
+            assertEquals("bug", filter("bugauth@labkey.testbug", user));
+
+            // Common sequences
             assertEquals("q", filter("qwerty", user));
+            assertEquals("y", filter("ytrewq", user));
             assertEquals("Q", filter("QWERTYUIOP", user));
             assertEquals("v", filter("vbnm,", user));
             assertEquals("`", filter("`12", user));
             assertEquals("a1x7", filter("abc123xyz789", user));
+            assertEquals("common sequences 123", filter("cbaonmfirstmnolastmon sequences 123423", user)); // forward and reverse
+
+            // Case-insensitive tests
+            assertEquals("wxyz", filter("wAUTH@labkey.testxLASyrsTz", user));
+            assertEquals("bugcatdogratfox", filter("bugcatdogratfoxCATDOGFOXRATBUG", user));
+            assertEquals("abcd", filter("aAaAbBcCcdDD", user));
         }
 
         // Convenience method that works with strings
