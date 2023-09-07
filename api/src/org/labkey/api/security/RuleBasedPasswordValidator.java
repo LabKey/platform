@@ -175,8 +175,6 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
 
     protected abstract int getRequiredCharacterTypeCount();
 
-    protected abstract boolean isDeprecated();
-
     @Override
     @NotNull
     public HtmlString getFullRuleHtml()

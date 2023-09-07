@@ -38,6 +38,12 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         return true;
     }
 
+    @Override
+    public boolean isDeprecated()
+    {
+        return false;
+    }
+
     private static final double BASE2_LOG = Math.log(2);
 
     public static double score(String password, User user)

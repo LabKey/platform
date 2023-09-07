@@ -96,4 +96,9 @@ public enum PasswordRule
 
         return isValidForLogin(password1, user, messages);
     }
+
+    public boolean isDeprecated()
+    {
+        return _validator.isDeprecated();
+    }
 }
