@@ -416,6 +416,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     /* can be used for simple bookkeeping tasks, per row processing belongs in a data iterator */
+    protected void afterInsertUpdate(int count, BatchValidationException errors, boolean isUpdate)
+    {
+        afterInsertUpdate(count, errors);
+    }
+
     protected void afterInsertUpdate(int count, BatchValidationException errors)
     {}
 
@@ -429,7 +434,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         configureDataIteratorContext(context);
         int count = _importRowsUsingDIB(user, container, rows, outputRows, context, extraScriptContext);
-        afterInsertUpdate(count, context.getErrors());
+        afterInsertUpdate(count, context.getErrors(), context.getInsertOption().updateOnly);
         return count;
     }
 
@@ -438,7 +443,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     {
         DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = _importRowsUsingInsertRows(user, container, rows.getDataIterator(context), errors, extraScriptContext);
-        afterInsertUpdate(count, errors);
+        afterInsertUpdate(count, errors, context.getInsertOption().updateOnly);
         return count;
     }
 
@@ -477,7 +482,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         DataIteratorBuilder dib = new DataIteratorBuilder.Wrapper(di);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<>();
         int count = _importRowsUsingDIB(user, container, dib, outputRows, context, extraScriptContext);
-        afterInsertUpdate(count, context.getErrors());
+        afterInsertUpdate(count, context.getErrors(), context.getInsertOption().updateOnly);
 
         if (context.getErrors().hasErrors())
             return null;
@@ -803,7 +808,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
-        afterInsertUpdate(null==result?0:result.size(), errors);
+        afterInsertUpdate(null==result?0:result.size(), errors, true);
 
         if (errors.hasErrors())
             throw errors;
