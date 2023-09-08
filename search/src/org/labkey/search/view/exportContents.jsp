@@ -31,6 +31,5 @@ term count. Body term count is an approximate, relative measure of the size of t
 <p>Use Excel or your favorite tool to sort, filter, and pivot the data. For example, sort by term count to identify the largest
 documents in the index. Or sum body terms by folder path to determine folders contributing the most to index size.</p>
 
-<p>Note: A file format warning message may appear when exporting to Excel; click "Yes" and the data should correctly appear.</p>
 <%=button("Export to Text").href(textURL).build()%>
 <%=button("Export to Excel").href(excelURL).build()%>
