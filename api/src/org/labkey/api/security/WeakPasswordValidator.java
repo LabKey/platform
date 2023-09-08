@@ -51,7 +51,7 @@ public class WeakPasswordValidator extends RuleBasedPasswordValidator
     }
 
     @Override
-    protected boolean isInappropriateForProduction()
+    public boolean isDeprecated()
     {
         return true;
     }

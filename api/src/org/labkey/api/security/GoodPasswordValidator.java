@@ -45,7 +45,7 @@ public class GoodPasswordValidator extends RuleBasedPasswordValidator
     }
 
     @Override
-    protected boolean isInappropriateForProduction()
+    public boolean isDeprecated()
     {
         return false;
     }
