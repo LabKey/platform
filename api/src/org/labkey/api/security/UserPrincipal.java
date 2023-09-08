@@ -97,7 +97,7 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
             throw new IllegalArgumentException("Unrecognized type specified. Must be one of 'u', 'g', 'm', or 's'.");
     }
 
-    public abstract int[] getGroups();
+    public abstract PrincipalArray getGroups();
 
     /**
      * @return the roles that the user is assumed to embody, which may go beyond the basic set of roles that the

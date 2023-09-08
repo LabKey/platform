@@ -1563,7 +1563,7 @@ public class SecurityManager
         {
             int id = recurse.removeFirst();
             groupSet.add(id);
-            int[] groups = GroupMembershipCache.getGroupMemberships(id);
+            int[] groups = GroupMembershipCache.getGroupMemberships(id).getPrincipals();
 
             for (int g : groups)
             {
@@ -1640,9 +1640,8 @@ public class SecurityManager
                 return PROJECT_TO_SITE_ERROR_MESSAGE;
         }
 
-        for (int id : group.getGroups())
-            if (newMember.getUserId() == id)
-                return CIRCULAR_GROUP_ERROR_MESSAGE;
+        if (group.getGroups().contains(newMember.getUserId()))
+            return CIRCULAR_GROUP_ERROR_MESSAGE;
 
         return null;
     }
@@ -1719,7 +1718,7 @@ public class SecurityManager
         Container proj = c.getProject();
         if (null == proj)
             proj = c;
-        int[] groupIds = u.getGroups();
+        int[] groupIds = u.getGroups().getPrincipals();
         List<Group> groupList = new ArrayList<>();
 
         for (int groupId : groupIds)
@@ -1746,7 +1745,7 @@ public class SecurityManager
         if (null == proj || u == null)
             return HtmlString.EMPTY_STRING;
 
-        int[] groupIds = u.getGroups();
+        int[] groupIds = u.getGroups().getPrincipals();
 
         StringBuilder groupList = new StringBuilder();
         String sep = "";
@@ -1778,8 +1777,8 @@ public class SecurityManager
     public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
     {
         Set<P> principals = new LinkedHashSet<>();
-        int[] ids = GroupMembershipCache.getGroupMembers(group);
-        addMembers(principals, ids, memberType);
+        PrincipalArray members = GroupMembershipCache.getGroupMembers(group);
+        addMembers(principals, members, memberType);
 
         return principals;
     }
@@ -1821,10 +1820,10 @@ public class SecurityManager
                 }
                 else
                 {
-                    int[] ids = GroupMembershipCache.getGroupMembers(next);
+                    PrincipalArray pa = GroupMembershipCache.getGroupMembers(next);
                     // Consider: optimize with a single loop
-                    addMembers(members, ids, memberType);
-                    addMembers(pendingGroups, ids, MemberType.GROUPS);
+                    addMembers(members, pa, memberType);
+                    addMembers(pendingGroups, pa, MemberType.GROUPS);
                 }
             }
         }
@@ -1840,6 +1839,11 @@ public class SecurityManager
             if (null != principal)
                 principals.add(principal);
         }
+    }
+
+    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, PrincipalArray members, MemberType<P> memberType)
+    {
+        addMembers(principals, members.getPrincipals(), memberType);
     }
 
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
@@ -3469,7 +3473,7 @@ public class SecurityManager
             UserPrincipal user = new UserPrincipal(testuser.getName(), testuser.getUserId(), testuser.getPrincipalType())
             {
                 @Override
-                public int[] getGroups()
+                public PrincipalArray getGroups()
                 {
                     return testuser.getGroups();
                 }

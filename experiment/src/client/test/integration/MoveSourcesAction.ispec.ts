@@ -48,25 +48,25 @@ beforeAll(async () => {
     subfolder2Options = { containerPath: subfolder2.path };
 
     // create users with different permissions
-    editorUser = await server.createUser('test_editor@expctrltest.com', 'pwSuperA1!');
+    editorUser = await server.createUser('test_editor@expctrltest.com');
     await server.addUserToRole(editorUser.username, PermissionRoles.Editor, PROJECT_NAME);
     await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder1.path);
     await server.addUserToRole(editorUser.username, PermissionRoles.Editor, subfolder2.path);
     editorUserOptions = { requestContext: await server.createRequestContext(editorUser) };
 
-    const subEditorUser = await server.createUser('test_subeditor@expctrltest.com', 'pwSuperA1!');
+    const subEditorUser = await server.createUser('test_subeditor@expctrltest.com');
     await server.addUserToRole(subEditorUser.username, PermissionRoles.Reader, PROJECT_NAME);
     await server.addUserToRole(subEditorUser.username, PermissionRoles.Editor, subfolder1.path);
     await server.addUserToRole(subEditorUser.username, PermissionRoles.Editor, subfolder2.path);
     subEditorUserOptions = { requestContext: await server.createRequestContext(subEditorUser) };
 
-    const authorUser = await server.createUser('test_author@expctrltest.com', 'pwSuperA1!');
+    const authorUser = await server.createUser('test_author@expctrltest.com');
     await server.addUserToRole(authorUser.username, PermissionRoles.Author, PROJECT_NAME);
     await server.addUserToRole(authorUser.username, PermissionRoles.Author, subfolder1.path);
     await server.addUserToRole(authorUser.username, PermissionRoles.Author, subfolder2.path);
     authorUserOptions = { requestContext: await server.createRequestContext(authorUser) };
 
-    const noPermsUser = await server.createUser('test_no_perms@expctrltest.com', 'pwSuperA1!');
+    const noPermsUser = await server.createUser('test_no_perms@expctrltest.com');
     noPermsUserOptions = { requestContext: await server.createRequestContext(noPermsUser) };
 
     // create a source types for use in tests

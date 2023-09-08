@@ -77,14 +77,13 @@ import static org.labkey.query.olap.QubeQuery.OP;
 
 /**
  * Created by matthew on 3/13/14.
- *
  */
 public class BitSetQueryImpl
 {
     private final boolean mondrianCompatibleNullHandling = false;
 
     private static Logger _log = LogManager.getLogger(BitSetQueryImpl.class);
-    private final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+    private final static User olapServiceUser = new LimitedUser(User.guest, Collections.singleton(RoleManager.getRole(ReaderRole.class)));
     static
     {
         olapServiceUser.setPrincipalType(PrincipalType.SERVICE);

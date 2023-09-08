@@ -933,7 +933,7 @@ public class IssueManager
         @Override
         public void run()
         {
-            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            User user = new LimitedUser(UserManager.getGuestUser(), Collections.singleton(RoleManager.getRole(ReaderRole.class)));
             indexIssues(null, user, _task, _ids);
         }
     }

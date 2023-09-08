@@ -25,7 +25,6 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.security.UserManager.UserListener;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashSet;
@@ -34,8 +33,6 @@ import java.util.Set;
 
 /**
  * Caches membership information for groups (their constituent users and child groups).
- * User: adam
- * Date: 10/11/11
  */
 public class GroupMembershipCache
 {
@@ -43,7 +40,7 @@ public class GroupMembershipCache
     private static final String IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX = "ImmMemShip=";
     private static final String GROUP_MEMBERS_PREFIX = "Members=";
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final Cache<String, int[]> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group memberships");
+    private static final Cache<String, PrincipalArray> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group memberships");
 
     static
     {
@@ -52,21 +49,21 @@ public class GroupMembershipCache
     }
 
 
-    private final static CacheLoader<String, int[]> ALL_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
+    private final static CacheLoader<String, PrincipalArray> ALL_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
         UserPrincipal user = (UserPrincipal)argument;
         return computeAllGroups(user);
     };
 
 
-    private final static CacheLoader<String, int[]> IMMEDIATE_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
+    private final static CacheLoader<String, PrincipalArray> IMMEDIATE_GROUP_MEMBERSHIPS_LOADER = (key, argument) -> {
         int groupId = (Integer)argument;
         SqlSelector selector = new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT GroupId FROM " + CORE.getTableInfoMembers() + " WHERE UserId = ?", groupId));
-        Integer[] groupsInt = selector.getArray(Integer.class);
-        return _toIntArray(groupsInt);
+
+        return new PrincipalArray(selector.getCollection(Integer.class));
     };
 
 
-    private final static CacheLoader<String, int[]> GROUP_MEMBERS_LOADER = (key, argument) -> {
+    private final static CacheLoader<String, PrincipalArray> GROUP_MEMBERS_LOADER = (key, argument) -> {
         Group group = (Group)argument;
         Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment(
             "SELECT Members.UserId FROM " + CORE.getTableInfoMembers() + " Members" +
@@ -75,26 +72,26 @@ public class GroupMembershipCache
             // order: Site groups, project groups, users
             " ORDER BY Users.Type, CASE WHEN ( Users.Container IS NULL ) THEN 1 ELSE 2 END, Users.Name", group.getUserId()));
 
-        return _toIntArray(selector.getArray(Integer.class));
+        return new PrincipalArray(selector.getCollection(Integer.class));
     };
 
 
     // Return FLATTENED array of groups to which this principal belongs (recursive)
-    public static int[] getAllGroupMemberships(@NotNull UserPrincipal user)
+    public static PrincipalArray getAllGroupMemberships(@NotNull UserPrincipal user)
     {
         return CACHE.get(ALL_GROUP_MEMBERSHIPS_PREFIX + user.getUserId(), user, ALL_GROUP_MEMBERSHIPS_LOADER);
     }
 
 
     // Return array of groups to which this principal directly belongs (non-recursive)
-    public static int[] getGroupMemberships(int principalId)
+    public static PrincipalArray getGroupMemberships(int principalId)
     {
         return CACHE.get(IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX + principalId, principalId, IMMEDIATE_GROUP_MEMBERSHIPS_LOADER);
     }
 
 
     // Return array of principals that directly belong to this group (non-recursive)
-    static int[] getGroupMembers(Group group)
+    static PrincipalArray getGroupMembers(Group group)
     {
         return CACHE.get(GROUP_MEMBERS_PREFIX + group.getUserId(), group, GROUP_MEMBERS_LOADER);
     }
@@ -140,7 +137,7 @@ public class GroupMembershipCache
     }
 
 
-    private static int[] computeAllGroups(UserPrincipal principal)
+    private static PrincipalArray computeAllGroups(UserPrincipal principal)
     {
         int userId = principal.getUserId();
 
@@ -162,7 +159,7 @@ public class GroupMembershipCache
 
 
     // Return all the principals plus all the groups they belong to (plus all the groups those groups belong to, etc.)
-    public static int[] computeAllGroups(Deque<Integer> principals)
+    public static PrincipalArray computeAllGroups(Deque<Integer> principals)
     {
         HashSet<Integer> groupSet = new HashSet<>();
 
@@ -170,18 +167,16 @@ public class GroupMembershipCache
         {
             int id = principals.removeFirst();
             groupSet.add(id);
-            int[] groups = getGroupMemberships(id);
-
-            for (int g : groups)
-                if (!groupSet.contains(g))
-                    principals.addLast(g);
+            getGroupMemberships(id).stream()
+                .filter(g -> !groupSet.contains(g))
+                .forEach(principals::addLast);
         }
 
         // Site administrators always get developer role as well
         if (groupSet.contains(Group.groupAdministrators))
             groupSet.add(Group.groupDevelopers);
 
-        return _toIntArray(groupSet);
+        return new PrincipalArray(groupSet);
     }
 
 
@@ -199,7 +194,6 @@ public class GroupMembershipCache
         public void userAccountDisabled(User user)
         {
             uncache(user);
-
         }
 
         @Override

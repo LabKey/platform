@@ -73,7 +73,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     private Integer _createdBy;
     private Date _created;
     private String _displayName = null;
-    protected int[] _groups = null;
+    protected PrincipalArray _groups = null;
     private Date _lastLogin = null;
     private Date _lastActivity = null;
     private boolean _active = false;
@@ -93,7 +93,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public static final User guest = new GuestUser("guest", "guest");
 
     // 'nobody' is a guest user who cannot be assigned permissions
-    public static final User nobody = new LimitedUser(guest, new int[0], Collections.emptySet(), false)
+    public static final User nobody = new LimitedUser(guest, Collections.emptySet())
     {
         @Override
         public boolean isGuest()
@@ -118,7 +118,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     {
         AdminServiceUser()
         {
-            super(new User("@serviceUserAdmin", User.guest.getUserId()), new int[0], Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), true);
+            super(new User("@serviceUserAdmin", User.guest.getUserId()), PrincipalArray.getEmptyPrincipalArray(), Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), true);
             setPrincipalType(PrincipalType.SERVICE);
         }
 
@@ -240,7 +240,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
 
     @Override
-    public int[] getGroups()
+    public PrincipalArray getGroups()
     {
         if (_groups == null)
             _groups = _impersonationContext.getGroups(this);
@@ -418,8 +418,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     @Override
     public boolean isInGroup(int group)
     {
-        int i = Arrays.binarySearch(getGroups(), group);
-        return i >= 0;
+        return getGroups().contains(group);
     }
 
     @Override
@@ -529,7 +528,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     {
         if (search == null)
         {
-            search = new LimitedUser(new GuestUser("@search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            search = new LimitedUser(new GuestUser("@search"), Collections.singleton(RoleManager.getRole(ReaderRole.class)));
             search.setPrincipalType(PrincipalType.SERVICE);
         }
         return search;

@@ -16,18 +16,20 @@
 
 package org.labkey.api.security;
 
+import java.util.List;
+
 /**
  * A special kind of user, representing anonymous access.
  * That is, users who have not authenticated with an account.
  */
 class GuestUser extends User
 {
-    private static final int[] _guestGroups = new int[]{Group.groupGuests};
+    private static final PrincipalArray GUEST_GROUPS = new PrincipalArray(List.of(Group.groupGuests));
 
     GuestUser(String name, String displayName)
     {
         super(name, 0);
-        _groups = _guestGroups;
+        _groups = GUEST_GROUPS;
         setDisplayName(displayName);
     }
 

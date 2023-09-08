@@ -15,7 +15,6 @@
  */
 package org.labkey.api.security;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -26,7 +25,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -106,7 +104,7 @@ public class NestedGroupsTest extends Assert
         // Grab the first group (if there is one) in the home project
         Container home = ContainerManager.getHomeContainer();
         List<Group> homeGroups = SecurityManager.getGroups(home, false);
-        @Nullable Group homeGroup = homeGroups.size() > 0 ? homeGroups.get(0) : null;
+        @Nullable Group homeGroup = !homeGroups.isEmpty() ? homeGroups.get(0) : null;
 
         final Group all = create(ALL);
         Group divA = create(DIV_A);
@@ -124,11 +122,11 @@ public class NestedGroupsTest extends Assert
 
         addMember(projectX, user);
         addMember(projectX, _testUser);
-        int[] groups = GroupMembershipCache.getGroupMemberships(user.getUserId());
+        PrincipalArray groups = GroupMembershipCache.getGroupMemberships(user.getUserId());
         expected(groups, projectX);
         notExpected(groups, user, all, divB, divC, testers, writers, siteGroup1, coders, divA);
 
-        int[] allGroups = GroupManager.getAllGroupsForPrincipal(user);
+        PrincipalArray allGroups = GroupManager.getAllGroupsForPrincipal(user);
         expected(allGroups, projectX, user);
         notExpected(allGroups, divB, divC, testers, writers, siteGroup1, coders, divA, all);
 
@@ -328,12 +326,12 @@ public class NestedGroupsTest extends Assert
         return null != group ? SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS) : Collections.emptySet();
     }
 
-    private void expected(int[] actualIds, UserPrincipal... expectedMembers)
+    private void expected(PrincipalArray actualIds, UserPrincipal... expectedMembers)
     {
         validate(true, actualIds, expectedMembers);
     }
 
-    private void notExpected(int[] actualIds, UserPrincipal... testMembers)
+    private void notExpected(PrincipalArray actualIds, UserPrincipal... testMembers)
     {
         validate(false, actualIds, testMembers);
     }
@@ -348,21 +346,14 @@ public class NestedGroupsTest extends Assert
         validate(false, group, expectedMembers);
     }
 
-    private void validate(boolean expected, int[] actualIds, UserPrincipal... testMembers)
-    {
-        Set<Integer> actual = new HashSet<>(Arrays.asList(ArrayUtils.toObject(actualIds)));
-
-        validate(expected, actual, testMembers);
-    }
-
-    private void validate(boolean expected, Set<Integer> actual, UserPrincipal... testMembers)
+    private void validate(boolean expected, PrincipalArray actualIds, UserPrincipal... testMembers)
     {
         for (UserPrincipal member : testMembers)
         {
             if (expected)
-                assertTrue("Expected member \"" + member.getName() + "\" (" + member.getUserId() + ") not present in " + actual, actual.contains(member.getUserId()));
+                assertTrue("Expected member \"" + member.getName() + "\" (" + member.getUserId() + ") not present in " + actualIds, actualIds.contains(member.getUserId()));
             else
-                assertFalse("Member \"" + member.getName() + "\" (" + member.getUserId() + ") was found but was not expected in " + actual, actual.contains(member.getUserId()));
+                assertFalse("Member \"" + member.getName() + "\" (" + member.getUserId() + ") was found but was not expected in " + actualIds, actualIds.contains(member.getUserId()));
         }
     }
 
@@ -373,7 +364,7 @@ public class NestedGroupsTest extends Assert
         for (UserPrincipal userPrincipal : getMembers(group))
             set.add(userPrincipal.getUserId());
 
-        validate(expected, set, members);
+        validate(expected, new PrincipalArray(set), members);
     }
 
     private static void validateGroupMembers(Group group, int allUsers, int activeUsers, int groups, int allRecursiveUsers, int activeRecursiveUsers, int recursiveGroups)
