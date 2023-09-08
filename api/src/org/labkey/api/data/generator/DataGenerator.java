@@ -480,7 +480,6 @@ public class DataGenerator<T extends DataGenerator.Config>
             if (errors.hasErrors())
                 throw errors;
         }
-//        _log.info(String.format("... %d (generation %d)", (numGenerated + generatedCount), generation));
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
