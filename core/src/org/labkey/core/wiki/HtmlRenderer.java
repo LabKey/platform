@@ -168,16 +168,17 @@ public class HtmlRenderer implements WikiRenderer
             }
         }
 
+        /* Add nonce attribute to <script> tags in the page.
+         * We don't require the <%=scriptNonce%> syntax (as with module html view), because we're already parsing the page.
+         * ModuleHtmlView does not parse the page and does a raw regexp substitution.
+         */
         nl = doc.getElementsByTagName("script");
         for (int i = 0, length = nl.getLength(); i < length; i++)
         {
             Element script = (Element)nl.item(i);
-            if (Pattern.matches("<%=\\s*scriptNonce\\s*%>", script.getAttribute("nonce")))
-            {
-                script.setAttribute("nonce", HttpView.currentPageConfig().getScriptNonce().toString());
-                volatilePage = true;
-                /* NOTE marking the page as volatile is a little heavy-handed.  We could add a "post-render" step, or detect that there is not CSP */
-            }
+            script.setAttribute("nonce", HttpView.currentPageConfig().getScriptNonce().toString());
+            volatilePage = true;
+            /* NOTE marking the page as volatile is a little heavy-handed.  We could add a "post-render" step, or detect that there is not CSP */
         }
 
         // back to html
