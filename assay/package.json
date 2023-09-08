@@ -12,7 +12,7 @@
     "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.358.2-fb-test-stability.0"
+    "@labkey/components": "2.365.3-fb-plate-editing.1"
   },
   "devDependencies": {
     "@labkey/build": "6.12.0",
