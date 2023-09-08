@@ -7,6 +7,7 @@ public class DataGeneratorRegistry
 {
     public enum DataType {
         AssayDesigns,
+        AssayRunData,
         StorageHierarchy,
         SamplesInStorage,
         WorkflowJobs,

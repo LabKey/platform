@@ -1,11 +1,13 @@
 package org.labkey.api.data.generator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -46,9 +48,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +63,8 @@ import java.util.stream.Collectors;
 
 public class DataGenerator<T extends DataGenerator.Config>
 {
+    private static final String SEARCH_FIELD_NAME = "Search";
+    private static final String USED_FIELD_NAME = "Used";
     private static final List<String> UNITS = List.of("g", "mg", "uL", "mL", "unit");
     private static final List<String> LABEL_COLORS = new ArrayList<>();
     static {
@@ -95,10 +101,12 @@ public class DataGenerator<T extends DataGenerator.Config>
     protected List<ExpSampleType> _sampleTypes = new ArrayList<>();
 
     protected Map<Integer, Long> _sampleTypeCounts = new HashMap<>();
+    protected Map<Integer, Long> _dataClassCounts = new HashMap<>();
 
     public record NamingPatternData(String prefix, Long startGenId) {};
 
     // Map from type name to a pair of name prefix and suffix (genId) start value
+    // TODO perhaps not needed anymore since we can select somewhat randomly from existing samples?
     protected final Map<String, NamingPatternData> _nameData = new HashMap<>();
 
     protected List<ExpDataClass> _customDataClasses = new ArrayList<>();
@@ -190,8 +198,20 @@ public class DataGenerator<T extends DataGenerator.Config>
         _config = config;
     }
 
-    public List<? extends ExpSampleType> getSampleTypes()
+    public List<? extends ExpSampleType> getSampleTypes(List<String> sampleTypeNames)
     {
+        if (_sampleTypes.isEmpty())
+        {
+            SampleTypeService service = SampleTypeService.get();
+            if (sampleTypeNames.isEmpty())
+                _sampleTypes.addAll(service.getSampleTypes(getContainer(), getUser(), false));
+            else
+            {
+                sampleTypeNames.forEach(typeName -> {
+                    _sampleTypes.add(service.getSampleType(getContainer(), getUser(), typeName));
+                });
+            }
+        }
         return _sampleTypes;
     }
 
@@ -280,16 +300,18 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("Name", "string"));
+        props.add(new GWTPropertyDescriptor(SEARCH_FIELD_NAME, "string"));
+        props.add(new GWTPropertyDescriptor(USED_FIELD_NAME, "boolean"));
         addDomainProperties(props, numFields);
 
         SampleTypeService service = SampleTypeService.get();
-        _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields));
+        _log.info(String.format("Creating Sample Type '%s' with %d fields", sampleTypeName, numFields+2));
         return service.createSampleType(_container, _user, sampleTypeName,
                 "Generated sample type", props, List.of(), -1, -1, -1, -1, namingPattern, null, null, null,
                 randomIndex(LABEL_COLORS), randomIndex(UNITS));
     }
 
-    public void generateSamplesForAllTypes(List<String> dataClassParents) throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
+    public void generateSamplesForAllTypes() throws SQLException, BatchValidationException, QueryUpdateServiceException, DuplicateKeyException
     {
         DataGenerator.Config config = getConfig();
 
@@ -300,8 +322,10 @@ public class DataGenerator<T extends DataGenerator.Config>
             _log.info(String.format("No samples generated because %s=%d and %s=%d", Config.MIN_SAMPLES, numSamples, Config.MAX_SAMPLES, config.getMaxSamples()));
             return;
         }
-        List<String> parentTypes = new ArrayList<>();
-        for (ExpSampleType sampleType : _sampleTypes)
+        List<String> parentTypes = new ArrayList<>(config.getSampleTypeParents());
+        boolean hasParentTypes = !parentTypes.isEmpty();
+        List<String> dataClassParents = new ArrayList<>(config.getDataClassParents());
+        for (ExpSampleType sampleType : getSampleTypes(_config.getSampleTypeNames()))
         {
             _log.info(String.format("Generating %d samples for sample type '%s'.", numSamples, sampleType.getName()));
             CPUTimer timer = addTimer(String.format("%d '%s' samples", numSamples, sampleType.getName()));
@@ -311,7 +335,8 @@ public class DataGenerator<T extends DataGenerator.Config>
             _log.info(String.format("Generating %d samples for sample type '%s' took %s.", numGenerated, sampleType.getName(), timer.getDuration()));
 
             numSamples = Math.min(numSamples + sampleIncrement, config.getMaxSamples());
-            parentTypes.add(sampleType.getName());
+            if (!hasParentTypes)
+                parentTypes.add(sampleType.getName());
         }
     }
 
@@ -332,10 +357,25 @@ public class DataGenerator<T extends DataGenerator.Config>
         {
             _log.info(String.format("Generating %d samples derived from data class objects.", numDerivedFromDataClass));
 
-            int numPerParentType = numDerivedFromDataClass / dataClassParentTypes.size();
+            int numPerParentGroup = numDerivedFromDataClass / dataClassParentTypes.size();
+            int numTypesPer = randomInt(_config.getMinDataClassParentTypesPerSample(), Math.min(_config.getMaxDataClassParentTypesPerSample(), dataClassParentTypes.size()));
             for (String parentType : dataClassParentTypes)
             {
-                numGenerated += generateDerivedSamples(sampleType, parentType, true, numPerParentType, _container);
+                Set<String> sampleParentTypes = new HashSet<>();
+                sampleParentTypes.add(parentType);
+                int iterationCount = 0;
+                if (numTypesPer == dataClassParentTypes.size())
+                    sampleParentTypes.addAll(dataClassParentTypes);
+                else
+                {
+                    while (sampleParentTypes.size() < numTypesPer && iterationCount < dataClassParentTypes.size() * 2)
+                    {
+                        sampleParentTypes.add(randomIndex(dataClassParentTypes));
+                        iterationCount++;
+                    }
+                }
+
+                numGenerated += generateDerivedSamples(sampleType, sampleParentTypes, true, numPerParentGroup, _container);
             }
         }
 
@@ -348,7 +388,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             int numPerParentType = numDerivedFromSamples / sampleTypeParents.size();
             for (String parentType : sampleTypeParents)
             {
-                numGenerated += generateDerivedSamples(sampleType, parentType, false, numPerParentType, _container);
+                numGenerated += generateDerivedSamples(sampleType, Set.of(parentType), false, numPerParentType, _container);
             }
         }
         // TODO create some % of the pooled samples
@@ -362,7 +402,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     {
         if (_config.getMaxAliquotsPerParent() <= 0)
         {
-            _log.info(String.format("Generating no aliquots because maxAliquotsPerParent is %d", _config.getMaxAliquotsPerParent()));
+            _log.info(String.format("Generating no aliquots because %s is %d", Config.MAX_ALIQUOTS_PER_SAMPLE, _config.getMaxAliquotsPerParent()));
             return 0;
         }
 
@@ -387,6 +427,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             List<Map<String, Object>> parents = getRandomSamples(sampleType, Math.min(10, Math.max(quantity, quantity / 100)));
             numGenerated = generateAliquotsForParents(parents, svc, quantity - totalAliquots, 0, 1, randomInt(1, _config.getMaxGenerations()), sampleStatuses);
             totalAliquots += numGenerated;
+            _log.info("... " + totalAliquots);
             iterations++;
         }
         while (totalAliquots < quantity && numGenerated > 0);
@@ -439,7 +480,7 @@ public class DataGenerator<T extends DataGenerator.Config>
             if (errors.hasErrors())
                 throw errors;
         }
-        _log.info(String.format("... %d (generation %d)", (numGenerated + generatedCount), generation));
+        _log.info(String.format("...... %d (generation %d)", (numGenerated + generatedCount), generation));
         // for some of the aliquots, possibly generate further aliquot generations
         if (generatedCount < quantity && generation < maxGenerations)
         {
@@ -448,32 +489,93 @@ public class DataGenerator<T extends DataGenerator.Config>
         return generatedCount;
     }
 
-    public List<Integer> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)
+    public List<Integer> selectExistingSampleIds(int limit, long totalSampleCount, ContainerFilter containerFilter)
+    {
+        if (limit <= 0)
+            return Collections.emptyList();
+
+        TableInfo tableInfo = ExpSchema.TableType.Materials.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Materials.toString(), containerFilter);
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId", limit, totalSampleCount);
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    public List<Integer> selectExistingSamplesIds(ExpSampleType sampleType, int limit, long totalSampleCount, ContainerFilter containerFilter)
+    {
+        if (limit <= 0)
+            return Collections.emptyList();
+
+        TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName(), containerFilter);
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId", limit, totalSampleCount);
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private SQLFragment limitFromOffsetSqlFrag(TableInfo tableInfo, String columns, int limit, long totalCount)
+    {
+        if (limit <= 0)
+            return null;
+
+        SQLFragment sql = new SQLFragment("SELECT " + columns + " FROM ")
+                .append(tableInfo, "dc")
+                .append(" LIMIT ")
+                .appendValue(limit);
+        if (totalCount > limit)
+            sql.append(" OFFSET ")
+                    .appendValue(randomLong(0, totalCount-limit));
+        return sql;
+    }
+
+    public List<Map<String, Object>> selectExistingSamples(ExpSampleType sampleType, int limit, long totalSampleCount)
     {
         if (limit <= 0)
             return Collections.emptyList();
 
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
-        SQLFragment sql = new SQLFragment("SELECT RowId FROM ")
-                .append(tableInfo)
-                .append(" LIMIT ")
-                .appendValue(limit);
-        if (totalSampleCount > limit)
-            sql.append(" OFFSET ")
-                .appendValue(randomLong(0, totalSampleCount-limit));
-        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+        if (tableInfo == null)
+        {
+            _log.warn("Sample type '" + sampleType.getName() + "' not found.");
+            return Collections.emptyList();
+        }
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId, Name", limit, totalSampleCount);
+        return Arrays.stream(new SqlSelector(tableInfo.getSchema(), sql).getMapArray()).toList();
+    }
+
+    public List<Map<String, Object>> selectExistingDataClassObjects(ExpDataClass dataClass, int limit, long totalSampleCount)
+    {
+        if (limit <= 0)
+            return Collections.emptyList();
+
+        TableInfo tableInfo = getDataClassSchema().getTable(dataClass.getName());
+        if (tableInfo == null)
+        {
+            _log.warn("Data class '" + dataClass.getName() + "' not found.");
+            return Collections.emptyList();
+        }
+        SQLFragment sql = limitFromOffsetSqlFrag(tableInfo, "RowId, Name", limit, totalSampleCount);
+        return Arrays.stream(new SqlSelector(tableInfo.getSchema(), sql).getMapArray()).toList();
     }
 
     private List<Map<String, Object>> getRandomSamples(ExpSampleType sampleType, int quantity)
     {
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
-        return getRowsByRandomNames(tableInfo, _nameData.get(sampleType.getName()), sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
+        if (_nameData.containsKey(sampleType.getName()))
+            return getRowsByRandomNames(tableInfo, _nameData.get(sampleType.getName()), sampleType.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
+        else
+        {
+            _sampleTypeCounts.computeIfAbsent(sampleType.getRowId(), t -> sampleType.getSamplesCount(getContainer(), null));
+            return selectExistingSamples(sampleType, quantity, _sampleTypeCounts.get(sampleType.getRowId()));
+        }
     }
 
     private List<Map<String, Object>> getRandomDataClassObjects(ExpDataClass dataClass, int quantity)
     {
         TableInfo tableInfo = getDataClassSchema().getTable(dataClass.getName());
-        return getRowsByRandomNames(tableInfo, _nameData.get(dataClass.getName()), dataClass.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
+        if (_nameData.containsKey(dataClass.getName()))
+            return getRowsByRandomNames(tableInfo, _nameData.get(dataClass.getName()), dataClass.getCurrentGenId(), quantity, Set.of("Name", "RowId"));
+        else
+        {
+            _dataClassCounts.computeIfAbsent(dataClass.getRowId(), t -> dataClass.getDataCount(getContainer(), null));
+            return selectExistingDataClassObjects(dataClass, quantity, _dataClassCounts.get(dataClass.getRowId()));
+        }
     }
 
     protected List<Map<String, Object>> getRowsByRandomNames(TableInfo tableInfo, NamingPatternData namingData, long endIndex, int quantity, Set<String> columns)
@@ -560,7 +662,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         return generateDomainData(numObjects, svc, dataClass.getDomain(), _container);
     }
 
-    public int generateDerivedSamples(ExpSampleType sampleType, String parentQueryName, boolean isDataClass, int quantity, Container container) throws SQLException, BatchValidationException
+    public int generateDerivedSamples(ExpSampleType sampleType, Collection<String> parentQueryNames, boolean isDataClass, int quantity, Container container) throws SQLException, BatchValidationException
     {
         if (_config.getMaxChildrenPerParent() <= 0)
         {
@@ -569,19 +671,28 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
 
         String parentInput;
-        ExpObject parentObject;
+        List<ExpObject> parentObjects = new ArrayList<>();
         if (isDataClass)
         {
             parentInput = "DataInputs";
-            parentObject = ExperimentService.get().getDataClass(_container, _user, parentQueryName);
+            parentQueryNames.forEach(parentQueryName -> {
+                ExpObject parentObject = ExperimentService.get().getDataClass(_container, _user, parentQueryName);
+                if (parentObject != null)
+                    parentObjects.add(parentObject);
+            });
         }
         else
         {
             parentInput = "MaterialInputs";
-            parentObject = SampleTypeService.get().getSampleType(_container, _user, parentQueryName);
+            parentQueryNames.forEach(parentQueryName -> {
+                ExpObject parentObject = SampleTypeService.get().getSampleType(_container, _user, parentQueryName);
+                if (parentObject != null)
+                    parentObjects.add(parentObject);
+            });
+
         }
-        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryName));
-        CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryName));
+        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' ...", quantity, sampleType.getName(), parentInput, parentQueryNames));
+        CPUTimer timer = addTimer(String.format("%d '%s/%s' derived samples", quantity, parentInput, parentQueryNames));
         timer.start();
         BatchValidationException errors = new BatchValidationException();
         TableInfo tableInfo = getSamplesSchema().getTable(sampleType.getName());
@@ -593,19 +704,30 @@ public class DataGenerator<T extends DataGenerator.Config>
         {
             int numRows = Math.min(batchSize, quantity - totalImported);
             List<Map<String, Object>> rows = createRows(numRows, sampleType.getDomain());
-            // choose a random set of object names from the parent type
-            List<Map<String, Object>> parents = isDataClass ?
-                    getRandomDataClassObjects((ExpDataClass) parentObject, batchSize) :
-                    getRandomSamples((ExpSampleType) parentObject, batchSize);
+            Map<String, List<Map<String, Object>>> parentLists = new HashMap<>();
+            int minParentsSize = -1;
+            for (ExpObject parentObject : parentObjects)
+            {
+                // choose a random set of object names from the parent type
+                List<Map<String, Object>> parents = isDataClass ?
+                        getRandomDataClassObjects((ExpDataClass) parentObject, batchSize) :
+                        getRandomSamples((ExpSampleType) parentObject, batchSize);
+                parentLists.put(parentObject.getName(), parents);
+                if (minParentsSize < 0 || parents.size() < minParentsSize)
+                    minParentsSize = parents.size();
+            }
+
             int rowNum = 0;
             int p = 0;
-            while (rowNum < rows.size() && p < parents.size())
+            while (rowNum < rows.size() && p < minParentsSize)
             {
                 // choose a random number of derivatives for the current parent
                 int numDerivatives = randomInt(1, _config.getMaxChildrenPerParent());
                 for (int i = 0; i < numDerivatives && rowNum < rows.size(); i++)
                 {
-                    rows.get(rowNum).put(parentInput + "/" + parentQueryName, parents.get(p).get("name"));
+                    Map<String, Object> row = rows.get(rowNum);
+                    for (Map.Entry<String, List<Map<String, Object>>> parentEntry : parentLists.entrySet())
+                        row.put(parentInput + "/" + parentEntry.getKey(), parentEntry.getValue().get(p).get("name"));
                     rowNum++;
                 }
                 p++;
@@ -618,7 +740,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
         timer.stop();
 
-        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryName, timer.getDuration()));
+        _log.info(String.format("Generating %d '%s' samples derived from '%s/%s' took %s.", quantity, sampleType.getName(), parentInput, parentQueryNames, timer.getDuration()));
         return totalImported;
     }
 
@@ -672,7 +794,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         }
     }
 
-    private List<Map<String, Object>> createRows(int numRows, Domain domain)
+    protected List<Map<String, Object>> createRows(int numRows, Domain domain)
     {
         List<Map<String, Object>> rows = new ArrayList<>();
         for (int i = 1; i <= numRows; i++)
@@ -750,6 +872,11 @@ public class DataGenerator<T extends DataGenerator.Config>
         public static final String MAX_GENERATIONS = "maxGenerations";
         public static final String MIN_NUM_FIELDS = "minFields";
         public static final String MAX_NUM_FIELDS = "maxFields";
+        public static final String SAMPLE_TYPE_NAMES = "sampleTypeNames";
+        public static final String DATA_CLASS_PARENTS = "dataClassParents";
+        public static final String SAMPLE_TYPE_PARENTS = "sampleTypeParents";
+        public static final String MIN_DATA_CLASS_PARENT_TYPES_PER_SAMPLE = "minDataClassParentTypesPerSample";
+        public static final String MAX_DATA_CLASS_PARENT_TYPES_PER_SAMPLE = "maxDataClassParentTypesPerSample";
 
         int _numFolders;
         int _numSampleTypes;
@@ -765,6 +892,21 @@ public class DataGenerator<T extends DataGenerator.Config>
         int _maxChildrenPerParent;
         int _minFields;
         int _maxFields;
+        List<String> _sampleTypeNames;
+        List<String> _dataClassParents;
+        List<String> _sampleTypeParents;
+        int _minDataClassParentTypesPerSample;
+        int _maxDataClassParentTypesPerSample;
+
+        public List<String> getSampleTypeNames()
+        {
+            return _sampleTypeNames;
+        }
+
+        public void setSampleTypeNames(List<String> sampleTypeNames)
+        {
+            _sampleTypeNames = sampleTypeNames;
+        }
 
         public Config(Properties properties)
         {
@@ -785,6 +927,22 @@ public class DataGenerator<T extends DataGenerator.Config>
             _minFields = Integer.parseInt(properties.getProperty(MIN_NUM_FIELDS, "1"));
             _maxFields = Math.max(Integer.parseInt(properties.getProperty(MAX_NUM_FIELDS, "1")), _minFields);
 
+            _sampleTypeNames = parseNameList(properties, SAMPLE_TYPE_NAMES);
+            _dataClassParents = parseNameList(properties, DATA_CLASS_PARENTS);
+            _sampleTypeParents = parseNameList(properties, SAMPLE_TYPE_PARENTS);
+            _minDataClassParentTypesPerSample = Integer.parseInt(properties.getProperty(MIN_DATA_CLASS_PARENT_TYPES_PER_SAMPLE, "0"));
+            _maxDataClassParentTypesPerSample = Integer.parseInt(properties.getProperty(MAX_DATA_CLASS_PARENT_TYPES_PER_SAMPLE, "1"));
+
+        }
+
+        protected List<String> parseNameList(Properties properties, String propertyName)
+        {
+            String parentConfigProp = properties.getProperty(propertyName);
+            if (!StringUtils.isEmpty(parentConfigProp))
+            {
+                return Arrays.stream(parentConfigProp.split(";")).toList();
+            }
+            return Collections.emptyList();
         }
 
         public int getNumFolders()
@@ -925,6 +1083,46 @@ public class DataGenerator<T extends DataGenerator.Config>
         public void setMaxFields(int maxFields)
         {
             _maxFields = maxFields;
+        }
+
+        public List<String> getDataClassParents()
+        {
+            return _dataClassParents;
+        }
+
+        public void setDataClassParents(List<String> dataClassParents)
+        {
+            _dataClassParents = dataClassParents;
+        }
+
+        public List<String> getSampleTypeParents()
+        {
+            return _sampleTypeParents;
+        }
+
+        public void setSampleTypeParents(List<String> sampleTypeParents)
+        {
+            _sampleTypeParents = sampleTypeParents;
+        }
+
+        public int getMinDataClassParentTypesPerSample()
+        {
+            return _minDataClassParentTypesPerSample;
+        }
+
+        public void setMinDataClassParentTypesPerSample(int minDataClassParentTypesPerSample)
+        {
+            _minDataClassParentTypesPerSample = minDataClassParentTypesPerSample;
+        }
+
+        public int getMaxDataClassParentTypesPerSample()
+        {
+            return _maxDataClassParentTypesPerSample;
+        }
+
+        public void setMaxDataClassParentTypesPerSample(int maxDataClassParentTypesPerSample)
+        {
+            _maxDataClassParentTypesPerSample = maxDataClassParentTypesPerSample;
         }
     }
 
