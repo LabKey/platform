@@ -126,10 +126,10 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     private static List<char[]> removePersonalInformation(List<char[]> segments, User user)
     {
         return remove(segments,
-            user.getEmail().toCharArray(),
-            user.getFriendlyName().toCharArray(),
-            StringUtils.trimToEmpty(user.getFirstName()).toCharArray(),
-            StringUtils.trimToEmpty(user.getLastName()).toCharArray());
+            user.getEmail(),
+            user.getFriendlyName(),
+            user.getFirstName(),
+            user.getLastName());
     }
 
     private static List<char[]> removeDuplicateSubstringsWithinEachSegment(List<char[]> segments)
@@ -214,11 +214,13 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         return Character.toLowerCase(a) == Character.toLowerCase(b);
     }
 
-    private static List<char[]> remove(List<char[]> segments, char[]... searchSource)
+    private static List<char[]> remove(List<char[]> segments, @Nullable String... searchSource)
     {
-        for (char[] searchSeq : searchSource)
+        for (String searchSeq : searchSource)
         {
-            segments = remove(segments, searchSeq);
+            searchSeq = StringUtils.trimToNull(searchSeq);
+            if (null != searchSeq)
+                segments = remove(segments, searchSeq.toCharArray());
         }
 
         return segments;
@@ -323,6 +325,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             user.setLastName("Last");
 
             // Personal info
+            assertEquals("testing nul personal info", filter("testing null personal info", new User()));
             assertEquals("", filter("auth@labkey.testFirLast", user));
             assertEquals("wxyz", filter("wauth@labkey.testxLasyrstz", user));
             assertEquals("adam", filter("adutham", user));
