@@ -1368,7 +1368,7 @@ public class PlateManager implements PlateService
                 .stream()
                 .map(PlateCustomField::new)
                 .sorted(Comparator.comparing(PlateCustomField::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public @NotNull List<PlateCustomField> addFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws SQLException
