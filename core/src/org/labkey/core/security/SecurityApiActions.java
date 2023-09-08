@@ -210,10 +210,8 @@ public class SecurityApiActions
 
                 if (container.hasPermission(getUser(), AdminPermission.class))
                 {
-                    int[] parentGroupIds = group.getGroups();
                     List<Map<String, Object>> parentGroupInfos = new ArrayList<>();
-                    for (int parentGroupId : parentGroupIds)
-                    {
+                    group.getGroups().stream().forEach(parentGroupId -> {
                         Group parentGroup = SecurityManager.getGroup(parentGroupId);
                         if (parentGroup != null && parentGroup.getUserId() != group.getUserId())
                         {
@@ -224,7 +222,7 @@ public class SecurityApiActions
                             groupInfo.put("isSystemGroup", parentGroup.isSystemGroup());
                             parentGroupInfos.add(groupInfo);
                         }
-                    }
+                    });
                     groupPerms.put("groups", parentGroupInfos);
                 }
 

@@ -15,13 +15,15 @@
  */
 package org.labkey.api.security.impersonation;
 
-/**
- * A "not impersonating" context that disallows all global roles (i.e., Site Admin and Developer)
- * Created by adam on 10/30/2015.
+/*
+  A "not impersonating" context that disallows global roles (i.e., Site Admin and Developer)
  */
-import org.apache.commons.lang3.ArrayUtils;
+
 import org.labkey.api.security.Group;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.User;
+
+import java.util.Set;
 
 public class DisallowGlobalRolesContext extends NotImpersonatingContext
 {
@@ -48,10 +50,13 @@ public class DisallowGlobalRolesContext extends NotImpersonatingContext
         return "DisallowGlobalRoles";
     }
 
+    private static final Set<Integer> FORBIDDEN_ROLES = Set.of(Group.groupAdministrators, Group.groupDevelopers);
+
     @Override
-    public int[] getGroups(User user)
+    public PrincipalArray getGroups(User user)
     {
-        int[] groups = super.getGroups(user);
-        return ArrayUtils.removeElements(groups, Group.groupAdministrators, Group.groupDevelopers);
+        return new PrincipalArray(super.getGroups(user).stream()
+            .filter(id -> !FORBIDDEN_ROLES.contains(id))
+            .toList());
     }
 }

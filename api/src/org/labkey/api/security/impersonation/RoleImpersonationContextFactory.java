@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
@@ -253,9 +254,9 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public int[] getGroups(User user)
+        public PrincipalArray getGroups(User user)
         {
-            return new int[0];
+            return PrincipalArray.getEmptyPrincipalArray();
         }
 
         // TODO: More expensive than it needs to be... should actually hold onto a Set<Roles> and use custom serialization (using unique names)

@@ -239,7 +239,7 @@ public class LinkedSchema extends ExternalSchema
     @NotNull
     public Map<String, QueryDefinition> getQueryDefs(@Nullable String nameFilter)
     {
-        if (_availableQueries.size() == 0)
+        if (_availableQueries.isEmpty())
             return super.getQueryDefs();
 
         if (nameFilter == null && _resolvedAllQueries)
@@ -588,13 +588,11 @@ public class LinkedSchema extends ExternalSchema
 
     private static class LinkedSchemaUserWrapper extends LimitedUser
     {
-        private static final int[] NO_GROUPS = new int[0];
-
         private final Set<String> _allowedPolicyResourceIds = new HashSet<>();
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer, String sourceSchemaName)
         {
-            super(realUser, NO_GROUPS, getContextualRoleForTargetSchema(sourceSchemaName), false);
+            super(realUser, getContextualRoleForTargetSchema(sourceSchemaName));
 
             // Current container policy and (if it exists) current study policy are the only policies that get
             // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
