@@ -23,6 +23,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.JSoupUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
@@ -164,6 +165,18 @@ public class HtmlRenderer implements WikiRenderer
             {
                 img.setAttribute("src", _attachPrefix + PageFlowUtil.encode(at.getName()));
                 wikiDependencies.add(at.getName());
+            }
+        }
+
+        nl = doc.getElementsByTagName("script");
+        for (int i = 0, length = nl.getLength(); i < length; i++)
+        {
+            Element script = (Element)nl.item(i);
+            if (Pattern.matches("<%=\\s*scriptNonce\\s*%>", script.getAttribute("nonce")))
+            {
+                script.setAttribute("nonce", HttpView.currentPageConfig().getScriptNonce().toString());
+                volatilePage = true;
+                /* NOTE marking the page as volatile is a little heavy-handed.  We could add a "post-render" step, or detect that there is not CSP */
             }
         }
 
