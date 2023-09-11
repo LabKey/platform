@@ -23,13 +23,11 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,7 +80,7 @@ public class AssayUpgradeCode implements UpgradeCode
                 protocolsByContainer.get(container).add(new Pair<>(protocol, resultsDomain));
             }
 
-            User upgradeUser = new LimitedUser(UserManager.getGuestUser(), Collections.singleton(RoleManager.getRole(SiteAdminRole.class)));
+            User upgradeUser = new LimitedUser(UserManager.getGuestUser(), SiteAdminRole.class);
             for (Container container : protocolsByContainer.keySet())
             {
                 List<Pair<ExpProtocol, Domain>> protocolDomains = protocolsByContainer.get(container);
@@ -96,7 +94,6 @@ public class AssayUpgradeCode implements UpgradeCode
 
             transaction.commit();
         }
-
     }
 
     private static void _addAssayResultColumns(ExpProtocol protocol, Domain resultsDomain)

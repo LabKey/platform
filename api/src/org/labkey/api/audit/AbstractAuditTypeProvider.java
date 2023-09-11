@@ -52,7 +52,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -106,7 +105,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         this.domainKind = domainKind;
 
         // Issue 20310: initialize AuditTypeProvider when registered during startup
-        User auditUser = new LimitedUser(UserManager.getGuestUser(), Collections.singleton(RoleManager.getRole(ReaderRole.class)));
+        User auditUser = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
         initializeProvider(auditUser);
     }
 

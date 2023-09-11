@@ -46,7 +46,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.logging.LogHelper;
@@ -573,7 +572,8 @@ public class LinkedSchema extends ExternalSchema
     }
 
     /** Most linked schemas grant only ReaderRole, but individual source schemas can be special-cased */
-    private static Set<Role> getContextualRoleForTargetSchema(String sourceSchemaName)
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Role>[] getContextualRolesForTargetSchema(String sourceSchemaName)
     {
         if (AbstractAuditTypeProvider.QUERY_SCHEMA_NAME.equalsIgnoreCase(sourceSchemaName))
         {
@@ -581,9 +581,9 @@ public class LinkedSchema extends ExternalSchema
             // that only those with site-level admin permission can create or edit linked schema definitions (enforced
             // by InsertLinkedSchemaAction and EditLinkedSchemaAction) and that they only share data from the source
             // container (enforced by LinkedSchemaUserWrapper)
-            return Set.of(RoleManager.getRole(ReaderRole.class), RoleManager.getRole(CanSeeAuditLogRole.class));
+            return new Class[]{ReaderRole.class, CanSeeAuditLogRole.class};
         }
-        return Collections.singleton(RoleManager.getRole(ReaderRole.class));
+        return new Class[]{ReaderRole.class};
     }
 
     private static class LinkedSchemaUserWrapper extends LimitedUser
@@ -592,7 +592,7 @@ public class LinkedSchema extends ExternalSchema
 
         public LinkedSchemaUserWrapper(User realUser, Container sourceContainer, String sourceSchemaName)
         {
-            super(realUser, getContextualRoleForTargetSchema(sourceSchemaName));
+            super(realUser, getContextualRolesForTargetSchema(sourceSchemaName));
 
             // Current container policy and (if it exists) current study policy are the only policies that get
             // overridden here. No need to handle dataset policies; when the study policy claims read, all per-group
