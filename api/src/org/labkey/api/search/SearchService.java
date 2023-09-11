@@ -419,6 +419,7 @@ public interface SearchService
     void addPathToCrawl(Path path, @Nullable Date nextCrawl);
 
     IndexTask indexContainer(@Nullable IndexTask task, Container c, Date since);
+    // TODO: Remove? This is never called
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
     void indexFull(boolean force);
 
