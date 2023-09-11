@@ -55,6 +55,13 @@ public class IndexInspector
             {
                 setDelimiterCharacter(DELIM.COMMA);
             }
+
+            // We want the "Export to Excel" option to open Excel and load the file. We're providing Excel content type
+            // but CSV file name and format because that seems to work and exporting in an Excel-native format would
+            // require a bit of a rewrite to the below, since ExcelWriter and TSVWriter don't share any useful
+            // interfaces. I haven't found a definitive reference that says this content type + extension discrepancy
+            // always works, but here's an old post that suggests it's reasonable:
+            // https://stackoverflow.com/questions/393647/response-content-type-as-csv#1719233
             @Override
             protected String getContentType()
             {

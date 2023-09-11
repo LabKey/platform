@@ -1304,7 +1304,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Query query = new TermQuery(new Term(FIELD_NAME.container.toString(), id));
 
-            // Run the query before delete, but only if Log4J debug level is set
+            // Count the docs and log before deleting them, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
                 _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
