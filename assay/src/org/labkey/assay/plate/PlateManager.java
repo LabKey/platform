@@ -519,29 +519,19 @@ public class PlateManager implements PlateService
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateFilter, null).getArray(WellGroupImpl.class);
     }
 
-    private String getLsid(Plate plate, Class<?> type, boolean instance)
-    {
-        return getLsid(type, plate.getContainer(), plate.isTemplate(), instance).toString();
-    }
-
-    public Lsid getLsid(Class<?> type, Container container, boolean isTemplate, boolean isInstance)
+    public Lsid getLsid(Class<?> type, Container container)
     {
         String nameSpace;
         if (type == Plate.class)
-            nameSpace = isTemplate ? "PlateTemplate" : "PlateInstance";
+            nameSpace = "Plate";
         else if (type == WellGroup.class)
-            nameSpace = isTemplate ? "WellGroupTemplate" : "WellGroupInstance";
+            nameSpace = "WellGroup";
         else if (type == Well.class)
-            nameSpace = isTemplate ? "WellTemplate" : "WellInstance";
+            nameSpace = "Well";
         else
             throw new IllegalArgumentException("Unknown type " + type);
 
-        String id;
-        if (isInstance)
-            id = GUID.makeGUID();
-        else
-            id = LSID_CLASS_OBJECT_ID;
-        return new Lsid(nameSpace, "Folder-" + container.getRowId(), id);
+        return new Lsid(nameSpace, "Folder-" + container.getRowId(), GUID.makeGUID());
     }
 
     private DbScope.Transaction ensureTransaction(Lock... locks)
@@ -557,17 +547,12 @@ public class PlateManager implements PlateService
         {
             Integer plateId = plate.getRowId();
             String plateInstanceLsid = plate.getLSID();
-            String plateObjectLsid;
             Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateImpl.class).toMap(plate, new ArrayListMap<>());
             QueryUpdateService qus = getPlateUpdateService(container, user);
             BatchValidationException errors = new BatchValidationException();
 
             if (updateExisting)
             {
-                // replace the GUID objectId with the fixed "objectType" value
-                Lsid lsid = Lsid.parse(plateInstanceLsid);
-                plateObjectLsid = lsid.edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
-
                 // special case if the plate name changes, we want to remove the cache key with the old name
                 Plate oldPlate = getPlate(container, plateId);
                 if (!oldPlate.getName().equals(plate.getName()))
@@ -579,7 +564,6 @@ public class PlateManager implements PlateService
             }
             else
             {
-                plateObjectLsid = getLsid(plate, Plate.class, false);
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateRow), errors, null, null);
                 if (errors.hasErrors())
                     throw errors;
@@ -588,7 +572,7 @@ public class PlateManager implements PlateService
                 plate.setRowId(plateId);
                 plate.setLsid(plateInstanceLsid);
             }
-            savePropertyBag(container, plateInstanceLsid, plateObjectLsid, plate.getProperties(), updateExisting);
+            savePropertyBag(container, plateInstanceLsid, plate.getProperties(), updateExisting);
 
             // delete well groups first
             List<WellGroupImpl> deletedWellGroups = plate.getDeletedWellGroups();
@@ -605,26 +589,20 @@ public class PlateManager implements PlateService
                 WellGroupImpl wellgroup = (WellGroupImpl) group;
                 assert !wellgroup._deleted;
                 String wellGroupInstanceLsid = wellgroup.getLSID();
-                String wellGroupObjectLsid;
                 Map<String, Object> wellGroupRow;
                 BatchValidationException wellGroupErrors = new BatchValidationException();
 
                 if (wellgroup.getRowId() != null && wellgroup.getRowId() > 0)
                 {
-                    // replace the GUID objectId with the fixed "objectType" value
-                    Lsid lsid = Lsid.parse(wellGroupInstanceLsid);
-                    wellGroupObjectLsid = lsid.edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
-
                     wellGroupRow = ObjectFactory.Registry.getFactory(WellGroupBean.class).toMap(WellGroupBean.from(wellgroup), new ArrayListMap<>());
                     wellGroupQus.updateRows(user, container, Collections.singletonList(wellGroupRow), null, wellGroupErrors, null, null);
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
-                    savePropertyBag(container, wellGroupInstanceLsid, wellGroupObjectLsid, wellgroup.getProperties(), true);
+                    savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), true);
                 }
                 else
                 {
-                    wellGroupObjectLsid = getLsid(plate, WellGroup.class, false);
                     wellgroup.setPlateId(plateId);
                     wellGroupRow = ObjectFactory.Registry.getFactory(WellGroupBean.class).toMap(WellGroupBean.from(wellgroup), new ArrayListMap<>());
 
@@ -634,11 +612,11 @@ public class PlateManager implements PlateService
 
                     wellGroupInstanceLsid = (String)insertedRows.get(0).get("Lsid");
                     wellgroup = ObjectFactory.Registry.getFactory(WellGroupImpl.class).fromMap(wellgroup, insertedRows.get(0));
-                    savePropertyBag(container, wellGroupInstanceLsid, wellGroupObjectLsid, wellgroup.getProperties(), false);
+                    savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
             }
 
-            String wellInstanceLsidPrefix = null;
+            //String wellInstanceLsidPrefix = null;
 
             // Get existing wells for the plate
             Map<Pair<Integer, Integer>, PositionImpl> existingPositionMap = new HashMap<>();
@@ -648,10 +626,6 @@ public class PlateManager implements PlateService
                 {
                     existingPositionMap.put(Pair.of(existingPosition.getRow(), existingPosition.getColumn()), (PositionImpl) existingPosition);
                 }
-            }
-            else
-            {
-                wellInstanceLsidPrefix = getLsid(plate, Well.class, true);
             }
 
             List<List<Integer>> wellGroupPositions = new LinkedList<>();
@@ -676,7 +650,6 @@ public class PlateManager implements PlateService
                     {
                         position = plate.getPosition(row, col);
                         assert position.getRowId() == null || position.getRowId() == 0;
-                        assert wellInstanceLsidPrefix != null;
 
                         position.setPlateId(plateId);
                         Map<String, Object> wellRow = ObjectFactory.Registry.getFactory(PositionImpl.class).toMap(position, new ArrayListMap<>());
@@ -737,10 +710,11 @@ public class PlateManager implements PlateService
         return wellGroupPositions;
     }
 
-    private void savePropertyBag(Container container, String ownerLsid,
-                                 String classLsid, Map<String, Object> props,
-                                 boolean updateExisting) throws SQLException
+    private void savePropertyBag(Container container, String ownerLsid, Map<String, Object> props, boolean updateExisting) throws SQLException
     {
+        // construct the LSID to associate with the property objects
+        String classLsid = Lsid.parse(ownerLsid).edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
+
         if (updateExisting)
         {
             // delete any existing properties
