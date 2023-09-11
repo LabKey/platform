@@ -751,6 +751,16 @@ public class PlateController extends SpringActionController
         }
     }
 
+    @RequiresPermission(UpdatePermission.class)
+    public static class SetFieldsAction extends MutatingApiAction<CustomFieldsForm>
+    {
+        @Override
+        public Object execute(CustomFieldsForm form, BindException errors) throws Exception
+        {
+            return success(PlateManager.get().setFields(getContainer(), getUser(), form.getPlateId(), form.getFields()));
+        }
+    }
+
     @RequiresPermission(DesignVocabularyPermission.class)
     public static class EnsurePlateMetadataDomainAction extends MutatingApiAction<Object>
     {
