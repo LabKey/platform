@@ -6117,7 +6117,10 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                int count = DataRegionSelection.setSelectionForAll(form, false);
+                // Note: DataRegionSelection.setSelectionForAll(form, false) will query for all rows in the region to remove those in context.
+                // Instead, get the selected values in context and then "uncheck" them directly
+                List<String> currentCtxSelection = DataRegionSelection.getSelected(form, false);
+                int count = DataRegionSelection.setSelected(getViewContext(), form.getQuerySettings().getSelectionKey(), currentCtxSelection, false);
                 return new DataRegionSelection.SelectionResponse(count);
             }
         }
