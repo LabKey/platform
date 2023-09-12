@@ -109,6 +109,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -352,6 +353,21 @@ public class PlateManager implements PlateService
                 return PlateCache.getPlate(c, lsid);
         }
         return null;
+    }
+
+    private @NotNull Plate requirePlate(Container container, int plateRowId, @Nullable String errorPrefix)
+    {
+        Plate plate = getPlate(container, plateRowId);
+        if (plate == null)
+        {
+            String error = "Plate id \"" + plateRowId + "\" not found.";
+            String errorPrefix_ = StringUtils.trimToEmpty(errorPrefix);
+            if (!errorPrefix_.isEmpty())
+                error = errorPrefix_ + " " + error;
+            throw new IllegalArgumentException(error);
+        }
+
+        return plate;
     }
 
     /**
@@ -1204,7 +1220,7 @@ public class PlateManager implements PlateService
      */
     public @Nullable Domain getPlateMetadataDomain(Container container, User user)
     {
-        DomainKind vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+        DomainKind<?> vocabDomainKind = PropertyService.get().getDomainKindByName("Vocabulary");
 
         if (vocabDomainKind == null)
             return null;
@@ -1229,7 +1245,7 @@ public class PlateManager implements PlateService
 
         if (vocabDomain == null)
         {
-            DomainKind domainKind = PropertyService.get().getDomainKindByName("Vocabulary");
+            DomainKind<?> domainKind = PropertyService.get().getDomainKindByName("Vocabulary");
             Container domainContainer = getPlateMetadataDomainContainer(container);
 
             if (!domainKind.canCreateDefinition(user, domainContainer))
@@ -1246,10 +1262,7 @@ public class PlateManager implements PlateService
     public @NotNull List<PlateCustomField> createPlateMetadataFields(Container container, User user, List<GWTPropertyDescriptor> fields) throws Exception
     {
         Domain vocabDomain = ensurePlateMetadataDomain(container, user);
-        DomainKind domainKind = vocabDomain.getDomainKind();
-
-        if (vocabDomain == null)
-            throw new IllegalArgumentException("Unable to create fields on the domain, the domain was not found.");
+        DomainKind<?> domainKind = vocabDomain.getDomainKind();
 
         if (!domainKind.canEditDefinition(user, vocabDomain))
             throw new IllegalArgumentException("Unable to create field on domain \"" + vocabDomain.getTypeURI() + "\". Insufficient permissions.");
@@ -1322,14 +1335,14 @@ public class PlateManager implements PlateService
     public @NotNull List<PlateCustomField> getPlateMetadataFields(Container container, User user)
     {
         Domain vocabDomain = getPlateMetadataDomain(container, user);
-        if (vocabDomain != null)
-        {
-            List<PlateCustomField> fields = vocabDomain.getProperties().stream().map(PlateCustomField::new).toList();
-            return fields.stream()
-                    .sorted(Comparator.comparing(PlateCustomField::getName))
-                    .collect(Collectors.toList());
-        }
-        return Collections.emptyList();
+        if (vocabDomain == null)
+            return Collections.emptyList();
+
+        return vocabDomain.getProperties()
+                .stream()
+                .map(PlateCustomField::new)
+                .sorted(Comparator.comparing(PlateCustomField::getName))
+                .toList();
     }
 
     public @NotNull List<PlateCustomField> addFields(Container container, User user, Integer plateId, List<PlateCustomField> fields) throws SQLException
@@ -1340,9 +1353,7 @@ public class PlateManager implements PlateService
         if (fields == null || fields.size() == 0)
             throw new IllegalArgumentException("Failed to add plate custom fields. No fields specified.");
 
-        Plate plate = getPlate(container, plateId);
-        if (plate == null)
-            throw new IllegalArgumentException("Failed to add plate custom fields. Plate id \"" + plateId + "\" not found.");
+        Plate plate = requirePlate(container, plateId, "Failed to add plate custom fields.");
 
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain == null)
@@ -1388,12 +1399,9 @@ public class PlateManager implements PlateService
         return getFields(container, plateId);
     }
 
-    public List<PlateCustomField> getFields(Container container, Integer plateId)
+    public @NotNull List<PlateCustomField> getFields(Container container, Integer plateId)
     {
-        Plate plate = getPlate(container, plateId);
-        if (plate == null)
-            throw new IllegalArgumentException("Failed to get plate custom fields. Plate id \"" + plateId + "\" not found.");
-
+        Plate plate = requirePlate(container, plateId, "Failed to get plate custom fields.");
         return plate.getCustomFields();
     }
 
@@ -1402,10 +1410,6 @@ public class PlateManager implements PlateService
      */
     private List<DomainProperty> _getFields(Container container, User user, Integer plateId)
     {
-        Plate plate = getPlate(container, plateId);
-        if (plate == null)
-            throw new IllegalArgumentException("Failed to get plate custom fields. Plate id \"" + plateId + "\" not found.");
-
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain == null)
             throw new IllegalArgumentException("Failed to get plate custom fields. Custom fields domain does not exist. Try creating fields first.");
@@ -1427,14 +1431,15 @@ public class PlateManager implements PlateService
 
     public List<WellCustomField> getWellCustomFields(Container container, User user, Integer plateId, Integer wellId)
     {
-        List<WellCustomField> fields = _getFields(container, user, plateId).stream().map(WellCustomField::new).toList();
+        Plate plate = requirePlate(container, plateId, "Failed to get well custom fields.");
 
-        // need to get the well values associated with each custom field
-        Plate plate = getPlate(container, plateId);
         Well well = plate.getWell(wellId);
         if (well == null)
             throw new IllegalArgumentException("Failed to get well custom fields. Well id \"" + wellId   + "\" not found.");
 
+        List<WellCustomField> fields = _getFields(container, user, plateId).stream().map(WellCustomField::new).toList();
+
+        // need to get the well values associated with each custom field
         Map<String, Object> properties = OntologyManager.getProperties(container, well.getLsid());
         for (WellCustomField field : fields)
             field.setValue(properties.get(field.getPropertyURI()));
@@ -1446,9 +1451,7 @@ public class PlateManager implements PlateService
 
     public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields)
     {
-        Plate plate = getPlate(container, plateId);
-        if (plate == null)
-            throw new IllegalArgumentException("Failed to remove plate custom fields. Plate id \"" + plateId + "\" not found.");
+        Plate plate = requirePlate(container, plateId, "Failed to remove plate custom fields.");
 
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain == null)
@@ -1488,6 +1491,53 @@ public class PlateManager implements PlateService
             }
         }
         return getFields(container, plateId);
+    }
+
+    public List<PlateCustomField> setFields(Container container, User user, Integer plateRowId, List<PlateCustomField> fields) throws SQLException
+    {
+        requirePlate(container, plateRowId, "Failed to set plate custom fields.");
+
+        List<PlateCustomField> allFields = getPlateMetadataFields(container, user);
+        Set<PlateCustomField> currentFields = new HashSet<>(getFields(container, plateRowId));
+
+        Set<PlateCustomField> desiredFields = new HashSet<>();
+        List<PlateCustomField> fieldsToAdd = new ArrayList<>();
+        List<PlateCustomField> fieldsToRemove = new ArrayList<>();
+
+        for (PlateCustomField partialField : fields)
+        {
+            Optional<PlateCustomField> opt = allFields.stream().filter(f -> f.getName().equals(partialField.getName()) || f.getPropertyURI().equals(partialField.getPropertyURI())).findFirst();
+            if (opt.isEmpty())
+                throw new IllegalArgumentException("Failed to set plate custom fields. Unable to resolve field with (name, propertyURI) (%s, %s)".formatted(partialField.getName(), partialField.getPropertyURI()));
+
+            PlateCustomField field = opt.get();
+            desiredFields.add(field);
+
+            if (currentFields.contains(field))
+                currentFields.remove(field);
+            else
+                fieldsToAdd.add(field);
+        }
+
+        for (PlateCustomField currentField : currentFields)
+        {
+            if (!desiredFields.contains(currentField))
+                fieldsToRemove.add(currentField);
+        }
+
+        if (!fieldsToAdd.isEmpty() || !fieldsToRemove.isEmpty())
+        {
+            try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+            {
+                if (!fieldsToRemove.isEmpty())
+                    removeFields(container, user, plateRowId, fieldsToRemove);
+                if (!fieldsToAdd.isEmpty())
+                    addFields(container, user, plateRowId, fieldsToAdd);
+                tx.commit();
+            }
+        }
+
+        return getFields(container, plateRowId);
     }
 
     public static final class TestCase
@@ -1679,13 +1729,13 @@ public class PlateManager implements PlateService
             List<PlateCustomField> fields = PlateManager.get().createPlateMetadataFields(c, user, customFields);
 
             // Verify returned sorted by name
-            assertTrue("Expected plate custom fields", fields.size() == 3);
-            assertTrue("Expected barcode custom field", fields.get(0).getName().equals("barcode"));
-            assertTrue("Expected concentration custom field", fields.get(1).getName().equals("concentration"));
-            assertTrue("Expected negativeControl custom field", fields.get(2).getName().equals("negativeControl"));
+            assertEquals("Expected plate custom fields", 3, fields.size());
+            assertEquals("Expected barcode custom field", "barcode", fields.get(0).getName());
+            assertEquals("Expected concentration custom field", "concentration", fields.get(1).getName());
+            assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(2).getName());
 
             // assign custom fields to the plate
-            assertTrue("Expected custom fields to be added to the plate", PlateManager.get().addFields(c, user, plateId, fields).size() == 3);
+            assertEquals("Expected custom fields to be added to the plate", 3, PlateManager.get().addFields(c, user, plateId, fields).size());
 
             // verification when adding custom fields to the plate
             try
@@ -1695,14 +1745,14 @@ public class PlateManager implements PlateService
             }
             catch (IllegalArgumentException e)
             {
-                assertTrue("Expected validation exception", e.getMessage().equals("Failed to add plate custom fields. Custom field \"barcode\" already is associated with this plate."));
+                assertEquals("Expected validation exception", "Failed to add plate custom fields. Custom field \"barcode\" already is associated with this plate.", e.getMessage());
             }
 
             // remove a plate custom field
             fields = PlateManager.get().removeFields(c, user, plateId, List.of(fields.get(0)));
-            assertTrue("Expected 2 plate custom fields", fields.size() == 2);
-            assertTrue("Expected concentration custom field", fields.get(0).getName().equals("concentration"));
-            assertTrue("Expected negativeControl custom field", fields.get(1).getName().equals("negativeControl"));
+            assertEquals("Expected 2 plate custom fields", 2, fields.size());
+            assertEquals("Expected concentration custom field", "concentration", fields.get(0).getName());
+            assertEquals("Expected negativeControl custom field", "negativeControl", fields.get(1).getName());
 
             // select wells
             SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -1710,11 +1760,12 @@ public class PlateManager implements PlateService
             filter.addCondition(FieldKey.fromParts("Row"), 0);
             List< org.labkey.assay.plate.model.Well> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, new Sort("Col")).getArrayList(org.labkey.assay.plate.model.Well.class);
 
-            assertTrue("Expected 24 wells to be returned", wells.size() == 24);
+            assertEquals("Expected 24 wells to be returned", 24, wells.size());
 
             // update
             TableInfo wellTable = QueryService.get().getUserSchema(user, c, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
             QueryUpdateService qus = wellTable.getUpdateService();
+            assertNotNull(qus);
             BatchValidationException errors = new BatchValidationException();
 
             // verify metadata update works for Property URI as well as field key

@@ -23,7 +23,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -31,7 +30,6 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Collections;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -85,7 +83,7 @@ public class QueryDriver implements Driver
 
         // NOTE: This code is only accessible from within LabKey Server when using components that require their own
         //JDBC Connection (e.g. Mondrian). The user must currently be a limited service user that cannot update
-        User user = new LimitedUser(User.guest, Collections.singleton(RoleManager.getRole(ReaderRole.class)));
+        User user = new LimitedUser(User.guest, ReaderRole.class);
         user.setPrincipalType(PrincipalType.SERVICE);
         user.setDisplayName("Internal JDBC Service User");
         user.setEmail("internaljdbc@labkey.org");

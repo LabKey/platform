@@ -33,7 +33,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -187,7 +186,7 @@ public class SearchModule extends DefaultModule
         UsageMetricsService.get().registerUsageMetrics(getName(), () ->
         {
             // Report the total number of search entries in the audit log
-            User user = new LimitedUser(User.getSearchUser(), Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)));
+            User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.EVERYTHING);
 

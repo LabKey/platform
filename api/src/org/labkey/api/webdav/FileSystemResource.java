@@ -47,8 +47,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -73,7 +71,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -607,10 +604,7 @@ public class FileSystemResource extends AbstractWebdavResource
         filter.addCondition(FieldKey.fromParts(FileSystemAuditProvider.COLUMN_NAME_FILE), file.getName());
 
         // Allow all users to see history in the container
-        HashSet<Role> roles = new HashSet<>();
-        roles.add(RoleManager.getRole(ReaderRole.class));
-        roles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-        User user = new LimitedUser(UserManager.getGuestUser(), roles);
+        User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class, CanSeeAuditLogRole.class);
 
         List<AuditTypeEvent> logs = AuditLogService.get().getAuditEvents(getContainer(), user, FileSystemAuditProvider.EVENT_TYPE, filter, null);
         if (null == logs)

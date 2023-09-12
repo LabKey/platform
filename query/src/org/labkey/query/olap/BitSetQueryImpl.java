@@ -34,7 +34,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.GUID;
 import org.labkey.api.visualization.SQLGenerationException;
@@ -83,7 +82,7 @@ public class BitSetQueryImpl
     private final boolean mondrianCompatibleNullHandling = false;
 
     private static Logger _log = LogManager.getLogger(BitSetQueryImpl.class);
-    private final static User olapServiceUser = new LimitedUser(User.guest, Collections.singleton(RoleManager.getRole(ReaderRole.class)));
+    private final static User olapServiceUser = new LimitedUser(User.guest, ReaderRole.class);
     static
     {
         olapServiceUser.setPrincipalType(PrincipalType.SERVICE);

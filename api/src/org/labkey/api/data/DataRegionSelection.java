@@ -459,9 +459,22 @@ public class DataRegionSelection
      */
     private static List<String> getSelectedItems(QueryView view, @NotNull Collection<String> selectedValues) throws IOException
     {
+        // Issue 48657: no need to query the region result set if we have no selectedValues
+        if (selectedValues.size() == 0)
+            return new LinkedList<>();
+
         var dataRegionContext = getDataRegionContext(view);
         var rgn = dataRegionContext.first;
         var ctx = dataRegionContext.second;
+
+        // Issue 48657: no need to query for all region results if we are only interested in a subset, filter for just those we want to verify
+        // Note: this only currently applies for tables with a single PK col. Consider altering this for multi-pk tables.
+        List<ColumnInfo> pkCols = rgn.getTable().getPkColumns();
+        if (pkCols.size() == 1)
+        {
+            ColumnInfo pkCol = pkCols.get(0);
+            ctx.setBaseFilter(new SimpleFilter(pkCol.getFieldKey(), pkCol.isNumericType() ? selectedValues.stream().map(Integer::parseInt).toList() : selectedValues, CompareType.IN));
+        }
 
         try (Timing ignored = MiniProfiler.step("getSelected"); Results rs = rgn.getResults(ctx))
         {
