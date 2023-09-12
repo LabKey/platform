@@ -75,7 +75,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HtmlString;
@@ -933,7 +932,7 @@ public class IssueManager
         @Override
         public void run()
         {
-            User user = new LimitedUser(UserManager.getGuestUser(), Collections.singleton(RoleManager.getRole(ReaderRole.class)));
+            User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
             indexIssues(null, user, _task, _ids);
         }
     }

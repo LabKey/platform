@@ -18,10 +18,13 @@ package org.labkey.api.security;
 
 import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A wrapper around another user that limits the permissions associated that that user, and thus
@@ -33,7 +36,14 @@ public class LimitedUser extends User
     private final Set<Role> _roles;
     private final boolean _allowedGlobalRoles;
 
-    // LimitedUser with no groups, only a set of explicit roles. Presence of any site role determines if global roles are allowed.
+    // LimitedUser that's granted one or more roles (no groups)
+    @SafeVarargs
+    public LimitedUser(User user, Class<? extends Role>... roleClasses)
+    {
+        this(user, Arrays.stream(roleClasses).map(RoleManager::getRole).filter(Objects::nonNull).collect(Collectors.toSet()));
+    }
+
+    @Deprecated // TODO: Make private once uses in all other repos have been converted
     public LimitedUser(User user, Set<Role> roles)
     {
         this(user, PrincipalArray.getEmptyPrincipalArray(), roles, roles.stream().anyMatch(r -> r instanceof AbstractRootContainerRole));
