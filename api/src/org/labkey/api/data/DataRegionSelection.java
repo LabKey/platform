@@ -467,7 +467,7 @@ public class DataRegionSelection
         var rgn = dataRegionContext.first;
         var ctx = dataRegionContext.second;
 
-        // Issue 48657: no need to query for all region results if we are only interested in a subset, filter for just those
+        // Issue 48657: no need to query for all region results if we are only interested in a subset, filter for just those we want to verify
         // Note: this only currently applies for tables with a single PK col. Consider altering this for multi-pk tables.
         List<ColumnInfo> pkCols = rgn.getTable().getPkColumns();
         if (pkCols.size() == 1)
