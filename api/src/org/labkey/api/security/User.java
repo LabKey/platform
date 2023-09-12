@@ -93,7 +93,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public static final User guest = new GuestUser("guest", "guest");
 
     // 'nobody' is a guest user who cannot be assigned permissions
-    public static final User nobody = new LimitedUser(guest, Collections.emptySet())
+    public static final User nobody = new LimitedUser(guest)
     {
         @Override
         public boolean isGuest()
@@ -118,7 +118,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     {
         AdminServiceUser()
         {
-            super(new User("@serviceUserAdmin", User.guest.getUserId()), PrincipalArray.getEmptyPrincipalArray(), Collections.singleton(RoleManager.getRole(SiteAdminRole.class)), true);
+            super(new User("@serviceUserAdmin", User.guest.getUserId()), SiteAdminRole.class);
             setPrincipalType(PrincipalType.SERVICE);
         }
 
@@ -528,7 +528,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     {
         if (search == null)
         {
-            search = new LimitedUser(new GuestUser("@search"), Collections.singleton(RoleManager.getRole(ReaderRole.class)));
+            search = new LimitedUser(new GuestUser("@search"), ReaderRole.class);
             search.setPrincipalType(PrincipalType.SERVICE);
         }
         return search;
