@@ -89,12 +89,9 @@ import static java.util.stream.Collectors.joining;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
- * classes like {@link PropertyDescriptor} and {@link DomainDescriptor}.
- *
- * When possible, it's usually preferable to use {@link PropertyService}, {@link Domain}, and {@link DomainProperty}
- * instead as they tend to provide higher-level abstractions.
- * User: migra
- * Date: Jun 14, 2005
+ * classes like {@link PropertyDescriptor} and {@link DomainDescriptor}. When possible, it's usually preferable to use
+ * {@link PropertyService}, {@link Domain}, and {@link DomainProperty} instead as they tend to provide higher-level
+ * abstractions.
  */
 public class OntologyManager
 {
@@ -185,16 +182,16 @@ public class OntologyManager
             if (null == c)
                 return Collections.emptyList();
             SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
-                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                    "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                    "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                    "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
+                " FROM " + getTinfoPropertyDescriptor() + " PD " +
+                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
+                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
+                "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
 
             sql.addAll(
-                    typeURI,
-                    // protect against null project, just double-up shared project
-                    c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
-                    _sharedContainer.getProject().getId()
+                typeURI,
+                // protect against null project, just double-up shared project
+                c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
+                _sharedContainer.getProject().getId()
             );
             List<PropertyDescriptor> pds = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
             //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
@@ -400,10 +397,10 @@ public class OntologyManager
         }
 
         assert total.stop();
-        _log.debug("\t" + total.toString());
-        _log.debug("\t" + before.toString());
-        _log.debug("\t" + ensure.toString());
-        _log.debug("\t" + insert.toString());
+        _log.debug("\t" + total);
+        _log.debug("\t" + before);
+        _log.debug("\t" + ensure);
+        _log.debug("\t" + insert);
 
         return resultingLsids;
     }

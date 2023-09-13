@@ -24,11 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * DbCache associates a DatabaseCache with each participating TableInfo. The Table layer then invalidates the entire
- * cache anytime it touches (insert, update, delete) that TableInfo. This is easy, but very inefficient. Managers should
- * use DatabaseCaches directly and handle invalidation themselves.
  *
- * Use CacheManager.getCache() or DatabaseCache instead.
+ * Don't use this! Use CacheManager.getCache() or DatabaseCache instead. DbCache associates a DatabaseCache with each
+ * participating TableInfo. The Table layer then invalidates the entire cache anytime it touches (insert, update, delete)
+ * that TableInfo. This is easy, but very inefficient. Managers should use DatabaseCaches directly and handle
+ * invalidation themselves.
  */
 @Deprecated
 public class DbCache
@@ -54,13 +54,11 @@ public class DbCache
         }
     }
 
-
     public static void put(TableInfo tinfo, String name, Object obj)
     {
         DatabaseCache<String, Object> cache = getCache(tinfo, true);
         cache.put(name, obj);
     }
-
 
     public static void put(TableInfo tinfo, String name, Object obj, long millisToLive)
     {
@@ -68,13 +66,11 @@ public class DbCache
         cache.put(name, obj, millisToLive);
     }
 
-
     public static Object get(TableInfo tinfo, String name)
     {
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         return null == cache ? null : cache.get(name);
     }
-    
 
     public static void remove(TableInfo tinfo, String name)
     {
@@ -82,7 +78,6 @@ public class DbCache
         if (null != cache)
             cache.remove(name);
     }
-
 
     /** used by Table */
     public static void invalidateAll(TableInfo tinfo)
@@ -92,7 +87,6 @@ public class DbCache
             cache.clear();
     }
 
-
     public static void clear(TableInfo tinfo)
     {
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
@@ -100,17 +94,10 @@ public class DbCache
             cache.clear();
     }
 
-
     public static void removeUsingPrefix(TableInfo tinfo, String name)
     {
         DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
             cache.removeUsingFilter(new Cache.StringPrefixFilter(name));
-    }
-
-    // Temporary helper to assist with DbCache removal process
-    public static boolean hasCache(TableInfo tinfo)
-    {
-        return null != getCache(tinfo, false);
     }
 }
