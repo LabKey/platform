@@ -1252,6 +1252,7 @@ public class DbScope
         return getTableInfoCache(options.getSchema().getType()).get(options);
     }
 
+    // This is expensive... use only for debugging and troubleshooting
     public <OptionType extends SchemaTableOptions> boolean isCached(OptionType options)
     {
         return getTableInfoCache(options.getSchema().getType()).isCached(options);

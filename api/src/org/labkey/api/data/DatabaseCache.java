@@ -27,7 +27,10 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.TransactionCache;
+import org.labkey.api.cache.Wrapper;
+import org.labkey.api.data.DbScope.TransactionImpl;
 import org.labkey.api.util.Filter;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -41,6 +44,8 @@ import java.util.Set;
  */
 public class DatabaseCache<K, V> implements Cache<K, V>
 {
+    private static final Logger LOG = LogHelper.getLogger(DatabaseCache.class, "DatabaseCache misses");
+
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
@@ -58,12 +63,43 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, CacheLoader<K, V> cacheLoader)
     {
-        return new BlockingCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+        return getBlockingCache(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
     }
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, CacheLoader<K, V> cacheLoader)
     {
-        return new BlockingCache<>(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
+        return getBlockingCache(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
+    }
+
+    private static <K, V> BlockingCache<K, V> getBlockingCache(DatabaseCache<K, Wrapper<V>> databaseCache, CacheLoader<K, V> cacheLoader)
+    {
+        return new ReplayBlockingCache<>(databaseCache, cacheLoader);
+    }
+
+    private static class ReplayBlockingCache<K, V> extends BlockingCache<K, V>
+    {
+        private final DatabaseCache<K, Wrapper<V>> _databaseCache;
+
+        public ReplayBlockingCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
+        {
+            super(cache, loader);
+            _databaseCache = cache;
+        }
+
+        @Override
+        protected V load(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
+        {
+            V value = super.load(key, argument, loader);
+            LOG.debug("Just loaded: " + key + " (" + getTrackingCache().getDebugName() + ")");
+            TransactionImpl t = _databaseCache.getCurrentTransaction();
+
+            if (null != t)
+            {
+                t.addCommitTask(new CacheReloadCommitTask<>(this, key, argument, loader), DbScope.CommitTaskOption.POSTCOMMIT);
+            }
+
+            return value;
+        }
     }
 
     protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
@@ -77,16 +113,19 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return createTemporaryCache(getTrackingCache());
     }
 
-    // Note: No need to subclass and override this method. If you want to set a default CacheLoader then wrap the
-    // DatabaseCache with a BlockingCache
-    protected final Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
+    private Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
         return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getTransactionStats());
     }
 
+    protected @Nullable TransactionImpl getCurrentTransaction()
+    {
+        return _scope.getCurrentTransactionImpl();
+    }
+
     public Cache<K, V> getCache()
     {
-        DbScope.TransactionImpl t = _scope.getCurrentTransactionImpl();
+        TransactionImpl t = getCurrentTransaction();
 
         if (null != t)
         {
@@ -170,6 +209,55 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     public String toString()
     {
         return "DatabaseCache over \"" + _sharedCache.toString() + "\"";
+    }
+
+    // This is added as a commit task when load operations take place inside a transaction, ensuring that they are
+    // re-played on successful commit.
+    public static class CacheReloadCommitTask<K, V> implements Runnable
+    {
+        private final Cache<K, V> _cache;
+        private final K _key;
+        private final Object _arg;
+        private final CacheLoader<K, V> _loader;
+
+        public CacheReloadCommitTask(Cache<K, V> cache, K key, Object arg, CacheLoader<K, V> loader)
+        {
+            _cache = cache;
+            _key = key;
+            _arg = arg;
+            _loader = loader;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CacheReloadCommitTask that = (CacheReloadCommitTask) o;
+
+            if (!getCache().equals(that.getCache())) return false;
+            return Objects.equals(_key, that._key);
+        }
+
+        protected Cache<K, V> getCache()
+        {
+            return _cache;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = getCache().hashCode();
+            result = 31 * result + (_key != null ? _key.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public void run()
+        {
+            getCache().get(_key, _arg, _loader);
+        }
     }
 
     public static class TestCase extends Assert
@@ -288,7 +376,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
         }
 
-
         private static class MyScope extends DbScope
         {
             private Boolean overrideTransactionActive = null;
@@ -331,7 +418,6 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             public void releaseConnection(Connection conn)
             {
             }
-
 
             @Override
             public boolean isTransactionActive()

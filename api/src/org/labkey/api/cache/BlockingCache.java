@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.Filter;
@@ -60,12 +59,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
         this(cache, loader, TimeUnit.MINUTES.toMillis(5));
     }
 
-    // TODO: Delete this... just for migration purposes
-    public BlockingCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
-    {
-        this(cache, loader, TimeUnit.MINUTES.toMillis(5));
-    }
-
     public BlockingCache(Cache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader, long timeout)
     {
         _cache = cache;
@@ -73,12 +66,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         _timeout = timeout;
     }
 
-
     public void setCacheTimeChooser(CacheTimeChooser<K> cacheTimeChooser)
     {
         _cacheTimeChooser = cacheTimeChooser;
     }
-
 
     protected Wrapper<V> createWrapper()
     {
@@ -167,7 +158,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 if (null == loader)
                     throw new IllegalStateException("cache loader was not provided");
 
-                V value = loader.load(key, argument);
+                V value = load(key, argument, loader);
                 CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", value);
 
                 synchronized (w.getLockObject())
@@ -193,6 +184,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         }
     }
 
+    protected V load(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
+    {
+        return loader.load(key, argument);
+    }
 
     /**
      * Preload or replace existing value at this key. Similar to remove() followed by get(), but doesn't block get() callers
@@ -204,7 +199,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         if (null == _loader)
             throw new IllegalStateException("cache loader is not set");
 
-        V value = _loader.load(key, argument);
+        V value = load(key, argument, _loader);
 
         put(key, value);
     }

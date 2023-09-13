@@ -96,7 +96,7 @@ import static java.util.stream.Collectors.joining;
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<Pair<String, String>, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 100000, "Property maps");
+    private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = DatabaseCache.get(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors", new CacheLoader<>()
     {
@@ -129,6 +129,7 @@ public class OntologyManager
             return null;
         }
     });
+
     /** DomainURI, ContainerEntityId -> DomainDescriptor */
     private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
         String domainURI = key.first;
@@ -735,11 +736,10 @@ public class OntologyManager
     }
 
     @NotNull
-    private static Pair<String, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    private static Pair<Container, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
     {
-        return Pair.of(container != null ? container.getEntityId().toStringNoDashes() : null, objectLSID);
+        return Pair.of(container, objectLSID);
     }
-
 
     /**
      * Get ordered map of property values for an object. The order of the properties in the
@@ -749,77 +749,83 @@ public class OntologyManager
      */
     public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Pair<String, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
-        Map<String, ObjectProperty> m = mapCache.get(cacheKey);
-        if (null != m)
-            return m;
+        Pair<Container, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        return PROPERTY_MAP_CACHE.get(cacheKey);
+    }
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
-        if (container != null)
+    public static class PropertyMapCacheLoader implements CacheLoader<Pair<Container, String>, Map<String, ObjectProperty>>
+    {
+        @Override
+        public Map<String, ObjectProperty> load(@NotNull Pair<Container, String> key, @Nullable Object argument)
         {
-            filter.addCondition(FieldKey.fromParts("Container"), container);
-        }
+            Container container = key.first;
+            String objectLSID = key.second;
 
-        if (_log.isDebugEnabled())
-        {
-            try (ResultSet rs = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getResultSet())
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
+            if (container != null)
             {
-                ResultSetUtil.logData(rs);
+                filter.addCondition(FieldKey.fromParts("Container"), container);
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeException(x);
-            }
-        }
 
-        List<ObjectProperty> props = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class);
-
-        // check for a "PropertyOrder" value
-        ObjectProperty propertyOrder = props.stream().filter(op -> PropertyOrderURI.equals(op.getPropertyURI())).findFirst().orElse(null);
-        if (propertyOrder != null)
-        {
-            String order = propertyOrder.getStringValue();
-            if (order != null)
+            if (_log.isDebugEnabled())
             {
-                // CONSIDER: Store as a JSONArray of propertyURI instead of propertyId
-                String[] parts = order.split(",");
-                try
+                try (ResultSet rs = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getResultSet())
                 {
-                    List<Integer> propertyIds = Arrays.stream(parts).map(s -> ConvertHelper.convert(s, Integer.class)).collect(Collectors.toList());
-
-                    // Don't include the "PropertyOrder" property
-                    props = new ArrayList<>(props);
-                    props.remove(propertyOrder);
-
-                    // Order by the index found in the PropertyOrder list, otherwise just stick it at the end
-                    Comparator<ObjectProperty> comparator = (op1, op2) -> {
-                        int i1 = propertyIds.indexOf(op1.getPropertyId());
-                        if (i1 == -1)
-                            i1 = propertyIds.size();
-
-                        int i2 = propertyIds.indexOf(op2.getPropertyId());
-                        if (i2 == -1)
-                            i2 = propertyIds.size();
-                        return i1 - i2;
-                    };
-                    props.sort(comparator);
+                    ResultSetUtil.logData(rs);
                 }
-                catch (ConversionException e)
+                catch (SQLException x)
                 {
-                    _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                    throw new RuntimeException(x);
                 }
             }
-        }
 
-        m = new LinkedHashMap<>();
-        for (ObjectProperty value : props)
-        {
-            m.put(value.getPropertyURI(), value);
-        }
+            List<ObjectProperty> props = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class);
 
-        m = unmodifiableMap(m);
-        mapCache.put(cacheKey, m);
-        return m;
+            // check for a "PropertyOrder" value
+            ObjectProperty propertyOrder = props.stream().filter(op -> PropertyOrderURI.equals(op.getPropertyURI())).findFirst().orElse(null);
+            if (propertyOrder != null)
+            {
+                String order = propertyOrder.getStringValue();
+                if (order != null)
+                {
+                    // CONSIDER: Store as a JSONArray of propertyURI instead of propertyId
+                    String[] parts = order.split(",");
+                    try
+                    {
+                        List<Integer> propertyIds = Arrays.stream(parts).map(s -> ConvertHelper.convert(s, Integer.class)).toList();
+
+                        // Don't include the "PropertyOrder" property
+                        props = new ArrayList<>(props);
+                        props.remove(propertyOrder);
+
+                        // Order by the index found in the PropertyOrder list, otherwise just stick it at the end
+                        Comparator<ObjectProperty> comparator = (op1, op2) -> {
+                            int i1 = propertyIds.indexOf(op1.getPropertyId());
+                            if (i1 == -1)
+                                i1 = propertyIds.size();
+
+                            int i2 = propertyIds.indexOf(op2.getPropertyId());
+                            if (i2 == -1)
+                                i2 = propertyIds.size();
+                            return i1 - i2;
+                        };
+                        props.sort(comparator);
+                    }
+                    catch (ConversionException e)
+                    {
+                        _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                    }
+                }
+            }
+
+            Map<String, ObjectProperty> m = new LinkedHashMap<>();
+            for (ObjectProperty value : props)
+            {
+                m.put(value.getPropertyURI(), value);
+            }
+
+            return unmodifiableMap(m);
+        }
     }
 
     public static void updateObjectPropertyOrder(User user, Container container, String objectLSID, List<PropertyDescriptor> properties)
@@ -919,7 +925,7 @@ public class OntologyManager
         }
         finally
         {
-            mapCache.clear();
+            PROPERTY_MAP_CACHE.clear();
             objectIdCache.clear();
         }
     }
@@ -1042,7 +1048,7 @@ public class OntologyManager
         }
         finally
         {
-            mapCache.clear();
+            PROPERTY_MAP_CACHE.clear();
             objectIdCache.clear();
         }
     }
@@ -2863,20 +2869,20 @@ public class OntologyManager
         domainDescByIDCache.clear();
         domainPropertiesCache.clear();
         propDescCache.clear();
-        mapCache.clear();
+        PROPERTY_MAP_CACHE.clear();
         objectIdCache.clear();
         domainDescByContainerCache.clear();
     }
 
     public static void clearPropertyCache(String parentObjectURI)
     {
-        mapCache.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
+        PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
 
 
     public static void clearPropertyCache()
     {
-        mapCache.clear();
+        PROPERTY_MAP_CACHE.clear();
     }
 
     public static class ImportPropertyDescriptor

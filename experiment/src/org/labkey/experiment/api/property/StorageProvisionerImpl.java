@@ -578,9 +578,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
     private SchemaTableInfo getSchemaTableInfo(@NotNull Domain domain, String schemaName, String tableName, DbSchema schema)
     {
         ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
-        if (!schema.getScope().isCached(options))
-            log.warn(schema.getName() + "." + tableName + " is NOT cached!");
-
         SchemaTableInfo sti = schema.getTable(options);
         if (null == sti)
             throw new TableNotFoundException(schemaName, tableName);
