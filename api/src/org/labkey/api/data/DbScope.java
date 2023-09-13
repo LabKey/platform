@@ -1252,6 +1252,11 @@ public class DbScope
         return getTableInfoCache(options.getSchema().getType()).get(options);
     }
 
+    public <OptionType extends SchemaTableOptions> boolean isCached(OptionType options)
+    {
+        return getTableInfoCache(options.getSchema().getType()).isCached(options);
+    }
+
     private SchemaTableInfoCache getTableInfoCache(DbSchemaType type)
     {
         return type == DbSchemaType.Provisioned ? _provisionedTableCache : _nonProvisionedTableCache;

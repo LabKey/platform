@@ -92,8 +92,6 @@ import java.util.function.Supplier;
 /**
  * Creates and maintains "hard" tables in the underlying database based on dynamically configured data types.
  * Will do CREATE TABLE and ALTER TABLE statements to make sure the table has the right set of requested columns.
- * User: newton
- * Date: Aug 11, 2010
  */
 public class StorageProvisionerImpl implements StorageProvisioner
 {
@@ -295,7 +293,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         for (PropertyStorageSpec prop : properties)
         {
-            if (prop.getName() == null || prop.getName().length() == 0)
+            if (prop.getName() == null || prop.getName().isEmpty())
                 throw new IllegalArgumentException("Can't add property with no name.");
 
             if (!allowAddBaseProperty && base.contains(prop.getName()))
@@ -339,7 +337,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         for (DomainProperty prop : properties)
         {
-            if (prop.getName() == null || prop.getName().length() == 0)
+            if (prop.getName() == null || prop.getName().isEmpty())
                 throw new IllegalArgumentException("Can't add property with no name: " + prop.getPropertyURI());
 
             if (!allowAddBaseProperty && base.contains(prop.getName()))
@@ -360,21 +358,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
             }
         }
         log.debug("addingProperties to " + domain.getName());
-        change.execute();
-    }
-
-    public void addOrDropConstraints(Domain domain, Collection<Constraint> constraints, boolean toAdd)
-    {
-        assert getScope(domain).isTransactionActive() : "should be in a transaction with propertydescriptor changes";
-
-        if (domain.getStorageTableName() == null)
-        {
-            throw new IllegalStateException("No storage table name set for domain: " + domain.getTypeURI());
-        }
-
-        TableChange change = new TableChange(domain, (toAdd?ChangeType.AddConstraints:ChangeType.DropConstraints));
-        change.setConstraints(constraints);
-
         change.execute();
     }
 
@@ -410,28 +393,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         TableChange change = new TableChange(domain, ChangeType.AddColumns, tableName);
 
         change.addColumn(makeMvColumn(prop));
-
-        change.execute();
-    }
-
-    public void dropStorageProperties(Domain domain, Collection<PropertyStorageSpec> properties)
-    {
-        DomainKind<?> kind = domain.getDomainKind();
-        DbScope scope = kind.getScope();
-
-        assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
-
-        if (domain.getStorageTableName() == null)
-        {
-            throw new IllegalStateException("No storage table name set for domain: " + domain.getTypeURI());
-        }
-
-        TableChange change = new TableChange(domain, ChangeType.DropColumns);
-
-        for (PropertyStorageSpec prop : properties)
-        {
-            change.addColumn(prop);
-        }
 
         change.execute();
     }
@@ -587,7 +548,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return alias;
     }
 
-
     /**
      * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer.
      */
@@ -618,6 +578,8 @@ public class StorageProvisionerImpl implements StorageProvisioner
     private SchemaTableInfo getSchemaTableInfo(@NotNull Domain domain, String schemaName, String tableName, DbSchema schema)
     {
         ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
+        if (!schema.getScope().isCached(options))
+            log.warn(schema.getName() + "." + tableName + " is NOT cached!");
 
         SchemaTableInfo sti = schema.getTable(options);
         if (null == sti)
@@ -635,7 +597,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
             throw new IllegalArgumentException("Could not find information for domain (deleted?): " + domain.getTypeURI());
         return kind;
     }
-
 
     public static class _VirtualTable extends VirtualTable<UserSchema> implements UpdateableTableInfo
     {
@@ -850,7 +811,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-
     /**
      * This is really an internal method, use createTableInfo() in most scenarios
      * This is public to support upgrade scenarios only.
@@ -954,7 +914,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     private static void dropIndicesFromTable(Domain domain, Set<String> indicesToDrop)
     {
-        if(indicesToDrop.size() > 0)
+        if (!indicesToDrop.isEmpty())
         {
             TableChange change = new TableChange(domain, ChangeType.DropIndicesByName);
 
@@ -993,7 +953,7 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
     private void addIndicesToTable(Domain domain, Set<PropertyStorageSpec.Index> indicesToAdd)
     {
-        if(indicesToAdd.size() >0)
+        if (!indicesToAdd.isEmpty())
         {
             TableChange change;
             if (domain.getStorageTableName() == null)
@@ -1110,7 +1070,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-
     @Override
     public void ensureBaseProperties(Domain domain)
     {
@@ -1123,14 +1082,14 @@ public class StorageProvisionerImpl implements StorageProvisioner
 
         for (PropertyStorageSpec prop : kind.getBaseProperties(domain))
         {
-            if (prop.getName() == null || prop.getName().length() == 0)
+            if (prop.getName() == null || prop.getName().isEmpty())
                 throw new IllegalArgumentException("Can't add property with no name.");
 
             if (null == storageTable.getColumn(prop.getName()))
                 change.addColumn(prop);
         }
 
-        if (0 < change.getColumns().size())
+        if (!change.getColumns().isEmpty())
             change.execute();
     }
 
@@ -1212,7 +1171,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         }
     }
 
-
     /**
      * We are mostly making the storage table match the existing property descriptors, because that is easiest.
      * Sometimes it would be better or more conservative to update the property descriptors instead
@@ -1288,7 +1246,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
                     }
                 }
             }
-
 
             drops.execute();
             adds.execute();
@@ -1566,7 +1523,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
         return report;
     }
 
-
     private class ProvisionedSchemaOptions extends SchemaTableOptions
     {
         private final Domain _domain;
@@ -1626,7 +1582,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
                 domain = null;
             }
         }
-
 
         @Test
         public void testAddProperty() throws Exception
@@ -1694,7 +1649,6 @@ public class StorageProvisionerImpl implements StorageProvisioner
             Assert.assertNotNull("enabled mvindicator causes mvindicator column to be provisioned", col);
         }
 
-
         @Test
         public void testDisableMv() throws Exception
         {
@@ -1743,7 +1697,6 @@ renaming a property AND toggling mvindicator on in the same change.
 
 */
 
-
         @Test
         public void testProvisioningReport()
         {
@@ -1764,7 +1717,6 @@ renaming a property AND toggling mvindicator on in the same change.
             //18775: StorageProvisioner junit test fails when external modules are not present
             Assert.assertTrue(sb.toString(), success);
         }
-
 
         @Test
         public void testEnsureBaseProperties() throws Exception
@@ -1880,7 +1832,6 @@ renaming a property AND toggling mvindicator on in the same change.
             }
         }
 
-
         private void addPropertyB() throws Exception
         {
             DomainProperty dp = domain.addProperty();
@@ -1890,17 +1841,6 @@ renaming a property AND toggling mvindicator on in the same change.
             domain.save(new User());
             domain = PropertyService.get().getDomain(domain.getTypeId());
         }
-
-        private void addNotNullProperty() throws Exception
-        {
-            DomainProperty dp = domain.addProperty();
-            dp.setPropertyURI(notNullPropName + "#" + notNullPropName);
-            dp.setName(notNullPropName);
-            dp.setRequired(true);
-            domain.save(new User());
-            domain = PropertyService.get().getDomain(domain.getTypeId());
-        }
-
 
         private @Nullable ColumnInfo getJdbcColumnMetadata(Domain domain, String columnName) throws Exception
         {

@@ -101,7 +101,7 @@ public class OntologyManager
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<Pair<String, String>, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 100000, "Property maps");
     private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
-    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = DatabaseCache.get(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors", new CacheLoader<>()
     {
         @Override
         public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -133,7 +133,7 @@ public class OntologyManager
         }
     });
     /** DomainURI, ContainerEntityId -> DomainDescriptor */
-    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI"), (key, argument) -> {
+    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
         String domainURI = key.first;
         Container c = ContainerManager.getForId(key.second);
 
@@ -174,8 +174,8 @@ public class OntologyManager
         return dd;
     }
 
-    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
+    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = DatabaseCache.get(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
     {
         @Override
         public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)

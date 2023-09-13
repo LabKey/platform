@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -37,12 +38,10 @@ import java.util.Set;
  * Implements a thread-safe, transaction-aware cache by deferring to a TransactionCache when transactions are in progress.
  * No synchronization is necessary in this class since the underlying caches are thread-safe, and the transaction cache
  * creation is single-threaded since the Transaction is thread local.
- *
- * @see org.labkey.api.data.DbScope
  */
 public class DatabaseCache<K, V> implements Cache<K, V>
 {
-    protected final Cache<K, V> _sharedCache;
+    private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
@@ -55,6 +54,16 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     {
         // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
         this(scope, maxSize, CacheManager.UNLIMITED, debugName);
+    }
+
+    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, CacheLoader<K, V> cacheLoader)
+    {
+        return new BlockingCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+    }
+
+    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, CacheLoader<K, V> cacheLoader)
+    {
+        return new BlockingCache<>(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
     }
 
     protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)

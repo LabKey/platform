@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.util.DeadlockPreventingException;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.Filter;
@@ -34,8 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
  * (readers block while someone is creating an object)
- * User: matthewb
- * Date: Sep 16, 2010
  */
 public class BlockingCache<K, V> implements Cache<K, V>
 {
@@ -44,7 +43,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     protected CacheTimeChooser<K> _cacheTimeChooser;
     /**
      * Milliseconds to wait if some other thread is loading the cache before timing out.
-     * Note that we will NOT timeout the thread that is doing the load, but this can still help reduce deadlocks
+     * Note that we will NOT time out the thread that is doing the load, but this can still help reduce deadlocks
      */
     protected final long _timeout;
 
@@ -57,6 +56,12 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
     public BlockingCache(Cache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
+    {
+        this(cache, loader, TimeUnit.MINUTES.toMillis(5));
+    }
+
+    // TODO: Delete this... just for migration purposes
+    public BlockingCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
     {
         this(cache, loader, TimeUnit.MINUTES.toMillis(5));
     }
@@ -332,7 +337,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
             assertEquals(5, _map.size());
         }
 
-        @NotNull
         private void createAndStartThreads(Runnable r, Object start, int count)
         {
             Thread[] threads = new Thread[count];

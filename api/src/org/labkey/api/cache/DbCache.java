@@ -29,9 +29,6 @@ import java.util.Map;
  * use DatabaseCaches directly and handle invalidation themselves.
  *
  * Use CacheManager.getCache() or DatabaseCache instead.
- *
- * User: migra
- * Date: Nov 30, 2005
  */
 @Deprecated
 public class DbCache
