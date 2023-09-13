@@ -63,24 +63,19 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, CacheLoader<K, V> cacheLoader)
     {
-        return getBlockingCache(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
+        return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
     }
 
     public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, CacheLoader<K, V> cacheLoader)
     {
-        return getBlockingCache(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
+        return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
     }
 
-    private static <K, V> BlockingCache<K, V> getBlockingCache(DatabaseCache<K, Wrapper<V>> databaseCache, CacheLoader<K, V> cacheLoader)
-    {
-        return new ReplayBlockingCache<>(databaseCache, cacheLoader);
-    }
-
-    private static class ReplayBlockingCache<K, V> extends BlockingCache<K, V>
+    private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
     {
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
 
-        public ReplayBlockingCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
+        public BlockingDatabaseCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
         {
             super(cache, loader);
             _databaseCache = cache;

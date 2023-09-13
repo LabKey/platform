@@ -1005,7 +1005,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return toExpProtocol(p);
     }
 
-
     @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
