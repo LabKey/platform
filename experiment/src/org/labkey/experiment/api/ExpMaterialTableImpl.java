@@ -66,8 +66,6 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -76,7 +74,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUrls;
@@ -253,9 +250,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case IsAliquot ->
             {
-                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + ".RootMaterialLSID";
+                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RootMaterialLSID.toString();
+                String LSIDField = ExprColumn.STR_TABLE_ALIAS + "." + Column.LSID.toString();
                 ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN " + rootMaterialLSIDField + " IS NULL THEN ").appendValue(false,getSqlDialect()).append(" ELSE ").appendValue(true,getSqlDialect()).append(" END)"), JdbcType.BOOLEAN);
+                        "(CASE WHEN (" + rootMaterialLSIDField + " = " + LSIDField + ") THEN ").append(getSqlDialect().getBooleanFALSE()).append(" ELSE ").append(getSqlDialect().getBooleanTRUE()).append(" END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -1051,6 +1049,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         provisionedCols.remove(Column.Name.name());
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
 
+        boolean hasSampleColumns = false;
+        boolean hasAliquotColumns = false;
+
         // all columns from exp.material except lsid
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
 
@@ -1084,33 +1085,32 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     sql.append(comma);
                     boolean rootField = StringUtils.isEmpty(propertyColumn.getDerivationDataScope())
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
-                    if (!rootField
-                            || "genid".equalsIgnoreCase(propertyColumn.getColumnName())
-                            || propertyColumn.isUniqueIdField())
+                    if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
                     {
-                        sql.append(propertyColumn.getValueSql("self"));
+                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").append(propertyColumn.getSelectName());
+                        hasAliquotColumns = true;
+                    }
+                    else if (rootField)
+                    {
+                        sql.append(propertyColumn.getValueSql("m_sample")).append(" AS ").append(propertyColumn.getSelectName());
+                        hasSampleColumns = true;
                     }
                     else
                     {
-                        sql.append("(CASE WHEN ")
-                                .append("m.rootMaterialLsid IS NULL THEN ")
-                                .append(propertyColumn.getValueSql("self"))
-                                .append(" ELSE ")
-                                .append(propertyColumn.getValueSql("root"))
-                                .append(" END) AS ")
-                                .appendIdentifier(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").append(propertyColumn.getSelectName());
+                        hasAliquotColumns = true;
                     }
                     comma = ", ";
                 }
             }
         }
+
         sql.append(" FROM ");
         sql.append(_rootTable, "m");
-        if (null != provisioned && hasProvisionedColumns)
-        {
-            sql.append(" INNER JOIN ").append(provisioned, "self").append(" ON m.lsid = self.lsid")
-                    .append(" LEFT JOIN ").append(provisioned, "root").append(" ON m.rootMaterialLsid = root.lsid");
-        }
+        if (hasSampleColumns)
+            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.rootmateriallsid = m_sample.lsid");
+        if (hasAliquotColumns)
+            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.lsid = m_aliquot.lsid");
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
