@@ -225,6 +225,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         result.add("RowId");
         result.add("Row Id");
         result.add("Container");
+        result.add("Project");
         result.add("LSID");
         result.add("Owner");
         result.add("CreatedBy");
