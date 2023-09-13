@@ -97,7 +97,7 @@ public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
-    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
+    private static final BlockingCache<String, Integer> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = DatabaseCache.get(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors", new CacheLoader<>()
     {
         @Override
@@ -131,7 +131,7 @@ public class OntologyManager
     });
 
     /** DomainURI, ContainerEntityId -> DomainDescriptor */
-    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
+    private static final Cache<Pair<String, GUID>, DomainDescriptor> DOMAIN_DESCRIPTORS_BY_URI_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
         String domainURI = key.first;
         Container c = ContainerManager.getForId(key.second);
 
@@ -172,8 +172,8 @@ public class OntologyManager
         return dd;
     }
 
-    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = DatabaseCache.get(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
+    private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> DOMAIN_PROPERTIES_CACHE = DatabaseCache.get(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
     {
         @Override
         public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -215,7 +215,18 @@ public class OntologyManager
             return Collections.unmodifiableList(propertyURIs);
         }
     });
-    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by container");
+    private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
+        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+
+        Map<String, DomainDescriptor> dds = new LinkedHashMap<>();
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        {
+            dds.putIfAbsent(dd.getDomainURI(), dd);
+        }
+
+        return unmodifiableMap(dds);
+    });
+
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -875,25 +886,31 @@ public class OntologyManager
     public static int ensureObject(Container container, String objectURI, Integer ownerId)
     {
         //TODO: (marki) Transact?
-        Integer i = objectIdCache.get(objectURI);
-        if (null != i)
-            return i.intValue();
-
-        OntologyObject o = getOntologyObject(container, objectURI);
-        if (null == o)
-        {
-            o = new OntologyObject();
-            o.setContainer(container);
-            o.setObjectURI(objectURI);
-            if (ownerId != null && ownerId > 0)
-                o.setOwnerObjectId(ownerId);
-            o = Table.insert(null, getTinfoObject(), o);
-        }
-
-        objectIdCache.put(objectURI, o.getObjectId());
-        return o.getObjectId();
+        return OBJECT_ID_CACHE.get(objectURI, Pair.of(container, ownerId));
     }
 
+    private static class ObjectIdCacheLoader implements CacheLoader<String, Integer>
+    {
+        @Override
+        public Integer load(@NotNull String objectURI, @Nullable Object argument)
+        {
+            Pair<Container, Integer> pair = (Pair<Container, Integer>)argument;
+            Container container = pair.first;
+            Integer ownerId = pair.second;
+            OntologyObject o = getOntologyObject(container, objectURI);
+            if (null == o)
+            {
+                o = new OntologyObject();
+                o.setContainer(container);
+                o.setObjectURI(objectURI);
+                if (ownerId != null && ownerId > 0)
+                    o.setOwnerObjectId(ownerId);
+                o = Table.insert(null, getTinfoObject(), o);
+            }
+
+            return o.getObjectId();
+        }
+    }
 
     public static OntologyObject getOntologyObject(Container container, String uri)
     {
@@ -904,7 +921,6 @@ public class OntologyManager
         }
         return new TableSelector(getTinfoObject(), filter, null).getObject(OntologyObject.class);
     }
-
 
     // UNDONE: optimize (see deleteOntologyObjects(Integer[])
     public static void deleteOntologyObjects(Container c, String... uris)
@@ -926,10 +942,9 @@ public class OntologyManager
         finally
         {
             PROPERTY_MAP_CACHE.clear();
-            objectIdCache.clear();
+            OBJECT_ID_CACHE.clear();
         }
     }
-
 
     public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, @Nullable Container c, boolean deleteOwnedObjects)
     {
@@ -1049,7 +1064,7 @@ public class OntologyManager
         finally
         {
             PROPERTY_MAP_CACHE.clear();
-            objectIdCache.clear();
+            OBJECT_ID_CACHE.clear();
         }
     }
 
@@ -1377,7 +1392,7 @@ public class OntologyManager
                 {
                     _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
                     propDescCache.remove(getCacheKey(pd));
-                    domainPropertiesCache.clear();
+                    DOMAIN_PROPERTIES_CACHE.clear();
                     pd.setContainer(project);
                     pd.setProject(project);
                     pd.setPropertyId(0);
@@ -1414,10 +1429,10 @@ public class OntologyManager
 
     private static void uncache(DomainDescriptor dd)
     {
-        domainDescByURICache.remove(getURICacheKey(dd));
-        domainDescByIDCache.remove(dd.getDomainId());
-        domainPropertiesCache.remove(getURICacheKey(dd));
-        domainDescByContainerCache.remove(dd.getContainer().getId());
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(dd));
+        DOMAIN_DESC_BY_ID_CACHE.remove(dd.getDomainId());
+        DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(dd));
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(dd.getContainer());
     }
 
 
@@ -1871,11 +1886,11 @@ public class OntologyManager
         {
             DomainDescriptor ddToSave = ddIn.edit().setDomainId(dd.getDomainId()).build();
             dd = Table.update(null, getTinfoDomainDescriptor(), ddToSave, ddToSave.getDomainId());
-            domainDescByURICache.remove(getURICacheKey(ddIn));
-            domainDescByURICache.remove(getURICacheKey(dd));
-            domainDescByIDCache.remove(dd.getDomainId());
-            domainPropertiesCache.remove(getURICacheKey(ddIn));
-            domainDescByContainerCache.clear();
+            DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(ddIn));
+            DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(dd));
+            DOMAIN_DESC_BY_ID_CACHE.remove(dd.getDomainId());
+            DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(ddIn));
+            DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.clear();
         }
         return dd;
     }
@@ -1918,7 +1933,7 @@ public class OntologyManager
             sqlUpdate.add(dd.getDomainId());
             new SqlExecutor(getExpSchema()).execute(sqlUpdate);
         }
-        domainPropertiesCache.remove(getURICacheKey(dd));
+        DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(dd));
         return pd;
     }
 
@@ -2091,7 +2106,7 @@ public class OntologyManager
             executor.execute(deletePropSql);
             _log.debug("Removing property descriptor from cache. Key: " + key + " descriptor: " + pd);
             propDescCache.remove(key);
-            domainPropertiesCache.clear();
+            DOMAIN_PROPERTIES_CACHE.clear();
             transaction.commit();
         }
     }
@@ -2371,19 +2386,19 @@ public class OntologyManager
 
     public static DomainDescriptor getDomainDescriptor(int id)
     {
-        return domainDescByIDCache.get(id);
+        return DOMAIN_DESC_BY_ID_CACHE.get(id);
     }
 
     @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        DomainDescriptor dd = domainDescByURICache.get(getCacheKey(domainURI, c));
+        DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, c));
         if (null != dd)
             return dd;
 
         // Try in the /Shared container too
-        return domainDescByURICache.get(getCacheKey(domainURI, _sharedContainer));
+        return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, _sharedContainer));
     }
 
     /**
@@ -2434,22 +2449,7 @@ public class OntologyManager
         if (user != null && !c.hasPermission(user, ReadPermission.class))
             return Collections.emptyMap();
 
-        String key = c.getId();
-        Map<String, DomainDescriptor> dds = domainDescByContainerCache.get(key);
-        if (dds != null)
-            return dds;
-
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-
-        dds = new LinkedHashMap<>();
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
-        {
-            dds.putIfAbsent(dd.getDomainURI(), dd);
-        }
-
-        dds = unmodifiableMap(dds);
-        domainDescByContainerCache.put(key, dds);
-        return dds;
+        return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c);
     }
 
     public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
@@ -2480,7 +2480,7 @@ public class OntologyManager
     //TODO: DbCache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
     {
-        List<Pair<String, Boolean>> propertyURIs = domainPropertiesCache.get(getCacheKey(typeURI, c));
+        List<Pair<String, Boolean>> propertyURIs = DOMAIN_PROPERTIES_CACHE.get(getCacheKey(typeURI, c));
         if (propertyURIs != null)
         {
             List<PropertyDescriptor> result = new ArrayList<>(propertyURIs.size());
@@ -2684,7 +2684,7 @@ public class OntologyManager
         _log.debug("Updating property descriptor in cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
         propDescCache.put(getCacheKey(pd), pd);
         // It's possible that the propertyURI has changed, thus breaking our reference
-        domainPropertiesCache.clear();
+        DOMAIN_PROPERTIES_CACHE.clear();
         return pd;
     }
 
@@ -2865,13 +2865,13 @@ public class OntologyManager
     {
         _log.debug("Clearing caches");
         ExperimentService.get().clearCaches();
-        domainDescByURICache.clear();
-        domainDescByIDCache.clear();
-        domainPropertiesCache.clear();
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.clear();
+        DOMAIN_DESC_BY_ID_CACHE.clear();
+        DOMAIN_PROPERTIES_CACHE.clear();
         propDescCache.clear();
         PROPERTY_MAP_CACHE.clear();
-        objectIdCache.clear();
-        domainDescByContainerCache.clear();
+        OBJECT_ID_CACHE.clear();
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.clear();
     }
 
     public static void clearPropertyCache(String parentObjectURI)
