@@ -33,6 +33,7 @@ import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -774,6 +775,7 @@ public class PlateController extends SpringActionController
     public static class GetPlateForm
     {
         private Integer _rowId;
+        private ContainerFilter.Type _containerFilter;
 
         public Integer getRowId()
         {
@@ -783,6 +785,16 @@ public class PlateController extends SpringActionController
         public void setRowId(Integer rowId)
         {
             _rowId = rowId;
+        }
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
     }
 
@@ -799,7 +811,13 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(GetPlateForm form, BindException errors) throws Exception
         {
-            return PlateManager.get().getPlate(getContainer(), form.getRowId());
+            ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            return PlateManager.get().getPlate(cf, form.getRowId());
         }
     }
 }

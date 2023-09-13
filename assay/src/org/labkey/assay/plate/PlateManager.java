@@ -39,6 +39,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
@@ -182,21 +183,21 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public @Nullable Plate createPlate(Plate template, double[][] wellValues, boolean[][] excluded)
+    public @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excluded)
     {
-        return createPlate(template, wellValues, excluded, PlateService.NO_RUNID, 1);
+        return createPlate(plate, wellValues, excluded, PlateService.NO_RUNID, 1);
     }
 
     @Override
-    public @Nullable Plate createPlate(Plate template, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
+    public @Nullable Plate createPlate(Plate plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        if (template == null)
+        if (plate == null)
             return null;
 
-        if (template instanceof PlateImpl plateTemplate)
-            return new PlateImpl(plateTemplate, wellValues, excluded, runId, plateNumber);
+        if (plate instanceof PlateImpl plateImpl)
+            return new PlateImpl(plateImpl, wellValues, excluded, runId, plateNumber);
 
-        throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
+        throw new IllegalArgumentException("Only plates retrieved from the plate service can be used to create plate instances.");
     }
 
     public @NotNull Plate createAndSavePlate(
@@ -334,6 +335,12 @@ public class PlateManager implements PlateService
     public @Nullable Plate getPlate(Container container, int rowId)
     {
         return PlateCache.getPlate(container, rowId);
+    }
+
+    @Override
+    public @Nullable Plate getPlate(ContainerFilter cf, int rowId)
+    {
+        return PlateCache.getPlate(cf, rowId);
     }
 
     @Override
@@ -599,8 +606,9 @@ public class PlateManager implements PlateService
                 deleteWellGroup(container, user, deletedWellGroup.getRowId());
             }
 
+            // create/update well groups
             QueryUpdateService wellGroupQus = getWellGroupUpdateService(container, user);
-            for (WellGroup group : plate.getWellGroupTemplates(null))
+            for (WellGroup group : plate.getWellGroups())
             {
                 WellGroupImpl wellgroup = (WellGroupImpl) group;
                 assert !wellgroup._deleted;
@@ -631,8 +639,6 @@ public class PlateManager implements PlateService
                     savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
             }
-
-            //String wellInstanceLsidPrefix = null;
 
             // Get existing wells for the plate
             Map<Pair<Integer, Integer>, PositionImpl> existingPositionMap = new HashMap<>();
@@ -1041,12 +1047,10 @@ public class PlateManager implements PlateService
     {
         if (_lsidHandlersRegistered)
             throw new IllegalStateException("Cannot register lsid handlers twice.");
-        PlateLsidHandler plateHandler = new PlateLsidHandler();
-        WellGroupLsidHandler wellgroupHandler = new WellGroupLsidHandler();
-        LsidManager.get().registerHandler("PlateTemplate", plateHandler);
-        LsidManager.get().registerHandler("PlateInstance", plateHandler);
-        LsidManager.get().registerHandler("WellGroupTemplate", wellgroupHandler);
-        LsidManager.get().registerHandler("WellGroupInstance", wellgroupHandler);
+
+        LsidManager.get().registerHandler("Plate", new PlateLsidHandler());
+        LsidManager.get().registerHandler("WellGroup", new WellGroupLsidHandler());
+
         _lsidHandlersRegistered = true;
     }
 
@@ -1671,6 +1675,13 @@ public class PlateManager implements PlateService
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
+
+            // verify container filter access
+            Plate savedPlate = PlateService.get().getPlate(ContainerManager.getSharedContainer(), plate.getRowId());
+            assertTrue("Saved plate should not exist in the shared container", savedPlate == null);
+
+            savedPlate = PlateService.get().getPlate(ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user), plate.getRowId());
+            assertTrue("Expected plate to be accessible via a container filter", plate.getRowId().equals(savedPlate.getRowId()));
         }
 
         @Test
