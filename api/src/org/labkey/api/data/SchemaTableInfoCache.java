@@ -43,7 +43,7 @@ public class SchemaTableInfoCache
     @SuppressWarnings("DataFlowIssue")
     private static final CacheTimeChooser<String> TABLE_CACHE_TIME_CHOOSER = (key, argument) -> ((SchemaTableOptions)argument).getSchema().getType().getCacheTimeToLive();
 
-    // This is expensive... use only for debugging and troubleshooting
+    /** This is expensive... use only for debugging and troubleshooting */
     public <OptionType extends SchemaTableOptions> boolean isCached(@NotNull OptionType options)
     {
         DbSchema schema = options.getSchema();
