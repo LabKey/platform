@@ -347,6 +347,12 @@ public class PlateManager implements PlateService
     }
 
     @Override
+    public @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid)
+    {
+        return PlateCache.getPlate(cf, lsid);
+    }
+
+    @Override
     public @Nullable Plate getPlate(Container container, Lsid lsid)
     {
         return PlateCache.getPlate(container, lsid);

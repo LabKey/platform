@@ -141,6 +141,14 @@ public interface PlateService
     @Nullable Plate getPlate(ContainerFilter cf, int rowId);
 
     /**
+     * Gets a plate instance object by lsid.
+     * @param cf The container filter to find the plate
+     * @param lsid The lsid of the plate.
+     * @return The requested plate, or null if no plate exists with the specified row id.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid);
+
+    /**
      * Gets all plate templates for the specified container. Plate templates are Plate instances
      * which have their template field set to TRUE.
      *

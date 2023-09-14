@@ -97,22 +97,33 @@ public class PlateCache
     public static @Nullable Plate getPlate(ContainerFilter cf, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        filter.addClause(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
+        Container c = getContainerWithIdentifier(cf, filter);
 
+        return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId)) : null;
+    }
+
+    public static @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Lsid"), lsid);
+        Container c = getContainerWithIdentifier(cf, filter);
+
+        return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, lsid)) : null;
+    }
+
+    private static @Nullable Container getContainerWithIdentifier(ContainerFilter cf, SimpleFilter filter)
+    {
+        filter.addClause(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
         List<String> containers = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
                 Collections.singleton("Container"),
                 filter, null).getArrayList(String.class);
 
         if (containers.size() > 1)
-            throw new IllegalStateException("More than one Plate found for the specified row ID : " + rowId);
+            throw new IllegalStateException("More than one Plate found that matches that filter");
 
         if (containers.size() == 1)
         {
-            Container c = ContainerManager.getForId(containers.get(0));
-            if (c != null)
-                return PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId));
+            return ContainerManager.getForId(containers.get(0));
         }
-
         return null;
     }
 
