@@ -4623,7 +4623,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
 
-                if (!isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                if (!isTruncate && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
                     sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
