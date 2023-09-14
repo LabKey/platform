@@ -251,7 +251,12 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         @Override
         public void run()
         {
-            getCache().get(_key, _arg, _loader);
+            // Workaround for nested transaction behavior... replay only if the database transaction has been committed
+            TransactionImpl transaction = DbScope.getLabKeyScope().getCurrentTransactionImpl();
+            if (null != transaction)
+                transaction.addCommitTask(this, DbScope.CommitTaskOption.POSTCOMMIT);
+            else
+                getCache().get(_key, _arg, _loader);
         }
     }
 
