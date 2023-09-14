@@ -28,7 +28,6 @@ import org.labkey.api.audit.AbstractAuditHandler;
 import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -526,17 +525,14 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
      *
      * Instead, cache modified dates separately
      */
-    static CacheLoader<String,Date> modifiedDatesLoader = (key, argument) -> {
+    private static final CacheLoader<String,Date> MODIFIED_DATES_LOADER = (key, argument) -> {
         StudySchema ss = StudySchema.getInstance();
         SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataset() + " WHERE EntityId = ?",key);
 
         return new SqlSelector(ss.getScope(),sql).getObject(Date.class);
     };
 
-    static Cache<String, Date> modifiedDates = new BlockingCache<>(
-            new DatabaseCache<>(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified"),
-            modifiedDatesLoader);
-
+    private static final Cache<String, Date> MODIFIED_DATES_CACHE = DatabaseCache.get(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Dataset modified", MODIFIED_DATES_LOADER);
 
     @Override
     public Date getModified()
@@ -546,7 +542,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
 
     public static Date getModified(DatasetDefinition def)
     {
-        return modifiedDates.get(def.getEntityId());
+        return MODIFIED_DATES_CACHE.get(def.getEntityId());
     }
 
     public static void updateModified(DatasetDefinition def, Date modified)
@@ -554,7 +550,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         StudySchema ss = StudySchema.getInstance();
         SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataset() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
         new SqlExecutor(ss.getScope()).execute(sql);
-        modifiedDates.remove(def.getEntityId());
+        MODIFIED_DATES_CACHE.remove(def.getEntityId());
     }
 
     @Override
@@ -1225,7 +1221,7 @@ public class DatasetDefinition extends AbstractStudyEntity<Dataset> implements C
         if (!getDefinitionContainer().getId().equals(getContainer().getId()))
             throw new IllegalStateException("Can't save dataset in this folder...");
         StudyManager.getInstance().updateDatasetDefinition(user, this);
-        modifiedDates.remove(getEntityId());
+        MODIFIED_DATES_CACHE.remove(getEntityId());
     }
 
 

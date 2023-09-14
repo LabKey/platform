@@ -18,7 +18,6 @@ package org.labkey.api.reports.model;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -44,7 +43,7 @@ public class ViewCategoryCache
 {
     private static final ViewCategoryCache INSTANCE = new ViewCategoryCache();
 
-    private final Cache<String, ViewCategoryCollections> VIEW_CATEGORY_CACHE = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), 300, "View categories"), (key, argument) -> new ViewCategoryCollections(key));
+    private final Cache<String, ViewCategoryCollections> VIEW_CATEGORY_CACHE = DatabaseCache.get(CoreSchema.getInstance().getSchema().getScope(), 300, "View categories", (key, argument) -> new ViewCategoryCollections(key));
 
     private ViewCategoryCache()
     {

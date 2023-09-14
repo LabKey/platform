@@ -30,7 +30,8 @@ import java.util.Set;
  * A read-through, transaction-specific cache. Reads through to the shared cache for each entry until a write operation
  * (put or remove) occurs on that entry, at which point only the private cache is consulted for this entry for the
  * remainder of the transaction. This should provide good performance while avoiding pollution of the shared cache
- * during the transaction and in the case of a rollback.
+ * during the transaction and in the case of a rollback. On successful commit, remove and clear operations are replayed
+ * into the shared cache and load operations are replayed on the special BlockingCache that wraps this.
  */
 public class TransactionCache<K, V> implements Cache<K, V>
 {
@@ -260,53 +261,6 @@ public class TransactionCache<K, V> implements Cache<K, V>
         public void run()
         {
             getCache().removeUsingFilter(object);
-        }
-    }
-
-    // Not currently used... consider adding this on every put to proactively populate shared cache after commit
-    private class CacheReloadCommitTask implements Runnable
-    {
-        private final K _key;
-        private final Object _arg;
-        private final CacheLoader<K, V> _loader;
-
-        public CacheReloadCommitTask(K key, Object arg, CacheLoader<K, V> loader)
-        {
-            _key = key;
-            _arg = arg;
-            _loader = loader;
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            CacheReloadCommitTask that = (CacheReloadCommitTask) o;
-
-            if (!getCache().equals(that.getCache())) return false;
-            return Objects.equals(_key, that._key);
-        }
-
-        protected Cache<K, V> getCache()
-        {
-            return _databaseCache.getCache();
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = getCache().hashCode();
-            result = 31 * result + (_key != null ? _key.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public void run()
-        {
-            V value = _loader.load(_key, _arg);
-            getCache().put(_key, value);
         }
     }
 
