@@ -34,8 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
  * (readers block while someone is creating an object)
- * User: matthewb
- * Date: Sep 16, 2010
  */
 public class BlockingCache<K, V> implements Cache<K, V>
 {
@@ -44,7 +42,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     protected CacheTimeChooser<K> _cacheTimeChooser;
     /**
      * Milliseconds to wait if some other thread is loading the cache before timing out.
-     * Note that we will NOT timeout the thread that is doing the load, but this can still help reduce deadlocks
+     * Note that we will NOT time out the thread that is doing the load, but this can still help reduce deadlocks
      */
     protected final long _timeout;
 
@@ -68,12 +66,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         _timeout = timeout;
     }
 
-
     public void setCacheTimeChooser(CacheTimeChooser<K> cacheTimeChooser)
     {
         _cacheTimeChooser = cacheTimeChooser;
     }
-
 
     protected Wrapper<V> createWrapper()
     {
@@ -162,7 +158,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 if (null == loader)
                     throw new IllegalStateException("cache loader was not provided");
 
-                V value = loader.load(key, argument);
+                V value = load(key, argument, loader);
                 CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", value);
 
                 synchronized (w.getLockObject())
@@ -188,6 +184,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         }
     }
 
+    protected V load(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
+    {
+        return loader.load(key, argument);
+    }
 
     /**
      * Preload or replace existing value at this key. Similar to remove() followed by get(), but doesn't block get() callers
@@ -199,7 +199,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         if (null == _loader)
             throw new IllegalStateException("cache loader is not set");
 
-        V value = _loader.load(key, argument);
+        V value = load(key, argument, _loader);
 
         put(key, value);
     }
@@ -332,7 +332,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
             assertEquals(5, _map.size());
         }
 
-        @NotNull
         private void createAndStartThreads(Runnable r, Object start, int count)
         {
             Thread[] threads = new Thread[count];
