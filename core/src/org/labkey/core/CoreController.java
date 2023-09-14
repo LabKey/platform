@@ -1084,6 +1084,7 @@ public class CoreController extends SpringActionController
     public static class ExtContainerTreeForm
     {
         private int _node;
+        private String _nodeId; // container GUID
         private boolean _move = false;
         private boolean _showContainerTabs = false;
         private boolean _useTitles = false;
@@ -1098,6 +1099,16 @@ public class CoreController extends SpringActionController
         public void setNode(int node)
         {
             _node = node;
+        }
+
+        public String getNodeId()
+        {
+            return _nodeId;
+        }
+
+        public void setNodeId(String nodeId)
+        {
+            _nodeId = nodeId;
         }
 
         public boolean isMove()
@@ -1175,6 +1186,8 @@ public class CoreController extends SpringActionController
             _move = form.isMove();
 
             Container parent = ContainerManager.getForRowId(form.getNode());
+            if (parent == null && !StringUtils.isEmpty(form.getNodeId()))
+                parent = ContainerManager.getForId(form.getNodeId());
             if (null != parent)
             {
                 if (!form.isShowContainerTabs() && parent.isContainerTab())
@@ -1268,7 +1281,10 @@ public class CoreController extends SpringActionController
             JSONObject props = super.getContainerProps(c, form);
             String text = c.getName();
             if (!c.getPolicy().getResourceId().equals(c.getResourceId()))
+            {
                 text += "*";
+                props.put("inherit", true);
+            }
             if (c.equals(getContainer()))
                 props.put("cls", "tree-node-selected");
 
