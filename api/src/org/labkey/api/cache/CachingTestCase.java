@@ -1,8 +1,12 @@
-package org.labkey.api.data;
+package org.labkey.api.cache;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TestSchema;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 

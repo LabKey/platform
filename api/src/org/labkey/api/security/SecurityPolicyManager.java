@@ -22,7 +22,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
-import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -72,7 +72,26 @@ public class SecurityPolicyManager
 {
     private static final Logger logger = LogHelper.getLogger(SecurityPolicyManager.class, "Security policy information");
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "Security policies");
+    private static final BlockingCache<String, SecurityPolicy> CACHE;
+
+    static
+    {
+        CACHE = DatabaseCache.get(core.getSchema().getScope(), Constants.getMaxContainers() * 3, "Security policies", (resourceId, argument) -> {
+            Container c = (Container) argument;
+            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
+
+            if (null != policyBean)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resourceId);
+                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
+                Collection<RoleAssignment> assignments = selector.getCollection(RoleAssignment.class);
+
+                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments, policyBean.getModified());
+            }
+
+            return null;
+        });
+    }
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
@@ -87,20 +106,7 @@ public class SecurityPolicyManager
     @Nullable
     public static SecurityPolicy getPolicy(@NotNull Container c, @NotNull String resourceId)
     {
-        return CACHE.get(cacheKey(resourceId), null, (key, argument) -> {
-            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
-
-            if (null != policyBean)
-            {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resourceId);
-                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
-                Collection<RoleAssignment> assignments = selector.getCollection(RoleAssignment.class);
-
-                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments, policyBean.getModified());
-            }
-
-            return null;
-        });
+        return CACHE.get(resourceId, c);
     }
 
     @NotNull

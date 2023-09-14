@@ -81,6 +81,7 @@ import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SampleStatusTable;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.files.FileContentService;
@@ -138,7 +139,6 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.ExperimentAuditProvider;
-import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.XarReader;
@@ -203,7 +203,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
-    private Cache<String, ExpProtocolImpl> protocolCache;
+    private static final Cache<String, ExpProtocolImpl> PROTOCOL_CACHE = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol");
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -245,15 +245,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dataClassCache.clear();
         else
             dataClassCache.remove(c.getId());
-    }
-
-    synchronized Cache<String, ExpProtocolImpl> getProtocolCache()
-    {
-        if (protocolCache == null)
-        {
-            protocolCache = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol");
-        }
-        return protocolCache;
     }
 
     @Override
@@ -757,10 +748,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         filter.addClause(clause);
 
         return new TableSelector(getTinfoMaterial(), filter, null)
-                .getArrayList(Material.class)
-                .stream()
-                .map(ExpMaterialImpl::new)
-                .collect(toList());
+            .getArrayList(Material.class)
+            .stream()
+            .map(ExpMaterialImpl::new)
+            .toList();
     }
 
     @Override
@@ -926,12 +917,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         TableInfo table = dataClass.getTinfo();
         // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
         SQLFragment sql = new SQLFragment()
-                .append("SELECT * FROM ").append(getTinfoData(), "d")
-                .append(", ").append(table, "t")
-                .append(" WHERE t.lsid = d.lsid")
-                .append(" AND d.classId = ?").add(dataClass.getRowId())
-                .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
-                .add(dataClass.getModified());
+            .append("SELECT * FROM ").append(getTinfoData(), "d")
+            .append(", ").append(table, "t")
+            .append(" WHERE t.lsid = d.lsid")
+            .append(" AND d.classId = ?").add(dataClass.getRowId())
+            .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
+            .add(dataClass.getModified());
 
         new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch -> {
             for (Data data : batch)
@@ -946,10 +937,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         // Index the data class if it has never been indexed OR it has changed since it was last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
-                .append(getTinfoDataClass(), "dc")
-                .append(" WHERE dc.LSID = ?").add(expDataClass.getLSID())
-                .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
-                .add(expDataClass.getModified());
+            .append(getTinfoDataClass(), "dc")
+            .append(" WHERE dc.LSID = ?").add(expDataClass.getLSID())
+            .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
+            .add(expDataClass.getModified());
 
         DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
         if (dClass != null)
@@ -1003,73 +994,53 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        return getExpProtocol(rowid, true);
-    }
+        ExpProtocolImpl result;
 
-    public ExpProtocolImpl getExpProtocol(int rowid, boolean useCache)
-    {
-        ExpProtocolImpl result = null;
-
-        if (useCache)
-        {
-            result = getProtocolCache().get("ROWID/" + rowid);
-            if (null != result)
-                return result;
-        }
+        result = PROTOCOL_CACHE.get("ROWID/" + rowid);
+        if (null != result)
+            return result;
 
         Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
 
-        return toExpProtocol(p, useCache);
+        return toExpProtocol(p);
     }
-
 
     @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        return getExpProtocol(lsid, true);
-    }
-
-    public ExpProtocolImpl getExpProtocol(String lsid, boolean useCache)
-    {
-        if (useCache)
-        {
-            ExpProtocolImpl result = getProtocolCache().get(getCacheKey(lsid));
-            if (null != result)
-                return result;
-        }
+        ExpProtocolImpl result = PROTOCOL_CACHE.get(getCacheKey(lsid));
+        if (null != result)
+            return result;
 
         Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
 
-        return toExpProtocol(p, useCache);
+        return toExpProtocol(p);
     }
 
     @NotNull
-    private ExpProtocolImpl toExpProtocol(@Nullable Protocol p, boolean cache)
+    private ExpProtocolImpl toExpProtocol(@Nullable Protocol p)
     {
         ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
-        if (cache && result != null)
+        if (result != null)
         {
-            Cache<String, ExpProtocolImpl> c = getProtocolCache();
-            c.put(getCacheKey(result.getLSID()), result);
-            c.put("ROWID/" + result.getRowId(), result);
+            PROTOCOL_CACHE.put(getCacheKey(result.getLSID()), result);
+            PROTOCOL_CACHE.put("ROWID/" + result.getRowId(), result);
         }
         return result;
     }
 
     private void uncacheProtocol(Protocol p)
     {
-        Cache<String, ExpProtocolImpl> c = getProtocolCache();
+        Cache<String, ExpProtocolImpl> c = PROTOCOL_CACHE;
         c.remove(getCacheKey(p.getLSID()));
         c.remove("ROWID/" + p.getRowId());
     }
-
 
     @Override
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
         return getExpProtocol(generateLSID(container, ExpProtocol.class, name));
     }
-
 
     @Override
     public ExpProtocolImpl createExpProtocol(Container container, ExpProtocol.ApplicationType type, String name)
@@ -3636,7 +3607,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
 
-    public DbSchema getExpSchema()
+    public static DbSchema getExpSchema()
     {
         return DbSchema.get("exp", DbSchemaType.Module);
     }
@@ -3919,7 +3890,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
-        getProtocolCache().clear();
+        PROTOCOL_CACHE.clear();
         DomainPropertyManager.clearCaches();
     }
 

@@ -16,33 +16,27 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 
-/**
- * User: adam
- * Date: 11/30/12
- * Time: 10:46 PM
- */
 public class PropertyCache
 {
-    private final DatabaseCache<String, PropertyManager.PropertyMap> _blockingCache;
-    private final CacheLoader<String, PropertyManager.PropertyMap> _loader;
+    private final BlockingCache<String, PropertyMap> _blockingCache;
 
-    PropertyCache(String name, CacheLoader<String, PropertyManager.PropertyMap> propertyLoader)
+    PropertyCache(String name, CacheLoader<String, PropertyMap> propertyLoader)
     {
-        _loader = propertyLoader;
-        _blockingCache = new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name);
+        _blockingCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
     }
 
-    @Nullable PropertyManager.PropertyMap getProperties(User user, Container container, String category)
+    @Nullable PropertyMap getProperties(User user, Container container, String category)
     {
         String key = getCacheKey(container, user, category);
 
-        return _blockingCache.get(key, new Object[]{container, user, category}, _loader);
+        return _blockingCache.get(key, new Object[]{container, user, category});
     }
 
     void remove(PropertyMap map)
@@ -67,6 +61,6 @@ public class PropertyCache
 
     private static String getCacheKey(String containerId, int userId, String category)
     {
-        return String.valueOf(containerId) + "/" + String.valueOf(userId) + "/" + category;
+        return containerId + "/" + userId + "/" + category;
     }
 }
