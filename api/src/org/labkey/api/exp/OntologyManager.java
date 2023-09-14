@@ -897,6 +897,7 @@ public class OntologyManager
                 obj.setOwnerObjectId(ownerId);
             obj = Table.insert(null, getTinfoObject(), obj);
             objId = obj.getObjectId();
+            OBJECT_ID_CACHE.remove(objectURI);
         }
 
         return objId;
