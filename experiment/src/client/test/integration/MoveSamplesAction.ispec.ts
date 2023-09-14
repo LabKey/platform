@@ -527,7 +527,7 @@ describe('ExperimentController', () => {
             expect(sampleEventsInTop).toHaveLength(0);
             const sampleEventsInSub1 = await getSampleTimelineAuditLogs(sampleRowId, subfolder1Options);
             expect(sampleEventsInSub1).toHaveLength(1);
-            expect(sampleEventsInSub1[0].Comment).toEqual("Sample was registered.");
+            expect(caseInsensitive(sampleEventsInSub1[0], 'Comment')).toEqual("Sample was registered.");
         });
 
         it('success, move sample from subfolder to parent project', async () => {
