@@ -119,14 +119,6 @@ public interface PlateService
     /**
      * Gets an existing plate.
      * @param container The plate's container.
-     * @param plateName The plate's name.
-     * @return  The requested plate, or null if no template exists with the specified name in the specified container.
-     */
-    @Nullable Plate getPlate(Container container, String plateName);
-
-    /**
-     * Gets an existing plate.
-     * @param container The plate's container.
      * @param lsid The plate's lsid.
      * @return  The requested plate, or null if no plate exists with the specified name in the specified container.
      */

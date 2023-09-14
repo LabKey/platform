@@ -239,7 +239,10 @@ public class PlateManager implements PlateService
         return new PositionImpl(container, row, column);
     }
 
-    @Override
+    /**
+     * Use the rowId or lsid variants instead.
+     */
+    @Deprecated
     public @Nullable Plate getPlate(Container container, String plateName)
     {
         return PlateCache.getPlate(container, plateName);
@@ -1058,24 +1061,23 @@ public class PlateManager implements PlateService
     public Plate copyPlate(Plate source, User user, Container destContainer)
             throws Exception
     {
-        Plate destination = getPlate(destContainer, source.getName());
-        if (destination != null)
+        if (plateExists(destContainer, source.getName()))
             throw new PlateService.NameConflictException(source.getName());
-        destination = createPlateTemplate(destContainer, source.getType(), source.getRows(), source.getColumns());
-        destination.setName(source.getName());
+        Plate newPlate = createPlateTemplate(destContainer, source.getType(), source.getRows(), source.getColumns());
+        newPlate.setName(source.getName());
         for (String property : source.getPropertyNames())
-            destination.setProperty(property, source.getProperty(property));
+            newPlate.setProperty(property, source.getProperty(property));
         for (WellGroup originalGroup : source.getWellGroups())
         {
             List<Position> positions = new ArrayList<>();
             for (Position position : originalGroup.getPositions())
-                positions.add(destination.getPosition(position.getRow(), position.getColumn()));
-            WellGroup copyGroup = destination.addWellGroup(originalGroup.getName(), originalGroup.getType(), positions);
+                positions.add(newPlate.getPosition(position.getRow(), position.getColumn()));
+            WellGroup copyGroup = newPlate.addWellGroup(originalGroup.getName(), originalGroup.getType(), positions);
             for (String property : originalGroup.getPropertyNames())
                 copyGroup.setProperty(property, originalGroup.getProperty(property));
         }
-        save(destContainer, user, destination);
-        return getPlate(destContainer, destination.getName());
+        int plateId = save(destContainer, user, newPlate);
+        return getPlate(destContainer, plateId);
     }
 
     @Override
@@ -1579,7 +1581,7 @@ public class PlateManager implements PlateService
 
             assertEquals(1, PlateManager.get().getPlateTemplates(c).size());
 
-            Plate savedTemplate = PlateService.get().getPlate(c, "bob");
+            Plate savedTemplate = PlateManager.get().getPlate(c, "bob");
             assertEquals(plateId, savedTemplate.getRowId().intValue());
             assertEquals("bob", savedTemplate.getName());
             assertEquals("yes", savedTemplate.getProperty("friendly")); assertNotNull(savedTemplate.getLSID());
