@@ -48,7 +48,6 @@ import { DetailPage } from "./DetailPage";
 import { AssayImportPage } from "./AssayImportPage";
 import { LineagePage } from "./LineagePage";
 import { UserProfilePage } from "./UserProfilePage";
-import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { UsersGridPanelPage } from "./UsersGridPanelPage";
 import { GridPanelPage } from './GridPanelPage';
 
@@ -350,9 +349,6 @@ export class App extends React.Component<any, State> {
                             </div>
                         </PageDetailHeader>
                     )
-                }
-                {selected === 'PermissionAssignments' &&
-                    <PermissionAssignmentsPage/>
                 }
                 {selected === 'Progress' &&
                     this.renderPanel('Progress',
