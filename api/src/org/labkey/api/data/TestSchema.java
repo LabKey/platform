@@ -19,9 +19,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 
 /**
  * A simple wrapper over a database schema that can be used for integration or other testing purposes.
- * User: arauch
- * Date: Sep 24, 2005
- * Time: 10:46:35 PM
  */
 public class TestSchema
 {

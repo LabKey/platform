@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -100,7 +99,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LISTID_FIELD_NAME = "listId";
 
 
-    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions"), new ListDefCacheLoader()) ;
+    private final Cache<String, List<ListDef>> _listDefCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
 
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {

@@ -1325,13 +1325,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             BooleanQuery query = new BooleanQuery.Builder()
-                    // Add container filter
-                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
-                    // Add files filter
-                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
-                    //Limit to just dav files and not attachments or other files
-                    .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
-                    .build();
+                // Add container filter
+                .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
+                // Add files filter
+                .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
+                //Limit to just dav files and not attachments or other files
+                .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
+                .build();
 
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())

@@ -73,7 +73,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RequiresPermission(ReadPermission.class)
@@ -248,7 +247,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
             JSONArray templates = new JSONArray();
             List<Pair<String, String>> it = tinfo.getImportTemplates(getViewContext());
-            if (null != it && it.size() > 0)
+            if (null != it && !it.isEmpty())
             {
                 for (Pair<String, String> pair : it)
                 {
