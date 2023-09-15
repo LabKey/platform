@@ -525,7 +525,7 @@ describe('ExperimentController', () => {
             expect(eventsInTop).toHaveLength(0);
             const eventsInSub1 = await getDetailedQueryUpdateAuditLogs(sourceRowId, subfolder1Options);
             expect(eventsInSub1).toHaveLength(1);
-            expect(eventsInSub1[0].Comment).toEqual("A row was inserted.");
+            expect(caseInsensitive(eventsInSub1[0], 'Comment')).toEqual("A row was inserted.");
         });
 
         it('success, move from subfolder to parent project', async () => {
