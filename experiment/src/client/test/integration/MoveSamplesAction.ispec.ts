@@ -238,11 +238,11 @@ describe('ExperimentController', () => {
                     console.log("oldValue slashed & encoded:", encodeURIComponent(getSlashedPath(valueChange.oldValue)));
                     console.log("newValue slashed & encoded:", encodeURIComponent(getSlashedPath(valueChange.newValue)));
                     const oldValues =  caseInsensitive(sampleEventsInTarget[0], 'OldValues');
-                    console.log("oldValues", oldValues);
+                    console.log("oldValues decoded & decoded/slashed: ", decodeURIComponent(oldValues), getSlashedPath(decodeURIComponent(oldValues)));
                     const newValues = caseInsensitive(sampleEventsInTarget[0], 'NewValues');
-                    console.log("newValues", newValues);
-                    expect(oldValues.indexOf(encodeURIComponent(getSlashedPath(valueChange.oldValue)))).toBeGreaterThan(-1);
-                    expect(newValues.indexOf(encodeURIComponent(getSlashedPath(valueChange.newValue)))).toBeGreaterThan(-1);
+                    console.log("newValues decoded & decoded/slashed: ", decodeURIComponent(newValues), getSlashedPath(decodeURIComponent(newValues)));
+                    expect(getSlashedPath(decodeURIComponent(oldValues)).indexOf(getSlashedPath(valueChange.oldValue))).toBeGreaterThan(-1);
+                    expect(getSlashedPath(decodeURIComponent(newValues)).indexOf(getSlashedPath(valueChange.newValue))).toBeGreaterThan(-1);
                 })
             }
             if (transactionId)
