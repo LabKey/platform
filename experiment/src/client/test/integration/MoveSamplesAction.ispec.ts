@@ -234,10 +234,15 @@ describe('ExperimentController', () => {
 
             if (valueChanges) {
                 valueChanges.forEach(valueChange => {
+                    console.log("valueChange", valueChange);
+                    console.log("oldValue slashed & encoded:", encodeURIComponent(getSlashedPath(valueChange.oldValue)));
+                    console.log("newValue slashed & encoded:", encodeURIComponent(getSlashedPath(valueChange.newValue)));
                     const oldValues =  caseInsensitive(sampleEventsInTarget[0], 'OldValues');
+                    console.log("oldValues", oldValues);
                     const newValues = caseInsensitive(sampleEventsInTarget[0], 'NewValues');
-                    expect(oldValues.indexOf(encodeURIComponent(valueChange.oldValue))).toBeGreaterThan(-1);
-                    expect(newValues.indexOf(encodeURIComponent(valueChange.newValue))).toBeGreaterThan(-1);
+                    console.log("newValues", newValues);
+                    expect(oldValues.indexOf(encodeURIComponent(getSlashedPath(valueChange.oldValue)))).toBeGreaterThan(-1);
+                    expect(newValues.indexOf(encodeURIComponent(getSlashedPath(valueChange.newValue)))).toBeGreaterThan(-1);
                 })
             }
             if (transactionId)
