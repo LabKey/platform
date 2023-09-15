@@ -183,9 +183,14 @@ describe('ExperimentController', () => {
     // work here because the sample status feature is only "enabled" when the sampleManagement module is available.
     // See sampleManagement/src/client/test/integration/MoveSamplesAction.ispec.ts for additional test cases.
 
-    function getAbsoluteContainerPath(containerPath: string)
+    function getAbsoluteContainerPath(containerPath: string) :string
     {
         return containerPath.charAt(0) === '/' ? containerPath : '/' + containerPath;
+    }
+
+    function getSlashedPath(path: any): any
+    {
+        return path.replaceAll("\\", "/");
     }
 
     async function verifyRunData(runId: number, folderOptions: RequestOptions, name: string) {
@@ -229,8 +234,8 @@ describe('ExperimentController', () => {
                 valueChanges.forEach(valueChange => {
                     const oldValues =  caseInsensitive(sampleEventsInTarget[0], 'OldValues');
                     const newValues = caseInsensitive(sampleEventsInTarget[0], 'NewValues');
-                    expect(oldValues.indexOf(encodeURIComponent(valueChange.oldValue))).toBeGreaterThan(-1);
-                    expect(newValues.indexOf(encodeURIComponent(valueChange.newValue))).toBeGreaterThan(-1);
+                    expect(getSlashedPath(decodeURIComponent(oldValues)).indexOf(getSlashedPath(valueChange.oldValue))).toBeGreaterThan(-1);
+                    expect(getSlashedPath(decodeURIComponent(newValues)).indexOf(getSlashedPath(valueChange.newValue))).toBeGreaterThan(-1);
                 })
             }
             if (transactionId)
@@ -527,7 +532,7 @@ describe('ExperimentController', () => {
             expect(sampleEventsInTop).toHaveLength(0);
             const sampleEventsInSub1 = await getSampleTimelineAuditLogs(sampleRowId, subfolder1Options);
             expect(sampleEventsInSub1).toHaveLength(1);
-            expect(sampleEventsInSub1[0].Comment).toEqual("Sample was registered.");
+            expect(caseInsensitive(sampleEventsInSub1[0], 'Comment')).toEqual("Sample was registered.");
         });
 
         it('success, move sample from subfolder to parent project', async () => {
@@ -627,6 +632,8 @@ describe('ExperimentController', () => {
 
         });
 
+
+
         it('success, move one sample from parent with file field', async () => {
             mock({
                 'fileA.txt': 'fileA contents',
@@ -648,14 +655,13 @@ describe('ExperimentController', () => {
             const sampleData = await _getSampleData(sampleRowId1, subfolder1Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
 
             expect(sampleData.length).toBe(1);
-            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(subfolder1Options.containerPath + "/@files/sampletype/fileA.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(subfolder1Options.containerPath + "/@files/sampletype/fileA.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(topFolderOptions, subfolder1Options, [sampleRowId1], undefined, userComment,
                 [{
-                    oldValue: topFolderOptions.containerPath + "/@files/sampletype/fileA.txt",
-                    newValue: subfolder1Options.containerPath + "/@files/sampletype/fileA.txt"
+                    oldValue: getSlashedPath(topFolderOptions.containerPath + "/@files/sampletype/fileA.txt"),
+                    newValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileA.txt")
                 }]);
-
         });
 
         it('success, move sample from subfolder with multiple file fields', async () => {
@@ -681,15 +687,15 @@ describe('ExperimentController', () => {
             expect(updateCounts.sampleFiles).toBe(2);
             const sampleData = await _getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
             expect(sampleData.length).toBe(1);
-            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileB.txt")).toBe(true);
-            expect(sampleData[0][FILE_FIELD_2_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileC.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileB.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_2_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileC.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId1], undefined, undefined, [{
-                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileB.txt",
-                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileB.txt"
+                oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileB.txt"),
+                newValue: getSlashedPath(topFolderOptions.containerPath + "/@files/sampletype/fileB.txt")
             }, {
-                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileC.txt",
-                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileC.txt"
+                oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileC.txt"),
+                newValue: getSlashedPath(topFolderOptions.containerPath + "/@files/sampletype/fileC.txt")
             }]);
         });
 
@@ -719,15 +725,15 @@ describe('ExperimentController', () => {
             expect(updateCounts.sampleFiles).toBe(2);
             const sampleData = await _getSampleData(sampleRowId1, topFolderOptions, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME + "," + FILE_FIELD_2_NAME);
             expect(sampleData.length).toBe(1);
-            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt")).toBe(true);
-            expect(sampleData[0][FILE_FIELD_2_NAME].endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileE.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_2_NAME]).endsWith(topFolderOptions.containerPath + "/@files/sampletype/fileE.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(subfolder1Options, topFolderOptions, [sampleRowId1], undefined, undefined, [{
-                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileD.txt",
-                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt"
+                oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileD.txt"),
+                newValue: getSlashedPath(topFolderOptions.containerPath + "/@files/sampletype/fileD-1.txt")
             }, {
-                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileE.txt",
-                newValue: topFolderOptions.containerPath + "/@files/sampletype/fileE.txt"
+                oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileE.txt"),
+                newValue: getSlashedPath(topFolderOptions.containerPath + "/@files/sampletype/fileE.txt")
             }]);
         });
 
@@ -750,11 +756,11 @@ describe('ExperimentController', () => {
             expect(updateCounts.sampleFiles).toBe(1);
             const sampleData = await _getSampleData(sampleRowId1, subfolder2Options, SAMPLE_TYPE_NAME_2, "RowId," + FILE_FIELD_1_NAME);
             expect(sampleData.length).toBe(1);
-            expect(sampleData[0][FILE_FIELD_1_NAME].endsWith(subfolder2Options.containerPath + "/@files/sampletype/fileF.txt")).toBe(true);
+            expect(getSlashedPath(sampleData[0][FILE_FIELD_1_NAME]).endsWith(subfolder2Options.containerPath + "/@files/sampletype/fileF.txt")).toBe(true);
 
             await verifyDetailedAuditLogs(subfolder1Options, subfolder2Options, [sampleRowId1], undefined, undefined, [{
-                oldValue: subfolder1Options.containerPath + "/@files/sampletype/fileF.txt",
-                newValue: subfolder2Options.containerPath + "/@files/sampletype/fileF.txt"
+                oldValue: getSlashedPath(subfolder1Options.containerPath + "/@files/sampletype/fileF.txt"),
+                newValue: getSlashedPath(subfolder2Options.containerPath + "/@files/sampletype/fileF.txt")
             }]);
         });
 
