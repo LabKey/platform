@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
@@ -118,14 +119,6 @@ public interface PlateService
     /**
      * Gets an existing plate.
      * @param container The plate's container.
-     * @param plateName The plate's name.
-     * @return  The requested plate, or null if no template exists with the specified name in the specified container.
-     */
-    @Nullable Plate getPlate(Container container, String plateName);
-
-    /**
-     * Gets an existing plate.
-     * @param container The plate's container.
      * @param lsid The plate's lsid.
      * @return  The requested plate, or null if no plate exists with the specified name in the specified container.
      */
@@ -138,6 +131,22 @@ public interface PlateService
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
     @Nullable Plate getPlate(Container container, int rowId);
+
+    /**
+     * Gets a plate instance object by row id.
+     * @param cf The container filter to find the plate
+     * @param rowId The row id of the plate.
+     * @return The requested plate, or null if no plate exists with the specified row id.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, int rowId);
+
+    /**
+     * Gets a plate instance object by lsid.
+     * @param cf The container filter to find the plate
+     * @param lsid The lsid of the plate.
+     * @return The requested plate, or null if no plate exists with the specified row id.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid);
 
     /**
      * Gets all plate templates for the specified container. Plate templates are Plate instances

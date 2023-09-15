@@ -40,31 +40,35 @@ public interface Plate extends PropertySet, Identifiable
 
     boolean isTemplate();
 
-    Well getWell(int row, int col);
+    /**
+     * Returns an existing well, or creates a new well if one
+     * had not previously existed.
+     */
+    @NotNull Well getWell(int row, int col);
 
-    Well getWell(int rowId);
+    @Nullable Well getWell(int rowId);
 
-    List<Well> getWells();
+    @NotNull List<Well> getWells();
 
-    WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
+    @Nullable WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
 
     @Nullable WellGroup getWellGroup(int rowId);
 
-    List<WellGroup> getWellGroups();
+    @NotNull List<WellGroup> getWellGroups();
 
-    List<WellGroup> getWellGroups(Position position);
+    @NotNull List<WellGroup> getWellGroups(Position position);
 
-    List<WellGroup> getWellGroups(WellGroup.Type type);
+    @NotNull List<WellGroup> getWellGroups(WellGroup.Type type);
 
-    Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupTemplateMap();
+    @NotNull Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupMap();
 
-    WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);
+    @NotNull WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);
 
-    WellGroup addWellGroup(String name, WellGroup.Type type, List<Position> positions);
+    @NotNull WellGroup addWellGroup(String name, WellGroup.Type type, List<Position> positions);
 
-    Integer getRowId();
+    @Nullable Integer getRowId();
 
-    Position getPosition(int row, int col);
+    @NotNull Position getPosition(int row, int col);
 
     int getWellGroupCount();
 
@@ -85,6 +89,5 @@ public interface Plate extends PropertySet, Identifiable
     /**
      * Returns the domain ID for the plate metadata domain.
      */
-    @Nullable
-    Integer getMetadataDomainId();
+    @Nullable Integer getMetadataDomainId();
 }

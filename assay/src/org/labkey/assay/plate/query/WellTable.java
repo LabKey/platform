@@ -233,7 +233,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
                         Object row = lsidGenerator.get(nameMap.get("row"));
                         Object col = lsidGenerator.get(nameMap.get("col"));
 
-                        Lsid lsid = PlateManager.get().getLsid(Well.class, container, true, true);
+                        Lsid lsid = PlateManager.get().getLsid(Well.class, container);
                         return String.format("%s-well-%s-%s", lsid.toString(), row, col);
                     });
 

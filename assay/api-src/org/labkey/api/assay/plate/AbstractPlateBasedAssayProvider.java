@@ -32,6 +32,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -71,6 +72,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
     public static final String METADATA_INPUT_FORMAT_SUFFIX = "#SampleMetadataInputFormat";
     public static final String VIRUS_WELL_GROUP_NAME = "VirusWellGroupName";
+    public static final String PLATE_TEMPLATE_SUFFIX = "#PlateTemplate";
 
     public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLsidPrefix, AssayDataType dataType, Module declaringModule)
     {
@@ -78,13 +80,13 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     }
 
     @Override
-    public void setPlate(Container container, ExpProtocol protocol, Plate template)
+    public void setPlate(Container container, ExpProtocol protocol, Plate plate)
     {
         if (!isPlateBased())
-            throw new IllegalStateException("Only plate-based assays may store a plate template.");
+            throw new IllegalStateException("Only plate-based assays may store a plate.");
         Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
         ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
-                protocol.getLSID() + "#PlateTemplate", template.getName());
+                protocol.getLSID() + PLATE_TEMPLATE_SUFFIX, plate.getLSID());
         props.put(prop.getPropertyURI(), prop);
         protocol.setObjectProperties(props);
     }
@@ -93,8 +95,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     @Nullable
     public Plate getPlate(Container container, ExpProtocol protocol)
     {
-        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
-        return prop != null ? PlateService.get().getPlate(protocol.getContainer(), prop.getStringValue()) : null;
+        ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + PLATE_TEMPLATE_SUFFIX);
+        return prop != null ? PlateService.get().getPlate(protocol.getContainer(), Lsid.parse(prop.getStringValue())) : null;
     }
 
     public boolean isPlateBased()

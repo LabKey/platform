@@ -186,13 +186,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             // generate a value for the lsid
             lsidGenerator.addColumn(plateTable.getColumn("lsid"),
-                    (Supplier) () -> {
-                        Object isTemplate = lsidGenerator.get(nameMap.get("template"));
-                        if (isTemplate instanceof String template)
-                            isTemplate = Boolean.valueOf(template);
-
-                        return PlateManager.get().getLsid(Plate.class, container, (Boolean)isTemplate, true);
-                    });
+                    (Supplier) () -> PlateManager.get().getLsid(Plate.class, container));
 
             // generate the data file id if not provided
             if (!nameMap.containsKey("dataFileId"))
