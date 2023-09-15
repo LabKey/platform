@@ -49,12 +49,14 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
+    @Deprecated // Use the factory methods that return a BlockingDatabaseCache instead
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
     {
         _sharedCache = createSharedCache(maxSize, defaultTimeToLive, debugName);
         _scope = scope;
     }
 
+    @Deprecated // Use the factory methods that return a BlockingDatabaseCache instead
     public DatabaseCache(DbScope scope, int maxSize, String debugName)
     {
         // TODO: UNLIMITED default TTL seems aggressive, but that's what we've used for years...
@@ -71,6 +73,11 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
     }
 
+    /**
+     * A DatabaseCache wrapped by a BlockingCache that knows how to replay load() events that take place on a
+     * transaction's private cache into the shared cache after successful commit. This can result in a big performance
+     * improvement, particularly for operations that always take place inside a transaction.
+     */
     private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
     {
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
@@ -94,6 +101,12 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
             return value;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "BlockingDatabaseCache over \"" + _databaseCache._sharedCache.toString() + "\"";
         }
     }
 
