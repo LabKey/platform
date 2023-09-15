@@ -190,9 +190,7 @@ describe('ExperimentController', () => {
 
     function getSlashedPath(path: any): any
     {
-        let newPath = path.replaceAll("\\", "/");
-        console.log("path, newPath", path, newPath);
-        return newPath;
+        return path.replaceAll("\\", "/");
     }
 
     async function verifyRunData(runId: number, folderOptions: RequestOptions, name: string) {
@@ -234,13 +232,8 @@ describe('ExperimentController', () => {
 
             if (valueChanges) {
                 valueChanges.forEach(valueChange => {
-                    console.log("valueChange", valueChange);
-                    console.log("oldValue slashed & encoded:", encodeURIComponent(getSlashedPath(valueChange.oldValue)));
-                    console.log("newValue slashed & encoded:", encodeURIComponent(getSlashedPath(valueChange.newValue)));
                     const oldValues =  caseInsensitive(sampleEventsInTarget[0], 'OldValues');
-                    console.log("oldValues decoded & decoded/slashed: ", decodeURIComponent(oldValues), getSlashedPath(decodeURIComponent(oldValues)));
                     const newValues = caseInsensitive(sampleEventsInTarget[0], 'NewValues');
-                    console.log("newValues decoded & decoded/slashed: ", decodeURIComponent(newValues), getSlashedPath(decodeURIComponent(newValues)));
                     expect(getSlashedPath(decodeURIComponent(oldValues)).indexOf(getSlashedPath(valueChange.oldValue))).toBeGreaterThan(-1);
                     expect(getSlashedPath(decodeURIComponent(newValues)).indexOf(getSlashedPath(valueChange.newValue))).toBeGreaterThan(-1);
                 })
