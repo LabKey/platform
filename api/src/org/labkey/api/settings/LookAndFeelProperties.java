@@ -164,7 +164,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public String getShortName()
     {
         return SHORT_NAME_CACHE.get(_settingsContainer, null,
-            (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName()).eval(AdminBean.getPropertyMap()));
+            (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName(), false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.KeepSubstitution).eval(AdminBean.getPropertyMap()));
     }
 
     public String getThemeName()

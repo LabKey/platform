@@ -663,13 +663,49 @@ public class StringExpressionFactory
         public enum NullValueBehavior
         {
             // Any null field results in a null eval (good for URLs)
-            NullResult(StringExpressionType.ReplaceMissing.NULL_RESULT),
+            NullResult(StringExpressionType.ReplaceMissing.NULL_RESULT)
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part) throws StopIteratingException
+                        {
+                            throw new StopIteratingException();
+                        }
+                    },
 
             // Null or missing fields get replaced with blank
-            ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE),
+            ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part)
+                        {
+                            return "";
+                        }
+                    },
+
 
             // Insert "null" into the string
-            OutputNull(StringExpressionType.ReplaceMissing.NULL_VALUE);
+            OutputNull(StringExpressionType.ReplaceMissing.NULL_VALUE)
+                    {
+                        @Override
+                        public String handleNull(StringExpressionFactory.StringPart part)
+                        {
+                            return "null";
+                        }
+                    },
+            KeepSubstitution(StringExpressionType.ReplaceMissing.KEEP_SUBSTITUTION)
+            {
+                @Override
+                public String handleNull(StringExpressionFactory.StringPart part)
+                {
+                    return "${" + part.getToken() + "}";
+                }
+
+                @Override
+                public String handleUndefined(StringExpressionFactory.StringPart part)
+                {
+                    return handleNull(part);
+                }
+            };
 
             private final StringExpressionType.ReplaceMissing.Enum _xenum;
 
@@ -693,6 +729,12 @@ public class StringExpressionFactory
                 return null;
             }
 
+            public abstract String handleNull(StringExpressionFactory.StringPart part) throws StopIteratingException;
+
+            public String handleUndefined(StringExpressionFactory.StringPart part) throws StopIteratingException
+            {
+                throw new StopIteratingException();
+            }
         }
 
         protected final NullValueBehavior _nullValueBehavior;
@@ -787,9 +829,10 @@ public class StringExpressionFactory
             ArrayList<StringPart> parts = getParsedExpression();
             if (parts.size() == 1)
             {
+                StringExpressionFactory.StringPart part = parts.get(0);
                 try
                 {
-                    return nullFilter(parts.get(0).getValue(context));
+                    return nullFilter(part.getValue(context), part);
                 }
                 catch (StopIteratingException e)
                 {
@@ -800,10 +843,9 @@ public class StringExpressionFactory
             try
             {
                 StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < parts.size(); i++)
+                for (StringPart part : parts)
                 {
-                    StringPart part = parts.get(i);
-                    String value = nullFilter(part.getValue(context));
+                    String value = nullFilter(part.getValue(context), part);
                     builder.append(value);
                 }
                 return builder.toString();
@@ -814,7 +856,7 @@ public class StringExpressionFactory
             }
         }
 
-        protected final String nullFilter(String value) throws StopIteratingException
+        protected final String nullFilter(String value, StringExpressionFactory.StringPart part) throws StopIteratingException
         {
             // Allow non-null and non-UNDEFINED values
             if (value != null && !UNDEFINED.equals(value))
@@ -824,26 +866,9 @@ public class StringExpressionFactory
             // Better to have no URL than a URL that's missing parameters.  In the future, we
             // could emit the missing FieldKey into the URL.
             if (UNDEFINED.equals(value))
-                throw new StopIteratingException();
+                return _nullValueBehavior.handleUndefined(part);
 
-            switch (_nullValueBehavior)
-            {
-                // Bail out if the context is missing one of the substitutions. Better to have no URL than
-                // a URL that's missing parameters
-                case NullResult:
-                    throw new StopIteratingException();
-
-                // More lenient... just substitute blank for missing/null
-                case ReplaceNullWithBlank:
-                    return "";
-
-                // Output "null"
-                case OutputNull:
-                    return "null";
-
-                default:
-                    throw new IllegalStateException("Unknown behavior: " + _nullValueBehavior);
-            }
+            return _nullValueBehavior.handleNull(part);
         }
 
 
@@ -874,8 +899,7 @@ public class StringExpressionFactory
                 if (null != clone._parsedExpression)
                 {
                     clone._parsedExpression = new ArrayList<>(clone._parsedExpression);
-                    for (int i=0 ; i<clone._parsedExpression.size() ; i++)
-                        clone._parsedExpression.set(i, (StringPart)clone._parsedExpression.get(i).clone());
+                    clone._parsedExpression.replaceAll(stringPart -> (StringPart) stringPart.clone());
                 }
                 return clone;
             }
@@ -1219,9 +1243,8 @@ public class StringExpressionFactory
             if (1 == _parsedExpression.size())
             {
                 StringPart p = _parsedExpression.get(0);
-                if (p instanceof FieldPart)
+                if (p instanceof FieldPart fp)
                 {
-                    FieldPart fp = (FieldPart)p;
                     _parsedExpression.set(0,new FieldPart(fp._key,SubstitutionFormat.passThrough));
                 }
             }
