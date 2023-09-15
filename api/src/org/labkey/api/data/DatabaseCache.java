@@ -44,8 +44,6 @@ import java.util.Set;
  */
 public class DatabaseCache<K, V> implements Cache<K, V>
 {
-    private static final Logger LOG = LogHelper.getLogger(DatabaseCache.class, "DatabaseCache misses");
-
     private final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
@@ -80,6 +78,8 @@ public class DatabaseCache<K, V> implements Cache<K, V>
      */
     private static class BlockingDatabaseCache<K, V> extends BlockingCache<K, V>
     {
+        private static final Logger LOG = LogHelper.getLogger(BlockingDatabaseCache.class, "BlockingDatabaseCache loads");
+
         private final DatabaseCache<K, Wrapper<V>> _databaseCache;
 
         public BlockingDatabaseCache(DatabaseCache<K, Wrapper<V>> cache, @Nullable CacheLoader<K, V> loader)
