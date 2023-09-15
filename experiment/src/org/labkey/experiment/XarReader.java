@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlCursor;
@@ -1548,8 +1549,10 @@ public class XarReader extends AbstractXarImporter
                 getLog().debug("Updating " + description + " with aliquot root LSID");
 
                 String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
+                String existingRootLsid = lsid.equals(((Material) output).getRootMaterialLSID()) ? null : ((Material) output).getRootMaterialLSID();
+
                 // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
-                if (((Material) output).getRootMaterialLSID() != null && !((Material) output).getRootMaterialLSID().equals(rootMaterialLSID))
+                if (existingRootLsid != null && !existingRootLsid.equals(rootMaterialLSID))
                 {
                     getLog().info(description + " with LSID '" + lsid + "' already has root material LSID of " + ((Material) output).getRootMaterialLSID() + "; not updating to " + newRootLsid + ".");
                 }
