@@ -886,7 +886,21 @@ public class OntologyManager
     public static int ensureObject(Container container, String objectURI, Integer ownerId)
     {
         //TODO: (marki) Transact?
-        return OBJECT_ID_CACHE.get(objectURI, Pair.of(container, ownerId));
+        Integer objId = OBJECT_ID_CACHE.get(objectURI, container);
+
+        if (null == objId)
+        {
+            OntologyObject obj = new OntologyObject();
+            obj.setContainer(container);
+            obj.setObjectURI(objectURI);
+            if (ownerId != null && ownerId > 0)
+                obj.setOwnerObjectId(ownerId);
+            obj = Table.insert(null, getTinfoObject(), obj);
+            objId = obj.getObjectId();
+            OBJECT_ID_CACHE.remove(objectURI);
+        }
+
+        return objId;
     }
 
     private static class ObjectIdCacheLoader implements CacheLoader<String, Integer>
@@ -894,25 +908,14 @@ public class OntologyManager
         @Override
         public Integer load(@NotNull String objectURI, @Nullable Object argument)
         {
-            Pair<Container, Integer> pair = (Pair<Container, Integer>)argument;
-            Container container = pair.first;
-            Integer ownerId = pair.second;
-            OntologyObject o = getOntologyObject(container, objectURI);
-            if (null == o)
-            {
-                o = new OntologyObject();
-                o.setContainer(container);
-                o.setObjectURI(objectURI);
-                if (ownerId != null && ownerId > 0)
-                    o.setOwnerObjectId(ownerId);
-                o = Table.insert(null, getTinfoObject(), o);
-            }
+            Container container = (Container)argument;
+            OntologyObject obj = getOntologyObject(container, objectURI);
 
-            return o.getObjectId();
+            return obj == null ? null : obj.getObjectId();
         }
     }
 
-    public static OntologyObject getOntologyObject(Container container, String uri)
+    public static @Nullable OntologyObject getOntologyObject(Container container, String uri)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), uri);
         if (container != null)
