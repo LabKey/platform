@@ -179,7 +179,7 @@ public class AssayUpgradeCode implements UpgradeCode
                             ExpProtocol mutableProtocol = ExperimentService.get().getExpProtocol(protocol.getRowId());
                             _log.info("Adjusting plate template storage for assay: " + mutableProtocol.getName());
                             plateProvider.setPlate(mutableProtocol.getContainer(), mutableProtocol, plate);
-                            mutableProtocol.save(User.getSearchUser());
+                            mutableProtocol.save(User.getAdminServiceUser());
                         }
                     }
                 }
