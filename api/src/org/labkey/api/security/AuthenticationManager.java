@@ -1052,7 +1052,7 @@ public class AuthenticationManager
                 else
                 {
                     // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getConfiguration().getDescription() + ". Login failed because account creation is disabled.");
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getSuccessDetails() + ", but login failed because account creation is disabled.");
                     return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
                 }
             }
@@ -1077,7 +1077,7 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via the \"" + response.getConfiguration().getDescription() + "\" configuration.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
 
         return new PrimaryAuthenticationResult(user, response);
     }

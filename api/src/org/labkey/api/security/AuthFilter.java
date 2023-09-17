@@ -61,13 +61,6 @@ public class AuthFilter implements Filter
     {
     }
 
-
-    @Override
-    public void destroy()
-    {
-    }
-
-
     // This is the first (and last) LabKey code invoked on a request.
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
@@ -103,7 +96,7 @@ public class AuthFilter implements Filter
         // We need to handle it here otherwise the begin page redirect in index.html will fail: issue 25395
 
         // getServletPath() will return an empty String when a URL with a context path but no trailing slash is requested
-        if (req.getServletPath().equals(""))
+        if (req.getServletPath().isEmpty())
         {
             // now check if this is the case where the request URL contains only the context path
             if (req.getContextPath() != null && req.getRequestURL().toString().endsWith(req.getContextPath()))

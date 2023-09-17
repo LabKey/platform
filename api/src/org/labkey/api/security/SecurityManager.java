@@ -492,17 +492,27 @@ public class SecurityManager
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
     {
+        // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
+        // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        @Nullable String apiKey = getApiKey(basicCredentials, request);
+
+        if (null == basicCredentials)
+            basicCredentials = getApiKey(request);
 
         // Handle session API key early, if present and valid
-        if (apiKey != null)
+        if (basicCredentials != null)
         {
-            HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
+            String username = basicCredentials.first;
 
-            if (null != session)
+            if (API_KEY.equals(username))
             {
-                request = new SessionReplacingRequest(request, session);
+                String apiKey = basicCredentials.second;
+                HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
+
+                if (null != session)
+                {
+                    request = new SessionReplacingRequest(request, session);
+                }
             }
         }
 
@@ -548,7 +558,7 @@ public class SecurityManager
                     if (sessionUser.isImpersonated())
                     {
                         SecurityManager.stopImpersonating(request, factory);
-                        sessionUser = sessionUser.getImpersonatingUser(); // Need to logout the admin
+                        sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                     }
 
                     // Now logout the session user
@@ -558,14 +568,6 @@ public class SecurityManager
             }
 
             u = sessionUser;
-        }
-
-        if (null == u && apiKey != null)
-        {
-            u = ApiKeyManager.get().authenticateFromApiKey(apiKey);
-
-            if (null != u)
-                request.setAttribute(AUTHENTICATION_METHOD, "Basic");
         }
 
         if (null == u && null != basicCredentials)
@@ -589,55 +591,44 @@ public class SecurityManager
     }
 
     /**
-     * Determine if an API key is present, checking basic auth first, then "apikey" header, and then the special "transform"
-     * cookie and parameters. Return the API key if it's present; otherwise return null.
-     * @param basicCredentials Basic auth credentials
+     * Determine if an API key is present, checking "apikey" header first and then the special "transform" cookie and
+     * parameters. Return a pair with the API key if it's present; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable String getApiKey(@Nullable Pair<String, String> basicCredentials, HttpServletRequest request) throws UnsupportedEncodingException
+    private static @Nullable Pair<String, String> getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
     {
-        String apiKey;
+        // Passing via the "apikey" HTTP header is our preferred approach and used by most
+        // LabKey client API implementations
+        String apiKey = request.getHeader(API_KEY);
 
-        // Accept API keys via basic auth if the username is "apikey". Supported for backwards compatibility and clients that don't support custom headers.
-
-        if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
+        if (null == apiKey)
         {
-            apiKey = basicCredentials.getValue();
-        }
-        else
-        {
-            // Passing via the "apikey" HTTP header is our preferred approach and used by most
-            // LabKey client API implementations
-            apiKey = request.getHeader(API_KEY);
-            if (null == apiKey)
+            // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
+            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+            apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+            if (null != apiKey)
             {
-                // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
-                // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-                apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-                if (null != apiKey)
+                _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+            }
+            else
+            {
+                // Support as a GET parameter as well, not just as a cookie, to support authentication
+                // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
+                // Do not use request.getParameter() since that will consume the POST body, #32711.
+                try
                 {
-                    _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                    Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
+                    apiKey = params.get(TRANSFORM_SESSION_ID);
                 }
-                else
+                catch (IllegalArgumentException e)
                 {
-                    // Support as a GET parameter as well, not just as a cookie, to support authentication
-                    // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
-                    // Do not use request.getParameter() since that will consume the POST body, #32711.
-                    try
-                    {
-                        Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                        apiKey = params.get(TRANSFORM_SESSION_ID);
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        throw new UnsupportedEncodingException(e.getMessage());
-                    }
+                    throw new UnsupportedEncodingException(e.getMessage());
                 }
             }
         }
 
-        return apiKey;
+        return null != apiKey ? Pair.of(API_KEY, apiKey) : null;
     }
 
     public static final int SECONDS_PER_DAY = 60*60*24;
