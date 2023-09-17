@@ -104,7 +104,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
             return user != null ?
                 AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), "an API key") :
-                AuthenticationResponse.createFailureResponse(configuration, FailureReason.badCredentials);
+                AuthenticationResponse.createFailureResponse(configuration, FailureReason.badApiKey);
         }
         else
         {

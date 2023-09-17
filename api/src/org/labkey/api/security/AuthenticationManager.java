@@ -969,7 +969,9 @@ public class AuthenticationManager
                     try
                     {
                         email = new ValidEmail(id);
-                        emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
+                        // If this user doesn't exist we can still report the normalized email address.
+                        // FailureReason can determine whether to log the email address or not.
+                        emailAddress = firstFailure.getFailureReason().getEmailAddress(email);
                     }
                     catch (InvalidEmailException e)
                     {
@@ -998,7 +1000,7 @@ public class AuthenticationManager
                 else
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
-                    addAuditEvent(User.guest, request, message);
+                    addAuditEvent(User.guest, request, "Unknown user" + message);
                     _log.warn("Unknown user" + message);
                 }
 

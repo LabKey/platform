@@ -396,7 +396,16 @@ public interface AuthenticationProvider
         complexity(ReportType.onFailure, "password does not meet the complexity requirements"),
         expired(ReportType.onFailure, "password has expired"),
         configurationError(ReportType.always, "configuration problem"),
-        notApplicable(ReportType.never, "not applicable");
+        notApplicable(ReportType.never, "not applicable"),
+        badApiKey(ReportType.onFailure, "invalid API key") {
+            @Override
+            public @Nullable String getEmailAddress(ValidEmail email) throws InvalidEmailException
+            {
+                // This override prevents logging a strange "apikey@domain.com"-type failure message. Invalid API key
+                // means email is unknown, so always return null.
+                return null;
+            }
+        };
 
         private final ReportType _type;
         private final String _message;
@@ -415,6 +424,11 @@ public interface AuthenticationProvider
         public String getMessage()
         {
             return _message;
+        }
+
+        public @Nullable String getEmailAddress(ValidEmail email) throws InvalidEmailException
+        {
+            return email.getEmailAddress();
         }
     }
 
