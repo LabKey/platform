@@ -862,7 +862,7 @@ public class AuthenticationManager
 
 
     /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
