@@ -56,6 +56,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
+import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.model.PlateType;
@@ -761,6 +762,7 @@ public class PlateController extends SpringActionController
     {
         private Integer _rowId;
         private ContainerFilter.Type _containerFilter;
+        private Boolean _includeRunCount;
 
         public Integer getRowId()
         {
@@ -780,6 +782,16 @@ public class PlateController extends SpringActionController
         public void setContainerFilter(ContainerFilter.Type containerFilter)
         {
             _containerFilter = containerFilter;
+        }
+
+        public Boolean getIncludeRunCount()
+        {
+            return _includeRunCount;
+        }
+
+        public void setIncludeRunCount(Boolean includeRunCount)
+        {
+            _includeRunCount = includeRunCount;
         }
     }
 
@@ -802,7 +814,12 @@ public class PlateController extends SpringActionController
             if (form.getContainerFilter() != null)
                 cf = form.getContainerFilter().create(getViewContext());
 
-            return PlateManager.get().getPlate(cf, form.getRowId());
+            Plate plate = PlateManager.get().getPlate(cf, form.getRowId());
+
+            if (plate != null && Boolean.TRUE.equals(form.getIncludeRunCount()))
+                ((PlateImpl) plate).setRunCount(PlateManager.get().getRunCountUsingPlate(plate.getContainer(), plate));
+
+            return plate;
         }
     }
 }

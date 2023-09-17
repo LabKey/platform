@@ -256,9 +256,9 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull Plate plateTemplate)
+    public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, plateTemplate);
+        SqlSelector se = selectRunUsingPlate(c, plate);
         if (se == null)
             return emptyList();
 
@@ -267,13 +267,13 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public int getRunCountUsingPlate(@NotNull Container c, @NotNull Plate plateTemplate)
+    public int getRunCountUsingPlate(@NotNull Container c, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, plateTemplate);
+        SqlSelector se = selectRunUsingPlate(c, plate);
         if (se == null)
             return 0;
 
-        return (int)se.getRowCount();
+        return (int) se.getRowCount();
     }
 
     private @Nullable SqlSelector selectRunUsingPlate(@NotNull Container c, @NotNull Plate plate)

@@ -70,6 +70,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private List<PlateCustomField> _customFields = Collections.emptyList();
     private Integer _metadataDomainId;
 
+    private Integer _runCount;
+
     public PlateImpl()
     {
         // no-param constructor for reflection
@@ -580,5 +582,17 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setMetadataDomainId(Integer metadataDomainId)
     {
         _metadataDomainId = metadataDomainId;
+    }
+
+    @Nullable
+    @Override
+    public Integer getRunCount()
+    {
+        return _runCount;
+    }
+
+    public void setRunCount(Integer runCount)
+    {
+        _runCount = runCount;
     }
 }
