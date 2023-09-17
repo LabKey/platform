@@ -381,6 +381,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         VcsService.setInstance(new VcsServiceImpl());
         LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
         DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
+        DbLoginService.setInstance(new DbLoginManager());
 
         try
         {
@@ -1123,8 +1124,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             WebdavService.get().registerRootResolver(UserResolverImpl.get());
         }
-
-        DbLoginService.setInstance(new DbLoginManager());
     }
 
     @Override
