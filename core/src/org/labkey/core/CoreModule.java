@@ -89,6 +89,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
+import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -1122,6 +1123,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             WebdavService.get().registerRootResolver(UserResolverImpl.get());
         }
+
+        DbLoginService.setInstance(new DbLoginManager());
     }
 
     @Override
