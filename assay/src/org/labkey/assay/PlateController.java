@@ -15,9 +15,13 @@
  */
 package org.labkey.assay;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
@@ -32,6 +36,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -46,6 +51,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -65,6 +71,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -535,19 +542,15 @@ public class PlateController extends SpringActionController
         }
     }
 
-    public static class CreatePlateForm
+    public static class CreatePlateForm implements ApiJsonForm
     {
         private String _name;
         private PlateType _plateType;
+        private List<Map<String, Object>> _data = new ArrayList<>();
 
         public String getName()
         {
             return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
         }
 
         public PlateType getPlateType()
@@ -555,12 +558,41 @@ public class PlateController extends SpringActionController
             return _plateType;
         }
 
-        public void setPlateType(PlateType plateType)
+        public List<Map<String, Object>> getData()
         {
-            _plateType = plateType;
+            return _data;
+        }
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
+
+            if (json.has("name"))
+                _name = json.getString("name");
+
+            if (json.has("plateType"))
+                _plateType = objectMapper.convertValue(json.getJSONObject("plateType"), PlateType.class);
+
+            if (json.has("data"))
+            {
+                RowMapFactory<Object> factory = new RowMapFactory<>();
+                JSONArray data = json.getJSONArray("data");
+                for (int i = 0; i < data.length(); i++)
+                {
+                    JSONObject jsonObj = data.getJSONObject(i);
+                    if (jsonObj != null)
+                    {
+                        Map<String, Object> rowMap = factory.getRowMap();
+                        JsonUtil.fillMapShallow(jsonObj, rowMap);
+                        _data.add(rowMap);
+                    }
+                }
+            }
         }
     }
 
+    @Marshal(Marshaller.JSONObject)
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
     {
@@ -578,7 +610,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName(), form.getData());
                 return success(plate);
             }
             catch (Exception e)
