@@ -119,6 +119,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -130,6 +131,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -145,7 +147,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 {
     private static final Logger _log = LogHelper.getLogger(ModuleLoader.class, "Initializes and starts up all modules");
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
-    private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
+    private static final Map<String, Module> _controllerNameToModule = new CaseInsensitiveHashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
@@ -203,19 +205,29 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // all names start with _modules to make it easier to search for usages
     private final Object _modulesLock = new Object();
     private final Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
-    private final Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
-    private final Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
+    /**
+     * We use an immutable map for _moduleMap and _moduleClassMap so their access doesn't need to be synchronized,
+     * reducing contention for these frequently accessed collections (dozens or hundreds of times per request)
+     */
+    private volatile Map<String, Module> _moduleMap = Collections.emptyMap();
+    private volatile Map<Class<? extends Module>, Module> _moduleClassMap = Collections.emptyMap();
+    /** Use a CopyOnWriteArrayList since the underlying collection is frequently accessed and very infrequently mutated */
+    private final List<Module> _modules = new CopyOnWriteArrayList<>();
+    /**
+     * Immutable wrapper over _modules so that we don't need to create a new wrapper every time we return it, which
+     * can be thousands of times per request
+     */
+    private final List<Module> _modulesImmutable = Collections.unmodifiableList(_modules);
+
     // Allow multiple StartupPropertyHandlers with the same scope as long as the StartupProperty impl class is different.
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveHashSetValuedMap<>();
 
-    private List<Module> _modules;
 
     public ModuleLoader()
     {
-        assert null == _instance : "Should be only one instance of module loader";
         if (null != _instance)
-            _log.error("More than one instance of module loader...");
+            throw new IllegalStateException("Should be only one instance of module loader");
 
         _instance = this;
 
@@ -245,7 +257,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
         catch (Throwable t)
         {
-            if (null == _modules || _modules.isEmpty())
+            if (_modules.isEmpty())
             {
                 _log.fatal("Failure occurred during ModuleLoader init.", t);
                 System.err.println("The server cannot start.  Check the server error log.");
@@ -282,8 +294,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         _log.debug("ModuleLoader init");
 
-        // CONSIDER: could optimize more by not
-
         setJavaVersion();
 
         // make sure ConvertHelper is initialized
@@ -299,13 +309,19 @@ public class ModuleLoader implements Filter, MemTrackerListener
         synchronized (_modulesLock)
         {
             ModuleDependencySorter sorter = new ModuleDependencySorter();
-            _modules = sorter.sortModulesByDependencies(moduleList);
+            _modules.addAll(sorter.sortModulesByDependencies(moduleList));
+
+            Map<String, Module> newModuleMap = new CaseInsensitiveHashMap<>();
+            Map<Class<? extends Module>, Module> newModuleClassMap = new HashMap<>();
 
             for (Module module : _modules)
             {
-                _moduleMap.put(module.getName(), module);
-                _moduleClassMap.put(module.getClass(), module);
+                newModuleMap.put(module.getName(), module);
+                newModuleClassMap.put(module.getClass(), module);
             }
+
+            _moduleMap = Collections.unmodifiableMap(newModuleMap);
+            _moduleClassMap = Collections.unmodifiableMap(newModuleClassMap);
         }
 
         return getModules();
@@ -396,16 +412,22 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 throw new IllegalStateException("Module name should not have changed.  Found '" + moduleCreated.getName() + "' and '" + moduleExisting.getName() + "'");
 
             _moduleContextMap.put(context.getName(), context);
-            _moduleMap.put(moduleCreated.getName(), moduleCreated);
+
+            Map<String, Module> newModuleMap = new CaseInsensitiveHashMap<>(_moduleMap);
+            newModuleMap.put(moduleCreated.getName(), moduleCreated);
+            _moduleMap = Collections.unmodifiableMap(newModuleMap);
+
             if (null != moduleExisting)
                 _modules.remove(moduleExisting);
             _modules.add(moduleCreated);
-            _moduleClassMap.put(moduleCreated.getClass(), moduleCreated);
+
+            Map<Class<? extends Module>, Module> newModuleClassMap = new HashMap<>(_moduleClassMap);
+            newModuleClassMap.put(moduleCreated.getClass(), moduleCreated);
+            _moduleClassMap = Collections.unmodifiableMap(newModuleClassMap);
 
             synchronized (_controllerNameToModule)
             {
                 _controllerNameToModule.put(moduleCreated.getName(), moduleCreated);
-                _controllerNameToModule.put(moduleCreated.getName().toLowerCase(), moduleCreated);
             }
 
             if (null != moduleExisting)
@@ -792,11 +814,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
     {
         Module core = getCoreModule();
 
-        ListIterator<Module> iterator = modules.listIterator();
         Module.SupportedDatabase coreType = Module.SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
-        while (iterator.hasNext())
+        for (Module module : modules)
         {
-            Module module = iterator.next();
             if (module == core)
                 continue;
             if (!module.getSupportedDatabasesSet().contains(coreType))
@@ -804,7 +824,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 var e = new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
                 // In production mode, treat these exceptions as a module initialization error
                 // In dev mode, make them warnings so devs can easily switch databases
-                removeModule(iterator, module, !AppProps.getInstance().isDevMode(), e);
+                removeModule(modules, module, !AppProps.getInstance().isDevMode(), e);
             }
         }
     }
@@ -848,12 +868,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         throw e;
 
                     // In dev mode, make them warnings so devs can easily switch databases
-                    removeModule(iterator, module, false, e);
+                    removeModule(modules, module, false, e);
                 }
             }
             catch(Throwable t)
             {
-                removeModule(iterator, module, true, t);
+                removeModule(modules, module, true, t);
             }
         }
 
@@ -881,7 +901,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-    private void removeModule(ListIterator<Module> iterator, Module current, boolean treatAsError, Throwable t)
+    private void removeModule(List<Module> modules, Module current, boolean treatAsError, Throwable t)
     {
         String name = current.getName();
 
@@ -898,16 +918,18 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         synchronized (_modulesLock)
         {
-            iterator.remove();
-            removeMapValue(current, _moduleClassMap);
-            removeMapValue(current, _moduleMap);
+            modules.remove(current);
+            _moduleClassMap = removeMapValue(current, new HashMap<>(_moduleClassMap));
+            _moduleMap = removeMapValue(current, new CaseInsensitiveHashMap<>(_moduleMap));
             removeMapValue(current, _controllerNameToModule);
         }
     }
 
-    private void removeMapValue(Module module, Map<?, Module> map)
+    /** @return an immutable wrapper over the modified map */
+    private <K> Map<K, Module> removeMapValue(Module module, Map<K, Module> map)
     {
         map.entrySet().removeIf(entry -> entry.getValue() == module);
+        return Collections.unmodifiableMap(map);
     }
 
     private List<String> additionalSchemasRequiringUpgrade(Module module)
@@ -1087,7 +1109,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (props.containsKey("name"))
             moduleName = props.get("name");
 
-        if (moduleName == null || moduleName.length() == 0)
+        if (moduleName == null || moduleName.isEmpty())
             throw new ConfigurationException("Simple module must specify a name in config/module.xml or config/module.properties: " + moduleDir.getParent());
 
         // Create the module instance
@@ -1415,7 +1437,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public Map<String, Throwable> getModuleFailures()
     {
-        if (_moduleFailures.size() == 0)
+        if (_moduleFailures.isEmpty())
         {
             return Collections.emptyMap();
         }
@@ -1738,8 +1760,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         synchronized (_modulesLock)
         {
-            removeMapValue(m, _moduleClassMap);
-            removeMapValue(m, _moduleMap);
+            _moduleClassMap = removeMapValue(m, new HashMap<>(_moduleClassMap));
+            _moduleMap = removeMapValue(m, new CaseInsensitiveHashMap<>(_moduleMap));
             removeMapValue(m, _controllerNameToModule);
             _moduleContextMap.remove(context.getName());
             _modules.remove(m);
@@ -1887,26 +1909,19 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public boolean hasModule(String name)
     {
-        synchronized (_modulesLock)
-        {
-            return _moduleMap.containsKey(name);
-        }
+        return getModule(name) != null;
     }
 
     public Module getModule(String name)
     {
-        synchronized (_modulesLock)
-        {
-            return _moduleMap.get(name);
-        }
+        // _moduleMap is immutable so no need to synchronize for reads
+        return _moduleMap.get(name);
     }
 
     public <M extends Module> M getModule(Class<M> moduleClass)
     {
-        synchronized (_modulesLock)
-        {
-            return (M) _moduleClassMap.get(moduleClass);
-        }
+        // _moduleClassMap is immutable so no need to synchronize for reads
+        return (M) _moduleClassMap.get(moduleClass);
     }
 
     public Module getCoreModule()
@@ -1917,10 +1932,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /** @return all known modules, sorted in dependency order */
     public List<Module> getModules()
     {
-        synchronized (_modulesLock)
-        {
-            return List.copyOf(_modules);
-        }
+        // We can return the immutable, thread-safe list without needing to lock anything
+        return _modulesImmutable;
     }
 
     public List<Module> getModules(boolean userHasEnableRestrictedModulesPermission)
@@ -2016,7 +2029,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
                         continue;   // Avoid duplicate work
 
                     _controllerNameToModule.put(key, module);
-                    _controllerNameToModule.put(key.toLowerCase(), module);
 
                     Class<?> clazz = entry.getValue();
                     for (Class<?> innerClass : clazz.getClasses())
@@ -2032,18 +2044,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
         }
     }
-
-
-    /** This is not for static java controllers, only use for dynamically loaded controllers */
-    public void addControllerAlias(Module m, String name, Class clss)
-    {
-        synchronized (_controllerNameToModule)
-        {
-            _controllerNameToModule.put(name, m);
-            _controllerNameToModule.put(name.toLowerCase(), m);
-        }
-    }
-
 
     public Module getModuleForController(String controllerName)
     {

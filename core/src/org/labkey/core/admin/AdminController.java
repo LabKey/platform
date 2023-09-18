@@ -2606,7 +2606,7 @@ public class AdminController extends SpringActionController
             if (null == _type)
                 throw new NotFoundException("Unknown execution plan type");
 
-            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHash(), _type);
+            return QueryProfiler.getInstance().getExecutionPlanView(form.getSqlHash(), _type, form.isLog());
         }
 
         @Override
@@ -2623,6 +2623,7 @@ public class AdminController extends SpringActionController
     {
         private String _sqlHash;
         private String _type = "Estimated"; // All dialects support Estimated
+        private boolean _log = false;
 
         public String getSqlHash()
         {
@@ -2644,6 +2645,16 @@ public class AdminController extends SpringActionController
         public void setType(String type)
         {
             _type = type;
+        }
+
+        public boolean isLog()
+        {
+            return _log;
+        }
+
+        public void setLog(boolean log)
+        {
+            _log = log;
         }
     }
 
