@@ -1082,6 +1082,11 @@
                                     <xs:documentation>Null or missing fields will be replaced with the string "null".</xs:documentation>
                                 </xs:annotation>
                             </xs:enumeration>
+                            <xs:enumeration value="keepSubstitution">
+                                <xs:annotation>
+                                    <xs:documentation>Retains the original text of the substitution parameter.</xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
                         </xs:restriction>
                     </xs:simpleType>
                 </xs:attribute>
