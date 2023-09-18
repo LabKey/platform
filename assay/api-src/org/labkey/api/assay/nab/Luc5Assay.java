@@ -20,6 +20,7 @@ import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.assay.plate.WellGroup;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.assay.plate.Plate;
@@ -38,8 +39,8 @@ import java.util.Map;
  */
 public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCalculator
 {
-    private Integer _runRowId;
-    private int[] _cutoffs;
+    private final Integer _runRowId;
+    private final int[] _cutoffs;
     private Map<Integer, String> _cutoffFormats;
     private File _dataFile;
     protected StatsService.CurveFitType _renderedCurveFitType;
@@ -65,12 +66,12 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
         return cutoffArray;
     }
 
-    protected DilutionSummary[] getDilutionSumariesForWellGroups(List<? extends WellGroup> specimenGroups)
+    protected DilutionSummary[] getDilutionSummariesForWellGroups(List<? extends WellGroup> specimenGroups, Container container)
     {
         int sampleIndex = 0;
         DilutionSummary[] dilutionSummaries = new DilutionSummary[specimenGroups.size()];
         for (WellGroup specimenGroup : specimenGroups)
-            dilutionSummaries[sampleIndex++] = new DilutionSummary(this, specimenGroup, null, _renderedCurveFitType);
+            dilutionSummaries[sampleIndex++] = new DilutionSummary(this, specimenGroup, null, _renderedCurveFitType, container);
         return dilutionSummaries;
     }
 
