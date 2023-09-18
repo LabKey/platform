@@ -31,7 +31,7 @@ import java.util.Set;
  * (put or remove) occurs on that entry, at which point only the private cache is consulted for this entry for the
  * remainder of the transaction. This should provide good performance while avoiding pollution of the shared cache
  * during the transaction and in the case of a rollback. On successful commit, remove and clear operations are replayed
- * into the shared cache and load operations are replayed on the special BlockingCache that wraps this.
+ * into the shared cache. Using a BlockingDatabaseCache ensures that load() operations are also replayed.
  */
 public class TransactionCache<K, V> implements Cache<K, V>
 {

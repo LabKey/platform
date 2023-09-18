@@ -33,6 +33,7 @@ import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -267,13 +268,16 @@ public class PlateController extends SpringActionController
     public static class CopyTemplateBean
     {
         private final HtmlString _treeHtml;
-        private final String _templateName;
+        private final Plate _plate;
         private final String _selectedDestination;
         private List<Plate> _destinationTemplates;
 
-        public CopyTemplateBean(final Container container, final User user, final String templateName, final String selectedDestination)
+        public CopyTemplateBean(final Container container, final User user, final Integer plateId, final String selectedDestination)
         {
-            _templateName = templateName;
+            _plate = PlateService.get().getPlate(container, plateId);
+            if (_plate == null)
+                throw new IllegalStateException("Could not resolve the plate with ID : " + plateId);
+
             _selectedDestination = selectedDestination;
 
             //Copy and Add to another folder requires InsertPermissions
@@ -283,7 +287,7 @@ public class PlateController extends SpringActionController
                 protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
                 {
                     ActionURL copyURL = new ActionURL(CopyTemplateAction.class, container);
-                    copyURL.addParameter("templateName", templateName);
+                    copyURL.addParameter("plateId", _plate.getRowId());
                     copyURL.addParameter("destination", c.getPath());
                     boolean selected = c.getPath().equals(selectedDestination);
                     if (selected)
@@ -320,9 +324,9 @@ public class PlateController extends SpringActionController
             return _treeHtml;
         }
 
-        public String getTemplateName()
+        public Plate getPlate()
         {
-            return _templateName;
+            return _plate;
         }
 
         public List<? extends Plate> getDestinationTemplates()
@@ -337,16 +341,15 @@ public class PlateController extends SpringActionController
         @Override
         public void validateCommand(CopyForm form, Errors errors)
         {
+            if (form.getPlateId() == null)
+                errors.reject(ERROR_REQUIRED, "Plate ID must not be blank");
         }
 
         @Override
         public ModelAndView getView(CopyForm form, boolean reshow, BindException errors)
         {
-            if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
-                return HttpView.redirect(new ActionURL(BeginAction.class, getContainer()));
-
             return new JspView<>("/org/labkey/assay/plate/view/copyTemplate.jsp",
-                    new CopyTemplateBean(getContainer(), getUser(), form.getTemplateName(), form.getDestination()), errors);
+                    new CopyTemplateBean(getContainer(), getUser(), form.getPlateId(), form.getDestination()), errors);
         }
 
         @Override
@@ -371,45 +374,28 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class HandleCopyAction extends CopyTemplateAction
     {
+        private Plate _plate;
+        private Container _destination;
+
         @Override
         public void validateCommand(CopyForm form, Errors errors)
         {
-            Container destination = ContainerManager.getForPath(form.getDestination());
-            if (destination == null || !destination.hasPermission(getUser(), InsertPermission.class))
+            _destination = ContainerManager.getForPath(form.getDestination());
+            if (_destination == null || !_destination.hasPermission(getUser(), InsertPermission.class))
                 errors.reject("copyForm", "Destination container does not exist or permission is denied.");
 
-            Plate destinationTemplate = PlateService.get().getPlate(destination, form.getTemplateName());
+            _plate = PlateService.get().getPlate(getContainer(), form.getPlateId());
+            if (_plate == null)
+                errors.reject(ERROR_REQUIRED, "Unable to retrieve source plate with ID : " + form.getPlateId());
 
-            if (destinationTemplate != null)
+            if (PlateManager.get().plateExists(_destination, _plate.getName()))
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
         }
 
         @Override
         public boolean handlePost(CopyForm form, BindException errors) throws Exception
         {
-            Container destination = ContainerManager.getForPath(form.getDestination());
-            // earlier validation should prevent a null or inaccessible destination container:
-            if (destination == null || !destination.hasPermission(getUser(), InsertPermission.class))
-            {
-                errors.reject("copyForm", "The destination is invalid or you do not have INSERT privileges on the specified container");
-                return false;
-            }
-            // earlier validation should prevent a missing source template:
-            Plate template = PlateService.get().getPlate(getContainer(), form.getTemplateName());
-            if (template == null)
-            {
-                errors.reject("copyForm", "Plate " + form.getTemplateName() + " does not exist in source container.");
-                return false;
-            }
-
-            // earlier validation should prevent an already-existing destination template:
-            Plate destinationTemplate = PlateService.get().getPlate(destination, form.getTemplateName());
-            if (destinationTemplate != null)
-            {
-                errors.reject("copyForm", "Plate " + form.getTemplateName() + " already exists in destination container.");
-                return false;
-            }
-            PlateService.get().copyPlate(template, getUser(), destination);
+            PlateService.get().copyPlate(_plate, getUser(), _destination);
             return true;
         }
 
@@ -525,7 +511,7 @@ public class PlateController extends SpringActionController
     public static class CopyForm
     {
         private String _destination;
-        private String _templateName;
+        private Integer _plateId;
 
         public String getDestination()
         {
@@ -537,14 +523,14 @@ public class PlateController extends SpringActionController
             _destination = destination;
         }
 
-        public String getTemplateName()
+        public Integer getPlateId()
         {
-            return _templateName;
+            return _plateId;
         }
 
-        public void setTemplateName(String templateName)
+        public void setPlateId(Integer plateId)
         {
-            _templateName = templateName;
+            _plateId = plateId;
         }
     }
 
@@ -774,6 +760,7 @@ public class PlateController extends SpringActionController
     public static class GetPlateForm
     {
         private Integer _rowId;
+        private ContainerFilter.Type _containerFilter;
 
         public Integer getRowId()
         {
@@ -783,6 +770,16 @@ public class PlateController extends SpringActionController
         public void setRowId(Integer rowId)
         {
             _rowId = rowId;
+        }
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
     }
 
@@ -799,7 +796,13 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(GetPlateForm form, BindException errors) throws Exception
         {
-            return PlateManager.get().getPlate(getContainer(), form.getRowId());
+            ContainerFilter cf = ContainerFilter.Type.Current.create(getViewContext());
+
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            return PlateManager.get().getPlate(cf, form.getRowId());
         }
     }
 }
