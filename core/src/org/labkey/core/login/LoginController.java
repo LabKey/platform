@@ -17,7 +17,6 @@
 package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -74,6 +73,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HtmlView;
@@ -103,10 +103,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -119,7 +117,7 @@ import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_C
 
 public class LoginController extends SpringActionController
 {
-    private static final Logger _log = LogManager.getLogger(LoginController.class);
+    private static final Logger _log = LogHelper.getLogger(LoginController.class, "User registration and authentication failures");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(LoginController.class);
 
     public LoginController()
@@ -1669,55 +1667,8 @@ public class LoginController extends SpringActionController
     private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
-        String password = StringUtils.trimToEmpty(request.getParameter("password"));
-        String password2 = StringUtils.trimToEmpty(request.getParameter("password2"));
 
-        Collection<String> messages = new LinkedList<>();
-        User user = UserManager.getUser(email);
-
-        if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
-        {
-            for (String message : messages)
-                errors.reject("setPassword", message);
-            return null;
-        }
-
-        try
-        {
-            SecurityManager.setPassword(email, password);
-        }
-        catch (UserManagementException e)
-        {
-            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ". Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-            return null;
-        }
-
-        try
-        {
-            if (clearVerification)
-                SecurityManager.setVerification(email, null);
-            UserManager.addToUserHistory(user, auditMessage);
-        }
-        catch (UserManagementException e)
-        {
-            errors.reject("setPassword", "Resetting verification failed. Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-            return null;
-        }
-
-        // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-        // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
-        if (getUser().isGuest())
-        {
-            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email.getEmailAddress(), password, returnUrlHelper, true);
-
-            if (result.getStatus() == Success)
-            {
-                // This user has passed primary authentication
-                AuthenticationManager.setPrimaryAuthenticationResult(request, result);
-            }
-        }
-
-        return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+        return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, email, returnUrlHelper, auditMessage, clearVerification, errors);
     }
 
     @RequiresNoPermission

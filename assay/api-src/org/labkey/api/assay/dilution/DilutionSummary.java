@@ -23,8 +23,6 @@ import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.WellData;
 import org.labkey.api.assay.plate.WellGroup;
@@ -46,23 +44,23 @@ import java.util.Map;
  */
 public class DilutionSummary implements Serializable
 {
-    private List<WellGroup> _sampleGroups;
-    private WellGroup _firstGroup;
-    private Map<StatsService.CurveFitType, DilutionCurve> _dilutionCurve = new HashMap<>() ;
-    private Luc5Assay _assay;
-    private String _lsid;
-    private StatsService.CurveFitType _curveFitType;
+    private final List<WellGroup> _sampleGroups;
+    private final WellGroup _firstGroup;
+    private final Map<StatsService.CurveFitType, DilutionCurve> _dilutionCurve = new HashMap<>() ;
+    private final Luc5Assay _assay;
+    private final String _lsid;
+    private final StatsService.CurveFitType _curveFitType;
     protected DilutionMaterialKey _materialKey = null;
-    protected Container _container;
+    protected final Container _container;
     public static final DilutionMaterialKey BLANK_NAB_MATERIAL = new DilutionMaterialKey(ContainerManager.getRoot(), "Blank", null, null, null, null);
 
 
-    public DilutionSummary(Luc5Assay assay, WellGroup sampleGroup, String lsid, StatsService.CurveFitType curveFitType)
+    public DilutionSummary(Luc5Assay assay, WellGroup sampleGroup, String lsid, StatsService.CurveFitType curveFitType, Container container)
     {
-        this(assay, Collections.singletonList(sampleGroup), lsid, curveFitType);
+        this(assay, Collections.singletonList(sampleGroup), lsid, curveFitType, container);
     }
 
-    public DilutionSummary(Luc5Assay assay, List<WellGroup> sampleGroups, String lsid, StatsService.CurveFitType curveFitType)
+    public DilutionSummary(Luc5Assay assay, List<WellGroup> sampleGroups, String lsid, StatsService.CurveFitType curveFitType, Container container)
     {
         assert sampleGroups != null && !sampleGroups.isEmpty() : "sampleGroups cannot be null or empty";
         assert assay != null : "assay cannot be null";
@@ -72,18 +70,7 @@ public class DilutionSummary implements Serializable
         _firstGroup = sampleGroups.get(0);
         _assay = assay;
         _lsid = lsid;
-
-        if (assay.getRunRowId() != null)
-        {
-            ExpRun run = ExperimentService.get().getExpRun(assay.getRunRowId());
-            if (run != null)
-                _container = run.getContainer();
-        }
-        else
-        {
-            // legacy nab assay instances do not use the run row id
-            _container = ContainerManager.getRoot();
-        }
+        _container = container;
     }
 
     private void ensureSameSample(List<WellGroup> groups)

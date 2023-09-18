@@ -156,7 +156,6 @@
             {
         %>
             <%= link("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
-                addParameter("templateName", template.getName()).
                 addParameter("plateId", template.getRowId())) %>
         <%
             }

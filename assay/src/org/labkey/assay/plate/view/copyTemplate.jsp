@@ -32,7 +32,7 @@
 <labkey:errors />
 <table>
     <tr>
-        <td>Copy <b><%= h(bean.getTemplateName()) %></b> to:</td>
+        <td>Copy <b><%= h(bean.getPlate().getName()) %></b> to:</td>
     </tr>
     <%=bean.getTreeHtml()%>
     <tr>
@@ -40,7 +40,7 @@
             <br>
             <labkey:form action="<%=urlFor(HandleCopyAction.class)%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
-                <input type="hidden" name="templateName" value="<%= h(bean.getTemplateName()) %>">
+                <input type="hidden" name="plateId" value="<%= bean.getPlate().getRowId() %>">
                 <%= button("Cancel").href(PlateTemplateListAction.class, getContainer()) %>
                 <%= bean.getSelectedDestination() != null ? button("Copy").submit(true) : button("Copy").submit(true).onClick("alert('Please select a destination folder.'); return false;") %>
             </labkey:form>

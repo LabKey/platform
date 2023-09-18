@@ -60,7 +60,7 @@ public class AssayPlateMetadataTemplateAction extends ExportAction<AssayPlateMet
                 Random rand = new Random();
 
                 JSONObject json = new JSONObject();
-                var wellGroupMap = plateTemplate.getWellGroupTemplateMap();
+                var wellGroupMap = plateTemplate.getWellGroupMap();
                 for (var typeGroupEntry : wellGroupMap.entrySet())
                 {
                     var type = typeGroupEntry.getKey();

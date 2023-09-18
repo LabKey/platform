@@ -21,12 +21,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.LabKeyCollectors;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MothershipReport;
@@ -75,6 +77,10 @@ public class AdminBean
     public static final String serverGuid = AppProps.getInstance().getServerGUID();
     public static final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public static final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
+    @SuppressWarnings("unused") // Available substitution property, not used directly in code
+    public static final String buildTime = ModuleLoader.getInstance().getCoreModule().getBuildTime();
+    @SuppressWarnings("unused") // Available substitution property, not used directly in code
+    public static final String serverStartupTime = DateUtil.formatDateTime(ContainerManager.getRoot());
     public static final List<Module> modules;
 
     public static String asserts = "disabled";
