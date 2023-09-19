@@ -227,16 +227,13 @@ public class PlateManager implements PlateService
             if (plate == null)
                 throw new IllegalStateException("Unexpected failure. Failed to retrieve plate after save.");
 
-            // if well data was specified, sava that to the well table
+            // if well data was specified, save that to the well table
             if (data != null && !data.isEmpty())
             {
                 QueryUpdateService qus = getWellUpdateService(container, user);
                 TableInfo wellTable = getWellTable(container, user);
                 BatchValidationException errors = new BatchValidationException();
-
-                Map<FieldKey, PlateCustomField> customFieldMap = new HashMap<>();
                 Set<PlateCustomField> customFields = new HashSet<>();
-                getPlateMetadataFields(container, user).forEach(cf -> customFieldMap.put(FieldKey.fromParts(cf.getName()), cf));
 
                 // resolve columns and set any custom fields associated with the plate
                 List<Map<String, Object>> rows = new ArrayList<>();
@@ -257,10 +254,9 @@ public class PlateManager implements PlateService
                                 ColumnInfo col = wellTable.getColumn(FieldKey.fromParts(colName));
                                 if (col instanceof PropertyColumn)
                                 {
-                                    if (!customFieldMap.containsKey(col.getFieldKey()))
-                                    {
-                                        customFields.add(new PlateCustomField(col.getPropertyURI()));
-                                    }
+                                    PlateCustomField customField = new PlateCustomField(col.getPropertyURI());
+                                    if (!customFields.contains(customField))
+                                        customFields.add(customField);
                                 }
                             }
                         }
