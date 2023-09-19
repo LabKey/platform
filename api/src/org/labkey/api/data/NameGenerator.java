@@ -2253,14 +2253,15 @@ public class NameGenerator
             ArrayList<StringExpressionFactory.StringPart> parts = getParsedExpression();
             if (parts.size() == 1)
             {
+                StringExpressionFactory.StringPart part = parts.get(0);
                 try
                 {
-                    if (parts.get(0) instanceof CounterExpressionPart)
+                    if (part instanceof CounterExpressionPart counterExpressionPart)
                     {
                         Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix,  (s) -> new HashMap<>());
-                        return nullFilter(((CounterExpressionPart) parts.get(0)).getValue(context, counterSequences));
+                        return nullFilter(counterExpressionPart.getValue(context, counterSequences), part);
                     }
-                    return nullFilter(parts.get(0).getValue(context));
+                    return nullFilter(part.getValue(context), part);
                 }
                 catch (StopIteratingException e)
                 {
@@ -2271,17 +2272,16 @@ public class NameGenerator
             try
             {
                 StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < parts.size(); i++)
+                for (StringExpressionFactory.StringPart part : parts)
                 {
-                    StringExpressionFactory.StringPart part = parts.get(i);
                     String value;
-                    if (part instanceof CounterExpressionPart)
+                    if (part instanceof CounterExpressionPart counterExpressionPart)
                     {
-                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix,  (s) -> new HashMap<>());
-                        value = nullFilter(((CounterExpressionPart) part).getValue(context, counterSequences));
+                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix, (s) -> new HashMap<>());
+                        value = nullFilter(counterExpressionPart.getValue(context, counterSequences), part);
                     }
                     else
-                        value = nullFilter(part.getValue(context));
+                        value = nullFilter(part.getValue(context), part);
                     builder.append(value);
                 }
                 return builder.toString();
