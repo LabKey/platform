@@ -862,7 +862,7 @@ public class AuthenticationManager
 
 
     /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
@@ -969,7 +969,9 @@ public class AuthenticationManager
                     try
                     {
                         email = new ValidEmail(id);
-                        emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
+                        // If this user doesn't exist we can still report the normalized email address.
+                        // FailureReason can determine whether to log the email address or not.
+                        emailAddress = firstFailure.getFailureReason().getEmailAddress(email);
                     }
                     catch (InvalidEmailException e)
                     {
@@ -998,7 +1000,7 @@ public class AuthenticationManager
                 else
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
-                    addAuditEvent(User.guest, request, message);
+                    addAuditEvent(User.guest, request, "Unknown user" + message);
                     _log.warn("Unknown user" + message);
                 }
 
@@ -1052,7 +1054,7 @@ public class AuthenticationManager
                 else
                 {
                     // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getConfiguration().getDescription() + ". Login failed because account creation is disabled.");
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getSuccessDetails() + ", but login failed because account creation is disabled.");
                     return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
                 }
             }
@@ -1077,7 +1079,7 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via the \"" + response.getConfiguration().getDescription() + "\" configuration.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
 
         return new PrimaryAuthenticationResult(user, response);
     }
