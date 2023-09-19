@@ -27,6 +27,7 @@ import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.util.Crawler;
+import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
@@ -46,6 +47,14 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     private static final File DATA_DEMOGRAPHICS3 = TestFileUtils.getSampleData("study/Demographics3.tsv");
     private static final File DATA_RESULTS = TestFileUtils.getSampleData("study/Results.tsv");
 
+    // If you are ever unlucky and have to work on this test, only do the import once. Uncomment this method and
+    // comment out the initProject method.
+//    @Override
+//    protected void doCleanup(boolean afterTest) throws TestTimeoutException
+//    {
+//        // Don't reimport the data.
+//    }
+
     @BeforeClass
     public static void initProject()
     {
@@ -57,7 +66,9 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     protected void setupFolder()
     {
         _containerHelper.createProject(getProjectName(), null);
-        importFolderFromZip(STUDY_FOLDER_ZIP, false, 1, false);
+
+        // Sometimes this import takes longer than the default import wait.
+        importFolderFromZip(STUDY_FOLDER_ZIP, false, 1, false, MAX_WAIT_SECONDS * 2000);
     }
 
     @Before
@@ -69,16 +80,19 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
     @Test
     public void testTimeChart()
     {
-        // regression testing for issue 22254
+        // Issue 22254
         waitForText("Data is present for 132,070 Participants.");
-        goToManageViews();
-        _extHelper.clickExtMenuButton(true, Locator.linkContainingText("Add Chart"));
-        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
-        ChartTypeDialog chartTypeDialog = new ChartTypeDialog(getDriver());
+        clickAndWait(Locator.tagWithId("a", "ClinicalandAssayDataTab"));
+        _extHelper.waitForLoadingMaskToDisappear(WAIT_FOR_JAVASCRIPT);
+        waitForElement(Locator.linkWithText("Results"));
+        click(Locator.linkWithText("Results"));
+        DataRegionTable resultsTable = new DataRegionTable("Dataset", this);
+        ChartTypeDialog chartTypeDialog = resultsTable.createChart();
         chartTypeDialog.setChartType(ChartTypeDialog.ChartType.Time)
                 .selectStudyQuery("Results")
                 .setYAxis("Value1")
                 .clickApply();
+        TimeChartWizard timeChartWizard = new TimeChartWizard(this);
         timeChartWizard.waitForWarningMessage("No calculated interval values (i.e. Days, Months, etc.) for the selected 'Measure Date' and 'Interval Start Date'.");
         chartTypeDialog = timeChartWizard.clickChartTypeButton();
         chartTypeDialog.setTimeAxisType(ChartTypeDialog.TimeAxisType.Visit).clickApply();
@@ -95,7 +109,11 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
         timeChartWizard.checkFilterGridRow("Group C");
         timeChartWizard.verifySvgChart(6, new String[]{"Group A", "Group B", "Group C", "UNK", "female", "male"});
         LookAndFeelTimeChart chartLayoutDialog = timeChartWizard.clickChartLayoutButton();
-        chartLayoutDialog.checkShowIndividualLines().clickApply();
+        chartLayoutDialog.checkShowIndividualLines();
+
+        // Cannot call chartLayoutDialog.clickApplyWithError() it expects a labkey-error not a warning message in the chart.
+        clickButton("Apply", 0);
+
         timeChartWizard.waitForWarningMessage("Unable to display individual series lines for greater than 10,000 total participants.");
         timeChartWizard.uncheckFilterGridRow("UNK");
         timeChartWizard.uncheckFilterGridRow("Group A");
@@ -107,6 +125,7 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
         timeChartWizard.saveReport("Test time chart", "");
     }
 
+    // This method is not called, should it be deleted?
     private void importEmptyFolderAndLoadData()
     {
         importFolderFromZip(STUDY_FOLDER_NODATA_ZIP, false, 1, false);
