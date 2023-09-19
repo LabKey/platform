@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.24.2",
-    "@labkey/components": "2.369.0-fb-projectAdmin.4",
+    "@labkey/components": "2.369.0-fb-projectAdmin.5",
     "@labkey/themes": "1.3.1"
   },
   "devDependencies": {
