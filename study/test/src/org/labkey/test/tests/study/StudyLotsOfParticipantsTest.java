@@ -41,11 +41,6 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
 
     // Study folder archive with > 130,000 participants, 2 datasets, 11 visits, 3 cohorts, and 3 participants groups
     private static final File STUDY_FOLDER_ZIP = TestFileUtils.getSampleData("study/LotsOfPtidsStudy.folder.zip");
-    private static final File STUDY_FOLDER_NODATA_ZIP = TestFileUtils.getSampleData("study/LotsOfPtidsStudy_NoData.folder.zip");
-    private static final File DATA_DEMOGRAPHICS1 = TestFileUtils.getSampleData("study/Demographics.tsv");
-    private static final File DATA_DEMOGRAPHICS2 = TestFileUtils.getSampleData("study/Demographics2.tsv");
-    private static final File DATA_DEMOGRAPHICS3 = TestFileUtils.getSampleData("study/Demographics3.tsv");
-    private static final File DATA_RESULTS = TestFileUtils.getSampleData("study/Results.tsv");
 
     // If you are ever unlucky and have to work on this test, only do the import once. Uncomment this method and
     // comment out the initProject method.
@@ -123,36 +118,6 @@ public class StudyLotsOfParticipantsTest extends BaseWebDriverTest
 
         // save so we don't get confirm navigation alert
         timeChartWizard.saveReport("Test time chart", "");
-    }
-
-    // This method is not called, should it be deleted?
-    private void importEmptyFolderAndLoadData()
-    {
-        importFolderFromZip(STUDY_FOLDER_NODATA_ZIP, false, 1, false);
-        clickTab("Clinical and Assay Data");
-        waitAndClickAndWait(Locator.linkWithText("Demographics"));
-        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS1);
-        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS2);
-        _listHelper.importDataFromFile(DATA_DEMOGRAPHICS3);
-
-        clickTab("Clinical and Assay Data");
-        waitAndClickAndWait(Locator.linkWithText("Results"));
-        _listHelper.importDataFromFile(DATA_RESULTS, 5 * 60000);
-
-        // Group A = 00001 - 00500
-        _studyHelper.createCustomParticipantGroup(getProjectName(), getProjectName(), "Group A", "Participant", "Test Category", true, true, getPtidsForGroup(1));
-        // Group B = 00501 - 01000
-        _studyHelper.createCustomParticipantGroup(getProjectName(), getProjectName(), "Group B", "Participant", "Test Category", false, true, getPtidsForGroup(501));
-        // Group C = 99500 - 99999
-        _studyHelper.createCustomParticipantGroup(getProjectName(), getProjectName(), "Group C", "Participant", "Test Category", false, true, getPtidsForGroup(99500));
-    }
-
-    private String[] getPtidsForGroup(int startId)
-    {
-        String[] ptids = new String[500];
-        for (int i = 0; i < 500; i++)
-            ptids[i] = ("00000" + (i+startId)).substring((""+(i+startId)).length());
-        return ptids;
     }
 
     @Override
