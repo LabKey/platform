@@ -379,6 +379,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 if (!existingFields.contains(AssayResultDomainKind.WELL_LSID_COLUMN_NAME))
                 {
                     GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLsid.setShownInInsertView(false);
                     wellLsid.setShownInUpdateView(false);
                     wellLsid.setHidden(true);
 
