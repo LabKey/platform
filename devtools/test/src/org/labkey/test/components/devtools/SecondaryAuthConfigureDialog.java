@@ -2,7 +2,7 @@ package org.labkey.test.components.devtools;
 
 import org.labkey.test.pages.core.login.AuthDialogBase;
 import org.labkey.test.pages.core.login.LoginConfigRow;
-import org.labkey.test.params.devtools.SecondaryAuthenticationProvider;
+import org.labkey.test.params.login.AuthenticationProvider;
 import org.openqa.selenium.WebDriver;
 
 public class SecondaryAuthConfigureDialog extends AuthDialogBase<SecondaryAuthConfigureDialog>
@@ -13,14 +13,13 @@ public class SecondaryAuthConfigureDialog extends AuthDialogBase<SecondaryAuthCo
         super(row);
     }
 
-    public SecondaryAuthConfigureDialog(WebDriver driver)
+    public SecondaryAuthConfigureDialog(WebDriver driver, AuthenticationProvider authenticationProvider)
     {
-        super(new SecondaryAuthenticationProvider(), driver);
+        super(authenticationProvider, driver);
     }
 
-
     @Override
-    protected  SecondaryAuthConfigureDialog getThis()  // supports chaining/builder pattern from the base class
+    protected SecondaryAuthConfigureDialog getThis()  // supports chaining/builder pattern from the base class
     {
         return this;
     }

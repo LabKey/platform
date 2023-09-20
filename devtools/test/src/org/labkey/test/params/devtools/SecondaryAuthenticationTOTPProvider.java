@@ -1,23 +1,22 @@
 package org.labkey.test.params.devtools;
 
-
 import org.labkey.test.components.devtools.SecondaryAuthConfigureDialog;
 import org.labkey.test.pages.core.login.LoginConfigRow;
 import org.labkey.test.params.login.AuthenticationProvider;
 import org.openqa.selenium.WebDriver;
 
-public class SecondaryAuthenticationProvider extends AuthenticationProvider<SecondaryAuthConfigureDialog>
+public class SecondaryAuthenticationTOTPProvider extends AuthenticationProvider<SecondaryAuthConfigureDialog>
 {
     @Override
     public String getProviderName()
     {
-        return "TestSecondary";
+        return "TOTP 2 Factor";
     }
 
     @Override
     public String getProviderDescription()
     {
-        return "Adds a trivial, insecure secondary authentication requirement (for test purposes only)";
+        return "Require two-factor authentication via Google Authenticator, Microsoft Authenticator, or another TOTP-enabled authenticator app";
     }
 
     @Override
