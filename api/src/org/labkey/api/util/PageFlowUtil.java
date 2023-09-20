@@ -1612,6 +1612,10 @@ public class PageFlowUtil
     }
 
 
+    // NOTE: these are attached vial query selector, so they must be the same for every popup
+    private static final String popupHideScript = "return hideHelpDivDelay();";
+    private static final String popupShowScript = "return showHelpDivDelay(this, 'popuptitle' in this.dataset ? this.dataset['popuptitle'] : '', this.dataset['popupcontent'], 'popupwidth' in this.dataset ? this.dataset['popupwidth'] : 'auto' );";
+
     public static class HelpPopupBuilder implements SafeToRender, HasHtmlString
     {
         final String helpText;
@@ -1699,17 +1703,15 @@ public class PageFlowUtil
             Objects.requireNonNull(helpHtml);
 
             String id = null;
-            String onMouseOut = "return hideHelpDivDelay();";
-            String onMouseOver = "return showHelpDivDelay(this, 'popuptitle' in this.dataset ? this.dataset['popuptitle'] : '', this.dataset['popupcontent'], 'popupwidth' in this.dataset ? this.dataset['popupwidth'] : 'auto' );";
 
             if (!inlineScript)
             {
                 var config = HttpView.currentPageConfig();
-                config.addHandlerForQuerySelector("A._helpPopup", "mouseout", onMouseOut);
-                config.addHandlerForQuerySelector("A._helpPopup", "mouseover", onMouseOver);
+                config.addHandlerForQuerySelector("A._helpPopup", "mouseout", popupHideScript);
+                config.addHandlerForQuerySelector("A._helpPopup", "mouseover", popupShowScript);
                 if (null == onClickScript)
                 {
-                    config.addHandlerForQuerySelector("A._helpPopup", "click", onMouseOver);
+                    config.addHandlerForQuerySelector("A._helpPopup", "click", popupShowScript);
                 }
                 else
                 {
@@ -1718,9 +1720,9 @@ public class PageFlowUtil
                 }
             }
             return DOM.createHtml(A(id(id).cl("_helpPopup").at(href,'#',tabindex,"-1")
-                    .at(inlineScript, onclick, null==onClickScript ? onMouseOver : onClickScript)
-                    .at(inlineScript, onmouseout, onMouseOut)
-                    .at(inlineScript, onmouseover, onMouseOver)
+                    .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
+                    .at(inlineScript, onmouseout, popupHideScript)
+                    .at(inlineScript, onmouseover, popupShowScript)
                     .data(width != 0, "popupwidth", width)
                     .data(isNotBlank(titleText),"popuptitle", title)
                     .data("popupcontent", helpHtml.toString()),
