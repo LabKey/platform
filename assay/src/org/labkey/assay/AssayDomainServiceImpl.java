@@ -61,8 +61,8 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -71,6 +71,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.assay.actions.SetDefaultValuesAssayAction;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
@@ -460,11 +461,11 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                     {
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
-                        Plate template = PlateService.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
-                        if (template != null)
-                            plateProvider.setPlate(getContainer(), protocol, template);
+                        Plate plate = PlateManager.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
+                        if (plate != null)
+                            plateProvider.setPlate(getContainer(), protocol, plate);
                         else
-                            throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
+                            throw new AssayException("The selected plate could not be found.  Perhaps it was deleted by another user?");
 
                         String selectedFormat = assay.getSelectedMetadataInputFormat();
                         SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);

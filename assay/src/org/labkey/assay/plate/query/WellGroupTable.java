@@ -158,7 +158,7 @@ public class WellGroupTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             // generate a value for the lsid
             lsidGenerator.addColumn(wellGroupTable.getColumn("lsid"),
-                    (Supplier) () -> PlateManager.get().getLsid(WellGroup.class, container, true, true));
+                    (Supplier) () -> PlateManager.get().getLsid(WellGroup.class, container));
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(wellGroupTable, lsidGenerator, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, wellGroupTable, container)

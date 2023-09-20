@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -27,6 +28,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -37,12 +39,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: Karl Lum
- * Date: Sep 19, 2007
- */
 public interface AuditLogService
 {
+    Logger LOG = LogHelper.getLogger(AuditLogService.class, "Warnings related to audit failures");
     AuditLogService _defaultProvider = new DefaultAuditProvider();
     Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
     List<AuditFailureHandlerProvider> auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
@@ -144,7 +143,16 @@ public interface AuditLogService
                 for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
                     provider.handleAuditFailure(user, e);
 
-                t.commit();
+                // DatabaseCache replay attempts can throw on commit(). For example, AuditInsertionFailureTestCase
+                // intentionally trashes the connection and expects a specific exception.
+                try
+                {
+                    t.commit();
+                }
+                catch (Exception ex)
+                {
+                    LOG.warn("Exception while committing: " + ex.getMessage());
+                }
             }
         }
         else

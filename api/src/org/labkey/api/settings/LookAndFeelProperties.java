@@ -15,7 +15,7 @@
  */
 package org.labkey.api.settings;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.Constants;
 import org.labkey.api.admin.AdminBean;
@@ -27,6 +27,7 @@ import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Arrays;
 
@@ -35,13 +36,11 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
  * or scoped to a specific project.
- *
- * User: adam
- * Date: Aug 1, 2008
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
     private static final Cache<Container, String> SHORT_NAME_CACHE = CacheManager.getBlockingCache(Constants.getMaxProjects(), CacheManager.YEAR, "Short name", null);
+    private static final Logger LOG = LogHelper.getLogger(LookAndFeelProperties.class, "Manages site-wide and project-scoped look and feel settings");
 
     // Defined in the same order they appear on the Site-level Look and Feel Settings page
     public enum Properties implements StartupProperty, SafeToRenderEnum
@@ -164,7 +163,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     public String getShortName()
     {
         return SHORT_NAME_CACHE.get(_settingsContainer, null,
-            (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName()).eval(AdminBean.getPropertyMap()));
+            (key, argument) -> StringExpressionFactory.create(getUnsubstitutedShortName(), false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.KeepSubstitution).eval(AdminBean.getPropertyMap()));
     }
 
     public String getThemeName()
@@ -225,7 +224,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
         //initial login will be used as the default value. During setup user will be prompted to change.
         String emailAddress = lookupStringValue(systemEmailAddress, "");
         if (emailAddress.isEmpty())
-            LogManager.getLogger(this.getClass()).error(String.format("System Email Address became unset somehow. Visit '%s/admin-projectSettings.view' to fix it",
+            LOG.error(String.format("System Email Address became unset somehow. Visit '%s/admin-projectSettings.view' to fix it",
                     _settingsContainer.getTitle().isEmpty() ? "" : _settingsContainer.getPath()));
         return emailAddress;
     }

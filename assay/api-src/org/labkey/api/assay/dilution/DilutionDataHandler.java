@@ -138,7 +138,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             DilutionAssayRun assayResults = getAssayResults(run, user, dataFile, null, useRunForPlates, recalculateStats);
             List<Map<String, Object>> results = new ArrayList<>();
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(run.getProtocol().getLSID());
-            DilutionAssayProvider provider = (DilutionAssayProvider) AssayService.get().getProvider(protocol);
+            DilutionAssayProvider<?> provider = (DilutionAssayProvider<?>) AssayService.get().getProvider(protocol);
 
             for (int summaryIndex = 0; summaryIndex < assayResults.getSummaries().length; summaryIndex++)
             {
@@ -392,10 +392,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return false;
     }
 
-    protected void applyDilution(List<? extends WellData> wells, ExpMaterial sampleInput, Map<String, DomainProperty> sampleProperties, boolean reverseDirection) throws ExperimentException
+    protected void applyDilution(List<? extends WellData> wells, ExpMaterial sampleInput, Map<String, DomainProperty> sampleProperties, boolean reverseDirection, Map<PropertyDescriptor,Object> sampleValues) throws ExperimentException
     {
         boolean first = true;
-        Map<PropertyDescriptor,Object> sampleValues = sampleInput.getPropertyValues();
         Double dilution = (Double) sampleValues.get(sampleProperties.get(DilutionAssayProvider.SAMPLE_INITIAL_DILUTION_PROPERTY_NAME).getPropertyDescriptor());
         Double factor = (Double) sampleValues.get(sampleProperties.get(DilutionAssayProvider.SAMPLE_DILUTION_FACTOR_PROPERTY_NAME).getPropertyDescriptor());
         String methodString = (String) sampleValues.get(sampleProperties.get(DilutionAssayProvider.SAMPLE_METHOD_PROPERTY_NAME).getPropertyDescriptor());
@@ -439,7 +438,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected abstract void prepareWellGroups(List<WellGroup> wellgroups, ExpMaterial material, Map<String, DomainProperty> samplePropertyMap) throws ExperimentException;
 
-    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider provider, List<Plate> plates, Map<ExpMaterial,String> sampleInputs)throws ExperimentException
+    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider<?> provider, List<Plate> plates, Map<ExpMaterial,String> sampleInputs)throws ExperimentException
     {
         Plate plate = plates.get(0);
         List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
@@ -462,7 +461,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return mapping;
     }
 
-    protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider provider, ExpRun run, List<Plate> plates, User user,
+    protected abstract DilutionAssayRun createDilutionAssayRun(DilutionAssayProvider<?> provider, ExpRun run, List<Plate> plates, User user,
                                                                List<Integer> sortedCutoffs, StatsService.CurveFitType fit);
 
     public abstract Map<DilutionSummary, DilutionAssayRun> getDilutionSummaries(User user, StatsService.CurveFitType fit, int... dataObjectIds) throws ExperimentException, SQLException;

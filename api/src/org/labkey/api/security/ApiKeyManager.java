@@ -127,6 +127,11 @@ public class ApiKeyManager
         }
     }
 
+    /**
+     * Returns the User associated with the supplied API key, if API key is valid. User could be inactive.
+     * @param apiKey The API key to validate
+     * @return The User associated with the API key or null if API key is invalid
+     */
     public @Nullable User authenticateFromApiKey(@NotNull String apiKey)
     {
         SimpleFilter filter = new SimpleFilter(getStillValidClause());
@@ -140,10 +145,7 @@ public class ApiKeyManager
             t.commit();
         }
 
-        User user = null != userId ? UserManager.getUser(userId) : null;
-        if (user != null && !user.isActive())
-            return null;
-        return user;
+        return null != userId ? UserManager.getUser(userId) : null;
     }
 
     private static final String API_KEY_SCOPE = "ApiKey";

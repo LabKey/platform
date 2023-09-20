@@ -27,10 +27,9 @@
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.NavTree"%>
-<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.view.NavTree" %>
+<%@ page import="org.labkey.core.admin.AdminController"%>
 <%@ page import="java.time.Duration" %>
 <%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
@@ -105,14 +104,16 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Name</td><td><%=h(AdminBean.javaRuntimeName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Version</td><td><%=h(AdminBean.javaVersion)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Home</td><td><%=h(AdminBean.javaHome)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Username</td><td><%=h(AdminBean.userName)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>User Name</td><td><%=h(AdminBean.userName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>User Home Dir</td><td><%=h(AdminBean.userHomeDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Webapp Dir</td><td><%=h(AdminBean.webappDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Distribution</td><td><%=h(AdminBean.distribution)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Build Time</td><td><%=h(AdminBean.buildTime)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(AdminBean.osName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Working Dir</td><td><%=h(AdminBean.workingDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverGuid)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Server Session GUID</td><td style="font-family:monospace"><%=h(AdminBean.serverSessionGuid)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Server Startup Time</td><td<%=style%>><%=h(AdminBean.serverStartupTime)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Web Server Time</td><td<%=style%>><%=h(serverTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server Time</td><td<%=style%>><%=h(databaseTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")))%><%=warning%></td></tr>
             </table>

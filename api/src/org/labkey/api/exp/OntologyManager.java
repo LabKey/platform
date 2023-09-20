@@ -98,7 +98,9 @@ public class OntologyManager
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
     private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
     private static final BlockingCache<String, Integer> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
-    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = DatabaseCache.get(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors", new CacheLoader<>()
+    // Note: Converting the below to a BlockingDatabaseCache resulted in a couple failures in the Daily suite. The
+    // explicit put() operations may be the problem. Leave it as an old school wrapped DatabaseCache for now.
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {
         @Override
         public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -886,7 +888,21 @@ public class OntologyManager
     public static int ensureObject(Container container, String objectURI, Integer ownerId)
     {
         //TODO: (marki) Transact?
-        return OBJECT_ID_CACHE.get(objectURI, Pair.of(container, ownerId));
+        Integer objId = OBJECT_ID_CACHE.get(objectURI, container);
+
+        if (null == objId)
+        {
+            OntologyObject obj = new OntologyObject();
+            obj.setContainer(container);
+            obj.setObjectURI(objectURI);
+            if (ownerId != null && ownerId > 0)
+                obj.setOwnerObjectId(ownerId);
+            obj = Table.insert(null, getTinfoObject(), obj);
+            objId = obj.getObjectId();
+            OBJECT_ID_CACHE.remove(objectURI);
+        }
+
+        return objId;
     }
 
     private static class ObjectIdCacheLoader implements CacheLoader<String, Integer>
@@ -894,25 +910,14 @@ public class OntologyManager
         @Override
         public Integer load(@NotNull String objectURI, @Nullable Object argument)
         {
-            Pair<Container, Integer> pair = (Pair<Container, Integer>)argument;
-            Container container = pair.first;
-            Integer ownerId = pair.second;
-            OntologyObject o = getOntologyObject(container, objectURI);
-            if (null == o)
-            {
-                o = new OntologyObject();
-                o.setContainer(container);
-                o.setObjectURI(objectURI);
-                if (ownerId != null && ownerId > 0)
-                    o.setOwnerObjectId(ownerId);
-                o = Table.insert(null, getTinfoObject(), o);
-            }
+            Container container = (Container)argument;
+            OntologyObject obj = getOntologyObject(container, objectURI);
 
-            return o.getObjectId();
+            return obj == null ? null : obj.getObjectId();
         }
     }
 
-    public static OntologyObject getOntologyObject(Container container, String uri)
+    public static @Nullable OntologyObject getOntologyObject(Container container, String uri)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), uri);
         if (container != null)
@@ -1339,7 +1344,7 @@ public class OntologyManager
 
             sqlIn.append(sep).append(propId);
 
-            if (sep.length() == 0)
+            if (sep.isEmpty())
                 sep.append(", ");
 
             Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
@@ -1360,7 +1365,7 @@ public class OntologyManager
         // so we can make copies of those domains and properties
         // Restrict it to properties and domains also in the same container
 
-        if (mObjsUsingMyProps.size() > 0)
+        if (!mObjsUsingMyProps.isEmpty())
         {
             sql = "SELECT PD.PropertyURI, DD.DomainURI " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
@@ -1529,7 +1534,7 @@ public class OntologyManager
 
                 sqlIn.append(sep).append(propId);
 
-                if (sep.length() == 0)
+                if (sep.isEmpty())
                     sep.append(", ");
 
                 Map<String, ObjectProperty> mtemp = getPropertyObjects(c, objURI);
@@ -1547,7 +1552,7 @@ public class OntologyManager
             // this sql gets all properties i ref and the domains they belong to and the
             // other properties in those domains
             //todo  what about materialsource ?
-            if (mMyObjsThatRefProjProps.size() > 0)
+            if (!mMyObjsThatRefProjProps.isEmpty())
             {
                 sql = "SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
                         " FROM " + getTinfoPropertyDescriptor() + " PD " +
@@ -1665,7 +1670,7 @@ public class OntologyManager
         {
             List<String> colDiffs = comparePropertyDescriptors(pdIn, pd);
 
-            if (colDiffs.size() == 0)
+            if (colDiffs.isEmpty())
             {
                 // if the descriptor differs by container only and the requested descriptor is in the project fldr
                 if (!pdIn.getContainer().getId().equals(pd.getContainer().getId()) &&
@@ -1981,25 +1986,25 @@ public class OntologyManager
 
         assert getExpSchema().getScope().isTransactionActive();
 
-        if (dates.size() > 0)
+        if (!dates.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue, MvIndicator) VALUES (?,?,'d',?, ?)";
             Table.batchExecute(getExpSchema(), sql, dates);
         }
 
-        if (floats.size() > 0)
+        if (!floats.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue, MvIndicator) VALUES (?,?,'f',?, ?)";
             Table.batchExecute(getExpSchema(), sql, floats);
         }
 
-        if (strings.size() > 0)
+        if (!strings.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue, MvIndicator) VALUES (?,?,'s',?, ?)";
             Table.batchExecute(getExpSchema(), sql, strings);
         }
 
-        if (mvIndicators.size() > 0)
+        if (!mvIndicators.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, MvIndicator) VALUES (?,?,?,?)";
             Table.batchExecute(getExpSchema(), sql, mvIndicators);
