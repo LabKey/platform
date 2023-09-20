@@ -36,9 +36,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
  * or scoped to a specific project.
- *
- * User: adam
- * Date: Aug 1, 2008
  */
 public class LookAndFeelProperties extends LookAndFeelFolderProperties
 {
