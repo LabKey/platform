@@ -156,6 +156,7 @@ import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.height;
@@ -1698,28 +1699,31 @@ public class PageFlowUtil
             Objects.requireNonNull(helpHtml);
 
             String id = null;
-            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
-            showHelpDivArgs.append(jsString(filter(titleText,true))).append(", ");
-            showHelpDivArgs.append(jsString(helpHtml.toString()));
-            if (width == 0)
-                showHelpDivArgs.append(", ").append("'auto'");
-            else
-                showHelpDivArgs.append(", ").append(jsString(width + "px"));
-            if (onClickScript == null)
-                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
+            String onMouseOut = "return hideHelpDivDelay();";
+            String onMouseOver = "return showHelpDivDelay(this, 'popuptitle' in this.dataset ? this.dataset['popuptitle'] : '', this.dataset['popupcontent'], 'popupwidth' in this.dataset ? this.dataset['popupwidth'] : 'auto' );";
 
             if (!inlineScript)
             {
                 var config = HttpView.currentPageConfig();
-                id = config.makeId("helpPopup");
-                config.addHandler(id, "click", onClickScript);
-                config.addHandler(id, "mouseout", "return hideHelpDivDelay();");
-                config.addHandler(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
+                config.addHandlerForQuerySelector("A._helpPopup", "mouseout", onMouseOut);
+                config.addHandlerForQuerySelector("A._helpPopup", "mouseover", onMouseOver);
+                if (null == onClickScript)
+                {
+                    config.addHandlerForQuerySelector("A._helpPopup", "click", onMouseOver);
+                }
+                else
+                {
+                    id = config.makeId("helpPopup");
+                    config.addHandler(id, "click", onClickScript);
+                }
             }
-            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1")
-                    .at(inlineScript, onclick, onClickScript)
-                    .at(inlineScript, onmouseout, "return hideHelpDivDelay();")
-                    .at(inlineScript, onmouseover, "return showHelpDivDelay(" + showHelpDivArgs + ");"),
+            return DOM.createHtml(A(id(id).cl("_helpPopup").at(href,'#',tabindex,"-1")
+                    .at(inlineScript, onclick, null==onClickScript ? onMouseOver : onClickScript)
+                    .at(inlineScript, onmouseout, onMouseOut)
+                    .at(inlineScript, onmouseover, onMouseOver)
+                    .data(width != 0, "popupwidth", width)
+                    .data(isNotBlank(titleText),"popuptitle", title)
+                    .data("popupcontent", helpHtml.toString()),
                     linkHtml));
         }
     }
