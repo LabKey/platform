@@ -39,6 +39,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -54,6 +55,7 @@ import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ProductFeature;
@@ -1664,12 +1666,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (project == null)
             return false;
 
-        boolean enabledAtProject = project.getFolderType().isProductFeatureEnabled(feature);
+        boolean enabledAtProject = project.isProductFeatureEnabled(feature);
         if (atProjectOnly || enabledAtProject)
             return enabledAtProject;
 
 
-        return getFolderType().isProductFeatureEnabled(feature);
+        return isProductFeatureEnabled(feature);
     }
 
     public boolean isFeatureEnabled(ProductFeature feature)
@@ -1684,6 +1686,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public boolean isProductProjectsEnabled()
     {
         return isFeatureEnabled(ProductFeature.Projects, true);
+    }
+
+    public boolean isProductFeatureEnabled(ProductFeature feature)
+    {
+        return hasProduct() && AdminConsole.isProductFeatureEnabled(feature);
+    }
+
+    public boolean hasProduct()
+    {
+        List<String> activeModuleNames = getActiveModules().stream().map(Module::getName).toList();
+        return ProductRegistry.get().getRegisteredProducts().stream().anyMatch(provider -> activeModuleNames.contains(provider.getModuleName()));
     }
 
     public boolean isAppHomeFolder()
