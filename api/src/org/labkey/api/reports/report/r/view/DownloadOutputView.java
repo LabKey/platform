@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.r.ParamReplacement;
@@ -78,6 +79,7 @@ public abstract class DownloadOutputView extends ROutputView
         {
 
             String downloadUrl = renderInternalAsString(file);
+            String filename = file.getName();
 
             // if we "failed" because the file doesn't exist then no
             // exception is thrown; just return immediately.
@@ -96,8 +98,16 @@ public abstract class DownloadOutputView extends ROutputView
                 out.write("<a href=\"");
                 out.write(downloadUrl);
                 out.write("\">");
-                out.write(_fileType);
-                out.write(" output file (click to download)</a>");
+                if (StringUtils.stripToNull(filename) == null)
+                {
+                    out.write(_fileType);
+                    out.write(" output file (click to download)");
+                }
+                else
+                {
+                    out.write(filename);
+                }
+                out.write("</a>");
             }
 
             out.write("</td></tr>");
