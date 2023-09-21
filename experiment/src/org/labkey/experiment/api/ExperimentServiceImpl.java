@@ -3314,7 +3314,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (Map<String, Object> fromDataLsid : fromDataLsids)
                 {
                     assert null != fromDataLsid.get("objectid");
-                    int objectid = (Integer)fromDataLsid.get("objectid");
+                    int objectid = (int)fromDataLsid.get("objectid");
                     if (seen.add(objectid))
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
@@ -3322,7 +3322,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 for (Map<String, Object> fromMaterialLsid : fromMaterialLsids)
                 {
                     assert null != fromMaterialLsid.get("objectid");
-                    int objectid = (Integer)fromMaterialLsid.get("objectid");
+                    int objectid = (int)fromMaterialLsid.get("objectid");
                     if (seen.add(objectid))
                         prepEdgeForInsert(params, objectid, runObjectId, runId);
                 }
@@ -3347,14 +3347,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 seen = new HashSet<>();
                 for (Map<String, Object> toDataLsid : toDataLsids)
                 {
-                    int objectid = (Integer)toDataLsid.get("objectid");
+                    int objectid = (int)toDataLsid.get("objectid");
                     if (seen.add(objectid))
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
 
                 for (Map<String, Object> toMaterialLsid : toMaterialLsids)
                 {
-                    int objectid = (Integer)toMaterialLsid.get("objectid");
+                    int objectid = (int)toMaterialLsid.get("objectid");
                     if (seen.add(objectid))
                         prepEdgeForInsert(params, runObjectId, objectid, runId);
                 }
@@ -4623,7 +4623,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
 
-                if (!isTruncate && !StringUtils.isEmpty(material.getRootMaterialLSID()))
+                if (!isTruncate && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
                 {
                     ExpSampleType sampleType = material.getSampleType();
                     sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
@@ -7079,7 +7079,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     }
                 }
             }
-
         }
         
         private void saveExpMaterialOutputs(List<ProtocolAppRecord> protAppRecords)

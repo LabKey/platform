@@ -137,6 +137,7 @@ import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
@@ -2262,11 +2263,28 @@ public class ExpDataIterators
             if (context.getInsertOption().updateOnly && !_isUpdateUsingLsid)
                 existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys(context);
 
-            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
+
+            // add "rootmateriallsid" if it does not exist
+            DataIteratorBuilder step2b = new DataIteratorBuilder()
+            {
+                @Override
+                public DataIterator getDataIterator(DataIteratorContext context)
+                {
+                    DataIterator in = step2a.getDataIterator(context);
+                    var map = DataIteratorUtil.createColumnNameMap(in);
+                    if (map.containsKey(RootMaterialLSID.toString()) || !map.containsKey(LSID.toString()))
+                        return in;
+                    var ret = new SimpleTranslator(in, context);
+                    ret.selectAll();
+                    ret.addAliasColumn(RootMaterialLSID.toString(), map.get(LSID.toString()));
+                    return ret;
+                }
+            };
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2b, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)

@@ -592,7 +592,7 @@ public class XarExporter
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
-        if (material.getRootMaterialLSID() != null)
+        if (material.getRootMaterialLSID() != null && !material.getRootMaterialLSID().equals(material.getLSID()))
             xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(material.getRootMaterialLSID()));
         if (material.getAliquotedFromLSID() != null)
             xMaterial.setAliquotedFromLSID(_relativizedLSIDs.relativize(material.getAliquotedFromLSID()));

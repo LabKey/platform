@@ -1367,7 +1367,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 throw new RuntimeSQLException(x);
             }
-
         }
 
         if (!withAmountsParents.isEmpty())
@@ -1472,7 +1471,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SQLFragment inner = new SQLFragment("SELECT DISTINCT(rootmateriallsid) FROM exp.material ali");
         inner.append(" WHERE ali.cpastype = ")
                 .appendValue(sampleTypeLsid)
-                .append(" AND ali.rootmateriallsid IS NOT NULL ")
+                .append(" AND ali.rootmateriallsid <> ali.lsid ")
                 .append(" AND ali.container = ")
                 .appendValue(container)
                 .append(" AND ali.SampleState ")
@@ -1509,27 +1508,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         sql.appendInClause(parentKeys, dialect);
         sql.append(" )");
 
-        Set<Integer> rootIds = new HashSet<>();
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
-        {
-            while (rs.next())
-                rootIds.add(rs.getInt(1));
-        }
-
-        sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
-        sql.append(" WHERE root.cpastype = ? AND root.rootMaterialLsid IS NULL ");
-        sql.add(sampleTypeLsid);
-        sql.append(" AND root.");
-        sql.append(isLsid ? "LSID" : "Name");
-        sql.appendInClause(parentKeys, dialect);
-
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
-        {
-            while (rs.next())
-                rootIds.add(rs.getInt(1));
-        }
-
-        return rootIds;
+        return new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).fillSet(new HashSet<>());
     }
 
     private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
@@ -1645,7 +1624,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     """
         SELECT distinct parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
-        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+            JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid AND aliquot.rootMaterialLsid <> aliquot.lsid
         WHERE aliquot.storedAmount IS NOT NULL AND\s
         """);
     }
@@ -1656,7 +1635,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     """
         SELECT distinct parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
-        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+            JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid AND aliquot.rootMaterialLsid <> aliquot.lsid
         WHERE
         """);
     }
@@ -1688,16 +1667,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment(
-                """
-                        SELECT m.RowId as SampleId, m.Units,
-                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+        SQLFragment sql = new SQLFragment("""
+                        SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE a.rootMaterialLsid=m.lsid)-1 AS CreatedAliquotCount
                         FROM exp.material AS m
-                        LEFT JOIN(
-                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
-                        FROM exp.material m2 GROUP BY RootMaterialLSID
-                        ) AS c ON m.lsid = c.rootLsid
-                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+                        WHERE m.rowid\s""");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1726,15 +1699,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         SELECT m.RowId as SampleId, m.Units,
                         (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
                         FROM exp.material AS m
-                        LEFT JOIN(
-                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
-                        FROM exp.material m2
-                        WHERE m2.SampleState """)
+                            LEFT JOIN (
+                            SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
+                            FROM exp.material
+                            WHERE RootMaterialLSID <> LSID AND SampleState\s""")
                 .appendInClause(availableSampleStates, dialect)
                 .append("""
-                         GROUP BY RootMaterialLSID
+                            GROUP BY RootMaterialLSID
                         ) AS c ON m.lsid = c.rootLsid
-                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+                        WHERE m.rootmateriallsid = m.LSID AND m.rowid\s""");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1762,9 +1735,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 """
                     SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate
                     FROM exp.material AS aliquot
-                    JOIN exp.material AS parent
-                    ON parent.lsid = aliquot.rootmateriallsid
-                    WHERE aliquot.rootmateriallsid IS NOT NULL AND parent.rowid\s
+                        JOIN exp.material AS parent ON parent.lsid = aliquot.rootmateriallsid
+                    WHERE aliquot.rootmateriallsid <> aliquot.lsid AND parent.rowid\s
                     """);
         dialect.appendInClauseSql(sql, sampleIds);
 
