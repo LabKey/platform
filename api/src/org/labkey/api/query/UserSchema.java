@@ -271,7 +271,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 return table;
         }
         if (null == table)
-            table = createTable(name, cf);
+            table = createTable(name, cf, includeExtraMetadata);
         Object torq;
 
         if (table != null)
@@ -323,8 +323,12 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return createTable(name, null);
     }
 
-    public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
+    public @Nullable TableInfo createTable(String name, ContainerFilter cf, boolean includeExtraMetadata)
+    {
+        return createTable(name, cf);
+    }
 
+    public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
 
     @Override
     abstract public Set<String> getTableNames();
