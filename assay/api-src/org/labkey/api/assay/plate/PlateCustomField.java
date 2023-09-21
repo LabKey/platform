@@ -21,6 +21,11 @@ public class PlateCustomField
     {
     }
 
+    public PlateCustomField(String propertyURI)
+    {
+        _propertyURI = propertyURI;
+    }
+
     public PlateCustomField(DomainProperty prop)
     {
         _name = prop.getName();

@@ -90,4 +90,6 @@ public interface Plate extends PropertySet, Identifiable
      * Returns the domain ID for the plate metadata domain.
      */
     @Nullable Integer getMetadataDomainId();
+
+    @Nullable Integer getRunCount();
 }
