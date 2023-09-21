@@ -25,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -55,7 +57,9 @@ import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
+import javax.management.StandardMBean;
 import javax.servlet.ServletContext;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -133,6 +137,57 @@ public class SearchModule extends DefaultModule
                 return null;
             }
         });
+
+        LabKeyManagement.register(new StandardMBean(new SearchMXBean()
+        {
+            @Override
+            public boolean isCrawlerRunning()
+            {
+                return SearchService.get().isRunning();
+            }
+
+            @Override
+            public boolean isCrawlerBusy()
+            {
+                return SearchService.get().isBusy();
+            }
+
+            @Override
+            public void setCrawlerRunning(boolean enabled)
+            {
+                if (enabled)
+                {
+                    SearchService.get().startCrawler();
+                }
+                else
+                {
+                    SearchService.get().pauseCrawler();
+                }
+            }
+
+//            @Override
+//            public int getRecentIndexingCount()
+//            {
+//                for (Map.Entry<String, Object> e : LuceneSearchServiceImpl.get().getIndexerStats().entrySet())
+//                {
+//                    if (e.getKey().startsWith(""))
+//                };
+//                return
+//            }
+
+            @Override
+            public int getIndexedDocumentCount()
+            {
+                try
+                {
+                    return LuceneSearchServiceImpl.get().getNumDocs();
+                }
+                catch (IOException e)
+                {
+                    return -1;
+                }
+            }
+        }, SearchMXBean.class, true), "Operations", "Search");
     }
 
     @Override

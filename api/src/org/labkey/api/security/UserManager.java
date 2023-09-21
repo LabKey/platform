@@ -42,13 +42,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.settings.AppProps;
@@ -64,12 +59,12 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -86,6 +81,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -105,6 +101,14 @@ public class UserManager
     public static final int VERIFICATION_EMAIL_TIMEOUT = 60 * 24;  // in minutes, one day currently
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
+
+    public static void ensureSessionTracked(HttpSession s)
+    {
+        if (s != null)
+        {
+            _activeSessions.put(s.getId(), s);
+        }
+    }
 
     /**
      * Listener for user account related notifications. Typically registered during a module's startup via a call to
@@ -365,7 +369,6 @@ public class UserManager
         }
     }
 
-
     // Includes users who have logged in during any server session
     public static int getRecentUserCount(Date since)
     {
@@ -399,6 +402,17 @@ public class UserManager
             recentUsers.sort(RECENT_USER_COMPARATOR);
 
             return recentUsers;
+        }
+    }
+
+    public static Long getMinutesSinceMostRecentUserActivity()
+    {
+        synchronized(RECENT_USERS)
+        {
+            Optional<Long> mostRecent = RECENT_USERS.values().stream().min(Comparator.naturalOrder());
+            return mostRecent.isPresent() ?
+                    TimeUnit.MILLISECONDS.toMinutes(HeartBeat.currentTimeMillis() - mostRecent.get().longValue()) :
+                    null;
         }
     }
 
@@ -478,16 +492,21 @@ public class UserManager
     /** In minutes */
     private static final AtomicLong _totalSessionDuration = new AtomicLong();
 
+    private static final Map<String, HttpSession> _activeSessions = Collections.synchronizedMap(new HashMap<>());
+
     public static class SessionListener implements HttpSessionListener
     {
         @Override
         public void sessionCreated(HttpSessionEvent event)
         {
+            _activeSessions.put(event.getSession().getId(), event.getSession());
         }
 
         @Override
         public void sessionDestroyed(HttpSessionEvent event)
         {
+            _activeSessions.remove(event.getSession().getId());
+
             // Issue 44761 - track session duration for authenticated users
             User user = SecurityManager.getSessionUser(event.getSession());
             if (user != null)
@@ -498,6 +517,22 @@ public class UserManager
                 _totalSessionDuration.addAndGet(duration);
             }
         }
+    }
+
+    public static int getActiveUserSessionCount()
+    {
+        int users = 0;
+        synchronized (_activeSessions)
+        {
+            for (HttpSession session : _activeSessions.values())
+            {
+                if (AuthenticatedRequest.isGuestSession(session))
+                {
+                    users++;
+                }
+            }
+        }
+        return users;
     }
 
     public static Integer getAverageSessionDuration()
@@ -678,7 +713,7 @@ public class UserManager
 
     public static String validGroupName(String name, @NotNull PrincipalType type)
     {
-        if (null == name || name.length() == 0)
+        if (null == name || name.isEmpty())
             return "Name cannot be empty";
         if (!name.trim().equals(name))
             return "Name should not start or end with whitespace";
@@ -686,28 +721,26 @@ public class UserManager
         switch (type)
         {
             // USER
-            case USER:
-                throw new IllegalArgumentException("User names are not allowed");
+            case USER -> throw new IllegalArgumentException("User names are not allowed");
 
             // GROUP (regular project or global)
-            case ROLE:
-            case GROUP:
+            case ROLE, GROUP ->
+            {
                 // see renameGroup.jsp if you change this
                 if (!StringUtils.containsNone(name, GROUP_NAME_CHAR_EXCLUSION_LIST))
                     return "Group name should not contain punctuation.";
                 if (name.length() > VALID_GROUP_NAME_LENGTH) // issue 14147
                     return "Name value is too long, maximum length is " + VALID_GROUP_NAME_LENGTH + " characters, but supplied value was " + name.length() + " characters.";
-                break;
+            }
 
             // MODULE MANAGED
-            case MODULE:
-                // no validation, HOWEVER must be UNIQUE
-                // recommended start with @ or look like a GUID
-                // must contain punctuation, but not look like email
-                break;
-
-            default:
-                throw new IllegalArgumentException("Unknown principal type: '" + type + "'");
+            case MODULE ->
+            {
+            }
+            // no validation, HOWEVER must be UNIQUE
+            // recommended start with @ or look like a GUID
+            // must contain punctuation, but not look like email
+            default -> throw new IllegalArgumentException("Unknown principal type: '" + type + "'");
         }
         return null;
     }
@@ -843,8 +876,7 @@ public class UserManager
     {
         SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT Email, RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
                 + " WHERE Email = ?", email.getEmailAddress());
-        VerifyEmail verifyEmail = sqlSelector.getObject(VerifyEmail.class);
-        return verifyEmail;
+        return sqlSelector.getObject(VerifyEmail.class);
     }
 
     public static class VerifyEmail
@@ -905,7 +937,7 @@ public class UserManager
 
         List<Throwable> errors = fireDeleteUser(user);
 
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             Throwable first = errors.get(0);
             if (first instanceof RuntimeException)
@@ -1189,62 +1221,6 @@ public class UserManager
 
         Collection<UserRelationships> relationships = new SqlSelector(CORE.getScope(), sql).getCollection(UserRelationships.class);
         return new HashSet<>(relationships);
-    }
-
-    public static void ensureRelationship(User user, User other, UserRelationships relationship)
-    {
-        Set<UserRelationships> existing = getRelationships(user, other);
-        if (existing.contains(relationship))
-            return;
-
-        try
-        {
-            addRelationship(user, other, relationship);
-        }
-        catch (SQLException | QueryUpdateServiceException | BatchValidationException | DuplicateKeyException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private static void addRelationship(User user, User other, UserRelationships relationship) throws SQLException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
-    {
-        Map<String, Object> values = new HashMap<>();
-        values.put("userid", user.getEntityId());
-        values.put("otherid", other.getEntityId());
-        values.put("relationship", relationship);
-
-        QueryUpdateService qus = CORE.getTableInfoPrincipalRelations().getUpdateService();
-        qus.insertRows(user, ContainerManager.getRoot(), Collections.singletonList(values), null, null, null);
-
-        addAuditEvent(user, ContainerManager.getRoot(), user,
-                String.format("Added [%1$s] relationship with user [%2$s]", relationship.name(), user.getEmail()));
-    }
-
-    public static void deleteRelationship(User user, User other, UserRelationships relationship) throws SQLException, QueryUpdateServiceException, BatchValidationException, InvalidKeyException
-    {
-        Map<String, Object> values = new HashMap<>();
-        values.put("userid", user.getEntityId());
-        values.put("otherid", other.getEntityId());
-        values.put("relationship", relationship);
-
-        QueryUpdateService qus = CORE.getTableInfoPrincipalRelations().getUpdateService();
-        qus.deleteRows(user, ContainerManager.getRoot(), Collections.singletonList(values), null, null);
-
-        addAuditEvent(user, ContainerManager.getRoot(), user,
-                String.format("Deleted [%1$s] relationship with user [%2$s]", relationship.name(), user.getEmail()));
-    }
-
-    public static boolean hasAllRelationships(User user, User other, Set<UserRelationships> relationships)
-    {
-        Set<UserRelationships> existing = getRelationships(user, other);
-        return existing.containsAll(relationships);
-    }
-
-    public static boolean hasAnyOfRelationships(User user, User other, Set<UserRelationships> relationships)
-    {
-        Set<UserRelationships> existing = getRelationships(user, other);
-        return relationships.stream().anyMatch(existing::contains);
     }
 
     /**

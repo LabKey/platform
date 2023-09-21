@@ -16,6 +16,7 @@
 package org.labkey.api.view.template;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ViewContext;
 
 public interface WarningProvider
@@ -34,11 +35,13 @@ public interface WarningProvider
      * Add warnings based on the current context (folder, user, page, etc.). Implementations must check permissions on
      * the context to limit who sees the warning(s); otherwise, ALL users (including guests) will see the warning(s).
      * @param warnings A @NotNull Warnings collector
-     * @param context A @NotNull ViewContext that also guarantees a @NotNull getUser() and @NotNull getRequest()
+     * @param context optionally, a ViewContext for which the warnings can be customized. Null when checking for
+     *                warnings that are scoped to the whole server's health, which typically correlate with site-wide
+     *                messages shown to site admins. If a ViewContext is provided, it will have a user, container, and request
      * @param showAllWarnings A flag for testing that indicates the provider should add all warnings if its standard
      *                        permissions check passes.
      */
-    default void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
+    default void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
     }
 }

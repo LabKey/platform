@@ -59,9 +59,6 @@ public class Link extends DisplayElement implements HasHtmlString
     public Appendable appendTo(Appendable out)
     {
         String clickEvent = null;
-        var page = HttpView.currentPageConfig();
-        if (isBlank(lb.id))
-            lb.id = page.makeId("a_");
 
         if (lb.usePost || isNotEmpty(lb.onClick))
         {
@@ -70,7 +67,15 @@ public class Link extends DisplayElement implements HasHtmlString
              else
                  clickEvent = lb.onClick;
         }
-        page.addHandler(lb.id, "click", clickEvent);
+
+        // Allow generation of HTML outside an active request, where JavaScript event handlers are unlikely to be important
+        if (HttpView.hasCurrentView())
+        {
+            var page = HttpView.currentPageConfig();
+            if (isBlank(lb.id))
+                lb.id = page.makeId("a_");
+            page.addHandler(lb.id, "click", clickEvent);
+        }
         return A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
                 .id(lb.id)

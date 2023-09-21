@@ -17,6 +17,7 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.TableXmlUtils;
 import org.labkey.api.admin.sitevalidation.SiteValidationResult;
@@ -27,7 +28,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.PasswordRule;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -109,13 +109,13 @@ public class CoreWarningProvider implements WarningProvider
     }
 
     @Override
-    public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
+    public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
-        if (context.getUser().hasSiteAdminPermission())
+        if (context == null || context.getUser().hasSiteAdminPermission())
         {
             getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings);
 
-            getModuleErrorWarnings(warnings, context, showAllWarnings);
+            getModuleErrorWarnings(warnings, showAllWarnings);
 
             getProbableLeakCountWarnings(warnings, showAllWarnings);
 
@@ -140,19 +140,22 @@ public class CoreWarningProvider implements WarningProvider
             }
         }
 
-        HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), showAllWarnings);
-        if (null != warning)
-            warnings.add(warning);
+        if (context != null)
+        {
+            HtmlString warning = LimitActiveUsersSettings.getWarningMessage(context.getContainer(), context.getUser(), showAllWarnings);
+            if (null != warning)
+                warnings.add(warning);
 
-        if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessage()))
-        {
-            String message = AppProps.getInstance().getRibbonMessage();
-            message = ModuleHtmlView.replaceTokens(message, context);
-            warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
-        }
-        else if (showAllWarnings)
-        {
-            warnings.add(HtmlString.of("Here is a sample ribbon message."));
+            if (AppProps.getInstance().isShowRibbonMessage() && !StringUtils.isEmpty(AppProps.getInstance().getRibbonMessage()))
+            {
+                String message = AppProps.getInstance().getRibbonMessage();
+                message = ModuleHtmlView.replaceTokens(message, context);
+                warnings.add(HtmlString.unsafe(message));  // We trust that the site admin has provided valid HTML
+            }
+            else if (showAllWarnings)
+            {
+                warnings.add(HtmlString.of("Here is a sample ribbon message."));
+            }
         }
     }
 
@@ -291,18 +294,18 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private void getModuleErrorWarnings(Warnings warnings, ViewContext context, boolean showAllWarnings)
+    private void getModuleErrorWarnings(Warnings warnings, boolean showAllWarnings)
     {
         //module failures during startup--show to admins
         Map<String, Throwable> moduleFailures = ModuleLoader.getInstance().getModuleFailures();
-        if (showAllWarnings || null != moduleFailures && moduleFailures.size() > 0)
+        if (showAllWarnings || null != moduleFailures && !moduleFailures.isEmpty())
         {
             if (showAllWarnings && moduleFailures.isEmpty())
             {
                 // Mock failures for testing purposes
                 moduleFailures = Map.of("core", new Throwable(), "flow",  new Throwable());
             }
-            addStandardWarning(warnings, "The following modules experienced errors during startup:", moduleFailures.keySet().toString(), PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL(context.getContainer()));
+            addStandardWarning(warnings, "The following modules experienced errors during startup:", moduleFailures.keySet().toString(), PageFlowUtil.urlProvider(AdminUrls.class).getModuleErrorsURL());
         }
 
         // Issue 46922 - check for and warn about unknown modules

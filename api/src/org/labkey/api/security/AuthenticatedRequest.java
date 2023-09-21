@@ -125,6 +125,11 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         _loggedIn = true;
     }
 
+    public static boolean isGuestSession(HttpSession session)
+    {
+        return session.getAttribute(AuthenticatedRequest.GuestSessionMarker.class.getName()) == null;
+    }
+
 
     @Override
     public HttpSession getSession()
@@ -134,11 +139,8 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
 
 
     /**
-     * We always return a wrapped session of some sort, makes it easier to set breakpionts
-     * or add add logging.
-     *
-     * @param create
-     * @return
+     * We always return a wrapped session of some sort, makes it easier to set breakpoints
+     * or add logging.
      */
     @Override
     public HttpSession getSession(boolean create)
@@ -210,7 +212,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             if (null == s)
             {
                 ServletRequest inner = null;
-                try { inner = getInnermostRequest(); } catch (Exception x){}
+                try { inner = getInnermostRequest(); } catch (Exception ignored){}
                 if (null == inner)
                     inner = getRequest();
                 // Issue 43548 - ignore failures to create sessions
@@ -570,7 +572,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
                     for (Entry<String, String> e : _info.entrySet())
                         sb.append(e.getKey()).append("=").append(e.getValue()).append("&");
                     sb.setLength(sb.length()-1);
-                    _logGuestSession(_ip, "Due to server load, guest session was forced to expire: " + _ip + "?" + sb.toString());
+                    _logGuestSession(_ip, "Due to server load, guest session was forced to expire: " + _ip + "?" + sb);
                 }
                 // Tomcat treats values <= 0 as making the session immortal. See issue 39366
                 s.setMaxInactiveInterval(1);

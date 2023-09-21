@@ -46,6 +46,13 @@ public class JSoupUtil
         return doc == null || doc.childrenSize() == 0 ? null : W3CDom.convert(doc);
     }
 
+    @Nullable
+    public static String convertHtmlToText(String html)
+    {
+        org.jsoup.nodes.Document doc = parseHtmlDOM(html, new ArrayList<>());
+        return doc == null|| doc.childrenSize() == 0 ? null : doc.child(0).text();
+    }
+
     // helper for script validation
     public static String convertHtmlToXml(String html, Collection<String> errors)
     {
@@ -113,6 +120,14 @@ public class JSoupUtil
 
             tidyHTML("<!-- -->", true, errors);
             tidyHTML("<!-- -->", false, errors);
+        }
+
+        @Test
+        public void testToText()
+        {
+            assertEquals("Here is some text", convertHtmlToText("<p>Here is some</p> text"));
+            assertEquals("Here is some text", convertHtmlToText("Here is some text"));
+            assertEquals("Here is some text", convertHtmlToText("Here is some <a href=\"https://labkey.com\">text</a>"));
         }
 
         @Test

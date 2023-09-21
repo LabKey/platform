@@ -225,6 +225,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _autoDetectParser = new AutoDetectParser(config);
     }
 
+    @NotNull
+    public static LuceneSearchServiceImpl get()
+    {
+        return (LuceneSearchServiceImpl) SearchService.get();
+    }
+
     private boolean _initializingIndex = false;
 
     /**
@@ -428,7 +434,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
      * Get the number of documents in the index
      * @return The number of documents
      */
-    private int getNumDocs() throws IOException
+    public int getNumDocs() throws IOException
     {
         IndexSearcher is = _indexManager.getSearcher();
 
