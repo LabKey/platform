@@ -55,6 +55,16 @@ public interface InventoryService
             "StorageStatus",
             "StorageComment"
     );
+    Set<String> INVENTORY_STATUS_COLUMN_LABELS = new CaseInsensitiveHashSet(
+            "Freeze/Thaw Count",
+            "Checked Out By",
+            "Checked Out",
+            "Storage Row",
+            "Storage Col",
+            "Storage Location",
+            "Entered Storage",
+            "Storage Status"
+    );
 
     static void setInstance(InventoryService impl)
     {
