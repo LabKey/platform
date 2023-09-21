@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="static org.labkey.api.util.PageFlowUtil.jsString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -45,18 +46,18 @@ Any user with READ access to this folder may view some summary data. However, ac
     if (returnUrl != null)
         out.print(generateReturnUrlFormField(returnUrl));
 %>
-    <table class="table table-striped table-bordered labkey-data-region-header-lock" id="datasetSecurityGroupTable">
+    <table class="table-striped table-bordered labkey-data-region-header-lock" id="datasetSecurityGroupTable">
         <tr>
-            <th>&nbsp;</th>
+            <th style="min-width:200px;">&nbsp;</th>
             <% if (includeEditOption)
             {
-            %><th width=100>EDIT&nbsp;ALL<%=helpPopup("EDIT ALL", "user/group may view and edit all rows in all datasets")%></th><%
+            %><th style="min-width:120px; text-align:center;">EDIT&nbsp;ALL<%=helpPopup("EDIT ALL", "user/group may view and edit all rows in all datasets")%></th><%
             }
             %>
-            <th width=100>READ&nbsp;ALL<%=helpPopup("READ ALL", "user/group may view all rows in all datasets")%></th>
-            <th width=100>PER&nbsp;DATASET<%=helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
-            <th width=100>NONE<%=helpPopup("NONE", "user/group may not view or edit any detail data")%></th>
-            <th>&nbsp;</th>
+            <th style="min-width:120px; text-align:center;">READ&nbsp;ALL<%=helpPopup("READ ALL", "user/group may view all rows in all datasets")%></th>
+            <th style="min-width:120px; text-align:center;">PER&nbsp;DATASET<%=helpPopup("PER DATASET", "user/group may view and/or edit rows in some datasets, configured per dataset")%></th>
+            <th style="min-width:120px; text-align:center;">NONE<%=helpPopup("NONE", "user/group may not view or edit any detail data")%></th>
+            <th style="min-width:24px; text-align:center;">&nbsp;</th>
         </tr>
     <%
     SecurityPolicy folderPolicy = getContainer().getPolicy();
@@ -77,18 +78,19 @@ Any user with READ access to this folder may view some summary data. However, ac
             hasReadAllPerm = true;
         GroupSecurityType gt = GroupSecurityType.getTypeForGroup(group, study);
         String inputName = "group." + group.getUserId();
-        String warning = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN').style.display='inline';\"";
-        String clear = hasFolderRead ? "" : "onclick=\"document.getElementById('" + inputName + "$WARN').style.display='none';\"";
-        %><tr><td><%=h(name)%></td><%
+        String warningShow = hasFolderRead ? "" : "document.getElementById(" + jsString(inputName+"$WARN") + ").style.display='inline';";
+        String warningHide = hasFolderRead ? "" : "document.getElementById(" + jsString(inputName+"$WARN") + ").style.display='none';";
+        %>
+        <tr><td><%=h(name)%></td><%
         if (includeEditOption)
         {
-        %><td><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>"<%=checked(GroupSecurityType.UPDATE_ALL == gt)%> onchange="LABKEY.setDirty(true);"></td><%
+        %><td style="text-align:center"><labkey:input onClick="<%=warningShow%>" formGroup="false" type="radio" name="<%=inputName%>" value="<%=h(GroupSecurityType.UPDATE_ALL.getParamName())%>" checked="<%=(GroupSecurityType.UPDATE_ALL == gt)%>" onChange="LABKEY.setDirty(true);"/></td><%
         }
         %>
-        <td><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>"<%=checked(GroupSecurityType.READ_ALL == gt)%> onchange="LABKEY.setDirty(true);"></td>
-        <td><input <%=h(warning)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>"<%=checked(GroupSecurityType.PER_DATASET == gt)%> onchange="LABKEY.setDirty(true);"></td>
-        <td><input <%=h(clear)%> type=radio name="<%=h(inputName)%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>"<%=checked(GroupSecurityType.NONE == gt)%> onchange="LABKEY.setDirty(true);"></td><%
-        %><td id="<%=h(inputName)%>$WARN"><% if (!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)) {%><img src="<%=getWebappURL("_images/exclaim.gif")%>" alt="This group does not have folder read permissions." title="This group does not have folder read permissions."><% } %></td><%
+        <td style="text-align:center"><labkey:input onClick="<%=warningShow%>" formGroup="false" type="radio" name="<%=inputName%>" value="<%=h(GroupSecurityType.READ_ALL.getParamName())%>" checked="<%=(GroupSecurityType.READ_ALL == gt)%>" onChange="LABKEY.setDirty(true);"/></td>
+        <td style="text-align:center"><labkey:input onClick="<%=warningShow%>" formGroup="false" type="radio" name="<%=inputName%>" value="<%=h(GroupSecurityType.PER_DATASET.getParamName())%>" checked="<%=(GroupSecurityType.PER_DATASET == gt)%>" onChange="LABKEY.setDirty(true);"/></td>
+        <td style="text-align:center"><labkey:input onClick="<%=warningHide%>" formGroup="false" type="radio" name="<%=inputName%>" value="<%=h(GroupSecurityType.NONE.getParamName())%>" checked="<%=(GroupSecurityType.NONE == gt)%>" onChange="LABKEY.setDirty(true);"/></td><%
+        %><td style="text-align:center"><span id="<%=h(inputName+"$WARN")%>"><% if (!hasFolderRead && (hasReadAllPerm || hasReadSomePerm)) {%><img src="<%=getWebappURL("_images/exclaim.gif")%>" alt="This group does not have folder read permissions." title="This group does not have folder read permissions."><% } %></span></td><%
         %></tr><%
     }
     %></table>
