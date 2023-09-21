@@ -339,6 +339,15 @@ public class PlateUtils
         return DEFAULT_GRID_NAME;
     }
 
+    /**
+     * Return a Location object from a location string : A1, A2, ... H11, H12
+     */
+    public static Location parseLocation(String description)
+    {
+        Position pos = new PositionImpl(null, description);
+        return new Location(pos.getRow(), pos.getColumn()-1);
+    }
+
     public static class Location
     {
         private int _row;

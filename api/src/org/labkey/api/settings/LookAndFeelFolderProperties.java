@@ -24,8 +24,6 @@ import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
 /**
  * Container-specific configuration settings, primarily related to look-and-feel or parsing options
  * that are not necessarily consistent across an entire project.
- * User: adam
- * Date: Aug 1, 2008
  */
 public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
 {

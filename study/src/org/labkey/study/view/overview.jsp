@@ -128,11 +128,12 @@
     <%
         if (showCohorts)
         {
+            var selectId = makeId("select");
+            addHandler(selectId, "change", "document.changeFilterForm.submit()");
     %>
     <input type="hidden" name="<%= h(Params.cohortFilterType.name()) %>"
            value="<%= h(CohortFilter.Type.PTID_CURRENT.name()) %>">
-    <%= h(subjectNoun) %>'s current cohort: <select name="<%= h(Params.cohortId.name()) %>"
-                                                    onchange="document.changeFilterForm.submit()">
+    <%= h(subjectNoun) %>'s current cohort: <select id="<%= HtmlString.of(selectId) %>" name="<%= h(Params.cohortId.name()) %>">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)
@@ -149,9 +150,10 @@
         }
         if (showQCStates)
         {
+            var selectId = makeId("select");
+            addHandler(selectId, "change", "document.changeFilterForm.submit()");
     %>
-    QC State: <select name="<%= h(SharedFormParameters.QCState.name()) %>"
-                      onchange="document.changeFilterForm.submit()">
+    QC State: <select id="<%= HtmlString.of(selectId) %>" name="<%= h(SharedFormParameters.QCState.name()) %>">
     <%
         for (QCStateSet set : qcStateSetOptions)
         {

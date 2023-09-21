@@ -351,7 +351,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
                     plateTemplate.setLookupContainer(protocol.getContainer().getId());
-                    plateTemplate.setRequired(true);
+                    plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
                     plateTemplate.setShownInUpdateView(false);
 
                     ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
@@ -379,6 +379,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 if (!existingFields.contains(AssayResultDomainKind.WELL_LSID_COLUMN_NAME))
                 {
                     GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLsid.setShownInInsertView(false);
                     wellLsid.setShownInUpdateView(false);
                     wellLsid.setHidden(true);
 
