@@ -1612,7 +1612,7 @@ public class PageFlowUtil
     }
 
 
-    // NOTE: these are attached vial query selector, so they must be the same for every popup
+    // NOTE: these are attached via query selector, so they must be the same for every popup
     private static final String popupHideScript = "return hideHelpDivDelay();";
     private static final String popupShowScript = "return showHelpDivDelay(this, 'popuptitle' in this.dataset ? this.dataset['popuptitle'] : '', this.dataset['popupcontent'], 'popupwidth' in this.dataset ? this.dataset['popupwidth'] : 'auto' );";
 
