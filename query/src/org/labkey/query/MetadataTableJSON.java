@@ -197,12 +197,10 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 }
             }
 
-            boolean keepPreviousXml = false;
             if (xmlColumn != null)
             {
                 // Still valid, don't delete it from the metadata overrides
                 columnsToDelete.remove(metadataColumnJSON.getName());
-                keepPreviousXml = true;
             }
             else
             {
@@ -232,7 +230,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setFormatString(metadataColumnJSON.getFormat());
             }
-            else if (xmlColumn.isSetFormatString() && !keepPreviousXml)
+            else if (xmlColumn.isSetFormatString())
             {
                 xmlColumn.unsetFormatString();
             }
@@ -242,7 +240,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setIsHidden(metadataColumnJSON.isHidden());
             }
-            else if (xmlColumn.isSetIsHidden() && !keepPreviousXml)
+            else if (xmlColumn.isSetIsHidden())
             {
                 xmlColumn.unsetIsHidden();
             }
@@ -250,7 +248,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setShownInInsertView(metadataColumnJSON.isShownInInsertView());
             }
-            else if (xmlColumn.isSetShownInInsertView() && !keepPreviousXml)
+            else if (xmlColumn.isSetShownInInsertView())
             {
                 xmlColumn.unsetShownInInsertView();
             }
@@ -258,7 +256,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setShownInUpdateView(metadataColumnJSON.isShownInUpdateView());
             }
-            else if (xmlColumn.isSetShownInUpdateView() && !keepPreviousXml)
+            else if (xmlColumn.isSetShownInUpdateView())
             {
                 xmlColumn.unsetShownInUpdateView();
             }
@@ -266,7 +264,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setShownInDetailsView(metadataColumnJSON.isShownInDetailsView());
             }
-            else if (xmlColumn.isSetShownInDetailsView() && !keepPreviousXml)
+            else if (xmlColumn.isSetShownInDetailsView())
             {
                 xmlColumn.unsetShownInDetailsView();
             }
@@ -274,7 +272,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setMeasure(metadataColumnJSON.isMeasure());
             }
-            else if (xmlColumn.isSetMeasure() && !keepPreviousXml)
+            else if (xmlColumn.isSetMeasure())
             {
                 xmlColumn.unsetMeasure();
             }
@@ -283,7 +281,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setDimension(metadataColumnJSON.isDimension());
             }
-            else if (xmlColumn.isSetDimension() && !keepPreviousXml)
+            else if (xmlColumn.isSetDimension())
             {
                 xmlColumn.unsetDimension();
             }
@@ -292,7 +290,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setRecommendedVariable(metadataColumnJSON.isRecommendedVariable());
             }
-            else if (xmlColumn.isSetRecommendedVariable() && !keepPreviousXml)
+            else if (xmlColumn.isSetRecommendedVariable())
             {
                 xmlColumn.unsetRecommendedVariable();
             }
@@ -301,7 +299,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setDefaultScale(DefaultScaleType.Enum.forString(metadataColumnJSON.getDefaultScale()));
             }
-            else if (xmlColumn.isSetDefaultScale() && !keepPreviousXml)
+            else if (xmlColumn.isSetDefaultScale())
             {
                 xmlColumn.unsetDefaultScale();
             }
@@ -310,7 +308,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setDerivationDataScope(DerivationDataScopeTypes.Enum.forString(metadataColumnJSON.getDerivationDataScope()));
             }
-            else if (xmlColumn.isSetDerivationDataScope() && !keepPreviousXml)
+            else if (xmlColumn.isSetDerivationDataScope())
             {
                 xmlColumn.unsetDerivationDataScope();
             }
@@ -329,7 +327,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setExcludeFromShifting(metadataColumnJSON.isExcludeFromShifting());
             }
-            else if (xmlColumn.isSetExcludeFromShifting() && !keepPreviousXml)
+            else if (xmlColumn.isSetExcludeFromShifting())
             {
                 xmlColumn.unsetExcludeFromShifting();
             }
@@ -339,7 +337,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setColumnTitle(metadataColumnJSON.getLabel());
             }
-            else if (xmlColumn.isSetColumnTitle() && !keepPreviousXml)
+            else if (xmlColumn.isSetColumnTitle())
             {
                 xmlColumn.unsetColumnTitle();
             }
@@ -361,7 +359,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     }
                 }
             }
-            else if (xmlColumn.isSetUrl() && !keepPreviousXml)
+            else if (xmlColumn.isSetUrl())
             {
                 xmlColumn.unsetUrl();
             }
@@ -386,7 +384,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                     }
                 }
                 // wipe off import aliases xml
-                else if (xmlColumn.isSetImportAliases() && !keepPreviousXml)
+                else if (xmlColumn.isSetImportAliases())
                 {
                     xmlColumn.unsetImportAliases();
                 }
@@ -437,18 +435,18 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                     }
                 }
-                else if (xmlColumn.isSetFk() && !keepPreviousXml)
+                else if (xmlColumn.isSetFk())
                 {
                     xmlColumn.unsetFk();
                 }
             }
-            else if (xmlColumn.isSetFk() && !keepPreviousXml)
+            else if (xmlColumn.isSetFk())
             {
                 xmlColumn.unsetFk();
             }
 
             // Always clear out the conditional formats if they've been set
-            if (xmlColumn.isSetConditionalFormats() && !keepPreviousXml)
+            if (xmlColumn.isSetConditionalFormats())
             {
                 xmlColumn.unsetConditionalFormats();
             }
@@ -463,7 +461,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setConceptURI(metadataColumnJSON.getConceptURI());
             }
-            else if (xmlColumn.isSetConceptURI() && !keepPreviousXml)
+            else if (xmlColumn.isSetConceptURI())
             {
                 xmlColumn.unsetConceptURI();
             }
@@ -489,7 +487,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             {
                 xmlColumn.setPrincipalConceptCode(metadataColumnJSON.getPrincipalConceptCode());
             }
-            else if (xmlColumn.isSetPrincipalConceptCode() && !keepPreviousXml)
+            else if (xmlColumn.isSetPrincipalConceptCode())
             {
                 xmlColumn.unsetPrincipalConceptCode();
             }
