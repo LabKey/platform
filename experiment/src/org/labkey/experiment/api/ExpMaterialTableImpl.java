@@ -1087,17 +1087,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(propertyColumn.getDerivationDataScope());
                     if ("genid".equalsIgnoreCase(propertyColumn.getColumnName()) || propertyColumn.isUniqueIdField())
                     {
-                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").append(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectName());
                         hasAliquotColumns = true;
                     }
                     else if (rootField)
                     {
-                        sql.append(propertyColumn.getValueSql("m_sample")).append(" AS ").append(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_sample")).append(" AS ").appendIdentifier(propertyColumn.getSelectName());
                         hasSampleColumns = true;
                     }
                     else
                     {
-                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").append(propertyColumn.getSelectName());
+                        sql.append(propertyColumn.getValueSql("m_aliquot")).append(" AS ").appendIdentifier(propertyColumn.getSelectName());
                         hasAliquotColumns = true;
                     }
                     comma = ", ";
