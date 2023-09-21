@@ -1653,9 +1653,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     /**
      * Check a feature is enabled at either its parent project, or itself
-     * @param feature
+     * @param feature the feature to check
      * @param atProjectOnly Only check Home Project for feature
-     * @return
+     * @return true if the feature is enabled based on product configuration; false otherwise
      */
     public boolean isFeatureEnabled(ProductFeature feature, boolean atProjectOnly)
     {
@@ -1663,15 +1663,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return false;
 
         Container project = getProject();
-        if (project == null)
+        if (project == null) // true only for the root container, where no features should be enabled
             return false;
 
-        boolean enabledAtProject = project.isProductFeatureEnabled(feature);
-        if (atProjectOnly || enabledAtProject)
-            return enabledAtProject;
+        if (atProjectOnly)
+            return isProject() && AdminConsole.isProductFeatureEnabled(feature);
 
-
-        return isProductFeatureEnabled(feature);
+        return AdminConsole.isProductFeatureEnabled(feature);
     }
 
     public boolean isFeatureEnabled(ProductFeature feature)
@@ -1686,17 +1684,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public boolean isProductProjectsEnabled()
     {
         return isFeatureEnabled(ProductFeature.Projects, true);
-    }
-
-    public boolean isProductFeatureEnabled(ProductFeature feature)
-    {
-        return hasProduct() && AdminConsole.isProductFeatureEnabled(feature);
-    }
-
-    public boolean hasProduct()
-    {
-        List<String> activeModuleNames = getActiveModules().stream().map(Module::getName).toList();
-        return ProductRegistry.get().getRegisteredProducts().stream().anyMatch(provider -> activeModuleNames.contains(provider.getModuleName()));
     }
 
     public boolean isAppHomeFolder()
