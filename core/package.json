@@ -55,12 +55,12 @@
   },
   "dependencies": {
     "@labkey/api": "1.24.2",
-    "@labkey/components": "2.368.2-fb-package-updates-0923.2",
+    "@labkey/components": "2.370.0",
     "@labkey/themes": "1.3.1"
   },
   "devDependencies": {
-    "@labkey/build": "6.14.0-fb-package-updates-0923.6",
-    "@labkey/eslint-config-react": "0.0.12-fb-package-updates-0923.0",
+    "@labkey/build": "6.15.0",
+    "@labkey/eslint-config-react": "0.0.13",
     "@types/enzyme": "3.10.13",
     "@types/enzyme-adapter-react-16": "1.0.6",
     "@types/jest": "29.5.4",
