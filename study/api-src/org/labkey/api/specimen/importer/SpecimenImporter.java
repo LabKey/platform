@@ -1305,8 +1305,8 @@ public class SpecimenImporter extends SpecimenTableManager
                 "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 "WHERE M.LSID IS NULL\n";
 
-        String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
-                "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, Name, ObjectId, Container, CpasType, Created FROM\n" +
+        String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, rootMaterialLSID, Name, ObjectId, Container, CpasType, Created)  \n" +
+                "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, LSID, Name, ObjectId, Container, CpasType, Created FROM\n" +
                 "(SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ? AS Container, ? AS CpasType, CAST(? AS " + getSqlDialect().getDefaultDateTimeDataType()+ ") AS Created\n" +
                 " FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 " WHERE M.LSID IS NULL) X\n";
