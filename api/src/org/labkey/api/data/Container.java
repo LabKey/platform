@@ -39,6 +39,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -1653,22 +1654,25 @@ public class Container implements Serializable, Comparable<Container>, Securable
     /**
      * Check a feature is enabled at either its parent project, or itself
      * @param feature the feature to check
-     * @param atProjectOnly Only check Home Project for feature
+     * @param forAppProductOnly check if the project is an app project or not.
      * @return true if the feature is enabled based on product configuration; false otherwise
      */
-    public boolean isFeatureEnabled(ProductFeature feature, boolean atProjectOnly)
+    public boolean isFeatureEnabled(ProductFeature feature, boolean forAppProductOnly)
     {
         if (isWorkbook())
             return false;
+
+        if (!AdminConsole.isProductFeatureEnabled(feature)) // product feature is not enabled anywhere
+            return false;
+
+        if (!forAppProductOnly) // product feature is enabled and no restriction on folderType
+            return true;
 
         Container project = getProject();
         if (project == null) // true only for the root container, where no features should be enabled
             return false;
 
-        if (atProjectOnly)
-            return isProject() && AdminConsole.isProductFeatureEnabled(feature);
-
-        return AdminConsole.isProductFeatureEnabled(feature);
+        return ProductRegistry.get().supportsProductProjects(project);
     }
 
     public boolean isFeatureEnabled(ProductFeature feature)

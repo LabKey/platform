@@ -43,10 +43,7 @@ public abstract class ProductMenuProvider
         return Collections.emptyList();
     }
 
-    public @NotNull List<MenuItem> getDevMenuItems()
-    {
-        return Collections.emptyList();
-    }
+    public boolean supportsProductProjects() { return false; }
 
     @NotNull
     public abstract String getModuleName();
