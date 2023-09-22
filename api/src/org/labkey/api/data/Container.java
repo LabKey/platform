@@ -1652,27 +1652,17 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     /**
-     * Check a feature is enabled at either its parent project, or itself
+     * Check a feature is enabled taking into account the container type
+     *
      * @param feature the feature to check
-     * @param forAppProductOnly check if the project is an app project or not.
      * @return true if the feature is enabled based on product configuration; false otherwise
      */
-    public boolean isFeatureEnabled(ProductFeature feature, boolean forAppProductOnly)
+    private boolean isFeatureEnabledForContainer(ProductFeature feature)
     {
         if (isWorkbook())
             return false;
 
-        if (!AdminConsole.isProductFeatureEnabled(feature)) // product feature is not enabled anywhere
-            return false;
-
-        if (!forAppProductOnly) // product feature is enabled and no restriction on folderType
-            return true;
-
-        Container project = getProject();
-        if (project == null) // true only for the root container, where no features should be enabled
-            return false;
-
-        return ProductRegistry.get().supportsProductProjects(project);
+        return AdminConsole.isProductFeatureEnabled(feature);
     }
 
     public boolean isFeatureEnabled(ProductFeature feature)
@@ -1680,13 +1670,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (ProductFeature.Projects == feature)
             return isProductProjectsEnabled();
 
-        return isFeatureEnabled(feature, false);
+        return isFeatureEnabledForContainer(feature);
     }
 
     // Projects feature should be checked at Home Project only
     public boolean isProductProjectsEnabled()
     {
-        return isFeatureEnabled(ProductFeature.Projects, true);
+        boolean enabled = isFeatureEnabledForContainer(ProductFeature.Projects);
+
+        if (!enabled) // feature is not enabled based on product choice
+            return false;
+
+        Container project = getProject();
+        if (project == null) // true only for the root container, where no features should be enabled
+            return false;
+
+        return ProductRegistry.get().supportsProductProjects(project);
     }
 
     public boolean isAppHomeFolder()
