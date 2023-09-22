@@ -250,7 +250,13 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
     }
 
     @Override
-    public TableInfo createTable(String name, ContainerFilter cf)
+    public @Nullable TableInfo createTable(String name, ContainerFilter cf)
+    {
+        return createTable(name, cf, true);
+    }
+
+    @Override
+    public TableInfo createTable(String name, ContainerFilter cf, boolean includeExtraMetadata)
     {
         TableInfo table = createProviderTable(name, cf);
         if (table == null)
@@ -264,7 +270,8 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
             }
         }
 
-        if (table != null)
+        // Issue 48598: when editing the assay table query metadata, don't overlayMetadata so that we can tell what changes the user is making
+        if (table != null && includeExtraMetadata)
             overlayMetadata(table, name);
 
         return table;

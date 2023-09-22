@@ -271,7 +271,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 return table;
         }
         if (null == table)
-            table = createTable(name, cf);
+            table = createTable(name, cf, includeExtraMetadata);
         Object torq;
 
         if (table != null)
@@ -323,8 +323,17 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return createTable(name, null);
     }
 
-    public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
+    /**
+     * This is available for those subclasses that may need to apply metadata that comes from atypical locations. See
+     * example in AssayProtocolSchema.java which also looks to apply assay-provider-scoped metadata in addition to the
+     * standard query metadata. Issue 48598
+     */
+    public @Nullable TableInfo createTable(String name, ContainerFilter cf, boolean includeExtraMetadata)
+    {
+        return createTable(name, cf);
+    }
 
+    public abstract @Nullable TableInfo createTable(String name, ContainerFilter cf);
 
     @Override
     abstract public Set<String> getTableNames();

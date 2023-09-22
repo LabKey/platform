@@ -445,7 +445,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetFk();
             }
 
-            // Always clear it out the conditional formats if they've been set
+            // Always clear out the conditional formats if they've been set
             if (xmlColumn.isSetConditionalFormats())
             {
                 xmlColumn.unsetConditionalFormats();
