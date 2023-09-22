@@ -101,6 +101,12 @@ public class ProductRegistry
         return productIds;
     }
 
+    public boolean supportsProductProjects(@NotNull Container container)
+    {
+        ProductMenuProvider provider = getPrimaryProductMenuForContainer(container);
+        return provider != null && provider.supportsProductProjects();
+    }
+
     @Nullable
     public ProductMenuProvider getPrimaryProductMenuForContainer(@NotNull Container container)
     {
