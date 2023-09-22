@@ -132,7 +132,7 @@ public class ApiModule extends CodeOnlyModule
         PropertyManager.registerEncryptionMigrationHandler();
         AuthenticationManager.registerEncryptionMigrationHandler();
 
-        LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations", "ActivityAndWarnings");
+        LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
     }
 
     @NotNull

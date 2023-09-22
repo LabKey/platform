@@ -1,12 +1,14 @@
 package org.labkey.api.mbean;
 
+import java.io.IOException;
+
 public interface SearchMXBean
 {
-    boolean isCrawlerRunning();
+    /** @return is the crawler enabled */
+    boolean isRunning();
 
-    boolean isCrawlerBusy();
+    /** @return is the crawler working on something right now - an indicator that there are a lot of things in the queue */
+    boolean isBusy();
 
-    void setCrawlerRunning(boolean enabled);
-
-    int getIndexedDocumentCount();
+    int getNumDocs() throws IOException;
 }

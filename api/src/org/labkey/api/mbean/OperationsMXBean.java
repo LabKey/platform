@@ -15,7 +15,4 @@ public interface OperationsMXBean
 
     /** @return number of site-wide warnings/errors that a site admin would see if they logged in */
     int getSiteWarningCount();
-
-    /** @return count of jobs in the queue, either running or waiting */
-    int getPipelineQueueSize();
 }

@@ -2,7 +2,6 @@ package org.labkey.api;
 
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.mbean.OperationsMXBean;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -32,13 +31,13 @@ class OperationsMXBeanImpl implements OperationsMXBean
     @Override
     public int getUserCountInLastTenMinutes()
     {
-        return UserManager.getRecentUsers(HeartBeat.currentTimeMillis() - TimeUnit.MINUTES.toMinutes(10)).size();
+        return UserManager.getRecentUsers(HeartBeat.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10)).size();
     }
 
     @Override
     public int getUserCountInLastHour()
     {
-        return UserManager.getRecentUsers(HeartBeat.currentTimeMillis() - TimeUnit.HOURS.toMinutes(1)).size();
+        return UserManager.getRecentUsers(HeartBeat.currentTimeMillis() - TimeUnit.HOURS.toMillis(1)).size();
     }
 
     @Override
@@ -62,11 +61,5 @@ class OperationsMXBeanImpl implements OperationsMXBean
         }
 
         return warnings.getMessages().size();
-    }
-
-    @Override
-    public int getPipelineQueueSize()
-    {
-        return PipelineService.get().getPipelineQueue().getQueuePositions().size();
     }
 }

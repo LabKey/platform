@@ -526,7 +526,7 @@ public class UserManager
         {
             for (HttpSession session : _activeSessions.values())
             {
-                if (AuthenticatedRequest.isGuestSession(session))
+                if (!AuthenticatedRequest.isGuestSession(session))
                 {
                     users++;
                 }

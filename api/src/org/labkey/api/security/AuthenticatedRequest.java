@@ -127,7 +127,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
 
     public static boolean isGuestSession(HttpSession session)
     {
-        return session.getAttribute(AuthenticatedRequest.GuestSessionMarker.class.getName()) == null;
+        return session.getAttribute(AuthenticatedRequest.GuestSessionMarker.class.getName()) != null;
     }
 
 
