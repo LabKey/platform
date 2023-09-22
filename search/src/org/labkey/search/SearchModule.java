@@ -25,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -55,6 +57,7 @@ import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
+import javax.management.StandardMBean;
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
@@ -119,6 +122,10 @@ public class SearchModule extends DefaultModule
         addController("search", SearchController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
         SearchService.setInstance(ss);
+
+        LabKeyManagement.register(new StandardMBean(ss, SearchMXBean.class, true), "Search");
+
+
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
             @Override
@@ -134,6 +141,7 @@ public class SearchModule extends DefaultModule
             }
         });
     }
+
 
     @Override
     public void doStartup(ModuleContext moduleContext)

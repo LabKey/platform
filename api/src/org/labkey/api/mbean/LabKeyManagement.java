@@ -16,7 +16,9 @@
 package org.labkey.api.mbean;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 
 import javax.management.DynamicMBean;
@@ -37,7 +39,7 @@ public class LabKeyManagement
 
     public static final Logger LOG = LogHelper.getLogger(LabKeyManagement.class, "Exports LabKey information via JMX");
 
-    public static ObjectName createName(String type, String name) throws MalformedObjectNameException
+    public static ObjectName createName(@NotNull String name, @Nullable String type)
     {
         Hashtable<String,String> t = new Hashtable<>();
         name = name.replace(": ", "-").replace(':','-');
@@ -45,16 +47,30 @@ public class LabKeyManagement
         name = replaceSpecialObjectNameCharacters(name);
         type = replaceSpecialObjectNameCharacters(type);
 
-        t.put("type", type);
+        if (type != null)
+        {
+            t.put("type", type);
+        }
         t.put("name", name);
 
-        return new ObjectName("LabKey", t);
+        try
+        {
+            return new ObjectName("LabKey", t);
+        }
+        catch (MalformedObjectNameException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
     /** Issue 47330 - steer clear of potentially problematic object names.
      * Special character lists compliments of ObjectName.quote(), plus comma, which may be separately problematic */
-    private static String replaceSpecialObjectNameCharacters(String s)
+    private static String replaceSpecialObjectNameCharacters(@Nullable String s)
     {
+        if (s == null)
+        {
+            return null;
+        }
         final StringBuilder buf = new StringBuilder();
         final int len = s.length();
         for (int i = 0; i < len; i++) {
@@ -69,18 +85,15 @@ public class LabKeyManagement
         return buf.toString();
     }
 
-    public static void register(DynamicMBean bean, String type, String name)
+    public static void register(DynamicMBean bean,String name)
     {
-        ObjectName oname=null;
-        try
-        {
-            oname = createName(type,name);
-        }
-        catch (Exception x)
-        {
-            LOG.error("error registering mbean : " + name, x);
-        }
-        register(bean, oname);
+        register(bean, name, null);
+    }
+
+    public static void register(DynamicMBean bean, String name, @Nullable String type)
+    {
+        ObjectName oName = createName(name, type);
+        register(bean, oName);
     }
 
 

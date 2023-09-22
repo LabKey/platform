@@ -352,7 +352,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public static PageConfig currentPageConfig()
     {
         Stack<ViewStackEntry> s = _viewContexts.get();
-        var ret = s.size() == 0 ? null : s.peek().pageConfig;
+        var ret = s.isEmpty() ? null : s.peek().pageConfig;
         if (null == ret)
             throw UnexpectedException.wrap(new ServletException("Request is not configured for rendering"));
         return ret;

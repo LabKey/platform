@@ -29,6 +29,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
@@ -72,7 +73,7 @@ import java.util.function.Function;
  * Date: Nov 12, 2009
  * Time: 12:54:01 PM
  */
-public interface SearchService
+public interface SearchService extends SearchMXBean
 {
     // create logger for package which can be set via logger-manage.view
     Logger _packageLogger = LogHelper.getLogger(SearchService.class.getPackage(), "Full text search module rollup");
@@ -399,7 +400,6 @@ public interface SearchService
     void pauseCrawler();
     void updateIndex();
     @Nullable Throwable getConfigurationError();
-    boolean isRunning();
 
     IndexTask defaultTask();
     IndexTask createTask(String description);
@@ -423,8 +423,6 @@ public interface SearchService
     IndexTask indexProject(@Nullable IndexTask task, Container project /*boolean incremental*/);
     void indexFull(boolean force);
 
-    /** an indicator that there are a lot of things in the queue */
-    boolean isBusy();
     void waitForIdle() throws InterruptedException;
 
     
