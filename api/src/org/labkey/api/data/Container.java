@@ -1652,12 +1652,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     /**
-     * Check a feature is enabled taking into account the container type
+     * Check a feature is enabled taking into account the container type. Use `isFeatureEnabled` to ensure proper
+     * checking for features (like product projects) that rely on folder structure as well.
      *
      * @param feature the feature to check
-     * @return true if the feature is enabled based on product configuration; false otherwise
+     * @return true if the feature is enabled based on product configuration and container type; false otherwise
      */
-    private boolean isFeatureEnabledForContainer(ProductFeature feature)
+    private boolean isFeatureEnabledForContainerType(ProductFeature feature)
     {
         if (isWorkbook())
             return false;
@@ -1670,13 +1671,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (ProductFeature.Projects == feature)
             return isProductProjectsEnabled();
 
-        return isFeatureEnabledForContainer(feature);
+        return isFeatureEnabledForContainerType(feature);
     }
 
     // Projects feature should be checked at Home Project only
     public boolean isProductProjectsEnabled()
     {
-        boolean enabled = isFeatureEnabledForContainer(ProductFeature.Projects);
+        boolean enabled = isFeatureEnabledForContainerType(ProductFeature.Projects);
 
         if (!enabled) // feature is not enabled based on product choice
             return false;
