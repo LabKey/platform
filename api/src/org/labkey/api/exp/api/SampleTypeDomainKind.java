@@ -628,7 +628,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             String table = domain.getStorageTableName();
             SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
                     .append("SELECT LSID FROM " + getStorageSchemaName() + "." + table)
-                    .append(") AND RootMaterialLSID IS NULL");
+                    .append(") AND RootMaterialLSID = LSID");
 
             long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
