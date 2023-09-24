@@ -49,6 +49,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.BaseScanner;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
@@ -167,7 +168,7 @@ public class Table
         boolean isSelectNew = isSelectNew(sql);
         boolean isSelectOld = isSelectOld(sql);
 
-        if (isSelectNew != isSelectOld)
+        if (isSelectNew != isSelectOld && !StringUtils.startsWithIgnoreCase(sql, "WITH"))
             _log.warn("isSelectSql disagreement!\n" + sql);
 
         return isSelectNew;
@@ -176,21 +177,78 @@ public class Table
     // Determines if SQL starts with SELECT or WITH, includes FROM, and doesn't include common CRUD keywords
     public static boolean isSelectNew(String sql)
     {
-        boolean isSelect = false;
-
-        // Strip comments and trim
+        // Remove comments and trim
         String strippedSql = new SqlScanner(sql).stripComments().toString().trim();
 
-        // Does sql start with SELECT or WITH?
-        if (StringUtils.startsWithIgnoreCase(strippedSql, "SELECT") || StringUtils.startsWithIgnoreCase(strippedSql, "WITH"))
+        // If present, remove WITH statement, which should leave a SELECT
+        if (StringUtils.startsWithIgnoreCase(strippedSql, "WITH"))
         {
-            // Does sql contain a FROM clause? Also, some databases allow WITH combined with CRUD statements; LabKey
-            // shouldn't generate these types of queries, but reject them just in case.
-            if (StringUtils.containsIgnoreCase(strippedSql, "FROM") && !StringUtils.containsAnyIgnoreCase("INSERT", "UPDATE", "DELETE", "MERGE"))
-                isSelect = true;
+            SqlScanner scanner = new SqlScanner(strippedSql);
+            SkipWithStatementHandler handler = new SkipWithStatementHandler();
+            scanner.scan(4, handler);
+            String error = handler.getError();
+
+            if (null != error)
+            {
+                _log.warn(error + "!\n" + strippedSql);
+                return false;
+            }
+
+            strippedSql = strippedSql.substring(handler.getSelectIdx()).trim();
         }
 
-        return isSelect;
+        return StringUtils.startsWithIgnoreCase(strippedSql, "SELECT") && StringUtils.containsIgnoreCase(strippedSql, "FROM");
+    }
+
+    private static class SkipWithStatementHandler implements BaseScanner.Handler
+    {
+        private boolean _parenSeen = false;
+        private int _parens = -1;
+        private int _selectIdx = -1;
+
+        @Override
+        public boolean character(char c, int index)
+        {
+            if (!_parenSeen)
+            {
+                if (c == '(')
+                {
+                    _parenSeen = true;
+                    _parens = 1;
+                }
+            }
+            else
+            {
+                switch (c)
+                {
+                    case '(' -> _parens++;
+                    case ')' -> _parens--;
+                }
+
+                if (_parens == 0)
+                {
+                    _selectIdx = index + 1;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private @Nullable String getError()
+        {
+            if (!_parenSeen)
+                return "Parentheses expected after WITH statement";
+            else if (_parens != 0)
+                return "Mismatched parentheses";
+            else
+                return null;
+        }
+
+        private int getSelectIdx()
+        {
+            return _selectIdx;
+        }
     }
 
     public static boolean isSelectOld(String sql)
@@ -219,6 +277,20 @@ public class Table
         return false;
     }
 
+    public static class IsSelectTestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            assertTrue(isSelect("SELECT * FROM foo.bar"));
+            assertTrue(isSelect("WITH Blue AS (SELECT * FROM foo.bar) SELECT * FROM Blue"));
+            assertTrue(isSelect("WITH cte AS (SELECT CAST('1' AS INTEGER) AS i) SELECT * FROM cte"));
+
+            assertFalse(isSelect("WITH Nothing SELECT * FROM foo.bar"));
+            assertFalse(isSelect("WITH Mismatched AS (SELECT * FROM (SELECT * FROM foo.bar) SELECT * FROM Mismatched"));
+            assertFalse(isSelect("WITH Incomplete AS (SELECT * FROM foo.bar)"));
+        }
+    }
 
     // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
     public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList) throws SQLException

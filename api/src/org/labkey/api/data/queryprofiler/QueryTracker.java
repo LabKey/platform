@@ -119,7 +119,11 @@ class QueryTracker
 
     public SQLFragment getSQLFragment()
     {
-        return null != _parameters ? new SQLFragment(getSql(), _parameters) : new SQLFragment(getSql());
+        // Avoid tripping up semicolon and unmatched quote detection, Issue 48731
+        SQLFragment sql = SQLFragment.unsafe(getSql());
+        if (null != _parameters)
+            sql.addAll(_parameters);
+        return sql;
     }
 
     public String getSqlAndParameters()
