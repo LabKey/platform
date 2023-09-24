@@ -164,6 +164,37 @@ public class Table
     /** @return if this is a statement that starts with SELECT and contains FROM, ignoring comment lines that start with "--" */
     public static boolean isSelect(String sql)
     {
+        boolean isSelectNew = isSelectNew(sql);
+        boolean isSelectOld = isSelectOld(sql);
+
+        if (isSelectNew != isSelectOld)
+            _log.warn("isSelectSql disagreement!\n" + sql);
+
+        return isSelectNew;
+    }
+
+    // Determines if SQL starts with SELECT or WITH, includes FROM, and doesn't include common CRUD keywords
+    public static boolean isSelectNew(String sql)
+    {
+        boolean isSelect = false;
+
+        // Strip comments and trim
+        String strippedSql = new SqlScanner(sql).stripComments().toString().trim();
+
+        // Does sql start with SELECT or WITH?
+        if (StringUtils.startsWithIgnoreCase(strippedSql, "SELECT") || StringUtils.startsWithIgnoreCase(strippedSql, "WITH"))
+        {
+            // Does sql contain a FROM clause? Also, some databases allow WITH combined with CRUD statements; LabKey
+            // shouldn't generate these types of queries, but reject them just in case.
+            if (StringUtils.containsIgnoreCase(strippedSql, "FROM") && !StringUtils.containsAnyIgnoreCase("INSERT", "UPDATE", "DELETE", "MERGE"))
+                isSelect = true;
+        }
+
+        return isSelect;
+    }
+
+    public static boolean isSelectOld(String sql)
+    {
         boolean select = false;
 
         for (String sqlLine : sql.split("\\r?\\n"))

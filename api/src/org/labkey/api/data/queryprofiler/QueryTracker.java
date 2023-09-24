@@ -24,7 +24,6 @@ import org.labkey.api.collections.ByteArrayHashKey;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DOM;
@@ -141,7 +140,7 @@ class QueryTracker
 
     public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && Table.isSelect(_sql);
+        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && type.canShowExecutionPlan(_sql);
     }
 
     public long getCount()
