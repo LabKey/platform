@@ -113,9 +113,13 @@ public class PageConfig
     }
 
     // collected javascript handlers
-    private final LinkedHashMap<String,EventHandler> _eventHandlers = new LinkedHashMap<>();
-    private final ArrayList<String> _onDomLoaded = new ArrayList<>();
-    private final ArrayList<String> _onDocumentLoaded = new ArrayList<>();
+
+    // Cap the total number of handlers to prevent excessive memory use. Typical key/event/handler strings are
+    // a combined 100-200 characters
+    private static final int MAX_EVENT_HANDLERS = 100_000;
+    private final Map<String,EventHandler> _eventHandlers = new LinkedHashMap<>();
+    private final List<String> _onDomLoaded = new ArrayList<>();
+    private final List<String> _onDocumentLoaded = new ArrayList<>();
 
 
     private final HttpServletRequest _request;
@@ -420,8 +424,17 @@ public class PageConfig
 
     public HtmlString getPreloadTags()
     {
-        final List<String> fonts = List.of();
+        // Preloading is sometimes great but is a waste if the resource isn't actually used in a way
+        // that impacts the initial page render. Need to refine the list to just the ones that will be used
+        // above the fold if we want to reintroduce this. Largely moot after the initial render due to caching.
+        final List<String> fonts = List.of(
+//                "/fonts/Roboto/Roboto-Regular.ttf",
+//                "/fonts/TitilliumWeb/TitilliumWeb-Regular.ttf",
+//                "/fonts/TitilliumWeb/TitilliumWeb-Bold.ttf",
+//                "/fonts/Roboto/Roboto-Bold.ttf"
+        );
         HtmlStringBuilder sb = HtmlStringBuilder.of();
+        //noinspection RedundantOperationOnEmptyContainer
         fonts.stream().map(PageFlowUtil::staticResourceUrl).forEach(url->
                 sb.append(HtmlString.unsafe("<link rel=\"preload\" as=\"font\" type=\"font/ttf\" crossorigin href=\"")).append(url).append(HtmlString.unsafe("\">")));
         return sb.getHtmlString();
@@ -584,8 +597,15 @@ public class PageConfig
 
     private void _addHandler(EventHandler eh)
     {
-        var prev = _eventHandlers.put(eh.getKey(), eh);
-        assert null==prev || prev.handler.equals(eh.handler) : "Duplicate handler registered. event:" + eh.getKey() + " handler:" + eh.handler();
+        if (_eventHandlers.size() <= MAX_EVENT_HANDLERS)
+        {
+            if (_eventHandlers.size() == MAX_EVENT_HANDLERS)
+            {
+                LOG.warn("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for " + eh.event + ": " + eh.handler);
+            }
+            var prev = _eventHandlers.put(eh.getKey(), eh);
+            assert null == prev || prev.handler.equals(eh.handler) : "Duplicate handler registered. event:" + eh.getKey() + " handler:" + eh.handler();
+        }
     }
 
 
@@ -725,7 +745,7 @@ public class PageConfig
                     _on_dom_content_loaded_();
                 else if (document.readyState === 'complete')
                     _on_document_loaded_();
-            }); 
+            });
             """
         );
 
