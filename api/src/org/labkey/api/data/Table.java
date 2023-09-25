@@ -49,10 +49,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.BaseScanner;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -109,13 +109,14 @@ public class Table
     public static final String MODIFIED_COLUMN_NAME = "Modified";
 
     /** Columns that are magically populated as part of an insert or update operation */
-    public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = Collections.unmodifiableSet(new CaseInsensitiveHashSet(PageFlowUtil.set(
-                    ENTITY_ID_COLUMN_NAME,
-                    OWNER_COLUMN_NAME,
-                    CREATED_BY_COLUMN_NAME,
-                    CREATED_COLUMN_NAME,
-                    MODIFIED_BY_COLUMN_NAME,
-                    MODIFIED_COLUMN_NAME)));
+    public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = CaseInsensitiveHashSet.of(
+        ENTITY_ID_COLUMN_NAME,
+        OWNER_COLUMN_NAME,
+        CREATED_BY_COLUMN_NAME,
+        CREATED_COLUMN_NAME,
+        MODIFIED_BY_COLUMN_NAME,
+        MODIFIED_COLUMN_NAME
+    );
 
     private Table()
     {
@@ -136,7 +137,6 @@ public class Table
         MemTracker.getInstance().put(stmt);
         return stmt;
     }
-
 
     public static void setParameters(PreparedStatement stmt, Collection<?> parameters, List<Parameter> jdbcParameters)
     {
@@ -160,34 +160,106 @@ public class Table
         }
     }
 
-
-    /** @return if this is a statement that starts with SELECT and contains FROM, ignoring comment lines that start with "--" */
+    /**
+     *  @return if this is a SELECT statement that contains FROM, possibly proceeded by a CTE (WITH clause). Comments
+     *  are ignored.
+     */
     public static boolean isSelect(String sql)
     {
-        boolean select = false;
+        // Remove comments and trim
+        String strippedSql = new SqlScanner(sql).stripComments().toString().trim();
 
-        for (String sqlLine : sql.split("\\r?\\n"))
+        // If present, remove WITH statement, which should leave behind a SELECT
+        if (strippedSql.matches("^(?ims)WITH\\s.*$")) // flags: case-insensitive, multiline, dot-all
         {
-            sqlLine = sqlLine.trim();
-            if (!sqlLine.startsWith("--"))
-            {
-                // First non-comment line must start with SELECT
-                if (!select)
-                {
-                    if (StringUtils.startsWithIgnoreCase(sqlLine, "SELECT"))
-                        select = true;
-                    else
-                        return false;
-                }
+            SqlScanner scanner = new SqlScanner(strippedSql);
+            SkipWithStatementHandler handler = new SkipWithStatementHandler();
+            scanner.scan("WITH ".length(), handler);
+            String error = handler.getError();
 
-                // We must also see a FROM clause so we don't flag stored procedure invocations, #22648
-                if (StringUtils.containsIgnoreCase(sqlLine, "FROM"))
-                    return true;
+            if (null != error)
+            {
+                _log.warn(error + "!\n" + strippedSql);
+                return false;
             }
+
+            strippedSql = strippedSql.substring(handler.getSelectIdx()).trim();
         }
-        return false;
+
+        // We must see a FROM clause, so we don't flag stored procedure invocations, #22648
+        return strippedSql.matches("^(?ims)SELECT\\s.*\\sFROM\\s.*$"); // flags: case-insensitive, multiline, dot-all
     }
 
+    private static class SkipWithStatementHandler implements BaseScanner.Handler
+    {
+        private boolean _parenSeen = false;
+        private int _parens = -1;
+        private int _selectIdx = -1;
+
+        @Override
+        public boolean character(char c, int index)
+        {
+            if (!_parenSeen)
+            {
+                if (c == '(')
+                {
+                    _parenSeen = true;
+                    _parens = 1;
+                }
+            }
+            else
+            {
+                switch (c)
+                {
+                    case '(' -> _parens++;
+                    case ')' -> _parens--;
+                }
+
+                if (_parens == 0)
+                {
+                    _selectIdx = index + 1;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private @Nullable String getError()
+        {
+            if (!_parenSeen)
+                return "Parentheses expected after WITH statement";
+            else if (_parens != 0)
+                return "Mismatched parentheses";
+            else
+                return null;
+        }
+
+        private int getSelectIdx()
+        {
+            return _selectIdx;
+        }
+    }
+
+    public static class IsSelectTestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            assertTrue(isSelect("SELECT * FROM foo.bar"));
+            assertTrue(isSelect("WITH Blue AS (SELECT * FROM foo.bar) SELECT * FROM Blue"));
+            assertTrue(isSelect("WITH cte AS (SELECT CAST('1' AS INTEGER) AS i) SELECT * FROM cte"));
+            assertTrue(isSelect("with lowercase as (select cast('1' as integer) as i) select * from lowercase"));
+            assertTrue(isSelect("WITH\nMultiLine AS (SELECT * FROM foo.bar)\nSELECT *\nFROM Blue"));
+
+            assertFalse(isSelect("WITH Nothing SELECT * FROM foo.bar"));
+            assertFalse(isSelect("WITH Mismatched AS (SELECT * FROM (SELECT * FROM foo.bar) SELECT * FROM Mismatched"));
+            assertFalse(isSelect("WITH Incomplete AS (SELECT * FROM foo.bar)"));
+            assertFalse(isSelect("WITH NonSelect AS (SELECT * FROM foo.bar) UPDATE foo.bar SET bam = 1"));
+            assertFalse(isSelect("WITH NonSelect AS (SELECT * FROM foo.bar) DELETE FROM foo.bar WHERE 1=1"));
+            assertFalse(isSelect("WITHOUT NonCTE AS (SELECT * FROM foo.bar) SELECT NonCTE WHERE 1=1"));
+        }
+    }
 
     // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
     public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList) throws SQLException
@@ -230,7 +302,6 @@ public class Table
             doClose(null, stmt, conn, schema.getScope());
         }
     }
-
 
     static void batchExecute1String(DbSchema schema, String sql, Iterable<String> paramList) throws SQLException
     {

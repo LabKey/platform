@@ -24,7 +24,6 @@ import org.labkey.api.collections.ByteArrayHashKey;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DOM;
@@ -120,7 +119,11 @@ class QueryTracker
 
     public SQLFragment getSQLFragment()
     {
-        return null != _parameters ? new SQLFragment(getSql(), _parameters) : new SQLFragment(getSql());
+        // Avoid tripping up semicolon and unmatched quote detection, Issue 48731
+        SQLFragment sql = SQLFragment.unsafe(getSql());
+        if (null != _parameters)
+            sql.addAll(_parameters);
+        return sql;
     }
 
     public String getSqlAndParameters()
@@ -141,7 +144,7 @@ class QueryTracker
 
     public boolean canShowExecutionPlan(ExecutionPlanType type)
     {
-        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && Table.isSelect(_sql);
+        return null != _scope && _scope.getSqlDialect().canShowExecutionPlan(type) && _validSql && !_truncated && type.canShowExecutionPlan(_sql);
     }
 
     public long getCount()
