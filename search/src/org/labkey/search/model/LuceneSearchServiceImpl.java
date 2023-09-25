@@ -33,6 +33,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -1593,13 +1594,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     private void processSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher, SearchResult result) throws IOException
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
-
         List<SearchHit> ret = new LinkedList<>();
+        StoredFields storedFields = searcher.getIndexReader().storedFields();
 
         for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
             ScoreDoc scoreDoc = hits[i];
-            Document doc = searcher.doc(scoreDoc.doc);
+            Document doc = storedFields.document(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
             hit.category = doc.get(FIELD_NAME.searchCategories.toString());
@@ -1648,11 +1649,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     private void processSearchResultUniqueIds(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher, List<String> searchResultUniqueIds) throws IOException
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
+        StoredFields storedFields = searcher.getIndexReader().storedFields();
 
         for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
             ScoreDoc scoreDoc = hits[i];
-            Document doc = searcher.doc(scoreDoc.doc);
+            Document doc = storedFields.document(scoreDoc.doc);
             String id = doc.get(FIELD_NAME.uniqueId.toString());
             if (id != null)
                 searchResultUniqueIds.add(id);
