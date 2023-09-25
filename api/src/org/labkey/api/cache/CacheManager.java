@@ -66,7 +66,7 @@ public class CacheManager
     {
         CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null, Thread.currentThread().getStackTrace());
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
-        LabKeyManagement.register(cache.createDynamicMBean(), "Cache", debugName);
+        LabKeyManagement.register(cache.createDynamicMBean(), debugName, "Cache");
         return cache;
     }
 

@@ -463,9 +463,9 @@ public class AdminController extends SpringActionController
     public static class AdminUrlsImpl implements AdminUrls
     {
         @Override
-        public ActionURL getModuleErrorsURL(Container container)
+        public ActionURL getModuleErrorsURL()
         {
-            return new ActionURL(ShowModuleErrors.class, container);
+            return new ActionURL(ShowModuleErrors.class, ContainerManager.getRoot());
         }
 
         @Override

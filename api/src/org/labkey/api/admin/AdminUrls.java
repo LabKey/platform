@@ -32,7 +32,7 @@ import org.springframework.web.servlet.mvc.Controller;
  */
 public interface AdminUrls extends UrlProvider
 {
-    ActionURL getModuleErrorsURL(Container container);
+    ActionURL getModuleErrorsURL();
     ActionURL getAdminConsoleURL();
     ActionURL getModuleStatusURL(URLHelper returnURL);
     ActionURL getCustomizeSiteURL();

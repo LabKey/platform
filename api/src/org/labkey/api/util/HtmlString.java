@@ -166,4 +166,10 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
     {
         return JSONObject.quote(_s);
     }
+
+    /** @return the plain text content of the HTML, omitting tags and attributes */
+    public String toText()
+    {
+        return JSoupUtil.convertHtmlToText(_s);
+    }
 }

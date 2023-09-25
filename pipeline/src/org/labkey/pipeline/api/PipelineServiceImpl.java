@@ -45,6 +45,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobNotificationProvider;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineMXBean;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
@@ -58,8 +59,6 @@ import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -116,7 +115,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.labkey.api.pipeline.PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider.DEFAULT_PIPELINE_JOB_NOTIFICATION_PROVIDER;
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
 
-public class PipelineServiceImpl implements PipelineService
+public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 {
     private static final Logger LOG = LogHelper.getLogger(PipelineService.class, "Pipeline initialization and job requeuing during server startup");
 
@@ -153,8 +152,7 @@ public class PipelineServiceImpl implements PipelineService
             PipeRoot root = findPipelineRoot(c);
             if (null != root)
             {
-                SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
-                if (policy.hasPermission(u, AdminPermission.class))
+                if (root.hasPermission(u, AdminPermission.class))
                     return Collections.singleton(root);
             }
             return Collections.emptyList();
@@ -167,9 +165,7 @@ public class PipelineServiceImpl implements PipelineService
             Context env = (Context) initCtx.lookup("java:comp/env");
             factory = (ConnectionFactory) env.lookup("jms/ConnectionFactory");
         }
-        catch (NamingException e)
-        {
-        }
+        catch (NamingException ignored) {}
 
         if (factory == null)
         {
@@ -277,6 +273,12 @@ public class PipelineServiceImpl implements PipelineService
         p.setPath(dir);
         p.setType(PRIMARY_ROOT);
         return p;
+    }
+
+    @Override
+    public int getPipelineQueueSize()
+    {
+        return getPipelineQueue().getQueuePositions().size();
     }
 
     @Override

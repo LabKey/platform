@@ -52,7 +52,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -503,7 +502,7 @@ public class PageConfig
         // Suppress warnings in print mode
         if (_template != Template.Print)
         {
-            // Keep an empty div for re-addition of dismissable messages onto the page
+            // Keep an empty div for re-addition of dismissible messages onto the page
             messages.append(HtmlString.unsafe("<div class=\"lk-dismissable-alert-ct\">"));
             if (context != null && context.getRequest() != null)
             {

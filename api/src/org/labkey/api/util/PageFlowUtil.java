@@ -1724,7 +1724,7 @@ public class PageFlowUtil
                     .at(inlineScript, onmouseout, popupHideScript)
                     .at(inlineScript, onmouseover, popupShowScript)
                     .data(width != 0, "popupwidth", width)
-                    .data(isNotBlank(titleText),"popuptitle", title)
+                    .data(isNotBlank(titleText),"popuptitle", titleText)
                     .data("popupcontent", helpHtml.toString()),
                     linkHtml));
         }

@@ -75,6 +75,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -150,7 +151,7 @@ import java.util.stream.Stream;
  * Date: Nov 18, 2009
  * Time: 1:14:44 PM
  */
-public class LuceneSearchServiceImpl extends AbstractSearchService
+public class LuceneSearchServiceImpl extends AbstractSearchService implements SearchMXBean
 {
     private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
 
@@ -428,7 +429,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
      * Get the number of documents in the index
      * @return The number of documents
      */
-    private int getNumDocs() throws IOException
+    @Override
+    public int getNumDocs() throws IOException
     {
         IndexSearcher is = _indexManager.getSearcher();
 

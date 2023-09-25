@@ -317,6 +317,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public int getNumDocs()
+    {
+        return 0;
+    }
+
+    @Override
     public void waitForIdle()
     {
     }

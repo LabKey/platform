@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.EncryptedPropertyStore;
 import org.labkey.api.data.PropertyManager;
@@ -85,9 +86,9 @@ public class Encryption
 
         WarningService.get().register(new WarningProvider() {
             @Override
-            public void addDynamicWarnings(@NotNull Warnings warnings, @NotNull ViewContext context, boolean showAllWarnings)
+            public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
             {
-                if (context.getUser().hasSiteAdminPermission())
+                if (context == null || context.getUser().hasSiteAdminPermission())
                 {
                     if (!isEncryptionPassPhraseSpecified() || showAllWarnings)
                         warnings.add(HtmlStringBuilder.of("The encryption key property is not set in " + AppProps.getInstance().getWebappConfigurationFilename() +

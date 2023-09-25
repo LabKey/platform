@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view.template;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ViewContext;
@@ -38,7 +39,7 @@ public interface WarningService
     boolean showAllWarnings();
     void register(WarningProvider provider);
     void forEachProvider(Consumer<WarningProvider> consumer);
-    Warnings getWarnings(ViewContext context);
+    Warnings getWarnings(@Nullable ViewContext context);
     HtmlString getWarningsHtml(Warnings warnings, ViewContext context);
     void rerunSchemaCheck(); // Doesn't really fit on this service, but there's no better existing service
 }
