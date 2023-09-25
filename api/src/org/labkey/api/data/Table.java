@@ -162,7 +162,7 @@ public class Table
 
     /**
      *  @return if this is a SELECT statement that contains FROM, possibly proceeded by a CTE (WITH clause). Comments
-     *  and strings are ignored.
+     *  are ignored.
      */
     public static boolean isSelect(String sql)
     {
@@ -170,11 +170,11 @@ public class Table
         String strippedSql = new SqlScanner(sql).stripComments().toString().trim();
 
         // If present, remove WITH statement, which should leave behind a SELECT
-        if (StringUtils.startsWithIgnoreCase(strippedSql, "WITH"))
+        if (strippedSql.matches("^(?ims)WITH\\s.*$")) // flags: case-insensitive, multiline, dot-all
         {
             SqlScanner scanner = new SqlScanner(strippedSql);
             SkipWithStatementHandler handler = new SkipWithStatementHandler();
-            scanner.scan(4, handler);
+            scanner.scan("WITH ".length(), handler);
             String error = handler.getError();
 
             if (null != error)
@@ -187,7 +187,7 @@ public class Table
         }
 
         // We must see a FROM clause, so we don't flag stored procedure invocations, #22648
-        return StringUtils.startsWithIgnoreCase(strippedSql, "SELECT") && StringUtils.containsIgnoreCase(strippedSql, "FROM");
+        return strippedSql.matches("^(?ims)SELECT\\s.*\\sFROM\\s.*$"); // flags: case-insensitive, multiline, dot-all
     }
 
     private static class SkipWithStatementHandler implements BaseScanner.Handler
@@ -249,10 +249,15 @@ public class Table
             assertTrue(isSelect("SELECT * FROM foo.bar"));
             assertTrue(isSelect("WITH Blue AS (SELECT * FROM foo.bar) SELECT * FROM Blue"));
             assertTrue(isSelect("WITH cte AS (SELECT CAST('1' AS INTEGER) AS i) SELECT * FROM cte"));
+            assertTrue(isSelect("with lowercase as (select cast('1' as integer) as i) select * from lowercase"));
+            assertTrue(isSelect("WITH\nMultiLine AS (SELECT * FROM foo.bar)\nSELECT *\nFROM Blue"));
 
             assertFalse(isSelect("WITH Nothing SELECT * FROM foo.bar"));
             assertFalse(isSelect("WITH Mismatched AS (SELECT * FROM (SELECT * FROM foo.bar) SELECT * FROM Mismatched"));
             assertFalse(isSelect("WITH Incomplete AS (SELECT * FROM foo.bar)"));
+            assertFalse(isSelect("WITH NonSelect AS (SELECT * FROM foo.bar) UPDATE foo.bar SET bam = 1"));
+            assertFalse(isSelect("WITH NonSelect AS (SELECT * FROM foo.bar) DELETE FROM foo.bar WHERE 1=1"));
+            assertFalse(isSelect("WITHOUT NonCTE AS (SELECT * FROM foo.bar) SELECT NonCTE WHERE 1=1"));
         }
     }
 
