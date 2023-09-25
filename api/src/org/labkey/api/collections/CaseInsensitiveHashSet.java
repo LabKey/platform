@@ -20,11 +20,9 @@ import org.junit.Test;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import static java.util.Collections.emptySet;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * Simple case-insensitive version of HashSet -- simply forces all Strings to lowercase before adding, removing,
@@ -85,39 +83,10 @@ public class CaseInsensitiveHashSet extends HashSet<String>
         return modified;
     }
 
-    public static Set<String> of()
+    /** Returns an immutable case-insensitive hash set */
+    public static Set<String> of(String... values)
     {
-        return emptySet();
-    }
-
-    public static Set<String> of(String s1)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1));
-    }
-
-    public static Set<String> of(String s1, String s2)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3, String s4)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3, String s4, String s5)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4, s5));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3, String s4, String s5, String s6)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4, s5, s6));
+        return Collections.unmodifiableSet(new CaseInsensitiveHashSet(values));
     }
 
     public static class TestCase extends Assert
