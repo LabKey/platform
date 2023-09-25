@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -95,7 +96,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
@@ -193,20 +193,20 @@ public class SecurityManager
             for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
             {
                 Role role = assignment.getRole();
+                int count = roleCounts.getOrDefault(role.getName(), 0);
                 if (siteRoles.contains(role))
                 {
-                    int count = roleCounts.getOrDefault(role.getName(), 0);
                     UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
                     if (principal != null && principal.isActive())
                     {
                         switch (principal.getPrincipalType())
                         {
                             case USER -> count++;
-                            case GROUP -> getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS);
+                            case GROUP -> count += getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS).size();
                         }
-                        roleCounts.put(role.getName(), count);
                     }
                 }
+                roleCounts.put(role.getName(), count);
             }
             result.put("SiteRoleUserCounts", roleCounts);
 
