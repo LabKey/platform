@@ -553,7 +553,6 @@ public class QueryProfiler
                         }
 
                         String sql = query.getSql();
-                        Table.isSelect(sql); // TODO: Temp - force every query through new method
                         String hash = HashHelpers.hash(sql);
 
                         QueryTracker tracker = _queries.get(hash);

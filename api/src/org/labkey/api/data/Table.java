@@ -53,7 +53,6 @@ import org.labkey.api.util.BaseScanner;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -110,13 +109,14 @@ public class Table
     public static final String MODIFIED_COLUMN_NAME = "Modified";
 
     /** Columns that are magically populated as part of an insert or update operation */
-    public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = Collections.unmodifiableSet(new CaseInsensitiveHashSet(PageFlowUtil.set(
-                    ENTITY_ID_COLUMN_NAME,
-                    OWNER_COLUMN_NAME,
-                    CREATED_BY_COLUMN_NAME,
-                    CREATED_COLUMN_NAME,
-                    MODIFIED_BY_COLUMN_NAME,
-                    MODIFIED_COLUMN_NAME)));
+    public static final Set<String> AUTOPOPULATED_COLUMN_NAMES = CaseInsensitiveHashSet.of(
+        ENTITY_ID_COLUMN_NAME,
+        OWNER_COLUMN_NAME,
+        CREATED_BY_COLUMN_NAME,
+        CREATED_COLUMN_NAME,
+        MODIFIED_BY_COLUMN_NAME,
+        MODIFIED_COLUMN_NAME
+    );
 
     private Table()
     {
@@ -137,7 +137,6 @@ public class Table
         MemTracker.getInstance().put(stmt);
         return stmt;
     }
-
 
     public static void setParameters(PreparedStatement stmt, Collection<?> parameters, List<Parameter> jdbcParameters)
     {
@@ -161,26 +160,16 @@ public class Table
         }
     }
 
-
-    /** @return if this is a statement that starts with SELECT and contains FROM, ignoring comment lines that start with "--" */
+    /**
+     *  @return if this is a SELECT statement that contains FROM, possibly proceeded by a CTE (WITH clause). Comments
+     *  and strings are ignored.
+     */
     public static boolean isSelect(String sql)
-    {
-        boolean isSelectNew = isSelectNew(sql);
-        boolean isSelectOld = isSelectOld(sql);
-
-        if (isSelectNew != isSelectOld && !StringUtils.startsWithIgnoreCase(sql, "WITH"))
-            _log.warn("isSelectSql disagreement!\n" + sql);
-
-        return isSelectNew;
-    }
-
-    // Determines if SQL starts with SELECT or WITH, includes FROM, and doesn't include common CRUD keywords
-    public static boolean isSelectNew(String sql)
     {
         // Remove comments and trim
         String strippedSql = new SqlScanner(sql).stripComments().toString().trim();
 
-        // If present, remove WITH statement, which should leave a SELECT
+        // If present, remove WITH statement, which should leave behind a SELECT
         if (StringUtils.startsWithIgnoreCase(strippedSql, "WITH"))
         {
             SqlScanner scanner = new SqlScanner(strippedSql);
@@ -197,6 +186,7 @@ public class Table
             strippedSql = strippedSql.substring(handler.getSelectIdx()).trim();
         }
 
+        // We must see a FROM clause, so we don't flag stored procedure invocations, #22648
         return StringUtils.startsWithIgnoreCase(strippedSql, "SELECT") && StringUtils.containsIgnoreCase(strippedSql, "FROM");
     }
 
@@ -249,32 +239,6 @@ public class Table
         {
             return _selectIdx;
         }
-    }
-
-    public static boolean isSelectOld(String sql)
-    {
-        boolean select = false;
-
-        for (String sqlLine : sql.split("\\r?\\n"))
-        {
-            sqlLine = sqlLine.trim();
-            if (!sqlLine.startsWith("--"))
-            {
-                // First non-comment line must start with SELECT
-                if (!select)
-                {
-                    if (StringUtils.startsWithIgnoreCase(sqlLine, "SELECT"))
-                        select = true;
-                    else
-                        return false;
-                }
-
-                // We must also see a FROM clause so we don't flag stored procedure invocations, #22648
-                if (StringUtils.containsIgnoreCase(sqlLine, "FROM"))
-                    return true;
-            }
-        }
-        return false;
     }
 
     public static class IsSelectTestCase extends Assert
@@ -333,7 +297,6 @@ public class Table
             doClose(null, stmt, conn, schema.getScope());
         }
     }
-
 
     static void batchExecute1String(DbSchema schema, String sql, Iterable<String> paramList) throws SQLException
     {

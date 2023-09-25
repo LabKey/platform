@@ -115,6 +115,10 @@ public class CaseInsensitiveHashSet extends HashSet<String>
         return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4, s5));
     }
 
+    public static Set<String> of(String s1, String s2, String s3, String s4, String s5, String s6)
+    {
+        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4, s5, s6));
+    }
 
     public static class TestCase extends Assert
     {
