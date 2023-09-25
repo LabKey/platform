@@ -601,7 +601,7 @@ public class PageConfig
         {
             if (_eventHandlers.size() == MAX_EVENT_HANDLERS)
             {
-                LOG.warn("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for " + eh.event + ": " + eh.handler);
+                LOG.error("Limit of " + MAX_EVENT_HANDLERS + " JavaScript event handlers reached. Subsequent handlers will be dropped. Current handler for " + eh.event + ": " + eh.handler);
             }
             var prev = _eventHandlers.put(eh.getKey(), eh);
             assert null == prev || prev.handler.equals(eh.handler) : "Duplicate handler registered. event:" + eh.getKey() + " handler:" + eh.handler();
