@@ -31,6 +31,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.query.QueryService;
