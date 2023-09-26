@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import React from 'react'
-import {Button, Panel} from "react-bootstrap";
-import { ActionURL, getServerContext } from "@labkey/api";
+import React from 'react';
+import { Button, Panel } from 'react-bootstrap';
+import { ActionURL, getServerContext } from '@labkey/api';
 import {
     LoadingSpinner,
     Alert,
@@ -25,23 +25,22 @@ import {
     DomainDesign,
     fetchDomain,
     saveDomain,
-    BeforeUnload
-} from "@labkey/components"
+    BeforeUnload,
+} from '@labkey/components';
 
-import "../DomainDesigner.scss"
+import '../DomainDesigner.scss';
 
 interface IAppState {
-    domain: DomainDesign
-    message?: string,
-    showConfirm: boolean
-    submitting: boolean
-    includeWarnings: boolean
-    showWarnings: boolean
-    badDomain : DomainDesign
+    domain: DomainDesign;
+    message?: string;
+    showConfirm: boolean;
+    submitting: boolean;
+    includeWarnings: boolean;
+    showWarnings: boolean;
+    badDomain: DomainDesign;
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
-
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -57,7 +56,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             message,
             submitting: false,
             showConfirm: false,
-            includeWarnings: true
+            includeWarnings: true,
         };
     }
 
@@ -67,15 +66,15 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
                 .then(domain => {
-                    this.setState(() => ({domain}));
+                    this.setState(() => ({ domain }));
                 })
                 .catch(error => {
-                    this.setState(() => ({message: error.exception}));
+                    this.setState(() => ({ message: error.exception }));
                 });
         }
     }
 
-    handleWindowBeforeUnload = (event) => {
+    handleWindowBeforeUnload = event => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
@@ -88,29 +87,28 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             return;
         }
 
-        this.setState(() => ({submitting: true}));
+        this.setState(() => ({ submitting: true }));
 
         saveDomain({ domain, options: { domainId: domain.domainId }, includeWarnings })
-            .then((savedDomain) => {
+            .then(savedDomain => {
                 this.setState(() => ({
                     domain: savedDomain,
-                    submitting: false
+                    submitting: false,
                 }));
 
                 this.navigate();
             })
-            .catch((badDomain) => {
+            .catch(badDomain => {
                 // if there are only warnings then show ConfirmModel
-                if (badDomain.domainException.severity === "Warning") {
+                if (badDomain.domainException.severity === 'Warning') {
                     this.setState(() => ({
-                        showWarnings : true,
-                        badDomain: badDomain
-                    }))
-                }
-                else {
+                        showWarnings: true,
+                        badDomain,
+                    }));
+                } else {
                     this.setState(() => ({
                         domain: badDomain,
-                        submitting: false
+                        submitting: false,
                     }));
                 }
             });
@@ -121,20 +119,23 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     confirmWarningAndNavigate = () => {
-        this.setState(() => ({
-            includeWarnings : false,
-            showWarnings : false,
-            submitting : false
-        }), () => {
-            this.submitHandler();
-        });
+        this.setState(
+            () => ({
+                includeWarnings: false,
+                showWarnings: false,
+                submitting: false,
+            }),
+            () => {
+                this.submitHandler();
+            }
+        );
     };
 
     onSubmitWarningsCancel = () => {
         this.setState(() => ({
-            showWarnings : false,
-            submitting : false
-        }))
+            showWarnings: false,
+            submitting: false,
+        }));
     };
 
     onChangeHandler = (newDomain, dirty) => {
@@ -144,9 +145,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     onCancelBtnHandler = () => {
         if (this._dirty) {
-            this.setState(() => ({showConfirm: true}));
-        }
-        else {
+            this.setState(() => ({ showConfirm: true }));
+        } else {
             this.navigate();
         }
     };
@@ -161,61 +161,66 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     renderNavigateConfirm() {
         return (
             <ConfirmModal
-                title='Keep unsaved changes?'
-                confirmVariant='primary'
+                title="Keep unsaved changes?"
+                confirmVariant="primary"
                 onConfirm={this.submitAndNavigate}
                 onCancel={this.navigate}
-                cancelButtonText='No, Discard Changes'
-                confirmButtonText='Yes, Save Changes'
+                cancelButtonText="No, Discard Changes"
+                confirmButtonText="Yes, Save Changes"
             >
                 You have made changes to this domain that have not yet been saved. Do you want to save these changes
                 before leaving?
             </ConfirmModal>
-        )
+        );
     }
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
         const errors = badDomain.domainException.errors;
-        const question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
-        const warnings = errors.map((error) => {
-            return <li> {error.message} </li>
+        const question = <p> There are issues with the following fields that you may wish to resolve: </p>;
+        const warnings = errors.map(error => {
+            return <li> {error.message} </li>;
         });
 
         // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
         const rollupURI = getServerContext().helpLinkPrefix + 'specimenCustomProperties';
         const suggestion = (
             <p>
-                See the following documentation page for further details: <br/>
-                <a href={rollupURI} target='_blank' rel='noopener noreferrer'> {"Specimen properties and rollup rules"}</a>
+                See the following documentation page for further details: <br />
+                <a href={rollupURI} target="_blank" rel="noopener noreferrer">
+                    {' '}
+                    Specimen properties and rollup rules
+                </a>
             </p>
         );
 
         return (
             <ConfirmModal
-                title='Save without resolving issues?'
-                confirmVariant='primary'
+                title="Save without resolving issues?"
+                confirmVariant="primary"
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
-                cancelButtonText='No, edit and resolve issues'
-                confirmButtonText='Yes, save changes'
+                cancelButtonText="No, edit and resolve issues"
+                confirmButtonText="Yes, save changes"
             >
                 {question}
                 <ul>{warnings}</ul>
                 {suggestion}
             </ConfirmModal>
-        )
+        );
     }
 
     renderButtons() {
         const { submitting } = this.state;
 
         return (
-            <div className={'domain-form-panel domain-designer-buttons'}>
+            <div className="domain-form-panel domain-designer-buttons">
                 <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
-                <Button className='pull-right' bsStyle='primary' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+                <Button className="pull-right" bsStyle="primary" disabled={submitting} onClick={this.submitAndNavigate}>
+                    Save
+                </Button>
             </div>
-        )
+        );
     }
 
     renderInstructionsPanel() {
@@ -224,7 +229,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 <Panel.Heading>Instructions</Panel.Heading>
                 <Panel.Body>{this.state.domain.instructions}</Panel.Body>
             </Panel>
-        )
+        );
     }
 
     render() {
@@ -232,29 +237,27 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                { showConfirm && this.renderNavigateConfirm() }
-                { showWarnings && this.renderWarningConfirm() }
-                { domain && domain.instructions && this.renderInstructionsPanel()}
-                { domain &&
+                {showConfirm && this.renderNavigateConfirm()}
+                {showWarnings && this.renderWarningConfirm()}
+                {domain && domain.instructions && this.renderInstructionsPanel()}
+                {domain && (
                     <DomainForm
-                        headerTitle={'Fields'}
+                        headerTitle="Fields"
                         domain={domain}
                         domainFormDisplayOptions={{
                             hideInferFromFile: true,
                         }}
                         onChange={this.onChangeHandler}
-                        useTheme={true}
-                        successBsStyle={'primary'}
                     />
-                }
-                { message && <Alert bsStyle={'danger'}>{message}</Alert>}
-                { domain && this.renderButtons() }
+                )}
+                {message && <Alert bsStyle="danger">{message}</Alert>}
+                {domain && this.renderButtons()}
             </BeforeUnload>
-        )
+        );
     }
 }

@@ -98,7 +98,6 @@ export class App extends React.Component<any, State> {
                     onCancel={this.onCancel}
                     onComplete={this.onComplete}
                     onChange={this.onChange}
-                    successBsStyle={'primary'}
                     showGenIdBanner={isUpdate}
                 />
             </BeforeUnload>

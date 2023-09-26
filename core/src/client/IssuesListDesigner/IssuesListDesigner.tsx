@@ -124,8 +124,6 @@ export class App extends React.Component<{}, State> {
                     onCancel={this.onCancel}
                     onComplete={this.onComplete}
                     onChange={this.onChange}
-                    useTheme={true}
-                    successBsStyle={'primary'}
                 />
             </BeforeUnload>
         );
