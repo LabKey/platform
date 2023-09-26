@@ -21,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.ProductFeature;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
@@ -190,12 +188,5 @@ public interface FolderType
     {
         return null;
     }
-
-    default boolean isProductFeatureEnabled(ProductFeature feature)
-    {
-        return isProduct() && AdminConsole.isProductFeatureEnabled(feature);
-    }
-
-    default boolean isProduct() { return false; }
 }
 
