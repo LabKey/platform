@@ -17,6 +17,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -80,6 +81,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -94,7 +96,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
@@ -180,6 +181,42 @@ public class SecurityManager
         EmailTemplateService.get().registerTemplate(RegistrationAdminEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(PasswordResetEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(PasswordResetAdminEmailTemplate.class);
+    }
+
+    public static UsageMetricsProvider getMetricsProvider()
+    {
+        return () -> {
+            Map<String, Object> result = new HashMap<>();
+
+            Map<String, Integer> roleCounts = new HashMap<>();
+            Set<Role> siteRoles = RoleManager.getSiteRoles();
+            for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
+            {
+                Role role = assignment.getRole();
+                int count = roleCounts.getOrDefault(role.getName(), 0);
+                if (siteRoles.contains(role))
+                {
+                    UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
+                    if (principal != null && principal.isActive())
+                    {
+                        switch (principal.getPrincipalType())
+                        {
+                            case USER -> count++;
+                            case GROUP -> count += getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS).size();
+                        }
+                    }
+                }
+                roleCounts.put(role.getName(), count);
+            }
+            result.put("SiteRoleUserCounts", roleCounts);
+
+            Map<String, Integer> groupCounts = new HashMap<>();
+            groupCounts.put("SiteAdmin", getAllGroupMembers(getGroup(Group.groupAdministrators), MemberType.ACTIVE_USERS).size());
+            groupCounts.put("Developer", getAllGroupMembers(getGroup(Group.groupDevelopers), MemberType.ACTIVE_USERS).size());
+            result.put("SiteGroupUserCounts", groupCounts);
+
+            return result;
+        };
     }
 
     public enum PermissionSet
@@ -1843,10 +1880,10 @@ public class SecurityManager
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<>();
         Set<UserPrincipal> origMembers = getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         LinkedList<UserPrincipal> visited = new LinkedList<>();
-        for (UserPrincipal memberGroup : getGroupMembers(group, MemberType.GROUPS))
+        for (Group memberGroup : getGroupMembers(group, MemberType.GROUPS))
         {
             visited.addLast(memberGroup);
-            checkForRedundantMembers((Group)memberGroup, origMembers, redundantMembers, visited);
+            checkForRedundantMembers(memberGroup, origMembers, redundantMembers, visited);
             visited.removeLast();
         }
         return redundantMembers;
@@ -1916,13 +1953,13 @@ public class SecurityManager
             }
         }
 
-        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.GROUPS))
+        for (Group member : SecurityManager.getGroupMembers(group, MemberType.GROUPS))
         {
             if (visited.contains(member) || member.equals(principal))
                 continue;
 
             visited.addLast(member);
-            checkForMembership(principal, (Group)member, visited, memberships);
+            checkForMembership(principal, member, visited, memberships);
             visited.removeLast();
         }
     }
@@ -1945,14 +1982,14 @@ public class SecurityManager
         for (List<UserPrincipal> path : paths)
         {
             // add an extra line if there are > 1 paths displayed
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append("<BR/>");
 
             StringBuilder spacer = new StringBuilder();
             for (int i = path.size()-1; i > 0 ; i--)
             {
                 String beginTxt = (i == path.size()-1 ? PageFlowUtil.filter(userDisplay) : "Which");
-                sb.append(spacer.toString()).append(beginTxt).append(" is a member of ").append("<strong>").append(PageFlowUtil.filter(path.get(i-1).getName())).append("</strong>");
+                sb.append(spacer).append(beginTxt).append(" is a member of ").append("<strong>").append(PageFlowUtil.filter(path.get(i-1).getName())).append("</strong>");
                 sb.append("<BR/>");
                 spacer.append("&nbsp;&nbsp;&nbsp;");
             }
@@ -2032,7 +2069,7 @@ public class SecurityManager
 
         //don't filter if all site users is playing a role
         Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
-        if (policy.getAssignedRoles(allSiteUsers).size() != 0)
+        if (!policy.getAssignedRoles(allSiteUsers).isEmpty())
         {
             // Just select all users
             SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
@@ -2304,7 +2341,7 @@ public class SecurityManager
 
     public static List<ValidEmail> normalizeEmails(List<String> rawEmails, List<String> invalidEmails)
     {
-        if (rawEmails == null || rawEmails.size() == 0)
+        if (rawEmails == null || rawEmails.isEmpty())
             return Collections.emptyList();
 
         List<ValidEmail> emails = new ArrayList<>(rawEmails.size());
@@ -2330,9 +2367,9 @@ public class SecurityManager
     {
         SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends RegistrationEmailTemplate> templateClass = isAdminCopy ? RegistrationAdminEmailTemplate.class : RegistrationEmailTemplate.class;
-        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
+        SecurityEmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
         sm.setMessagePrefix(mailPrefix);
-        sm.setEmailTemplate((SecurityEmailTemplate)et);
+        sm.setEmailTemplate(et);
         sm.setType("User Registration Email");
 
         return sm;
@@ -2362,8 +2399,8 @@ public class SecurityManager
     {
         SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends PasswordResetEmailTemplate> templateClass = isAdminCopy ? PasswordResetAdminEmailTemplate.class : PasswordResetEmailTemplate.class;
-        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
-        sm.setEmailTemplate((SecurityEmailTemplate)et);
+        SecurityEmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
+        sm.setEmailTemplate(et);
         sm.setType("Reset Password Email");
         return sm;
     }
@@ -3177,7 +3214,7 @@ public class SecurityManager
 
             var granted = getPermissions(policy, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
-            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, policy, ret);
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, policy, ret);
 
             return ret;
         }
@@ -3220,7 +3257,7 @@ public class SecurityManager
         Set<Role> roles = policy.getRoles(principal.getGroups());
         roles.addAll(policy.getAssignedRoles(principal));
         if (includeContextualRoles)
-            roles.addAll(principal.getContextualRoles(policy));;
+            roles.addAll(principal.getContextualRoles(policy));
         return roles;
     }
 
@@ -3244,9 +3281,7 @@ public class SecurityManager
         };
 
         abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
-    };
-
-
+    }
 
 
     public static class TestCase extends Assert
@@ -3594,7 +3629,7 @@ public class SecurityManager
 
             String defaultDomain = ValidEmail.getDefaultDomain();
             // If default domain is defined this should succeed; if it's not defined, this should fail.
-            testEmail("foo", defaultDomain.length() > 0);
+            testEmail("foo", !defaultDomain.isEmpty());
 
             testEmail("~()@bar.com", false);
             testEmail("this@that.com@con", false);
@@ -3753,7 +3788,7 @@ public class SecurityManager
         public void testGetUsersWithPermissions() throws Exception
         {
             Container parent = JunitUtil.getTestContainer();
-            Container test = null;
+            Container test;
             Pair<ValidEmail,User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
             Pair<ValidEmail,User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
             Pair<ValidEmail,User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
@@ -3791,25 +3826,25 @@ public class SecurityManager
                 policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAB()));
                 policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAC()));
 
-                var usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
+                var usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
                 assertEquals(3, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userAC.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                var usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
+                var usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
+                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
                 assertEquals(2, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
+                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(1, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(3, usersWithAny.size());
                 assertTrue(usersWithAny.contains(userAB.getValue()));
                 assertTrue(usersWithAny.contains(userAC.getValue()));

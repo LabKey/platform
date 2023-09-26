@@ -24,7 +24,6 @@ import org.json.JSONObject;
 import org.json.JSONString;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -54,11 +53,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -349,14 +345,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
     }
 
-    static final Set<Class<? extends Permission>> trustedanalyst = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>(Arrays.asList(
-            AnalystPermission.class,
-            TrustedPermission.class
-    )));
-    static final Set<Class<? extends Permission>> trustedbrowserdev = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>(Arrays.asList(
-            BrowserDeveloperPermission.class,
-            TrustedPermission.class
-    )));
+    static final Set<Class<? extends Permission>> trustedanalyst = Set.of(AnalystPermission.class, TrustedPermission.class);
+    static final Set<Class<? extends Permission>> trustedbrowserdev = Set.of(BrowserDeveloperPermission.class, TrustedPermission.class);
 
     // NOTE all PlatformDeveloper are TrustedAnalyst and all TrustedAnalyst are TrustedBrowserDev
     // Usually you should only have one of these tests
@@ -687,7 +677,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("isSystem", user.isSystem());
 
             // PHI level
-            /** CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()} */
+            // CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()}
             if (nonNullContainer)
             {
                 PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(container, user);

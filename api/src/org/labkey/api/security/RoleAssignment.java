@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.roles.Role;
 
 /**
@@ -77,12 +78,9 @@ public class RoleAssignment implements Comparable<RoleAssignment>, Cloneable
     }
 
     @Override
-    public int compareTo(RoleAssignment other)
+    public int compareTo(@NotNull RoleAssignment other)
     {
-        if(null == other)
-            throw new NullPointerException();
-
-        int ret = 0;
+        int ret;
         //sort by resource id, then user id, then role unique name
         //FIX: 10023 -- the resource ids should never be null, but some modules
         //seem to use null resource ids on occasion (esp. reports and pipe roots)
