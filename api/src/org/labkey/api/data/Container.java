@@ -39,6 +39,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.products.ProductRegistry;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -54,6 +55,7 @@ import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ProductFeature;
@@ -1629,26 +1631,18 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     /**
-     * Check a feature is enabled at either its parent project, or itself
-     * @param feature
-     * @param atProjectOnly Only check Home Project for feature
-     * @return
+     * Check a feature is enabled taking into account the container type. Use `isFeatureEnabled` to ensure proper
+     * checking for features (like product projects) that rely on folder structure as well.
+     *
+     * @param feature the feature to check
+     * @return true if the feature is enabled based on product configuration and container type; false otherwise
      */
-    public boolean isFeatureEnabled(ProductFeature feature, boolean atProjectOnly)
+    private boolean isFeatureEnabledForContainerType(ProductFeature feature)
     {
         if (isWorkbook())
             return false;
 
-        Container project = getProject();
-        if (project == null)
-            return false;
-
-        boolean enabledAtProject = project.getFolderType().isProductFeatureEnabled(feature);
-        if (atProjectOnly || enabledAtProject)
-            return enabledAtProject;
-
-
-        return getFolderType().isProductFeatureEnabled(feature);
+        return AdminConsole.isProductFeatureEnabled(feature);
     }
 
     public boolean isFeatureEnabled(ProductFeature feature)
@@ -1656,13 +1650,22 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (ProductFeature.Projects == feature)
             return isProductProjectsEnabled();
 
-        return isFeatureEnabled(feature, false);
+        return isFeatureEnabledForContainerType(feature);
     }
 
     // Projects feature should be checked at Home Project only
     public boolean isProductProjectsEnabled()
     {
-        return isFeatureEnabled(ProductFeature.Projects, true);
+        boolean enabled = isFeatureEnabledForContainerType(ProductFeature.Projects);
+
+        if (!enabled) // feature is not enabled based on product choice
+            return false;
+
+        Container project = getProject();
+        if (project == null) // true only for the root container, where no features should be enabled
+            return false;
+
+        return ProductRegistry.get().supportsProductProjects(project);
     }
 
     public boolean isAppHomeFolder()
