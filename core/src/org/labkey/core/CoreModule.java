@@ -1095,6 +1095,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
         UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());

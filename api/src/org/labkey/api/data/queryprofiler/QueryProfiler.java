@@ -22,8 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -31,7 +29,6 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect.ExecutionPlanType;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.query.QueryService;
@@ -50,6 +47,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -70,11 +68,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/*
-* User: adam
-* Date: Oct 14, 2009
-* Time: 6:31:40 PM
-*/
 public class QueryProfiler
 {
     private static final Logger LOG = LogHelper.getLogger(QueryProfiler.class, "Tracks SQL query execution and duration");
@@ -211,7 +204,7 @@ public class QueryProfiler
 
     @Nullable
     public StackTraceElement[] track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
-                      @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
+          @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
     {
         if (null == stackTrace)
             stackTrace = MiniProfiler.getTroubleshootingStackTrace();
@@ -389,7 +382,8 @@ public class QueryProfiler
                     DOM.TR(
                         DOM.TD(DOM.at(DOM.Attribute.id, "sqlNoParams"), HtmlString.of(tracker.getSql(), true)),
                         DOM.TD(DOM.at(DOM.Attribute.id, "sqlWithParams"), HtmlString.of(tracker.getSqlAndParameters(), true))
-                    )),
+                    )
+                ),
 
                 DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');")),
                 DOM.BR(),
@@ -433,7 +427,7 @@ public class QueryProfiler
                 return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
 
             if (!tracker.canShowExecutionPlan(type))
-                throw new IllegalStateException("Can't show the \"" + type.name() + "\" execution plan for this query");
+                throw new NotFoundException("Can't show the \"" + type.name() + "\" execution plan for this query");
 
             scope = tracker.getScope();
 
@@ -445,7 +439,6 @@ public class QueryProfiler
         }
 
         Collection<String> executionPlan = scope.getSqlDialect().getExecutionPlan(scope, sql, type);
-
         String fullPlan = StringUtils.join(executionPlan, "\n");
         final HttpView<?> view;
 
@@ -554,7 +547,6 @@ public class QueryProfiler
 
                         String sql = query.getSql();
                         String hash = HashHelpers.hash(sql);
-
                         QueryTracker tracker = _queries.get(hash);
 
                         if (null == tracker)
@@ -618,7 +610,6 @@ public class QueryProfiler
         // stupid tomcat won't let me construct one of these at shutdown, so stash one statically
         private final QueryStatTsvWriter shutdownWriter = new QueryStatTsvWriter();
 
-
         @Override
         public void shutdownPre()
         {
@@ -629,12 +620,12 @@ public class QueryProfiler
         public void shutdownStarted()
         {
             Logger logger = LogManager.getLogger(QueryProfilerThread.class);
-            LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-            Configuration config = ctx.getConfiguration();
 
             if (null != logger)
             {
 //                LOG.info("Starting to log statistics for queries prior to web application shut down");
+//                LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+//                Configuration config = ctx.getConfiguration();
 //                Appender appender = config.getAppender("QUERY_STATS");
 //                if (null != appender && appender instanceof RollingFileAppender)
 //                    ((RollingFileAppender)appender).rollOver();

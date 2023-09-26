@@ -16,7 +16,7 @@
 package org.labkey.api.security.roles;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.labkey.api.data.ContainerManager;
@@ -28,9 +28,11 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewContext;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -47,7 +49,6 @@ import java.util.stream.Collectors;
 /*
 * User: Dave
 * Date: Apr 22, 2009
-* Time: 2:09:39 PM
 */
 
 /**
@@ -57,6 +58,7 @@ public class RoleManager
 {
     public static final Role siteAdminRole = new SiteAdminRole();
     public static final Set<Class<? extends Permission>> BasicPermissions = new HashSet<>();
+    public static final Logger LOG = LogHelper.getLogger(RoleManager.class, "Registers and tracks all known roles");
 
     static
     {
@@ -73,7 +75,7 @@ public class RoleManager
         @Override
         public int compare(Role o1, Role o2)
         {
-            int levelCompare = getPermLevel(o1).compareTo(getPermLevel(o2));
+            int levelCompare = Integer.compare(getPermLevel(o1), getPermLevel(o2));
 
             if (0 == levelCompare)
                 return o1.getDisplayName().compareTo(o2.getDisplayName());
@@ -81,7 +83,7 @@ public class RoleManager
             return levelCompare;
         }
 
-        private Integer getPermLevel(Role r)
+        private int getPermLevel(Role r)
         {
             Set<Class<? extends Permission>> set = r.getPermissions();
             return
@@ -97,7 +99,7 @@ public class RoleManager
     private static final Map<String, Role> _nameToRoleMap = new ConcurrentHashMap<>();
     private static final Map<Class<? extends Role>, Role> _classToRoleMap = new ConcurrentHashMap<>();
     private static final List<Role> _roles = new CopyOnWriteArrayList<>();
-    private static final List<AdminRoleListener> _adminRolelisteners = new CopyOnWriteArrayList<>();
+    private static final List<AdminRoleListener> _adminRoleListeners = new CopyOnWriteArrayList<>();
 
     //register all core roles
     static
@@ -127,14 +129,14 @@ public class RoleManager
 
     public static void addAdminRoleListener(AdminRoleListener listener)
     {
-        _adminRolelisteners.add(listener);
+        _adminRoleListeners.add(listener);
     }
 
     public static Role getRole(String name)
     {
         Role role = _nameToRoleMap.get(name);
         if (null == role)
-            LogManager.getLogger(RoleManager.class).warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
+            LOG.warn("Could not resolve the role " + name + "! The role may no longer exist, or may not yet be registered.");
         return role;
     }
 
@@ -142,7 +144,7 @@ public class RoleManager
     {
         Role role = _classToRoleMap.get(clazz);
         if (null == role)
-            LogManager.getLogger(RoleManager.class).warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
+            LOG.warn("Could not resolve the role " + clazz.getName() + "! Did you forget to register the role with RoleManager.register()?");
         return role;
     }
 
@@ -156,7 +158,7 @@ public class RoleManager
     {
         Permission perm = (Permission) _classToRoleMap.get(clazz);
         if (null == perm)
-            LogManager.getLogger(RoleManager.class).warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
+            LOG.warn("Could not resolve the permission " + clazz.getName() + "! If this is not part of a role, you must register it separately with RoleManager.register().");
         return perm;
     }
 
@@ -164,7 +166,7 @@ public class RoleManager
     {
         Permission perm = (Permission) _nameToRoleMap.get(uniqueName);
         if (null == perm)
-            LogManager.getLogger(RoleManager.class).warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
+            LOG.warn("Could not resolve the permission " + uniqueName + "! The permission may no longer exist, or may not yet be registered.");
         return perm;
     }
 
@@ -208,12 +210,12 @@ public class RoleManager
         {
             try
             {
-                Permission perm = permClass.newInstance();
+                Permission perm = permClass.getDeclaredConstructor().newInstance();
                 registerPermission(perm, addToAdminRoles);
             }
-            catch (InstantiationException | IllegalAccessException e)
+            catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
             {
-                LogManager.getLogger(RoleManager.class).error("Exception while instantiating permission " + permClass, e);
+                LOG.error("Exception while instantiating permission " + permClass, e);
             }
         }
 
@@ -271,7 +273,7 @@ public class RoleManager
 
     public static void addPermissionToAdminRoles(Class<? extends Permission> perm)
     {
-        for (AdminRoleListener listener : _adminRolelisteners)
+        for (AdminRoleListener listener : _adminRoleListeners)
         {
             listener.permissionRegistered(perm);
         }
@@ -287,7 +289,7 @@ public class RoleManager
     public static Set<Role> roleSet(Class<? extends Role>... roleClasses)
     {
         Set<Role> roles = new HashSet<>();
-        if(null != roleClasses && roleClasses.length > 0)
+        if(null != roleClasses)
         {
             for(Class<? extends Role> roleClass : roleClasses)
             {
@@ -350,9 +352,7 @@ public class RoleManager
             HasContextualRoles factory;
             try
             {
-                Constructor ctor = roleFactory.getConstructor();
-                if (ctor == null)
-                    throw new IllegalStateException("Failed to find no-arg constructor.");
+                Constructor<?> ctor = roleFactory.getConstructor();
                 factory = (HasContextualRoles)ctor.newInstance();
             }
             catch (Exception e)
