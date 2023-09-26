@@ -624,6 +624,7 @@ public class QueryProfiler
             if (null != logger)
             {
 //                LOG.info("Starting to log statistics for queries prior to web application shut down");
+//                LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
 //                Configuration config = ctx.getConfiguration();
 //                Appender appender = config.getAppender("QUERY_STATS");
 //                if (null != appender && appender instanceof RollingFileAppender)
