@@ -533,7 +533,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public void setSampleType(ExpSampleType st, boolean filter)
+    public void setSampleType(ExpSampleType st)
     {
         checkLocked();
         if (_ss != null)
@@ -549,9 +549,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             setPublicSchemaName(SamplesSchema.SCHEMA_NAME);
             setName(st.getName());
-            if (filter)
-                addCondition(getRealTable().getColumn("CpasType"), _ss.getLSID());
-
             if (canUserAccessPhi())
             {
                 ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
@@ -592,17 +589,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     protected void populateColumns()
     {
-        populate(null, false);
+        populate(null);
     }
 
     @Override
-    public final void populate(@Nullable ExpSampleType st, boolean filterSampleType)
+    public final void populate(@Nullable ExpSampleType st)
     {
-        populateColumns(st, filterSampleType);
+        populateColumns(st);
         _populated = true;
     }
 
-    protected void populateColumns(@Nullable ExpSampleType st, boolean filter)
+    protected void populateColumns(@Nullable ExpSampleType st)
     {
         if (st != null)
         {
@@ -616,7 +613,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
 
             if (!"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
-                setSampleType(st, filter);
+                setSampleType(st);
         }
 
         var rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
@@ -1114,9 +1111,21 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
+        if (_ss != null && !hasSampleColumns && !hasAliquotColumns)
+        {
+            /*
+            NOTE for the interested reader.
+            We used to always apply a cpasType filter and in theory it should give the optimizer more options for how to handle this query.
+            However, it is redundant with the JOIN to the materialized table, and the Postgres optimizer can badly underestimate row counts when
+            there are redundant (non-independent) filters.  It may be better to leave this off when not needed.
+            */
+            // if we are not joining to the provisioned table, we need to add a cpasType filter to limit to the current SampleType
+            if (!filterFrag.isEmpty())
+                filterFrag.append(" AND ");
+            filterFrag.append("CpasType = ").appendValue(_ss.getLSID());
+        }
         sql.append("\n").append(filterFrag).append(") ").append(alias);
         sql.appendComment("</ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
-
         return sql;
     }
 
