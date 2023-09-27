@@ -45,11 +45,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-/*
-* User: adam
-* Date: Nov 26, 2010
-* Time: 9:19:38 PM
-*/
 public class PostgreSqlDialectFactory implements SqlDialectFactory
 {
     private static final Logger _log = LogHelper.getLogger(PostgreSqlDialectFactory.class, "PostgreSQL version warnings");
@@ -76,7 +71,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         if (!(StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX)))
             return null;
 
-        String databaseProductVersion = md.getDatabaseProductVersion();
+        String databaseProductVersion = md.getDatabaseProductVersion().trim();
 
         int betaIdx = databaseProductVersion.indexOf("beta");
         if (-1 != betaIdx)
