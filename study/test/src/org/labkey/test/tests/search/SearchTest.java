@@ -69,7 +69,7 @@ public abstract class SearchTest extends StudyBaseTest
     private static final String FOLDER_D = "Subfolder Date";
     private static final String FOLDER_E = "Subfolder Eggfruit";
     private static final String GROUP_NAME = "Test Group";
-    private static final String USER1 = "user1_searchtest@search.test";
+    private static final String USER1 = "geologist@search.test";
 
     private static final String WIKI_NAME = "Brie";
     private static final String WIKI_TITLE = "Roquefort";
@@ -213,7 +213,7 @@ public abstract class SearchTest extends StudyBaseTest
 
         _searchHelper.enqueueSearchItem("BoarQPine");
         _searchHelper.enqueueSearchItem("Panda", Locator.linkContainingText("List " + fullySearchableList));
-        _searchHelper.enqueueSearchItem("2003-01-02", Locator.linkContainingText("List " + fullySearchableList));
+        _searchHelper.enqueueSearchItem("\"2003-01-02\"", Locator.linkContainingText("List " + fullySearchableList));
         _searchHelper.enqueueSearchItem("12345", Locator.linkContainingText("List " + fullySearchableList));  //Issue 15419
         _searchHelper.enqueueSearchItem("Owlbear", Locator.linkContainingText("List " + textOnlySearchableList));
         _searchHelper.enqueueSearchItem("54321");
