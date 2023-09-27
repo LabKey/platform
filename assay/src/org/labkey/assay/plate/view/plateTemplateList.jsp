@@ -47,7 +47,7 @@
     Map<Plate, Integer> plateTemplateRunCount = new HashMap<>();
     for (Plate template : plateTemplates)
     {
-        int count = PlateService.get().getRunCountUsingPlate(c, template);
+        int count = PlateService.get().getRunCountUsingPlate(c, getUser(), template);
         plateTemplateRunCount.put(template, count);
     }
 %>

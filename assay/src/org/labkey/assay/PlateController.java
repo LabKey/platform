@@ -645,7 +645,7 @@ public class PlateController extends SpringActionController
         @Override
         public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
         {
-            var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), form.getIds(false));
+            var results = PlateManager.get().getPlateOperationConfirmationData(getContainer(), getUser(), form.getIds(false));
             return success(results);
         }
     }
@@ -849,7 +849,7 @@ public class PlateController extends SpringActionController
             Plate plate = PlateManager.get().getPlate(cf, form.getRowId());
 
             if (plate != null && Boolean.TRUE.equals(form.getIncludeRunCount()))
-                ((PlateImpl) plate).setRunCount(PlateManager.get().getRunCountUsingPlate(plate.getContainer(), plate));
+                ((PlateImpl) plate).setRunCount(PlateManager.get().getRunCountUsingPlate(plate.getContainer(), getUser(), plate));
 
             return plate;
         }

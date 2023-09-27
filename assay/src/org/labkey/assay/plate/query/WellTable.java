@@ -262,7 +262,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 Plate plate = PlateManager.get().getPlate(container, (Integer)oldRow.get("plateId"));
                 if (plate != null)
                 {
-                    int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+                    int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
                     if (runsInUse > 0)
                         throw new QueryUpdateServiceException(String.format("This %s is used by %d runs and its wells cannot be modified.", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
                 }

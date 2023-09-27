@@ -349,7 +349,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 Optional<GWTPropertyDescriptor> plateTemplateColumn = update.getFields().stream().filter(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).findFirst();
                 if (plateTemplateColumn.isPresent())
                 {
-                    // Ensure the lookup container is null so it defaults to "Current Folder" to more easily support
+                    // Ensure the lookup container is null, so it defaults to "Current Folder" to more easily support
                     // cross-folder support.
                     GWTPropertyDescriptor plateTemplate = plateTemplateColumn.get();
                     plateTemplate.setLookupContainer(null);

@@ -228,7 +228,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
@@ -254,7 +254,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
