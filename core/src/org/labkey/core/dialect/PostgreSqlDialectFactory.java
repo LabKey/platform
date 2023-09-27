@@ -26,6 +26,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
+import org.labkey.api.data.dialect.PostgreSql91Dialect;
 import org.labkey.api.data.dialect.PostgreSqlServerType;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
@@ -61,8 +62,6 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql_11_Dialect() : null;
     }
 
-    final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 15.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
@@ -71,19 +70,19 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         if (!(StringUtils.startsWithIgnoreCase(md.getURL(), JDBC_PREFIX)))
             return null;
 
-        String databaseProductVersion = md.getDatabaseProductVersion().trim();
+        String databaseProductVersion = md.getDatabaseProductVersion();
 
         int betaIdx = databaseProductVersion.indexOf("beta");
         if (-1 != betaIdx)
-            databaseProductVersion = StringUtils.left(databaseProductVersion, betaIdx);
+            databaseProductVersion = StringUtils.left(databaseProductVersion, betaIdx).trim();
 
         int rcIdx = databaseProductVersion.indexOf("rc");
         if (-1 != rcIdx)
-            databaseProductVersion = StringUtils.left(databaseProductVersion, rcIdx);
+            databaseProductVersion = StringUtils.left(databaseProductVersion, rcIdx).trim();
 
         int parenIdx = databaseProductVersion.indexOf("(");
         if (-1 != parenIdx)
-            databaseProductVersion = StringUtils.left(databaseProductVersion, parenIdx);
+            databaseProductVersion = StringUtils.left(databaseProductVersion, parenIdx).trim();
 
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
         PostgreSqlVersion psv = PostgreSqlVersion.get(versionNumber.getVersionInt());
@@ -118,7 +117,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     public static String getStandardWarningMessage(String warning, String databaseProductVersion)
     {
-        return "LabKey Server " + warning + " " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+        return "LabKey Server " + warning + " " + PostgreSql91Dialect.PRODUCT_NAME + " version " + databaseProductVersion + ". " + PostgreSql91Dialect.RECOMMENDED;
     }
 
     @Override
