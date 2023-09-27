@@ -230,7 +230,7 @@ public class ParentChildView extends VBox
                 // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
                 ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), ContainerFilter.EVERYTHING);
                 table.setMaterials(materials);
-                table.populate(st, false);
+                table.populate(st);
 
                 List<FieldKey> defaultVisibleColumns = new ArrayList<>();
                 if (st == null)
