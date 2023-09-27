@@ -52,7 +52,6 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
 
     public BUILDER href(@Nullable String href)
     {
-        assert(null==href || !href.startsWith("javascript:"));
         this.href = href;
         return getThis();
     }

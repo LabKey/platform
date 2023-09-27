@@ -6023,11 +6023,14 @@ public class ExperimentController extends SpringActionController
                 {
                     if (hasRoot && !c.equals(getContainer()))
                     {
-                        new Link.LinkBuilder(c.getName()).onClick("moveTo('" + c.getId() + "')").appendTo(html);
+                        html.append("<a href=\"javascript:moveTo('");
+                        html.append(c.getId());
+                        html.append("')\">");
                     }
-                    else
+                    html.append(PageFlowUtil.filter(c.getName()));
+                    if (hasRoot)
                     {
-                        html.append(PageFlowUtil.filter(c.getName()));
+                        html.append("</a>");
                     }
                 }
             };

@@ -70,9 +70,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
     }
 
     void populate(@Nullable ExpSampleType st);
-
-    // the filter parameter is left-over from pre-materialized table days and is not needed
-    // TODO : find usages in modules outside of the platform module
     @Deprecated void setSampleType(ExpSampleType st, boolean filter);
     void setSampleType(ExpSampleType st);
 }

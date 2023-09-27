@@ -42,7 +42,7 @@ public class HelpPopup extends InlineLabel
         _body = body;
 
         final String headerSize = PropertyUtil.getServerProperty("header1Size");
-        String text = "<a tabindex=\"-1\" href=\"#\"><span class=\"labkey-help-pop-up\" style=\"font-size:" +
+        String text = "<a tabindex=\"-1\" href=\"javascript:void(0);\"><span class=\"labkey-help-pop-up\" style=\"font-size:" +
                 (headerSize == null ? "10pt" : headerSize) +
                 ";\"><sup>?</sup></span></a>";
         DOM.setInnerHTML(_element, text);

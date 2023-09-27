@@ -53,7 +53,7 @@ public class HttpPostRedirectView extends HttpView
     protected void renderInternal(Object model, PrintWriter out)
     {
         out.println("<html>");
-        out.println("<body>");
+        out.println("<body onload='document.forms[\"form\"].submit()'>");
         out.println("<form name='form' method='POST' action='" + PageFlowUtil.filter(_url) + "'>");
         out.println(new CsrfInput(getViewContext()).toString());
         for (Map.Entry<String, String> pair : _hiddenInputs)
@@ -61,15 +61,7 @@ public class HttpPostRedirectView extends HttpView
             out.println("<input type='hidden' name='" + PageFlowUtil.filter(pair.getKey()) + "' value='" + PageFlowUtil.filter(pair.getValue()) + "'>");
         }
         out.println("</form>");
-        out.println("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">");
-        out.println("""
-                document.addEventListener("DOMContentLoaded", function(event) {
-                    document.forms["form"].submit();
-                });
-                """);
-        out.println("</script>");
         out.println("</body>");
         out.println("</html>");
-        out.flush();
     }
 }
