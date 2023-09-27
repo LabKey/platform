@@ -532,6 +532,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return ret;
     }
 
+    @Deprecated
+    public void setSampleType(ExpSampleType st, boolean filter)
+    {
+        assert( null == st || filter);
+        setSampleType(st);
+    }
+
     @Override
     public void setSampleType(ExpSampleType st)
     {
