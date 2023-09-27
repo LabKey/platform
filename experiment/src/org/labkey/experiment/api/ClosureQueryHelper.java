@@ -258,7 +258,7 @@ public class ClosureQueryHelper
     private static TableInfo getClosureTableInfo(UserSchema userSchema, TableType type, String sourceLSID)
     {
         var tx = userSchema.getDbSchema().getScope().getCurrentTransaction();
-        String key = ClosureQueryHelper.class.getName() + "/" + (null == tx ? "-" : tx.getId());
+        String key = ClosureQueryHelper.class.getName() + "/" + (null == tx ? "-" : tx.getId()) + "/" + sourceLSID;
         return userSchema.getCachedLookupTableInfo(key, () ->
         {
             MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true));
