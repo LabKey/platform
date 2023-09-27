@@ -25,6 +25,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.ExpandableTextDisplayColumnFactory;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -373,6 +374,8 @@ public class MothershipSchema extends UserSchema
         result.getMutableColumnOrThrow("Container").setFk(new ContainerForeignKey(this, cf));
         result.getMutableColumnOrThrow("AssignedTo").setFk(new UserIdQueryForeignKey(this, true));
         result.getMutableColumnOrThrow("ModifiedBy").setFk(new UserIdQueryForeignKey(this, true));
+
+        result.getMutableColumnOrThrow("StackTrace").setDisplayColumnFactory(new ExpandableTextDisplayColumnFactory());
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));

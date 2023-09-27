@@ -325,4 +325,38 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
+
+    /**
+     * Called from exp-23.009-23.010.sql
+    public static void addSampleTypeObjectId(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        ArrayList<String> storageTableNames = new SqlSelector(scope, "SELECT storagetablename FROM exp.domaindescriptor WHERE storageschemaname = 'expsampleset'").getArrayList(String.class);
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            storageTableNames.forEach(storageTableName -> {
+                SqlExecutor executor = new SqlExecutor(scope);
+                executor.execute("""
+                        ALTER TABLE expsampleset.%s ADD COLUMN IF NOT EXISTS objectid int8
+                        """.formatted(storageTableName));
+                executor.execute("""
+                        UPDATE expsampleset.%s
+                        SET objectid = (SELECT objectid FROM exp.material WHERE expsampleset.%s.lsid = exp.material.lsid)
+                        """.formatted(storageTableName, storageTableName));
+                executor.execute("""
+                        ALTER TABLE expsampleset.%s ALTER COLUMN objectid SET NOT NULL
+                        """.formatted(storageTableName));
+            });
+            transaction.commit();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+     */
 }
