@@ -16,12 +16,12 @@ import java.util.stream.Collectors;
 public enum PostgreSqlVersion
 {
     POSTGRESQL_UNSUPPORTED(-1, true, false, null),
-    POSTGRESQL_11(110, false, true, PostgreSql_11_Dialect::new),
+    POSTGRESQL_11(110, true, true, PostgreSql_11_Dialect::new),
     POSTGRESQL_12(120, false, true, PostgreSql_12_Dialect::new),
     POSTGRESQL_13(130, false, true, PostgreSql_13_Dialect::new),
     POSTGRESQL_14(140, false, true, PostgreSql_14_Dialect::new),
     POSTGRESQL_15(150, false, true, PostgreSql_15_Dialect::new),
-    POSTGRESQL_16(160, false, false, PostgreSql_16_Dialect::new),
+    POSTGRESQL_16(160, false, true, PostgreSql_16_Dialect::new),
     POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_16_Dialect::new);
 
     private final int _version;

@@ -63,7 +63,7 @@ abstract class PostgreSql92Dialect extends PostgreSql91Dialect
     @Override
     public String getProductName()
     {
-        return PostgreSqlDialectFactory.PRODUCT_NAME;
+        return PostgreSql91Dialect.PRODUCT_NAME;
     }
 
     @Override
