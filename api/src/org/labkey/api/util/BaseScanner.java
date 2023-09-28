@@ -150,7 +150,7 @@ public abstract class BaseScanner
 
     /**
      * Returns the text stripped of all comments (while correctly handling comment characters in quoted strings).
-     * @return StringBuilder containing the stripped text
+     * @return StringBuilder containing the text stripped of comments
      */
     public StringBuilder stripComments()
     {
@@ -161,6 +161,32 @@ public abstract class BaseScanner
         {
             @Override
             public boolean comment(int startIndex, int endIndex)
+            {
+                ret.append(_text, previous.getValue(), startIndex);
+                previous.setValue(endIndex);
+
+                return true;
+            }
+        });
+
+        ret.append(_text.substring(previous.getValue()));
+
+        return ret;
+    }
+
+    /**
+     * Returns the text stripped of all quoted strings (while correctly handling quote characters in comments).
+     * @return StringBuilder containing the text stripped of quoted strings
+     */
+    public StringBuilder stripQuotedStrings()
+    {
+        StringBuilder ret = new StringBuilder();
+        MutableInt previous = new MutableInt(0);
+
+        scan(0, new Handler()
+        {
+            @Override
+            public boolean string(int startIndex, int endIndex)
             {
                 ret.append(_text, previous.getValue(), startIndex);
                 previous.setValue(endIndex);
