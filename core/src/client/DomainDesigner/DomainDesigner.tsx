@@ -24,6 +24,7 @@ import {
     DomainForm,
     DomainDesign,
     fetchDomain,
+    FormButtons,
     saveDomain,
     BeforeUnload,
 } from '@labkey/components';
@@ -60,7 +61,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         const { domainId, schemaName, queryName } = ActionURL.getParameters();
 
         if ((schemaName && queryName) || domainId) {
@@ -74,13 +75,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         }
     }
 
-    handleWindowBeforeUnload = event => {
+    handleWindowBeforeUnload = (event): void => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
-    submitHandler() {
+    submitHandler = (): void => {
         const { domain, submitting, includeWarnings } = this.state;
 
         if (submitting) {
@@ -112,13 +113,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     }));
                 }
             });
-    }
+    };
 
-    submitAndNavigate = () => {
+    submitAndNavigate = (): void => {
         this.submitHandler();
     };
 
-    confirmWarningAndNavigate = () => {
+    confirmWarningAndNavigate = (): void => {
         this.setState(
             () => ({
                 includeWarnings: false,
@@ -131,19 +132,19 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         );
     };
 
-    onSubmitWarningsCancel = () => {
+    onSubmitWarningsCancel = (): void => {
         this.setState(() => ({
             showWarnings: false,
             submitting: false,
         }));
     };
 
-    onChangeHandler = (newDomain, dirty) => {
+    onChangeHandler = (newDomain, dirty): void => {
         this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
         this.setState(() => ({ domain: newDomain }));
     };
 
-    onCancelBtnHandler = () => {
+    onCancelBtnHandler = (): void => {
         if (this._dirty) {
             this.setState(() => ({ showConfirm: true }));
         } else {
@@ -151,28 +152,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         }
     };
 
-    navigate = () => {
+    navigate = (): void => {
         this._dirty = false;
 
         const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
     };
-
-    renderNavigateConfirm() {
-        return (
-            <ConfirmModal
-                title="Keep unsaved changes?"
-                confirmVariant="primary"
-                onConfirm={this.submitAndNavigate}
-                onCancel={this.navigate}
-                cancelButtonText="No, Discard Changes"
-                confirmButtonText="Yes, Save Changes"
-            >
-                You have made changes to this domain that have not yet been saved. Do you want to save these changes
-                before leaving?
-            </ConfirmModal>
-        );
-    }
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
@@ -210,30 +195,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         );
     }
 
-    renderButtons() {
-        const { submitting } = this.state;
-
-        return (
-            <div className="domain-form-panel domain-designer-buttons">
-                <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
-                <Button className="pull-right" bsStyle="primary" disabled={submitting} onClick={this.submitAndNavigate}>
-                    Save
-                </Button>
-            </div>
-        );
-    }
-
-    renderInstructionsPanel() {
-        return (
-            <Panel>
-                <Panel.Heading>Instructions</Panel.Heading>
-                <Panel.Body>{this.state.domain.instructions}</Panel.Body>
-            </Panel>
-        );
-    }
-
     render() {
-        const { domain, message, showConfirm, showWarnings } = this.state;
+        const { domain, message, showConfirm, showWarnings, submitting } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
@@ -242,21 +205,58 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {showConfirm && this.renderNavigateConfirm()}
-                {showWarnings && this.renderWarningConfirm()}
-                {domain && domain.instructions && this.renderInstructionsPanel()}
-                {domain && (
-                    <DomainForm
-                        headerTitle="Fields"
-                        domain={domain}
-                        domainFormDisplayOptions={{
-                            hideInferFromFile: true,
-                        }}
-                        onChange={this.onChangeHandler}
-                    />
-                )}
-                {message && <Alert bsStyle="danger">{message}</Alert>}
-                {domain && this.renderButtons()}
+                <div className="domain-designer">
+                    {showConfirm && (
+                        <ConfirmModal
+                            title="Keep unsaved changes?"
+                            confirmVariant="primary"
+                            onConfirm={this.submitAndNavigate}
+                            onCancel={this.navigate}
+                            cancelButtonText="No, Discard Changes"
+                            confirmButtonText="Yes, Save Changes"
+                        >
+                            You have made changes to this domain that have not yet been saved. Do you want to save these
+                            changes before leaving?
+                        </ConfirmModal>
+                    )}
+                    {showWarnings && this.renderWarningConfirm()}
+                    {domain && domain.instructions && (
+                        <Panel>
+                            <Panel.Heading>Instructions</Panel.Heading>
+                            <Panel.Body>{domain.instructions}</Panel.Body>
+                        </Panel>
+                    )}
+                    {domain && (
+                        <DomainForm
+                            headerTitle="Fields"
+                            domain={domain}
+                            domainFormDisplayOptions={{
+                                hideInferFromFile: true,
+                            }}
+                            onChange={this.onChangeHandler}
+                        />
+                    )}
+                    {message && <Alert bsStyle="danger">{message}</Alert>}
+                    {domain && (
+                        <FormButtons sticky={false}>
+                            <button
+                                className="cancel-button btn btn-default"
+                                onClick={this.onCancelBtnHandler}
+                                type="button"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="save-button btn btn-primary"
+                                disabled={submitting}
+                                onClick={this.submitAndNavigate}
+                                type="button"
+                            >
+                                Save
+                            </button>
+                        </FormButtons>
+                    )}
+                </div>
             </BeforeUnload>
         );
     }
