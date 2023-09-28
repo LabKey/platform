@@ -66,17 +66,13 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * User: arauch
- * Date: Dec 28, 2004
- * Time: 8:58:25 AM
- */
-
-// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep this class versioned as "91" to
+// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep the dialects versioned to
 // track changes we've implemented for each version over time.
 public abstract class PostgreSql91Dialect extends SqlDialect
 {
     public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+    public static final String PRODUCT_NAME = "PostgreSQL";
+    public static final String RECOMMENDED = PRODUCT_NAME + " 16.x is the recommended version.";
 
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -1889,8 +1885,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (null != _adminWarning)
             warnings.add(_adminWarning);
         else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a sample warning
-            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. PostgreSQL 15.x is the recommended version."));
-
+            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. " + RECOMMENDED));
     }
 
     @Override
