@@ -21,8 +21,6 @@ import org.labkey.api.services.ServiceRegistry;
 import java.util.Map;
 
 /**
- * Created by Tony on 2/14/2017.
- *
  * Service for modules to register their own set of metrics to include in mothership usage reports
  * Example usage from DataIntegrationModule.doStartup():
  *         UsageMetricsService svc = UsageMetricsService.get();

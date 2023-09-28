@@ -18,6 +18,7 @@ package org.labkey.core.admin.usageMetrics;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ConcurrentHashSet;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.usageMetrics.UsageMetricsProvider;
@@ -29,17 +30,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * Created by Tony on 2/14/2017.
- */
 public class UsageMetricsServiceImpl implements UsageMetricsService
 {
     private static final Logger LOG = LogHelper.getLogger(UsageMetricsServiceImpl.class, "Usage metrics errors");
 
-    private final Map<String, Set<UsageMetricsProvider>> moduleUsageReports = new ConcurrentHashMap<>();
+    private final Map<String, Set<UsageMetricsProvider>> moduleUsageReports = new CopyOnWriteHashMap<>();
 
     @Override
     public void registerUsageMetrics(String moduleName, UsageMetricsProvider metrics)
