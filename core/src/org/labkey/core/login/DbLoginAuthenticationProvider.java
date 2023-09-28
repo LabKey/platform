@@ -102,8 +102,9 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         {
             User user = ApiKeyManager.get().authenticateFromApiKey(password);
 
+            // API keys are exempt from secondary authentication, Issue 48764
             return user != null ?
-                AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), "an API key") :
+                AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), "an API key", false) :
                 AuthenticationResponse.createFailureResponse(configuration, FailureReason.badApiKey);
         }
         else
