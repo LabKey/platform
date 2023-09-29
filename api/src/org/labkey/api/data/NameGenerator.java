@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -668,9 +669,13 @@ public class NameGenerator
             Collection<?> coll = (Collection)value;
             values = coll.stream().map(String::valueOf);
         }
+        else if (value instanceof JSONArray jsonArray)
+        {
+            values = jsonArray.toList().stream().map(String::valueOf);
+        }
         else
         {
-            throw new IllegalStateException("Expected string or collection for '" + parentColName + "': " + value);
+            throw new IllegalStateException("For parent values in naming pattern, expected string or collection for '" + parentColName + "': " + value);
         }
 
         return values
