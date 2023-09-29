@@ -162,9 +162,9 @@ public interface PlateService
      * for the standard assay with plate support since other assays types do not store the plate ID with the
      * run.
      */
-    int getRunCountUsingPlate(@NotNull Container c, @NotNull Plate plate);
+    int getRunCountUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate);
 
-    List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull Plate plate);
+    List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate);
 
     /**
      * Creates a new plate template.

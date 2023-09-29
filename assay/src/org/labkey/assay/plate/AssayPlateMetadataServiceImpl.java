@@ -87,7 +87,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (property != null)
                 plateLsid = Lsid.parse(String.valueOf(run.getProperty(property)));
 
-            Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(plateLsid, plateMetadata, user, protocol, true);
+            Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(container, user, plateLsid, plateMetadata, protocol, true);
             Domain domain = getPlateDataDomain(protocol);
 
             Map<String, PropertyDescriptor> descriptorMap = new CaseInsensitiveHashMap<>();
@@ -158,9 +158,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
      * to metadata properties.
      */
     private Map<Position, Map<String, Object>> prepareMergedPlateData(
+            Container container,
+            User user,
             Lsid plateLsid,
             Map<String, MetadataLayer> plateMetadata,
-            @Nullable User user,
             ExpProtocol protocol,
             boolean ensurePlateDomain           // true to create the plate domain and properties if they don't exist
     ) throws ExperimentException
@@ -168,7 +169,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         _domainDirty = false;
         _propValues.clear();
 
-        Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+        Plate plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(protocol, container, user), plateLsid);
         if (plate == null)
             throw new ExperimentException("Unable to resolve the plate template for the run");
 
@@ -272,7 +273,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         if (plateMetadata != null)
         {
-            Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(plateLsid, plateMetadata, null, protocol, false);
+            Map<Position, Map<String, Object>> plateData = prepareMergedPlateData(container, user, plateLsid, plateMetadata, protocol, false);
             for (Map<String, Object> row : mergedRows)
             {
                 PositionImpl well = new PositionImpl(null, String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
@@ -287,12 +288,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
             // include metadata that may have been applied directly to the plate
-            Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+            Plate plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(protocol, container, user), plateLsid);
             if (plate == null)
                 throw new ExperimentException("Unable to resolve the plate for the run");
 
             // if there are metadata fields configured for this plate
-            if (!PlateManager.get().getFields(container, plate.getRowId()).isEmpty())
+            if (!plate.getCustomFields().isEmpty())
             {
                 // create the map of well locations to the well
                 Map<Position, Well> positionToWell = new HashMap<>();
@@ -310,7 +311,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                     if (positionToWell.containsKey(well))
                     {
-                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(container, user, plate.getRowId(), positionToWell.get(well).getRowId()))
+                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, positionToWell.get(well).getRowId()))
                         {
                             row.put(customField.getName(), customField.getValue());
                         }
@@ -493,7 +494,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (property != null)
             plateLsid = Lsid.parse(String.valueOf(run.getProperty(property)));
 
-        Plate plate = PlateService.get().getPlate(protocol.getContainer(), plateLsid);
+        Plate plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(protocol, container, user), plateLsid);
         if (plate == null)
             throw new ExperimentException(String.format("Unable to resolve the plate : %s for the run", plateLsid));
 
