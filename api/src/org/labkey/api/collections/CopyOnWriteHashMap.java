@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * A thread-safe version of {@link HashMap} in which all operations that change the Map are implemented by making
- * a new copy of the underlying Map. This is appropriate for scenarios where reads far outnumber writes.
+ * a new copy of the underlying Map. This is appropriate for scenarios where reads vastly outnumber writes.
  */
 public class CopyOnWriteHashMap<K, V> extends CopyOnWriteMap<K, V, HashMap<K, V>>
 {

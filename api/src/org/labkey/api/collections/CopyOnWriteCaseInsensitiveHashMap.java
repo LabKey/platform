@@ -4,7 +4,7 @@ import java.util.Map;
 
 /**
  * A thread-safe version of {@link CaseInsensitiveHashMap} in which all operations that change the Map are implemented
- * by making a new copy of the underlying Map. This is appropriate for scenarios where reads far outnumber writes.
+ * by making a new copy of the underlying Map. This is appropriate for scenarios where reads vastly outnumber writes.
  */
 public class CopyOnWriteCaseInsensitiveHashMap<V> extends CopyOnWriteMap<String, V, CaseInsensitiveHashMap<V>>
 {
