@@ -1448,28 +1448,31 @@ public class AuthenticationManager
 
         List<AuthenticationValidator> validators = new LinkedList<>();
 
-        for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
+        if (primaryAuthResult.getResponse().requireSecondary())
         {
-            User secondaryAuthUser = getSecondaryAuthenticationUser(session, configuration.getRowId());
-
-            if (null == secondaryAuthUser)
+            for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
             {
-                SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
-                if (provider.bypass())
+                User secondaryAuthUser = getSecondaryAuthenticationUser(session, configuration.getRowId());
+
+                if (null == secondaryAuthUser)
                 {
-                    _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
-                    setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
-                    continue;
+                    SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
+                    if (provider.bypass())
+                    {
+                        _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                        setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
+                        continue;
+                    }
+
+                    return new AuthenticationResult(configuration.getRedirectURL(primaryAuthUser, c));
                 }
 
-                return new AuthenticationResult(configuration.getRedirectURL(primaryAuthUser, c));
+                // Validate that secondary auth user matches primary auth user
+                if (!secondaryAuthUser.equals(primaryAuthUser))
+                    throw new IllegalStateException("Wrong user");
+
+                // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
             }
-
-            // Validate that secondary auth user matches primary auth user
-            if (!secondaryAuthUser.equals(primaryAuthUser))
-                throw new IllegalStateException("Wrong user");
-
-            // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
         }
 
         // Get the redirect URL from the current session
