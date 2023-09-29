@@ -279,8 +279,9 @@ public interface AuthenticationProvider
         private final @Nullable ActionURL _redirectURL;
         private final @NotNull Map<String, String> _attributeMap;
         private final @Nullable String _successDetails;
+        private final boolean _requireSecondary;
 
-        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
         {
             _configuration = configuration;
             _email = email;
@@ -289,6 +290,7 @@ public interface AuthenticationProvider
             _failureReason = null;
             _redirectURL = null;
             _successDetails = null != successDetails ? successDetails : "the \"" + configuration.getDescription() + "\" configuration";
+            _requireSecondary = requireSecondary;
         }
 
         private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
@@ -300,6 +302,7 @@ public interface AuthenticationProvider
             _redirectURL = redirectURL;
             _attributeMap = Collections.emptyMap();
             _successDetails = null;
+            _requireSecondary = true;
         }
 
         /**
@@ -309,23 +312,25 @@ public interface AuthenticationProvider
          */
         public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email)
         {
-            return createSuccessResponse(configuration, email, null, Collections.emptyMap(), null);
+            return createSuccessResponse(configuration, email, null, Collections.emptyMap(), null, true);
         }
 
         /**
          * Creates an authentication provider response that can include a validator to be called on every request and a
          * map of user attributes
-         * @param configuration The PrimaryAuthenticationConfiguration that was used in this authentication attempt
-         * @param email Valid email address of the authenticated user
-         * @param validator An authentication validator
-         * @param attributeMap A <b>case-insensitive</b> map of attribute names and values associated with this authentication
-         * @param successDetails An optional string describing how successful authentication took place, which will appear in
-         *                       the audit log. If null, the configuration's description will be used.
+         *
+         * @param configuration     The PrimaryAuthenticationConfiguration that was used in this authentication attempt
+         * @param email             Valid email address of the authenticated user
+         * @param validator         An authentication validator
+         * @param attributeMap      A <b>case-insensitive</b> map of attribute names and values associated with this authentication
+         * @param successDetails    An optional string describing how successful authentication took place, which will appear in
+         *                          the audit log. If null, the configuration's description will be used.
+         * @param requireSecondary  Require secondary authentication
          * @return A new successful authentication response containing the email address of the authenticated user and a validator
          */
-        public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails)
+        public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email, @Nullable AuthenticationValidator validator, @NotNull Map<String, String> attributeMap, @Nullable String successDetails, boolean requireSecondary)
         {
-            return new AuthenticationResponse(configuration, email, validator, attributeMap, successDetails);
+            return new AuthenticationResponse(configuration, email, validator, attributeMap, successDetails, requireSecondary);
         }
 
         public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, FailureReason failureReason)
@@ -383,6 +388,11 @@ public interface AuthenticationProvider
         public String getSuccessDetails()
         {
             return _successDetails;
+        }
+
+        public boolean requireSecondary()
+        {
+            return _requireSecondary;
         }
     }
 

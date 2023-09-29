@@ -587,7 +587,7 @@ public class UserController extends SpringActionController
                         invalidUserIds.add(userId);
                 }
 
-                if (invalidUserIds.size() > 0)
+                if (!invalidUserIds.isEmpty())
                     errors.reject(ERROR_MSG, "Invalid user id(s) provided: " + StringUtils.join(invalidUserIds, ", ") + ".");
             }
         }
