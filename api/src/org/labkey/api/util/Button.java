@@ -253,7 +253,6 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
             .cl(!isEnabled(), DISABLEDCLS)
-            .cl(isSubmit(), PRIMARY_CLS)
             .cl(isDropdown(), "labkey-down-arrow")
             .cl(isDropdown(), "dropdown-toggle")
             .cl(iconOnly, "icon-only");
@@ -325,6 +324,7 @@ public class Button extends DisplayElement implements HasHtmlString, SafeToRende
         public ButtonBuilder submit(boolean submit)
         {
             this.submit = submit;
+            this.primary(true);
             return this;
         }
 
