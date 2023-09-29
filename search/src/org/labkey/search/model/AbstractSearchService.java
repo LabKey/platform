@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -71,7 +72,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -640,15 +640,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-
-    private final Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
+    private final Map<String, ResourceResolver> _resolvers = new CopyOnWriteHashMap<>();
 
     @Override
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
         _resolvers.put(prefix, resolver);
     }
-
 
     // CONSIDER Iterable<Resource>
     @Override
@@ -664,7 +662,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return null;
         return res.resolve(resourceIdentifier.substring(i+1));
     }
-
 
     @Override
     public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)

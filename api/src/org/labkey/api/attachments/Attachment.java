@@ -183,7 +183,7 @@ public class Attachment implements Serializable
     {
         synchronized (icons)
         {
-            if (icons.size() == 0)
+            if (icons.isEmpty())
             {
                 WebdavResolver staticFiles = ServiceRegistry.get().getService(WebdavResolver.class);
                 if (staticFiles != null)
@@ -204,7 +204,7 @@ public class Attachment implements Serializable
                         }
                     }
                 }
-                if (icons.size() == 0)
+                if (icons.isEmpty())
                 {
                     ServletContext context = ViewServlet.getViewServletContext();
                     if (null != context)
