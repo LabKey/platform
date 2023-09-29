@@ -195,9 +195,9 @@ public class FileContentModule extends DefaultModule
                 MutableLong fileCount = new MutableLong(0);
                 boolean timedOut = false;
                 boolean succeeded = true;
-                try
+                try (Stream<File> s = FileUtils.streamFiles(root, true, (String[])null))
                 {
-                    FileUtils.streamFiles(root, true, (String[])null).forEach(f ->
+                    s.forEach(f ->
                     {
                         totalSize.add(f.length());
                         fileCount.increment();
