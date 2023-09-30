@@ -46,6 +46,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.labkey.api.reports.report.r.RReport.getLocalPath;
@@ -230,20 +231,24 @@ public class RserveScriptEngine extends RScriptEngine
 
         LOG.debug("Copy files in working directory to remote server");
         final Path localWorkingDirectoryPath = getWorkingDir(getContext()).toPath();
-        List<Pair<File,File>> listing = Files.find(localWorkingDirectoryPath, Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()).map(
-                path -> new Pair<>(path.toFile(), localWorkingDirectoryPath.relativize(path).toFile())).toList();
-        var dirs = new HashSet<String>();
-        for (var pair : listing)
+        try (Stream<Path> pathStream = Files.find(localWorkingDirectoryPath, Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()))
         {
-            File file = pair.first;
-            File relative = pair.second;
-            String parent = relative.getParent();
-            if (null != parent && dirs.add(parent))
-                rconn.eval("dir.create(" + toR(parent) + ", recursive=TRUE)");
-            try (OutputStream os = rconn.createFile(relative.toString());
-                 FileInputStream fis = new FileInputStream(file))
+            List<Pair<File, File>> listing = pathStream
+                .map(path -> new Pair<>(path.toFile(), localWorkingDirectoryPath.relativize(path).toFile()))
+                .toList();
+            var dirs = new HashSet<String>();
+            for (var pair : listing)
             {
-                IOUtil.copyCompletely(fis, os);
+                File file = pair.first;
+                File relative = pair.second;
+                String parent = relative.getParent();
+                if (null != parent && dirs.add(parent))
+                    rconn.eval("dir.create(" + toR(parent) + ", recursive=TRUE)");
+                try (OutputStream os = rconn.createFile(relative.toString());
+                     FileInputStream fis = new FileInputStream(file))
+                {
+                    IOUtil.copyCompletely(fis, os);
+                }
             }
         }
     }
