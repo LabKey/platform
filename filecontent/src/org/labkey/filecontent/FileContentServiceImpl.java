@@ -107,13 +107,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static org.labkey.api.settings.AppProps.SCOPE_SITE_SETTINGS;
 
-/**
- * User: klum
- * Date: Dec 9, 2009
- */
 public class FileContentServiceImpl implements FileContentService
 {
     private static final Logger _log = LogManager.getLogger(FileContentServiceImpl.class);
@@ -1496,13 +1493,16 @@ public class FileContentServiceImpl implements FileContentService
             try (var ignore = SpringActionController.ignoreSqlUpdates())
             {
                 java.nio.file.Path rootPath = file.toPath();
-                Files.walk(rootPath, 100) // prevent symlink loop
+
+                try (Stream<java.nio.file.Path> pathStream = Files.walk(rootPath, 100)) // prevent symlink loop
+                {
+                    pathStream
                         .filter(path -> !Files.isSymbolicLink(path) && path.compareTo(rootPath) != 0) // exclude symlink & root
                         .forEach(path -> {
                             if (!containsUrlOrVariation(existingDataFileUrls, path))
                                 rows.add(new CaseInsensitiveHashMap<>(Collections.singletonMap("DataFileUrl", path.toUri().toString())));
-
                         });
+                }
 
                 qus.insertRows(user, container, rows, errors, null, null);
             }
