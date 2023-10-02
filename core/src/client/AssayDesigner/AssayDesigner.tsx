@@ -167,15 +167,13 @@ export class App extends React.Component<any, State> {
                             onChange={this.onChange}
                             onCancel={this.onCancel}
                             onComplete={this.onComplete}
-                            successBsStyle="primary"
-                            useTheme
                         />
                     )}
                     {!hasDesignAssayPerm && (
                         <>
                             <Panel>
                                 <Panel.Heading>
-                                    <div className={"panel-title"}>{model.name}</div>
+                                    <div className="panel-title">{model.name}</div>
                                 </Panel.Heading>
                                 <Panel.Body>
                                     <table>

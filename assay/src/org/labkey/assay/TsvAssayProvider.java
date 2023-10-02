@@ -84,6 +84,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -345,12 +346,20 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain runDomain = getRunDomain(protocol);
             if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)))
+                Optional<GWTPropertyDescriptor> plateTemplateColumn = update.getFields().stream().filter(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).findFirst();
+                if (plateTemplateColumn.isPresent())
+                {
+                    // Ensure the lookup container is null, so it defaults to "Current Folder" to more easily support
+                    // cross-folder support.
+                    GWTPropertyDescriptor plateTemplate = plateTemplateColumn.get();
+                    plateTemplate.setLookupContainer(null);
+                }
+                else
                 {
                     GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
-                    plateTemplate.setLookupContainer(protocol.getContainer().getId());
+                    plateTemplate.setLookupContainer(null);
                     plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
                     plateTemplate.setShownInUpdateView(false);
 

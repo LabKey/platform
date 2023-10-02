@@ -15,18 +15,19 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.collections.CopyOnWriteHashMap;
+
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
- * Registry for different types of container.  The name provided when registering is the value
+ * Registry for different types of containers. The name provided when registering is the value
  * stored in the "type" field of the container table.
  */
 public class ContainerTypeRegistry
 {
-    private ConcurrentMap<String, ContainerType> types = new ConcurrentHashMap<>();
-    private static ContainerTypeRegistry instance = new ContainerTypeRegistry();
+    private final Map<String, ContainerType> types = new CopyOnWriteHashMap<>();
+    private static final ContainerTypeRegistry instance = new ContainerTypeRegistry();
 
     private ContainerTypeRegistry()
     {

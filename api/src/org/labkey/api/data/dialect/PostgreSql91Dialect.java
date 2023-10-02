@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
@@ -58,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -74,7 +74,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public static final String PRODUCT_NAME = "PostgreSQL";
     public static final String RECOMMENDED = PRODUCT_NAME + " 16.x is the recommended version.";
 
-    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
+    private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
 
@@ -1884,7 +1884,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
-        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a sample warning
+        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a generic warning
             warnings.add(HtmlString.of("LabKey Server has not been tested against this version. " + RECOMMENDED));
     }
 

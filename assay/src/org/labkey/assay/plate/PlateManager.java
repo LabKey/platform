@@ -320,9 +320,9 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull Plate plate)
+    public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, plate);
+        SqlSelector se = selectRunUsingPlate(c, user, plate);
         if (se == null)
             return emptyList();
 
@@ -331,20 +331,17 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public int getRunCountUsingPlate(@NotNull Container c, @NotNull Plate plate)
+    public int getRunCountUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, plate);
+        SqlSelector se = selectRunUsingPlate(c, user, plate);
         if (se == null)
             return 0;
 
         return (int) se.getRowCount();
     }
 
-    private @Nullable SqlSelector selectRunUsingPlate(@NotNull Container c, @NotNull Plate plate)
+    private @Nullable SqlSelector selectRunUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        if (plate == null)
-            return null;
-
         // first, get the list of GPAT protocols in the container
         AssayProvider gpat = AssayService.get().getProvider(TsvAssayProvider.NAME);
         if (gpat == null)
@@ -369,12 +366,14 @@ public class PlateManager implements PlateService
         List<Integer> plateTemplatePropIds = plateTemplateProps.stream().map(PropertyDescriptor::getPropertyId).toList();
 
         // query for runs with that property that point to the plate by LSID
+        ContainerFilter cf = getPlateContainerFilter(null, c, user);
         SQLFragment sql = new SQLFragment()
                 .append("SELECT r.rowId\n")
                 .append("FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").append("\n")
                 .append("INNER JOIN ").append(OntologyManager.getTinfoObject(), "o").append(" ON o.objectUri = r.lsid\n")
                 .append("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").append(" ON op.objectId = o.objectId\n")
-                .append("WHERE r.container = ?\n").add(c.getId())
+                .append("WHERE ")
+                .append(cf.getSQLFragment(AssayDbSchema.getInstance().getSchema(), new SQLFragment("r.container"))).append("\n")
                 .append("AND op.propertyId ").appendInClause(plateTemplatePropIds, AssayDbSchema.getInstance().getSchema().getSqlDialect()).append("\n")
                 .append("AND op.stringvalue = ?").add(plate.getLSID());
 
@@ -414,6 +413,16 @@ public class PlateManager implements PlateService
     public @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid)
     {
         return PlateCache.getPlate(cf, lsid);
+    }
+
+    /**
+     * Helper to create container filters to support assay import using cross folder
+     * plates
+     */
+    public ContainerFilter getPlateContainerFilter(@Nullable ExpProtocol protocol, Container container, User user)
+    {
+        ContainerFilter defaultCf = ContainerFilter.Type.Current.create(protocol != null ? protocol.getContainer() : container, user);
+        return QueryService.get().getProductContainerFilterForLookups(container, user, defaultCf);
     }
 
     @Override
@@ -1234,6 +1243,7 @@ public class PlateManager implements PlateService
 
     public @NotNull Map<String, List<Map<String, Integer>>> getPlateOperationConfirmationData(
         @NotNull Container container,
+        @NotNull User user,
         @NotNull Set<Integer> plateRowIds
     )
     {
@@ -1247,7 +1257,7 @@ public class PlateManager implements PlateService
         // TODO: This is really expensive. Find a way to consolidate this check into a single query.
         permittedIds.forEach(plateRowId -> {
             Plate plate = getPlate(container, plateRowId);
-            if (plate == null || getRunCountUsingPlate(container, plate) > 0)
+            if (plate == null || getRunCountUsingPlate(container, user, plate) > 0)
                 notPermittedIds.add(plateRowId);
         });
         permittedIds.removeAll(notPermittedIds);
@@ -1510,18 +1520,16 @@ public class PlateManager implements PlateService
         return fields;
     }
 
-    public List<WellCustomField> getWellCustomFields(Container container, User user, Integer plateId, Integer wellId)
+    public List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
     {
-        Plate plate = requirePlate(container, plateId, "Failed to get well custom fields.");
-
         Well well = plate.getWell(wellId);
         if (well == null)
             throw new IllegalArgumentException("Failed to get well custom fields. Well id \"" + wellId   + "\" not found.");
 
-        List<WellCustomField> fields = _getFields(container, user, plateId).stream().map(WellCustomField::new).toList();
+        List<WellCustomField> fields = _getFields(plate.getContainer(), user, plate.getRowId()).stream().map(WellCustomField::new).toList();
 
         // need to get the well values associated with each custom field
-        Map<String, Object> properties = OntologyManager.getProperties(container, well.getLsid());
+        Map<String, Object> properties = OntologyManager.getProperties(plate.getContainer(), well.getLsid());
         for (WellCustomField field : fields)
             field.setValue(properties.get(field.getPropertyURI()));
 

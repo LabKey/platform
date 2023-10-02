@@ -409,7 +409,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     @Override
     public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
-        // NOTE: this will only be needed in HaplotypeAssayProvider; thus this is no-op.
     }
 
     @Override

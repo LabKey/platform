@@ -100,6 +100,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -818,7 +819,17 @@ public class PipelineManager
             if (!archiveFile.getParent().toAbsolutePath().toString().equalsIgnoreCase(importDir.toAbsolutePath().toString()))
                 importDir = pipelineRoot.deleteImportDirectory(null);
 
-            if (Files.notExists(importDir) || Files.list(importDir).noneMatch(s -> s.getFileName().toString().equalsIgnoreCase(archiveFile.getFileName().toString())))
+            boolean shouldUnzip = Files.notExists(importDir);
+
+            if (!shouldUnzip)
+            {
+                try (Stream<Path> pathStream = Files.list(importDir))
+                {
+                    shouldUnzip = pathStream.noneMatch(s -> s.getFileName().toString().equalsIgnoreCase(archiveFile.getFileName().toString()));
+                }
+            }
+
+            if (shouldUnzip)
             {
                 // Only unzip once
                 try (InputStream is = Files.newInputStream(archiveFile))

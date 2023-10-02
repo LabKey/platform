@@ -18,12 +18,14 @@ package org.labkey.filecontent;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.StopIteratingRuntimeException;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
@@ -33,6 +35,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavService;
@@ -155,6 +158,9 @@ public class FileContentModule extends DefaultModule
         return result;
     }
 
+    /** Maximum time to spend crawling the file root to get its size */
+    private static final long FILE_CRAWL_TIMEOUT_MILLIS = 20_000;
+
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
@@ -184,9 +190,38 @@ public class FileContentModule extends DefaultModule
             File root = FileContentService.get().getSiteDefaultRoot();
             if (root.isDirectory())
             {
-                long currentTime = System.currentTimeMillis();
-                results.put("fileRootSize", FileUtils.sizeOfDirectory(root));
-                results.put("fileRootMillisecondsToCalculateSize", System.currentTimeMillis() - currentTime);
+                long startTime = HeartBeat.currentTimeMillis();
+                MutableLong totalSize = new MutableLong(0);
+                MutableLong fileCount = new MutableLong(0);
+                boolean timedOut = false;
+                boolean succeeded = true;
+                try (Stream<File> s = FileUtils.streamFiles(root, true, (String[])null))
+                {
+                    s.forEach(f ->
+                    {
+                        totalSize.add(f.length());
+                        fileCount.increment();
+
+                        if (HeartBeat.currentTimeMillis() - startTime > FILE_CRAWL_TIMEOUT_MILLIS)
+                        {
+                            throw new StopIteratingRuntimeException();
+                        }
+                    });
+                }
+                catch (StopIteratingRuntimeException e)
+                {
+                    timedOut = true;
+                    succeeded = false;
+                }
+                catch (IOException ignored)
+                {
+                    succeeded = false;
+                }
+                results.put("fileRootSize", totalSize.longValue());
+                results.put("fileRootFileCount", fileCount.longValue());
+                results.put("fileRootCrawlTimedOut", timedOut);
+                results.put("fileRootCrawlSucceeded", succeeded);
+                results.put("fileRootMillisecondsToCalculateSize", System.currentTimeMillis() - startTime);
             }
             return results;
         });

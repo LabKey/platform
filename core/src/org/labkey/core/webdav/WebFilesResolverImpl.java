@@ -52,7 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class WebFilesResolverImpl extends AbstractWebdavResolver implements FileListener
@@ -379,7 +378,7 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
                             boolean isCloudRoot = null != fileContentService && fileContentService.isCloudRoot(parentContainer);
                             try (Stream<java.nio.file.Path> list = Files.list(fileRootFile))
                             {
-                                for (java.nio.file.Path p : list.collect(Collectors.toList()))
+                                for (java.nio.file.Path p : list.toList())
                                 {
                                     String pathFileName = FileUtil.getFileName(p);
                                     if ((Files.isDirectory(p) && StringUtils.equals(rawFolderName, pathFileName)) ||
