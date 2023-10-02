@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.24.2",
-    "@labkey/components": "2.373.3-fb-form-buttons.0",
+    "@labkey/components": "2.374.0",
     "@labkey/themes": "1.3.2"
   },
   "devDependencies": {
