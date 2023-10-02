@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import React from 'react'
-import {Button, Panel} from "react-bootstrap";
-import { ActionURL, getServerContext } from "@labkey/api";
+import React from 'react';
+import { Button, Panel } from 'react-bootstrap';
+import { ActionURL, getServerContext } from '@labkey/api';
 import {
     LoadingSpinner,
     Alert,
@@ -24,24 +24,24 @@ import {
     DomainForm,
     DomainDesign,
     fetchDomain,
+    FormButtons,
     saveDomain,
-    BeforeUnload
-} from "@labkey/components"
+    BeforeUnload,
+} from '@labkey/components';
 
-import "../DomainDesigner.scss"
+import '../DomainDesigner.scss';
 
 interface IAppState {
-    domain: DomainDesign
-    message?: string,
-    showConfirm: boolean
-    submitting: boolean
-    includeWarnings: boolean
-    showWarnings: boolean
-    badDomain : DomainDesign
+    domain: DomainDesign;
+    message?: string;
+    showConfirm: boolean;
+    submitting: boolean;
+    includeWarnings: boolean;
+    showWarnings: boolean;
+    badDomain: DomainDesign;
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
-
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -57,204 +57,207 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             message,
             submitting: false,
             showConfirm: false,
-            includeWarnings: true
+            includeWarnings: true,
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         const { domainId, schemaName, queryName } = ActionURL.getParameters();
 
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
                 .then(domain => {
-                    this.setState(() => ({domain}));
+                    this.setState(() => ({ domain }));
                 })
                 .catch(error => {
-                    this.setState(() => ({message: error.exception}));
+                    this.setState(() => ({ message: error.exception }));
                 });
         }
     }
 
-    handleWindowBeforeUnload = (event) => {
+    handleWindowBeforeUnload = (event): void => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
-    submitHandler() {
+    submitHandler = (): void => {
         const { domain, submitting, includeWarnings } = this.state;
 
         if (submitting) {
             return;
         }
 
-        this.setState(() => ({submitting: true}));
+        this.setState(() => ({ submitting: true }));
 
         saveDomain({ domain, options: { domainId: domain.domainId }, includeWarnings })
-            .then((savedDomain) => {
+            .then(savedDomain => {
                 this.setState(() => ({
                     domain: savedDomain,
-                    submitting: false
+                    submitting: false,
                 }));
 
                 this.navigate();
             })
-            .catch((badDomain) => {
+            .catch(badDomain => {
                 // if there are only warnings then show ConfirmModel
-                if (badDomain.domainException.severity === "Warning") {
+                if (badDomain.domainException.severity === 'Warning') {
                     this.setState(() => ({
-                        showWarnings : true,
-                        badDomain: badDomain
-                    }))
-                }
-                else {
+                        showWarnings: true,
+                        badDomain,
+                    }));
+                } else {
                     this.setState(() => ({
                         domain: badDomain,
-                        submitting: false
+                        submitting: false,
                     }));
                 }
             });
-    }
+    };
 
-    submitAndNavigate = () => {
+    submitAndNavigate = (): void => {
         this.submitHandler();
     };
 
-    confirmWarningAndNavigate = () => {
-        this.setState(() => ({
-            includeWarnings : false,
-            showWarnings : false,
-            submitting : false
-        }), () => {
-            this.submitHandler();
-        });
+    confirmWarningAndNavigate = (): void => {
+        this.setState(
+            () => ({
+                includeWarnings: false,
+                showWarnings: false,
+                submitting: false,
+            }),
+            () => {
+                this.submitHandler();
+            }
+        );
     };
 
-    onSubmitWarningsCancel = () => {
+    onSubmitWarningsCancel = (): void => {
         this.setState(() => ({
-            showWarnings : false,
-            submitting : false
-        }))
+            showWarnings: false,
+            submitting: false,
+        }));
     };
 
-    onChangeHandler = (newDomain, dirty) => {
+    onChangeHandler = (newDomain, dirty): void => {
         this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
         this.setState(() => ({ domain: newDomain }));
     };
 
-    onCancelBtnHandler = () => {
+    onCancelBtnHandler = (): void => {
         if (this._dirty) {
-            this.setState(() => ({showConfirm: true}));
-        }
-        else {
+            this.setState(() => ({ showConfirm: true }));
+        } else {
             this.navigate();
         }
     };
 
-    navigate = () => {
+    navigate = (): void => {
         this._dirty = false;
 
         const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
     };
 
-    renderNavigateConfirm() {
-        return (
-            <ConfirmModal
-                title='Keep unsaved changes?'
-                confirmVariant='primary'
-                onConfirm={this.submitAndNavigate}
-                onCancel={this.navigate}
-                cancelButtonText='No, Discard Changes'
-                confirmButtonText='Yes, Save Changes'
-            >
-                You have made changes to this domain that have not yet been saved. Do you want to save these changes
-                before leaving?
-            </ConfirmModal>
-        )
-    }
-
     renderWarningConfirm() {
         const { badDomain } = this.state;
         const errors = badDomain.domainException.errors;
-        const question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
-        const warnings = errors.map((error) => {
-            return <li> {error.message} </li>
+        const question = <p> There are issues with the following fields that you may wish to resolve: </p>;
+        const warnings = errors.map(error => {
+            return <li> {error.message} </li>;
         });
 
         // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
         const rollupURI = getServerContext().helpLinkPrefix + 'specimenCustomProperties';
         const suggestion = (
             <p>
-                See the following documentation page for further details: <br/>
-                <a href={rollupURI} target='_blank' rel='noopener noreferrer'> {"Specimen properties and rollup rules"}</a>
+                See the following documentation page for further details: <br />
+                <a href={rollupURI} target="_blank" rel="noopener noreferrer">
+                    {' '}
+                    Specimen properties and rollup rules
+                </a>
             </p>
         );
 
         return (
             <ConfirmModal
-                title='Save without resolving issues?'
-                confirmVariant='primary'
+                title="Save without resolving issues?"
+                confirmVariant="primary"
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
-                cancelButtonText='No, edit and resolve issues'
-                confirmButtonText='Yes, save changes'
+                cancelButtonText="No, edit and resolve issues"
+                confirmButtonText="Yes, save changes"
             >
                 {question}
                 <ul>{warnings}</ul>
                 {suggestion}
             </ConfirmModal>
-        )
-    }
-
-    renderButtons() {
-        const { submitting } = this.state;
-
-        return (
-            <div className={'domain-form-panel domain-designer-buttons'}>
-                <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
-                <Button className='pull-right' bsStyle='primary' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
-            </div>
-        )
-    }
-
-    renderInstructionsPanel() {
-        return (
-            <Panel>
-                <Panel.Heading>Instructions</Panel.Heading>
-                <Panel.Body>{this.state.domain.instructions}</Panel.Body>
-            </Panel>
-        )
+        );
     }
 
     render() {
-        const { domain, message, showConfirm, showWarnings } = this.state;
+        const { domain, message, showConfirm, showWarnings, submitting } = this.state;
         const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                { showConfirm && this.renderNavigateConfirm() }
-                { showWarnings && this.renderWarningConfirm() }
-                { domain && domain.instructions && this.renderInstructionsPanel()}
-                { domain &&
-                    <DomainForm
-                        headerTitle={'Fields'}
-                        domain={domain}
-                        domainFormDisplayOptions={{
-                            hideInferFromFile: true,
-                        }}
-                        onChange={this.onChangeHandler}
-                        useTheme={true}
-                        successBsStyle={'primary'}
-                    />
-                }
-                { message && <Alert bsStyle={'danger'}>{message}</Alert>}
-                { domain && this.renderButtons() }
+                <div className="domain-designer">
+                    {showConfirm && (
+                        <ConfirmModal
+                            title="Keep unsaved changes?"
+                            confirmVariant="primary"
+                            onConfirm={this.submitAndNavigate}
+                            onCancel={this.navigate}
+                            cancelButtonText="No, Discard Changes"
+                            confirmButtonText="Yes, Save Changes"
+                        >
+                            You have made changes to this domain that have not yet been saved. Do you want to save these
+                            changes before leaving?
+                        </ConfirmModal>
+                    )}
+                    {showWarnings && this.renderWarningConfirm()}
+                    {domain && domain.instructions && (
+                        <Panel>
+                            <Panel.Heading>Instructions</Panel.Heading>
+                            <Panel.Body>{domain.instructions}</Panel.Body>
+                        </Panel>
+                    )}
+                    {domain && (
+                        <DomainForm
+                            headerTitle="Fields"
+                            domain={domain}
+                            domainFormDisplayOptions={{
+                                hideInferFromFile: true,
+                            }}
+                            onChange={this.onChangeHandler}
+                        />
+                    )}
+                    {message && <Alert bsStyle="danger">{message}</Alert>}
+                    {domain && (
+                        <FormButtons sticky={false}>
+                            <button
+                                className="cancel-button btn btn-default"
+                                onClick={this.onCancelBtnHandler}
+                                type="button"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="save-button btn btn-primary"
+                                disabled={submitting}
+                                onClick={this.submitAndNavigate}
+                                type="button"
+                            >
+                                Save
+                            </button>
+                        </FormButtons>
+                    )}
+                </div>
             </BeforeUnload>
-        )
+        );
     }
 }

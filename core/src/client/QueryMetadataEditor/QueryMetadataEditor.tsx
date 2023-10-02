@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import {List} from "immutable";
-import React, {PureComponent} from 'react';
-import {Button} from "react-bootstrap";
+import { List } from 'immutable';
+import React, { PureComponent } from 'react';
+import { Button } from 'react-bootstrap';
 import {
     Alert,
     BeforeUnload,
@@ -25,32 +25,32 @@ import {
     DomainField,
     DomainForm,
     IBannerMessage,
-    LoadingSpinner
-} from "@labkey/components";
-import {ActionURL, getServerContext} from "@labkey/api";
-import {AliasFieldModal} from "./components/AliaseFieldModal";
-import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
+    LoadingSpinner,
+} from '@labkey/components';
+import { ActionURL, getServerContext } from '@labkey/api';
 
-import "./queryMetadataEditor.scss";
+import { AliasFieldModal } from './components/AliaseFieldModal';
+import { fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata } from './actions';
+
+import './queryMetadataEditor.scss';
 
 interface IAppState {
-    domain: DomainDesign,
-    messages?: List<IBannerMessage>,
-    queryName: string,
-    returnUrl: string,
-    schemaName: string,
-    showAlias: boolean,
-    showSave: boolean,
-    showEditSourceConfirmationModal: boolean,
-    showResetConfirmationModal: boolean,
-    showViewDataConfirmationModal: boolean,
-    navigateAfterSave: boolean,
-    userDefinedQuery: boolean,
-    error: string,
+    domain: DomainDesign;
+    messages?: List<IBannerMessage>;
+    queryName: string;
+    returnUrl: string;
+    schemaName: string;
+    showAlias: boolean;
+    showSave: boolean;
+    showEditSourceConfirmationModal: boolean;
+    showResetConfirmationModal: boolean;
+    showViewDataConfirmationModal: boolean;
+    navigateAfterSave: boolean;
+    userDefinedQuery: boolean;
+    error: string;
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
-
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -85,22 +85,22 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         if (schemaName && queryName) {
             fetchQueryMetadata(schemaName, queryName)
-                .then((data) => {
+                .then(data => {
                     const domain = DomainDesign.create(data.domainDesign ? data.domainDesign : data, undefined);
                     this.setState(() => ({
-                        domain: domain,
-                        userDefinedQuery: data.userDefinedQuery
-                    }))
+                        domain,
+                        userDefinedQuery: data.userDefinedQuery,
+                    }));
                 })
-                .catch((error) => {
+                .catch(error => {
                     this.setState(() => ({
-                        messages: messages.set(0, {message: error.exception, messageType: 'danger'})
+                        messages: messages.set(0, { message: error.exception, messageType: 'danger' }),
                     }));
                 });
         }
     }
 
-    handleWindowBeforeUnload = (event) => {
+    handleWindowBeforeUnload = event => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
@@ -111,47 +111,52 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         this.setState(() => ({
             domain: newDomain,
-            showSave: true
+            showSave: true,
         }));
     };
 
     showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
         const { messages } = this.state;
 
-        this.setState(Object.assign({}, additionalState, {
-            messages : messages.set(index, {message: message, messageType: messageType})
-        }));
+        this.setState(
+            Object.assign({}, additionalState, {
+                messages: messages.set(index, { message, messageType }),
+            })
+        );
     };
 
     dismissChangeConfirmation = () => {
         const { showViewDataConfirmationModal, showEditSourceConfirmationModal } = this.state;
 
-        this.setState(() => ({
-            showResetConfirmationModal: false,
-            showViewDataConfirmationModal: false,
-            showEditSourceConfirmationModal: false
-        }), () => {
-            if (showViewDataConfirmationModal) {
-                this.navigateToViewData();
+        this.setState(
+            () => ({
+                showResetConfirmationModal: false,
+                showViewDataConfirmationModal: false,
+                showEditSourceConfirmationModal: false,
+            }),
+            () => {
+                if (showViewDataConfirmationModal) {
+                    this.navigateToViewData();
+                }
+                if (showEditSourceConfirmationModal) {
+                    this.navigateToEditSource();
+                }
             }
-            if (showEditSourceConfirmationModal) {
-                this.navigateToEditSource();
-            }
-        });
+        );
     };
 
     dismissAlert = (index: any) => {
         this.setState(() => ({
-            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
+            messages: this.state.messages.setIn([index], [{ message: undefined, messageType: undefined }]),
         }));
     };
 
     aliasFieldBtnHandler = () => {
-        this.setState(() => ({showAlias: true}));
+        this.setState(() => ({ showAlias: true }));
     };
 
     onHideAliasField = (): any => {
-        this.setState(() => ({showAlias: false}));
+        this.setState(() => ({ showAlias: false }));
     };
 
     onAddAliasField = (domainField: DomainField): any => {
@@ -164,15 +169,14 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         this.setState(() => ({
             showAlias: false,
             domain: newDomain,
-            showSave: true
+            showSave: true,
         }));
     };
 
     onConfirmEditSource = () => {
         if (this._dirty) {
             this.onSaveBtnHandler(this.navigateToEditSource);
-        }
-        else {
+        } else {
             this.navigateToEditSource();
         }
     };
@@ -181,79 +185,80 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         this._dirty = false;
 
         const { schemaName, queryName } = this.state;
-        window.location.href =  ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
-            schemaName: schemaName,
-            ['query.queryName']: queryName
+        window.location.href = ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
+            schemaName,
+            'query.queryName': queryName,
         });
     };
 
     onConfirmViewData = () => {
         if (this._dirty) {
             this.onSaveBtnHandler(this.navigateToViewData);
-        }
-        else {
+        } else {
             this.navigateToViewData();
         }
     };
 
-    onSaveBtnHandler = (onSaveNavigation) => {
+    onSaveBtnHandler = onSaveNavigation => {
         const { domain, schemaName, messages, navigateAfterSave, userDefinedQuery } = this.state;
         saveQueryMetadata(domain, schemaName, userDefinedQuery)
             .then(() => {
                 this._dirty = false;
-                this.showMessage("Save Successful", 'success', 0);
+                this.showMessage('Save Successful', 'success', 0);
 
-                this.setState(() => ({
-                    showSave: false
-                }), () => {
-                    if (navigateAfterSave) {
-                        onSaveNavigation();
+                this.setState(
+                    () => ({
+                        showSave: false,
+                    }),
+                    () => {
+                        if (navigateAfterSave) {
+                            onSaveNavigation();
+                        }
                     }
-                });
+                );
             })
-            .catch((error) => {
+            .catch(error => {
                 this.setState(() => ({
-                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
+                    messages: messages.set(0, { message: error.exception, messageType: 'danger' }),
                 }));
             });
     };
 
-    navigateToEditSource = () =>  {
+    navigateToEditSource = () => {
         this._dirty = false;
 
         const { schemaName, queryName } = this.state;
-        window.location.href =  ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {
-            schemaName: schemaName,
-            ['query.queryName']: queryName
-        }) + '#metadata';
+        window.location.href =
+            ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {
+                schemaName,
+                'query.queryName': queryName,
+            }) + '#metadata';
     };
 
     editSourceBtnHandler = () => {
         this.setState(() => ({
-            navigateAfterSave: true
+            navigateAfterSave: true,
         }));
 
         if (this._dirty) {
             this.setState(() => ({
-                showEditSourceConfirmationModal: true
+                showEditSourceConfirmationModal: true,
             }));
-        }
-        else {
+        } else {
             this.onConfirmEditSource();
         }
     };
 
     viewDataBtnHandler = () => {
         this.setState(() => ({
-            navigateAfterSave: true
+            navigateAfterSave: true,
         }));
 
         if (this._dirty) {
             this.setState(() => ({
-                showViewDataConfirmationModal: true
+                showViewDataConfirmationModal: true,
             }));
-        }
-        else {
+        } else {
             this.onConfirmViewData();
         }
     };
@@ -262,22 +267,22 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { schemaName, queryName, messages } = this.state;
 
         resetQueryMetadata(schemaName, queryName)
-            .then((domain) => {
+            .then(domain => {
                 this.setState(() => ({
-                    domain: domain,
-                    showResetConfirmationModal: false
-                }))
+                    domain,
+                    showResetConfirmationModal: false,
+                }));
             })
-            .catch((error) => {
+            .catch(error => {
                 this.setState(() => ({
-                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
+                    messages: messages.set(0, { message: error.exception, messageType: 'danger' }),
                 }));
             });
     };
 
     onResetBtnHandler = () => {
         this.setState(() => ({
-            showResetConfirmationModal: true
+            showResetConfirmationModal: true,
         }));
     };
 
@@ -285,29 +290,38 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { showSave, userDefinedQuery } = this.state;
 
         return (
-            <div className={'domain-form-panel query-metadata-editor-buttons'}>
-                { !userDefinedQuery && <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button> }
-                <Button bsStyle='primary' className='pull-right' disabled={!showSave} onClick={this.onSaveBtnHandler}>Save</Button>
+            <div className="domain-form-panel query-metadata-editor-buttons">
+                {!userDefinedQuery && <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>}
+                <Button bsStyle="primary" className="pull-right" disabled={!showSave} onClick={this.onSaveBtnHandler}>
+                    Save
+                </Button>
                 <Button onClick={this.editSourceBtnHandler}>Edit Source</Button>
                 <Button onClick={this.viewDataBtnHandler}>View Data</Button>
                 <Button onClick={this.onResetBtnHandler}>Reset To Default</Button>
             </div>
-        )
+        );
     }
 
-    renderConfirmationModal(title: string, msg: string, onConfirm: any, onCancel: any, confirmButtonText: string, cancelButtonText: string) {
+    renderConfirmationModal(
+        title: string,
+        msg: string,
+        onConfirm: any,
+        onCancel: any,
+        confirmButtonText: string,
+        cancelButtonText: string
+    ) {
         return (
             <ConfirmModal
                 title={title}
                 onConfirm={onConfirm}
                 onCancel={onCancel}
-                confirmVariant='danger'
+                confirmVariant="danger"
                 confirmButtonText={confirmButtonText}
                 cancelButtonText={cancelButtonText}
             >
                 {msg}
             </ConfirmModal>
-        )
+        );
     }
 
     render() {
@@ -331,14 +345,13 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {domain &&
+                {domain && (
                     <DomainForm
-                        headerTitle={'Metadata Properties'}
-                        helpTopic={'metadataSql'}
+                        headerTitle="Metadata Properties"
+                        helpTopic="metadataSql"
                         domain={domain}
                         onChange={this.onChangeHandler}
-                        useTheme={false}
-                        domainFormDisplayOptions= {{
+                        domainFormDisplayOptions={{
                             hideRequired: true,
                             isDragDisabled: true,
                             hideValidators: true,
@@ -350,44 +363,57 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                             hideInferFromFile: true,
                         }}
                     />
-                }
+                )}
 
-                {messages && messages.size > 0 && messages.map((bannerMessage, idx) => (
-                    <Alert
-                        key={idx}
-                        bsStyle={bannerMessage.messageType}
-                        onDismiss={() => this.dismissAlert(idx)}>
-                        {bannerMessage.message}
-                    </Alert>
-                ))}
+                {messages &&
+                    messages.size > 0 &&
+                    messages.map((bannerMessage, idx) => (
+                        <Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>
+                            {bannerMessage.message}
+                        </Alert>
+                    ))}
 
                 {domain && this.renderButtons()}
 
-                {showAlias &&
+                {showAlias && (
                     <AliasFieldModal
                         domainFields={domain.fields}
                         showAlias={true}
                         onHide={this.onHideAliasField}
                         onAdd={this.onAddAliasField}
                     />
-                }
+                )}
 
                 {showResetConfirmationModal &&
-                    this.renderConfirmationModal("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.",
-                        this.onConfirmReset, this.dismissChangeConfirmation, "Reset", "Cancel")
-                }
+                    this.renderConfirmationModal(
+                        'Confirm Reset',
+                        'Are you sure you want to reset? You will lose any edits you made.',
+                        this.onConfirmReset,
+                        this.dismissChangeConfirmation,
+                        'Reset',
+                        'Cancel'
+                    )}
 
                 {showEditSourceConfirmationModal &&
-                    this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
-                        this.onConfirmEditSource, this.dismissChangeConfirmation, "Yes, Save", "No, Edit Source")
-                }
+                    this.renderConfirmationModal(
+                        'Save Changes?',
+                        'Do you want to save your changes?',
+                        this.onConfirmEditSource,
+                        this.dismissChangeConfirmation,
+                        'Yes, Save',
+                        'No, Edit Source'
+                    )}
 
                 {showViewDataConfirmationModal &&
-                    this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
-                        this.onConfirmViewData, this.dismissChangeConfirmation, "Yes, Save", "No, View Data")
-                }
+                    this.renderConfirmationModal(
+                        'Save Changes?',
+                        'Do you want to save your changes?',
+                        this.onConfirmViewData,
+                        this.dismissChangeConfirmation,
+                        'Yes, Save',
+                        'No, View Data'
+                    )}
             </BeforeUnload>
-        )
+        );
     }
 }
-

@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-import React, {PureComponent} from "react";
+import React, { PureComponent, ReactNode } from 'react';
 import {
     Alert,
     DatasetDesignerPanels,
     DatasetModel,
     fetchDatasetDesign,
     LoadingSpinner,
-    BeforeUnload
-} from "@labkey/components";
-import { ActionURL, Domain, getServerContext } from "@labkey/api";
+    BeforeUnload,
+} from '@labkey/components';
+import { ActionURL, Domain, getServerContext } from '@labkey/api';
 
-import "../DomainDesigner.scss"
+import '../DomainDesigner.scss';
 
 interface State {
-    model: DatasetModel,
-    isLoadingModel: boolean,
-    message?: string
+    model: DatasetModel;
+    isLoadingModel: boolean;
+    message?: string;
 }
 
 export class App extends PureComponent<any, State> {
-
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -42,95 +41,101 @@ export class App extends PureComponent<any, State> {
 
         this.state = {
             model: undefined,
-            isLoadingModel: true
+            isLoadingModel: true,
         };
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         const { datasetId } = ActionURL.getParameters();
 
         fetchDatasetDesign(datasetId)
             .then((model: DatasetModel) => {
-                this.setState(() => ({model, isLoadingModel: false}));
+                this.setState(() => ({ model, isLoadingModel: false }));
             })
-            .catch((error) => {
-                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            .catch(error => {
+                this.setState(() => ({ message: error.exception, isLoadingModel: false }));
             });
     }
 
-    handleWindowBeforeUnload = (event) => {
+    handleWindowBeforeUnload = (event): void => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
-    navigate(defaultUrl: string) {
+    navigate(defaultUrl: string): void {
         this._dirty = false;
 
         const returnUrl = ActionURL.getReturnUrl();
         window.location.href = returnUrl || defaultUrl;
     }
 
-    navigateOnComplete(model: DatasetModel) {
+    navigateOnComplete(model: DatasetModel): void {
         // if the model comes back to here without the newly saved datasetId, query to get it
         if (model.datasetId && model.datasetId > 0) {
-            this.navigate(ActionURL.buildURL('study', 'datasetDetails', getServerContext().container.path, {id: model.datasetId}));
-        }
-        else {
+            this.navigate(
+                ActionURL.buildURL('study', 'datasetDetails', getServerContext().container.path, {
+                    id: model.datasetId,
+                })
+            );
+        } else {
             Domain.getDomainDetails({
                 containerPath: getServerContext().container.path,
                 domainId: model.domain.domainId,
-                success: (data) => {
+                success: data => {
                     const newModel = DatasetModel.create(undefined, data);
-                    this.navigate(ActionURL.buildURL('study', 'datasetDetails', getServerContext().container.path, {id: newModel.datasetId}));
+                    this.navigate(
+                        ActionURL.buildURL('study', 'datasetDetails', getServerContext().container.path, {
+                            id: newModel.datasetId,
+                        })
+                    );
                 },
-                failure: (error) => {
+                failure: error => {
                     // bail out and go to the study-begin page
                     this.navigate(ActionURL.buildURL('study', 'begin', getServerContext().container.path));
-                }
+                },
             });
         }
     }
 
-    onComplete = (model: DatasetModel) => {
+    onComplete = (model: DatasetModel): void => {
         this.navigateOnComplete(model);
     };
 
-    onCancel = () => {
+    onCancel = (): void => {
         this.navigate(ActionURL.buildURL('study', 'begin', getServerContext().container.path));
     };
 
-    onChange = (model: DatasetModel) => {
+    onChange = (model: DatasetModel): void => {
         this._dirty = true;
     };
 
-    render() {
+    render(): ReactNode {
         const { isLoadingModel, message, model } = this.state;
 
         if (message) {
-            return <Alert>{message}</Alert>
+            return <Alert>{message}</Alert>;
         }
 
         if (isLoadingModel) {
-            return <LoadingSpinner/>
+            return <LoadingSpinner />;
         }
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {model && model.isFromLinkedSource() &&
+                {model && model.isFromLinkedSource() && (
                     <p>
-                        This dataset was created by linking {model.sourceType} data from <a href={model.sourceUrl}>{model.sourceName}</a>.
+                        This dataset was created by linking {model.sourceType} data from{' '}
+                        <a href={model.sourceUrl}>{model.sourceName}</a>.
                     </p>
-                }
+                )}
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    useTheme={true}
                     onComplete={this.onComplete}
-                    successBsStyle={'primary'}
                     onChange={this.onChange}
                 />
             </BeforeUnload>
-        )
+        );
     }
 }
