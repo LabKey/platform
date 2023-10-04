@@ -197,7 +197,7 @@ public class AssaySchemaImpl extends AssaySchema
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(ASSAY_LIST_TABLE_NAME))
-            return new AssayListTable(this);
+            return new AssayListTable(this, cf);
 
         if (name.equalsIgnoreCase(ASSAY_PROVIDERS_TABLE_NAME))
             return new AssayProviderTable(this);
