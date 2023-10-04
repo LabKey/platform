@@ -927,7 +927,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     drop.add(name);
             }
             if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
+            {
                 drop.remove("lsid");
+                drop.remove("rowid");// keep rowid for audit log
+            }
+
             if (!drop.isEmpty())
                 input = new DropColumnsDataIterator(input, drop);
 
@@ -1344,6 +1348,12 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         {
             if (context.getInsertOption().allowUpdate)
                 context.putConfigParameter(QueryUpdateService.ConfigParameters.CheckForCrossProjectData, true);
+            if (context.getInsertOption() == InsertOption.IMPORT || context.getInsertOption() == InsertOption.MERGE)
+            {
+                AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
+                if (auditType != null && auditType != AuditBehaviorType.NONE)
+                    context.setSelectIds(true); // select rowId for QueryUpdateAuditEvent.rowPk
+            }
         }
 
         @Override

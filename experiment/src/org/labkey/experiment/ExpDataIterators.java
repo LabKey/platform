@@ -2204,6 +2204,7 @@ public class ExpDataIterators
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
+            dontUpdate.add("rowid"); // rowid is added / not dropped for dataclass for QueryUpdateAuditEvent.rowpk audit purpose
             if (context.getInsertOption().updateOnly)
             {
                 dontUpdate.add("objectid");
@@ -2259,11 +2260,7 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
-            if (context.getInsertOption().updateOnly && !_isUpdateUsingLsid)
-                existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys(context);
-
-            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, true);
 
             // add "rootmateriallsid" if it does not exist
             DataIteratorBuilder step2b = new DataIteratorBuilder()
