@@ -75,9 +75,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     // Cache the audit events associated with transaction ids. We currently use these for interacting with objects
     // that were created immediately after they were created, so the cache size does not need to be very large.
-    private static final Cache<Long, List<AuditTypeEvent>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.DAY,
+    // Use a pair as the cache object to avoid warnings about mutable cache objects (Issue 48779).
+    // Since this is all about capturing data from the same transaction, there shouldn't be other threads in the mix.
+    private static final Cache<Long, Pair<Long, List<AuditTypeEvent>>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.DAY,
             "Transaction Audit Event Cache",
-            (key, argument) -> new ArrayList<>()
+            (key, argument) -> Pair.of(key, new ArrayList<>())
     );
 
     public static AuditLogImpl get()
@@ -152,7 +154,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
             }
             if (event.getTransactionId() != null)
             {
-                List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(event.getTransactionId());
+                List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(event.getTransactionId()).second;
                 transactionEvents.add(event);
             }
 
@@ -252,7 +254,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     public List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container)
     {
-        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId);
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
         if (!transactionEvents.isEmpty())
         {
             List<Integer> ids = new ArrayList<>();
@@ -274,7 +276,7 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     {
         List<String> lsids = new ArrayList<>();
         List<Integer> sourceIds = new ArrayList<>();
-        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId);
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
         if (!transactionEvents.isEmpty())
         {
             transactionEvents.forEach(event -> {
