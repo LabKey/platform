@@ -9118,7 +9118,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 query.append(unionAll);
                 query.append("SELECT LSID, ")
-                        .append("CAST (").append(dialect.quoteIdentifier(col.getName())).append(" AS VARCHAR)")
+                        .append("CAST (").appendIdentifier(col.getName()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
                 query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
                 query.append(" WHERE ").appendIdentifier(col.getName()).appendInClause(uniqueIds, dialect);
