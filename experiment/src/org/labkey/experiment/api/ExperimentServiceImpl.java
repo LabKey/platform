@@ -9089,6 +9089,62 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return auditProvider.moveEvents(targetContainer, runLsids);
     }
 
+    @Override
+    public @NotNull Map<String, String> getUniqueIdLsids(List<String> uniqueIds, User user, Container container)
+    {
+        final String UNIQUE_ID_COL_NAME = "UniqueId";
+
+        Map<String, String> idLsids = new HashMap<>();
+        int numUniqueIdCols = 0;
+        SQLFragment unionSql;
+
+        DbSchema dbSchema = ExperimentService.get().getSchema();
+        SqlDialect dialect = dbSchema.getSqlDialect();
+        UserSchema samplesUserSchema = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME);
+        List<ExpSampleTypeImpl> sampleTypes = SampleTypeServiceImpl.get().getSampleTypes(container, user, true);
+
+        String unionAll = "";
+        SQLFragment query = new SQLFragment();
+
+        for (ExpSampleTypeImpl type : sampleTypes)
+        {
+            TableInfo provisioned = type.getTinfo();
+            TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
+            if (tableInfo == null)
+                continue;
+            List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
+            numUniqueIdCols += uniqueIdCols.size();
+            for (ColumnInfo col : uniqueIdCols)
+            {
+                query.append(unionAll);
+                query.append("SELECT LSID, ")
+                        .append("CAST (").append(dialect.quoteIdentifier(col.getName())).append(" AS VARCHAR)")
+                        .append(" AS ").append(UNIQUE_ID_COL_NAME);
+                query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
+                query.append(" WHERE ").appendIdentifier(col.getName()).appendInClause(uniqueIds, dialect);
+                unionAll = "\n UNION ALL\n";
+            }
+        }
+
+        if (numUniqueIdCols == 0)
+            return idLsids;
+
+        unionSql = new SQLFragment();
+        unionSql.appendComment("<ExpMaterialUniqueIdUnionTableInfo>", dialect);
+        unionSql.append(query);
+        unionSql.appendComment("</ExpMaterialUniqueIdUnionTableInfo>", dialect);
+
+        Map<String, Object>[] results = new SqlSelector(samplesUserSchema.getDbSchema(), unionSql).getMapArray();
+        for (Map<String, Object> row : results)
+        {
+            String uniqId = (String) row.get(UNIQUE_ID_COL_NAME);
+            String lsid = (String) row.get("LSID");
+            idLsids.put(uniqId, lsid);
+        }
+
+        return idLsids;
+    }
+
     public static class TestCase extends Assert
     {
         final Logger log = LogManager.getLogger(ExperimentServiceImpl.class);

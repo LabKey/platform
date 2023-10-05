@@ -1026,6 +1026,15 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     int moveAuditEvents(Container targetContainer, List<String> runLsids);
 
+    /**
+     * From a list of barcodes, find material lsids
+     * @param uniqueIds A list of barcodes
+     * @param user
+     * @param container
+     * @return map of barcode and lsid
+     */
+    @NotNull Map<String, String> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);
+
     class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
