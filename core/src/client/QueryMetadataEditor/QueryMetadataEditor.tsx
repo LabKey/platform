@@ -16,7 +16,6 @@
 
 import { List } from 'immutable';
 import React, { PureComponent } from 'react';
-import { Button } from 'react-bootstrap';
 import {
     Alert,
     BeforeUnload,
@@ -291,13 +290,28 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         return (
             <div className="domain-form-panel query-metadata-editor-buttons">
-                {!userDefinedQuery && <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>}
-                <Button bsStyle="primary" className="pull-right" disabled={!showSave} onClick={this.onSaveBtnHandler}>
+                {!userDefinedQuery && (
+                    <button className="btn btn-default" onClick={this.aliasFieldBtnHandler} type="button">
+                        Alias Field
+                    </button>
+                )}
+                <button className="btn btn-default" onClick={this.editSourceBtnHandler} type="button">
+                    Edit Source
+                </button>
+                <button className="btn btn-default" onClick={this.viewDataBtnHandler} type="button">
+                    View Data
+                </button>
+                <button className="btn btn-default" onClick={this.onResetBtnHandler} type="button">
+                    Reset To Default
+                </button>
+                <button
+                    className="btn btn-primary save-button pull-right"
+                    disabled={!showSave}
+                    onClick={this.onSaveBtnHandler}
+                    type="button"
+                >
                     Save
-                </Button>
-                <Button onClick={this.editSourceBtnHandler}>Edit Source</Button>
-                <Button onClick={this.viewDataBtnHandler}>View Data</Button>
-                <Button onClick={this.onResetBtnHandler}>Reset To Default</Button>
+                </button>
             </div>
         );
     }
