@@ -1118,15 +1118,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         // WHERE
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        if (_ss != null && !hasSampleColumns && !hasAliquotColumns)
+        if (_ss != null)
         {
             /*
             NOTE for the interested reader.
-            We used to always apply a cpasType filter and in theory it should give the optimizer more options for how to handle this query.
-            However, it is redundant with the JOIN to the materialized table, and the Postgres optimizer can badly underestimate row counts when
-            there are redundant (non-independent) filters.  It may be better to leave this off when not needed.
+            The cpasType filter might be redundant with the JOIN to the materialized table.
+            Without the redundant filter, we have seen Postgres optimizer do expensive whole table scan on exp.material during join of the provisioned table on lsid.
             */
-            // if we are not joining to the provisioned table, we need to add a cpasType filter to limit to the current SampleType
             if (!filterFrag.isEmpty())
                 filterFrag.append(" AND ");
             filterFrag.append("CpasType = ").appendValue(_ss.getLSID());
