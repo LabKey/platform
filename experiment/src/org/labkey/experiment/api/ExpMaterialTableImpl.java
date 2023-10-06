@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -94,6 +95,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -1063,8 +1065,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-    static final Map<String,MaterializedQueryHelper> _materializedQueries = Collections.synchronizedMap(new HashMap<>());
+    static final BlockingCache<String,MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
     static final Map<String, AtomicLong> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
+    static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
+
 
 
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
@@ -1099,9 +1103,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     private static AtomicLong getInvalidateCounter(String lsid)
     {
-        if (_invalidationCounters.isEmpty())
+        if (!initializedListeners.getAndSet(true))
         {
-            CacheManager.addListener(() -> _invalidationCounters.clear());
+            CacheManager.addListener(_invalidationCounters::clear);
         }
         return _invalidationCounters.computeIfAbsent(lsid, (unused) ->
                 new AtomicLong(System.currentTimeMillis())
@@ -1115,7 +1119,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (null == _ss)
             return getJoinSQL(null);
 
-        var mqh = _materializedQueries.computeIfAbsent(_ss.getLSID(), (unused) ->
+        var mqh = _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
         {
             SQLFragment viewSql = getJoinSQL(null).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             SQLFragment provisioned = Objects.requireNonNull(_ss.getTinfo().getSQLName());
@@ -1128,7 +1132,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 .upToDateSql(new SQLFragment("SELECT CAST(COUNT(*) AS VARCHAR) FROM ").append(provisioned))  // MAX(modified) would probably be better if it were a) in the materailized table b) indexed
                 .build();
         });
-        return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_", null));
+        return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
     }
 
 
@@ -1148,7 +1152,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         SQLFragment sql = new SQLFragment();
-        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
+        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null==_ss ? "" : _ss.getName()) + ")>", getSqlDialect());
         sql.append("SELECT ");
         String comma = "";
         for (String naterialCol : materialCols)
