@@ -9112,7 +9112,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
             if (tableInfo == null)
                 continue;
-            List<ColumnInfo> uniqueIdCols = tableInfo.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
+            List<ColumnInfo> uniqueIdCols = provisioned.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
             numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {
@@ -9137,10 +9137,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
                 query.append(unionAll);
                 query.append("SELECT LSID, ")
-                        .append("CAST (").appendIdentifier(col.getName()).append(" AS VARCHAR)")
+                        .append("CAST (").appendIdentifier(col.getSelectName()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
                 query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
-                query.append(" WHERE ").appendIdentifier(col.getName()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
+                query.append(" WHERE ").appendIdentifier(col.getSelectName()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
                 unionAll = "\n UNION ALL\n";
             }
         }
