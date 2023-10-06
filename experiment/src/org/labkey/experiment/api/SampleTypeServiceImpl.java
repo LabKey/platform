@@ -2091,7 +2091,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
 
        return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);
-
     }
 
     @Override
@@ -2176,5 +2175,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
+    }
+
+    void refreshSampleTypeMaterializedView(ExpSampleType st)
+    {
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID());
     }
 }
