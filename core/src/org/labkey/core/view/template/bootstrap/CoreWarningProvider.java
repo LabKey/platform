@@ -29,6 +29,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -111,7 +112,7 @@ public class CoreWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
-        if (context == null || context.getUser().hasSiteAdminPermission())
+        if (context == null || context.getUser().hasRootPermission(TroubleShooterPermission.class))
         {
             getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings);
 

@@ -93,7 +93,7 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
      *          if the admin user that is impersonating is not a site admin.*/
     protected Set<Role> getFilteredContextualRoles(Set<Role> roles)
     {
-        if (getAdminUser() != null && !getAdminUser().isInSiteAdminGroup())
+        if (getAdminUser() != null && !getAdminUser().hasSiteAdminPermission())
             roles.remove(RoleManager.siteAdminRole);
         return roles;
     }

@@ -79,8 +79,9 @@ public abstract class AbstractRole implements Role
 
         if (null != perms && perms.length > 0)
         {
-            _permissions = Arrays.stream(perms).filter(Objects::nonNull)
-                    .collect(Collectors.toUnmodifiableSet());
+            _permissions = Arrays.stream(perms)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableSet());
         }
     }
 

@@ -53,9 +53,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -285,6 +283,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
      * NOTE: most callers should use hasSiteAdminPermission() instead; only use this if you care specifically about the role itself
      * @return boolean
      */
+    @Deprecated // Call hasSiteAdminPermission() instead. This is going away...
     public boolean isInSiteAdminGroup()
     {
         return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
@@ -299,28 +298,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return isAllowedGlobalRoles() && hasRootPermission(ApplicationAdminPermission.class);
     }
 
-    /**
-     * Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
-     * NOTE: most callers should use hasApplicationAdminPermission() instead; only use this if you care specifically about the role itself
-     * @return boolean
-     */
-    public boolean isApplicationAdmin()
-    {
-        // Issue 32695: app admin that impersonates a group should not retain the ApplicationAdminRole (see getStandardContextualRoles)
-        if (!isAllowedGlobalRoles())
-            return false;
-
-        SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
-        List<Role> rootAssignedRoles = rootContainerPolicy.getAssignedRoles(this);
-        rootAssignedRoles.addAll(rootContainerPolicy.getRoles(getGroups()));
-        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
-    }
-
-    public boolean hasApplicationAdminPermissionForPolicy(SecurityPolicy policy)
-    {
-        return doesAnyRoleHaveAppAdminPermission(SecurityManager.getEffectiveRoles(policy, this, false));
-    }
-
     // NOTE: most callers should use hasApplicationAdminPermissionForPolicy() instead; only use this if you care specifically about the role itself
     public boolean hasApplicationAdminForPolicy(SecurityPolicy policy)
     {
@@ -328,27 +305,10 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
-    private boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
-    {
-        for (Role role : roles)
-        {
-            if (role.getPermissions().contains(ApplicationAdminPermission.class))
-                return true;
-        }
-        return false;
-    }
+    private static final Set<Class<? extends Permission>> TRUSTED_ANALYST = Set.of(AnalystPermission.class, TrustedPermission.class);
+    private static final Set<Class<? extends Permission>> TRUSTED_BROWSER_DEV = Set.of(BrowserDeveloperPermission.class, TrustedPermission.class);
 
-    // Note: site administrators are always developers; see GroupManager.computeAllGroups().
-    @Deprecated
-    public boolean isDeveloper()
-    {
-        return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
-    }
-
-    static final Set<Class<? extends Permission>> trustedanalyst = Set.of(AnalystPermission.class, TrustedPermission.class);
-    static final Set<Class<? extends Permission>> trustedbrowserdev = Set.of(BrowserDeveloperPermission.class, TrustedPermission.class);
-
-    // NOTE all PlatformDeveloper are TrustedAnalyst and all TrustedAnalyst are TrustedBrowserDev
+    // NOTE all PlatformDeveloper are TrustedAnalyst and all TrustedAnalysts are TrustedBrowserDev
     // Usually you should only have one of these tests
     public boolean isPlatformDeveloper()
     {
@@ -357,7 +317,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
     public boolean isTrustedAnalyst()
     {
-        return isAllowedGlobalRoles() && hasRootPermissions(trustedanalyst);
+        return isAllowedGlobalRoles() && hasRootPermissions(TRUSTED_ANALYST);
     }
 
     public boolean isAnalyst()
@@ -367,14 +327,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
     public boolean isTrustedBrowserDev()
     {
-        return isAllowedGlobalRoles() && hasRootPermissions(trustedbrowserdev);
+        return isAllowedGlobalRoles() && hasRootPermissions(TRUSTED_BROWSER_DEV);
     }
 
     public boolean isBrowserDev()
     {
         return isAllowedGlobalRoles() && hasRootPermission(BrowserDeveloperPermission.class);
     }
-
 
     /**
      * Check if the user has AdminPermission at the root container.
@@ -431,10 +390,11 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         roles.remove(RoleManager.getRole(NoPermissionsRole.class));
         for (Role role : roles)
             assert role.isApplicable(policy, root);
+        // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
+        // simply assigning the role to the group (like Platform Developers). This is special to Site Admin group; no
+        // other role or group should follow this pattern.
         if (isInSiteAdminGroup())
             roles.add(RoleManager.siteAdminRole);
-        if (isApplicationAdmin())
-            roles.add(RoleManager.getRole(ApplicationAdminRole.class));
         return roles;
     }
 

@@ -1,0 +1,16 @@
+package org.labkey.api.security.roles;
+
+import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+
+import java.util.Set;
+
+public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
+{
+    protected ImpersonatingTroubleshooterRole()
+    {
+        super("Impersonating Troubleshooter", "Can impersonate site roles, including Site Administrators, in addition to having other standard TroubleShooter abilities.", TroubleshooterRole.PERMISSIONS, Set.of(CanImpersonateSiteRolesPermission.class));
+        addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
+    }
+}

@@ -27,6 +27,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
@@ -112,7 +113,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL, this, this._cacheKey);
+        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL, this, _cacheKey);
     }
 
     @Override
@@ -229,12 +230,17 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         private void verifyPermissions(@Nullable Container project, User user)
         {
             // Site/app admin can impersonate anywhere
-            if (user.hasRootAdminPermission())
+            if (user.hasRootAdminPermission()) // TODO: Prevent App Admin from impersonating site admin!
                 return;
 
             // Must not be root
             if (null == project)
+            {
+                // Impersonating Troubleshooter case
+                if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+                    return;
                 throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in the root", getFactory());
+            }
 
             // Must have admin permissions in project
             if (!project.hasPermission(user, AdminPermission.class))
@@ -244,7 +250,8 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         @Override
         public boolean isAllowedGlobalRoles()
         {
-            return false;
+            // Global roles are still constrained to the roles that were allowed in verifyPermissions()
+            return getAdminUser().hasRootPermission(CanImpersonateSiteRolesPermission.class);
         }
 
         @Override
@@ -274,7 +281,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         @Override
         public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
-            return getFilteredContextualRoles(getRoles());
+            return getRoles(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
         }
 
         @Override

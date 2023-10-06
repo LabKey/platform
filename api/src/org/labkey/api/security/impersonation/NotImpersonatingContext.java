@@ -17,12 +17,13 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -112,6 +113,13 @@ public class NotImpersonatingContext implements ImpersonationContext
             NavTree impersonateMenu = new NavTree("Impersonate");
             UserImpersonationContextFactory.addMenu(impersonateMenu);
             GroupImpersonationContextFactory.addMenu(impersonateMenu);
+            RoleImpersonationContextFactory.addMenu(impersonateMenu);
+            menu.addChild(impersonateMenu);
+        }
+        // Or Impersonating Troubleshooter to impersonate site roles only
+        else if (null == project && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        {
+            NavTree impersonateMenu = new NavTree("Impersonate");
             RoleImpersonationContextFactory.addMenu(impersonateMenu);
             menu.addChild(impersonateMenu);
         }

@@ -333,7 +333,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
         AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
-        AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -442,9 +442,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    @RequiresSiteAdmin
-    public class ShowModuleErrors extends SimpleViewAction<Object>
+    @RequiresPermission(TroubleShooterPermission.class)
+    public class ShowModuleErrorsAction extends SimpleViewAction<Object>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -459,13 +458,12 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class AdminUrlsImpl implements AdminUrls
     {
         @Override
         public ActionURL getModuleErrorsURL()
         {
-            return new ActionURL(ShowModuleErrors.class, ContainerManager.getRoot());
+            return new ActionURL(ShowModuleErrorsAction.class, ContainerManager.getRoot());
         }
 
         @Override
@@ -3684,7 +3682,7 @@ public class AdminController extends SpringActionController
         public ActionURL nextURL;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(TroubleShooterPermission.class)
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking
     public static class ModuleStatusAction extends SimpleViewAction<ReturnUrlForm>
@@ -11004,7 +11002,7 @@ public class AdminController extends SpringActionController
 
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
-                controller.new ShowModuleErrors(),
+                controller.new ShowModuleErrorsAction(),
                 new GetPendingRequestCountAction(),
                 controller.new SystemMaintenanceAction(),
                 new ModuleStatusAction(),

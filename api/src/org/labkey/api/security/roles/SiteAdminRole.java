@@ -18,6 +18,7 @@ package org.labkey.api.security.roles;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
 import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -33,19 +34,18 @@ import java.util.Collections;
 
 /**
  * The Site Administrator role. Site admins are equivalent to root in *nix - they can do anything.
- * User: Dave
- * Date: Apr 23, 2009
  */
 public class SiteAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
-        SiteAdminPermission.class,
         AdminOperationsPermission.class,
         AnalystPermission.class,
         BrowserDeveloperPermission.class,
+        CanImpersonateSiteRolesPermission.class,
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
         PlatformDeveloperPermission.class,
+        SiteAdminPermission.class,
         TrustedPermission.class,
         UploadFileBasedModulePermission.class
     );

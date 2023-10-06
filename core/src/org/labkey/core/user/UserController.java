@@ -98,6 +98,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -3003,6 +3004,9 @@ public class UserController extends SpringActionController
 
         if (context.isImpersonating())
             user = context.getAdminUser();
+
+        if (getContainer().isRoot() && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+            return context;
 
         if (!getContainer().hasPermission(user, AdminPermission.class))
             throw new UnauthorizedException();

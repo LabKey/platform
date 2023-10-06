@@ -117,13 +117,14 @@ public class RoleManager
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
         registerRole(new TroubleshooterRole(), false);
+        registerRole(new ImpersonatingTroubleshooterRole(), false);
+        registerRole(new PlatformDeveloperRole(), false);
         registerRole(new SeeUserAndGroupDetailsRole());
         registerRole(new CanSeeAuditLogRole());
         registerRole(new SharedViewEditorRole());
         registerRole(new EmailNonUsersRole(), false);
         registerRole(new SeeFilePathsRole(), false);
         registerRole(new CanUseSendMessageApi(), false);
-        registerRole(new PlatformDeveloperRole(), false);
         registerRole(new ProjectCreatorRole());
     }
 
