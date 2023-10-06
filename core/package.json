@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.24.2",
-    "@labkey/components": "2.375.2-fb-assayFixes2311CAN.0",
+    "@labkey/components": "2.375.3",
     "@labkey/themes": "1.3.2"
   },
   "devDependencies": {
