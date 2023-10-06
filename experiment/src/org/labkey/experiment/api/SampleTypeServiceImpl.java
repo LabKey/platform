@@ -2178,7 +2178,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 
-    void refreshSampleTypeMaterializedView(ExpSampleType st)
+    void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st)
     {
         ExpMaterialTableImpl.refreshMaterializedView(st.getLSID());
     }
