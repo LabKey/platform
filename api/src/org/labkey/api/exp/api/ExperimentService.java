@@ -1033,7 +1033,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param container
      * @return map of barcode and lsid
      */
-    @NotNull Map<String, String> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);
+    @NotNull Map<String, List<String>> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);
 
     class XarExportOptions
     {

@@ -9090,11 +9090,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public @NotNull Map<String, String> getUniqueIdLsids(List<String> uniqueIds, User user, Container container)
+    public @NotNull Map<String, List<String>> getUniqueIdLsids(List<String> uniqueIds, User user, Container container)
     {
         final String UNIQUE_ID_COL_NAME = "UniqueId";
 
-        Map<String, String> idLsids = new HashMap<>();
+        Map<String, List<String>> idLsids = new HashMap<>();
         int numUniqueIdCols = 0;
         SQLFragment unionSql;
 
@@ -9116,12 +9116,31 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {
+                boolean isIntegerField = col.getJdbcType().isInteger();
+                List<Integer> intIds = new ArrayList<>();
+                if (isIntegerField)
+                {
+                    for (String id : uniqueIds)
+                    {
+                        try
+                        {
+                            int intId = Integer.parseInt(id);
+                            intIds.add(intId);
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            // do nothing, skip non int ids
+                        }
+                    }
+                    if (intIds.isEmpty())
+                        continue;
+                }
                 query.append(unionAll);
                 query.append("SELECT LSID, ")
                         .append("CAST (").appendIdentifier(col.getName()).append(" AS VARCHAR)")
                         .append(" AS ").append(UNIQUE_ID_COL_NAME);
                 query.append(" FROM expsampleset.").append(dialect.quoteIdentifier(provisioned.getName()));
-                query.append(" WHERE ").appendIdentifier(col.getName()).appendInClause(uniqueIds, dialect);
+                query.append(" WHERE ").appendIdentifier(col.getName()).appendInClause(isIntegerField ? intIds : uniqueIds, dialect);
                 unionAll = "\n UNION ALL\n";
             }
         }
@@ -9139,7 +9158,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             String uniqId = (String) row.get(UNIQUE_ID_COL_NAME);
             String lsid = (String) row.get("LSID");
-            idLsids.put(uniqId, lsid);
+            idLsids.putIfAbsent(uniqId, new ArrayList<>());
+            idLsids.get(uniqId).add(lsid);
         }
 
         return idLsids;

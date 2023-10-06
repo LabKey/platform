@@ -7158,7 +7158,7 @@ public class ExperimentController extends SpringActionController
         private static final String UNIQUE_ID_PREFIX = "u:";
 
         private List<String> _ids;
-        private Map<String, String> _uniqueIdLsids;
+        private Map<String, List<String>> _uniqueIdLsids;
 
         @Override
         public void validateForm(FindByIdsForm form, Errors errors)
@@ -7290,13 +7290,21 @@ public class ExperimentController extends SpringActionController
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
                     String idClean = id.substring(UNIQUE_ID_PREFIX.length());
-                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
-                    uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
-                    uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append(LabKeySql.quoteString(_uniqueIdLsids.get(idClean)));
-                    uniqueIdValuesSql.append(")");
-                    uniqueIdComma = "\n,";
+
+                    List<String> lsids = _uniqueIdLsids.get(idClean);
+                    if (lsids != null)
+                    {
+                        for (String lsid : lsids)
+                        {
+                            uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
+                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
+                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(LabKeySql.quoteString(lsid));
+                            uniqueIdValuesSql.append(")");
+                            uniqueIdComma = "\n,";
+                        }
+                    }
                 }
                 index++;
             }
@@ -7334,6 +7342,9 @@ public class ExperimentController extends SpringActionController
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
+                if (!sampleIdValuesSql.isEmpty())
+                    sql.append("\nUNION ALL\n\n");
+
                 sql.append("SELECT\n\tM.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t_ordered_unique_ids_.column2 as Id,\n\t_ordered_unique_ids_.column3 as lsid");
                 sql.append("\nFROM _ordered_unique_ids_\n");
                 sql.append("INNER JOIN exp.materials M ON _ordered_unique_ids_.column3 = M.lsid");
