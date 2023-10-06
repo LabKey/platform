@@ -117,8 +117,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                 }
                 else
                 {
-                    selectInto = new SQLFragment("MaterializedQueryHelper - " + Thread.currentThread().getId(), temp.getSqlDialect());
-                    selectInto.append("SELECT * INTO ").appendIdentifier("\"" + temp.getName() + "\"").append(".").appendIdentifier("\"" + _tableName + "\"").append("\nFROM (\n");
+                    selectInto = new SQLFragment("SELECT * INTO ").appendIdentifier("\"" + temp.getName() + "\"").append(".").appendIdentifier("\"" + _tableName + "\"").append("\nFROM (\n");
                     selectInto.append(selectQuery);
                     selectInto.append("\n) _sql_");
                 }

@@ -1061,6 +1061,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
+                refreshSampleTypeMaterializedView(st);
             }
         }
 
