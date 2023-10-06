@@ -47,9 +47,9 @@ import java.util.List;
  */
 public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 {
-    public AssayListTable(AssaySchemaImpl schema)
+    public AssayListTable(AssaySchemaImpl schema, ContainerFilter cf)
     {
-        super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.AssayLocation(schema.getContainer(), schema.getUser()));
+        super(ExperimentService.get().getTinfoProtocol(), schema, cf);
         setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), ExpProtocol.ApplicationType.ExperimentRun.toString());
         setName(AssaySchema.ASSAY_LIST_TABLE_NAME);
@@ -112,6 +112,12 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         addCondition(new SQLFragment("(SELECT MAX(pd.PropertyId) from exp.object o, exp.objectproperty op, exp.propertydescriptor pd where pd.propertyid = op.propertyid and op.objectid = o.objectid and o.objecturi = lsid AND pd.PropertyURI LIKE '%AssayDomain-Run%') IS NOT NULL"));
 
         setDetailsURL(detailsURL);
+    }
+
+    @Override
+    protected ContainerFilter getDefaultContainerFilter()
+    {
+        return new ContainerFilter.AssayLocation(_userSchema.getContainer(), _userSchema.getUser());
     }
 
     @Override
