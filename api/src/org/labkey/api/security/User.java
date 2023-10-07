@@ -279,17 +279,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     }
 
     /**
-     * Is the user a Site Administrator? This is NOT a check for AdminPermission.
-     * NOTE: most callers should use hasSiteAdminPermission() instead; only use this if you care specifically about the role itself
-     * @return boolean
-     */
-    @Deprecated // Call hasSiteAdminPermission() instead. This is going away...
-    public boolean isInSiteAdminGroup()
-    {
-        return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
-    }
-
-    /**
      * Does the user have the permission of the Application Administrator at the root container? This is NOT a check for AdminPermission.
      * @return boolean
      */
@@ -391,9 +380,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         for (Role role : roles)
             assert role.isApplicable(policy, root);
         // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
-        // simply assigning the role to the group (like Platform Developers). This is special to Site Admin group; no
-        // other role or group should follow this pattern.
-        if (isInSiteAdminGroup())
+        // simply assigning the role to the group (like Platform Developers). This is special to the Site Admin group;
+        // no other role or group should follow this pattern.
+        if (isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators))
             roles.add(RoleManager.siteAdminRole);
         return roles;
     }
