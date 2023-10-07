@@ -10,7 +10,7 @@ public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
 {
     protected ImpersonatingTroubleshooterRole()
     {
-        super("Impersonating Troubleshooter", "Can impersonate site roles, including Site Administrators, in addition to having other standard TroubleShooter abilities.", TroubleshooterRole.PERMISSIONS, Set.of(CanImpersonateSiteRolesPermission.class));
+        super("Impersonating Troubleshooter", "Can impersonate site roles, including Site Administrator, in addition to having other standard Troubleshooter abilities.", TroubleshooterRole.PERMISSIONS, Set.of(CanImpersonateSiteRolesPermission.class));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
     }
 }

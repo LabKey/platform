@@ -35,13 +35,13 @@ import java.util.Collection;
 public class ApplicationAdminRole extends AbstractRootContainerRole implements AdminRoleListener
 {
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
-        ApplicationAdminPermission.class,
-        TroubleShooterPermission.class,
-        EnableRestrictedModules.class,
-        UserManagementPermission.class,
         AddUserPermission.class,
+        ApplicationAdminPermission.class,
         DeleteUserPermission.class,
-        UpdateUserPermission.class
+        EnableRestrictedModules.class,
+        TroubleShooterPermission.class,
+        UpdateUserPermission.class,
+        UserManagementPermission.class
     );
 
     public ApplicationAdminRole()

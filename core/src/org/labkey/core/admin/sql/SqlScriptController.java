@@ -1426,7 +1426,6 @@ public class SqlScriptController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new ConsolidateSchemaAction(),
                 controller.new ConsolidateScriptsAction(),
-                new GetModuleStatusAction(),
                 controller.new OrphanedScriptsAction(),
                 controller.new ReorderAllScriptsAction(),
                 controller.new ReorderScriptAction(),
@@ -1435,6 +1434,10 @@ public class SqlScriptController extends SpringActionController
                 controller.new ScriptsWithErrorsAction(),
                 controller.new UnreachableScriptsAction(),
                 controller.new UpgradeCodeAction()
+            );
+
+            assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
+                new GetModuleStatusAction()
             );
 
             // @AdminConsoleAction
