@@ -43,16 +43,9 @@ public class LimitedUser extends User
         this(user, Arrays.stream(roleClasses).map(RoleManager::getRole).filter(Objects::nonNull).collect(Collectors.toSet()));
     }
 
-    @Deprecated // TODO: Make private once uses in all other repos have been converted
-    public LimitedUser(User user, Set<Role> roles)
+    private LimitedUser(User user, Set<Role> roles)
     {
         this(user, PrincipalArray.getEmptyPrincipalArray(), roles, roles.stream().anyMatch(r -> r instanceof AbstractRootContainerRole));
-    }
-
-    @Deprecated // Leave in place temporarily until the many uses in other repos have been converted
-    public LimitedUser(User user, int[] groups, Set<Role> roles, boolean allowedGlobalRoles)
-    {
-        this(user, new PrincipalArray(Arrays.stream(groups).boxed().toList()), roles, allowedGlobalRoles);
     }
 
     public LimitedUser(User user, PrincipalArray groups, Set<Role> roles, boolean allowedGlobalRoles)

@@ -16,7 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 /*
-  A "not impersonating" context that disallows global roles (i.e., Site Admin and Developer)
+  A "not impersonating" context that filters out privileged site roles (i.e., Site Admin and Platform Developer)
  */
 
 import org.labkey.api.security.Group;
