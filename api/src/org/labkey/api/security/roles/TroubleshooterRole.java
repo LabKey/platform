@@ -20,7 +20,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 
 import java.util.Collection;
 import java.util.Set;
@@ -28,7 +28,7 @@ import java.util.Set;
 public class TroubleshooterRole extends AbstractRootContainerRole
 {
     static Collection<Class<? extends Permission>> PERMISSIONS = Set.of(
-        TroubleShooterPermission.class,
+        TroubleshooterPermission.class,
         SeeUserDetailsPermission.class,
         CanSeeAuditLogPermission.class
     );

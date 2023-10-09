@@ -129,7 +129,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -442,7 +442,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class ShowModuleErrorsAction extends SimpleViewAction<Object>
     {
         @Override
@@ -3682,7 +3682,7 @@ public class AdminController extends SpringActionController
         public ActionURL nextURL;
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking
     public static class ModuleStatusAction extends SimpleViewAction<ReturnUrlForm>
@@ -9856,7 +9856,7 @@ public class AdminController extends SpringActionController
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class TestMothershipReportAction extends ReadOnlyApiAction<MothershipReportSelectionForm>
     {
         @Override
@@ -9974,7 +9974,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class SuspiciousAction extends SimpleViewAction<Object>
     {
         @Override

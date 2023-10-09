@@ -32,7 +32,7 @@ import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
@@ -64,7 +64,7 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class ManageAction extends FormViewAction<MiniProfilerSettingsForm>
     {
         @Override
@@ -125,7 +125,7 @@ public class MiniProfilerController extends SpringActionController
     }
 
     @IgnoresAllocationTracking
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class MinimizeAction extends MutatingApiAction<MinimizeForm>
     {
         @Override
@@ -139,7 +139,7 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class ResetAction extends FormHandlerAction<Object>
     {
         @Override

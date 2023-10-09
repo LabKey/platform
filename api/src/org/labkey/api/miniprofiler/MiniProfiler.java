@@ -24,7 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -99,7 +99,7 @@ public class MiniProfiler
             return false;
 
         // CONSIDER: Add CanSeeProfilingPermission?
-        if (user != null && (user.isPlatformDeveloper() || user.hasRootPermission(TroubleShooterPermission.class)))
+        if (user != null && (user.isPlatformDeveloper() || user.hasRootPermission(TroubleshooterPermission.class)))
         {
             Settings settings = getSettings(user);
             if (settings != null)

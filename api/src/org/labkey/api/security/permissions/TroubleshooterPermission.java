@@ -20,9 +20,9 @@ package org.labkey.api.security.permissions;
  * Describes the ability to view administration and configuration, but not change it.
  */
 @AllowedForReadOnlyUser
-public class TroubleShooterPermission extends AbstractPermission
+public class TroubleshooterPermission extends AbstractPermission
 {
-    public TroubleShooterPermission()
+    public TroubleshooterPermission()
     {
         super("Read-Only Administrator", "Users may view administrative information");
     }

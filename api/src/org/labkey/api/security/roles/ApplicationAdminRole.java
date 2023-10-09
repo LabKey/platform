@@ -22,7 +22,7 @@ import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdateUserPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 
@@ -39,7 +39,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
         ApplicationAdminPermission.class,
         DeleteUserPermission.class,
         EnableRestrictedModules.class,
-        TroubleShooterPermission.class,
+        TroubleshooterPermission.class,
         UpdateUserPermission.class,
         UserManagementPermission.class
     );

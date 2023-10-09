@@ -53,7 +53,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -105,7 +105,7 @@ public class SqlScriptController extends SpringActionController
 
     @IgnoresAllocationTracking
     @SuppressWarnings("unused")
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     @AllowedDuringUpgrade
     public static class GetModuleStatusAction extends ReadOnlyApiAction<Object>
     {
