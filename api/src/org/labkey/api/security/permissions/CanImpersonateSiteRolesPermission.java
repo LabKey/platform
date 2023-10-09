@@ -4,6 +4,6 @@ public class CanImpersonateSiteRolesPermission extends AbstractPermission
 {
     public CanImpersonateSiteRolesPermission()
     {
-        super("Can Impersonate Site Roles", "Allows users to impersonate site roles includcing Site Admin");
+        super("Can Impersonate Site Roles", "Allows users to impersonate site roles including Site Admin");
     }
 }

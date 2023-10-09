@@ -18,8 +18,6 @@ package org.labkey.api.security.permissions;
 
 /**
  * Describes the ability to view administration and configuration, but not change it.
- * User: adam
- * Date: Dec 8, 2009
  */
 @AllowedForReadOnlyUser
 public class TroubleShooterPermission extends AbstractPermission
