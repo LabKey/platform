@@ -1153,6 +1153,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
 
+        // Issue 48101: Grid views are not cleaned up for assay protocol tables after assay delete
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        AssayProtocolSchema schema = provider != null ? provider.createProtocolSchema(user, protocol.getContainer(), protocol, null) : null;
+        if (schema != null)
+            QueryService.get().fireQueryDeleted(user, protocol.getContainer(), null, schema.getSchemaPath(), schema.getTableNames());
+
         // Take care of a few extra settings, such as whether runs and data rows are editable
         for (Map.Entry<String, ObjectProperty> entry : protocol.getObjectProperties().entrySet())
         {
