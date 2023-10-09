@@ -72,6 +72,7 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -1037,7 +1038,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean usedMaterialized;
 
         // SELECT FROM
-        if (null != _ss && !getExpSchema().getDbSchema().getScope().isTransactionActive())
+        if (AppProps._instance.isExperimentalFeatureEnabled(USE_MATERIALIZED_SAMPLETYPE) && null != _ss && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
             sql.append(getMaterializedSQL());
             usedMaterialized = true;
@@ -1072,9 +1073,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
 
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
-    public static void refreshMaterializedView(String lsid)
+    public static void refreshMaterializedView(final String lsid, boolean schemaChange)
     {
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
+        if (schemaChange)
+            scope.addCommitTask(() -> _materializedQueries.remove(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
         scope.addCommitTask(new RefreshMaterializedViewRunnable(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
@@ -1121,6 +1124,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         var mqh = _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
         {
+            /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
+             * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
+             * even if just to help with race-conditions.
+             *
+             * Maybe have a callback to generate the SQL dynamically, and verify that the sql is unchanged.
+             */
             SQLFragment viewSql = getJoinSQL(null).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
             SQLFragment provisioned = Objects.requireNonNull(_ss.getTinfo().getSQLName());
             return new MaterializedQueryHelper.Builder("", getExpSchema().getDbSchema().getScope(), viewSql)
@@ -1199,7 +1208,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
 
-        sql.append(" FROM ");
+        sql.append("\nFROM ");
         sql.append(_rootTable, "m");
         if (hasSampleColumns)
             sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.rootmateriallsid = m_sample.lsid");

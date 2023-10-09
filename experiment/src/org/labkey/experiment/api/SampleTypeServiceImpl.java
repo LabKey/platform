@@ -1061,7 +1061,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
-                refreshSampleTypeMaterializedView(st);
+                refreshSampleTypeMaterializedView(st, true);
             }
         }
 
@@ -2178,8 +2178,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
     }
 
-    void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st)
+    void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, boolean schemaChange)
     {
-        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID());
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), schemaChange);
     }
 }

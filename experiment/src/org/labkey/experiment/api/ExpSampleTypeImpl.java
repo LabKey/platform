@@ -800,7 +800,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public void onSamplesChanged(User user, List<Material> materials)
     {
-        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this);
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, false);
 
         ExpProtocol[] protocols = getProtocols(user);
         if (protocols.length != 0)
