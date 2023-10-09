@@ -43,10 +43,7 @@ import java.util.Set;
 /**
  * Context representing that a user is impersonating another user, and should not be treated as their normal self.
  * We stash simple properties (container and user id) in session and turn them into a context with objects on each request
- * User: adam
- * Date: 11/9/11
 */
-
 public class UserImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
@@ -56,7 +53,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
 
     @JsonCreator
     protected UserImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_impersonatedUserId") int impersonatedUserId,
             @JsonProperty("_returnURL") ActionURL returnURL

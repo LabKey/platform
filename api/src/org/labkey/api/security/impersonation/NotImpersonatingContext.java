@@ -32,8 +32,8 @@ import org.labkey.api.view.NavTree;
 import java.util.Set;
 
 /**
- * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
- * as themselves.
+ * Used when a user is not impersonating another user, group, or role. That is, they are logged in normally, and
+ * operating as themselves.
  */
 public class NotImpersonatingContext implements ImpersonationContext
 {

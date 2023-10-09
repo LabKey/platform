@@ -44,11 +44,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * User: adam
- * Date: 4/10/12
- * Time: 8:28 AM
- */
 public class RoleImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
@@ -60,7 +55,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
     @JsonCreator
     protected RoleImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_roleNames") Set<String> roleNames,
             @JsonProperty("_previousRoleNames") Set<String> previousRoleNames,

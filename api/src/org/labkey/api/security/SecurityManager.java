@@ -891,7 +891,7 @@ public class SecurityManager
         return verificationUrl;
     }
 
-    // Test if non-LDAP email has been verified
+    // Test if user has been verified for database authentication
     public static boolean isVerified(ValidEmail email)
     {
         return (null == getVerification(email));
@@ -1205,7 +1205,7 @@ public class SecurityManager
         }
     }
 
-    // Create record for non-LDAP login, saving email address and hashed password. Return verification token.
+    // Create record for database login, saving email address and hashed password. Return verification token.
     public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user

@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Used to indicate that a user is impersonating a specific group (site or project), and are not operating as their
+ * Used to indicate that a user is impersonating a specific group (site or project), and is not operating as their
  * normal logged-in self.
  */
 public class GroupImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
@@ -54,7 +54,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 
     @JsonCreator
     protected GroupImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_groupId") int groupId,
             @JsonProperty("_returnURL") ActionURL returnURL

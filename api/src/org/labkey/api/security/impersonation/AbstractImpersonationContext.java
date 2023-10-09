@@ -29,11 +29,6 @@ import org.labkey.api.view.NavTree;
 
 import java.util.Set;
 
-/**
- * User: adam
- * Date: 3/28/2014
- * Time: 9:42 AM
- */
 public abstract class AbstractImpersonationContext implements ImpersonationContext
 {
     private final User _adminUser;
