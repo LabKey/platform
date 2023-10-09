@@ -1282,7 +1282,7 @@ public class ProjectController extends SpringActionController
                 return null;
             }
 
-            WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
+            WebPartFactory factory = Portal.getPortalPart(webPartName);
             if (null == factory)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Couldn't find a web part factory for requested web part.");
