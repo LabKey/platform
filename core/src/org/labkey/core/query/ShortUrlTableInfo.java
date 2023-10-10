@@ -1,19 +1,33 @@
 package org.labkey.core.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.RowIdQueryUpdateService;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ShortURLRecord;
+import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.core.admin.AdminController;
 
@@ -29,7 +43,6 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
     private static final String SHORT_URL_COL = "shorturl";
     private static final String FULL_URL_COL = "fullurl";
     private static final String ROWID_COL = "rowid";
-    private static final String UPDATE_SHORT_URL_COL = "UpdateShortUrl";
     private static final String TO_CLIPBOARD_COL = "CopyToClipboard";
 
     public ShortUrlTableInfo(@NotNull CoreQuerySchema userSchema)
@@ -38,9 +51,10 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
         wrapAllColumns(true);
         setInsertURL(LINK_DISABLER);
         setImportURL(LINK_DISABLER);
-        setDeleteURL(LINK_DISABLER);
-        setUpdateURL(LINK_DISABLER);
-        setDetailsURL(LINK_DISABLER);
+
+        DetailsURL updateUrl = new DetailsURL(new ActionURL(AdminController.UpdateShortURLAction.class, getContainer()),
+                Collections.singletonMap("shortURL", SHORT_URL_COL));
+        setUpdateURL(updateUrl);
 
         var fullUrlCol = getMutableColumn(FieldKey.fromParts(FULL_URL_COL));
         if (fullUrlCol != null ) fullUrlCol.setLabel("Target URL");
@@ -67,30 +81,6 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
             });
         }
 
-        // Update and Delete column
-        var updateCol = addWrapColumn(UPDATE_SHORT_URL_COL, getRealTable().getColumn(SHORT_URL_COL));
-        updateCol.setLabel("");
-        updateCol.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
-        {
-            @Override
-            public void renderGridCellContents(RenderContext ctx, Writer out)
-            {
-                String shortUrl = (String) getValue(ctx);
-                if (shortUrl != null)
-                {
-                    PageFlowUtil.link("Update")
-                            .href(new ActionURL(AdminController.UpdateShortURLAction.class, getContainer()).addParameter("shortURL", shortUrl))
-                            .appendTo(out);
-
-                    PageFlowUtil.link("Delete")
-                            .href(new ActionURL(AdminController.UpdateShortURLAction.class, getContainer()).addParameter("shortURL", shortUrl).addParameter("delete", true))
-                            .usePost("Are you sure you want to delete the short URL " + shortUrl + "?")
-                            .style("margin-left:5px;")
-                            .appendTo(out);
-                }
-            }
-        });
-
         // Copy to Clipboard column
         var copyToClipboardCol = addWrapColumn(TO_CLIPBOARD_COL, getRealTable().getColumn(SHORT_URL_COL));
         copyToClipboardCol.setLabel("");
@@ -112,7 +102,7 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
                 if (shortUrl != null && rowId != null)
                 {
                     var elementId = "copyToClipboardId" + rowId;
-                    PageFlowUtil.link("copy to clipboard")
+                    PageFlowUtil.iconLink("fa fa-clipboard", "copy to clipboard")
                             .onClick("return false;")
                             .id(elementId)
                             .attributes(Collections.singletonMap("data-clipboard-text", ShortURLRecord.renderShortURL(shortUrl)))
@@ -138,8 +128,69 @@ public class ShortUrlTableInfo extends FilteredTable<CoreQuerySchema>
         defaultCols.add(FieldKey.fromParts("CreatedBy"));
         defaultCols.add(FieldKey.fromParts(SHORT_URL_COL));
         defaultCols.add(FieldKey.fromParts(TO_CLIPBOARD_COL));
-        defaultCols.add(FieldKey.fromParts(UPDATE_SHORT_URL_COL));
         defaultCols.add(FieldKey.fromParts(FULL_URL_COL));
         setDefaultVisibleColumns(defaultCols);
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        return new RowIdQueryUpdateService<ShortURLRecord>(this)
+        {
+            @Override
+            protected ShortURLRecord createNewBean()
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected ShortURLRecord insert(User user, Container container, ShortURLRecord bean)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            protected ShortURLRecord update(User user, Container container, ShortURLRecord bean, Integer oldKey)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ShortURLRecord get(User user, Container container, int key)
+            {
+                return new TableSelector(CoreSchema.getInstance().getTableInfoShortURL()).getObject(key, ShortURLRecord.class);
+            }
+
+            @Override
+            public void delete(User user, Container container, int key) throws QueryUpdateServiceException
+            {
+                ShortURLRecord shortUrl = get(user, container, key);
+                if (shortUrl == null)
+                {
+                    throw new NotFoundException("No short URL record found for rowId " + key);
+                }
+
+                try
+                {
+                    ShortURLService.get().deleteShortURL(shortUrl, user);
+                }
+                catch (ValidationException e)
+                {
+                    String err = "Unable to delete short URL " + shortUrl.getShortURL();
+                    throw new QueryUpdateServiceException(err + ". " + StringUtils.join(e.getAllErrors(), ". "), e);
+                }
+            }
+        };
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return canDisplayTable(user, getContainer()) && getContainer().hasPermission(user, perm);
+    }
+
+    public static boolean canDisplayTable(@NotNull UserPrincipal user, @NotNull Container container)
+    {
+        return container.isRoot() && container.hasPermission(user, AdminOperationsPermission.class);
     }
 }

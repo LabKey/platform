@@ -178,7 +178,7 @@ public class CoreQuerySchema extends UserSchema
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))
             return getMVIndicatorTable(cf);
-        if (SHORTURL_TABLE_NAME.equalsIgnoreCase(name))
+        if (SHORTURL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
             return new ShortUrlTableInfo(this);
 
         return null;
