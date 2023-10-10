@@ -59,7 +59,7 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             }
             else
             {
-                String[] values = value.toString().split(VALUE_DELIMITER_REGEX, -1);
+                String[] values = value.toString().split(VALUE_DELIMITER_REGEX);
                 if (length != -1 && values.length != length)
                 {
                     throw new IllegalStateException("Expected all columns to have the same number of values, but '" + fieldKey + "' has " + values.length + " and " + _iterators.keySet() + " had " + length);

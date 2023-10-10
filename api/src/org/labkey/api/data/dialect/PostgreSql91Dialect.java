@@ -493,9 +493,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             result.append("DISTINCT ");
         }
-        result.append("COALESCE(CAST(");
         result.append(sql);
-        result.append(" AS VARCHAR), ''))");
+        result.append(")");
         if (useSortFunction)
         {
             result.append(")");
