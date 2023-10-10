@@ -63,6 +63,12 @@ public class SiteAdminRole extends AbstractRootContainerRole implements AdminRol
     }
 
     @Override
+    public boolean isPrivileged()
+    {
+        return true;
+    }
+
+    @Override
     public void permissionRegistered(Class<? extends Permission> perm)
     {
         addPermission(perm);

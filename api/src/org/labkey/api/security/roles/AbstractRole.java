@@ -39,8 +39,6 @@ import java.util.stream.Collectors;
 
 /**
  * Abstract base class for roles
- * User: Dave
- * Date: Apr 22, 2009
  */
 public abstract class AbstractRole implements Role
 {

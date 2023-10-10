@@ -54,7 +54,7 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
+import org.labkey.api.security.impersonation.DisallowPrivilegedRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
@@ -573,7 +573,7 @@ public class SecurityManager
             }
             else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
             {
-                sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
+                sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
             }
 
             List<AuthenticationValidator> validators = getValidators(session);

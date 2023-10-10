@@ -39,8 +39,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -176,11 +174,9 @@ public class SecurityPolicyManager
         {
             for (Role changedRole : changedRoles)
             {
-                // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
-                if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                    throw new UnauthorizedException("You do not have permission to modify the Site Admin role or permission.");
-                if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                    throw new UnauthorizedException("You do not have permission to modify the Platform Developer role or permission.");
+                // AppAdmin cannot change assignments to privileged roles (e.g., Site Admin, Platform Developer, Impersonating Troubleshooter)
+                if (changedRole.isPrivileged())
+                    throw new UnauthorizedException("You do not have permission to modify the " + changedRole.getName() + " role.");
             }
         }
 

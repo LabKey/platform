@@ -20,4 +20,10 @@ public class ImpersonatingTroubleshooterRole extends AbstractRootContainerRole
         );
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));
     }
+
+    @Override
+    public boolean isPrivileged()
+    {
+        return true;
+    }
 }
