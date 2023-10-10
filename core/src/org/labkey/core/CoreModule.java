@@ -1081,7 +1081,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
-            results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
+            SimpleFilter loginFilter = new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS);
+            results.put("totalLogins", new TableSelector(userAuditTable, loginFilter, null).getRowCount());
+            loginFilter.addClause(new CompareType.ContainsClause(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.API_KEY));
+            results.put("apiKeyLogins", new TableSelector(userAuditTable, loginFilter, null).getRowCount());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());
