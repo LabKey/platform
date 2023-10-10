@@ -209,7 +209,6 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.FindMaterialByUniqueIdHelper;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
@@ -7159,6 +7158,7 @@ public class ExperimentController extends SpringActionController
         private static final String UNIQUE_ID_PREFIX = "u:";
 
         private List<String> _ids;
+        private Map<String, List<String>> _uniqueIdLsids;
 
         @Override
         public void validateForm(FindByIdsForm form, Errors errors)
@@ -7173,9 +7173,21 @@ public class ExperimentController extends SpringActionController
             }
         }
 
+        private void ensureUniqueIdLsids()
+        {
+            boolean hasUniqueId = _ids.stream().anyMatch(s -> s.startsWith(UNIQUE_ID_PREFIX));
+            if (hasUniqueId && _uniqueIdLsids == null)
+            {
+                List<String> uniqueIds = _ids.stream().map(s -> s.substring(UNIQUE_ID_PREFIX.length())).toList();
+                _uniqueIdLsids = ExperimentService.get().getUniqueIdLsids(uniqueIds, getUser(), getContainer());
+            }
+        }
+
         @Override
         public Object execute(FindByIdsForm form, BindException errors) throws Exception
         {
+            ensureUniqueIdLsids();
+
             SQLFragment select = getOrderedRowsSql();
             // need to set the key field so selections are possible
             // need the SampleTypeUnits so we will display using that unit
@@ -7270,21 +7282,34 @@ public class ExperimentController extends SpringActionController
                     sampleIdValuesSql.append(sampleIdComma).append("\t(").appendValue(index);
                     sampleIdValuesSql.append(", ");
                     sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.append(", ");
+                    sampleIdValuesSql.append(LabKeySql.quoteString("null"));
                     sampleIdValuesSql.append(")");
                     sampleIdComma = "\n,";
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
-                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
-                    uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append(LabKeySql.quoteString(id.substring(UNIQUE_ID_PREFIX.length())));
-                    uniqueIdValuesSql.append(")");
-                    uniqueIdComma = "\n,";
+                    String idClean = id.substring(UNIQUE_ID_PREFIX.length());
+
+                    List<String> lsids = _uniqueIdLsids.get(idClean);
+                    if (lsids != null)
+                    {
+                        for (String lsid : lsids)
+                        {
+                            uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
+                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
+                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(LabKeySql.quoteString(lsid));
+                            uniqueIdValuesSql.append(")");
+                            uniqueIdComma = "\n,";
+                        }
+                    }
                 }
                 index++;
             }
 
-            boolean haveData = !sampleIdValuesSql.isEmpty();
+            boolean haveData = !sampleIdValuesSql.isEmpty() || !_uniqueIdLsids.isEmpty();
             SQLFragment sql = new SQLFragment();
             if (!sampleIdValuesSql.isEmpty())
             {
@@ -7310,27 +7335,20 @@ public class ExperimentController extends SpringActionController
             sql.append("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
-                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id");
+                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id,\n\t_ordered_ids_.column2 as lsid");
                 sql.append("\nFROM _ordered_ids_\n");
                 sql.append("INNER JOIN exp.materials M ON _ordered_ids_.column2 = M.Name");
                 sql.append("\n");
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
-                FindMaterialByUniqueIdHelper uidHelper = new FindMaterialByUniqueIdHelper(getContainer(), getUser());
-                if (uidHelper.getNumUniqueIdCols() > 0)
-                {
-                    haveData = true;
-                    if (!sampleIdValuesSql.isEmpty())
-                        sql.append("\nUNION ALL\n\n");
+                if (!sampleIdValuesSql.isEmpty())
+                    sql.append("\nUNION ALL\n\n");
 
-                    sql.append("SELECT\n\tU.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id");
-                    sql.append("\nFROM _ordered_unique_ids_\n");
-                    sql.append("INNER JOIN (");
-
-                    sql.append(uidHelper.getSQL()).append(") U");
-                    sql.append(" ON _ordered_unique_ids_.column2 = ").append(FindMaterialByUniqueIdHelper.UNIQUE_ID_COL_NAME);
-                }
+                sql.append("SELECT\n\tM.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t_ordered_unique_ids_.column2 as Id,\n\t_ordered_unique_ids_.column3 as lsid");
+                sql.append("\nFROM _ordered_unique_ids_\n");
+                sql.append("INNER JOIN exp.materials M ON _ordered_unique_ids_.column3 = M.lsid");
+                sql.append("\n");
             }
             if (!haveData) // no data to return but return data in the expected shape.
             {
