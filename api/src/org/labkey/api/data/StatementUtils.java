@@ -36,6 +36,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -535,7 +536,7 @@ public class StatementUtils
         //
 
         LinkedHashMap<FieldKey,ColumnInfo> keys = new LinkedHashMap<>();
-        ColumnInfo col = table.getColumn("Container");
+        ColumnInfo col = table.getColumn(BuiltInColumnTypes.Container.name());
         if (null != col)
             keys.put(col.getFieldKey(), col);
         if (null != _keyColumnNames && !_keyColumnNames.isEmpty())
@@ -593,8 +594,8 @@ public class StatementUtils
 // TODO Should we add created and createdby? Or make the caller decide?
         if (Operation.update == _operation)
         {
-            _dontUpdateColumnNames.add(Table.CREATED_COLUMN_NAME);
-            _dontUpdateColumnNames.add(Table.CREATED_BY_COLUMN_NAME);
+            _dontUpdateColumnNames.add(BuiltInColumnTypes.Created.name());
+            _dontUpdateColumnNames.add(BuiltInColumnTypes.CreatedBy.name());
         }
 
         boolean objectUriPreselectSet = false;
@@ -687,58 +688,59 @@ public class StatementUtils
         List<ColumnInfo> cols = new ArrayList<>();
         List<SQLFragment> values = new ArrayList<>();
 
-        if (_updateBuiltInColumns && Operation.update != _operation)
+        if (_updateBuiltInColumns)
         {
-            col = table.getColumn(Table.OWNER_COLUMN_NAME);
-            if (null != col && null != user)
+            BuiltInColumnTypes type = BuiltInColumnTypes.findBuiltInType(col);
+
+            if (Operation.update != _operation)
+            {
+                if (type == BuiltInColumnTypes.Owner && null != user)
+                {
+                    cols.add(col);
+                    values.add(new SQLFragment().appendValue(user.getUserId()));
+                    done.add(type.name());
+                }
+                else if (type == BuiltInColumnTypes.CreatedBy && null != user)
+                {
+                    cols.add(col);
+                    values.add(new SQLFragment().appendValue(user.getUserId()));
+                    done.add(type.name());
+                }
+                else if (type == BuiltInColumnTypes.Created)
+                {
+                    cols.add(col);
+                    values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
+                    done.add(type.name());
+                }
+            }
+
+            if (type == BuiltInColumnTypes.ModifiedBy && null != user)
             {
                 cols.add(col);
                 values.add(new SQLFragment().appendValue(user.getUserId()));
-                done.add(Table.OWNER_COLUMN_NAME);
+                done.add(type.name());
             }
-            col = table.getColumn(Table.CREATED_BY_COLUMN_NAME);
-            if (null != col && null != user)
-            {
-                cols.add(col);
-                values.add(new SQLFragment().appendValue(user.getUserId()));
-                done.add(Table.CREATED_BY_COLUMN_NAME);
-            }
-            col = table.getColumn(Table.CREATED_COLUMN_NAME);
-            if (null != col)
+            else if (type == BuiltInColumnTypes.Modified)
             {
                 cols.add(col);
                 values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
-                done.add(Table.CREATED_COLUMN_NAME);
+                done.add(type.name());
             }
-        }
 
-        ColumnInfo colModifiedBy = table.getColumn(Table.MODIFIED_BY_COLUMN_NAME);
-        if (_updateBuiltInColumns && null != colModifiedBy && null != user)
-        {
-            cols.add(colModifiedBy);
-            values.add(new SQLFragment().appendValue(user.getUserId()));
-            done.add(Table.MODIFIED_BY_COLUMN_NAME);
-        }
-
-        ColumnInfo colModified = table.getColumn(Table.MODIFIED_COLUMN_NAME);
-        if (_updateBuiltInColumns && null != colModified)
-        {
-            cols.add(colModified);
-            values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
-            done.add(Table.MODIFIED_COLUMN_NAME);
-        }
-        ColumnInfo colVersion = table.getVersionColumn();
-        if (_updateBuiltInColumns && null != colVersion && !done.contains(colVersion.getName()))
-        {
-            SQLFragment expr = colVersion.getVersionUpdateExpression();
-            if (null != expr)
+            ColumnInfo colVersion = table.getVersionColumn();
+            if (null != colVersion && !done.contains(colVersion.getName()))
             {
-                cols.add(colVersion);
-                values.add(expr);
-                done.add(colVersion.getName());
+                SQLFragment expr = colVersion.getVersionUpdateExpression();
+                if (null != expr)
+                {
+                    cols.add(colVersion);
+                    values.add(expr);
+                    done.add(colVersion.getName());
+                }
             }
         }
 
+        ColumnInfo colModified = table.getColumn(BuiltInColumnTypes.Modified.name());
         String objectIdColumnName = StringUtils.trimToNull(updatable.getObjectIdColumnName());
         ColumnInfo autoIncrementColumn = null;
         CaseInsensitiveHashMap<String> remap = updatable.remapSchemaColumns();
@@ -841,7 +843,6 @@ public class StatementUtils
             {
                 _dialect.addReselect(sqlfInsertInto, table.getColumn(objectURIColumnName), objectURIVar);
             }
-
         }
 
         //
