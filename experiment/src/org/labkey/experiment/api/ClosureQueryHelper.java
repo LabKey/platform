@@ -286,7 +286,7 @@ public class ClosureQueryHelper
     {
         // if there's nothing cached, we don't need to do incremental
         MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false);
-        if (null == helper || !helper.isCached())
+        if (null == helper)
             return;
 
         TempTableTracker ttt = null;
