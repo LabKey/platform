@@ -1,5 +1,6 @@
 package org.labkey.api.query.column;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -17,9 +18,10 @@ public enum BuiltInColumnTypes
     Container(When.insert, JdbcType.GUID, BuiltInColumnTypes.CONTAINERID_CONCEPT_URI, null),
     CreatedBy(When.insert, JdbcType.INTEGER, BuiltInColumnTypes.CREATEDBY_CONCEPT_URI, "Created By"),
     Created(When.insert, JdbcType.TIMESTAMP, BuiltInColumnTypes.CREATED_CONCEPT_URI, "Created"),
+    EntityId(When.insert, JdbcType.GUID, null, null),
     ModifiedBy(When.both, JdbcType.INTEGER, BuiltInColumnTypes.MODIFIEDBY_CONCEPT_URI, "Modified By"),
     Modified(When.both, JdbcType.TIMESTAMP, BuiltInColumnTypes.MODIFIED_CONCEPT_URI, "Modified"),
-    EntityId(When.insert, JdbcType.GUID, null, null);
+    Owner(When.insert, JdbcType.INTEGER, BuiltInColumnTypes.USERID_CONCEPT_URI, null);
 
     public enum When
     {
@@ -43,7 +45,7 @@ public enum BuiltInColumnTypes
 
     public boolean matches(ColumnInfo c)
     {
-        return c.getJdbcType()==type && name().equalsIgnoreCase(c.getName());
+        return c.getJdbcType() == type && name().equalsIgnoreCase(c.getName());
     }
 
     static final Map<String, BuiltInColumnTypes> names;
@@ -55,8 +57,9 @@ public enum BuiltInColumnTypes
         names = Collections.unmodifiableMap(map);
     }
 
-    public static BuiltInColumnTypes findBuiltInType(ColumnInfo col)
+    public static @Nullable BuiltInColumnTypes findBuiltInType(ColumnInfo col)
     {
+        if (col == null) return null;
         BuiltInColumnTypes type = names.get(col.getName());
         return null != type && type.matches(col) ? type : null;
     }
