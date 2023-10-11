@@ -284,6 +284,24 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public void addReselect(SQLFragment sql, List<ColumnInfo> columns)
+    {
+        if (columns == null || columns.isEmpty())
+            return;
+
+        SQLFragment returning = new SQLFragment("\nRETURNING ");
+        String comma = "";
+
+        for (ColumnInfo col : columns)
+        {
+            returning.append(comma).append(col.getSelectName());
+            comma = ", ";
+        }
+
+        sql.append(returning);
+    }
+
+    @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         if (params.size() >= TEMPTABLE_GENERATOR_MINSIZE)

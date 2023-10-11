@@ -685,7 +685,7 @@ public class Table
     }
 
 
-    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields)
+    protected static void _insertSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields)
     {
         ColumnInfo col = table.getColumn(OWNER_COLUMN_NAME);
         if (null != col && null != user)
@@ -705,7 +705,7 @@ public class Table
             fields.put(ENTITY_ID_COLUMN_NAME, GUID.makeGUID());
     }
 
-    protected static void _copyInsertSpecialFields(Object returnObject, Map<String, Object> fields, java.sql.Timestamp currentTimestamp)
+    protected static void _copyInsertSpecialFields(Object returnObject, Map<String, Object> fields)
     {
         if (returnObject == fields)
             return;
@@ -715,8 +715,6 @@ public class Table
             _setProperty(returnObject, ENTITY_ID_COLUMN_NAME, fields.get(ENTITY_ID_COLUMN_NAME));
         if (fields.containsKey(OWNER_COLUMN_NAME))
             _setProperty(returnObject, OWNER_COLUMN_NAME, fields.get(OWNER_COLUMN_NAME));
-        if (fields.containsKey(CREATED_COLUMN_NAME))
-            _setProperty(returnObject, CREATED_COLUMN_NAME, currentTimestamp);
         if (fields.containsKey(CREATED_BY_COLUMN_NAME))
             _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
@@ -736,26 +734,13 @@ public class Table
             fields.put(colVersion.getName(), new SQLFragment("CURRENT_TIMESTAMP"));
     }
 
-    protected static void _copyUpdateSpecialFields(TableInfo table, Object returnObject, Map<String, Object> fields, java.sql.Timestamp currentTimestamp)
+    protected static void _copyUpdateSpecialFields(Object returnObject, Map<String, Object> fields)
     {
         if (returnObject == fields)
             return;
 
         if (fields.containsKey(MODIFIED_BY_COLUMN_NAME))
             _setProperty(returnObject, MODIFIED_BY_COLUMN_NAME, fields.get(MODIFIED_BY_COLUMN_NAME));
-
-        if (fields.containsKey(MODIFIED_COLUMN_NAME))
-            _setProperty(returnObject, MODIFIED_COLUMN_NAME, currentTimestamp);
-
-        ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
-        ColumnInfo colVersion = table.getVersionColumn();
-        if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
-        {
-            Object value = fields.get(colVersion.getName());
-            if (value instanceof SQLFragment)
-                value = currentTimestamp;
-            _setProperty(returnObject, colVersion.getName(), value);
-        }
     }
 
 
@@ -804,6 +789,7 @@ public class Table
         SQLFragment insertSQL = new SQLFragment();
         StringBuilder columnSQL = new StringBuilder();
         SQLFragment valueSQL = new SQLFragment();
+        List<ColumnInfo> reselectColumns = new ArrayList<>();
         ColumnInfo autoIncColumn = null;
         String comma = "";
 
@@ -820,7 +806,10 @@ public class Table
         {
             // note  if(version) is not an no-op, it protects the isautoinc test from version columns implemented using sequences
             if (column.isAutoIncrement() && !column.isVersionColumn())
+            {
                 autoIncColumn = column;
+                reselectColumns.add(autoIncColumn);
+            }
 
             if (!fields.containsKey(column.getName()))
                 continue;
@@ -845,6 +834,7 @@ public class Table
             }
             else if (value instanceof SQLFragment sqlFragmentValue) // CONSIDER: less generic alternative to allow for use of CURRENT_TIMESTAMP
             {
+                reselectColumns.add(column);
                 valueSQL.append(sqlFragmentValue);
             }
             else
@@ -883,8 +873,8 @@ public class Table
         insertSQL.append(')');
 
         // CONSIDER reselect version column
-        if (null != autoIncColumn)
-            table.getSqlDialect().addReselect(insertSQL, autoIncColumn, null);
+        if (!reselectColumns.isEmpty())
+            table.getSqlDialect().addReselect(insertSQL, reselectColumns);
 
         // If Map was handed in, then we hand back a Map
         // UNDONE: use Table.select() to reselect and return new Object
@@ -901,9 +891,8 @@ public class Table
         {
             conn = schema.getScope().getConnection();
             stmt = prepareStatement(conn, insertSQL.getSQL(), insertSQL.getParams(), jdbcParameters);
-            java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
 
-            if (null == autoIncColumn)
+            if (reselectColumns.isEmpty())
             {
                 stmt.execute();
             }
@@ -912,16 +901,26 @@ public class Table
                 rs = table.getSqlDialect().executeWithResults(stmt);
                 rs.next();
 
-                // Explicitly retrieve the new rowId based on the autoIncrement type.  We shouldn't use getObject()
-                // here because PostgreSQL sequences always return Long, and we expect Integer in many places.
-                if (autoIncColumn.getJavaClass().isAssignableFrom(Long.TYPE))
-                    _setProperty(returnObject, autoIncColumn.getName(), rs.getLong(1));
-                else
-                    _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
+                for (int i = 0; i < reselectColumns.size(); i++)
+                {
+                    ColumnInfo col = reselectColumns.get(i);
+                    int columnIndex = i + 1;
+
+                    // Explicitly retrieve the new rowId based on the autoIncrement type.  We shouldn't use getObject()
+                    // here because PostgreSQL sequences always return Long, and we expect Integer in many places.
+                    if (Long.TYPE.isAssignableFrom(col.getJavaClass()))
+                        _setProperty(returnObject, col.getName(), rs.getLong(columnIndex));
+                    else if (Integer.TYPE.isAssignableFrom(col.getJavaClass()))
+                        _setProperty(returnObject, col.getName(), rs.getInt(columnIndex));
+                    else if (JdbcType.TIMESTAMP == col.getJdbcType())
+                        _setProperty(returnObject, col.getName(), rs.getTimestamp(columnIndex));
+                    else
+                        _setProperty(returnObject, col.getName(), rs.getObject(columnIndex));
+                }
             }
 
-            _copyInsertSpecialFields(returnObject, fields, currentTimestamp);
-            _copyUpdateSpecialFields(table, returnObject, fields, currentTimestamp);
+            _copyInsertSpecialFields(returnObject, fields);
+            _copyUpdateSpecialFields(returnObject, fields);
 
             notifyTableUpdate(table);
         }
@@ -958,6 +957,7 @@ public class Table
         StringBuilder whereSQL = new StringBuilder();
         ArrayList<Object> parametersSet = new ArrayList<>();
         ArrayList<Object> parametersWhere = new ArrayList<>();
+        List<ColumnInfo> reselectColumns = new ArrayList<>();
         String comma = "";
 
         // UNDONE -- rowVersion
@@ -1066,6 +1066,7 @@ public class Table
             {
                 setSQL.append("=");
                 setSQL.append(sqlFragmentValue);
+                reselectColumns.add(column);
             }
             else
             {
@@ -1091,31 +1092,75 @@ public class Table
 
         if (hasFieldsToSet)
         {
-            // UNDONE: reselect
             SQLFragment updateSQL = new SQLFragment("UPDATE " + table.getSelectName() + "\n\t" +
                                                     "SET " + setSQL + "\n\t" +
                                                     whereSQL);
             updateSQL.addAll(parametersSet);
             updateSQL.addAll(parametersWhere);
 
-            try
+            if (reselectColumns.isEmpty())
             {
-                int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
-                java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
-
-                // check for concurrency problem
-                if (count == 0)
+                try
                 {
-                    throw OptimisticConflictException.create(ERROR_DELETED);
-                }
+                    int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
 
-                _copyUpdateSpecialFields(table, fieldsIn, fields, currentTimestamp);
-                notifyTableUpdate(table);
+                    // check for concurrency problem
+                    if (count == 0)
+                        throw OptimisticConflictException.create(ERROR_DELETED);
+
+                    _copyUpdateSpecialFields(fieldsIn, fields);
+                    notifyTableUpdate(table);
+                }
+                catch (OptimisticConflictException e)
+                {
+                    logException(updateSQL, null, e.getSQLException(), level);
+                    throw (e);
+                }
             }
-            catch (OptimisticConflictException e)
+            else
             {
-                logException(updateSQL, null, e.getSQLException(), level);
-                throw (e);
+                table.getSqlDialect().addReselect(updateSQL, reselectColumns);
+
+                DbSchema schema = table.getSchema();
+                Connection conn = null;
+                PreparedStatement stmt = null;
+                ResultSet rs = null;
+
+                try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
+                {
+                    conn = table.getSchema().getScope().getConnection();
+                    stmt = prepareStatement(conn, updateSQL.getSQL(), updateSQL.getParams(), jdbcParameters);
+
+                    rs = table.getSqlDialect().executeWithResults(stmt);
+                    rs.next();
+
+                    for (int i = 0; i < reselectColumns.size(); i++)
+                    {
+                        ColumnInfo col = reselectColumns.get(i);
+                        int columnIndex = i + 1;
+
+                        if (Long.TYPE.isAssignableFrom(col.getJavaClass()))
+                            _setProperty(fieldsIn, col.getName(), rs.getLong(columnIndex));
+                        else if (Integer.TYPE.isAssignableFrom(col.getJavaClass()))
+                            _setProperty(fieldsIn, col.getName(), rs.getInt(columnIndex));
+                        else if (JdbcType.TIMESTAMP == col.getJdbcType())
+                            _setProperty(fieldsIn, col.getName(), rs.getTimestamp(columnIndex));
+                        else
+                            _setProperty(fieldsIn, col.getName(), rs.getObject(columnIndex));
+                    }
+
+                    _copyUpdateSpecialFields(fieldsIn, fields);
+                    notifyTableUpdate(table);
+                }
+                catch (SQLException e)
+                {
+                    logException(updateSQL, conn, e, Level.WARN);
+                    throw new RuntimeSQLException(e);
+                }
+                finally
+                {
+                    doClose(rs, stmt, conn, schema.getScope());
+                }
             }
         }
         else

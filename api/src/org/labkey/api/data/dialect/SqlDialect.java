@@ -498,6 +498,9 @@ public abstract class SqlDialect
      */
     public abstract String addReselect(SQLFragment sql, ColumnInfo column, @Nullable String proposedVariable);
 
+    // TODO: Document
+    public abstract void addReselect(SQLFragment sql, List<ColumnInfo> columns);
+
     // Could be INSERT, UPDATE, or DELETE statement
     public abstract @NotNull ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 

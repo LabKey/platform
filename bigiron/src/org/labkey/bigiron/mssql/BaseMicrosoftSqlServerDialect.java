@@ -370,7 +370,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return _addReselect(sql, columnName, hasDbTriggers, proposedVariable);
     }
 
-
     public String _addReselect(SQLFragment sql, String columnName, boolean useOutputIntoTableVar, @Nullable String proposedVariable)
     {
         ReselectType type = getReselectType(sql.getRawSQL());
@@ -448,6 +447,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
 
         return ret;
+    }
+
+    public void addReselect(SQLFragment sql, List<ColumnInfo> columns)
+    {
+        // TODO: Implement
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
     @Override
