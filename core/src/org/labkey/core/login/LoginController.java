@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -2520,6 +2521,28 @@ public class LoginController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public static class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
     {
+        @Override
+        public void validateForm(SaveDbLoginPropertiesForm form, Errors errors)
+        {
+            try
+            {
+                PasswordRule.valueOf(form.getStrength());
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new ApiUsageException("Invalid password strength: " + form.getStrength());
+            }
+
+            try
+            {
+                PasswordExpiration.valueOf(form.getExpiration());
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new ApiUsageException("Invalid password expiration: " + form.getExpiration());
+            }
+        }
+
         @Override
         public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
         {
