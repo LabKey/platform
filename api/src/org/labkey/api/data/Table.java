@@ -654,7 +654,6 @@ public class Table
         {
             String key = column.getName();
 
-//            if (column.isReadOnly() && !(insert && key.equals("EntityId")))
             if (!insert && column.isReadOnly() || column.isAutoIncrement() || column.isVersionColumn())
                 continue;
 
@@ -686,7 +685,7 @@ public class Table
     }
 
 
-    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _insertSpecialFields(User user, TableInfo table, Map<String, Object> fields)
     {
         ColumnInfo col = table.getColumn(OWNER_COLUMN_NAME);
         if (null != col && null != user)
@@ -699,14 +698,14 @@ public class Table
         {
             Date dateCreated = (Date)fields.get(CREATED_COLUMN_NAME);
             if (null == dateCreated || 0 == dateCreated.getTime())
-                fields.put(CREATED_COLUMN_NAME, date);
+                fields.put(CREATED_COLUMN_NAME, new SQLFragment("CURRENT_TIMESTAMP"));
         }
         col = table.getColumn(ENTITY_ID_COLUMN_NAME);
         if (col != null && fields.get(ENTITY_ID_COLUMN_NAME) == null)
             fields.put(ENTITY_ID_COLUMN_NAME, GUID.makeGUID());
     }
 
-    protected static void _copyInsertSpecialFields(Object returnObject, Map<String, Object> fields)
+    protected static void _copyInsertSpecialFields(Object returnObject, Map<String, Object> fields, java.sql.Timestamp currentTimestamp)
     {
         if (returnObject == fields)
             return;
@@ -717,12 +716,12 @@ public class Table
         if (fields.containsKey(OWNER_COLUMN_NAME))
             _setProperty(returnObject, OWNER_COLUMN_NAME, fields.get(OWNER_COLUMN_NAME));
         if (fields.containsKey(CREATED_COLUMN_NAME))
-            _setProperty(returnObject, CREATED_COLUMN_NAME, fields.get(CREATED_COLUMN_NAME));
+            _setProperty(returnObject, CREATED_COLUMN_NAME, currentTimestamp);
         if (fields.containsKey(CREATED_BY_COLUMN_NAME))
             _setProperty(returnObject, CREATED_BY_COLUMN_NAME, fields.get(CREATED_BY_COLUMN_NAME));
     }
 
-    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields, java.sql.Timestamp date)
+    protected static void _updateSpecialFields(@Nullable User user, TableInfo table, Map<String, Object> fields)
     {
         ColumnInfo colModifiedBy = table.getColumn(MODIFIED_BY_COLUMN_NAME);
         if (null != colModifiedBy && null != user)
@@ -730,14 +729,14 @@ public class Table
 
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         if (null != colModified)
-            fields.put(colModified.getName(), date);
+            fields.put(colModified.getName(), new SQLFragment("CURRENT_TIMESTAMP"));
 
         ColumnInfo colVersion = table.getVersionColumn();
         if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
-            fields.put(colVersion.getName(), date);
+            fields.put(colVersion.getName(), new SQLFragment("CURRENT_TIMESTAMP"));
     }
 
-    protected static void _copyUpdateSpecialFields(TableInfo table, Object returnObject, Map<String, Object> fields)
+    protected static void _copyUpdateSpecialFields(TableInfo table, Object returnObject, Map<String, Object> fields, java.sql.Timestamp currentTimestamp)
     {
         if (returnObject == fields)
             return;
@@ -746,12 +745,17 @@ public class Table
             _setProperty(returnObject, MODIFIED_BY_COLUMN_NAME, fields.get(MODIFIED_BY_COLUMN_NAME));
 
         if (fields.containsKey(MODIFIED_COLUMN_NAME))
-            _setProperty(returnObject, MODIFIED_COLUMN_NAME, fields.get(MODIFIED_COLUMN_NAME));
+            _setProperty(returnObject, MODIFIED_COLUMN_NAME, currentTimestamp);
 
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
         ColumnInfo colVersion = table.getVersionColumn();
         if (null != colVersion && colVersion != colModified && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
-            _setProperty(returnObject, colVersion.getName(), fields.get(colVersion.getName()));
+        {
+            Object value = fields.get(colVersion.getName());
+            if (value instanceof SQLFragment)
+                value = currentTimestamp;
+            _setProperty(returnObject, colVersion.getName(), value);
+        }
     }
 
 
@@ -797,31 +801,25 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): ("Table " + table.getSchema().getName() + "." + table.getName() + " is not in the physical database.");
 
-        // _executeTriggers(table, fields);
-
         SQLFragment insertSQL = new SQLFragment();
         StringBuilder columnSQL = new StringBuilder();
         SQLFragment valueSQL = new SQLFragment();
         ColumnInfo autoIncColumn = null;
-        ColumnInfo versionColumn = null;
         String comma = "";
 
         //noinspection unchecked
         Map<String, Object> fields = fieldsIn instanceof Map ?
                 _getTableData(table, (Map<String, Object>)fieldsIn, true) :
                 _getTableData(table, fieldsIn, true);
-        java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
-        _insertSpecialFields(user, table, fields, date);
-        _updateSpecialFields(user, table, fields, date);
+        _insertSpecialFields(user, table, fields);
+        _updateSpecialFields(user, table, fields);
 
         List<ColumnInfo> columns = table.getColumns();
 
         for (ColumnInfo column : columns)
         {
             // note  if(version) is not an no-op, it protects the isautoinc test from version columns implemented using sequences
-            if (column.isVersionColumn())
-                versionColumn = column;
-            else if (column.isAutoIncrement())
+            if (column.isAutoIncrement() && !column.isVersionColumn())
                 autoIncColumn = column;
 
             if (!fields.containsKey(column.getName()))
@@ -831,7 +829,7 @@ public class Table
 
             if (!column.isAutoIncrement() &&
                     column.isRequired() &&
-                    (null == value || value instanceof String && 0 == ((String) value).length()) &&
+                    (null == value || value instanceof String s && s.isEmpty()) &&
                     !Table.AUTOPOPULATED_COLUMN_NAMES.contains(column.getName()) &&
                     column.getJdbcDefaultValue() == null)
             {
@@ -841,8 +839,14 @@ public class Table
             columnSQL.append(comma);
             columnSQL.append(column.getSelectName());
             valueSQL.append(comma);
-            if (null == value || value instanceof String && 0 == ((String) value).length())
+            if (null == value || value instanceof String s && s.isEmpty())
+            {
                 valueSQL.append("NULL");
+            }
+            else if (value instanceof SQLFragment sqlFragmentValue) // CONSIDER: less generic alternative to allow for use of CURRENT_TIMESTAMP
+            {
+                valueSQL.append(sqlFragmentValue);
+            }
             else
             {
                 // Validate the value
@@ -863,7 +867,7 @@ public class Table
             comma = ", ";
         }
 
-        if (comma.length() == 0)
+        if (comma.isEmpty())
         {
             // NO COLUMNS TO INSERT
             throw new IllegalArgumentException("Table.insert called with no column data. table=" + table + " object=" + fieldsIn);
@@ -897,6 +901,7 @@ public class Table
         {
             conn = schema.getScope().getConnection();
             stmt = prepareStatement(conn, insertSQL.getSQL(), insertSQL.getParams(), jdbcParameters);
+            java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
 
             if (null == autoIncColumn)
             {
@@ -915,12 +920,12 @@ public class Table
                     _setProperty(returnObject, autoIncColumn.getName(), rs.getInt(1));
             }
 
-            _copyInsertSpecialFields(returnObject, fields);
-            _copyUpdateSpecialFields(table, returnObject, fields);
+            _copyInsertSpecialFields(returnObject, fields, currentTimestamp);
+            _copyUpdateSpecialFields(table, returnObject, fields, currentTimestamp);
 
             notifyTableUpdate(table);
         }
-        catch(SQLException e)
+        catch (SQLException e)
         {
             logException(insertSQL, conn, e, Level.WARN);
             throw new RuntimeSQLException(e);
@@ -948,8 +953,6 @@ public class Table
     {
         assert (table.getTableType() != DatabaseTableType.NOT_IN_DB): (table.getName() + " is not in the physical database.");
         assert null != pkVals;
-
-        // _executeTriggers(table, previous, fields);
 
         StringBuilder setSQL = new StringBuilder();
         StringBuilder whereSQL = new StringBuilder();
@@ -1014,8 +1017,7 @@ public class Table
         Map<String, Object> fields = fieldsIn instanceof Map ?
             _getTableData(table, (Map<String,Object>)fieldsIn, true) :
             _getTableData(table, fieldsIn, true);
-        java.sql.Timestamp date = new java.sql.Timestamp(System.currentTimeMillis());
-        _updateSpecialFields(user, table, fields, date);
+        _updateSpecialFields(user, table, fields);
 
         List<ColumnInfo> columns = table.getColumns();
         ColumnInfo colModified = table.getColumn(MODIFIED_COLUMN_NAME);
@@ -1056,9 +1058,14 @@ public class Table
             setSQL.append(comma);
             setSQL.append(column.getSelectName());
 
-            if (null == value || value instanceof String && 0 == ((String) value).length())
+            if (null == value || value instanceof String s && s.isEmpty())
             {
                 setSQL.append("=NULL");
+            }
+            else if (value instanceof SQLFragment sqlFragmentValue) // CONSIDER: less generic alternative to allow for use of CURRENT_TIMESTAMP
+            {
+                setSQL.append("=");
+                setSQL.append(sqlFragmentValue);
             }
             else
             {
@@ -1088,13 +1095,13 @@ public class Table
             SQLFragment updateSQL = new SQLFragment("UPDATE " + table.getSelectName() + "\n\t" +
                                                     "SET " + setSQL + "\n\t" +
                                                     whereSQL);
-
             updateSQL.addAll(parametersSet);
             updateSQL.addAll(parametersWhere);
 
             try
             {
                 int count = new SqlExecutor(table.getSchema()).execute(updateSQL);
+                java.sql.Timestamp currentTimestamp = new java.sql.Timestamp(System.currentTimeMillis());
 
                 // check for concurrency problem
                 if (count == 0)
@@ -1102,7 +1109,7 @@ public class Table
                     throw OptimisticConflictException.create(ERROR_DELETED);
                 }
 
-                _copyUpdateSpecialFields(table, fieldsIn, fields);
+                _copyUpdateSpecialFields(table, fieldsIn, fields, currentTimestamp);
                 notifyTableUpdate(table);
             }
             catch (OptimisticConflictException e)
@@ -1227,7 +1234,7 @@ public class Table
 
     // Table modification
 
-    public static void notifyTableUpdate(/*String operation,*/ TableInfo table/*, Container c*/)
+    public static void notifyTableUpdate(TableInfo table)
     {
         DbCache.invalidateAll(table);
     }

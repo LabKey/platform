@@ -490,10 +490,9 @@ public class StatementUtils
 
     public ParameterMapStatement createStatement(Connection conn, @Nullable Container c, User user, boolean checkUpdatableColumns) throws SQLException, TableInsertUpdateDataIterator.NoUpdatableColumnInDataException
     {
-        if (!(_targetTable instanceof UpdateableTableInfo))
+        if (!(_targetTable instanceof UpdateableTableInfo updatable))
             throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
 
-        UpdateableTableInfo updatable = (UpdateableTableInfo) _targetTable;
         TableInfo table = updatable.getSchemaTableInfo();
 
         if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
@@ -594,8 +593,8 @@ public class StatementUtils
 // TODO Should we add created and createdby? Or make the caller decide?
         if (Operation.update == _operation)
         {
-            _dontUpdateColumnNames.add("Created");
-            _dontUpdateColumnNames.add("CreatedBy");
+            _dontUpdateColumnNames.add(Table.CREATED_COLUMN_NAME);
+            _dontUpdateColumnNames.add(Table.CREATED_BY_COLUMN_NAME);
         }
 
         boolean objectUriPreselectSet = false;
@@ -690,43 +689,43 @@ public class StatementUtils
 
         if (_updateBuiltInColumns && Operation.update != _operation)
         {
-            col = table.getColumn("Owner");
+            col = table.getColumn(Table.OWNER_COLUMN_NAME);
             if (null != col && null != user)
             {
                 cols.add(col);
                 values.add(new SQLFragment().appendValue(user.getUserId()));
-                done.add("Owner");
+                done.add(Table.OWNER_COLUMN_NAME);
             }
-            col = table.getColumn("CreatedBy");
+            col = table.getColumn(Table.CREATED_BY_COLUMN_NAME);
             if (null != col && null != user)
             {
                 cols.add(col);
                 values.add(new SQLFragment().appendValue(user.getUserId()));
-                done.add("CreatedBy");
+                done.add(Table.CREATED_BY_COLUMN_NAME);
             }
-            col = table.getColumn("Created");
+            col = table.getColumn(Table.CREATED_COLUMN_NAME);
             if (null != col)
             {
                 cols.add(col);
                 values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
-                done.add("Created");
+                done.add(Table.CREATED_COLUMN_NAME);
             }
         }
 
-        ColumnInfo colModifiedBy = table.getColumn("ModifiedBy");
+        ColumnInfo colModifiedBy = table.getColumn(Table.MODIFIED_BY_COLUMN_NAME);
         if (_updateBuiltInColumns && null != colModifiedBy && null != user)
         {
             cols.add(colModifiedBy);
             values.add(new SQLFragment().appendValue(user.getUserId()));
-            done.add("ModifiedBy");
+            done.add(Table.MODIFIED_BY_COLUMN_NAME);
         }
 
-        ColumnInfo colModified = table.getColumn("Modified");
+        ColumnInfo colModified = table.getColumn(Table.MODIFIED_COLUMN_NAME);
         if (_updateBuiltInColumns && null != colModified)
         {
             cols.add(colModified);
             values.add(new SQLFragment("CURRENT_TIMESTAMP"));   // Instead of {fn now()} -- see #27534
-            done.add("Modified");
+            done.add(Table.MODIFIED_COLUMN_NAME);
         }
         ColumnInfo colVersion = table.getVersionColumn();
         if (_updateBuiltInColumns && null != colVersion && !done.contains(colVersion.getName()))
