@@ -90,8 +90,8 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         for (int i=0; i < PositionImpl.ALPHABET.length; i++)
         {
             positionSql.append("\n")
-                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".Row = ? THEN (? || CAST(")
-                    .append(ExprColumn.STR_TABLE_ALIAS).append(".Col AS VARCHAR))")
+                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(getSqlDialect().concatenate(".Row = ? THEN (?", "CAST("))
+                    .append(ExprColumn.STR_TABLE_ALIAS).append(".Col + 1 AS VARCHAR))")
                     .add(i)
                     .add(PositionImpl.ALPHABET[i]);
         }
