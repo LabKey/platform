@@ -21,8 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -84,12 +84,15 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
         return _factory;
     }
 
-    /** @return Returns a set of roles with the SiteAdminRole filtered out
-     *          if the admin user that is impersonating is not a site admin.*/
+    /**
+     * @return Returns a set of roles with the privileged roles filtered out if the admin user that is impersonating
+     * isn't allow them.
+     */
     protected Set<Role> getFilteredContextualRoles(Set<Role> roles)
     {
-        if (getAdminUser() != null && !getAdminUser().hasSiteAdminPermission())
-            roles.remove(RoleManager.siteAdminRole);
+        if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonateSiteRolesPermission.class))
+            roles.removeIf(Role::isPrivileged);
+
         return roles;
     }
 }

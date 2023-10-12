@@ -104,6 +104,7 @@ import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
@@ -317,7 +318,6 @@ public class SecurityManager
         UserManager.addUserListener(new SecurityUserListener());
     }
 
-
     //
     // GroupListener
     //
@@ -416,7 +416,6 @@ public class SecurityManager
                 "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
     }
 
-
     /** Move is handled by direct call from ContainerManager into SecurityManager */
     private static class SecurityContainerListener extends ContainerManager.AbstractContainerListener
     {
@@ -426,7 +425,6 @@ public class SecurityManager
             deleteGroups(c, null);
         }
     }
-
 
     private static class SecurityUserListener implements UserManager.UserListener
     {
@@ -1481,7 +1479,7 @@ public class SecurityManager
     }
 
 
-    public static void deleteMembers(Group group, List<UserPrincipal> membersToDelete)
+    public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)
     {
         int groupId = group.getUserId();
 
@@ -1498,19 +1496,45 @@ public class SecurityManager
             }
             core.getSqlDialect().appendInClauseSql(sql, userIds);
 
-            new SqlExecutor(core.getSchema()).execute(sql);
+            try (DbScope.Transaction transaction = core.getScope().beginTransaction())
+            {
+                new SqlExecutor(core.getSchema()).execute(sql);
 
-            for (UserPrincipal member : membersToDelete)
-                fireDeletePrincipalFromGroup(groupId, member);
+                if (!group.isProjectGroup())
+                {
+                    // Clear caches BEFORE checking for the last site admin
+                    for (UserPrincipal member : membersToDelete)
+                        GroupMembershipCache.handleGroupChange(group, member);
+
+                    ensureAtLeastOneSiteAdminExists();
+                }
+
+                transaction.addCommitTask(() -> {
+                    for (UserPrincipal member : membersToDelete)
+                        fireDeletePrincipalFromGroup(groupId, member);
+                }, DbScope.CommitTaskOption.POSTROLLBACK);
+
+                transaction.commit();
+            }
+            finally
+            {
+                // Clear those caches again regardless of roll back or commit
+                 for (UserPrincipal member : membersToDelete)
+                    GroupMembershipCache.handleGroupChange(group, member);
+            }
         }
     }
 
     public static void deleteMember(Group group, UserPrincipal principal)
     {
-        int groupId = group.getUserId();
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-            "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId());
-        fireDeletePrincipalFromGroup(groupId, principal);
+        deleteMembers(group, Set.of(principal));
+    }
+
+    public static void ensureAtLeastOneSiteAdminExists()
+    {
+        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(CanImpersonateSiteRolesPermission.class));
+        if (siteAdmins.isEmpty())
+            throw new UnauthorizedException("You can't remove the last Site Admin from the site");
     }
 
     // Returns a list of errors
@@ -2124,34 +2148,18 @@ public class SecurityManager
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
-
-        for (User user : allUsers)
-            if (SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
-                users.add(user);
-
-        return users;
+        return UserManager.getActiveUsers().stream()
+            .filter(user -> SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
+            .toList();
     }
 
     public static List<User> getUsersWithOneOf(Container c, Set<Class<? extends Permission>> perms)
     {
-        Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
-
-        for (User user : allUsers)
-            if (SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
-                users.add(user);
-
-        return users;
-    }
-
-    /** Returns both users and groups, but direct members only (not recursive) */
-    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
-    {
-        return getGroupMemberNamesAndIds(path, false);
+        return UserManager.getActiveUsers().stream()
+            .filter(user -> SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
+            .toList();
     }
 
     /** Returns both users and groups, but direct members only (not recursive) */

@@ -6,7 +6,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AllowedForReadOnlyUser;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -18,15 +17,16 @@ public class ReadOnlyImpersonatingContext extends NotImpersonatingContext
     @Override
     public Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
     {
-        var allowed = perms.stream().filter(p -> null != p.getAnnotation(AllowedForReadOnlyUser.class)).collect(Collectors.toSet());
-        return allowed;
+        return perms.stream()
+            .filter(p -> null != p.getAnnotation(AllowedForReadOnlyUser.class))
+            .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
     {
         var ret = super.getContextualRoles(user, policy);
-        ret.remove(RoleManager.siteAdminRole);
+        ret.removeIf(Role::isPrivileged);
         return ret;
     }
 

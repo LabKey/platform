@@ -819,18 +819,8 @@ public class SecurityController extends SpringActionController
                 //check for users to delete
                 if (removeNames != null)
                 {
-                    //get list of group members to determine how many there are
-                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-
-                    //if this is the site admins group and user is attempting to remove all site admins, display error.
-                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
-                    {
-                        errors.addError(new LabKeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
-                    }
-                    else
-                    {
-                        SecurityManager.deleteMembers(_group, removeIds);
-                    }
+                    // Note: deleteMembers() will throw if removing this member will result in no Site Admins
+                    SecurityManager.deleteMembers(_group, removeIds);
                 }
 
                 // issue 43366 : users without the AddUserPermission are still allowed to create new users through the
@@ -1540,8 +1530,8 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    // Delete all container permissions. Note: savePolicy() throws on some unauthorized actions (e.g., App Admin
-    // attempting to delete Site Admin perms)
+    // Delete all container permissions. Note: savePolicy() and deleteMember() throw on some unauthorized actions
+    // (e.g., App Admin attempting to delete Site Admin perms, deleting the last site admin)
     private void deletePermissions(User user)
     {
         if (user != null)

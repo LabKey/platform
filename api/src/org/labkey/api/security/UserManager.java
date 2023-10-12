@@ -46,6 +46,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -946,8 +947,10 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (DbScope.Transaction transaction = CORE.getScope().beginTransaction())
         {
+            boolean needToEnsureSiteAdmins = user.hasRootPermission(CanImpersonateSiteRolesPermission.class);
+
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
@@ -960,6 +963,14 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
+
+            if (needToEnsureSiteAdmins)
+            {
+                // Clear cache BEFORE checking for the last site admin (Note: finally below ensures it's cleared on roll back and non-ensure cases)
+                UserManager.clearUserList();
+                SecurityManager.ensureAtLeastOneSiteAdminExists();
+            }
+            transaction.commit();
         }
         catch (Exception e)
         {

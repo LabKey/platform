@@ -234,11 +234,21 @@ public class SecurityPolicyManager
                 Table.insert(null, table, assignment);
             }
 
-            //commit transaction
+            // Ensure at least one site admin will remain if attempting to modify the root container's policy
+            if (policy.getResourceId().equals(ContainerManager.getRoot().getResourceId()))
+            {
+                // Remove the resource-oriented policy from cache BEFORE checking for the last site admin
+                remove(policy);
+                SecurityManager.ensureAtLeastOneSiteAdminExists();
+            }
+
             transaction.commit();
         }
-        //remove the resource-oriented policy from cache
-        remove(policy);
+        finally
+        {
+            // Addresses roll back and non-ensure cases
+            remove(policy);
+        }
         notifyPolicyChange(policy.getResourceId());
     }
 
