@@ -138,6 +138,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
@@ -291,6 +292,7 @@ import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebpar
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
+import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
 
 /**
  * User: migra
@@ -1047,6 +1049,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Deserialize objects from update forms",
                 "We no longer deserialize objects encoded into update forms. Turn this feature on if the removal of object deserialization is causing specific update operations to fail.",
                 false);
+        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+                "Marketing updates from local server", "Test marketing updates from a local server (requires the mothership module).", false, true));
+
+        ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+            // update the timer task when this setting changes
+            MothershipReport.enableLocalMarketingUpdates(enabled);
+            _warningProvider.createMarketingTimerTask();
+        });
 
         if (null != PropertyService.get())
         {
@@ -1152,6 +1162,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+        _warningProvider.createMarketingTimerTask();
         TempTableTracker.init();
     }
 

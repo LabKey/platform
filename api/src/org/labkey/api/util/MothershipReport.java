@@ -31,6 +31,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
 import javax.mail.internet.ContentType;
@@ -52,6 +53,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -82,6 +84,8 @@ public class MothershipReport implements Runnable
     private static int _droppedExceptionCount = 0;
 
     public final static String JSON_METRICS_KEY = "jsonMetrics";
+    public static final String EXPERIMENTAL_LOCAL_MARKETING_UPDATE = "localMarketingUpdates";
+    private static boolean _localMarketingUpdatesEnabled = ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LOCAL_MARKETING_UPDATE);
 
     /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
     public static boolean isShowSelfReportExceptions()
@@ -133,7 +137,16 @@ public class MothershipReport implements Runnable
             String getAction()
             {
                 return "checkForUpdates";
-            }};
+            }
+        },
+        GetMarketingUpdates
+        {
+            @Override
+            String getAction()
+            {
+                return "getMarketingUpdates";
+            }
+        };
 
         URLHelper getURL() throws URISyntaxException
         {
@@ -488,5 +501,22 @@ public class MothershipReport implements Runnable
                 LOG.error("Failed to serialize JSON metrics", e);
             }
         }
+    }
+
+    public static boolean shouldReceiveMarketingUpdates(String distributionName)
+    {
+        // the set of distributions that will receive the marketing message just community for now
+        Set<String> allowed = Set.of("community");
+        return isLocalMarketingUpdatesEnabled() || allowed.contains(distributionName);
+    }
+
+    public static void enableLocalMarketingUpdates(boolean enabled)
+    {
+        _localMarketingUpdatesEnabled = enabled;
+    }
+
+    public static boolean isLocalMarketingUpdatesEnabled()
+    {
+        return _localMarketingUpdatesEnabled;
     }
 }
