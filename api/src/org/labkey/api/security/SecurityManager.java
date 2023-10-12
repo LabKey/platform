@@ -1461,6 +1461,9 @@ public class SecurityManager
         if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
             throw new IllegalArgumentException("Illegal group type: " + type);
 
+        if (c.isRoot())
+            throw new IllegalArgumentException("Should not call deleteGroups() on the root");
+
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
 
         SqlExecutor executor = new SqlExecutor(core.getSchema());
@@ -1534,7 +1537,12 @@ public class SecurityManager
     {
         List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(CanImpersonateSiteRolesPermission.class));
         if (siteAdmins.isEmpty())
-            throw new UnauthorizedException("You can't remove the last Site Admin from the site");
+        {
+            // Skip the check while bootstrapping since some policies are saved before any Site Admins exist
+            boolean bootstrapping = ModuleLoader.getInstance().isNewInstall() && !ModuleLoader.getInstance().isStartupComplete();
+            if (!bootstrapping)
+                throw new UnauthorizedException("You can't remove the last Site Admin from the site");
+        }
     }
 
     // Returns a list of errors

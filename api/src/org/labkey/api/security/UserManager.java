@@ -1020,7 +1020,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (DbScope.Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);
@@ -1037,11 +1037,19 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
+            if (!active && userToAdjust.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+            {
+                clearUserList();
+                SecurityManager.ensureAtLeastOneSiteAdminExists();
+            }
+
             removeRecentUser(userToAdjust);
 
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled") + " " + extendedMessage
             );
+
+            transaction.commit();
         }
         catch(RuntimeSQLException e)
         {

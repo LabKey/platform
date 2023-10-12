@@ -587,6 +587,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
+        _log.info("Starting LabKey Server " + AppProps.getInstance().getReleaseVersion());
         _log.info("Server installation GUID: " + AppProps.getInstance().getServerGUID() + ", server session GUID: " + AppProps.getInstance().getServerSessionGUID());
         _log.info("Deploying to context path " + AppProps.getInstance().getContextPath());
 
