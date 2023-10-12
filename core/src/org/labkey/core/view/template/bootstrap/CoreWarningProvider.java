@@ -76,7 +76,7 @@ public class CoreWarningProvider implements WarningProvider
     private static final Logger LOG = LogHelper.getLogger(CoreWarningProvider.class, "Warning provider for the core module.");
     private Timer _marketingTimer;
     private static HtmlString _marketingMessage;
-    private static HtmlString _marketingMessageDefault = HtmlString.unsafe("Do more with LabKey Server. Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions. ");
+    private static HtmlString _marketingMessageDefault = HtmlString.unsafe("Do more with LabKey Server. Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions.");
 
     /** Schema name -> problem list */
     private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
@@ -408,7 +408,7 @@ public class CoreWarningProvider implements WarningProvider
             MothershipReport report;
             try
             {
-                MothershipReport.Target target = MothershipReport.isLocalMarketingUpdatesEnabled()
+                MothershipReport.Target target = MothershipReport.isSelfTestMarketingUpdates()
                         ? MothershipReport.Target.local
                         : MothershipReport.Target.remote;
                 report = new MothershipReport(MothershipReport.Type.GetMarketingUpdates, target, null);

@@ -1050,11 +1050,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "We no longer deserialize objects encoded into update forms. Turn this feature on if the removal of object deserialization is causing specific update operations to fail.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
-                "Marketing updates from local server", "Test marketing updates from a local server (requires the mothership module).", false, true));
+                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true));
 
         ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
-            MothershipReport.enableLocalMarketingUpdates(enabled);
+            MothershipReport.setSelfTestMarketingUpdates(enabled);
             _warningProvider.createMarketingTimerTask();
         });
 

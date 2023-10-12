@@ -85,7 +85,7 @@ public class MothershipReport implements Runnable
 
     public final static String JSON_METRICS_KEY = "jsonMetrics";
     public static final String EXPERIMENTAL_LOCAL_MARKETING_UPDATE = "localMarketingUpdates";
-    private static boolean _localMarketingUpdatesEnabled = ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LOCAL_MARKETING_UPDATE);
+    private static boolean _selfTestMarketingUpdates = ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_LOCAL_MARKETING_UPDATE);
 
     /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
     public static boolean isShowSelfReportExceptions()
@@ -507,16 +507,16 @@ public class MothershipReport implements Runnable
     {
         // the set of distributions that will receive the marketing message just community for now
         Set<String> allowed = Set.of("community");
-        return isLocalMarketingUpdatesEnabled() || allowed.contains(distributionName);
+        return isSelfTestMarketingUpdates() || allowed.contains(distributionName);
     }
 
-    public static void enableLocalMarketingUpdates(boolean enabled)
+    public static void setSelfTestMarketingUpdates(boolean enabled)
     {
-        _localMarketingUpdatesEnabled = enabled;
+        _selfTestMarketingUpdates = enabled;
     }
 
-    public static boolean isLocalMarketingUpdatesEnabled()
+    public static boolean isSelfTestMarketingUpdates()
     {
-        return _localMarketingUpdatesEnabled;
+        return _selfTestMarketingUpdates;
     }
 }
