@@ -46,11 +46,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-/*
-* User: Dave
-* Date: Apr 22, 2009
-*/
-
 /**
  * Global role manager
  */
@@ -171,7 +166,6 @@ public class RoleManager
         return perm;
     }
 
-
     public static List<Role> getAllRoles()
     {
         return _roles;
@@ -181,8 +175,8 @@ public class RoleManager
     {
         SecurityPolicy policy = ContainerManager.getRoot().getPolicy();
         return _roles.stream().
-                filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
-                collect(Collectors.toSet());
+            filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
+            collect(Collectors.toSet());
     }
 
     private static void registerAdminRole(Role role)
@@ -290,9 +284,9 @@ public class RoleManager
     public static Set<Role> roleSet(Class<? extends Role>... roleClasses)
     {
         Set<Role> roles = new HashSet<>();
-        if(null != roleClasses)
+        if (null != roleClasses)
         {
-            for(Class<? extends Role> roleClass : roleClasses)
+            for (Class<? extends Role> roleClass : roleClasses)
             {
                 if (null != roleClass)
                     roles.add(getRole(roleClass));

@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -791,7 +792,7 @@ public class UserManager
         if (SecurityManager.loginExists(currentEmail))
         {
             DbScope scope = CORE.getSchema().getScope();
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            try (Transaction transaction = scope.ensureTransaction())
             {
                 Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
@@ -815,7 +816,7 @@ public class UserManager
         newEmail = new ValidEmail(newEmail).getEmailAddress();
 
         DbScope scope = CORE.getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (!isAdmin)
             {
@@ -947,7 +948,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try (DbScope.Transaction transaction = CORE.getScope().beginTransaction())
+        try (Transaction transaction = CORE.getScope().beginTransaction())
         {
             boolean needToEnsureSiteAdmins = user.hasRootPermission(CanImpersonateSiteRolesPermission.class);
 
@@ -967,7 +968,7 @@ public class UserManager
             if (needToEnsureSiteAdmins)
             {
                 // Clear cache BEFORE checking for the last site admin (Note: finally below ensures it's cleared on roll back and non-ensure cases)
-                UserManager.clearUserList();
+                clearUserList();
                 SecurityManager.ensureAtLeastOneSiteAdminExists();
             }
             transaction.commit();
@@ -1020,7 +1021,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try (DbScope.Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
+        try (Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);

@@ -37,6 +37,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -1046,7 +1048,7 @@ public class SecurityManager
         User newUser;
         DbScope scope = core.getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (createLogin && !status.isLdapOrSsoEmail())
             {
@@ -1138,7 +1140,7 @@ public class SecurityManager
         if (null != email.getPersonal())
             displayName = email.getPersonal();
         else if (email.getEmailAddress().indexOf("@") > 0)
-            displayName = email.getEmailAddress().substring(0,email.getEmailAddress().indexOf("@"));
+            displayName = email.getEmailAddress().substring(0, email.getEmailAddress().indexOf("@"));
         else
             displayName = email.getEmailAddress();
 
@@ -1414,46 +1416,64 @@ public class SecurityManager
                 groupId == Group.groupDevelopers)
             throw new IllegalArgumentException("The global groups cannot be deleted.");
 
-        Group group = getGroup(groupId);
-
-        // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
-        GroupMembershipCache.handleGroupChange(group, group);
-
-        // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
-        // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
-        // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
-
-        SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?",groupId);
-        List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
-
-        Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
-
-        // make sure we didn't empty out any policies completely
-        // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
-        // NOTE: handy, so we'd have to rework the API/caching a bit
-
-        FieldKey resourceId = new FieldKey(null,"resourceid");
-        for (String id : resources)
+        try (Transaction transaction = core.getScope().beginTransaction())
         {
-            SimpleFilter f = new SimpleFilter(resourceId, id);
-            if (!new TableSelector(core.getTableInfoRoleAssignments(),f,null).exists())
+            Group group = getGroup(groupId);
+            if (null == group)
+                return;
+
+            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+            GroupMembershipCache.handleGroupChange(group, group);
+
+            // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
+            // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
+            // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
+
+            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?", groupId);
+            List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
+
+            Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
+
+            // make sure we didn't empty out any policies completely
+            // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
+            // NOTE: handy, so we'd have to rework the API/caching a bit
+
+            FieldKey resourceId = new FieldKey(null, "resourceid");
+            for (String id : resources)
             {
-                SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid,userid,role) VALUES (?,-3,'org.labkey.api.security.roles.NoPermissionsRole')",id);
-                new SqlExecutor(core.getSchema()).execute(insert);
+                SimpleFilter f = new SimpleFilter(resourceId, id);
+                if (!new TableSelector(core.getTableInfoRoleAssignments(), f, null).exists())
+                {
+                    SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid, userid, role) VALUES (?, -3, 'org.labkey.api.security.roles.NoPermissionsRole')", id);
+                    new SqlExecutor(core.getSchema()).execute(insert);
+                }
             }
+
+            Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
+            Table.delete(core.getTableInfoMembers(), groupFilter);
+
+            Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
+            Table.delete(core.getTableInfoPrincipals(), principalsFilter);
+            Container c = ContainerManager.getForId(group.getContainer());
+
+            Runnable clearCaches = () -> {
+                GroupCache.uncache(groupId);
+                ProjectAndSiteGroupsCache.uncache(c);
+                // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
+                SecurityPolicyManager.notifyPolicyChanges(resources);
+            };
+
+            // Clear caches after commit or rollback
+            transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            if (!group.isProjectGroup())
+            {
+                clearCaches.run();
+                ensureAtLeastOneSiteAdminExists();
+            }
+
+            transaction.commit();
         }
-
-        Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
-        Table.delete(core.getTableInfoMembers(), groupFilter);
-
-        Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
-        Table.delete(core.getTableInfoPrincipals(), principalsFilter);
-
-        GroupCache.uncache(groupId);
-        Container c = ContainerManager.getForId(group.getContainer());
-        ProjectAndSiteGroupsCache.uncache(c);
-        // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
-        SecurityPolicyManager.notifyPolicyChanges(resources);
     }
 
     public static void deleteGroups(Container c, @Nullable PrincipalType type)
@@ -1499,31 +1519,25 @@ public class SecurityManager
             }
             core.getSqlDialect().appendInClauseSql(sql, userIds);
 
-            try (DbScope.Transaction transaction = core.getScope().beginTransaction())
+            try (Transaction transaction = core.getScope().beginTransaction())
             {
                 new SqlExecutor(core.getSchema()).execute(sql);
+                Runnable clearCaches = () -> {
+                    for (UserPrincipal member : membersToDelete)
+                        GroupMembershipCache.handleGroupChange(group, member);
+                };
+
+                // Clear caches after commit or rollback
+                transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
                 if (!group.isProjectGroup())
                 {
-                    // Clear caches BEFORE checking for the last site admin
-                    for (UserPrincipal member : membersToDelete)
-                        GroupMembershipCache.handleGroupChange(group, member);
-
+                    // Must clear caches BEFORE checking for the last site admin
+                    clearCaches.run();
                     ensureAtLeastOneSiteAdminExists();
                 }
 
-                transaction.addCommitTask(() -> {
-                    for (UserPrincipal member : membersToDelete)
-                        fireDeletePrincipalFromGroup(groupId, member);
-                }, DbScope.CommitTaskOption.POSTROLLBACK);
-
                 transaction.commit();
-            }
-            finally
-            {
-                // Clear those caches again regardless of roll back or commit
-                 for (UserPrincipal member : membersToDelete)
-                    GroupMembershipCache.handleGroupChange(group, member);
             }
         }
     }
@@ -3676,9 +3690,9 @@ public class SecurityManager
         @Test
         public void testDisplayName() throws Exception
         {
-            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"),1));
-            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"),1));
-            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"),1));
+            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"), 1));
+            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"), 1));
+            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"), 1));
         }
 
         /**
@@ -3805,9 +3819,9 @@ public class SecurityManager
         {
             Container parent = JunitUtil.getTestContainer();
             Container test;
-            Pair<ValidEmail,User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
-            Pair<ValidEmail,User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
-            Pair<ValidEmail,User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
+            Pair<ValidEmail, User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
+            Pair<ValidEmail, User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
+            Pair<ValidEmail, User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
 
             try
             {

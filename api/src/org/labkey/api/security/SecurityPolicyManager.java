@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -190,7 +191,7 @@ public class SecurityPolicyManager
     {
         DbScope scope = core.getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
@@ -389,7 +390,7 @@ public class SecurityPolicyManager
 
     public static void deletePolicy(@NotNull SecurableResource resource)
     {
-        try (DbScope.Transaction transaction = core.getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = core.getSchema().getScope().ensureTransaction())
         {
             //delete all rows where resourceid = resource.getResourceId()
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
