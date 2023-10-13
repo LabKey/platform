@@ -196,7 +196,7 @@ public class CoreWarningProvider implements WarningProvider
     private void getPasswordRuleWarnings(Warnings warnings, boolean showAllWarnings)
     {
         if (showAllWarnings || (!AppProps.getInstance().isDevMode() && DbLoginManager.getPasswordRule().isDeprecated()))
-            warnings.add(HtmlString.of("Database authentication is configured with \"" + DbLoginManager.getPasswordRule().name() + "\" strength, which is not appropriate for a production deployments. This option will be removed in the next major release."));
+            warnings.add(HtmlString.of("Database authentication is configured with \"" + DbLoginManager.getPasswordRule().name() + "\" strength, which is not appropriate for production deployments. This option will be removed in the next major release."));
     }
 
     private void getHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)

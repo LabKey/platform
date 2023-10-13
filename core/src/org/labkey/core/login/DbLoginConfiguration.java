@@ -10,14 +10,40 @@ import java.util.Map;
 
 public class DbLoginConfiguration extends BaseAuthenticationConfiguration<DbLoginAuthenticationProvider> implements AuthenticationConfiguration.LoginFormAuthenticationConfiguration<DbLoginAuthenticationProvider>
 {
+    private static final PasswordRule DEFAULT_RULE = PasswordRule.Strong;
+    private static final PasswordExpiration DEFAULT_EXPIRATION = PasswordExpiration.Never;
+
     private final PasswordRule _passwordRule;
     private final PasswordExpiration _expiration;
 
     protected DbLoginConfiguration(DbLoginAuthenticationProvider provider, Map<String, String> stringProperties, Map<String, Object> properties)
     {
         super(provider, properties);
-        _passwordRule = PasswordRule.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Strength.toString(), PasswordRule.Strong.toString()));
-        _expiration = PasswordExpiration.valueOf(stringProperties.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
+
+        String ruleProp = stringProperties.getOrDefault(DbLoginManager.Key.Strength.toString(), DEFAULT_RULE.toString());
+        String expProp = stringProperties.getOrDefault(DbLoginManager.Key.Expiration.toString(), DEFAULT_EXPIRATION.toString());
+
+        PasswordRule tempRule = DEFAULT_RULE;
+        try
+        {
+            tempRule = PasswordRule.valueOf(ruleProp);
+        }
+        catch (IllegalArgumentException ignore)
+        {
+            LOG.warn("%s: Unable to load saved password rule '%s'. Using default: %s".formatted(getDescription(), ruleProp, DEFAULT_RULE));
+        }
+        _passwordRule = tempRule;
+
+        PasswordExpiration tempExpiration = DEFAULT_EXPIRATION;
+        try
+        {
+            tempExpiration = PasswordExpiration.valueOf(expProp);
+        }
+        catch (IllegalArgumentException ignore)
+        {
+            LOG.warn("%s: Unable to load saved password expiration '%s'. Using default: %s".formatted(getDescription(), expProp, DEFAULT_EXPIRATION));
+        }
+        _expiration = tempExpiration;
     }
 
     @Override
