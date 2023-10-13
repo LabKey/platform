@@ -77,7 +77,6 @@ public class ResponseHelper
         {
             // filename should not have any path components "/", and should look like a legal filename
             String safeName = FileUtil.makeLegalName(Path.parse(filename).getName());
-            assert filename.equals(safeName);
             return builder().filename(safeName, StandardCharsets.UTF_8).build().toString();
         }
     };
