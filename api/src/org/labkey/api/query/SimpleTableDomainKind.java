@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
@@ -267,9 +268,11 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
         String tableName = (String)arguments.get("tableName");
         if (schemaName == null || tableName == null)
             throw new IllegalArgumentException("schemaName and tableName are required");
-
+        String trimmedName = StringUtils.trimToNull(domain.getName());
+        if (trimmedName == null)
+            throw new IllegalArgumentException("Non-blank domain name is required.");
         String domainURI = generateDomainURI(schemaName, tableName, container, user);
-        return PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);
+        return PropertyService.get().createDomain(container, domainURI, trimmedName, templateInfo);
     }
 }
 
