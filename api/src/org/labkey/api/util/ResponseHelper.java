@@ -149,6 +149,11 @@ public class ResponseHelper
         }
     }
 
+    public static void setContentDisposition(HttpServletResponse response, ContentDisposition disposition)
+    {
+        response.setHeader("Content-Disposition", disposition.toString());
+    }
+
     public static void setContentDisposition(HttpServletResponse response, ContentDispositionType type)
     {
         response.setHeader("Content-Disposition", type.toHeaderValue());
@@ -171,8 +176,7 @@ public class ResponseHelper
      *         and false if any of the conditions is not satisfied, in which case
      *         request processing is stopped
      */
-    public static boolean checkIfHeaders(ViewContext context,
-                                         String eTag, long lastModified)
+    public static boolean checkIfHeaders(ViewContext context, String eTag, long lastModified)
             throws IOException
     {
         return checkIfHeaders(context.getRequest(), context.getResponse(), eTag, lastModified);

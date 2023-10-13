@@ -82,6 +82,7 @@ import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.query.AttachmentAuditProvider;
+import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -96,6 +97,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1026,7 +1028,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     throw new NotFoundException("Could not find file " + alias);
 
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename(alias, StandardCharsets.UTF_8).build());
                 s = new FileInputStream(file);
             }
             else
@@ -1038,9 +1040,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename("alias", StandardCharsets.UTF_8).build());
                 else
-                    writer.setContentDisposition("inline; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("inline").filename(alias, StandardCharsets.UTF_8).build());
 
                 int size = rs.getInt("DocumentSize");
                 if (size > 0)
@@ -1219,7 +1221,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         @Override
-        public void setContentDisposition(String value)
+        public void setContentDisposition(ContentDisposition value)
         {
             ResponseHelper.setContentDisposition(_response, value);
         }

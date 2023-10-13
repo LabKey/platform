@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.util.ResponseHelper;
+import org.springframework.http.ContentDisposition;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
@@ -45,7 +46,7 @@ public class CacheableWriter implements DocumentWriter
     };
 
     private String _contentType;
-    private String _disposition;
+    private ContentDisposition _disposition;
     private int _size;
     private ByteArrayOutputStream _bOut = new ByteArrayOutputStream();
     private byte[] _bytes;
@@ -72,8 +73,7 @@ public class CacheableWriter implements DocumentWriter
         _contentType = contentType;
     }
 
-    @Override
-    public void setContentDisposition(String value)
+    public void setContentDisposition(ContentDisposition value)
     {
         _disposition = value;
     }
