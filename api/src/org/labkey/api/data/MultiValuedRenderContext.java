@@ -59,6 +59,8 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             }
             else
             {
+                // Use -1 as the limit so that we pick up back-to-back delimiters as empty strings in the returned array,
+                // which lets us understand there were rows with nulls.
                 String[] values = value.toString().split(VALUE_DELIMITER_REGEX, -1);
                 if (length != -1 && values.length != length)
                 {
