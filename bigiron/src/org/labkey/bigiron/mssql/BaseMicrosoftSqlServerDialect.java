@@ -687,7 +687,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter)
     {
-        String sql = selectSql.getSQL().toUpperCase();
+        String sql = selectSql.getRawSQL().toUpperCase();
 
         // Use SQLServer's FOR XML syntax to concat multiple values together
         // We want them separated by commas, so prefix each value with a comma and then use SUBSTRING to strip
@@ -728,9 +728,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             throw new IllegalArgumentException("Can't handle SQL: " + sql);
         }
-        ret.insert(fromIndex, "AS NVARCHAR) AS [text()] ");
+        ret.insert(fromIndex, "AS NVARCHAR), '') AS [text()] ");
         int selectIndex = sql.indexOf("SELECT");
-        ret.insert(selectIndex + "SELECT".length(), "'" + delimiter + "' + CAST(");
+        ret.insert(selectIndex + "SELECT".length(), "'" + delimiter + "' + COALESCE(CAST(");
         ret.insert(0, "SUBSTRING ((");
         ret.append(" FOR XML PATH ('')), ");
         // Trim off the first delimiter
