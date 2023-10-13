@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.attachments.DocumentWriter;
+import org.labkey.api.util.ResponseHelper;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
@@ -110,7 +111,7 @@ public class CacheableWriter implements DocumentWriter
         }
         if (_disposition != null)
         {
-            response.setHeader("Content-Disposition", _disposition);
+            ResponseHelper.setContentDisposition(response, _disposition);
         }
         response.setContentLength(_size);
         response.getOutputStream().write(getBytes());

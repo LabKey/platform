@@ -18,11 +18,14 @@ package org.labkey.api.util;
 
 // place to centralize some common usages
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.ViewContext;
+import org.springframework.http.ContentDisposition;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.StringTokenizer;
 
@@ -30,6 +33,56 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED;
 
 public class ResponseHelper
 {
+    public enum ContentDispositionType
+    {
+        attachment("attachment")
+        {
+            @Override
+            final ContentDisposition.Builder builder()
+            {
+                return ContentDisposition.attachment();
+            }
+        },
+        inline("inline")
+        {
+            @Override
+            final ContentDisposition.Builder builder()
+            {
+                return ContentDisposition.inline();
+            }
+        },
+        formData("form-data")
+        {
+            @Override
+            final ContentDisposition.Builder builder()
+            {
+                return ContentDisposition.formData();
+            }
+        };
+
+        final String _type;
+
+        ContentDispositionType(String type)
+        {
+            this._type = type;
+        }
+
+        abstract ContentDisposition.Builder builder();
+
+        public String toHeaderValue()
+        {
+            return _type;
+        }
+        public String toHeaderValue(@NotNull String filename)
+        {
+            // filename should not have any path components "/", and should look like a legal filename
+            String safeName = FileUtil.makeLegalName(Path.parse(filename).getName());
+            assert filename.equals(safeName);
+            return builder().filename(safeName, StandardCharsets.UTF_8).build().toString();
+        }
+    };
+
+
     public static void setNoCache(HttpServletResponse response)
     {
         response.setHeader("Expires", "Sun, 01 Jan 2000 00:00:00 GMT");
@@ -82,6 +135,31 @@ public class ResponseHelper
     {
         setPublicStatic(response, Duration.ofDays(days));
     }
+
+    public static void setContentDisposition(HttpServletResponse response, String type)
+    {
+        switch (type.toLowerCase())
+        {
+            case "attachment":
+            case "inline":
+            case "form-data":
+                 response.setHeader("Content-Disposition", "form-data");
+                break;
+            default:
+                throw new IllegalStateException("unexected value for Content-Disposition: " + type);
+        }
+    }
+
+    public static void setContentDisposition(HttpServletResponse response, ContentDispositionType type)
+    {
+        response.setHeader("Content-Disposition", type.toHeaderValue());
+    }
+
+    public static void setContentDisposition(HttpServletResponse response, ContentDispositionType type, @NotNull String filename)
+    {
+        response.setHeader("Content-Disposition", type.toHeaderValue(filename));
+    }
+
 
     /**
      * Check if the conditions specified in the optional If headers are
