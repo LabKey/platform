@@ -1463,7 +1463,7 @@ public class SecurityManager
                 SecurityPolicyManager.notifyPolicyChanges(resources);
             };
 
-            // Clear caches after commit or rollback
+            // Add clear caches commit task here since ensureAtLeastOneSiteAdminExists() might throw
             transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (!group.isProjectGroup())
@@ -1509,8 +1509,7 @@ public class SecurityManager
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
             SQLFragment sql = new SQLFragment(
-            "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId = ? AND UserId ");
+            "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
             List<Integer> userIds = new ArrayList<>(membersToDelete.size());
             for (UserPrincipal userPrincipal : membersToDelete)
@@ -1527,7 +1526,7 @@ public class SecurityManager
                         GroupMembershipCache.handleGroupChange(group, member);
                 };
 
-                // Clear caches after commit or rollback
+                // Add clear caches commit task here since ensureAtLeastOneSiteAdminExists() might throw
                 transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
                 if (!group.isProjectGroup())
