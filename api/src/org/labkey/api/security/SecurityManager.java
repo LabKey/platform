@@ -3046,7 +3046,7 @@ public class SecurityManager
                     }
                 }
                 String[] roles = prop.getValue().split(",");
-                MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
                 for (String roleName : roles)
                 {
                     roleName = StringUtils.trimToNull(roleName);
@@ -3364,7 +3364,6 @@ public class SecurityManager
 
         private void attemptRenameGroupExpectErrors(String newName, String expectedErrorMessage)
         {
-
             try
             {
                 renameGroup(groupA, newName, null);
@@ -3383,7 +3382,6 @@ public class SecurityManager
                             "' to '" + groupA.getName() + "' because that name is already used by another group!"},
                     {groupB.getName(), "Cannot rename group '" + groupA.getName() +
                             "' to '" + groupB.getName() + "' because that name is already used by another group!"}
-
             };
         }
 
