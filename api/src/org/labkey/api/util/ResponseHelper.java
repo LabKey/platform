@@ -137,16 +137,16 @@ public class ResponseHelper
 
     public static void setContentDisposition(HttpServletResponse response, String type)
     {
-        switch (type.toLowerCase())
+        type = type.toLowerCase();
+        for (var e : ContentDispositionType.values())
         {
-            case "attachment":
-            case "inline":
-            case "form-data":
-                 response.setHeader("Content-Disposition", "form-data");
-                break;
-            default:
-                throw new IllegalStateException("unexected value for Content-Disposition: " + type);
+            if (e._type.equals(type))
+            {
+                response.setHeader("Content-Disposition", e._type);
+                return;
+            }
         }
+        throw new IllegalStateException("unexpected value for Content-Disposition: " + type);
     }
 
     public static void setContentDisposition(HttpServletResponse response, ContentDisposition disposition)

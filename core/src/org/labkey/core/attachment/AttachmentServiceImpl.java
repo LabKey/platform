@@ -1028,7 +1028,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     throw new NotFoundException("Could not find file " + alias);
 
                 if (asAttachment)
-                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename(alias, StandardCharsets.UTF_8).build());
+                    writer.setContentDisposition(ContentDisposition.attachment().filename(alias, StandardCharsets.UTF_8).build());
                 s = new FileInputStream(file);
             }
             else

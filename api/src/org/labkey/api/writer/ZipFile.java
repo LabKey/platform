@@ -97,7 +97,7 @@ public class ZipFile extends AbstractVirtualFile
     public static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
     {
         response.setContentType("application/zip");
-        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, _makeLegalName(name));
+        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, name);
 
         return response.getOutputStream();
     }
