@@ -434,11 +434,16 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
                 window.location.reload();
             },
             failure: function(response) {
-                var jsonResp = LABKEY.Utils.decode(response.responseText);
-                if (jsonResp && jsonResp.errors)
-                {
-                    var errorHTML = jsonResp.errors[0].message;
-                    Ext4.Msg.alert('Error', errorHTML);
+                const jsonResp = LABKEY.Utils.decode(response.responseText);
+                if (jsonResp) {
+                    if (jsonResp.errors) {
+                        const errorHTML = jsonResp.errors[0].message;
+                        Ext4.Msg.alert('Error', errorHTML);
+                    }
+                    else if (jsonResp.exception)
+                    {
+                        Ext4.Msg.alert('Error', jsonResp.exception);
+                    }
                 }
             }
         });
