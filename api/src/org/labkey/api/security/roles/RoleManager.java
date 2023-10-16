@@ -111,8 +111,8 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
-        registerRole(new TroubleshooterRole(), false);
         registerRole(new ImpersonatingTroubleshooterRole(), false);
+        registerRole(new TroubleshooterRole(), false);
         registerRole(new PlatformDeveloperRole(), false);
         registerRole(new SeeUserAndGroupDetailsRole());
         registerRole(new CanSeeAuditLogRole());
