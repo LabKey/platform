@@ -21,6 +21,7 @@ import org.labkey.experiment.api.MaterialSource;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +164,6 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
     @Override
     public Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
-        return null;
+        return Collections.emptyList();
     }
 }
