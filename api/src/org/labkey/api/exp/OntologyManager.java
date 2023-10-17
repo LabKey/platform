@@ -1813,10 +1813,10 @@ public class OntologyManager
 
     public static DomainDescriptor ensureDomainDescriptor(String domainURI, String name, Container container)
     {
-        String trimmedName = StringUtils.trimToEmpty(name);
-        if (trimmedName.isEmpty())
+        String trimmedName = StringUtils.trimToNull(name);
+        if (trimmedName == null)
             throw new IllegalArgumentException("Non-blank name is required.");
-        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(StringUtils.trimToNull(name)).build();
+        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(trimmedName).build();
         return ensureDomainDescriptor(dd);
     }
 

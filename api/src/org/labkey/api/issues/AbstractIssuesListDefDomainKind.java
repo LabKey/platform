@@ -308,13 +308,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
-            String name = StringUtils.trimToEmpty(domain.getName());
+            String name = StringUtils.trimToNull(domain.getName());
+
+            if (null == name)
+                throw new IllegalArgumentException("Issue name must not be null.");
+
             String providerName = getKindName();
             String singularNoun = (arguments != null && arguments.getSingularItemName() != null) ? arguments.getSingularItemName() : getDefaultSingularName();
             String pluralNoun = (arguments != null && arguments.getPluralItemName() != null) ? arguments.getPluralItemName() : getDefaultPluralName();
-
-            if (StringUtils.isBlank(name))
-                throw new IllegalArgumentException("Issue name must not be null.");
 
             IssuesListDefService.get().saveIssueProperties(container, arguments,  IssuesListDefService.get().getNameFromDomain(domain));
 
