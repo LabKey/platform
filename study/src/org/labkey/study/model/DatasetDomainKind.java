@@ -401,7 +401,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         arguments.setName(StringUtils.trimToNull(domain.getName()));
         String name = arguments.getName();
         if (name == null)
-            throw new IllegalArgumentException("Non-blank name is required.");
+            throw new IllegalArgumentException("Dataset name cannot be empty.");
         String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
