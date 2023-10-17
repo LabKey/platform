@@ -124,6 +124,8 @@ public class XarExporter
 
     public static final String MATERIAL_PREFIX_PLACEHOLDER_SUFFIX = "sfx";
 
+    public static final String GPAT_ASSAY_PROTOCOL_LSID_SUB = ":GeneralAssayProtocol.Folder";
+
     /**
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
@@ -979,7 +981,7 @@ public class XarExporter
         }
         ProtocolBaseType xProtocol = protocolDefs.addNewProtocol();
 
-        boolean useXarJobId = protocol.getLSID().indexOf("urn:lsid:labkey.com:GeneralAssayProtocol.") == 0;
+        boolean useXarJobId = protocol.getLSID().indexOf(GPAT_ASSAY_PROTOCOL_LSID_SUB) > 0;
         xProtocol.setAbout(_relativizedLSIDs.relativize(protocol.getLSID(), useXarJobId));
         xProtocol.setApplicationType(protocol.getApplicationType().toString());
         ContactType contactType = getContactType(protocol.getLSID(), protocol.getContainer());

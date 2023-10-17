@@ -126,6 +126,7 @@ import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME_SUB;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
 import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
+import static org.labkey.experiment.XarExporter.GPAT_ASSAY_PROTOCOL_LSID_SUB;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -726,7 +727,8 @@ public class XarReader extends AbstractXarImporter
 
     private Domain loadDomain(DomainDescriptorType xDomain) throws ExperimentException
     {
-        boolean useName = xDomain.getDomainURI().contains(XAR_JOB_ID_NAME_SUB); // TODO or is assay
+        // gpat assay support renaming, use name instead of lsid to find existing
+        boolean useName = xDomain.getDomainURI().contains(":AssayDomain-");
         Pair<Domain, Map<DomainProperty, Object>> loaded = PropertyService.get().createDomain(getContainer(), getRootContext(), xDomain);
         Domain domain = loaded.getKey();
         Map<DomainProperty, Object> newDefaultValues = loaded.getValue();
@@ -2042,9 +2044,11 @@ public class XarReader extends AbstractXarImporter
 
     private void loadProtocol(ProtocolBaseType p) throws ExperimentException, SQLException
     {
-        String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");//
+        String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
         ExpProtocolImpl existingProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
-        boolean useName = p.getAbout().contains(XAR_JOB_ID_NAME_SUB) || p.getAbout().contains(":GeneralAssayProtocol.Folder");
+
+        // gpat assay support renaming, use name instead of lsid to find existing
+        boolean useName = p.getAbout().contains(GPAT_ASSAY_PROTOCOL_LSID_SUB);
         Pair<String, String> ignoreNameDiff = null;
         if (useName)
         {
