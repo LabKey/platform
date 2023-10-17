@@ -10,16 +10,15 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ReadOnlyImpersonatingContext extends NotImpersonatingContext
 {
     @Override
-    public Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
+    public Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
-        return perms.stream()
-            .filter(p -> null != p.getAnnotation(AllowedForReadOnlyUser.class))
-            .collect(Collectors.toSet());
+        return perms
+            .filter(p -> null != p.getAnnotation(AllowedForReadOnlyUser.class));
     }
 
     @Override

@@ -138,8 +138,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -3230,13 +3233,18 @@ public class SecurityManager
         if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
             return Set.of();
 
-        var granted = new HashSet<Class<? extends Permission>>();
-        principal.getAssignedRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
+        Stream<Role> roles = principal.getAssignedRoles(policy).stream()
+            .filter(Objects::nonNull);
+
         if (null != contextualRoles)
-            contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
+            roles = Stream.concat(roles, contextualRoles.stream());
+
+        Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
+
         if (principal instanceof User user)
-            return user.getImpersonationContext().filterPermissions(granted);
-        return granted;
+            permissions = user.getImpersonationContext().filterPermissions(permissions);
+
+        return permissions.collect(Collectors.toSet());
     }
 
     private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)

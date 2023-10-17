@@ -31,6 +31,7 @@ import org.labkey.api.view.NavTree;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Context that describes the way in which a user is operating within the system. They may be logged in normally,
@@ -93,7 +94,7 @@ public interface ImpersonationContext extends Serializable
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 
     // restrict the permissions this user is allowed
-    default Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
+    default Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
         return perms;
     }
