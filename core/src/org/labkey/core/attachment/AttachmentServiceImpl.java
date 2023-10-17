@@ -1040,7 +1040,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
-                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename("alias", StandardCharsets.UTF_8).build());
+                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename(alias, StandardCharsets.UTF_8).build());
                 else
                     writer.setContentDisposition(ContentDisposition.builder("inline").filename(alias, StandardCharsets.UTF_8).build());
 
