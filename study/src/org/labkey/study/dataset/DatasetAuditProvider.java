@@ -23,9 +23,11 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -35,6 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -279,6 +282,14 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         public String getKindName()
         {
             return NAME;
+        }
+
+        @Override
+        public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
+        {
+            Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new PropertyStorageSpec.Index(true, COLUMN_NAME_LSID));
+            return indexes;
         }
     }
 }

@@ -8,9 +8,11 @@ import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
@@ -195,6 +197,14 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         public String getKindName()
         {
             return NAME;
+        }
+
+        @Override
+        public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
+        {
+            Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new PropertyStorageSpec.Index(false, SAMPLE_ID_COLUMN_NAME));
+            return indexes;
         }
     }
 }
