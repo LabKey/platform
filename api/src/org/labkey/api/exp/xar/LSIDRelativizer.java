@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME_SUB;
@@ -121,6 +122,14 @@ public enum LSIDRelativizer implements SafeToRenderEnum
 
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + xarFileId, lsid.getObjectId(), lsid.getVersion());
             }
+            else if (suffix != null && FOLDER_UUID_PATTERN.matcher(suffix).matches() && useXarJobId)
+            {
+                Matcher guidMatcher = UUID_PATTERN.matcher(suffix);
+                String guid = "";
+                if (guidMatcher.find())
+                    guid = guidMatcher.group(0);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + "." + guid + "." + XAR_JOB_ID_NAME_SUB, lsid.getObjectId(), lsid.getVersion());
+            }
 
             return lsid.toString();
         }
@@ -195,6 +204,8 @@ public enum LSIDRelativizer implements SafeToRenderEnum
 
     private static final Pattern SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+");
     private static final Pattern XAR_IMPORT_SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+.Xar-[0-9]+");
+    private static final Pattern UUID_PATTERN = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
+    private static final Pattern FOLDER_UUID_PATTERN = Pattern.compile("Folder-[0-9]+.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
 
     LSIDRelativizer(String description)
     {

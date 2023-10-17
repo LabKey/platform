@@ -2059,7 +2059,8 @@ public class XarReader extends AbstractXarImporter
                 String folderSubstr = ".Folder-" + getContainer().getRowId() + ".";
                 int existingStartInd = existingLsid.indexOf(folderSubstr);
                 int incomingStartInd = protocolLSID.indexOf(folderSubstr);
-                ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), protocolLSID.substring(incomingStartInd));
+                if (existingStartInd > -1 && incomingStartInd > -1)
+                    ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), protocolLSID.substring(incomingStartInd));
             }
         }
 
