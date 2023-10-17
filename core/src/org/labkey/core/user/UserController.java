@@ -562,7 +562,7 @@ public class UserController extends SpringActionController
 
         return null != formUser
                 && formUserId != currentUser.getUserId() // don't let a user activate/deactivate/delete themselves
-                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasPrivilegedRole()); // don't let non-site admin deactivate/delete a user with a privileged role (site admin, platform dev)
     }
 
     @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})

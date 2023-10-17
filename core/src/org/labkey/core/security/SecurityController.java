@@ -271,8 +271,9 @@ public class SecurityController extends SpringActionController
         @Nullable
         public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL)
         {
-            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
-                    filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
+            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream()
+                .filter(externalToolsViewProvider -> !externalToolsViewProvider.getViews(user).isEmpty())
+                .count();
             if (viewCount > 0)
             {
                 ActionURL url = new ActionURL(ExternalToolsViewAction.class, c);
@@ -727,8 +728,8 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
         {
-            // 0 - only site-admins can modify members of system groups
-            // 1 - Global admins group cannot be empty
+            // 0 - only site admins can modify members of system groups
+            // 1 - only site admins can modify groups that are assigned a privileged role
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
 
@@ -743,6 +744,9 @@ public class SecurityController extends SpringActionController
 
             if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
+
+            if (_group.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
+                throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + _group.getName());
 
             _messages = new ArrayList<>();
 
@@ -785,7 +789,7 @@ public class SecurityController extends SpringActionController
 
             // delete group members by ID (can be both groups and users)
             List<UserPrincipal> removeIds = new ArrayList<>();
-            if (removeNames != null && removeNames.length > 0)
+            if (removeNames != null)
             {
                 for (String removeName : removeNames)
                 {
@@ -837,7 +841,7 @@ public class SecurityController extends SpringActionController
                     }
                 }
 
-                if (!errors.hasErrors() && (addGroups.size() > 0 || addEmails.size() > 0))
+                if (!errors.hasErrors() && (!addGroups.isEmpty() || !addEmails.isEmpty()))
                 {
                     // add new users
                     List<User> addUsers = new ArrayList<>(addEmails.size());
@@ -1456,9 +1460,9 @@ public class SecurityController extends SpringActionController
                     }
                     else if (userToClone != null)
                     {
-                        if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
+                        if (userToClone.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
                         {
-                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users with site administration permissions."));
+                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users assigned a privileged role."));
                         }
                         else
                         {
@@ -1656,10 +1660,10 @@ public class SecurityController extends SpringActionController
 
             if (!getUser().hasSiteAdminPermission())
             {
-                if (_source.hasSiteAdminPermission())
-                    errors.reject(ERROR_MSG, "Only site administrators can clone from users with site administration permissions");
+                if (_source.hasPrivilegedRole())
+                    errors.reject(ERROR_MSG, "Only site administrators can clone from users assigned a privileged role");
                 else if (_target.hasSiteAdminPermission())
-                    errors.reject(ERROR_MSG, "Only site administrators can clone to users with site administration permissions");
+                    errors.reject(ERROR_MSG, "Only site administrators can clone to users assigned a privileged role");
             }
         }
 

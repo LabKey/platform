@@ -2536,6 +2536,12 @@ public class SecurityManager
         return message.getHtmlString();
     }
 
+    @SuppressWarnings("unused") // Called from mGAP
+    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
+    {
+        sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
+    }
+
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser) throws Exception
     {
         Container c = context.getContainer();
