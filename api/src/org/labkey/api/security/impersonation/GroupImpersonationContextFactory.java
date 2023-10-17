@@ -132,11 +132,11 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group.isGuests())
             return false;
 
-        // Impersonating the "Site: Administrators" group as a non-site admin is confusing as well.
-        if (group.isAdministrators() && !user.hasSiteAdminPermission())
+        // Impersonating "Site: Administrators" or any group assigned a privileged role by a non-site admin is confusing as well.
+        if (group.hasPrivilegedRole() && !user.hasSiteAdminPermission())
             return false;
 
-        // Site/app admin can impersonate any group
+        // Site/app admin can impersonate any other group
         if (user.hasRootAdminPermission())
             return true;
 
@@ -217,12 +217,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
             // Now expand the list of groups to include all groups they belong to (see #13802)
             _groups = GroupMembershipCache.computeAllGroups(seedGroups);
             _group = group;
-        }
-
-        @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            return false;
         }
 
         @Override

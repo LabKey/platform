@@ -208,14 +208,6 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            // Don't allow global roles (site admin, developer, etc.) if user is being impersonated within a project
-            // or if the admin user is not a site admin
-            return null == getImpersonationProject() && getAdminUser().hasSiteAdminPermission();
-        }
-
-        @Override
         public String getCacheKey()
         {
             // NavTree for user being impersonated will be different per impersonating user per project

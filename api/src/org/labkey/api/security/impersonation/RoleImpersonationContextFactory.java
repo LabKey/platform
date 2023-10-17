@@ -263,13 +263,6 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            // Global roles are still constrained to the roles that were allowed in verifyPermissions()
-            return getAdminUser().hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
-        }
-
-        @Override
         public String getCacheKey()
         {
             return _cacheKey;

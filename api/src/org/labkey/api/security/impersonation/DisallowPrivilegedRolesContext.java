@@ -39,12 +39,6 @@ public class DisallowPrivilegedRolesContext extends NotImpersonatingContext
     }
 
     @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return false;
-    }
-
-    @Override
     public String getCacheKey()
     {
         return "DisallowGlobalRoles";

@@ -58,12 +58,6 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return delegate.isAllowedGlobalRoles();
-    }
-
-    @Override
     @Nullable
     public Container getImpersonationProject()
     {

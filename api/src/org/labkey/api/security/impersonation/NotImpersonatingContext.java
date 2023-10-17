@@ -57,12 +57,6 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return true;
-    }
-
-    @Override
     public User getAdminUser()
     {
         return null;
