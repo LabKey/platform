@@ -742,11 +742,14 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
-            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
+            if (!getUser().hasSiteAdminPermission())
+            {
+                if (_group.isSystemGroup())
+                    throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
 
-            if (_group.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + _group.getName());
+                if (_group.hasPrivilegedRole())
+                    throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + _group.getName());
+            }
 
             _messages = new ArrayList<>();
 
