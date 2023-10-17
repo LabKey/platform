@@ -65,6 +65,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -814,7 +815,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission() || user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
@@ -1546,9 +1547,12 @@ public class SecurityManager
         deleteMembers(group, Set.of(principal));
     }
 
+    /**
+     * Throws if the site current has no Site Admins and no Impersonating Troubleshooters
+     */
     public static void ensureAtLeastOneSiteAdminExists()
     {
-        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(CanImpersonateSiteRolesPermission.class));
+        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(CanImpersonatePrivilegedSiteRolesPermission.class));
         if (siteAdmins.isEmpty())
         {
             // Skip the check while bootstrapping since some policies are saved before any Site Admins exist

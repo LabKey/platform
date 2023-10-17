@@ -22,7 +22,7 @@ import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -107,7 +107,7 @@ public class NotImpersonatingContext implements ImpersonationContext
             menu.addChild(impersonateMenu);
         }
         // Or Impersonating Troubleshooter to impersonate site roles only
-        else if (null == project && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        else if (null == project && user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
         {
             NavTree impersonateMenu = new NavTree("Impersonate");
             RoleImpersonationContextFactory.addMenu(impersonateMenu);

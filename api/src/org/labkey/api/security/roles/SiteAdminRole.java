@@ -18,6 +18,7 @@ package org.labkey.api.security.roles;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
 import org.labkey.api.security.permissions.EditModuleResourcesPermission;
@@ -42,6 +43,7 @@ public class SiteAdminRole extends AbstractRootContainerRole implements AdminRol
         AdminOperationsPermission.class,
         AnalystPermission.class,
         BrowserDeveloperPermission.class,
+        CanImpersonatePrivilegedSiteRolesPermission.class,
         CanImpersonateSiteRolesPermission.class,
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,

@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -89,7 +89,7 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
      */
     protected Set<Role> getFilteredRoles(Set<Role> roles)
     {
-        if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonateSiteRolesPermission.class))
+        if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
             roles.removeIf(Role::isPrivileged);
 
         return roles;

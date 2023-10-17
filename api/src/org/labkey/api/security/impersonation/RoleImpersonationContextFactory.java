@@ -28,6 +28,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
@@ -192,7 +193,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     public static Stream<Role> getValidImpersonationRoles(Container c, User user)
     {
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
-        boolean canImpersonatePrivilegedRoles = user.hasRootPermission(CanImpersonateSiteRolesPermission.class);
+        boolean canImpersonatePrivilegedRoles = user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
 
         // Stream the valid roles
         return RoleManager.getAllRoles().stream()
@@ -238,10 +239,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             if (null == project)
             {
                 // Site Administrator and Impersonating Troubleshooter can impersonate any site role
-                if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+                if (user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
                     return;
 
-                if (!user.hasRootAdminPermission())
+                if (!user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
                     throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", getFactory());
 
                 // Application Administrator can impersonate all site roles except the privileged ones
@@ -265,7 +266,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         public boolean isAllowedGlobalRoles()
         {
             // Global roles are still constrained to the roles that were allowed in verifyPermissions()
-            return getAdminUser().hasRootPermission(CanImpersonateSiteRolesPermission.class);
+            return getAdminUser().hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
         }
 
         @Override

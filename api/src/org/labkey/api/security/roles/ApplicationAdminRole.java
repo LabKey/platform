@@ -19,6 +19,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
 import org.labkey.api.security.permissions.Permission;
@@ -37,6 +38,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole implements A
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AddUserPermission.class,
         ApplicationAdminPermission.class,
+        CanImpersonateSiteRolesPermission.class,
         DeleteUserPermission.class,
         EnableRestrictedModules.class,
         TroubleshooterPermission.class,

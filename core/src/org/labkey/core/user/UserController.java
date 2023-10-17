@@ -3004,7 +3004,7 @@ public class UserController extends SpringActionController
         if (context.isImpersonating())
             user = context.getAdminUser();
 
-        if (getContainer().isRoot() && (user.hasRootAdminPermission() || user.hasRootPermission(CanImpersonateSiteRolesPermission.class)))
+        if (getContainer().isRoot() && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
             return context;
 
         if (!getContainer().hasPermission(user, AdminPermission.class))

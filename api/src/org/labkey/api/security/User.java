@@ -612,7 +612,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
             props.put("isRootAdmin", user.hasRootAdminPermission());
             props.put("isSystemAdmin", user.hasSiteAdminPermission());
-            props.put("canImpersonateSiteRoles", user.hasRootAdminPermission() || user.hasRootPermission(CanImpersonateSiteRolesPermission.class));
+            props.put("canImpersonateSiteRoles", user.hasRootPermission(CanImpersonateSiteRolesPermission.class));
             props.put("isGuest", user.isGuest());
             props.put("isDeveloper", user.isBrowserDev());
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
