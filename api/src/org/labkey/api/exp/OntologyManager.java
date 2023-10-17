@@ -145,16 +145,22 @@ public class OntologyManager
         return fetchDomainDescriptorFromDB(domainURI, c);
     });
 
-    /** Goes against the DB, bypassing the cache */
     @Nullable
     private static DomainDescriptor fetchDomainDescriptorFromDB(String domainURI, Container c)
+    {
+        return fetchDomainDescriptorFromDB(domainURI, c, false);
+    }
+
+    /** Goes against the DB, bypassing the cache */
+    @Nullable
+    public static DomainDescriptor fetchDomainDescriptorFromDB(String uriOrName, Container c, boolean isName)
     {
         Container proj = c.getProject();
         if (null == proj)
             proj = c;
 
-        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, domainURI,
+        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE " + (isName ? "Name" : "DomainURI") + " = ? AND Project IN (?,?) ";
+        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, uriOrName,
                 proj,
                 ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
         DomainDescriptor dd = null;
@@ -166,7 +172,7 @@ public class OntologyManager
             // and one of the two is in the shared project, use the project-level descriptor.
             if (ddArray.size() > 1)
             {
-                _log.debug("Multiple DomainDescriptors found for " + domainURI);
+                _log.debug("Multiple DomainDescriptors found for " + uriOrName);
                 if (dd.getProject().equals(ContainerManager.getSharedContainer()))
                     dd = ddArray.get(0);
             }

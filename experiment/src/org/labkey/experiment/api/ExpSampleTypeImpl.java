@@ -1027,7 +1027,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+        setImportAliasMapJson(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+    }
+
+    public void setImportAliasMapJson(String aliasJon)
+    {
+        _object.setMaterialParentImportAliasMap(aliasJon);
     }
 
     @Override

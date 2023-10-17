@@ -26,6 +26,8 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -138,7 +140,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @NotNull
     AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol);
 
-    ExpProtocol createAssayDefinition(User user, Container container, String name, String description, @Nullable ExpProtocol.Status status) throws ExperimentException;
+    ExpProtocol createAssayDefinition(User user, Container container, String name, String description, @Nullable ExpProtocol.Status status, @NotNull XarContext context) throws ExperimentException;
 
     /**
      * Creates the default set of domains for a new assay definition, pre-populated with their default
@@ -384,4 +386,20 @@ public interface AssayProvider extends Handler<ExpProtocol>
     default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
 
     void moveRuns(List<ExpRun> runs, Container targetContainer, User user, AbstractAssayProvider.AssayMoveData assayMoveData);
+
+    default void ensurePropertyDomainName(ExpProtocol protocol, ObjectProperty prop)
+    {
+    }
+
+    default boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        return false;
+    }
+
+    default boolean canRename()
+    {
+        return false;
+    }
+
+
 }

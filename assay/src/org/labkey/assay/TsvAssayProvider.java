@@ -42,7 +42,10 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -105,6 +108,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     private static final Set<String> dateImportAliases;
 
     public static final Class<Module> assayModuleClass;
+
+    public static final String ASSAY_DBSEQ = "AssayDBSeq";
+    public static final String ASSAY_DBSEQ_SUBSTITUTION = "${" + ASSAY_DBSEQ + "}";
 
     static
     {
@@ -170,6 +176,26 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    protected String getPresubstitutionRunLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN, ASSAY_DBSEQ_SUBSTITUTION);
+    }
+
+    @Override
+    protected String getPresubstitutionBatchLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH, ASSAY_DBSEQ_SUBSTITUTION);
+    }
+
+    protected String getAssayProtocolLsid(Container container, String assayName, XarContext context)
+    {
+        // ensure min?
+        String assayDesignDBSeq = ExperimentService.get().generateLSIDWithDBSeq(container, ExpProtocol.class).second;
+        context.addSubstitution(ASSAY_DBSEQ, assayDesignDBSeq);
+        return new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), assayDesignDBSeq).toString();
+    }
+
+    @Override
     public String getLabel()
     {
         // Hack because there are many subclasses where we want to keep showing their name in the UI, but we want to
@@ -202,7 +228,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
-        List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);
+        List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);//
 
         Pair<Domain, Map<DomainProperty, Object>> resultDomain = createResultDomain(c, user);
         if (resultDomain != null)
@@ -212,7 +238,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA), "Data Fields");
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, ASSAY_DBSEQ_SUBSTITUTION), "Data Fields");//
         dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
@@ -340,6 +366,11 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         super.changeDomain(user, protocol, orig, update);
 
+        if (!(protocol.getName() + getDomainNameSuffix(orig)).equals(orig.getName()))
+        {
+            update.setName(protocol.getName() + getDomainNameSuffix(orig));
+        }
+
         if (isPlateMetadataEnabled(protocol))
         {
             // for plate metadata support we need to ensure specific fields on both the run and result domains
@@ -402,6 +433,38 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 }
             }
         }
+    }
+
+    @Override
+    public void ensurePropertyDomainName(ExpProtocol protocol, ObjectProperty prop)
+    {
+        if (prop.getName() == null)
+            prop.setName(protocol.getName()); // set domain name to match assay design name
+    }
+
+    private String getDomainNameSuffix(GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        String domainKindName = domain.getDomainKindName();
+        String nameSuffix = switch (domainKindName)
+                {
+                    case "Assay Batches" -> "Batch";
+                    case "Assay Runs" -> "Run";
+                    case "Assay Results" -> "Data";
+                    default -> "";
+                };
+        return " " + nameSuffix + " Fields";
+    }
+
+    @Override
+    public boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        return !(protocol.getName() + getDomainNameSuffix(domain)).equals(domain.getName());
+    }
+
+    @Override
+    public boolean canRename()
+    {
+        return true;
     }
 
     public static class TestCase extends Assert

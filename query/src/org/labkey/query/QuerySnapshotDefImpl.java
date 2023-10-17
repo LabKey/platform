@@ -244,6 +244,12 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
     }
 
     @Override
+    public void setSchema(String schema)
+    {
+        edit().setSchema(schema);
+    }
+
+    @Override
     public void setName(String name)
     {
         edit().setName(name);

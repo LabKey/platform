@@ -7880,10 +7880,11 @@ public class ExperimentController extends SpringActionController
                 if (dataClass != null) // dataclass might have been renamed
                     effectiveQueryName = dataClass.getName();
             }
-            else if ("assay.general".equalsIgnoreCase(schemaName))
+            else if (schemaName.toLowerCase().startsWith("assay.general."))
             {
-                // TODO: get effective schemaname, when assay design renaming is supported
-                // effectiveSchemaName = getEffectiveExpProtocol
+                ExpProtocol protocol = experimentService.getEffectiveProtocol(container, user, schemaName.substring("assay.general.".length()), effectiveDate, dataTypeCF);
+                if (protocol != null)
+                    effectiveSchemaName = "assay.general." + protocol.getName();
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();

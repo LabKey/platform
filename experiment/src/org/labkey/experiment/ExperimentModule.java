@@ -131,6 +131,7 @@ import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
+import org.labkey.experiment.samples.ExperimentQueryChangeListener;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
@@ -213,6 +214,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         QueryService.get().addCompareType(new LineageCompareType());
         QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), JdbcType.BOOLEAN, 2, 3);
         QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
+        QueryService.get().addQueryListener(new ExperimentQueryChangeListener());
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
