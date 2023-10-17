@@ -225,19 +225,19 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             verifyPermissions(project, adminUser, getRoles());
         }
 
-        // Throws if user is not authorized.
+        // Throws if user is not authorized to impersonate all roles
         private void verifyPermissions(@Nullable Container project, User user, Set<Role> roles)
         {
-            boolean invalid = roles.stream().anyMatch(role -> (role instanceof AbstractRootContainerRole) != (null == project));
-
-            if (invalid)
-            {
-                String what = null == project ? "project roles while impersonating in the root" : "site roles while impersonating in a project";
-                throw new UnauthorizedImpersonationException("You are not allowed to impersonate " + what, getFactory());
-            }
-
             if (null == project)
             {
+                // Ensure we have either site roles or project roles, not both
+                var map = roles.stream()
+                    .collect(Collectors.groupingBy(role -> role instanceof AbstractRootContainerRole));
+
+                // UI prevents this, but crafty admin could attempt it by crafting a post with specific class names
+                if (map.size() > 1)
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", getFactory());
+
                 // Site Administrator and Impersonating Troubleshooter can impersonate any site role
                 if (user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
                     return;
@@ -259,6 +259,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
                 // Must have admin permissions in this project
                 if (!project.hasPermission(user, AdminPermission.class))
                     throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
+
+                // Must not be impersonating any site roles
+                if (roles.stream().anyMatch(role -> (role instanceof AbstractRootContainerRole)))
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", getFactory());
             }
         }
 
