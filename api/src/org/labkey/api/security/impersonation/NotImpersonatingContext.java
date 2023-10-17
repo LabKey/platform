@@ -20,16 +20,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PrincipalArray;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-
-import java.util.Set;
 
 /**
  * Used when a user is not impersonating another user, group, or role. That is, they are logged in normally, and
@@ -94,12 +90,6 @@ public class NotImpersonatingContext implements ImpersonationContext
     public PrincipalArray getGroups(User user)
     {
         return GroupManager.getAllGroupsForPrincipal(user);
-    }
-
-    @Override
-    public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
-    {
-        return user.getStandardContextualRoles();
     }
 
     @Override

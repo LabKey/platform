@@ -17,6 +17,7 @@ package org.labkey.api.security.impersonation;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -289,7 +290,14 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+        public Set<Role> getSiteRoles(User user)
+        {
+            // Return only site roles that are being impersonated
+            return new HashSet<>(CollectionUtils.intersection(super.getSiteRoles(user), getRoles()));
+        }
+
+        @Override
+        public Set<Role> getAllRoles(User user, SecurityPolicy policy)
         {
             return getRoles(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
         }

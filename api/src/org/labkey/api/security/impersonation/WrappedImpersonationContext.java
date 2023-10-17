@@ -95,10 +95,10 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+    public Set<Role> getAllRoles(User user, SecurityPolicy policy)
     {
         Set<Role> ret = new HashSet<>(additionalRoles);
-        ret.addAll(delegate.getContextualRoles(user, policy));
+        ret.addAll(delegate.getAllRoles(user, policy));
         return ret;
     }
 

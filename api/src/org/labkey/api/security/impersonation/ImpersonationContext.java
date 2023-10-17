@@ -17,11 +17,15 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
@@ -45,7 +49,39 @@ public interface ImpersonationContext extends Serializable
     /** @return the URL to which the user should be returned when impersonation is over */
     ActionURL getReturnURL();
     PrincipalArray getGroups(User user);
-    Set<Role> getContextualRoles(User user, SecurityPolicy policy);
+    /**
+     * @return The roles assigned to this user in the provided policy as well as the root. The roles may be modified
+     * and/or filtered by the impersonation context.
+     */
+    default Set<Role> getAllRoles(User user, SecurityPolicy policy)
+    {
+        Set<Role> roles = getSiteRoles(user);
+        Container c = ContainerManager.getForId(policy.getContainerId());
+        if (null == c || !c.isRoot())
+            roles.addAll(policy.getRoles(getGroups(user)));
+        return roles;
+    }
+
+    /**
+     * @return The roles assigned to this user in the root. The roles may be modified and/or filtered by the
+     * impersonation context.
+     */
+    default Set<Role> getSiteRoles(User user)
+    {
+        Container root = ContainerManager.getRoot();
+        SecurityPolicy policy = root.getPolicy();
+        Set<Role> roles = policy.getRoles(getGroups(user));
+        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
+        for (Role role : roles)
+            assert role.isApplicable(policy, root);
+        // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
+        // simply assigning the role to the group (like Platform Developers). This is special to the Site Admin group;
+        // no other role or group should follow this pattern.
+        if (isAllowedGlobalRoles() && user.isInGroup(Group.groupAdministrators))
+            roles.add(RoleManager.siteAdminRole);
+        return roles;
+    }
+
     ImpersonationContextFactory getFactory();
     /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);

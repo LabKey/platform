@@ -42,7 +42,6 @@ import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -362,7 +361,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     @Override
     public Set<Role> getContextualRoles(SecurityPolicy policy)
     {
-        return _impersonationContext.getContextualRoles(this, policy);
+        return _impersonationContext.getAllRoles(this, policy);
     }
 
     public JSONObject getUserProps()
@@ -370,21 +369,15 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return User.getUserProps(this);
     }
 
-    // Return the usual contextual roles
+    @Deprecated // Confusing name... use getSiteRoles() instead
     public Set<Role> getStandardContextualRoles()
     {
-        Container root = ContainerManager.getRoot();
-        SecurityPolicy policy = root.getPolicy();
-        Set<Role> roles = policy.getRoles(getGroups());
-        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
-        for (Role role : roles)
-            assert role.isApplicable(policy, root);
-        // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
-        // simply assigning the role to the group (like Platform Developers). This is special to the Site Admin group;
-        // no other role or group should follow this pattern.
-        if (isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators))
-            roles.add(RoleManager.siteAdminRole);
-        return roles;
+        return getSiteRoles();
+    }
+
+    public Set<Role> getSiteRoles()
+    {
+        return _impersonationContext.getSiteRoles(this);
     }
 
     @Override

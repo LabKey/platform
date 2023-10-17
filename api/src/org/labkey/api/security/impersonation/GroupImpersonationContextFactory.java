@@ -239,9 +239,9 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+        public Set<Role> getAllRoles(User user, SecurityPolicy policy)
         {
-            return getFilteredContextualRoles(user.getStandardContextualRoles());
+            return getFilteredRoles(super.getAllRoles(user, policy));
         }
     }
 }

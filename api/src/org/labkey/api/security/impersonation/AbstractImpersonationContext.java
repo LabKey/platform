@@ -85,10 +85,9 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
     }
 
     /**
-     * @return Returns a set of roles with the privileged roles filtered out if the admin user that is impersonating
-     * isn't allow them.
+     * @return A set of roles with the privileged roles filtered out if the impersonating admin user isn't allowed them
      */
-    protected Set<Role> getFilteredContextualRoles(Set<Role> roles)
+    protected Set<Role> getFilteredRoles(Set<Role> roles)
     {
         if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonateSiteRolesPermission.class))
             roles.removeIf(Role::isPrivileged);

@@ -255,7 +255,7 @@ public class SecurityPolicy
 
 
     @NotNull
-    protected Set<Role> getRoles(PrincipalArray principalArray)
+    public Set<Role> getRoles(PrincipalArray principalArray)
     {
         int[] principals = principalArray.getPrincipals();
         Set<Role> roles = new HashSet<>();
