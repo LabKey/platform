@@ -49,16 +49,17 @@ public interface ImpersonationContext extends Serializable
     /** @return the URL to which the user should be returned when impersonation is over */
     ActionURL getReturnURL();
     PrincipalArray getGroups(User user);
+
     /**
      * @return The roles assigned to this user in the provided policy as well as the root. The roles may be modified
      * and/or filtered by the impersonation context.
      */
-    default Set<Role> getAllRoles(User user, SecurityPolicy policy)
+    default Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
         Set<Role> roles = getSiteRoles(user);
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null == c || !c.isRoot())
-            roles.addAll(policy.getRoles(getGroups(user)));
+            roles.addAll(policy.getRoles(user.getGroups()));
         return roles;
     }
 
@@ -83,6 +84,7 @@ public interface ImpersonationContext extends Serializable
     }
 
     ImpersonationContextFactory getFactory();
+
     /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 

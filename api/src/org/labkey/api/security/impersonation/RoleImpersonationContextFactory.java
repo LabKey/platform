@@ -230,7 +230,10 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             boolean invalid = roles.stream().anyMatch(role -> (role instanceof AbstractRootContainerRole) != (null == project));
 
             if (invalid)
-                System.out.println("Hey, that's illegal!!"); // TODO: Test and throw Unauthorized
+            {
+                String what = null == project ? "project roles while impersonating in the root" : "site roles while impersonating in a project";
+                throw new UnauthorizedImpersonationException("You are not allowed to impersonate " + what, getFactory());
+            }
 
             if (null == project)
             {
@@ -297,7 +300,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Set<Role> getAllRoles(User user, SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
         {
             return getRoles(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
         }

@@ -75,7 +75,7 @@ public class LimitedUser extends User
     }
 
     @Override
-    public Set<Role> getContextualRoles(SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
         return new HashSet<>(_roles);
     }

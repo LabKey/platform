@@ -407,7 +407,7 @@ public class AuditController extends SpringActionController
             User elevatedUser = user;
             if (!getContainer().hasPermission(getUser(), CanSeeAuditLogPermission.class))
             {
-                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                 contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
                 elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, false);
             }

@@ -98,6 +98,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -2973,7 +2974,7 @@ public class UserController extends SpringActionController
         public ApiResponse execute(Object object, BindException errors)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAllRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
             User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3003,7 +3004,7 @@ public class UserController extends SpringActionController
         if (context.isImpersonating())
             user = context.getAdminUser();
 
-        if (getContainer().isRoot() && user.hasRootAdminPermission())
+        if (getContainer().isRoot() && (user.hasRootAdminPermission() || user.hasRootPermission(CanImpersonateSiteRolesPermission.class)))
             return context;
 
         if (!getContainer().hasPermission(user, AdminPermission.class))
@@ -3038,7 +3039,7 @@ public class UserController extends SpringActionController
         public String impersonate(ImpersonateRolesForm form)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAllRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();
 

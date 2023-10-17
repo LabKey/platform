@@ -34,6 +34,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -117,9 +118,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
         @Override
         @JsonIgnore
-        public Set<Role> getContextualRoles(SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(SecurityPolicy policy)
         {
-            return super.getContextualRoles(policy);
+            return super.getAssignedRoles(policy);
         }
     }
 
@@ -359,9 +360,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     }
 
     @Override
-    public Set<Role> getContextualRoles(SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
-        return _impersonationContext.getAllRoles(this, policy);
+        return _impersonationContext.getAssignedRoles(this, policy);
     }
 
     public JSONObject getUserProps()
@@ -611,6 +612,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
             props.put("isRootAdmin", user.hasRootAdminPermission());
             props.put("isSystemAdmin", user.hasSiteAdminPermission());
+            props.put("canImpersonateSiteRoles", user.hasRootAdminPermission() || user.hasRootPermission(CanImpersonateSiteRolesPermission.class));
             props.put("isGuest", user.isGuest());
             props.put("isDeveloper", user.isBrowserDev());
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));

@@ -51,9 +51,9 @@ public class DisallowPrivilegedRolesContext extends NotImpersonatingContext
     }
 
     @Override
-    public Set<Role> getAllRoles(User user, SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
-        Set<Role> roles = super.getAllRoles(user, policy);
+        Set<Role> roles = super.getAssignedRoles(user, policy);
         roles.removeIf(Role::isPrivileged);
 
         return roles;

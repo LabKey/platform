@@ -314,8 +314,8 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
     },
 
     getPanel: function(){
-        var instructions = LABKEY.Security.currentUser.isRootAdmin ?
-            "As a site or application administrator, you can impersonate one or more security roles. While impersonating you will have access to " +
+        var instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
+            "As a site administrator, application administrator, or impersonating troubleshooter you can impersonate one or more security roles. While impersonating you will have access to " +
                 "the entire site, limited to the permissions provided by the selected roles(s)." :
             "As a project administrator, you can impersonate one or more security roles. While impersonating you will be restricted to this project.";
 

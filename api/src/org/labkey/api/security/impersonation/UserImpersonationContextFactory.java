@@ -234,9 +234,9 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Set<Role> getAllRoles(User user, SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
         {
-            return getFilteredRoles(super.getAllRoles(user, policy));
+            return getFilteredRoles(super.getAssignedRoles(user, policy));
         }
     }
 }

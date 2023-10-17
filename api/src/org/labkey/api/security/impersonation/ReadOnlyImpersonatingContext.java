@@ -23,9 +23,9 @@ public class ReadOnlyImpersonatingContext extends NotImpersonatingContext
     }
 
     @Override
-    public Set<Role> getAllRoles(User user, SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
-        var ret = super.getAllRoles(user, policy);
+        var ret = super.getAssignedRoles(user, policy);
         ret.removeIf(Role::isPrivileged);
         return ret;
     }

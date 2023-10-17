@@ -2532,11 +2532,6 @@ public class SecurityManager
         return message.getHtmlString();
     }
 
-    public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
-    {
-        sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
-    }
-
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters, String provider, boolean isAddUser) throws Exception
     {
         Container c = context.getContainer();
@@ -3225,16 +3220,16 @@ public class SecurityManager
         if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
             return Set.of();
 
-        var granted = policy.getOwnPermissions(principal);
-        principal.getContextualRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
+        var granted = new HashSet<Class<? extends Permission>>();
+        principal.getAssignedRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
         if (null != contextualRoles)
             contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
-        if (principal instanceof User)
-            return ((User)principal).getImpersonationContext().filterPermissions(granted);
+        if (principal instanceof User user)
+            return user.getImpersonationContext().filterPermissions(granted);
         return granted;
     }
 
-    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
@@ -3286,7 +3281,7 @@ public class SecurityManager
         Set<Role> roles = policy.getRoles(principal.getGroups());
         roles.addAll(policy.getAssignedRoles(principal));
         if (includeContextualRoles)
-            roles.addAll(principal.getContextualRoles(policy));
+            roles.addAll(principal.getAssignedRoles(policy));
         return roles;
     }
 
@@ -3532,9 +3527,9 @@ public class SecurityManager
                 }
 
                 @Override
-                public Set<Role> getContextualRoles(SecurityPolicy policy)
+                public Set<Role> getAssignedRoles(SecurityPolicy policy)
                 {
-                    return Set.of();
+                    return policy.getRoles(getGroups());
                 }
 
                 @Override

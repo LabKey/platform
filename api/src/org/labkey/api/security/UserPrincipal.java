@@ -98,15 +98,12 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     public abstract PrincipalArray getGroups();
 
     /**
-     * @return the roles that the user is assumed to embody, which may go beyond the basic set of roles that the
-     * user might have otherwise. For example, a user in an {@link org.labkey.api.security.roles.AuthorRole} might
-     * be allowed to edit an object that they created, even though they aren't in an {@link org.labkey.api.security.roles.EditorRole}
-     * and therefore don't have {@link org.labkey.api.security.permissions.UpdatePermission} to make edits more generally.
+     * @return When not impersonating, the roles assigned to this user in the provided policy as well as the root. When
+     * impersonating, the roles may be modified and/or filtered by the impersonation context.
      */
-    public abstract Set<Role> getContextualRoles(SecurityPolicy policy);
+    public abstract Set<Role> getAssignedRoles(SecurityPolicy policy);
 
     public abstract boolean isInGroup(int group);
-
 
     @Override
     public String toString()
@@ -122,9 +119,7 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
 
         UserPrincipal principal = (UserPrincipal) o;
 
-        if (getUserId() != principal.getUserId()) return false;
-
-        return true;
+        return getUserId() == principal.getUserId();
     }
 
     @Override
