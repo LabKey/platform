@@ -62,9 +62,7 @@ public interface ImpersonationContext extends Serializable
     default Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
         Set<Role> roles = getSiteRoles(user);
-        Container c = ContainerManager.getForId(policy.getContainerId());
-        if (null == c || !c.isRoot())
-            roles.addAll(policy.getRoles(user.getGroups()));
+        roles.addAll(policy.getRoles(user.getGroups()));
         return roles;
     }
 

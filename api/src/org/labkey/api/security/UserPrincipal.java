@@ -98,8 +98,7 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     public abstract PrincipalArray getGroups();
 
     /**
-     * @return When not impersonating, the roles assigned to this user in the provided policy as well as the root. When
-     * impersonating, the roles may be modified and/or filtered by the impersonation context.
+     * @return the roles assigned to this principal in the provided policy
      */
     public abstract Set<Role> getAssignedRoles(SecurityPolicy policy);
 
