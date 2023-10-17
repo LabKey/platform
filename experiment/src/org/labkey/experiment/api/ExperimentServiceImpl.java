@@ -6269,8 +6269,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 // if protocol exist, throw error
                 ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
-                if (existing != null)
-                    throw new RuntimeSQLException(new SQLException("Duplicate " + existing.getName() + " protocol is not allowed."));
+                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
+                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
 
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }

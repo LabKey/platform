@@ -42,6 +42,11 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
@@ -64,6 +69,7 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
@@ -91,6 +97,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.CompareType.STARTS_WITH;
+
 /**
  * User: brittp
  * Date: Jul 11, 2007
@@ -109,7 +117,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public static final Class<Module> assayModuleClass;
 
-    public static final String ASSAY_DBSEQ = "AssayDBSeq";
+    public static final String ASSAY_DBSEQ = "GpatAssayDBSeq";
     public static final String ASSAY_DBSEQ_SUBSTITUTION = "${" + ASSAY_DBSEQ + "}";
 
     static
@@ -187,12 +195,45 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH, ASSAY_DBSEQ_SUBSTITUTION);
     }
 
+    @Override
     protected String getAssayProtocolLsid(Container container, String assayName, XarContext context)
     {
-        // ensure min?
-        String assayDesignDBSeq = ExperimentService.get().generateLSIDWithDBSeq(container, ExpProtocol.class).second;
+        Container projectContainer = container;
+        if (!container.isProject() && container.getProject() != null)
+            projectContainer = container.getProject();
+
+        DbSequence sequence = DbSequenceManager.get(projectContainer, ASSAY_DBSEQ);
+        sequence.ensureMinimum(getMaxExistingAssayDesignId(container));
+
+        String assayDesignDBSeq = String.valueOf(sequence.next());
         context.addSubstitution(ASSAY_DBSEQ, assayDesignDBSeq);
         return new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), assayDesignDBSeq).toString();
+    }
+
+    private Long getMaxExistingAssayDesignId(Container container)
+    {
+        long max = 0;
+        TableInfo protocolTable = ExperimentService.get().getTinfoProtocol();
+        String lsidPrefix = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + _protocolLSIDPrefix + ".Folder-" + container.getRowId() + ":";
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("LSID"), lsidPrefix, STARTS_WITH);
+
+        TableSelector selector = new TableSelector(protocolTable, Collections.singleton("LSID"), filter, null);
+        final List<String> nameSuffixes = new ArrayList<>();
+        selector.forEach(String.class, fullname -> nameSuffixes.add(fullname.replace(lsidPrefix, "")));
+
+        for (String nameSuffix : nameSuffixes)
+        {
+            if (nameSuffix.matches("\\d+"))
+            {
+                long id = Long.parseLong(nameSuffix);
+                if (id > max)
+                    max = id;
+            }
+        }
+
+        return max;
     }
 
     @Override
