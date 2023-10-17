@@ -259,7 +259,9 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         @Override
         public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(new PropertyStorageSpec.Index(false, COLUMN_NAME_LIST_ITEM_ENTITY_ID));
+            Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_LIST_ITEM_ENTITY_ID));
+            return indexes;
         }
     }
 }

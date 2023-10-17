@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
@@ -274,7 +275,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
-        return Collections.emptySet();
+        return PageFlowUtil.set(new PropertyStorageSpec.Index(false, "Container", "Created"));
     }
 
     @Override

@@ -300,10 +300,10 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         @Override
         public Set<Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(
-                    new Index(false, COLUMN_NAME_USER),
-                    new Index(false, COLUMN_NAME_GROUP)
-            );
+            Set<Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new Index(false, COLUMN_NAME_USER));
+            indexes.add(new Index(false, COLUMN_NAME_GROUP));
+            return indexes;
         }
 
         @Override
