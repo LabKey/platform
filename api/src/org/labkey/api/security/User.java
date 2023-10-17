@@ -275,7 +275,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
      */
     public boolean hasSiteAdminPermission()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(SiteAdminPermission.class);
+        return hasRootPermission(SiteAdminPermission.class);
     }
 
     /**
@@ -284,7 +284,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
      */
     public boolean hasApplicationAdminPermission()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(ApplicationAdminPermission.class);
+        return hasRootPermission(ApplicationAdminPermission.class);
     }
 
     // NOTE: most callers should use hasApplicationAdminPermissionForPolicy() instead; only use this if you care specifically about the role itself
@@ -301,27 +301,27 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     // Usually you should only have one of these tests
     public boolean isPlatformDeveloper()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
+        return hasRootPermission(PlatformDeveloperPermission.class);
     }
 
     public boolean isTrustedAnalyst()
     {
-        return isAllowedGlobalRoles() && hasRootPermissions(TRUSTED_ANALYST);
+        return hasRootPermissions(TRUSTED_ANALYST);
     }
 
     public boolean isAnalyst()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(AnalystPermission.class);
+        return hasRootPermission(AnalystPermission.class);
     }
 
     public boolean isTrustedBrowserDev()
     {
-        return isAllowedGlobalRoles() && hasRootPermissions(TRUSTED_BROWSER_DEV);
+        return hasRootPermissions(TRUSTED_BROWSER_DEV);
     }
 
     public boolean isBrowserDev()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(BrowserDeveloperPermission.class);
+        return hasRootPermission(BrowserDeveloperPermission.class);
     }
 
     /**
@@ -346,11 +346,6 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public boolean hasRootPermissions(Set<Class<? extends Permission>> perms)
     {
         return ContainerManager.getRoot().hasPermissions(this, perms);
-    }
-
-    public boolean isAllowedGlobalRoles()
-    {
-        return _impersonationContext.isAllowedGlobalRoles();
     }
 
     @Override

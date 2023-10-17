@@ -41,11 +41,6 @@ public interface ImpersonationContext extends Serializable
 {
     /** @return whether the user is impersonating someone or some group, or working as their normal self */
     boolean isImpersonating();
-    // TODO: Remove this method and all callers; it's redundant with the role filtering in impersonation contexts
-    default boolean isAllowedGlobalRoles()
-    {
-        return true;
-    }
     /** @return if non-null, the container to which the impersonation should be restricted */
     @Nullable Container getImpersonationProject();
     /** @return the user who is actually performing the operation, not the user that they might be impersonating */
@@ -81,7 +76,7 @@ public interface ImpersonationContext extends Serializable
         // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
         // simply assigning the role to the group (like Platform Developers). This is special to the Site Admin group;
         // no other role or group should follow this pattern.
-        if (isAllowedGlobalRoles() && user.isInGroup(Group.groupAdministrators))
+        if (user.isInGroup(Group.groupAdministrators))
             roles.add(RoleManager.siteAdminRole);
         return roles;
     }

@@ -132,7 +132,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group.isGuests())
             return false;
 
-        // Impersonating "Site: Administrators" or any group assigned a privileged role by a non-site admin is confusing as well.
+        // Impersonating "Site: Administrators" or any other group assigned a privileged role by a non-site admin is confusing as well.
         if (group.hasPrivilegedRole() && !user.hasSiteAdminPermission())
             return false;
 

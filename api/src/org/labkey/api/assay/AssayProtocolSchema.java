@@ -701,7 +701,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                         {
                             contextualRoles.add(RoleManager.getRole(qcRole.getClass()));
                             contextualRoles.add(RoleManager.getRole(readerRole.getClass()));
-                            User elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, true);
+                            User elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles);
 
                             ViewContext viewContext = new ViewContext(context);
                             viewContext.setUser(elevatedUser);

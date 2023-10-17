@@ -16,7 +16,6 @@
 
 package org.labkey.api.security;
 
-import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
@@ -34,21 +33,21 @@ public class LimitedUser extends User
 {
     private final PrincipalArray _groups;
     private final Set<Role> _roles;
-    private final boolean _allowedGlobalRoles;
 
     // LimitedUser that's granted one or more roles (no groups)
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
-        this(user, Arrays.stream(roleClasses).map(RoleManager::getRole).filter(Objects::nonNull).collect(Collectors.toSet()));
+        this(user, PrincipalArray.getEmptyPrincipalArray(), Arrays.stream(roleClasses).map(RoleManager::getRole).filter(Objects::nonNull).collect(Collectors.toSet()));
     }
 
-    private LimitedUser(User user, Set<Role> roles)
+    @Deprecated // For backward compatibility. TODO: migrate and remove
+    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles, boolean ignored)
     {
-        this(user, PrincipalArray.getEmptyPrincipalArray(), roles, roles.stream().anyMatch(r -> r instanceof AbstractRootContainerRole));
+        this(user, groups, roles);
     }
 
-    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles, boolean allowedGlobalRoles)
+    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles)
     {
         super(user.getEmail(), user.getUserId());
         setFirstName(user.getFirstName());
@@ -59,13 +58,6 @@ public class LimitedUser extends User
         setPhone(user.getPhone());
         _groups = groups;
         _roles = roles;
-        _allowedGlobalRoles = allowedGlobalRoles;
-    }
-
-    @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return _allowedGlobalRoles;
     }
 
     @Override
