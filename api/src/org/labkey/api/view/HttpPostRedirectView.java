@@ -52,15 +52,19 @@ public class HttpPostRedirectView extends HttpView
     @Override
     protected void renderInternal(Object model, PrintWriter out)
     {
+        String formName = "form";
         out.println("<html>");
-        out.println("<body onload='document.forms[\"form\"].submit()'>");
-        out.println("<form name='form' method='POST' action='" + PageFlowUtil.filter(_url) + "'>");
-        out.println(new CsrfInput(getViewContext()).toString());
+        out.println("<body>");
+        out.println(String.format("<form name='%1$s' method='POST' action='%2$s'>", formName, PageFlowUtil.filter(_url)));
+        out.println(new CsrfInput(getViewContext()));
         for (Map.Entry<String, String> pair : _hiddenInputs)
         {
-            out.println("<input type='hidden' name='" + PageFlowUtil.filter(pair.getKey()) + "' value='" + PageFlowUtil.filter(pair.getValue()) + "'>");
+            out.println(String.format("<input type='hidden' name='%1$s' value='%2$s'>", PageFlowUtil.filter(pair.getKey()), PageFlowUtil.filter(pair.getValue())));
         }
         out.println("</form>");
+        out.println(String.format("<script type='text/javascript' nonce='%1$s'>", HttpView.currentPageConfig().getScriptNonce()));
+        out.println(String.format("document.forms['%1$s'].submit();", formName));
+        out.println("</script>");
         out.println("</body>");
         out.println("</html>");
     }
