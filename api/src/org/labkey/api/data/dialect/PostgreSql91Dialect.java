@@ -501,8 +501,9 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
         if (includeNulls)
         {
-            result.append(" AS VARCHAR), ''))");
+            result.append(" AS VARCHAR), '')");
         }
+        result.append(")");
         if (useSortFunction)
         {
             result.append(")");
