@@ -28,6 +28,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -235,10 +236,10 @@ public class SecurityPolicyManager
                 Table.insert(null, table, assignment);
             }
 
-            // Remove policy on commit or rollback
-            transaction.addCommitTask(() -> remove(policy), DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            // Remove policy from cache immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(() -> remove(policy), CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
             // Notify on commit
-            transaction.addCommitTask(() -> notifyPolicyChange(policy.getResourceId()), DbScope.CommitTaskOption.POSTCOMMIT);
+            transaction.addCommitTask(() -> notifyPolicyChange(policy.getResourceId()), CommitTaskOption.POSTCOMMIT);
 
             // Ensure at least one site admin will remain if attempting to modify the root container's policy
             if (policy.getResourceId().equals(ContainerManager.getRoot().getResourceId()))

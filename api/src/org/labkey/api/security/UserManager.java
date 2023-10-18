@@ -30,6 +30,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
@@ -965,15 +966,12 @@ public class UserManager
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
 
-            // Clear user list on commit or rollback
-            transaction.addCommitTask(UserManager::clearUserList, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            // Clear user list immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (needToEnsureSiteAdmins)
-            {
-                // Clear cache BEFORE checking for the last site admin (Note: finally below ensures it's cleared on roll back and non-ensure cases)
-                clearUserList();
                 SecurityManager.ensureAtLeastOneSiteAdminExists();
-            }
+
             transaction.commit();
         }
         catch (Exception e)
@@ -1037,15 +1035,12 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
-            // Clear user list on commit or rollback
-            transaction.addCommitTask(UserManager::clearUserList, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            // Clear user list immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             // If deactivating a site admin or impersonating troubleshooter, ensure at least one site admin remains
             if (!active && userToAdjust.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
-            {
-                clearUserList();
                 SecurityManager.ensureAtLeastOneSiteAdminExists();
-            }
 
             removeRecentUser(userToAdjust);
 

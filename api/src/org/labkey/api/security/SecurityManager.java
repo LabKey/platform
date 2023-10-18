@@ -1460,21 +1460,16 @@ public class SecurityManager
             Table.delete(core.getTableInfoPrincipals(), principalsFilter);
             Container c = ContainerManager.getForId(group.getContainer());
 
-            Runnable clearCaches = () -> {
+            // Clear caches immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(() -> {
                 GroupCache.uncache(groupId);
                 ProjectAndSiteGroupsCache.uncache(c);
                 // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
                 SecurityPolicyManager.notifyPolicyChanges(resources);
-            };
-
-            // Add clear caches commit task here since ensureAtLeastOneSiteAdminExists() might throw
-            transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+            }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (!group.isProjectGroup())
-            {
-                clearCaches.run();
                 ensureAtLeastOneSiteAdminExists();
-            }
 
             transaction.commit();
         }
@@ -1530,15 +1525,11 @@ public class SecurityManager
                         GroupMembershipCache.handleGroupChange(group, member);
                 };
 
-                // Add clear caches commit task here since ensureAtLeastOneSiteAdminExists() might throw
+                // Clear caches immediately (before the last site admin check) and again after commit/rollback
                 transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
                 if (!group.isProjectGroup())
-                {
-                    // Must clear caches BEFORE checking for the last site admin
-                    clearCaches.run();
                     ensureAtLeastOneSiteAdminExists();
-                }
 
                 transaction.commit();
             }
