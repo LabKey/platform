@@ -9927,7 +9927,7 @@ public class AdminController extends SpringActionController
             }
             if (form.isDownload())
             {
-                getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"metrics.json\"");
+                ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, "metrics.json");
             }
             return new ApiSimpleResponse(params);
         }

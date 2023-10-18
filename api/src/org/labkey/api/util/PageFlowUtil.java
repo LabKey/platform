@@ -1027,11 +1027,11 @@ public class PageFlowUtil
         response.setContentType(contentType);
         if (asAttachment)
         {
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, fileName);
         }
         else
         {
-            response.setHeader("Content-Disposition", "filename=\"" + fileName + "\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.inline, fileName);
         }
         for (Map.Entry<String, String> entry : responseHeaders.entrySet())
             response.setHeader(entry.getKey(), entry.getValue());

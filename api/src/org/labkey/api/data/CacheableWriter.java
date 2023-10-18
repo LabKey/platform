@@ -19,6 +19,8 @@ package org.labkey.api.data;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.labkey.api.attachments.DocumentWriter;
+import org.labkey.api.util.ResponseHelper;
+import org.springframework.http.ContentDisposition;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
@@ -44,7 +46,7 @@ public class CacheableWriter implements DocumentWriter
     };
 
     private String _contentType;
-    private String _disposition;
+    private ContentDisposition _disposition;
     private int _size;
     private ByteArrayOutputStream _bOut = new ByteArrayOutputStream();
     private byte[] _bytes;
@@ -72,7 +74,7 @@ public class CacheableWriter implements DocumentWriter
     }
 
     @Override
-    public void setContentDisposition(String value)
+    public void setContentDisposition(ContentDisposition value)
     {
         _disposition = value;
     }
@@ -110,7 +112,7 @@ public class CacheableWriter implements DocumentWriter
         }
         if (_disposition != null)
         {
-            response.setHeader("Content-Disposition", _disposition);
+            ResponseHelper.setContentDisposition(response, _disposition);
         }
         response.setContentLength(_size);
         response.getOutputStream().write(getBytes());
