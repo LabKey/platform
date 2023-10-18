@@ -1294,8 +1294,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
         {
             RemapMissingBehavior missing = remapMissingBehavior;
+            boolean hasValidator = pd != null && pd.getValidators().size() > 0;
             if (missing == null)
-                missing = col.isRequired() ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
+                missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
         }
 
