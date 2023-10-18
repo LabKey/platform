@@ -288,7 +288,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
         public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
         {
             Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
-            indexes.add(new PropertyStorageSpec.Index(true, COLUMN_NAME_LSID));
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_LSID));
             return indexes;
         }
     }

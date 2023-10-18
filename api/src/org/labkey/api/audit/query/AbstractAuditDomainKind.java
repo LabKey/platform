@@ -275,7 +275,10 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     @Override
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
-        return PageFlowUtil.set(new PropertyStorageSpec.Index(false, "Container", "Created"));
+        return PageFlowUtil.set(
+            new PropertyStorageSpec.Index(false, "Container"),
+            new PropertyStorageSpec.Index(false,  "Created")
+        );
     }
 
     @Override
