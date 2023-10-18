@@ -2,13 +2,18 @@ package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -26,6 +31,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
@@ -61,6 +67,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("PlateId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Row"));
         defaultVisibleColumns.add(FieldKey.fromParts("Col"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Position"));
 
         // for now don't surface value and dilution, we may choose to drop these fields from the
         // db schema at some point
@@ -77,6 +84,22 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
     public void addColumns()
     {
         super.addColumns();
+
+        SQLFragment positionSql = new SQLFragment();
+        positionSql.append("(CASE");
+        for (int i=0; i < PositionImpl.ALPHABET.length; i++)
+        {
+            positionSql.append("\n")
+                    .append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(getSqlDialect().concatenate(".Row = ? THEN (?", "CAST("))
+                    .append(ExprColumn.STR_TABLE_ALIAS).append(".Col + 1 AS VARCHAR))")
+                    .add(i)
+                    .add(PositionImpl.ALPHABET[i]);
+        }
+        positionSql.append(" END)");
+        var positionCol = new ExprColumn(this, "Position", positionSql, JdbcType.VARCHAR);
+        positionCol.setUserEditable(false);
+        addColumn(positionCol);
+
         addVocabularyDomains();
     }
 
