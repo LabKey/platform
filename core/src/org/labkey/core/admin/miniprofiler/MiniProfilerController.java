@@ -31,7 +31,6 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
@@ -162,7 +161,7 @@ public class MiniProfilerController extends SpringActionController
     }
 
     // Invoked by test framework
-    @RequiresSiteAdmin
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class IsEnabledAction extends ReadOnlyApiAction
     {
         @Override
@@ -174,7 +173,7 @@ public class MiniProfilerController extends SpringActionController
     }
 
     // Invoked by test framework
-    @RequiresSiteAdmin
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class EnableAction extends MutatingApiAction<EnableForm>
     {
         @Override
@@ -189,7 +188,7 @@ public class MiniProfilerController extends SpringActionController
     }
 
     // Invoked by test framework
-    @RequiresSiteAdmin
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class EnableTroubleshootingStacktracesAction extends MutatingApiAction<EnableForm>
     {
         @Override
