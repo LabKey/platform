@@ -965,6 +965,9 @@ public class UserManager
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
 
+            // Clear user list on commit or rollback
+            transaction.addCommitTask(UserManager::clearUserList, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+
             if (needToEnsureSiteAdmins)
             {
                 // Clear cache BEFORE checking for the last site admin (Note: finally below ensures it's cleared on roll back and non-ensure cases)
@@ -977,10 +980,6 @@ public class UserManager
         {
             LOG.error("deleteUser: " + e);
             throw new UserManagementException(user.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
 
         //TODO: Delete User files
@@ -1038,6 +1037,9 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
+            // Clear user list on commit or rollback
+            transaction.addCommitTask(UserManager::clearUserList, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+
             // If deactivating a site admin or impersonating troubleshooter, ensure at least one site admin remains
             if (!active && userToAdjust.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
             {
@@ -1057,10 +1059,6 @@ public class UserManager
         {
             LOG.error("setUserActive: " + e);
             throw new UserManagementException(userToAdjust.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
     }
 

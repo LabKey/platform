@@ -235,6 +235,11 @@ public class SecurityPolicyManager
                 Table.insert(null, table, assignment);
             }
 
+            // Remove policy on commit or rollback
+            transaction.addCommitTask(() -> remove(policy), DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            // Notify on commit
+            transaction.addCommitTask(() -> notifyPolicyChange(policy.getResourceId()), DbScope.CommitTaskOption.POSTCOMMIT);
+
             // Ensure at least one site admin will remain if attempting to modify the root container's policy
             if (policy.getResourceId().equals(ContainerManager.getRoot().getResourceId()))
             {
@@ -245,12 +250,6 @@ public class SecurityPolicyManager
 
             transaction.commit();
         }
-        finally
-        {
-            // Addresses roll back and non-ensure cases
-            remove(policy);
-        }
-        notifyPolicyChange(policy.getResourceId());
     }
 
     protected enum RoleModification
