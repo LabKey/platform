@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.BaseColumnInfo;
@@ -397,8 +398,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
                                @Nullable TemplateInfo templateInfo)
     {
-        arguments.setName(domain.getName());
+        arguments.setName(StringUtils.trimToNull(domain.getName()));
         String name = arguments.getName();
+        if (name == null)
+            throw new IllegalArgumentException("Dataset name cannot be empty.");
         String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();

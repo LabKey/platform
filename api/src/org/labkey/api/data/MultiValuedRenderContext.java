@@ -59,7 +59,9 @@ public class MultiValuedRenderContext extends RenderContextDecorator
             }
             else
             {
-                String[] values = value.toString().split(VALUE_DELIMITER_REGEX);
+                // Use -1 as the limit so that we pick up back-to-back delimiters as empty strings in the returned array,
+                // which lets us understand there were rows with nulls.
+                String[] values = value.toString().split(VALUE_DELIMITER_REGEX, -1);
                 if (length != -1 && values.length != length)
                 {
                     throw new IllegalStateException("Expected all columns to have the same number of values, but '" + fieldKey + "' has " + values.length + " and " + _iterators.keySet() + " had " + length);
@@ -104,16 +106,16 @@ public class MultiValuedRenderContext extends RenderContextDecorator
 
         if (null != value)
         {
+            // empty string values map to null
+            if ("".equals(value))
+                value = null;
+
             ColumnInfo columnInfo = getFieldMap().get(key);
             // The value was concatenated with others, so it's become a string.
             // Do conversion to switch it back to the expected type.
-            if (columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
+            if (value != null && columnInfo != null && !columnInfo.getJavaClass().isInstance(value))
             {
-                // empty string values map to null
-                if ("".equals(value))
-                    value = null;
-                else
-                    value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
+                value = ConvertUtils.convert(value.toString(), columnInfo.getJavaClass());
             }
         }
         else

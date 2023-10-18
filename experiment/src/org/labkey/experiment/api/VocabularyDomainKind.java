@@ -1,5 +1,6 @@
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -145,7 +146,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     @Override
     public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
+        String name = StringUtils.trimToNull(domain.getName());
         if (name == null)
             throw new IllegalArgumentException("Vocabulary name required");
 
