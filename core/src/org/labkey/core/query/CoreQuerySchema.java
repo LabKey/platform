@@ -93,6 +93,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
+    public static final String SHORTURL_TABLE_NAME = "ShortURL";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -177,6 +178,9 @@ public class CoreQuerySchema extends UserSchema
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))
             return getMVIndicatorTable(cf);
+        if (SHORTURL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
+            return new ShortUrlTableInfo(this);
+
         return null;
     }
 

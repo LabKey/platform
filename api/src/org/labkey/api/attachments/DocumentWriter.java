@@ -16,6 +16,8 @@
 
 package org.labkey.api.attachments;
 
+import org.springframework.http.ContentDisposition;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -28,8 +30,7 @@ public interface DocumentWriter
 {
     void setContentType(String contentType);
 
-    void setContentDisposition(String value);
-
+    void setContentDisposition(ContentDisposition value);
     void setContentLength(int size);
 
     OutputStream getOutputStream() throws IOException;

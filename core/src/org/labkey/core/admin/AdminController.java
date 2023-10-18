@@ -9510,38 +9510,13 @@ public class AdminController extends SpringActionController
         {
             return _delete;
         }
-
-        public List<ShortURLRecord> getSavedShortURLs()
-        {
-            return _savedShortURLs;
-        }
-
-        public void setSavedShortURLs(List<ShortURLRecord> savedShortURLs)
-        {
-            _savedShortURLs = savedShortURLs;
-        }
     }
 
-    @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public class ShortURLAdminAction extends FormViewAction<ShortURLForm>
+    public abstract class AbstractShortURLAdminAction extends FormViewAction<ShortURLForm>
     {
         @Override
         public void validateCommand(ShortURLForm target, Errors errors) {}
-
-        @Override
-        public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors)
-        {
-            form.setSavedShortURLs(ShortURLService.get().getAllShortURLs());
-            JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
-            newView.setTitle("Create New Short URL");
-            newView.setFrame(WebPartView.FrameType.PORTAL);
-            JspView<ShortURLForm> existingView = new JspView<>("/org/labkey/core/admin/existingShortURLs.jsp", form, errors);
-            existingView.setTitle("Existing Short URLs");
-            existingView.setFrame(WebPartView.FrameType.PORTAL);
-
-            return new VBox(newView, existingView);
-        }
 
         @Override
         public boolean handlePost(ShortURLForm form, BindException errors) throws Exception
@@ -9619,6 +9594,27 @@ public class AdminController extends SpringActionController
             }
             return true;
         }
+    }
+
+    @AdminConsoleAction
+    @RequiresPermission(AdminPermission.class)
+    public class ShortURLAdminAction extends AbstractShortURLAdminAction
+    {
+        @Override
+        public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors)
+        {
+            JspView<ShortURLForm> newView = new JspView<>("/org/labkey/core/admin/createNewShortURL.jsp", form, errors);
+            newView.setTitle("Create New Short URL");
+            newView.setFrame(WebPartView.FrameType.PORTAL);
+
+            QuerySettings qSettings = new QuerySettings(getViewContext(), "ShortURL", "ShortURL");
+            qSettings.setBaseSort(new Sort("-Created"));
+            QueryView existingView = new QueryView(new CoreQuerySchema(getUser(), getContainer()), qSettings, errors);
+            existingView.setTitle("Existing Short URLs");
+            existingView.setFrame(WebPartView.FrameType.PORTAL);
+
+            return new VBox(newView, existingView);
+        }
 
         @Override
         public URLHelper getSuccessURL(ShortURLForm form)
@@ -9631,6 +9627,40 @@ public class AdminController extends SpringActionController
         {
             setHelpTopic("shortURL");
             addAdminNavTrail(root, "Short URL Admin", getClass());
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class UpdateShortURLAction extends AbstractShortURLAdminAction
+    {
+        @Override
+        public ModelAndView getView(ShortURLForm form, boolean reshow, BindException errors)
+        {
+            var shortUrlRecord = ShortURLService.get().resolveShortURL(form.getShortURL());
+            if (shortUrlRecord == null)
+            {
+                errors.addError(new LabKeyError("Short URL does not exist: " + form.getShortURL()));
+                return new SimpleErrorView(errors);
+            }
+            form.setFullURL(shortUrlRecord.getFullURL());
+
+            JspView<ShortURLForm> view = new JspView<>("/org/labkey/core/admin/updateShortURL.jsp", form, errors);
+            view.setTitle("Update Short URL");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+            return view;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ShortURLForm form)
+        {
+            return new ActionURL(ShortURLAdminAction.class, getContainer());
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            setHelpTopic("shortURL");
+            addAdminNavTrail(root, "Update Short URL", getClass());
         }
     }
 
@@ -9895,7 +9925,7 @@ public class AdminController extends SpringActionController
             }
             if (form.isDownload())
             {
-                getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"metrics.json\"");
+                ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, "metrics.json");
             }
             return new ApiSimpleResponse(params);
         }
