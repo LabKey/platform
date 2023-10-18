@@ -598,9 +598,6 @@ public abstract class SqlDialect
     /**
      * GroupConcat is usable as an aggregate function within a GROUP BY
      *
-     * @param sql
-     * @param distinct
-     * @param sorted
      * @param delimiter Simple Java string to use as a delimiter (not SQL!)
      * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
      */
@@ -613,13 +610,18 @@ public abstract class SqlDialect
     /**
      * GroupConcat is usable as an aggregate function within a GROUP BY
      *
-     * @param sql
-     * @param distinct
-     * @param sorted
      * @param delimiterSQL SQL expression to use as a delimiter
      * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
      */
-    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL);
+    public final SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    {
+        return getGroupConcat(sql, distinct, sorted, delimiterSQL, false);
+    }
+
+    /**
+     * @param includeNulls whether to include null values as empty strings between delimeters
+     */
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls);
 
     public abstract boolean supportsSelectConcat();
 

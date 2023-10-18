@@ -634,7 +634,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
@@ -658,7 +658,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             result.append("DISTINCT ");
         }
 
+        if (includeNulls)
+        {
+            result.append("COALESCE(CAST(");
+        }
         result.append(sql);
+        if (includeNulls)
+        {
+            result.append(" AS NVARCHAR), '')");
+        }
         result.append(", ");
         result.append(delimiterSQL);
 
