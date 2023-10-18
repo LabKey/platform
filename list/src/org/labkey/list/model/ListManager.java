@@ -1088,8 +1088,13 @@ public class ListManager implements SearchService.DocumentProvider
             if (null != keyColumn)
             {
                 String keySelectName = keyColumn.getSelectName();
-                new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
-                        keySelectName + " = ?", new Timestamp(ms), pk);
+
+                // May have a race condition where the list has been deleted prior to being indexed, but after being enumerated
+                String listName = getListTableName(sti);
+                new SQLFragment("UPDATE ").append(listName).append('\n')
+                        .append(" SET LastIndexed = ?").add(new Timestamp(ms)).append('\n')
+                        .append(" WHERE ").append("Exists (SELECT 1 FROM ").append(listName).append(" WHERE ").append(keySelectName).append(" = ? ").add(pk).append(")")
+                        .append(" AND ").append(keySelectName).append(" = ?").add(pk).append('\n');
             }
             String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
             LOG.debug("List \"" + list + "\": Set LastIndexed for item with PK = " + pk + warning);
