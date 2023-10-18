@@ -43,7 +43,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Helper methods for working with Jackson, JSONObject, and JSONArray
@@ -260,6 +262,38 @@ public class JsonUtil
         }
 
         return value;
+    }
+
+    /**
+     * Sanitizes a mutable map by replacing +Infinity, -Infinity, and NaN values with JSON-legal values. Recursively
+     * sanitizes all embedded maps and lists as well; these must also be mutable.
+     * @param mutableMap mutable Map to sanitize
+     */
+    public static void sanitizeMap(Map<String, Object> mutableMap)
+    {
+        mutableMap.keySet().forEach(key -> sanitize(mutableMap.get(key), num -> mutableMap.put(key, translateNumber(num))));
+    }
+
+    /**
+     * Sanitizes a mutable list by replacing +Infinity, -Infinity, and NaN values with JSON-legal values. Recursively
+     * sanitizes all embedded maps and lists as well; these must also be mutable.
+     * @param mutableList mutable List to sanitize
+     */
+    public static void sanitizeList(List<Object> mutableList)
+    {
+        ListIterator<Object> iter = mutableList.listIterator();
+        while (iter.hasNext())
+            sanitize(iter.next(), num -> iter.set(translateNumber(num)));
+    }
+
+    private static void sanitize(Object obj, Consumer<Number> numberAction)
+    {
+        if (obj instanceof Map m)
+            sanitizeMap(m);
+        else if (obj instanceof List list)
+            sanitizeList(list);
+        else if (obj instanceof Number num)
+            numberAction.accept(num);
     }
 
     public static class TestCase extends Assert
