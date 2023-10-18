@@ -2762,7 +2762,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GetImpersonationUsersAction extends MutatingApiAction
+    public static class GetImpersonationUsersAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -3219,7 +3219,7 @@ public class UserController extends SpringActionController
                 controller.new ShowUsersAction(),
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
-                controller.new GetImpersonationUsersAction(),
+                new GetImpersonationUsersAction(),
                 controller.new ImpersonateUserAction(),
                 controller.new GetImpersonationGroupsAction(),
                 controller.new ImpersonateGroupAction()

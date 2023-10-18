@@ -2173,6 +2173,9 @@ public class SecurityManager
         return userIds;
     }
 
+    /**
+     * @return an immutable list of Users who have been assigned all the requested permissions in the given container
+     */
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
@@ -2182,6 +2185,9 @@ public class SecurityManager
             .toList();
     }
 
+    /**
+     * @return an immutable list of Users who have been assigned any of the requested permissions in the given container
+     */
     public static List<User> getUsersWithOneOf(Container c, Set<Class<? extends Permission>> perms)
     {
         SecurityPolicy policy = c.getPolicy();
