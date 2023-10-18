@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -455,6 +456,48 @@ public class JsonUtil
             assertEquals(url.toString(), roundTripJson.get("actionUrl"));
             assertEquals(html.toString(), roundTripJson.get("htmlString"));
             assertEquals(u.getUserId(), roundTripJson.get("user"));
+        }
+
+        @Test
+        public void testSanitize()
+        {
+            // Rough approximation of the map GetNabRunsAction generates
+            Map<String, Object> response = new HashMap<>();
+            response.put("assayName", "foobar");
+            response.put("assayDescription", "this is my assay");
+            response.put("assayId", 1234);
+            response.put("neg", Double.NEGATIVE_INFINITY);
+            response.put("pos", Double.POSITIVE_INFINITY);
+            response.put("nan", Double.NaN);
+
+            List<Map<String, Object>> runList = new ArrayList<>();
+            response.put("runs", runList);
+            runList.add(getDoubleRun());
+            runList.add(getFloatRun());
+
+            assertThrows(JSONException.class, () -> new JSONObject(response));
+            JsonUtil.sanitizeMap(response);
+            JSONObject json = new JSONObject(response);
+        }
+
+        private Map<String, Object> getFloatRun()
+        {
+            Map<String, Object> run = new HashMap<>();
+            run.put("cutoff", Float.NaN);
+            run.put("maxDilution", Float.NEGATIVE_INFINITY);
+            run.put("minDilution", Float.POSITIVE_INFINITY);
+
+            return run;
+        }
+
+        private Map<String, Object> getDoubleRun()
+        {
+            Map<String, Object> run = new HashMap<>();
+            run.put("cutoff", Double.NaN);
+            run.put("maxDilution", Double.NEGATIVE_INFINITY);
+            run.put("minDilution", Double.POSITIVE_INFINITY);
+
+            return run;
         }
     }
 }
