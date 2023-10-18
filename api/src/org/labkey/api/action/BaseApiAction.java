@@ -312,7 +312,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             String contentType = getViewContext().getRequest().getContentType();
             if (null != contentType)
             {
-                if (contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
+                if (contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON) || contentType.equals("application/csp-report"))
                 {
                     _reqFormat = ApiResponseWriter.Format.JSON;
                     return populateJsonForm();
