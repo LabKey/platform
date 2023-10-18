@@ -908,7 +908,8 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     validateMultiValueInput : function(inputValues, multiValueSeparator, minOccurs, maxOccurs) {
         // Used when "Equals One Of.." or "Between" is selected. Calls validateInputField on each value entered.
-        var values = inputValues.split(multiValueSeparator);
+        const sep = inputValues.indexOf('\n') > 0 ? '\n' : multiValueSeparator;
+        var values = inputValues.split(sep);
         var isValid = "";
         for(var i = 0; i < values.length; i++){
             isValid = this.validateInputField(values[i]);
@@ -928,6 +929,9 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             if (values.length > maxOccurs)
                 return "At most " + maxOccurs + " '" + multiValueSeparator + "' separated values are allowed";
         }
+
+        if (!Ext.isEmpty(inputValues) && typeof inputValues === 'string' && inputValues.trim().length > 1000)
+            return "Value is too long";
 
         //If we make it out of the for loop we had no errors.
         return true;
@@ -951,7 +955,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 useNull: true
             });
 
-            var values = (!Ext.isEmpty(value) && value instanceof String && value.indexOf('\n') > -1) ?  value.split('\n') : [value];
+            var values = (!Ext.isEmpty(value) && typeof value === 'string' && value.indexOf('\n') > -1) ?  value.split('\n') : [value];
             var invalid = null;
             values.forEach(val => {
                 if (val == null)
@@ -964,6 +968,9 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
             if (invalid != null)
                 return "Invalid value: " + invalid;
+
+            if (!Ext.isEmpty(value) && typeof value === 'string' && value.trim().length > 1000)
+                return "Value is too long";
         }
         else {
             console.log('Unrecognized type: ' + this.jsonType);
