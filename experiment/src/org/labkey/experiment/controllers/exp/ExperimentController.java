@@ -2489,7 +2489,7 @@ public class ExperimentController extends SpringActionController
                 try (Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType))
                 {
                     response.setContentType(docType.getMimeType());
-                    response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+                    ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
@@ -2686,8 +2686,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getSuccessView(ConvertHtmlToExcelForm form)
         {
-            // CONSIDER <base href="form.getBaseURL()" />
-            getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + form.getName() + "\"");
+            ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, form.getName());
             getPageConfig().setTemplate(PageConfig.Template.None);
             HtmlView v = new HtmlView(_responseHtml);
             v.setContentType("application/vnd.ms-excel");
@@ -4512,7 +4511,7 @@ public class ExperimentController extends SpringActionController
                 XarExporter exporter = new XarExporter(lsidRelativizer, selection, getUser(), xarXmlFileName, null);
 
                 getViewContext().getResponse().setContentType("application/zip");
-                getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+                ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, fileName);
                 ResponseHelper.setPrivate(getViewContext().getResponse());
 
                 exporter.writeAsArchive(getViewContext().getResponse().getOutputStream());

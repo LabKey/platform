@@ -47,24 +47,22 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -82,9 +80,9 @@ import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.query.AttachmentAuditProvider;
+import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -99,6 +97,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1029,7 +1028,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     throw new NotFoundException("Could not find file " + alias);
 
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.attachment().filename(alias, StandardCharsets.UTF_8).build());
                 s = new FileInputStream(file);
             }
             else
@@ -1041,9 +1040,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename(alias, StandardCharsets.UTF_8).build());
                 else
-                    writer.setContentDisposition("inline; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("inline").filename(alias, StandardCharsets.UTF_8).build());
 
                 int size = rs.getInt("DocumentSize");
                 if (size > 0)
@@ -1222,9 +1221,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         @Override
-        public void setContentDisposition(String value)
+        public void setContentDisposition(ContentDisposition value)
         {
-            _response.setHeader("Content-Disposition", value);
+            ResponseHelper.setContentDisposition(_response, value);
         }
 
         @Override

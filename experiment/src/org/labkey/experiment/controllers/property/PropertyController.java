@@ -262,7 +262,7 @@ public class PropertyController extends SpringActionController
 
             String kindName = form.getKind() == null ? form.getDomainKind() : form.getKind();
             String domainGroup = form.getDomainGroup();
-            String domainName = form.getDomainName();
+            String domainName = StringUtils.trimToNull(form.getDomainName());
 
             if (domainGroup != null)
             {

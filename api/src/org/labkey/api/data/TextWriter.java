@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.writer.PrintWriters;
 
 import javax.servlet.ServletOutputStream;
@@ -96,7 +97,7 @@ public abstract class TextWriter implements AutoCloseable
 
         // Set the content-type so the browser knows which application to launch
         response.setContentType(getContentType());
-        response.setHeader("Content-disposition", "attachment; filename=\"" + getFilename() + "\"");
+        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, getFilename());
 
         // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've
         // set the content-disposition and content-type)

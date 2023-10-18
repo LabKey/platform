@@ -17,6 +17,7 @@ package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -1818,7 +1819,10 @@ public class OntologyManager
 
     public static DomainDescriptor ensureDomainDescriptor(String domainURI, String name, Container container)
     {
-        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(name).build();
+        String trimmedName = StringUtils.trimToNull(name);
+        if (trimmedName == null)
+            throw new IllegalArgumentException("Non-blank name is required.");
+        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(trimmedName).build();
         return ensureDomainDescriptor(dd);
     }
 
