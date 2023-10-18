@@ -1408,8 +1408,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (legacyObjectId != null)
             return getExpProtocol(legacyObjectId);
 
-        boolean includeProjectAndShared = cf != null && cf.getType() != ContainerFilter.Type.Current;
-        
         ExpProtocol protocol = getExpProtocol(definitionContainer, schemaName, cf);
 
         if (protocol != null && protocol.getCreated().compareTo(effectiveDate) <= 0)
@@ -8584,10 +8582,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
+        String objecIdSql = dataType.equals("Protocol") ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
+
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
                 "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
-                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ");
+                "AND ObjectId IN (SELECT " + objecIdSql + " WHERE Container ");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);

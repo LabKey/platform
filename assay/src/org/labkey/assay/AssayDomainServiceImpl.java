@@ -418,7 +418,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                             }
                             else
                             {
-                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider);
+                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, isNew);
                                 if (domainErrors.hasErrors())
                                 {
                                     throw domainErrors;
@@ -582,7 +582,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     StringBuilder errors = new StringBuilder();
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
-                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider);
+                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, isNew);
 
                         // Need to bail out inside of the loop because some errors may have left the DB connection in
                         // an unusable state.
@@ -613,7 +613,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
     }
 
-    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
+    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean isNew)
     {
         GWTDomain<GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
@@ -623,7 +623,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                 prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocol.getName()));
             }
         }
-        boolean hasNameChange = provider.hasDomainNameChanged(protocol, domain);
+        boolean hasNameChange = !isNew && provider.hasDomainNameChanged(protocol, domain);
         String oldName = domain.getName();
         String newName = protocol.getName();
         provider.changeDomain(getUser(), protocol, previous, domain);
