@@ -554,11 +554,6 @@ public class DavController extends SpringActionController
             ResponseHelper.setPrivate(this.getResponse());
         }
 
-        void setContentDisposition(String value)
-        {
-            super.setHeader("Content-Disposition", value);
-        }
-
         @Override
         public void setContentType(String contentType)
         {
@@ -1002,7 +997,7 @@ public class DavController extends SpringActionController
             HttpServletResponse response = getViewContext().getResponse();
             response.reset();
             response.setContentType("application/zip");
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + zipName + ".zip\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, zipName + ".zip");
 
             try (ZipOutputStream out = new ZipOutputStream(response.getOutputStream()))
             {
@@ -1116,7 +1111,7 @@ public class DavController extends SpringActionController
                 sb.append("</dm:mount>\n");
 
                 getResponse().setContentType("application/davmount+xml");
-                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".davmount\"");
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".davmount");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
                 close(w, "response writer");
@@ -1144,7 +1139,7 @@ public class DavController extends SpringActionController
                         "</plist>\n");
 
                 getResponse().setContentType("application/x-cyberduck+xml");
-                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".duck\"");
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".duck");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
                 close(w, "response writer");
@@ -5080,7 +5075,7 @@ public class DavController extends SpringActionController
 
         if (!StringUtils.isEmpty(contentDisposition))
         {
-            getResponse().setContentDisposition(contentDisposition);
+            ResponseHelper.setContentDisposition(getResponse(), contentDisposition);
         }
 
         // Find content type

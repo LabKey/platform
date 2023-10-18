@@ -16,8 +16,14 @@
 
 package org.labkey.api.assay.plate;
 
+import org.apache.commons.lang3.CharUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * User: brittp
@@ -26,8 +32,8 @@ import org.labkey.api.data.Container;
  */
 public class PositionImpl implements Position
 {
-    public static final char[] ALPHABET = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-            'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'};
+    public static final String[] ALPHABET = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
+            "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF"};
 
     protected int _row;
     protected int _column;
@@ -41,23 +47,39 @@ public class PositionImpl implements Position
         // no-arg constructor for reflection    
     }
 
+    private int getRowChar(char rowChar, char minChar, char maxChar)
+    {
+        if (rowChar < minChar || rowChar > maxChar)
+        {
+            throw new IllegalArgumentException(String.format("The well row character must be between %s and %s but was %s", maxChar, maxChar, rowChar));
+        }
+        return rowChar - 'A';
+    }
+
     public PositionImpl(Container container, @NotNull String description)
     {
-        _container = container;
-        if (description.length() < 2)
-        {
-            throw new IllegalArgumentException("Well descriptions should be at least two characters, but was: '" + description + "'");
-        }
         description = description.toUpperCase();
-        char rowChar = description.charAt(0);
-        if (rowChar < 'A' || rowChar > 'Z')
+        _container = container;
+
+        String rowStr = description.substring(0, 1);
+        if (description.length() >= 3)
         {
-            throw new IllegalArgumentException("Well descriptions should start with a letter, but was: '" + description + "'");
+            if (CharUtils.isAsciiAlpha(description.charAt(1)))
+                rowStr = description.substring(0, 2);
         }
-        _row = rowChar - 'A';
+
+        _row = switch (rowStr.length())
+        {
+            case 1 -> getRowChar(rowStr.charAt(0), 'A', 'Z');
+            case 2 -> getRowChar(rowStr.charAt(1), 'A', 'F') + 26;
+            default -> throw new IllegalArgumentException("Well row descriptions should be between one and two characters, but was: '" + rowStr + "'");
+        };
+
         try
         {
-            _column = Integer.parseInt(description.substring(1));
+            _column = Integer.parseInt(description.substring(rowStr.length()));
+            if (_column > 48)
+                throw new IllegalArgumentException("Columns greater than 48 are not currently supported.");
         }
         catch (NumberFormatException e)
         {
@@ -175,5 +197,41 @@ public class PositionImpl implements Position
         if (getRow() > ALPHABET.length)
             return "Row " + (getRow() + 1) + ", Column " + (getColumn() + 1);
         return "" + ALPHABET[getRow()] + (getColumn() + 1);
+    }
+
+    public static final class TestCase
+    {
+        @Test
+        public void testParsePositions() throws Exception
+        {
+            Container c = ContainerManager.getSharedContainer();
+            // verify we can parse A1 through AF48
+            for (int i=0; i < ALPHABET.length; i++)
+            {
+                for (int j=1; j <= 48; j++)
+                {
+                    String description = ALPHABET[i] + j;
+                    Position position = new PositionImpl(c, description);
+
+                    assertEquals(i, position.getRow());
+                    assertEquals(j, position.getColumn());
+                }
+            }
+            // test unsupported well labels
+            testUnsupported(c, "AG1");
+            testUnsupported(c, "zz9");
+            testUnsupported(c, "A500");
+            testUnsupported(c, "12A");
+        }
+
+        private void testUnsupported(Container c, String description)
+        {
+            try
+            {
+                new PositionImpl(c, description);
+                fail(description + " should not be a supported well name.");
+            }
+            catch (IllegalArgumentException e) {}
+        }
     }
 }

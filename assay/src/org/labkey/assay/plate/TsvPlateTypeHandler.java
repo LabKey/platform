@@ -45,8 +45,12 @@ public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
     public List<Pair<Integer, Integer>> getSupportedPlateSizes()
     {
         List<Pair<Integer, Integer>> sizes = new ArrayList<>();
+        sizes.add(new Pair<>(3, 4));
+        sizes.add(new Pair<>(4, 6));
+        sizes.add(new Pair<>(6, 8));
         sizes.add(new Pair<>(8, 12));
         sizes.add(new Pair<>(16, 24));
+        sizes.add(new Pair<>(32, 48));
 
         return sizes;
     }

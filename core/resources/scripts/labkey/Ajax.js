@@ -28,17 +28,22 @@ LABKEY.Ajax = new function () {
             // parse the filename out of the Content-Disposition header. Example:
             //   Content-Disposition: attachment; filename=data.xlsx
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+            // also
+            //   Content-Disposition: attachment; filename*=UTF-8''filename.xlsx
             var disposition = xhr.getResponseHeader('Content-Disposition');
-            if (disposition && disposition.indexOf('attachment') !== -1) {
-                var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+            if (disposition && disposition.startsWith('attachment') !== -1) {
+                var filenameRegex = /filename\*?=([^']*'')?(['"].*?['"]|[^;\n]*)/;
                 var matches = filenameRegex.exec(disposition);
-                if (matches != null && matches[1]) {
-                    filename = matches[1].replace(/['"]/g, '');
+                if (matches) {
+                    if (matches.length > 2) {
+                        filename = matches[2];
+                    } else if (matches[1]) {
+                        filename = matches[1];
+                    }
+                    filename = decodeURI(filename.replace(/['"]/g, ''));
                 }
             }
         }
-
-        var type = xhr.getResponseHeader('Content-Type');
 
         var blob = xhr.response;
         var downloadUrl = URL.createObjectURL(blob);

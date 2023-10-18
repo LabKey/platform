@@ -1973,7 +1973,7 @@ public class QueryController extends SpringActionController
             getPageConfig().setTemplate(PageConfig.Template.None);
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
-            response.setHeader("Content-Disposition", "attachment");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment);
             ViewContext viewContext = getViewContext();
 
             ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
@@ -2298,7 +2298,7 @@ public class QueryController extends SpringActionController
             }
             getViewContext().getResponse().setContentType("text/x-ms-iqy");
             String filename = FileUtil.makeFileNameWithTimestamp(form.getQueryName(), "iqy");
-            getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+            ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, filename);
             PrintWriter writer = getViewContext().getResponse().getWriter();
             writer.println("WEB");
             writer.println("1");
