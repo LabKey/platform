@@ -505,7 +505,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public Domain createDomain(GWTDomain domain, @Nullable SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
+        String name = StringUtils.trimToNull(domain.getName());
         if (name == null)
             throw new IllegalArgumentException("SampleSet name required");
 

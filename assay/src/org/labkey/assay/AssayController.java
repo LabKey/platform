@@ -123,6 +123,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -242,6 +243,8 @@ public class AssayController extends SpringActionController
         private String _name;
         private String _type;
         private Integer _id;
+        private Boolean _plateEnabled;
+        private String _status;
 
         public String getName()
         {
@@ -273,13 +276,37 @@ public class AssayController extends SpringActionController
             _id = id;
         }
 
+        public Boolean getPlateEnabled()
+        {
+            return _plateEnabled;
+        }
+
+        public void setPlateEnabled(Boolean plateEnabled)
+        {
+            _plateEnabled = plateEnabled;
+        }
+
+        public String getStatus()
+        {
+            return _status;
+        }
+
+        public void setStatus(String status)
+        {
+            _status = status;
+        }
+
         public boolean matches(ExpProtocol protocol, AssayProvider provider)
         {
             if (_id != null && protocol.getRowId() != _id.intValue())
                 return false;
             if (_name != null && !_name.equals(protocol.getName()))
                 return false;
-            return !(_type != null && !_type.equals(provider.getName()));
+            if (_type != null && !_type.equals(provider.getName()))
+                return false;
+            if (_status != null && !_status.equalsIgnoreCase(protocol.getStatus().name()))
+                return false;
+            return !(_plateEnabled != null && !_plateEnabled.equals(provider.isPlateMetadataEnabled(protocol)));
         }
     }
 
@@ -338,6 +365,7 @@ public class AssayController extends SpringActionController
         if (provider instanceof PlateBasedAssayProvider plateBased)
             assayProperties.put("plateTemplate", plateBased.getPlate(c, protocol));
         assayProperties.put("requireCommentOnQCStateChange", AssayQCService.getProvider().isRequireCommentOnQCStateChange(protocol.getContainer()));
+        assayProperties.put("plateEnabled", provider.isPlateMetadataEnabled(protocol));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
         AssayProtocolSchema schema = provider.createProtocolSchema(user, c, protocol, null);
@@ -891,7 +919,7 @@ public class AssayController extends SpringActionController
 
                         response.reset();
                         response.setContentType("application/zip");
-                        response.setHeader("Content-Disposition", "attachment; filename=\"" + "sampleQCData" + ".zip\"");
+                        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, "sampleQCData.zip");
                         ZipOutputStream stream = new ZipOutputStream(response.getOutputStream());
                         byte[] buffer = new byte[1024];
                         for (File file : files)
@@ -1528,7 +1556,7 @@ public class AssayController extends SpringActionController
                     User user = getUser();
                     if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
                     {
-                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                        Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                         contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
                         user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
                     }
