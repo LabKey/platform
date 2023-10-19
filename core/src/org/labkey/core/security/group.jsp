@@ -160,7 +160,7 @@
 
 <labkey:form id="groupMembersForm" action="<%=urlFor(GroupAction.class)%>" method="POST" layout="horizontal">
 <%
-if (bean.messages.size() > 0)
+if (!bean.messages.isEmpty())
 {
     %><b>System membership status for new group members:</b><br>
     <div id="messages"><%
@@ -279,13 +279,13 @@ else
     %>
     </table>
     </div><%
-    if (bean.redundantMembers.size() > 0)
+    if (!bean.redundantMembers.isEmpty())
     {
         %><div style="padding:5px;">* These group members already appear in other included member groups and can be safely removed.</div><%
     }
 
     %><div style="padding:5px;"><%
-    if (bean.redundantMembers.size() > 0)
+    if (!bean.redundantMembers.isEmpty())
     {
         %><%= button("Select Redundant Members").submit(true).onClick("return selectAllForRemoval(true);") %><%
     }
@@ -323,7 +323,7 @@ else
 if (!bean.isSystemGroup)
 {
     %><br><br><div id="delete-group"><%
-    if (bean.members.size() == 0)
+    if (bean.members.isEmpty())
     {
         %>
         <labkey:form action="<%=urlFor(StandardDeleteGroupAction.class)%>" method="POST">

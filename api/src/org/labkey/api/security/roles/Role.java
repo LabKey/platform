@@ -27,12 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: Apr 13, 2009
-* Time: 10:31:50 AM
-*/
-
 /**
  * Represents a security role, which is a set of permissions with a name and description. Roles are what are assigned
  * to users and groups to grant them access to resources.
@@ -125,6 +119,16 @@ public interface Role extends Parameter.JdbcParameterValue
      * certain type of resource, such as a folder (or particular type of folder) or dataset
      */
     boolean isApplicable(SecurityPolicy policy, SecurableResource resource);
+
+    /**
+     * @return Whether this role is considered "privileged," meaning only Site Admins can assign it, un-assign it,
+     * delete or deactivate users with it, manipulate groups that have been granted it, clone permissions to/from users
+     * with it, impersonate users with it (exception for Impersonating Troubleshooters), etc.
+     */
+    default boolean isPrivileged()
+    {
+        return false;
+    }
 
     interface TestRole extends Role {}
 }

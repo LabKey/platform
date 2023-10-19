@@ -22,14 +22,14 @@ import {
     AssayProtocolModel,
     BeforeUnload,
     DomainFieldsDisplay,
-    fetchProtocol,
+    getProtocol,
     LoadingSpinner,
     ServerContext,
     ServerContextProvider,
     withAppUser,
 } from '@labkey/components';
 
-import "../DomainDesigner.scss"
+import '../DomainDesigner.scss';
 
 type State = {
     copy?: boolean;
@@ -41,10 +41,9 @@ type State = {
     providerName?: string;
     returnUrl: string;
     serverContext: ServerContext;
-}
+};
 
 export class App extends React.Component<any, State> {
-
     private _dirty: boolean = false;
 
     constructor(props) {
@@ -55,7 +54,7 @@ export class App extends React.Component<any, State> {
         // hack, if the returnUrl has stripped off the rowId because of encoding/decoding issues (see TODO in AbstractAssayProvider.getManageMenuNavTree()) add it back on
         let returnUrl = ActionURL.getReturnUrl();
         if (rowId !== undefined && returnUrl && returnUrl.indexOf('rowId') === returnUrl.length - 5) {
-            returnUrl = returnUrl + '=' + rowId
+            returnUrl = returnUrl + '=' + rowId;
         }
 
         // default to dirty state for assay copy case
@@ -76,32 +75,31 @@ export class App extends React.Component<any, State> {
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
-            success: (data) => {
+            success: data => {
                 this.setState({
                     hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1,
                 });
             },
-            failure: (error) => {
+            failure: error => {
                 this.setState({ hasDesignAssayPerm: false, message: error.exception });
-            }
+            },
         });
 
         // if URL has a protocol RowId, look up the assay design info. otherwise use the providerName to get the template
         if (protocolId || providerName) {
-            fetchProtocol(protocolId, providerName, copy)
-                .then((model) => {
+            getProtocol({ protocolId, providerName, copy })
+                .then(model => {
                     this.setState({ isLoadingModel: false, model });
                 })
-                .catch((error) => {
+                .catch(error => {
                     this.setState({ isLoadingModel: false, message: error.exception });
                 });
-        }
-        else {
+        } else {
             this.setState({ isLoadingModel: false, message: 'Missing required parameter: rowId or providerName' });
         }
     }
 
-    handleWindowBeforeUnload = (event) => {
+    handleWindowBeforeUnload = event => {
         if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
@@ -130,11 +128,11 @@ export class App extends React.Component<any, State> {
         if (value && !hide) {
             return (
                 <tr>
-                    <td style={{verticalAlign: 'top', padding: '3px'}}>{label}:&nbsp;&nbsp;&nbsp;</td>
+                    <td style={{ verticalAlign: 'top', padding: '3px' }}>{label}:&nbsp;&nbsp;&nbsp;</td>
                     <td>
                         {Utils.isString(value) && value}
                         {Utils.isBoolean(value) && value.toString()}
-                        {typeof value === 'object' && value.map((val) => <div>{val}</div>)}
+                        {typeof value === 'object' && value.map(val => <div>{val}</div>)}
                     </td>
                 </tr>
             );
@@ -153,7 +151,7 @@ export class App extends React.Component<any, State> {
             return <LoadingSpinner />;
         }
 
-        // check if this is a create assay case with a user that doesn't have permissions
+        // check if this is the create assay case with a user that doesn't have permissions
         if (model.isNew() && !hasDesignAssayPerm) {
             return <Alert>You do not have sufficient permissions to create a new assay design.</Alert>;
         }
@@ -181,13 +179,32 @@ export class App extends React.Component<any, State> {
                                         {this.renderReadOnlyProperty('Description', model.description)}
                                         {this.renderReadOnlyProperty('Plate Template', model.selectedPlateTemplate)}
                                         {this.renderReadOnlyProperty('Detection Method', model.selectedDetectionMethod)}
-                                        {this.renderReadOnlyProperty('Metadata Input Format', model.selectedMetadataInputFormat)}
+                                        {this.renderReadOnlyProperty(
+                                            'Metadata Input Format',
+                                            model.selectedMetadataInputFormat
+                                        )}
                                         {this.renderReadOnlyProperty('QC States', model.qcEnabled)}
-                                        {this.renderReadOnlyProperty('Auto-Copy Data to Study', model.autoCopyTargetContainer ? model.autoCopyTargetContainer['path'] : undefined)}
+                                        {this.renderReadOnlyProperty(
+                                            'Auto-Copy Data to Study',
+                                            model.autoCopyTargetContainer
+                                                ? model.autoCopyTargetContainer['path']
+                                                : undefined
+                                        )}
                                         {this.renderReadOnlyProperty('Import in Background', model.backgroundUpload)}
-                                        {this.renderReadOnlyProperty('Transform Scripts', model.protocolTransformScripts, model.protocolTransformScripts.size === 0)}
-                                        {this.renderReadOnlyProperty('Save Script Data for Debugging', model.saveScriptFiles)}
-                                        {this.renderReadOnlyProperty('Module-Provided Scripts', model.moduleTransformScripts, model.moduleTransformScripts.size === 0)}
+                                        {this.renderReadOnlyProperty(
+                                            'Transform Scripts',
+                                            model.protocolTransformScripts,
+                                            model.protocolTransformScripts.size === 0
+                                        )}
+                                        {this.renderReadOnlyProperty(
+                                            'Save Script Data for Debugging',
+                                            model.saveScriptFiles
+                                        )}
+                                        {this.renderReadOnlyProperty(
+                                            'Module-Provided Scripts',
+                                            model.moduleTransformScripts,
+                                            model.moduleTransformScripts.size === 0
+                                        )}
                                         {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
                                         {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
                                     </table>

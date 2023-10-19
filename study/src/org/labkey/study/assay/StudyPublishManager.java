@@ -442,7 +442,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 // we allow linking data to a study even if the study security is set to read-only datasets, since the
                 // underlying insert uses the QUS, we pass in a contextual role to allow the insert to succeed
-                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                 contextualRoles.add(RoleManager.getRole(FolderAdminRole.class));
                 user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
             }

@@ -991,7 +991,7 @@ public class AnnouncementsController extends SpringActionController
     private static SelectBuilder getAssignedToSelect(Container c, Integer assignedTo, String name, final User currentUser)
     {
         Set<Class<? extends Permission>> perms = Collections.singleton(InsertPermission.class);
-        List<User> possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
+        List<User> possibleAssignedTo = new ArrayList<>(SecurityManager.getUsersWithPermissions(c, perms));
         possibleAssignedTo.sort(Comparator.comparing(user -> user.getDisplayName(currentUser), String.CASE_INSENSITIVE_ORDER));
 
         SelectBuilder builder = new SelectBuilder().name(name).className(null)

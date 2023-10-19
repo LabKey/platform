@@ -18,6 +18,7 @@ package org.labkey.core.view.template.bootstrap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
@@ -146,7 +147,7 @@ public class WarningServiceImpl implements WarningService
         // Collect warnings
         List<HtmlString> warningMessages = new LinkedList<>();
 
-        if (context == null || context.getUser().hasSiteAdminPermission())
+        if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
             warningMessages.addAll(getStaticAdminWarnings());
 
         Warnings warnings = Warnings.of(warningMessages);

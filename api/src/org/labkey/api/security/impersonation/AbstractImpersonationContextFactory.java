@@ -26,12 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: adam
- * Date: 12/31/2014
- * Time: 4:36 PM
- */
-
 /** Base class for session handling */
 public class AbstractImpersonationContextFactory
 {
@@ -47,7 +41,6 @@ public class AbstractImpersonationContextFactory
         _sessionAttributesToStash.add(attributeName);
     }
 
-    /** Don't remove/rename without updating PipelineJobMarshaller.getXStream() */
     private transient final Map<String, Object> _adminSessionAttributes;
 
     @JsonCreator

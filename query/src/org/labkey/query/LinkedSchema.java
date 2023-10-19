@@ -611,12 +611,12 @@ public class LinkedSchema extends ExternalSchema
         }
 
         @Override
-        public Set<Role> getContextualRoles(SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(SecurityPolicy policy)
         {
             // If the policy is allowed (current container or current study) then return the ReaderRole that's set on the LimitedUser
             if (_allowedPolicyResourceIds.contains(policy.getResourceId()))
             {
-                return super.getContextualRoles(policy);
+                return super.getAssignedRoles(policy);
             }
 
             // For all other containers and policies, no permissions
