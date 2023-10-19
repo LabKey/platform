@@ -20,7 +20,6 @@ import org.apache.commons.collections4.Factory;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -73,6 +72,7 @@ import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.element.CsrfInput;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -120,7 +120,7 @@ import static org.labkey.api.util.DOM.createHtml;
  */
 public class Portal implements ModuleChangeListener
 {
-    private static final Logger LOG = LogManager.getLogger(Portal.class);
+    private static final Logger LOG = LogHelper.getLogger(Portal.class, "Page and web part warnings");
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
 
     public static final String FOLDER_PORTAL_PAGE = "folder";
@@ -558,7 +558,7 @@ public class Portal implements ModuleChangeListener
         @Override
         protected void fixupBean(WebPart part)
         {
-            if (null == part.location || part.location.length() == 0)
+            if (null == part.location || part.location.isEmpty())
                 part.location = HttpView.BODY;
         }
     }
@@ -908,7 +908,10 @@ public class Portal implements ModuleChangeListener
 
             // Next add all other pages to allPages (includes custom pages)
             // creating copy of PortalPage object
-            allPages.addAll(pageMap.values().stream().map(PortalPage::copy).sorted(Comparator.comparing(PortalPage::getIndex)).collect(Collectors.toList()));
+            allPages.addAll(pageMap.values().stream()
+                .map(PortalPage::copy)
+                .sorted(Comparator.comparing(PortalPage::getIndex))
+                .toList());
 
             // Now set indexes of all pages by walking in reverse order, assigning indexes down
             Collections.reverse(allPages);
@@ -916,13 +919,12 @@ public class Portal implements ModuleChangeListener
             Map<String, PortalPage> currentPages = new HashMap<>();
             TableInfo portalTable = getTableInfoPortalPages();
             new TableSelector(portalTable, SimpleFilter.createContainerFilter(c), null)
-                    .getArrayList(PortalPage.class)
-                    .forEach(page -> currentPages.put(page.getPageId(), page));
+                .forEach(PortalPage.class, page -> currentPages.put(page.getPageId(), page));
 
             // Transaction does not have to call Portal.getPortalPage
             try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
             {
-                // We have to insure that the already set page with the highest index will get reset before that index is used
+                // We have to ensure that the already set page with the highest index will get reset before that index is used
                 int validPageIndex = maxOriginalIndex + allPages.size();
                 for (PortalPage p : allPages)
                 {
@@ -1300,7 +1302,7 @@ public class Portal implements ModuleChangeListener
                     OPTIONS.add(OPTION(at(value, name), displayName));
             });
 
-            if (OPTIONS.size() > 0)
+            if (!OPTIONS.isEmpty())
                 OPTIONS.add(OPTION(at(value, ""), HR()));
         }
 
@@ -1555,7 +1557,7 @@ public class Portal implements ModuleChangeListener
 
         for (WebPart part : parts)
         {
-            if (null == part.getName() || 0 == part.getName().length())
+            if (null == part.getName() || part.getName().isEmpty())
                 continue;
             String location = part.getLocation();
             multiMap.put(location, part);
@@ -1569,16 +1571,17 @@ public class Portal implements ModuleChangeListener
         return getViewMap().get(name);
     }
 
+    // The maintained view map is now case-insensitive, so this is identical to the above method
+    @Deprecated // Call getPortalPart() instead
     public static WebPartFactory getPortalPartCaseInsensitive(String name)
     {
-        CaseInsensitiveHashMap<WebPartFactory> viewMap = new CaseInsensitiveHashMap<>(getViewMap());
-        return viewMap.get(name);
+        return getPortalPart(name);
     }
 
     private static synchronized Map<String, WebPartFactory> getViewMap()
     {
         if (null == _viewMap)
-            initMaps();
+            initMap();
 
         return _viewMap;
     }
@@ -1587,12 +1590,12 @@ public class Portal implements ModuleChangeListener
     public void onModuleChanged(Module m)
     {
         // force releasing of WebPartFactory objects
-        clearMaps();
+        clearMap();
     }
 
-    private synchronized static void initMaps()
+    private synchronized static void initMap()
     {
-        _viewMap = new HashMap<>(20);
+        _viewMap = new CaseInsensitiveHashMap<>(200);
 
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
@@ -1625,7 +1628,7 @@ public class Portal implements ModuleChangeListener
         return true;
     }
 
-    synchronized static void clearMaps()
+    synchronized static void clearMap()
     {
         _viewMap = null;
     }
@@ -1709,9 +1712,7 @@ public class Portal implements ModuleChangeListener
             errorView.setWebPart(webPart);
             return errorView;
         }
-
     }
-
 
     private static void _setHidden(PortalPage page, boolean hidden)
     {

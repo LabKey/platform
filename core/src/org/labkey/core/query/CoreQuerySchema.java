@@ -44,7 +44,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.Role;
@@ -723,7 +723,7 @@ public class CoreQuerySchema extends UserSchema
             if (getContainer().isRoot())
             {
                 // NOTE: as usual does not override TableInfo.hasPermission()
-                if (getContainer().hasOneOf(user, Set.of(SeeUserDetailsPermission.class, TroubleShooterPermission.class)))
+                if (getContainer().hasOneOf(user, Set.of(SeeUserDetailsPermission.class, TroubleshooterPermission.class)))
                     return true;
             }
             return super.canReadSchema();

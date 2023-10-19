@@ -47,7 +47,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -125,7 +125,7 @@ public class AuditController extends SpringActionController
     }
 
     // An admin console action, but we want Troubleshooters to be able to POST (for export)
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
@@ -407,7 +407,7 @@ public class AuditController extends SpringActionController
             User elevatedUser = user;
             if (!getContainer().hasPermission(getUser(), CanSeeAuditLogPermission.class))
             {
-                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                 contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
                 elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, false);
             }

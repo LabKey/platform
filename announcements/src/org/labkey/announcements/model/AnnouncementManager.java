@@ -387,7 +387,7 @@ public class AnnouncementManager
         IndividualEmailPrefsSelector sel = new IndividualEmailPrefsSelector(c);
         Set<User> subscribers = sel.getNotificationUsers(ann);
 
-        List<User> admins = SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class));
+        List<User> admins = new ArrayList<>(SecurityManager.getUsersWithPermissions(c, Collections.singleton(AdminPermission.class)));
         admins.retainAll(subscribers);
 
         List<String> toList = admins.stream()

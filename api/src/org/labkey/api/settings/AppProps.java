@@ -32,9 +32,6 @@ import java.util.Map;
 /**
  * Stores basic site-wide configuration.
  * @see org.labkey.api.settings.WriteableAppProps
- *
- * User: arauch
- * Date: Apr 11, 2005
  */
 public interface AppProps
 {

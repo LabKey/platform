@@ -136,7 +136,7 @@
         Map<String, List<Group>> accessGroups = row.getAccessGroups();
         Set<String> roleNames = accessGroups.keySet();
         getPageConfig().addHandlerForQuerySelector("A.roleToggleLink", "click", "return LABKEY.Utils.toggleLink(this, false);");
-        if (roleNames.size() > 0)
+        if (!roleNames.isEmpty())
         {
 %>
             <td style="padding-left:<%=cellPadding%>px;">
@@ -162,21 +162,21 @@
                                     boolean first = true;
                                     for (Group group : accessGroups.get(roleName))
                                     {
-                                        Container groupContainer = group.isAdministrators() ? ContainerManager.getRoot() : row.getContainer().getProject();
+                                        Container groupContainer = group.isProjectGroup() ? row.getContainer().getProject() : ContainerManager.getRoot();
                                         String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site: ") + group.getName();
 
                                         Set<List<UserPrincipal>> membershipPaths = SecurityManager.getMembershipPathways(row.getUser(), group);
                                         String hoverExplanation = SecurityManager.getMembershipPathwayHTMLDisplay(membershipPaths, userColDisplay, roleName);
 
-                                        if (group.isAdministrators() || group.isProjectGroup())
+                                        if (group.isGuests() || group.isUsers())
+                                        {
+                                            %><%= text(!first ? ", " : "") %><span data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></span><%
+                                        }
+                                        else
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
                                             %><%= text(!first ? ", " : "") %><a href="<%=h(groupURL)%>" data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></a><%
-                                        }
-                                        else
-                                        {
-                                            %><%= text(!first ? ", " : "") %><span data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></span><%
                                         }
                                         first = false;
                                     }
