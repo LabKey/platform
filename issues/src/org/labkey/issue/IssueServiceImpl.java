@@ -304,7 +304,7 @@ public class IssueServiceImpl implements IssueService
 
         if (!relatedContainer.hasPermission(user, UpdatePermission.class))
         {
-            Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+            Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
             contextualRoles.add(RoleManager.getRole(EditorRole.class));
             return new LimitedUser(user, user.getGroups(), contextualRoles, false);
         }

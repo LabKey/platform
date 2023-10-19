@@ -27,6 +27,7 @@ import org.labkey.api.view.NavTree;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating as
@@ -55,12 +56,6 @@ public class WrappedImpersonationContext implements ImpersonationContext
     public boolean isImpersonating()
     {
         return delegate.isImpersonating();
-    }
-
-    @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return delegate.isAllowedGlobalRoles();
     }
 
     @Override
@@ -95,10 +90,10 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
         Set<Role> ret = new HashSet<>(additionalRoles);
-        ret.addAll(delegate.getContextualRoles(user, policy));
+        ret.addAll(delegate.getAssignedRoles(user, policy));
         return ret;
     }
 
@@ -115,7 +110,7 @@ public class WrappedImpersonationContext implements ImpersonationContext
     }
 
     @Override
-    public Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
+    public Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
         return delegate.filterPermissions(perms);
     }

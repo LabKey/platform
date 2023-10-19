@@ -98,6 +98,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -561,7 +562,7 @@ public class UserController extends SpringActionController
 
         return null != formUser
                 && formUserId != currentUser.getUserId() // don't let a user activate/deactivate/delete themselves
-                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasPrivilegedRole()); // don't let non-site admin deactivate/delete a user with a privileged role (site admin, platform dev)
     }
 
     @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})
@@ -2761,7 +2762,7 @@ public class UserController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GetImpersonationUsersAction extends MutatingApiAction
+    public static class GetImpersonationUsersAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -2967,27 +2968,26 @@ public class UserController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class GetImpersonationRolesAction extends MutatingApiAction
+    public class GetImpersonationRolesAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> impersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
+            User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Collection<Role> roles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer());
-            Collection<Map<String, Object>> responseRoles = new LinkedList<>();
-
-            for (Role role : roles)
-            {
-                Map<String, Object> map = new HashMap<>();
-                map.put("displayName", role.getDisplayName());
-                map.put("roleName", role.getUniqueName());
-                map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
-                map.put("selected", impersonationRoles.contains(role));
-                responseRoles.add(map);
-            }
+            Collection<Map<String, Object>> responseRoles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer(), user)
+                .map(role -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("displayName", role.getDisplayName());
+                    map.put("roleName", role.getUniqueName());
+                    map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
+                    map.put("selected", impersonationRoles.contains(role));
+                    return map;
+                })
+                .toList();
 
             response.put("roles", responseRoles);
 
@@ -3003,6 +3003,9 @@ public class UserController extends SpringActionController
 
         if (context.isImpersonating())
             user = context.getAdminUser();
+
+        if (getContainer().isRoot() && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+            return context;
 
         if (!getContainer().hasPermission(user, AdminPermission.class))
             throw new UnauthorizedException();
@@ -3036,7 +3039,7 @@ public class UserController extends SpringActionController
         public String impersonate(ImpersonateRolesForm form)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();
 
@@ -3216,7 +3219,7 @@ public class UserController extends SpringActionController
                 controller.new ShowUsersAction(),
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
-                controller.new GetImpersonationUsersAction(),
+                new GetImpersonationUsersAction(),
                 controller.new ImpersonateUserAction(),
                 controller.new GetImpersonationGroupsAction(),
                 controller.new ImpersonateGroupAction()

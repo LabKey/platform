@@ -23,7 +23,7 @@ public interface WarningProvider
 {
     /**
      * Add warnings for conditions that will never change while the server is running (e.g., size of JVM heap or Tomcat
-     * version). These warnings are displayed to site administrators only.
+     * version). These warnings are displayed to site administrators, application administrators, and troubleshooters.
      * @param warnings A @NotNull Warnings collector
      * @param showAllWarnings A flag for testing that indicates the provider should unconditionally add all warnings
      */

@@ -53,6 +53,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -104,9 +105,9 @@ public class SqlScriptController extends SpringActionController
 
     @IgnoresAllocationTracking
     @SuppressWarnings("unused")
-    @RequiresPermission(AdminOperationsPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     @AllowedDuringUpgrade
-    public class GetModuleStatusAction extends ReadOnlyApiAction
+    public static class GetModuleStatusAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -318,7 +319,7 @@ public class SqlScriptController extends SpringActionController
                         warningHtml.append("<span class=\"labkey-error\">Warning: The script ").append(PageFlowUtil.filter(pair.getKey())).append(" from module ").append(PageFlowUtil.filter(pair.getValue().getName())).append(" was not found!</span><br>\n");
                 }
 
-                if (warningHtml.length() > 0)
+                if (!warningHtml.isEmpty())
                     html.insert(0, warningHtml);
             }
 
@@ -367,7 +368,7 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ScriptsWithErrorsAction extends SimpleViewAction
+    public class ScriptsWithErrorsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1425,7 +1426,6 @@ public class SqlScriptController extends SpringActionController
             assertForAdminOperationsPermission(user,
                 controller.new ConsolidateSchemaAction(),
                 controller.new ConsolidateScriptsAction(),
-                controller.new GetModuleStatusAction(),
                 controller.new OrphanedScriptsAction(),
                 controller.new ReorderAllScriptsAction(),
                 controller.new ReorderScriptAction(),
@@ -1434,6 +1434,10 @@ public class SqlScriptController extends SpringActionController
                 controller.new ScriptsWithErrorsAction(),
                 controller.new UnreachableScriptsAction(),
                 controller.new UpgradeCodeAction()
+            );
+
+            assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
+                new GetModuleStatusAction()
             );
 
             // @AdminConsoleAction

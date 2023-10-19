@@ -123,7 +123,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 Map<String, Object> raw = new TableSelector(getQueryTable(), keyFilter, null).getMap();
 
-                if (null != raw && raw.size() > 0)
+                if (null != raw && !raw.isEmpty())
                 {
                     ret = new CaseInsensitiveHashMap<>();
 
@@ -173,7 +173,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 }
             }
 
-            if (result.size() > 0 && !errors.hasErrors())
+            if (!result.isEmpty() && !errors.hasErrors())
                 mgr.indexList(_list);
         }
 
@@ -186,8 +186,8 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             // if the list is a picklist and you have permission to manage picklists, that equates
             // to having editor permission.
-            Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-            contextualRoles.addAll(user.getContextualRoles(container.getPolicy()));
+            Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
+            contextualRoles.addAll(user.getAssignedRoles(container.getPolicy()));
             Role editorRole = RoleManager.getRole(EditorRole.class);
             if (!contextualRoles.contains(editorRole))
             {
@@ -483,7 +483,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(entityId, container));
 
                 // Clean up Search indexer
-                if (result.size() > 0)
+                if (!result.isEmpty())
                     mgr.deleteItemIndex(_list, entityId);
             }
         }
@@ -598,7 +598,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /**
      * Delegate class to generate an AttachmentParent
      */
-    public class ListItemAttachmentParentFactory implements AttachmentParentFactory
+    public static class ListItemAttachmentParentFactory implements AttachmentParentFactory
     {
         @Override
         public AttachmentParent generateAttachmentParent(String entityId, Container c)

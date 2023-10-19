@@ -39,6 +39,7 @@ import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
@@ -98,9 +99,6 @@ import static java.lang.Boolean.TRUE;
 import static org.labkey.api.view.template.PageConfig.Template.Dialog;
 
 /**
- * User: matthewb
- * Date: May 17, 2007
- *
  * CONSIDER using DispatchServlet instead of Controller here, or perhaps make the Module expose a DispatchServlet
  *
  * This class acts pretty much as DispatchServlet.  However, it does not follow all the rules/conventions of DispatchServlet.
@@ -623,7 +621,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     // ignore
                 }
 
-                if (!user.hasSiteAdminPermission())
+                if (!user.hasRootPermission(TroubleshooterPermission.class))
                 {
                     if (HttpUtil.isApiLike(request, action))
                     {
