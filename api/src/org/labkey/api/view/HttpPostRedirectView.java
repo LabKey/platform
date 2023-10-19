@@ -32,16 +32,11 @@ import java.util.Map;
  *
  * @see HttpRedirectView
  */
-public class HttpPostRedirectView extends HttpView
+public class HttpPostRedirectView extends HttpView<Object>
 {
     private final String _url;
     private final Collection<? extends Map.Entry<String, String>> _hiddenInputs;
 
-    public HttpPostRedirectView(String url, Map<String, String> hiddenInputs)
-    {
-        _url = url;
-        _hiddenInputs = hiddenInputs.entrySet();
-    }
 
     public HttpPostRedirectView(String url, Collection<Pair<String, String>> hiddenInputs)
     {
