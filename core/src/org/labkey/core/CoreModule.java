@@ -1055,7 +1055,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
-            _warningProvider.createMarketingTimerTask();
+            AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         });
 
         if (null != PropertyService.get())
@@ -1158,11 +1158,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+            if (AppProps.getInstance().getUsageReportingLevel() == UsageReportingLevel.NONE)
+            {
+                // force the usage reporting level to on for community edition distributions
+                WriteableAppProps appProps = AppProps.getWriteableInstance();
+                appProps.setUsageReportingLevel(UsageReportingLevel.ON);
+                appProps.save(User.getAdminServiceUser());
+            }
+        }
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
-        _warningProvider.createMarketingTimerTask();
         TempTableTracker.init();
     }
 

@@ -16,8 +16,6 @@
 package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
@@ -56,14 +54,10 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -73,11 +67,6 @@ import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNE
 
 public class CoreWarningProvider implements WarningProvider
 {
-    private static final Logger LOG = LogHelper.getLogger(CoreWarningProvider.class, "Warning provider for the core module.");
-    private Timer _marketingTimer;
-    private static HtmlString _marketingMessage;
-    private static HtmlString _marketingMessageDefault = HtmlString.unsafe("Do more with LabKey Server. Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions.");
-
     /** Schema name -> problem list */
     private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
 
@@ -123,8 +112,11 @@ public class CoreWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
-        if (_marketingMessage != null)
-            warnings.add(_marketingMessage);
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+            if (UsageReportingLevel.getMarketingUpdate() != null)
+                warnings.add(UsageReportingLevel.getMarketingUpdate());
+        }
 
         if (context == null || context.getUser().hasSiteAdminPermission())
         {
@@ -381,56 +373,5 @@ public class CoreWarningProvider implements WarningProvider
         html.append(topic.getSimpleLinkHtml(helpText));
         html.append(" for more information.");
         warnings.add(html);
-    }
-
-    public void createMarketingTimerTask()
-    {
-        _marketingMessage = null;
-        if (_marketingTimer != null)
-        {
-            _marketingTimer.cancel();
-            _marketingTimer = null;
-        }
-
-        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
-        {
-            _marketingTimer = new Timer("MarketingMessage", true);
-            _marketingTimer.scheduleAtFixedRate(new MarketingTimerTask(), 0, DateUtils.MILLIS_PER_DAY);
-        }
-    }
-
-    private static class MarketingTimerTask extends TimerTask
-    {
-        @Override
-        public void run()
-        {
-            LOG.debug("Checking for marketing updates");
-            MothershipReport report;
-            try
-            {
-                MothershipReport.Target target = MothershipReport.isSelfTestMarketingUpdates()
-                        ? MothershipReport.Target.local
-                        : MothershipReport.Target.remote;
-                report = new MothershipReport(MothershipReport.Type.GetMarketingUpdates, target, null);
-            }
-            catch (MalformedURLException | URISyntaxException e)
-            {
-                throw new RuntimeException(e);
-            }
-            report.addServerSessionParams();
-            report.run();
-            String message = report.getContent();
-            if (!StringUtils.isEmpty(message))
-            {
-                LOG.debug("Obtained the most recent marketing update");
-                _marketingMessage = HtmlString.unsafe(message);
-            }
-            else
-            {
-                // use the default message
-                LOG.debug("Using the default marketing update");
-                _marketingMessage = _marketingMessageDefault;
-            }
-        }
     }
 }

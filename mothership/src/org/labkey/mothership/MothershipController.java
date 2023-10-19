@@ -751,28 +751,19 @@ public class MothershipController extends SpringActionController
                 // First log this installation and session
                 var sessionAndRelease = saveSessionInfo(form);
                 setSuccessHeader();
-                getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
-            }
 
-            return null;
-        }
-    }
-
-    @CSRF(CSRF.Method.NONE)
-    @RequiresNoPermission
-    public class GetMarketingUpdatesAction extends MutatingApiAction<ServerInfoForm>
-    {
-        @Override
-        public Object execute(ServerInfoForm form, BindException errors) throws Exception
-        {
-            if (form.getServerGUID() != null)
-            {
-                if (MothershipReport.shouldReceiveMarketingUpdates(form.getDistribution()))
+                if (form.getApiVersion() >= 23.11)
                 {
-                    // First log this installation and session
-                    saveSessionInfo(form);
-                    setSuccessHeader();
-                    getViewContext().getResponse().getWriter().print(MothershipManager.get().getMarketingMessage(getContainer()));
+                    JSONObject response = new JSONObject();
+                    response.put("upgradeMessage", getUpgradeMessage(sessionAndRelease.second));
+                    response.put("marketingUpdate", MothershipManager.get().getMarketingMessage(getContainer()));
+
+                    return success(response);
+                }
+                else
+                {
+                    // respond in plain text
+                    getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
                 }
             }
             return null;
@@ -957,6 +948,7 @@ public class MothershipController extends SpringActionController
         private String _logoLink;
         private String _organizationName;
         private String _systemShortName;
+        private float _apiVersion;             // used to pass along the api version being used
 
         public String getLogoLink()
         {
@@ -1194,6 +1186,16 @@ public class MothershipController extends SpringActionController
         public void setServerHostName(String serverHostName)
         {
             _serverHostName = serverHostName;
+        }
+
+        public float getApiVersion()
+        {
+            return _apiVersion;
+        }
+
+        public void setApiVersion(float apiVersion)
+        {
+            _apiVersion = apiVersion;
         }
 
         public Pair<ServerSession, SoftwareRelease> toSession(Container container)

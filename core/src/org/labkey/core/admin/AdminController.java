@@ -9891,8 +9891,8 @@ public class AdminController extends SpringActionController
                 {
                     report.setForwardedFor(form.getForwardedFor());
                     report.run();
-                    if (null != report.getContent())
-                        params.put("upgradeMessage", report.getContent());
+                    if (null != report.getUpgradeMessage())
+                        params.put("upgradeMessage", report.getUpgradeMessage());
                 }
             }
             if (form.isDownload())

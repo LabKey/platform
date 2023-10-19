@@ -138,6 +138,8 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     private static final Logger LOG = LogHelper.getLogger(UsageReportingLevel.class, "Submits usage metrics to labkey.org");
     private static Timer _timer;
     private static HtmlString _upgradeMessage;
+    private static HtmlString _marketingUpdate;
+    private static String _marketingMessageDefault = "Do more with LabKey Server. Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions.";
 
     public static void cancelUpgradeCheck()
     {
@@ -147,12 +149,18 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         }
         _timer = null;
         _upgradeMessage = null;
+        _marketingUpdate = null;
     }
 
     public void scheduleUpgradeCheck()
     {
         cancelUpgradeCheck();
-        TimerTask task = createTimerTask();
+        TimerTask task;
+        // override the configured reporting level if the self test experimental feature is on
+        if (MothershipReport.isSelfTestMarketingUpdates())
+            task = ON.createTimerTask();
+        else
+            task = createTimerTask();
         if (task != null)
         {
             _timer = new Timer("UpgradeCheck", true);
@@ -168,6 +176,11 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     public static @Nullable HtmlString getUpgradeMessage()
     {
         return _upgradeMessage;
+    }
+
+    public static @Nullable HtmlString getMarketingUpdate()
+    {
+        return _marketingUpdate;
     }
 
     @Nullable
@@ -213,19 +226,25 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         public void run()
         {
             LOG.debug("Starting to generate metrics report for " + _level);
-            MothershipReport report = generateReport(_level, MothershipReport.Target.remote);
+            MothershipReport.Target target = MothershipReport.isSelfTestMarketingUpdates()
+                    ? MothershipReport.Target.local
+                    : MothershipReport.Target.remote;
+            MothershipReport report = generateReport(_level, target);
             if (report != null)
             {
+                _upgradeMessage = null;
+                _marketingUpdate = null;
+
                 report.run();
-                String message = report.getContent();
-                if (StringUtils.isEmpty(message))
+                if (!StringUtils.isEmpty(report.getUpgradeMessage()))
+                    _upgradeMessage = HtmlString.unsafe(report.getUpgradeMessage());
+
+                if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
                 {
-                    _upgradeMessage = null;
-                }
-                else
-                {
-                    // We assume labkey.org is sending back legal HTML
-                    _upgradeMessage = HtmlString.unsafe(message);
+                    if (!StringUtils.isEmpty(report.getMarketingUpdate()))
+                        _marketingUpdate = HtmlString.unsafe(report.getMarketingUpdate());
+                    else
+                        _marketingUpdate = HtmlString.unsafe(_marketingMessageDefault);
                 }
             }
          }

@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -69,7 +70,8 @@ public class MothershipReport implements Runnable
     private final Map<String, String> _params = new LinkedHashMap<>();
     private final String _errorCode;
     private int _responseCode = -1;
-    private String _content;
+    private String _upgradeMessage;
+    private String _marketingUpdate;
     private final Target _target;
     private String _forwardedFor = null;
     public static final String X_FORWARDED_FOR = "X-Forwarded-For";
@@ -137,14 +139,6 @@ public class MothershipReport implements Runnable
             String getAction()
             {
                 return "checkForUpdates";
-            }
-        },
-        GetMarketingUpdates
-        {
-            @Override
-            String getAction()
-            {
-                return "getMarketingUpdates";
             }
         };
 
@@ -325,16 +319,39 @@ public class MothershipReport implements Runnable
                 if (_responseCode == 200 && MOTHERSHIP_STATUS_SUCCESS.equals(connection.getHeaderField(MOTHERSHIP_STATUS_HEADER_NAME)))
                 {
                     String encoding = StringUtilsLabKey.DEFAULT_CHARSET.name();
+                    ContentType contentType = null;
 
                     if (connection.getContentType() != null)
                     {
-                        ContentType contentType = new ContentType(connection.getContentType());
+                        contentType = new ContentType(connection.getContentType());
                         encoding = contentType.getParameter("charset");
                     }
 
                     try (InputStream in = connection.getInputStream())
                     {
-                        _content = IOUtils.toString(in, encoding);
+                        if (contentType != null && contentType.getBaseType().equalsIgnoreCase("application/json"))
+                        {
+                            JSONObject json = new JSONObject(new JSONTokener(in));
+                            if (json.has("data"))
+                            {
+                                JSONObject data = json.getJSONObject("data");
+                                if (data.has("upgradeMessage"))
+                                    _upgradeMessage = data.getString("upgradeMessage");
+
+                                if (shouldReceiveMarketingUpdates(getDistributionName()))
+                                {
+                                    if (data.has("marketingUpdate"))
+                                    {
+                                        _marketingUpdate = data.getString("marketingUpdate");
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // legacy plain text response for mothership prior to 23.11
+                            _upgradeMessage = IOUtils.toString(in, encoding);
+                        }
                     }
                 }
                 LOG.debug("Successfully submitted report to " + _url);
@@ -452,11 +469,17 @@ public class MothershipReport implements Runnable
         addParam("distribution", getDistributionName());
         addParam("usageReportingLevel", AppProps.getInstance().getUsageReportingLevel().toString());
         addParam("exceptionReportingLevel", AppProps.getInstance().getExceptionReportingLevel().toString());
+        addParam("apiVersion", "23.11");
     }
 
-    public String getContent()
+    public String getUpgradeMessage()
     {
-        return _content;
+        return _upgradeMessage;
+    }
+
+    public String getMarketingUpdate()
+    {
+        return _marketingUpdate;
     }
 
     public static String getDistributionName()
