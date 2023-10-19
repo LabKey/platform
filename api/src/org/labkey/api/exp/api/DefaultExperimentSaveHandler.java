@@ -386,9 +386,18 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
      * protocol application change or choose not add its own data for saving.
      * Called from DefaultAssaySaveHandler.handleRun.
      */
-    protected void handleProtocolApplications(ViewContext context, ExpProtocol protocol, ExpExperiment batch, ExpRun run, JSONArray inputDataArray,
-                                           JSONArray dataArray, JSONArray inputMaterialArray, JSONObject runJsonObject, JSONArray outputDataArray,
-                                           JSONArray outputMaterialArray) throws ExperimentException, ValidationException
+    protected void handleProtocolApplications(
+        ViewContext context,
+        ExpProtocol protocol,
+        ExpExperiment batch,
+        ExpRun run,
+        JSONArray inputDataArray,
+        JSONArray dataArray,
+        JSONArray inputMaterialArray,
+        JSONObject runJsonObject,
+        JSONArray outputDataArray,
+        JSONArray outputMaterialArray
+    ) throws ExperimentException, ValidationException
     {
         // First, clear out any old data analysis results
         clearOutputDatas(context, run);
@@ -399,6 +408,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
         String aliquotParentLsid = null;
         String aliquotRootLsid = null;
+        Integer aliquotRootRowId = null;
         if (isAliquotProtocol)
         {
             if (inputMaterial.size() != 1)
@@ -407,6 +417,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             ExpMaterial parent = inputMaterial.keySet().iterator().next();
             aliquotParentLsid = parent.getLSID();
             aliquotRootLsid = StringUtils.isEmpty(parent.getRootMaterialLSID()) ? parent.getLSID() : parent.getRootMaterialLSID();
+            aliquotRootRowId = StringUtils.isEmpty(parent.getRootMaterialLSID()) ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
         run.deleteProtocolApplications(context.getUser());
@@ -433,6 +444,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 {
                     material.setAliquotedFromLSID(aliquotParentLsid);
                     material.setRootMaterialLSID(aliquotRootLsid);
+                    material.setRootMaterialRowId(aliquotRootRowId);
                 }
 
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
@@ -530,7 +542,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 }
             }
 
-            if (materialName != null && materialName.length() > 0)
+            if (materialName != null && !materialName.isEmpty())
             {
                 if (sampleType != null)
                     material = sampleType.getSample(context.getContainer(), materialName);

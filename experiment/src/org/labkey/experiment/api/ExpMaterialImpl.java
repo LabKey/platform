@@ -147,8 +147,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
-    @Nullable @Override
-    public ExpSampleType getSampleType()
+    @Override
+    public @Nullable ExpSampleType getSampleType()
     {
         String type = _object.getCpasType();
         if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
@@ -156,10 +156,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             // try current container first (uses cache)
             return SampleTypeService.get().getSampleTypeByType(type, getContainer());
         }
-        else
-        {
-            return null;
-        }
+
+        return null;
     }
 
     @Override
@@ -185,6 +183,18 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     public void setRootMaterialLSID(String lsid)
     {
         _object.setRootMaterialLSID(lsid);
+    }
+
+    @Override
+    public Integer getRootMaterialRowId()
+    {
+        return _object.getRootMaterialRowId();
+    }
+
+    @Override
+    public void setRootMaterialRowId(int rowId)
+    {
+        _object.setRootMaterialRowId(rowId);
     }
 
     @Override
@@ -351,6 +361,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             setRowId((int) longId);
             if (null == getRootMaterialLSID())
                 setRootMaterialLSID(getLSID());
+            if (null == getRootMaterialRowId())
+                setRootMaterialRowId(getRowId());
         }
         super.save(user, table, true, isInsert);
     }

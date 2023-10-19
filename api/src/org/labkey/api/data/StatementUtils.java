@@ -838,7 +838,7 @@ public class StatementUtils
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT").appendEOS();  // CONSIDER: Move this into addReselect()?
             }
 
-            if(_selectObjectUri && hasObjectURIColumn)
+            if (_selectObjectUri && hasObjectURIColumn)
             {
                 _dialect.addReselect(sqlfInsertInto, table.getColumn(objectURIColumnName), objectURIVar);
             }

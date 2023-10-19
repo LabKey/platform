@@ -362,7 +362,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
+    public @Nullable ExpSampleType getEffectiveSampleType(
+        @NotNull Container definitionContainer,
+        @NotNull User user,
+        @NotNull String sampleTypeName,
+        @NotNull Date effectiveDate,
+        @Nullable ContainerFilter cf
+    )
     {
         Integer legacyObjectId = ExperimentService.get().getObjectIdWithLegacyName(sampleTypeName, ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), effectiveDate, definitionContainer, cf);
         if (legacyObjectId != null)
@@ -374,7 +380,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return sampleType;
 
         return null;
-
     }
 
     @Override
@@ -425,7 +430,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return getSampleType(c, user, rowId, true);
     }
 
-
     @Override
     public ExpSampleTypeImpl getSampleTypeByType(@NotNull String lsid, Container hint)
     {
@@ -442,7 +446,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             sampleTypeCache.put(lsid,st.getContainer().getId());
         return st;
     }
-
 
     private ExpSampleTypeImpl getSampleType(@NotNull Container c, @Nullable User user, int rowId, boolean includeOtherContainers)
     {
@@ -499,7 +502,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         return new ExpSampleTypeImpl(ms);
     }
-
 
     public MaterialSource getMaterialSource(String lsid)
     {
@@ -704,7 +706,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (existing != null)
             throw new IllegalArgumentException("SampleType '" + existing.getName() + "' already exists");
 
-        if (properties == null || properties.size() < 1)
+        if (properties == null || properties.isEmpty())
             throw new ExperimentException("At least one property is required");
 
         if (idCol2 != -1 && idCol1 == idCol2)
@@ -766,7 +768,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         String lsid = dbSeqLsids.first;
         String materialPrefixLsid = dbSeqLsids.second;
         Domain domain = PropertyService.get().createDomain(c, lsid, name, templateInfo);
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         if (kind != null)
             domain.setDisabledSystemFields(kind.getDisabledSystemFields(disabledSystemField));
         Set<String> reservedNames = kind.getReservedPropertyNames(domain, u);

@@ -325,4 +325,85 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
+    private static void addRowIdColumn(ExpSampleTypeImpl st)
+    {
+        // TODO: Share all this code with above
+        Domain domain = st.getDomain();
+        SampleTypeDomainKind kind = null;
+        try
+        {
+            kind = (SampleTypeDomainKind) domain.getDomainKind();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+        if (null == kind || null == kind.getStorageSchemaName())
+            return;
+
+        DbSchema schema = kind.getSchema();
+        DbScope scope = kind.getSchema().getScope();
+
+        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert (null != domain && null != domain.getStorageTableName());
+
+        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
+        if (provisionedTable == null)
+        {
+            LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
+            return;
+        }
+
+        addRowIdColumn(st, domain, scope);
+    }
+
+    private static void addRowIdColumn(ExpSampleTypeImpl st, Domain domain, DbScope scope)
+    {
+        // TODO: Support SQLServer upgrade
+        String tableName = domain.getStorageTableName();
+        SQLFragment addColumn = new SQLFragment("ALTER TABLE ")
+                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName).append("\n")
+                .append("ADD COLUMN RowId INTEGER\n");
+        SQLFragment update = new SQLFragment("UPDATE ")
+                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName).append(" AS ST\n")
+                .append("SET RowId = (SELECT RowId FROM exp.material AS ExpMatFrom WHERE ST.LSID = ExpMatFrom.LSID)\n");
+        SQLFragment notNull = new SQLFragment("ALTER TABLE ")
+                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName)
+                .append(" ALTER COLUMN RowId SET NOT NULL\n");
+        // TODO: Is there a better way to add an index programmatically?
+        SQLFragment addIndex = new SQLFragment("CREATE UNIQUE INDEX ")
+                .append(tableName).append("_rowId ON ")
+                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName).append(" (RowId)\n");
+        new SqlExecutor(scope).execute(addColumn);
+        int count = new SqlExecutor(scope).execute(update);
+        new SqlExecutor(scope).execute(notNull);
+        new SqlExecutor(scope).execute(addIndex); // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added 'rowId' column, count=" + count);
+    }
+
+    /**
+     * Called from exp-23.010-23.011.sql
+     */
+    public static void addRowIdToMaterializedSampleTypes(ModuleContext context) throws Exception
+    {
+        if (context.isNewInstall())
+            return;
+
+        boolean alwaysFail = true;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            // get all SampleTypes across all containers
+            TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
+            new TableSelector(sampleTypeTable, null, null).stream(MaterialSource.class)
+                    .map(ExpSampleTypeImpl::new)
+                    .forEach(ExperimentUpgradeCode::addRowIdColumn);
+
+            if (alwaysFail)
+                throw new Exception("Successfully completed addRowIdToMaterializedSampleTypes. Not.");
+
+            tx.commit();
+        }
+    }
 }

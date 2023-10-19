@@ -290,6 +290,7 @@
       </column>
       <column columnName="ObjectId"/>
       <column columnName="RootMaterialLSID"/>
+      <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState">
           <description>Represents the status of the sample</description>
@@ -1023,6 +1024,7 @@
       <column columnName="LastIndexed"/>
       <column columnName="ObjectId"/>
       <column columnName="RootMaterialLSID"/>
+      <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
       <column columnName="AliquotCount"/>

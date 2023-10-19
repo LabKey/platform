@@ -82,7 +82,7 @@ abstract public class DomainKind<T>  implements Handler<String>
      */
     abstract public String generateDomainURI(String schemaName, String queryName, Container container, User user);
 
-    abstract public ActionURL urlShowData(Domain domain, ContainerUser containerUser);
+    abstract public @Nullable ActionURL urlShowData(Domain domain, ContainerUser containerUser);
     abstract public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser);
     abstract public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user);
 

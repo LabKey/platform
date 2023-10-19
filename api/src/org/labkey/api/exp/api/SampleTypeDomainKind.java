@@ -93,9 +93,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     static
     {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
-                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
+            new PropertyStorageSpec("genId", JdbcType.INTEGER),
+            new PropertyStorageSpec("rowId", JdbcType.INTEGER).setNullable(false),
+            new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+            new PropertyStorageSpec("name", JdbcType.VARCHAR, 200)
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
@@ -104,14 +105,15 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("Protocol"); // alias for "SourceProtocolApplication"
         RESERVED_NAMES.add("SampleTypeUnits"); // alias for MetricUnit
         RESERVED_NAMES.add("CpasType");
-        RESERVED_NAMES.add("IsAliquot");
+        RESERVED_NAMES.add(ExpMaterialTable.Column.IsAliquot.name());
         RESERVED_NAMES.add("Is Aliquot");
         RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
-        RESERVED_NAMES.add("AliquotedFromLSID");
+        RESERVED_NAMES.add(ExpMaterialTable.Column.AliquotedFromLSID.name());
         RESERVED_NAMES.add("Aliquoted From Parent");
         RESERVED_NAMES.add("Available Aliquot Count");
         RESERVED_NAMES.add("Available Aliquot Amount");
-        RESERVED_NAMES.add("RootMaterialLSID");
+        RESERVED_NAMES.add(ExpMaterialTable.Column.RootMaterialLSID.name());
+        RESERVED_NAMES.add(ExpMaterialTable.Column.RootMaterialRowId.name());
         RESERVED_NAMES.add("Root Material");
         RESERVED_NAMES.add("RecomputeRollup");
         RESERVED_NAMES.add("AliquotTotalVolume");
@@ -139,14 +141,15 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_LABELS);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate
-                // the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
-                new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false)
+                // NOTE: We generate the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
+                new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false),
+                new PropertyStorageSpec.ForeignKey("rowId", "exp", "Material", "RowId", null, false)
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid"),
-                new PropertyStorageSpec.Index(true, "name")
+            new PropertyStorageSpec.Index(true, "rowId"),
+            new PropertyStorageSpec.Index(true, "lsid"),
+            new PropertyStorageSpec.Index(true, "name")
         )));
 
         FORCE_ENABLED_SYSTEM_FIELDS = Collections.unmodifiableSet(Sets.newHashSet(Arrays.asList("Name", "SampleState")));
@@ -221,7 +224,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
-    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
+    public @Nullable ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleType st = getSampleType(domain);
         if (st == null)
@@ -459,7 +462,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             throw new IllegalArgumentException("Value for Category field may not exceed " + categoryMax + " characters.");
 
         Map<String, String> aliasMap = options.getImportAliases();
-        if (aliasMap != null && aliasMap.size() > 0)
+        if (aliasMap != null && !aliasMap.isEmpty())
         {
             SampleTypeService ss = SampleTypeService.get();
             ExpSampleType sampleType = options.getRowId() >= 0 ? ss.getSampleType(options.getRowId()) : null;
@@ -626,17 +629,15 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         {
             // Issue 43754: Don't include aliquot rows in the null value check (see ExpMaterialTableImpl.createColumn for IsAliquot)
             String table = domain.getStorageTableName();
-            SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
-                    .append("SELECT LSID FROM " + getStorageSchemaName() + "." + table)
-                    .append(") AND RootMaterialLSID = LSID");
+            SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE RowId IN (")
+                    .append("SELECT RowId FROM " + getStorageSchemaName() + "." + table)
+                    .append(") AND RootMaterialRowId = RowId");
 
             long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();
             return totalRows != nonBlankRows;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 }

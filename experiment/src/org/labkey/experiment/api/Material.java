@@ -33,6 +33,7 @@ public class Material extends RunItem
 {
     private Integer materialSourceId;
     private String rootMaterialLSID;
+    private Integer rootMaterialRowId;
     private String aliquotedFromLSID;
     private Integer sampleState;
 
@@ -68,6 +69,16 @@ public class Material extends RunItem
     public void setRootMaterialLSID(String rootMaterialLSID)
     {
         this.rootMaterialLSID = rootMaterialLSID;
+    }
+
+    public Integer getRootMaterialRowId()
+    {
+        return rootMaterialRowId;
+    }
+
+    public void setRootMaterialRowId(Integer rootMaterialRowId)
+    {
+        this.rootMaterialRowId = rootMaterialRowId;
     }
 
     public String getAliquotedFromLSID()

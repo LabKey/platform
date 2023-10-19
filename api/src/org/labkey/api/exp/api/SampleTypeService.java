@@ -150,6 +150,7 @@ public interface SampleTypeService
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
     /** Get the sample type with name at a specific time */
+    @Nullable
     ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
 
     /**

@@ -151,13 +151,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (Column.QueryableInputs.name().equalsIgnoreCase(name))
             {
                 result = createColumn(Column.QueryableInputs.name(), Column.QueryableInputs);
-                // TODO this can't be added unless the table becomes mutable.  Is it needed?
-//                addMethod(Column.QueryableInputs.name(), new LineageMethod(getContainer(), result, true));
             }
         }
         return result;
     }
-
 
     @Override
     public ColumnInfo getExpObjectColumn()
@@ -166,7 +163,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         ret.setConceptURI(BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI);
         return ret;
     }
-
 
     @Override
     public AuditHandler getAuditHandler(AuditBehaviorType auditBehaviorType)
@@ -193,11 +189,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case LSID ->
             {
-                return wrapColumn(alias, _rootTable.getColumn("LSID"));
+                return wrapColumn(alias, _rootTable.getColumn(Column.LSID.name()));
             }
             case MaterialSourceId ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.MaterialSourceId.name()));
                 columnInfo.setFk(new LookupForeignKey(getLookupContainerFilter(), null, null, null, null, "RowId", "Name")
                 {
                     @Override
@@ -221,17 +217,24 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case RootMaterialLSID ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn("RootMaterialLSID"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.RootMaterialLSID.name()));
                 columnInfo.setSqlTypeName("lsidtype");
-                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), "LSID"));
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), Column.LSID.name()));
+                columnInfo.setLabel("Root Material");
+                return columnInfo;
+            }
+            case RootMaterialRowId ->
+            {
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.RootMaterialRowId.name()));
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), Column.RowId.name()));
                 columnInfo.setLabel("Root Material");
                 return columnInfo;
             }
             case AliquotedFromLSID ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn("AliquotedFromLSID"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.AliquotedFromLSID.name()));
                 columnInfo.setSqlTypeName("lsidtype");
-                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), "LSID"));
+                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), Column.LSID.name()));
                 columnInfo.setLabel("Aliquoted From Parent");
                 return columnInfo;
             }
@@ -261,22 +264,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case RawAmount ->
             {
-                return wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+                return wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
             }
             case StoredAmount ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn("StoredAmount"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.StoredAmount.name()));
                 columnInfo.setLabel("Amount");
                 columnInfo.setImportAliasesSet(Set.of("Amount"));
                 return columnInfo;
             }
             case RawUnits ->
             {
-                return wrapColumn(alias, _rootTable.getColumn("Units"));
+                return wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
             }
             case Units ->
             {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn("Units"));
+                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.Units.name()));
                 columnInfo.setFk(new LookupForeignKey("Value", "Value")
                 {
                     @Override
@@ -289,7 +292,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case Description ->
             {
-                return wrapColumn(alias, _rootTable.getColumn("Description"));
+                return wrapColumn(alias, _rootTable.getColumn(Column.Description.name()));
             }
             case SampleSet ->
             {
@@ -432,7 +435,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case SampleState ->
             {
-                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getAllProjectStates(getContainer()).size() > 0;
+                boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(getContainer()).isEmpty();
                 var ret = wrapColumn(alias, _rootTable.getColumn(column.name()));
                 ret.setLabel("Status");
                 ret.setHidden(!statusEnabled);
@@ -510,7 +513,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         return t.getColumn("lsid");
                     }
                 });
-//                ret.setFk(new PropertyForeignKey(domain, _userSchema));
             }
         }
         ret.setIsUnselectable(true);
@@ -610,21 +612,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 setSampleType(st);
         }
 
-        var rowIdCol = addColumn(ExpMaterialTable.Column.RowId);
-
+        var rowIdCol = addColumn(Column.RowId);
         addColumn(Column.MaterialSourceId);
-
         addColumn(Column.SourceProtocolApplication);
-
         addColumn(Column.SourceApplicationInput);
-
         addColumn(Column.RunApplication);
-
         addColumn(Column.RunApplicationOutput);
-
         addColumn(Column.SourceProtocolLSID);
 
-        var nameCol = addColumn(ExpMaterialTable.Column.Name);
+        var nameCol = addColumn(Column.Name);
         if (st != null && st.hasNameAsIdCol())
         {
             // Show the Name field but don't mark is as required when using name expressions
@@ -649,7 +645,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
 
         addColumn(Column.Alias);
-
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
@@ -682,17 +677,17 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         addColumn(Column.MaterialExpDate);
 
-        var folderCol = addContainerColumn(ExpMaterialTable.Column.Folder, null);
+        var folderCol = addContainerColumn(Column.Folder, null);
         boolean hasProductProjects = getContainer().hasProductProjects();
         if (hasProductProjects)
             folderCol.setLabel("Project");
 
-        var runCol = addColumn(ExpMaterialTable.Column.Run);
+        var runCol = addColumn(Column.Run);
         runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
         runCol.setShownInUpdateView(false);
 
-        var colLSID = addColumn(ExpMaterialTable.Column.LSID);
+        var colLSID = addColumn(Column.LSID);
         colLSID.setHidden(true);
         colLSID.setReadOnly(true);
         colLSID.setUserEditable(false);
@@ -700,7 +695,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         colLSID.setShownInDetailsView(false);
         colLSID.setShownInUpdateView(false);
 
-        var rootLSID = addColumn(ExpMaterialTable.Column.RootMaterialLSID);
+        var rootLSID = addColumn(Column.RootMaterialLSID);
         rootLSID.setHidden(true);
         rootLSID.setReadOnly(true);
         rootLSID.setUserEditable(false);
@@ -708,7 +703,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         rootLSID.setShownInDetailsView(false);
         rootLSID.setShownInUpdateView(false);
 
-        var aliquotParentLSID = addColumn(ExpMaterialTable.Column.AliquotedFromLSID);
+        var rootRowId = addColumn(Column.RootMaterialRowId);
+        rootRowId.setHidden(true);
+        rootRowId.setReadOnly(true);
+        rootRowId.setUserEditable(false);
+        rootRowId.setShownInInsertView(false);
+        rootRowId.setShownInDetailsView(false);
+        rootRowId.setShownInUpdateView(false);
+
+        var aliquotParentLSID = addColumn(Column.AliquotedFromLSID);
         aliquotParentLSID.setHidden(true);
         aliquotParentLSID.setReadOnly(true);
         aliquotParentLSID.setUserEditable(false);
@@ -717,39 +720,39 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         aliquotParentLSID.setShownInUpdateView(false);
 
         addColumn(Column.IsAliquot);
-        addColumn(ExpMaterialTable.Column.Created);
-        addColumn(ExpMaterialTable.Column.CreatedBy);
-        addColumn(ExpMaterialTable.Column.Modified);
-        addColumn(ExpMaterialTable.Column.ModifiedBy);
+        addColumn(Column.Created);
+        addColumn(Column.CreatedBy);
+        addColumn(Column.Modified);
+        addColumn(Column.ModifiedBy);
 
         List<FieldKey> defaultCols = new ArrayList<>();
-        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Name));
+        defaultCols.add(FieldKey.fromParts(Column.Name));
         defaultCols.add(FieldKey.fromParts(Column.MaterialExpDate));
         if (hasProductProjects)
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Folder));
-        defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Run));
+            defaultCols.add(FieldKey.fromParts(Column.Folder));
+        defaultCols.add(FieldKey.fromParts(Column.Run));
 
         if (st == null)
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleSet));
+            defaultCols.add(FieldKey.fromParts(Column.SampleSet));
 
-        addColumn(ExpMaterialTable.Column.Flag);
+        addColumn(Column.Flag);
 
-        var statusColInfo = addColumn(ExpMaterialTable.Column.SampleState);
-        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && SampleStatusService.get().getAllProjectStates(getContainer()).size() > 0;
+        var statusColInfo = addColumn(Column.SampleState);
+        boolean statusEnabled = SampleStatusService.get().supportsSampleStatus() && !SampleStatusService.get().getAllProjectStates(getContainer()).isEmpty();
         statusColInfo.setShownInDetailsView(statusEnabled);
         statusColInfo.setShownInInsertView(statusEnabled);
         statusColInfo.setShownInUpdateView(statusEnabled);
         statusColInfo.setHidden(!statusEnabled);
         statusColInfo.setRemapMissingBehavior(SimpleTranslator.RemapMissingBehavior.Error);
         if (statusEnabled)
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.SampleState));
+            defaultCols.add(FieldKey.fromParts(Column.SampleState));
         statusColInfo.setFk(new QueryForeignKey.Builder(getUserSchema(), getSampleStatusLookupContainerFilter())
                 .schema(getExpSchema()).table(ExpSchema.TableType.SampleStatus).display("Label"));
 
         // TODO is this a real Domain???
         if (st != null && !"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
         {
-            defaultCols.add(FieldKey.fromParts(ExpMaterialTable.Column.Flag));
+            defaultCols.add(FieldKey.fromParts(Column.Flag));
             addSampleTypeColumns(st, defaultCols);
 
             setName(_ss.getName());
@@ -913,10 +916,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
         UserSchema schema = getUserSchema();
         Domain domain = st.getDomain();
+        ColumnInfo rowIdColumn = getColumn(Column.RowId);
         ColumnInfo lsidColumn = getColumn(Column.LSID);
         ColumnInfo nameColumn = getColumn(Column.Name);
 
-        visibleColumns.remove(FieldKey.fromParts("Run"));
+        visibleColumns.remove(FieldKey.fromParts(Column.Run.name()));
 
         // When not using name expressions, mark the ID columns as required.
         // NOTE: If not explicitly set, the first domain property will be chosen as the ID column.
@@ -934,9 +938,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             if (schema.getUser().isSearchUser() && !dbColumn.getPHI().isLevelAllowed(PHI.NotPHI))
                 continue;
 
-            if (lsidColumn.getFieldKey().equals(dbColumn.getFieldKey())
-                || nameColumn.getFieldKey().equals(dbColumn.getFieldKey()))
+            if (
+                rowIdColumn.getFieldKey().equals(dbColumn.getFieldKey()) ||
+                lsidColumn.getFieldKey().equals(dbColumn.getFieldKey()) ||
+                nameColumn.getFieldKey().equals(dbColumn.getFieldKey())
+            )
+            {
                 continue;
+            }
 
             // TODO this seems bad to me, why isn't this done in ss.getTinfo()
             if (dbColumn.getName().equalsIgnoreCase("genid"))
@@ -1013,9 +1022,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return ALL_COLUMNS;
         selectedColumns = new TreeSet<>(selectedColumns);
         if (selectedColumns.contains(new FieldKey(null, ExpMaterial.ALIQUOTED_FROM_INPUT)))
-            selectedColumns.add(new FieldKey(null, "aliquotedfromlsid"));
-        if (selectedColumns.contains(new FieldKey(null, "IsAliquot")))
-            selectedColumns.add(new FieldKey(null, "rootMaterialLsid"));
+            selectedColumns.add(new FieldKey(null, Column.AliquotedFromLSID.name()));
+        if (selectedColumns.contains(new FieldKey(null, Column.IsAliquot.name())))
+            selectedColumns.add(new FieldKey(null, Column.RootMaterialLSID.name()));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());
@@ -1154,6 +1163,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
         Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
+        provisionedCols.remove(Column.RowId.name());
         provisionedCols.remove(Column.LSID.name());
         provisionedCols.remove(Column.Name.name());
         boolean hasProvisionedColumns = containsProvisionedColumns(selectedColumns, provisionedCols);
@@ -1182,9 +1192,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             for (ColumnInfo propertyColumn : provisioned.getColumns())
             {
                 // don't select twice
-                if (Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName())
-                    || Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName()))
+                if (
+                    Column.RowId.name().equalsIgnoreCase(propertyColumn.getColumnName()) ||
+                    Column.LSID.name().equalsIgnoreCase(propertyColumn.getColumnName()) ||
+                    Column.Name.name().equalsIgnoreCase(propertyColumn.getColumnName())
+                )
+                {
                     continue;
+                }
 
                 // don't need to generate SQL for columns that aren't selected
                 if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(propertyColumn.getFieldKey()) || propertyColumn.isMvIndicatorColumn())
@@ -1215,9 +1230,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         sql.append("\nFROM ");
         sql.append(_rootTable, "m");
         if (hasSampleColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.rootmateriallsid = m_sample.lsid");
+            sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.RootMaterialRowId = m_sample.RowId");
         if (hasAliquotColumns)
-            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.lsid = m_aliquot.lsid");
+            sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.RowId = m_aliquot.RowId");
 
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;

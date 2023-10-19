@@ -6795,9 +6795,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private class DeriveSamplesBulkHelper
     {
-        private Container _container;
-        private XarContext _context;
-        private boolean _isAliquot;
+        private final Container _container;
+        private final XarContext _context;
+        private final boolean _isAliquot;
 
         private List<List<?>> _runParams;
         private List<List<?>> _protAppParams;
@@ -6807,7 +6807,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         private List<List<?>> _aliquotInputParams;
 
-        private Map<String, String> _aliquotRootCache;
+        private Map<String, Pair<String, Integer>> _aliquotRootCache;
 
         public DeriveSamplesBulkHelper(Container container, XarContext context, boolean isAliquot)
         {
@@ -6907,10 +6907,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo table = getTinfoMaterial();
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("Lsid"), parentLSIDS, IN).getSQLFragment(table, "m");
 
-            new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialLSID FROM " + table + " ")
+            new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialLSID, RootMaterialRowId FROM " + table + " ")
                     .append(sqlfilter).append(" AND RootMaterialLSID IS NOT NULL")).forEach(rs ->
             {
-                _aliquotRootCache.put(rs.getString("Lsid"), rs.getString("RootMaterialLSID"));
+                _aliquotRootCache.put(rs.getString("Lsid"), Pair.of(rs.getString("RootMaterialLSID"), rs.getInt("RootMaterialRowId")));
             });
         }
 
@@ -7118,19 +7118,39 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
                         SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
-                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
+                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, RootMaterialRowId = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
-                        String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
-                        if (StringUtils.isEmpty(rootMaterial))
+                        String rootMaterialLSID = null;
+                        Integer rootMaterialRowId = null;
+
+                        if (isParentRootMaterial)
                         {
-                            rootMaterial = parent.getRootMaterialLSID();
-                            if (StringUtils.isEmpty(rootMaterial))
+                            rootMaterialLSID = parent.getLSID();
+                            rootMaterialRowId = parent.getRowId();
+                        }
+                        else if (_aliquotRootCache.containsKey(parent.getLSID()))
+                        {
+                            rootMaterialLSID = _aliquotRootCache.get(parent.getLSID()).first;
+                            rootMaterialRowId = _aliquotRootCache.get(parent.getLSID()).second;
+                        }
+
+                        if (StringUtils.isEmpty(rootMaterialLSID))
+                        {
+                            rootMaterialLSID = parent.getRootMaterialLSID();
+                            if (StringUtils.isEmpty(rootMaterialLSID))
                                 throw new ValidationException("Unable to find aliquot parent");
                         }
 
-                        _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache
+                        if (rootMaterialRowId == null)
+                        {
+                            rootMaterialRowId = parent.getRootMaterialRowId();
+                            if (rootMaterialRowId == null)
+                                throw new ValidationException("Unable to find aliquot parent");
+                        }
 
-                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
+                        _aliquotRootCache.put(outputAliquot.getLSID(), Pair.of(rootMaterialLSID, rootMaterialRowId)); // add self's root to cache
+
+                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterialLSID, rootMaterialRowId, parent.getLSID(), outputAliquot.getRowId());
                         
                         new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }
