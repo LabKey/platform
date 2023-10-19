@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlCursor;
@@ -1210,7 +1211,7 @@ public class XarReader extends AbstractXarImporter
                 {
                     throw new ExperimentException("Multiple ProtocolApplications found with object id: " + objectId);
                 }
-                else if (protocolApplications.size() == 0)
+                else if (protocolApplications.isEmpty())
                 {
                     getLog().warn("Could not find ProtocolApplication with LSID containing object id: " + objectId);
                 }
@@ -1350,8 +1351,6 @@ public class XarReader extends AbstractXarImporter
         if (xbParams != null)
             loadProtocolApplicationParameters(xbParams, protAppId);
 
-        //todo  extended protocolApp types??
-
         for (InputOutputRefsType.MaterialLSID inputMaterialLSID : inputMaterialLSIDs)
         {
             String declaredType = (inputMaterialLSID.isSetCpasType() ? inputMaterialLSID.getCpasType() : ExpMaterial.DEFAULT_CPAS_TYPE);
@@ -1429,7 +1428,7 @@ public class XarReader extends AbstractXarImporter
         getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
     }
 
-    private String getOperationNotPermittedMessage(String protocolLSID, ExpMaterial material)
+    private @Nullable String getOperationNotPermittedMessage(String protocolLSID, ExpMaterial material)
     {
         // For existing samples, we check their current status to see if it allows runs to be added.
         if ((protocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) || protocolLSID.equals(SAMPLE_DERIVATION_PROTOCOL_LSID)) &&
@@ -1481,7 +1480,15 @@ public class XarReader extends AbstractXarImporter
         if (material == null)
         {
             Material m = new Material();
-            m.setRootMaterialLSID(rootMaterialLSID);
+            if (StringUtils.isEmpty(rootMaterialLSID))
+            {
+                ExpMaterialImpl rootMaterial = ExperimentServiceImpl.get().getExpMaterial(rootMaterialLSID);
+                if (rootMaterial != null)
+                {
+                    m.setRootMaterialLSID(rootMaterial.getLSID()); // TODO: Remove this
+                    m.setRootMaterialRowId(rootMaterial.getRowId());
+                }
+            }
             m.setAliquotedFromLSID(aliquotedFromLSID);
             m.setLSID(materialLSID);
             m.setName(trimString(xbMaterial.getName()));
@@ -1597,22 +1604,27 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterial rootMaterial = null;
                 if (run != null)
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
-                getLog().debug("Updating " + description + " with aliquot root LSID");
+                getLog().debug("Updating " + description + " with aliquot root");
 
-                String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
-                String existingRootLsid = lsid.equals(((Material) output).getRootMaterialLSID()) ? null : ((Material) output).getRootMaterialLSID();
+                // TODO: Remove RootMaterialLSID processing
+                // String existingRootLsid = lsid.equals(((Material) output).getRootMaterialLSID()) ? null : ((Material) output).getRootMaterialLSID();
+                int newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : ((Material) output).getRowId();
+                int rowId = ((Material) output).getRowId();
+                Integer existingRootRowId = ((Material) output).getRootMaterialRowId();
 
-                // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
-                if (existingRootLsid != null && !existingRootLsid.equals(rootMaterialLSID))
+                // When importing over existing samples, if the root rowId does not match the rowId, we only log an info message here and don't update.
+                if (!Objects.equals(existingRootRowId, rowId))
                 {
-                    getLog().info(description + " with LSID '" + lsid + "' already has root material LSID of " + ((Material) output).getRootMaterialLSID() + "; not updating to " + newRootLsid + ".");
+                    getLog().info(description + " with LSID '" + lsid + "' already has root material rowId of " + existingRootRowId + "; not updating to " + newRootRowId + ".");
                 }
-                else
+                else if (!Objects.equals(existingRootRowId, newRootRowId))
                 {
+                    // TODO: Remove RootMaterialLSID processing
+                    String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
                     ((Material) output).setRootMaterialLSID(newRootLsid);
+                    ((Material) output).setRootMaterialRowId(newRootRowId);
                     changed = true;
                 }
-
             }
             if (aliquotedFromLSID != null)
             {
@@ -1633,16 +1645,15 @@ public class XarReader extends AbstractXarImporter
                     changed = true;
                 }
             }
-
         }
+
         if (changed)
         {
             Table.update(getUser(), tableInfo, output, output.getRowId());
         }
     }
 
-
-    String findOriginalUrlProperty(PropertyCollectionType xbProps)
+    private @Nullable String findOriginalUrlProperty(PropertyCollectionType xbProps)
     {
         if (xbProps != null)
         {
@@ -1660,7 +1671,6 @@ public class XarReader extends AbstractXarImporter
         }
         return null;
     }
-
 
     private Data loadData(DataBaseType xbData,
                           ExperimentRun experimentRun,

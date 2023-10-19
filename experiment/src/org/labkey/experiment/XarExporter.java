@@ -282,7 +282,7 @@ public class XarExporter
 
         Set<Map.Entry<ExpData, String>> inputData = run.getDataInputs().entrySet();
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
-        if (inputData.size() > 0 && inputDefs == null)
+        if (!inputData.isEmpty() && inputDefs == null)
         {
             inputDefs = _archive.addNewStartingInputDefinitions();
         }
@@ -299,7 +299,7 @@ public class XarExporter
         }
 
         List<Material> inputMaterials = ExperimentServiceImpl.get().getRunInputMaterial(run.getLSID());
-        if (inputMaterials.size() > 0 && inputDefs == null)
+        if (!inputMaterials.isEmpty() && inputDefs == null)
         {
             inputDefs = _archive.addNewStartingInputDefinitions();
         }
@@ -594,8 +594,12 @@ public class XarExporter
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
-        if (material.getRootMaterialLSID() != null && !material.getRootMaterialLSID().equals(material.getLSID()))
-            xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(material.getRootMaterialLSID()));
+        if (material.getRootMaterialRowId() != null && !material.getRootMaterialRowId().equals(material.getRowId()))
+        {
+            ExpMaterial rootMaterial = ExperimentService.get().getExpMaterial(material.getRootMaterialRowId());
+            if (rootMaterial != null)
+                xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(rootMaterial.getLSID()));
+        }
         if (material.getAliquotedFromLSID() != null)
             xMaterial.setAliquotedFromLSID(_relativizedLSIDs.relativize(material.getAliquotedFromLSID()));
 
