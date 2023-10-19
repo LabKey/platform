@@ -26,8 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.exp.api.ExperimentJSONConverter.DATA_INPUTS;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.MATERIAL_INPUTS;
+
 public class ExperimentQueryChangeListener implements QueryChangeListener
 {
+    public static final String MATERIAL_INPUTS_ALIAS_PREFIX = MATERIAL_INPUTS + "/";
+    public static final String DATA_INPUTS_ALIAS_PREFIX = DATA_INPUTS + "/";
+
     @Override
     public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
@@ -75,7 +81,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
                 queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        String prefix = isSamples ? "materialInputs/" : "dataInputs/";
+        String prefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
 
         for (String oldQueryName : queryNameChangeMap.keySet())
         {
@@ -109,7 +115,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         if (!isSamples && !isData)
             return;
 
-        String prefix = isSamples ? "materialInputs/" : "dataInputs/";
+        String prefix = isSamples ? MATERIAL_INPUTS_ALIAS_PREFIX : DATA_INPUTS_ALIAS_PREFIX;
 
         for (String removed : queries)
         {
