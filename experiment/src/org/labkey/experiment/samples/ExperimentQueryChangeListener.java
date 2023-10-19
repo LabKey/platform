@@ -34,6 +34,27 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
 
     }
 
+    private List<ExpSampleTypeImpl> getRenamedSampleTypes(Container container, String searchStr)
+    {
+        SimpleFilter sampleTypeFilter = SimpleFilter.createContainerFilter(container, "Container");
+        sampleTypeFilter.addCondition(FieldKey.fromParts("materialparentimportaliasmap"), searchStr, CompareType.CONTAINS);
+        TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
+
+        return new TableSelector(sampleTypeTable, sampleTypeFilter, null).stream(MaterialSource.class)
+                .map(ExpSampleTypeImpl::new)
+                .toList();
+    }
+
+    private List<ExpDataClassImpl> getRenamedDataClasses(Container container, String searchStr)
+    {
+        SimpleFilter dataClassFilter = SimpleFilter.createContainerFilter(container, "Container");
+        dataClassFilter.addCondition(FieldKey.fromParts("dataparentimportaliasmap"), searchStr, CompareType.CONTAINS);
+        TableInfo dataClassTable = ExperimentServiceImpl.get().getTinfoDataClass();
+        return new TableSelector(dataClassTable, dataClassFilter, null).stream(DataClass.class)
+                .map(ExpDataClassImpl::new)
+                .toList();
+    }
+
     @Override
     public void queryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
@@ -48,7 +69,10 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         Map<String, String> queryNameChangeMap = new CaseInsensitiveHashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
-            queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+            String oldVal = (String)qpc.getOldValue();
+            String newVal = (String)qpc.getNewValue();
+            if (oldVal != null && !oldVal.equals(newVal))
+                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
         String prefix = isSamples ? "materialInputs/" : "dataInputs/";
@@ -56,32 +80,18 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         for (String oldQueryName : queryNameChangeMap.keySet())
         {
             String newQueryName = queryNameChangeMap.get(oldQueryName);
-            if (oldQueryName.equals(newQueryName))
-                continue;
 
             String searchStr = "\"" + prefix + oldQueryName + "\"";
             String replaceStr = "\"" + prefix + newQueryName + "\"";
 
-            SimpleFilter sampleTypeFilter = SimpleFilter.createContainerFilter(container, "Container");
-            sampleTypeFilter.addCondition(FieldKey.fromParts("materialparentimportaliasmap"), searchStr, CompareType.CONTAINS);
-            TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
-            List<ExpSampleTypeImpl> sampleTypes = new TableSelector(sampleTypeTable, sampleTypeFilter, null).stream(MaterialSource.class)
-                    .map(ExpSampleTypeImpl::new)
-                    .toList();
-            for (ExpSampleTypeImpl sampleType : sampleTypes)
+            for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
                 String updatedAlias = sampleType.getImportAliasJson().replaceAll("(?i)" + searchStr, replaceStr);
                 sampleType.setImportAliasMapJson(updatedAlias);
                 sampleType.save(sampleType.getModifiedBy());
             }
 
-            SimpleFilter dataClassFilter = SimpleFilter.createContainerFilter(container, "Container");
-            dataClassFilter.addCondition(FieldKey.fromParts("dataparentimportaliasmap"), searchStr, CompareType.CONTAINS);
-            TableInfo dataClassTable = ExperimentServiceImpl.get().getTinfoDataClass();
-            List<ExpDataClassImpl> dataClasses = new TableSelector(dataClassTable, dataClassFilter, null).stream(DataClass.class)
-                    .map(ExpDataClassImpl::new)
-                    .toList();
-            for (ExpDataClassImpl dataClass : dataClasses)
+            for (ExpDataClassImpl dataClass : getRenamedDataClasses(container, searchStr))
             {
                 String updatedAlias = dataClass.getImportAliasJson().replaceAll("(?i)" + searchStr, replaceStr);
                 dataClass.setImportAliasMapJson(updatedAlias);
@@ -105,13 +115,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
         {
             String searchStr = "\"" + prefix + removed + "\"";
 
-            SimpleFilter sampleTypeFilter = SimpleFilter.createContainerFilter(container, "Container");
-            sampleTypeFilter.addCondition(FieldKey.fromParts("materialparentimportaliasmap"), searchStr, CompareType.CONTAINS);
-            TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
-            List<ExpSampleTypeImpl> sampleTypes = new TableSelector(sampleTypeTable, sampleTypeFilter, null).stream(MaterialSource.class)
-                    .map(ExpSampleTypeImpl::new)
-                    .toList();
-            for (ExpSampleTypeImpl sampleType : sampleTypes)
+            for (ExpSampleTypeImpl sampleType : getRenamedSampleTypes(container, searchStr))
             {
                 try
                 {
@@ -132,13 +136,7 @@ public class ExperimentQueryChangeListener implements QueryChangeListener
                 }
             }
 
-            SimpleFilter dataClassFilter = SimpleFilter.createContainerFilter(container, "Container");
-            dataClassFilter.addCondition(FieldKey.fromParts("dataparentimportaliasmap"), searchStr, CompareType.CONTAINS);
-            TableInfo dataClassTable = ExperimentServiceImpl.get().getTinfoDataClass();
-            List<ExpDataClassImpl> dataClasses = new TableSelector(dataClassTable, dataClassFilter, null).stream(DataClass.class)
-                    .map(ExpDataClassImpl::new)
-                    .toList();
-            for (ExpDataClassImpl dataClass : dataClasses)
+            for (ExpDataClassImpl dataClass : getRenamedDataClasses(container, searchStr))
             {
                 try
                 {

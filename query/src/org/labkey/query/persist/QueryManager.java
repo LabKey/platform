@@ -506,14 +506,6 @@ public class QueryManager
             l.queryChanged(user, container, scope, schema, property, changes);
     }
 
-//    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
-//    {
-//        QueryService.get().updateLastModified();
-//        assert checkChanges(property, changes);
-//        for (QueryChangeListener l : QUERY_LISTENERS)
-//            l.queryChanged(user, container, scope, schema, property, changes);
-//    }
-
     // Checks all changes have the correct property and type.
     private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange> changes)
     {

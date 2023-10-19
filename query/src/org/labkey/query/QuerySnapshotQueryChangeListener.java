@@ -74,7 +74,10 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
         Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
-            queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+            String oldVal = (String)qpc.getOldValue();
+            String newVal = (String)qpc.getNewValue();
+            if (oldVal != null && !oldVal.equals(newVal))
+                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
         for (QuerySnapshotDefinition qsd : QueryService.get().getQuerySnapshotDefs(container, schemaKey.toString()))

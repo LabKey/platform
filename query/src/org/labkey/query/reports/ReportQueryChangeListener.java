@@ -130,7 +130,10 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
-            queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+            String oldVal = (String)qpc.getOldValue();
+            String newVal = (String)qpc.getNewValue();
+            if (oldVal != null && !oldVal.equals(newVal))
+                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
         // passing in null for the user should get all reports (private and public, independent of the owner)

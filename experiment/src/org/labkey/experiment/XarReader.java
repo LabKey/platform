@@ -738,7 +738,7 @@ public class XarReader extends AbstractXarImporter
         if (existingDomainDescriptor == null && useName)
             existingDomainDescriptor = OntologyManager.fetchDomainDescriptorFromDB(xDomain.getName(), getContainer(), true);
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
-        if (existingDomain != null)//
+        if (existingDomain != null)
         {
             Pair<String, String> lsidIgnoreSubStrs = useName ? getGPATLsidNameDiff(existingDomain.getTypeURI(), lsid) : null;
             Map<String, DomainProperty> newProps = new HashMap<>();
@@ -908,6 +908,17 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+    private ExpProtocolImpl getProtocolFromLsid(String lsid)
+    {
+        ExpProtocol batchProtocol = _loadedProtocols.get(lsid);
+        if (batchProtocol == null)
+            batchProtocol = ExperimentService.get().getExpProtocol(lsid);
+
+        if (batchProtocol != null)
+            return (ExpProtocolImpl) batchProtocol;
+
+        return null;
+    }
 
     private void loadExperiment(ExperimentType exp) throws SQLException, XarFormatException
     {
@@ -953,9 +964,8 @@ public class XarReader extends AbstractXarImporter
             {
                 String batchProtocolLSID = LsidUtils.resolveLsidFromTemplate(exp.getBatchProtocolLSID(), getRootContext(), "Protocol");
 
-                ExpProtocol batchProtocol = _loadedProtocols.get(batchProtocolLSID);
-                if (batchProtocol == null)
-                    batchProtocol = ExperimentService.get().getExpProtocol(batchProtocolLSID);
+                ExpProtocol batchProtocol = getProtocolFromLsid(batchProtocolLSID);
+
                 if (batchProtocol == null)
                 {
                     throw new XarFormatException("Could not resolve protocol with LSID '" + batchProtocolLSID + "'");
@@ -1037,9 +1047,8 @@ public class XarReader extends AbstractXarImporter
 
         Lsid pRunLSID = new Lsid(runLSID);
         String runProtocolLSID = LsidUtils.resolveLsidFromTemplate(a.getProtocolLSID(), getRootContext(), "Protocol");
-        ExpProtocol protocol = _loadedProtocols.get(runProtocolLSID);
-        if (protocol == null)
-            protocol = ExperimentService.get().getExpProtocol(runProtocolLSID);
+        ExpProtocol protocol = getProtocolFromLsid(runProtocolLSID);
+
         if (protocol == null)
         {
             throw new XarFormatException("Unknown protocol " + runProtocolLSID + " referenced by ExperimentRun " + pRunLSID);
@@ -1296,9 +1305,8 @@ public class XarReader extends AbstractXarImporter
         String protAppLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getAbout(), context, "ProtocolApplication");
 
         String protocolLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getProtocolLSID(), context, "Protocol");
-        ExpProtocol protocol = _loadedProtocols.get(protocolLSID);
-        if (protocol == null)
-            protocol = ExperimentService.get().getExpProtocol(protocolLSID);
+        ExpProtocol protocol = getProtocolFromLsid(protocolLSID);
+
         if (protocol == null)
         {
             throw new XarFormatException("Unknown protocol " + xmlProtocolApp.getProtocolLSID() + " referenced by protocol application " + protAppLSID);

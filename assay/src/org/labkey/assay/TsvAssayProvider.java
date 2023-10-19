@@ -269,7 +269,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
-        List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);//
+        List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);
 
         Pair<Domain, Map<DomainProperty, Object>> resultDomain = createResultDomain(c, user);
         if (resultDomain != null)
@@ -279,7 +279,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, ASSAY_DBSEQ_SUBSTITUTION), "Data Fields");//
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, ASSAY_DBSEQ_SUBSTITUTION), "Data Fields");
         dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
@@ -402,12 +402,17 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return true;
     }
 
+    private boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        return !(protocol.getName() + getDomainNameSuffix(domain)).equals(domain.getName());
+    }
+
     @Override
     public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
         super.changeDomain(user, protocol, orig, update);
 
-        if (!(protocol.getName() + getDomainNameSuffix(orig)).equals(orig.getName()))
+        if (hasDomainNameChanged(protocol, orig))
         {
             update.setName(protocol.getName() + getDomainNameSuffix(orig));
         }
