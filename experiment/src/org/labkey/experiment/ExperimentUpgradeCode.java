@@ -327,54 +327,33 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     private static void addRowIdColumn(ExpSampleTypeImpl st)
     {
-        // TODO: Share all this code with above
-        Domain domain = st.getDomain();
-        SampleTypeDomainKind kind = null;
-        try
-        {
-            kind = (SampleTypeDomainKind) domain.getDomainKind();
-        }
-        catch (IllegalArgumentException e)
-        {
-            // pass
-        }
-        if (null == kind || null == kind.getStorageSchemaName())
-            return;
-
-        DbSchema schema = kind.getSchema();
-        DbScope scope = kind.getSchema().getScope();
-
-        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
-        domain = PropertyService.get().getDomain(domain.getTypeId());
-        assert (null != domain && null != domain.getStorageTableName());
-
-        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
-        if (provisionedTable == null)
+        TableInfo tableInfo = st.getTinfo();
+        if (tableInfo == null)
         {
             LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
             return;
         }
 
-        addRowIdColumn(st, domain, scope);
+        DbScope scope = st.getDomain().getDomainKind().getScope();
+        addRowIdColumn(scope, tableInfo, st);
     }
 
-    private static void addRowIdColumn(ExpSampleTypeImpl st, Domain domain, DbScope scope)
+    private static void addRowIdColumn(@NotNull DbScope scope, @NotNull TableInfo tableInfo, @NotNull ExpSampleTypeImpl st)
     {
         // TODO: Support SQLServer upgrade
-        String tableName = domain.getStorageTableName();
-        SQLFragment addColumn = new SQLFragment("ALTER TABLE ")
-                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName).append("\n")
-                .append("ADD COLUMN RowId INTEGER\n");
+        SQLFragment addColumn = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ADD COLUMN RowId INTEGER\n");
+
         SQLFragment update = new SQLFragment("UPDATE ")
-                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName).append(" AS ST\n")
-                .append("SET RowId = (SELECT RowId FROM exp.material AS ExpMatFrom WHERE ST.LSID = ExpMatFrom.LSID)\n");
-        SQLFragment notNull = new SQLFragment("ALTER TABLE ")
-                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName)
-                .append(" ALTER COLUMN RowId SET NOT NULL\n");
+                .append(tableInfo, "ST")
+                .append(" SET RowId = (SELECT RowId FROM exp.material AS ExpMatFrom WHERE ST.LSID = ExpMatFrom.LSID)\n");
+
+        SQLFragment notNull = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ALTER COLUMN RowId SET NOT NULL\n");
+
         // TODO: Is there a better way to add an index programmatically?
         SQLFragment addIndex = new SQLFragment("CREATE UNIQUE INDEX ")
-                .append(tableName).append("_rowId ON ")
-                .append(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName).append(" (RowId)\n");
+                .append(tableInfo.getName()).append("_rowId ON ")
+                .append(tableInfo).append(" (RowId)\n");
+
         new SqlExecutor(scope).execute(addColumn);
         int count = new SqlExecutor(scope).execute(update);
         new SqlExecutor(scope).execute(notNull);
