@@ -123,6 +123,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -918,7 +919,7 @@ public class AssayController extends SpringActionController
 
                         response.reset();
                         response.setContentType("application/zip");
-                        response.setHeader("Content-Disposition", "attachment; filename=\"" + "sampleQCData" + ".zip\"");
+                        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, "sampleQCData.zip");
                         ZipOutputStream stream = new ZipOutputStream(response.getOutputStream());
                         byte[] buffer = new byte[1024];
                         for (File file : files)
@@ -1555,7 +1556,7 @@ public class AssayController extends SpringActionController
                     User user = getUser();
                     if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
                     {
-                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                        Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                         contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
                         user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
                     }

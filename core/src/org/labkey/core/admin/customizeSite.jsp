@@ -16,11 +16,12 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.security.Group" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission"%>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.security.permissions.SiteAdminPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.UsageReportingLevel" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -28,6 +29,7 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="java.util.Set" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
@@ -135,10 +137,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label" valign="top">Primary site administrator</td>
     <td>
         <select name="<%=administratorContactEmail%>" id="<%=administratorContactEmail%>">
-            <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds(Group.groupAdministrators, false);
+            <%
+                List<User> siteAdmins = org.labkey.api.security.SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(SiteAdminPermission.class));
                 String selectedAdminEmail = appProps.getAdministratorContactEmail(false);
-                for (Pair<Integer,String> member : members) { %>
-                    <option value="<%=h(member.getValue())%>"<%=selected(Objects.equals(member.getValue(), selectedAdminEmail))%>><%=h(member.getValue())%></option>
+                for (User siteAdmin : siteAdmins) { %>
+                    <option value="<%=h(siteAdmin.getEmail())%>"<%=selected(Objects.equals(siteAdmin.getEmail(), selectedAdminEmail))%>><%=h(siteAdmin.getEmail())%></option>
             <% } %>
         </select>
     </td>

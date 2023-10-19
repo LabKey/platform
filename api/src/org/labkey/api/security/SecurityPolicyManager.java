@@ -28,6 +28,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -39,8 +41,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -176,11 +176,9 @@ public class SecurityPolicyManager
         {
             for (Role changedRole : changedRoles)
             {
-                // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
-                if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                    throw new UnauthorizedException("You do not have permission to modify the Site Admin role or permission.");
-                if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                    throw new UnauthorizedException("You do not have permission to modify the Platform Developer role or permission.");
+                // AppAdmin cannot change assignments to privileged roles (e.g., Site Admin, Platform Developer, Impersonating Troubleshooter)
+                if (changedRole.isPrivileged())
+                    throw new UnauthorizedException("You do not have permission to modify the " + changedRole.getName() + " role.");
             }
         }
 
@@ -194,7 +192,7 @@ public class SecurityPolicyManager
     {
         DbScope scope = core.getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
@@ -238,12 +236,21 @@ public class SecurityPolicyManager
                 Table.insert(null, table, assignment);
             }
 
-            //commit transaction
+            // Remove policy from cache immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(() -> remove(policy), CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+            // Notify on commit
+            transaction.addCommitTask(() -> notifyPolicyChange(policy.getResourceId()), CommitTaskOption.POSTCOMMIT);
+
+            // Ensure at least one site admin will remain if attempting to modify the root container's policy
+            if (policy.getResourceId().equals(ContainerManager.getRoot().getResourceId()))
+            {
+                // Remove the resource-oriented policy from cache BEFORE checking for the last site admin
+                remove(policy);
+                SecurityManager.ensureAtLeastOneSiteAdminExists();
+            }
+
             transaction.commit();
         }
-        //remove the resource-oriented policy from cache
-        remove(policy);
-        notifyPolicyChange(policy.getResourceId());
     }
 
     protected enum RoleModification
@@ -383,7 +390,7 @@ public class SecurityPolicyManager
 
     public static void deletePolicy(@NotNull SecurableResource resource)
     {
-        try (DbScope.Transaction transaction = core.getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = core.getSchema().getScope().ensureTransaction())
         {
             //delete all rows where resourceid = resource.getResourceId()
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());

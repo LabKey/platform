@@ -130,7 +130,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -335,7 +335,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
         AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root), SiteAdminPermission.class);
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
-        AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
+        AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
         AdminConsole.addLink(Diagnostics, "queries", getQueriesURL(null));
         AdminConsole.addLink(Diagnostics, "reset site errors", new ActionURL(ResetErrorMarkAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -444,9 +444,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-
-    @RequiresSiteAdmin
-    public class ShowModuleErrors extends SimpleViewAction<Object>
+    @RequiresPermission(TroubleshooterPermission.class)
+    public class ShowModuleErrorsAction extends SimpleViewAction<Object>
     {
         @Override
         public void addNavTrail(NavTree root)
@@ -461,13 +460,12 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     public static class AdminUrlsImpl implements AdminUrls
     {
         @Override
         public ActionURL getModuleErrorsURL()
         {
-            return new ActionURL(ShowModuleErrors.class, ContainerManager.getRoot());
+            return new ActionURL(ShowModuleErrorsAction.class, ContainerManager.getRoot());
         }
 
         @Override
@@ -3686,7 +3684,7 @@ public class AdminController extends SpringActionController
         public ActionURL nextURL;
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermission(TroubleshooterPermission.class)
     @AllowedDuringUpgrade
     @IgnoresAllocationTracking
     public static class ModuleStatusAction extends SimpleViewAction<ReturnUrlForm>
@@ -9890,7 +9888,7 @@ public class AdminController extends SpringActionController
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class TestMothershipReportAction extends ReadOnlyApiAction<MothershipReportSelectionForm>
     {
         @Override
@@ -9929,7 +9927,7 @@ public class AdminController extends SpringActionController
             }
             if (form.isDownload())
             {
-                getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"metrics.json\"");
+                ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, "metrics.json");
             }
             return new ApiSimpleResponse(params);
         }
@@ -10008,7 +10006,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class SuspiciousAction extends SimpleViewAction<Object>
     {
         @Override
@@ -10860,6 +10858,7 @@ public class AdminController extends SpringActionController
             DbSchema schema = tInfo.getSchema();
             String comma = "";
             List<String> updating = new ArrayList<>();
+
             for (String fieldName: fieldNames)
             {
                 ColumnInfo col = tInfo.getColumn(FieldKey.fromParts(fieldName));
@@ -10872,7 +10871,8 @@ public class AdminController extends SpringActionController
                             .append(String.format(" %s = {fn timestampadd(SQL_TSI_HOUR, %d, %s)}", col.getSelectName(), delta, col.getSelectName()));
                     comma = ", ";
                 }
-            };
+            }
+
             if (!sql.isEmpty())
             {
                 logger.info(String.format("Updating %s in table %s.%s", updating, schema.getName(), tInfo.getName()));
@@ -10880,7 +10880,6 @@ public class AdminController extends SpringActionController
                 int numRows = new SqlExecutor(schema).execute(sql);
                 logger.info(String.format("Updated %d rows for table %s.%s", numRows, schema.getName(), tInfo.getName()));
             }
-
         }
 
         @Override
@@ -10978,7 +10977,7 @@ public class AdminController extends SpringActionController
             assertForReadPermission(user, false,
                 new GetModulesAction(),
                 new GetFolderTabsAction(),
-                    new ClearDeletedTabFoldersAction()
+                new ClearDeletedTabFoldersAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
@@ -10988,32 +10987,32 @@ public class AdminController extends SpringActionController
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                new ResetResourceAction(),
-                new ResetPropertiesAction(),
-                controller.new SiteValidationAction(),
-                    new ResetQueryStatisticsAction(),
-                controller.new FolderAliasesAction(),
                 controller.new CustomizeEmailAction(),
-                new DeleteCustomEmailAction(),
-                new RenameContainerAction(),
-                controller.new RenameFolderAction(),
+                controller.new FolderAliasesAction(),
                 controller.new MoveFolderAction(),
-                new ConfirmProjectMoveAction(),
-                new CreateFolderAction(),
-                new SetFolderPermissionsAction(),
-                new SetInitialFolderSettingsAction(),
+                controller.new MoveTabAction(),
+                controller.new RenameFolderAction(),
                 controller.new ReorderFoldersAction(),
                 controller.new ReorderFoldersApiAction(),
-                new RevertFolderAction(),
-                    new CustomizeMenuAction(),
-                    new AddTabAction(),
-                    new ShowTabAction(),
-                controller.new MoveTabAction(),
-                    new RenameTabAction(),
+                controller.new SiteValidationAction(),
+                new AddTabAction(),
+                new ConfirmProjectMoveAction(),
+                new CreateFolderAction(),
+                new CustomizeMenuAction(),
+                new DeleteCustomEmailAction(),
+                new FilesAction(),
+                new MenuBarAction(),
                 new ProjectSettingsAction(),
-                    new ResourcesAction(),
-                    new MenuBarAction(),
-                    new FilesAction()
+                new RenameContainerAction(),
+                new RenameTabAction(),
+                new ResetPropertiesAction(),
+                new ResetQueryStatisticsAction(),
+                new ResetResourceAction(),
+                new ResourcesAction(),
+                new RevertFolderAction(),
+                new SetFolderPermissionsAction(),
+                new SetInitialFolderSettingsAction(),
+                new ShowTabAction()
             );
 
             //TODO @RequiresPermission(AdminReadPermission.class)
@@ -11021,58 +11020,61 @@ public class AdminController extends SpringActionController
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
+                controller.new DbCheckerAction(),
+                controller.new DeleteModuleAction(),
+                controller.new DoCheckAction(),
                 controller.new EmailTestAction(),
                 controller.new ShowNetworkDriveTestAction(),
-                controller.new DbCheckerAction(),
-                controller.new DoCheckAction(),
-                new GetSchemaXmlDocAction(),
-                new RecreateViewsAction(),
                 controller.new ValidateDomainsAction(),
-                controller.new DeleteModuleAction(),
-                new ExperimentalFeatureAction()
+                new ExperimentalFeatureAction(),
+                new GetSchemaXmlDocAction(),
+                new RecreateViewsAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                new ShowAdminAction(),
-                controller.new ShowThreadsAction(),
-                controller.new DumpHeapAction(),
-                controller.new ResetErrorMarkAction(),
-                controller.new ShowErrorsSinceMarkAction(),
-                controller.new ShowAllErrorsAction(),
-                controller.new ShowPrimaryLogAction(),
                 controller.new ActionsAction(),
-                    new ExportActionsAction(),
-                controller.new QueriesAction(),
-                controller.new QueryStackTracesAction(),
-                controller.new ExecutionPlanAction(),
-                    new ExportQueriesAction(),
-                controller.new MemTrackerAction(),
-                new MemoryChartAction(),
-                controller.new FolderTypesAction(),
-                controller.new ShortURLAdminAction(),
-                controller.new CustomizeSiteAction(),
                 controller.new CachesAction(),
                 controller.new ConfigureSystemMaintenanceAction(),
-                controller.new ModulesAction()
+                controller.new CustomizeSiteAction(),
+                controller.new DumpHeapAction(),
+                controller.new ExecutionPlanAction(),
+                controller.new FolderTypesAction(),
+                controller.new MemTrackerAction(),
+                controller.new ModulesAction(),
+                controller.new QueriesAction(),
+                controller.new QueryStackTracesAction(),
+                controller.new ResetErrorMarkAction(),
+                controller.new ShortURLAdminAction(),
+                controller.new ShowAllErrorsAction(),
+                controller.new ShowErrorsSinceMarkAction(),
+                controller.new ShowPrimaryLogAction(),
+                controller.new ShowThreadsAction(),
+                new ExportActionsAction(),
+                new ExportQueriesAction(),
+                new MemoryChartAction(),
+                new ShowAdminAction()
             );
 
             // @AdminConsoleAction
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(ContainerManager.getRoot(), user,
-                    controller.new ExperimentalFeaturesAction()
+                controller.new ExperimentalFeaturesAction()
             );
 
             // @RequiresSiteAdmin
             assertForRequiresSiteAdmin(user,
-                controller.new ShowModuleErrors(),
-                new GetPendingRequestCountAction(),
-                controller.new SystemMaintenanceAction(),
-                new ModuleStatusAction(),
-                new NewInstallSiteSettingsAction(),
-                new InstallCompleteAction(),
                 controller.new EnvironmentVariablesAction(),
-                controller.new SystemPropertiesAction()
+                controller.new SystemMaintenanceAction(),
+                controller.new SystemPropertiesAction(),
+                new GetPendingRequestCountAction(),
+                new InstallCompleteAction(),
+                new NewInstallSiteSettingsAction()
+            );
+
+            assertForTroubleshooterPermission(ContainerManager.getRoot(), user,
+                controller.new ShowModuleErrorsAction(),
+                new ModuleStatusAction()
             );
         }
     }

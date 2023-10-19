@@ -44,6 +44,7 @@ import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.HttpView;
 
 import javax.servlet.ServletOutputStream;
@@ -592,7 +593,7 @@ public class ExcelWriter implements ExportWriter
         // so that your browser doesn't put the generated file into its cache
 
         String filename = FileUtil.makeFileNameWithTimestamp(filenamePrefix, docType.name());
-        response.setHeader("Content-disposition", "attachment; filename=\"" + filename +"\"");
+        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
 
         try
         {
