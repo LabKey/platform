@@ -93,6 +93,7 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -755,7 +756,7 @@ public class VisualizationController extends SpringActionController
         {
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType("image/png");
-            response.addHeader("Content-Disposition", "attachment; filename=\"" + getFilename("png") + "\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, getFilename("png"));
 
             DocumentConversionService svc = DocumentConversionService.get();
 

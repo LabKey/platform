@@ -16,8 +16,6 @@
 package org.labkey.core.admin.miniprofiler;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
@@ -31,11 +29,9 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
@@ -49,22 +45,15 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-/**
- * User: kevink
- * Date: 9/22/14
- */
 @Marshal(Marshaller.Jackson)
 public class MiniProfilerController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(MiniProfilerController.class);
 
-    private static final Logger LOG = LogManager.getLogger(MiniProfilerController.class);
-
     public MiniProfilerController()
     {
         setActionResolver(_actionResolver);
     }
-
 
     public static class MiniProfilerSettingsForm extends BeanViewForm<MiniProfiler.Settings>
     {
@@ -74,9 +63,8 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
-    public class ManageAction extends FormViewAction<MiniProfilerSettingsForm>
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class ManageAction extends FormViewAction<MiniProfilerSettingsForm>
     {
         @Override
         public void validateCommand(MiniProfilerSettingsForm form, Errors errors)
@@ -128,6 +116,7 @@ public class MiniProfilerController extends SpringActionController
             return _minimized;
         }
 
+        @SuppressWarnings("unused")
         public void setMinimized(boolean minimized)
         {
             _minimized = minimized;
@@ -135,8 +124,8 @@ public class MiniProfilerController extends SpringActionController
     }
 
     @IgnoresAllocationTracking
-    @RequiresPermission(AdminPermission.class)
-    public class MinimizeAction extends MutatingApiAction<MinimizeForm>
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class MinimizeAction extends MutatingApiAction<MinimizeForm>
     {
         @Override
         public Object execute(MinimizeForm form, BindException errors) throws Exception
@@ -149,9 +138,8 @@ public class MiniProfilerController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
-    public class ResetAction extends FormHandlerAction
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class ResetAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object o, Errors errors)
@@ -173,8 +161,8 @@ public class MiniProfilerController extends SpringActionController
     }
 
     // Invoked by test framework
-    @RequiresSiteAdmin
-    public class IsEnabledAction extends ReadOnlyApiAction
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class IsEnabledAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -185,8 +173,8 @@ public class MiniProfilerController extends SpringActionController
     }
 
     // Invoked by test framework
-    @RequiresSiteAdmin
-    public class EnableAction extends MutatingApiAction<EnableForm>
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class EnableAction extends MutatingApiAction<EnableForm>
     {
         @Override
         public Object execute(EnableForm form, BindException errors)
@@ -200,8 +188,8 @@ public class MiniProfilerController extends SpringActionController
     }
 
     // Invoked by test framework
-    @RequiresSiteAdmin
-    public class EnableTroubleshootingStacktracesAction extends MutatingApiAction<EnableForm>
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class EnableTroubleshootingStacktracesAction extends MutatingApiAction<EnableForm>
     {
         @Override
         public Object execute(EnableForm form, BindException errors)
@@ -221,6 +209,7 @@ public class MiniProfilerController extends SpringActionController
             return _enabled;
         }
 
+        @SuppressWarnings("unused")
         public void setEnabled(boolean enabled)
         {
             _enabled = enabled;
@@ -236,6 +225,7 @@ public class MiniProfilerController extends SpringActionController
             return _id;
         }
 
+        @SuppressWarnings("unused")
         public void setId(long id)
         {
             _id = id;
@@ -244,7 +234,7 @@ public class MiniProfilerController extends SpringActionController
 
     @RequiresNoPermission // permissions will be checked in the action
     @IgnoresAllocationTracking
-    public class ReportAction extends MutatingApiAction<ReportForm>
+    public static class ReportAction extends MutatingApiAction<ReportForm>
     {
         @Override
         public Object execute(ReportForm form, BindException errors)
@@ -265,7 +255,7 @@ public class MiniProfilerController extends SpringActionController
 
     @RequiresNoPermission // permissions will be checked in the action
     @IgnoresAllocationTracking
-    public class RecentRequestsAction extends SimpleViewAction
+    public static class RecentRequestsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)

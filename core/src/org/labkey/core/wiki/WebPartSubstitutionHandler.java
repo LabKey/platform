@@ -64,7 +64,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
         try
         {
             String partName = params.get("partName");
-            WebPartFactory factory = Portal.getPortalPartCaseInsensitive(partName);
+            WebPartFactory factory = Portal.getPortalPart(partName);
 
             if (null == factory)
                 return new FormattedHtml(HtmlString.unsafe("<br><font class='error' color='red'>Error: Could not find webpart \"" + PageFlowUtil.filter(partName) + "\"</font>"));

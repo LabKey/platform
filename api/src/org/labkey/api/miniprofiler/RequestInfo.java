@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Captures basic profiling data for a single HTTP request.
- * User: kevink
  */
 @JsonPropertyOrder({"id", "url", "date", "duration", "root", "objects"})
 public class RequestInfo implements AutoCloseable
@@ -47,7 +46,7 @@ public class RequestInfo implements AutoCloseable
     private String _name;
 
     // User that initiated the request.
-    private Principal _user;
+    private final Principal _user;
 
     // The ignore flag may be set after profiling starts.  Timings won't be collected and will be marked as already viewed when the request is complete.
     private boolean _ignored = false;

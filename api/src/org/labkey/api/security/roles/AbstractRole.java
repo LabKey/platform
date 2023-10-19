@@ -39,8 +39,6 @@ import java.util.stream.Collectors;
 
 /**
  * Abstract base class for roles
- * User: Dave
- * Date: Apr 22, 2009
  */
 public abstract class AbstractRole implements Role
 {
@@ -79,8 +77,9 @@ public abstract class AbstractRole implements Role
 
         if (null != perms && perms.length > 0)
         {
-            _permissions = Arrays.stream(perms).filter(Objects::nonNull)
-                    .collect(Collectors.toUnmodifiableSet());
+            _permissions = Arrays.stream(perms)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableSet());
         }
     }
 
