@@ -18,6 +18,7 @@ package org.labkey.api.audit;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
@@ -36,15 +37,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public interface AuditLogService
 {
     Logger LOG = LogHelper.getLogger(AuditLogService.class, "Warnings related to audit failures");
     AuditLogService _defaultProvider = new DefaultAuditProvider();
-    Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
-    List<AuditFailureHandlerProvider> auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
+    Map<String, AuditTypeProvider> _auditTypeProviders = new CopyOnWriteCaseInsensitiveHashMap<>();
+    List<AuditFailureHandlerProvider> _auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
 
     static AuditLogService get()
     {
@@ -67,9 +67,9 @@ public interface AuditLogService
     {
         assert ModuleLoader.getInstance().isStartupInProgress() : "Audit types must be registered in Module.doStartup()";
 
-        if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
+        if (!_auditTypeProviders.containsKey(provider.getEventName()))
         {
-            _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
+            _auditTypeProviders.put(provider.getEventName(), provider);
         }
         else
             throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
@@ -87,7 +87,7 @@ public interface AuditLogService
     {
         if (eventType == null)
             return null;
-        return _auditTypeProviders.get(eventType.toLowerCase());
+        return _auditTypeProviders.get(eventType);
     }
 
     /**
@@ -122,12 +122,12 @@ public interface AuditLogService
 
     static void addAuditFailureHandlerProvider(AuditFailureHandlerProvider provider)
     {
-        auditFailureHandlerProviders.add(provider);
+        _auditFailureHandlerProviders.add(provider);
     }
 
     static List<AuditFailureHandlerProvider> getAuditFailureHandlerProviders()
     {
-        return auditFailureHandlerProviders;
+        return _auditFailureHandlerProviders;
     }
 
     static void handleAuditFailure(User user, Throwable e)

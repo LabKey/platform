@@ -44,11 +44,6 @@ import java.util.regex.Pattern;
 
 import static java.lang.Math.min;
 
-/**
- * User: adam
- * Date: Mar 7, 2010
- * Time: 6:20:24 PM
- */
 public class StringUtilsLabKey
 {
     /** Instead of relying on the platform default character encoding, use this Charset */
@@ -67,7 +62,7 @@ public class StringUtilsLabKey
     {
         if (!StringUtils.isEmpty(value))
         {
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append(" ");
 
             sb.append(value);
@@ -295,10 +290,10 @@ public class StringUtilsLabKey
     {
         if (null == value)
             return 0;
-        else if (String.class.isInstance(value))
-            return Integer.valueOf((String) value);
-        else if (Number.class.isInstance(value))
-            return ((Number) value).intValue();
+        else if (value instanceof String v)
+            return Integer.valueOf(v);
+        else if (value instanceof Number v)
+            return v.intValue();
 
         throw new IllegalArgumentException("Unable to get int value for value parameter");
     }

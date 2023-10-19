@@ -17,16 +17,21 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Context that describes the way in which a user is operating within the system. They may be logged in normally,
@@ -36,7 +41,6 @@ public interface ImpersonationContext extends Serializable
 {
     /** @return whether the user is impersonating someone or some group, or working as their normal self */
     boolean isImpersonating();
-    boolean isAllowedGlobalRoles();
     /** @return if non-null, the container to which the impersonation should be restricted */
     @Nullable Container getImpersonationProject();
     /** @return the user who is actually performing the operation, not the user that they might be impersonating */
@@ -45,13 +49,45 @@ public interface ImpersonationContext extends Serializable
     /** @return the URL to which the user should be returned when impersonation is over */
     ActionURL getReturnURL();
     PrincipalArray getGroups(User user);
-    Set<Role> getContextualRoles(User user, SecurityPolicy policy);
+
+    /**
+     * @return The roles assigned to this user in the provided policy as well as the root. The roles may be modified
+     * and/or filtered by the impersonation context.
+     */
+    default Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+    {
+        Set<Role> roles = getSiteRoles(user);
+        roles.addAll(policy.getRoles(user.getGroups()));
+        return roles;
+    }
+
+    /**
+     * @return The roles assigned to this user in the root. The roles may be modified and/or filtered by the
+     * impersonation context.
+     */
+    default Set<Role> getSiteRoles(User user)
+    {
+        Container root = ContainerManager.getRoot();
+        SecurityPolicy policy = root.getPolicy();
+        Set<Role> roles = policy.getRoles(getGroups(user));
+        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
+        for (Role role : roles)
+            assert role.isApplicable(policy, root);
+        // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
+        // simply assigning the role to the group (like Platform Developers). This is special to the Site Admin group;
+        // no other role or group should follow this pattern.
+        if (user.isInGroup(Group.groupAdministrators))
+            roles.add(RoleManager.siteAdminRole);
+        return roles;
+    }
+
     ImpersonationContextFactory getFactory();
+
     /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
     void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 
     // restrict the permissions this user is allowed
-    default Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
+    default Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
         return perms;
     }

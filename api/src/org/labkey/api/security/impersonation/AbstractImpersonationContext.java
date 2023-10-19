@@ -21,19 +21,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Set;
 
-/**
- * User: adam
- * Date: 3/28/2014
- * Time: 9:42 AM
- */
 public abstract class AbstractImpersonationContext implements ImpersonationContext
 {
     private final User _adminUser;
@@ -89,12 +84,14 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
         return _factory;
     }
 
-    /** @return Returns a set of roles with the SiteAdminRole filtered out
-     *          if the admin user that is impersonating is not a site admin.*/
-    protected Set<Role> getFilteredContextualRoles(Set<Role> roles)
+    /**
+     * @return A set of roles with the privileged roles filtered out if the impersonating admin user isn't allowed them
+     */
+    protected Set<Role> getFilteredRoles(Set<Role> roles)
     {
-        if (getAdminUser() != null && !getAdminUser().isInSiteAdminGroup())
-            roles.remove(RoleManager.siteAdminRole);
+        if (getAdminUser() != null && !getAdminUser().hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
+            roles.removeIf(Role::isPrivileged);
+
         return roles;
     }
 }

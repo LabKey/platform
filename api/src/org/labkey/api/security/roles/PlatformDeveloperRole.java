@@ -24,21 +24,24 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.settings.AppProps;
 
-/**
- * Created by davebradlee on 7/23/18.
- */
 public class PlatformDeveloperRole extends AbstractRootContainerRole
 {
     public PlatformDeveloperRole()
     {
         super("Platform Developer", "Allows developers to write and deploy code outside the LabKey security framework.",
-                PlatformDeveloperPermission.class,
-                AnalystPermission.class,
-                BrowserDeveloperPermission.class,
-                TrustedPermission.class,
-                AppProps.getInstance().isDevMode() ? EditModuleResourcesPermission.class : null
+            AnalystPermission.class,
+            BrowserDeveloperPermission.class,
+            AppProps.getInstance().isDevMode() ? EditModuleResourcesPermission.class : null,
+            PlatformDeveloperPermission.class,
+            TrustedPermission.class
         );
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
+    }
+
+    @Override
+    public boolean isPrivileged()
+    {
+        return true;
     }
 }

@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+
 /**
  * A mime type map that implements the java.net.FileNameMap interface.
  * Copied from Tomcat, modified to read from mime.txt, loaded as a classloader resource.
@@ -46,6 +48,7 @@ public class MimeMap implements FileNameMap
     {
         private final String _contentType;
         private final boolean _inline;
+        private final boolean _json;
 
         public MimeType(String contentType)
         {
@@ -54,8 +57,14 @@ public class MimeMap implements FileNameMap
 
         public MimeType(String contentType, boolean inline)
         {
+            this(contentType, inline, false);
+        }
+
+        public MimeType(String contentType, boolean inline, boolean json)
+        {
             _contentType = contentType;
             _inline = inline;
+            _json = json;
         }
 
         public String getContentType()
@@ -95,7 +104,6 @@ public class MimeMap implements FileNameMap
 
             if (_inline != mimeType._inline) return false;
             return _contentType != null ? _contentType.equals(mimeType._contentType) : mimeType._contentType == null;
-
         }
 
         @Override
@@ -117,11 +125,15 @@ public class MimeMap implements FileNameMap
         public static final MimeType HTML = new MimeType("text/html");
         public static final MimeType PLAIN = new MimeType("text/plain");
         public static final MimeType XML = new MimeType("text/xml");
+        public static final MimeType JSON = new MimeType("application/json", false, true);
+        public static final MimeType TEXT_JSON = new MimeType("text/json", false, true);
+        public static final MimeType CSP = new MimeType("application/csp-report", false, true);
     }
 
     static
     {
-        for (MimeType mt : Arrays.asList(MimeType.GIF, MimeType.JPEG, MimeType.PDF, MimeType.PNG, MimeType.SVG, MimeType.HTML, MimeType.PLAIN, MimeType.XML))
+        for (MimeType mt : Arrays.asList(MimeType.GIF, MimeType.JPEG, MimeType.PDF, MimeType.PNG, MimeType.SVG, MimeType.HTML, MimeType.PLAIN, MimeType.XML,
+                MimeType.TEXT_JSON, MimeType.JSON, MimeType.CSP))
         {
             mimeTypeMap.put(mt.getContentType(), mt);
         }
@@ -148,6 +160,7 @@ public class MimeMap implements FileNameMap
             LogHelper.getLogger(MimeMap.class, "Resolves file names and extensions to MIME types").error("Failed loading MIME types", e);
         }
     }
+
 
     public MimeType getMimeType(String extn)
     {
@@ -237,6 +250,18 @@ public class MimeMap implements FileNameMap
         {
             return false;
         }
+    }
+
+
+    public boolean isJsonContentTypeHeader(String contentType)
+    {
+        if (null == contentType)
+            return false;
+        var i = contentType.indexOf(";");
+        if (i > 0)
+            contentType = contentType.substring(0, i);
+        var mt = mimeTypeMap.get(contentType.trim());
+        return null != mt && mt._json;
     }
 
 

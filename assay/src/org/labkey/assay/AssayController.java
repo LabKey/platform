@@ -1556,7 +1556,7 @@ public class AssayController extends SpringActionController
                     User user = getUser();
                     if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
                     {
-                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
+                        Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                         contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
                         user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
                     }

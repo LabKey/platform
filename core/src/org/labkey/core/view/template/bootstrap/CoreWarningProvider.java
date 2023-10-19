@@ -29,6 +29,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -111,9 +112,9 @@ public class CoreWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
-        if (context == null || context.getUser().hasSiteAdminPermission())
+        if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
         {
-            getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings);
+            getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context.getUser().hasSiteAdminPermission());
 
             getModuleErrorWarnings(warnings, showAllWarnings);
 
@@ -325,12 +326,13 @@ public class CoreWarningProvider implements WarningProvider
             addStandardWarning(warnings, "The WebSocket connection failed. LabKey Server uses WebSockets to send notifications and alert users when their session ends.", "configTomcat#websocket", "Tomcat Configuration");
     }
 
-    private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings, boolean showAllWarnings)
+    private void getUserRequestedAdminOnlyModeWarnings(Warnings warnings, boolean showAllWarnings, boolean isSiteAdmin)
     {
         //admin-only mode--show to admins
         if (showAllWarnings || AppProps.getInstance().isUserRequestedAdminOnlyMode())
         {
-            addStandardWarning(warnings, "This site is configured so that only administrators may sign in. To allow other users to sign in, turn off admin-only mode via the", "site settings page", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL());
+            String extraText = isSiteAdmin ? "" : " a site administrator will need to";
+            addStandardWarning(warnings, "This site is configured so that only administrators and troubleshooters may sign in. To allow other users to sign in," + extraText + " turn off admin-only mode via the", "site settings page", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeSiteURL());
         }
     }
 
