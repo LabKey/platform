@@ -1,15 +1,16 @@
-ALTER TABLE exp.material ADD rootmaterialrowid INT NULL
+ALTER TABLE exp.material ADD rootmaterialrowid INTEGER NULL;
 GO
 
-UPDATE exp.material SET rootmaterialrowid = (
-    SELECT DISTINCT rowid FROM exp.material expmat WHERE rootmateriallsid = expmat.lsid
-)
+UPDATE Material
+    SET Material.rootmaterialrowid = Parent.rowid
+    FROM exp.material Material
+    INNER JOIN exp.material Parent ON Material.rootmateriallsid = Parent.lsid;
 GO
 
-ALTER TABLE exp.material ALTER COLUMN rootmaterialrowid INT NOT NULL
+ALTER TABLE exp.material ALTER COLUMN rootmaterialrowid INTEGER NOT NULL;
 GO
 
-CREATE INDEX uq_material_rootrowid ON exp.material (rootmaterialrowid)
+CREATE INDEX ix_material_rootrowid ON exp.material (rootmaterialrowid);
 GO
 
 EXEC core.executeJavaUpgradeCode 'addRowIdToMaterializedSampleTypes';

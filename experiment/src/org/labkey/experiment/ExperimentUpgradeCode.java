@@ -327,44 +327,76 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     private static void addRowIdColumn(ExpSampleTypeImpl st)
     {
-        TableInfo tableInfo = st.getTinfo();
-        if (tableInfo == null)
+        // TODO: Share all this code with above
+        Domain domain = st.getDomain();
+        SampleTypeDomainKind kind = null;
+        try
+        {
+            kind = (SampleTypeDomainKind) domain.getDomainKind();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+        if (null == kind || null == kind.getStorageSchemaName())
+            return;
+
+        DbSchema schema = kind.getSchema();
+        DbScope scope = kind.getSchema().getScope();
+
+        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert (null != domain && null != domain.getStorageTableName());
+
+        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
+        if (provisionedTable == null)
         {
             LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
             return;
         }
 
-        DbScope scope = st.getDomain().getDomainKind().getScope();
-        addRowIdColumn(scope, tableInfo, st);
+        int count = addRowIdColumn(scope, domain);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added 'rowId' column, count=" + count);
     }
 
-    private static void addRowIdColumn(@NotNull DbScope scope, @NotNull TableInfo tableInfo, @NotNull ExpSampleTypeImpl st)
+    private static int addRowIdColumn(@NotNull DbScope scope, @NotNull Domain domain)
     {
+        String tableName = domain.getStorageTableName();
+        SQLFragment table = new SQLFragment(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName);
+
         SQLFragment addColumn;
-        if (scope.getSqlDialect().isSqlServer())
-            addColumn = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ADD COLUMN rowid INT NULL\n");
-        else
-            addColumn = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ADD COLUMN rowid INTEGER\n");
-
-        SQLFragment update = new SQLFragment("UPDATE ")
-                .append(tableInfo, "st")
-                .append(" SET rowid = (SELECT rowid FROM exp.material expmat WHERE st.lsid = expmat.lsid)\n");
-
+        SQLFragment update;
         SQLFragment notNull;
         if (scope.getSqlDialect().isSqlServer())
-            notNull = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ALTER COLUMN rowid INT NOT NULL\n");
-        else
-            notNull = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ALTER COLUMN rowid SET NOT NULL\n");
+        {
+            addColumn = new SQLFragment("ALTER TABLE ").append(table).append(" ADD rowid INTEGER NULL").appendEOS().append("\n");
 
-        SQLFragment primaryKey = new SQLFragment("ALTER TABLE ").append(tableInfo)
-                .append(" ADD CONSTRAINT PK_").append(tableInfo.getName()).append(" PRIMARY KEY (rowid)\n");
+            update = new SQLFragment("UPDATE Materialized SET Materialized.rowid = Material.rowid\n")
+                    .append("FROM ").append(table).append(" Materialized\n")
+                    .append("INNER JOIN exp.material Material ON Materialized.lsid = Material.lsid").appendEOS().append("\n");
+
+            notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid INT NOT NULL").appendEOS().append("\n");
+        }
+        else
+        {
+            addColumn = new SQLFragment("ALTER TABLE ").append(table).append(" ADD COLUMN rowid INTEGER").appendEOS().append("\n");
+
+            update = new SQLFragment("UPDATE ")
+                    .append(table).append(" AS st\n")
+                    .append("SET rowid = (SELECT rowid FROM exp.material expmat WHERE st.lsid = expmat.lsid)").appendEOS().append("\n");
+
+            notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid SET NOT NULL").appendEOS().append("\n");
+        }
+
+        SQLFragment primaryKey = new SQLFragment("ALTER TABLE ").append(table)
+                .append(" ADD CONSTRAINT PK_").append(tableName).append(" PRIMARY KEY (rowid)").appendEOS().append("\n");
 
         new SqlExecutor(scope).execute(addColumn);
         int count = new SqlExecutor(scope).execute(update);
         new SqlExecutor(scope).execute(notNull);
         new SqlExecutor(scope).execute(primaryKey); // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
 
-        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added 'rowId' column, count=" + count);
+        return count;
     }
 
     /**
