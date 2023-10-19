@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -181,6 +182,7 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -10930,6 +10932,35 @@ public class AdminController extends SpringActionController
             this.hourDelta = hourDelta;
         }
     }
+
+
+    @RequiresNoPermission
+    @CSRF(CSRF.Method.NONE)
+    public class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
+    {
+        private static final Logger _log = LogHelper.getLogger(ContentSecurityPolicyReportAction.class, "CSP warnings");
+
+        // recent reports, to help avoid log spam
+        private static final Map<String,Boolean> reports = Collections.synchronizedMap(new LRUMap<>(20));
+
+        @Override
+        public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            // NOTE User will always be "guest".  Seems like a bad design to force the server to accept guest w/o CSRF here.
+            var jsonObj = form.getJsonObject();
+            if (null != jsonObj)
+            {
+                var jsonStr = jsonObj.toString();
+                JSONObject cspReport = jsonObj.getJSONObject("csp-report");
+                String urlString = cspReport.getString("source-file");
+                String path = new URLHelper(urlString).deleteParameters().getPath();
+                if (null == reports.put(path,Boolean.TRUE))
+                    _log.warn("ContentSecurityPolicy warning:\n" + jsonStr);
+            }
+            return new JSONObject().put("success",true);
+        }
+    }
+
 
     public static class TestCase extends AbstractActionPermissionTest
     {
