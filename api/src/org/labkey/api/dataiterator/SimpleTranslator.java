@@ -53,6 +53,7 @@ import org.labkey.api.data.TestSchema;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -1293,8 +1294,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         ForeignKey fk = col.getFk();
         if (fk != null && _context.isAllowImportLookupByAlternateKey() && fk.allowImportByAlternateKey())
         {
+            // Issue 48347: if the lookup field has a "Lookup Validator", then treat the missing values as an error
+            boolean hasValidator = pd != null && pd.getValidators().stream().anyMatch(v -> PropertyValidatorType.Lookup.getLabel().equalsIgnoreCase(v.getName()));
+
             RemapMissingBehavior missing = remapMissingBehavior;
-            boolean hasValidator = pd != null && pd.getValidators().size() > 0;
             if (missing == null)
                 missing = col.isRequired() || hasValidator ? RemapMissingBehavior.Error : RemapMissingBehavior.Null;
             c = new RemapPostConvertColumn(c, fromIndex, col, missing, true);
