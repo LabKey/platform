@@ -139,7 +139,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     private static Timer _timer;
     private static HtmlString _upgradeMessage;
     private static HtmlString _marketingUpdate;
-    private static String _marketingMessageDefault = "Do more with LabKey Server. Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions.";
+    private static String _marketingMessageDefault = "Do more with LabKey Server. <a href='https://www.labkey.com/products-services/labkey-server/'>Click here</a> to learn about our Premium Editions.";
 
     public static void cancelUpgradeCheck()
     {
