@@ -1417,7 +1417,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(null, false);
         return parents.size() > 0 ? parents.size() : (availableParents != null ? availableParents.size() : withAmountsParents.size());
     }
 
