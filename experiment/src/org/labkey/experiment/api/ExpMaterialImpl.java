@@ -341,7 +341,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid, name) SELECT ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getName(), getLSID());
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (rowId, lsid, name) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getRowId(), getLSID(), getName(), getLSID());
             }
         }
         index(null);
@@ -416,7 +416,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     };
 
-    public void index(SearchService.IndexTask task)
+    public void index(@Nullable SearchService.IndexTask task)
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
         // from being indexed as samples
