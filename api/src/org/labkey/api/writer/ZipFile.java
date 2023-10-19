@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.PrintWriters.StandardPrintWriter;
@@ -96,7 +97,7 @@ public class ZipFile extends AbstractVirtualFile
     public static OutputStream getOutputStream(HttpServletResponse response, String name) throws IOException
     {
         response.setContentType("application/zip");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + _makeLegalName(name) + "\";");
+        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, name);
 
         return response.getOutputStream();
     }

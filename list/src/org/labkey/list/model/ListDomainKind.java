@@ -358,7 +358,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     @Override
     public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
+        String name = StringUtils.trimToEmpty(domain.getName());
         String keyName = listProperties.getKeyName();
 
         if (StringUtils.isEmpty(name))

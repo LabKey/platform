@@ -28,6 +28,7 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.attachments.SvgSource;
+import org.labkey.api.util.ResponseHelper;
 
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
@@ -78,7 +79,7 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     public void svgToPdf(SvgSource svgSource, String filename, HttpServletResponse response) throws IOException
     {
         response.setContentType("application/pdf");
-        response.addHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
 
         PDFTranscoder transcoder = new PDFTranscoder();
 

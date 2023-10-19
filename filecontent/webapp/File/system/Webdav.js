@@ -627,8 +627,10 @@
                     {
                         url = url + "&file=" + encodeURIComponent(records[i].data.name);
                     }
-
-                    window.location = url;
+                }
+                else
+                {
+                    throw new Error("Nothing to download");
                 }
 
                 window.location = url;

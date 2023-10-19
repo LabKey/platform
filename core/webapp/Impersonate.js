@@ -314,8 +314,8 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
     },
 
     getPanel: function(){
-        var instructions = LABKEY.Security.currentUser.isRootAdmin ?
-            "As a site or application administrator, you can impersonate one or more security roles. While impersonating you will have access to " +
+        var instructions = LABKEY.Security.currentUser.canImpersonateSiteRoles ?
+            "As a site administrator, application administrator, or impersonating troubleshooter you can impersonate one or more security roles. While impersonating you will have access to " +
                 "the entire site, limited to the permissions provided by the selected roles(s)." :
             "As a project administrator, you can impersonate one or more security roles. While impersonating you will be restricted to this project.";
 
@@ -434,11 +434,16 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
                 window.location.reload();
             },
             failure: function(response) {
-                var jsonResp = LABKEY.Utils.decode(response.responseText);
-                if (jsonResp && jsonResp.errors)
-                {
-                    var errorHTML = jsonResp.errors[0].message;
-                    Ext4.Msg.alert('Error', errorHTML);
+                const jsonResp = LABKEY.Utils.decode(response.responseText);
+                if (jsonResp) {
+                    if (jsonResp.errors) {
+                        const errorHTML = jsonResp.errors[0].message;
+                        Ext4.Msg.alert('Error', errorHTML);
+                    }
+                    else if (jsonResp.exception)
+                    {
+                        Ext4.Msg.alert('Error', jsonResp.exception);
+                    }
                 }
             }
         });

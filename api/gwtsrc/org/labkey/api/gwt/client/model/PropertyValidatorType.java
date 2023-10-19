@@ -26,25 +26,43 @@ public enum PropertyValidatorType
     RegEx
     {
         @Override
+        public String getLabel()
+        {
+            return "RegEx Validator";
+        }
+
+        @Override
         public HelpPopup createHelpPopup()
         {
-            return new HelpPopup("RegEx Validator", "RegEx validators allow you to specify a regular expression that defines what string values are valid");
+            return new HelpPopup(getLabel(), "RegEx validators allow you to specify a regular expression that defines what string values are valid");
         }
     },
     Range
     {
         @Override
+        public String getLabel()
+        {
+            return "Range Validator";
+        }
+
+        @Override
         public HelpPopup createHelpPopup()
         {
-            return new HelpPopup("Range Validator", "Range validators allow you to specify numeric comparisons that must be satisfied, such as the value must be greater than or less than some constant");
+            return new HelpPopup(getLabel(), "Range validators allow you to specify numeric comparisons that must be satisfied, such as the value must be greater than or less than some constant");
         }
     },
     Lookup
     {
         @Override
+        public String getLabel()
+        {
+            return "Lookup Validator";
+        }
+
+        @Override
         public HelpPopup createHelpPopup()
         {
-            return new HelpPopup("Lookup Validator", "Lookup validators allow you to require that any value is present in the lookup's target table or query");
+            return new HelpPopup(getLabel(), "Lookup validators allow you to require that any value is present in the lookup's target table or query");
         }
 
         @Override
@@ -56,9 +74,15 @@ public enum PropertyValidatorType
     TextLength
     {
         @Override
+        public String getLabel()
+        {
+            return "Length Validator";
+        }
+
+        @Override
         public HelpPopup createHelpPopup()
         {
-            return new HelpPopup("Length Validator", "Length validators allow you to validate the length of a text field");
+            return new HelpPopup(getLabel(), "Length validators allow you to validate the length of a text field");
         }
         @Override
         public boolean isConfigurable()
@@ -74,13 +98,21 @@ public enum PropertyValidatorType
     TextChoice
     {
         @Override
+        public String getLabel()
+        {
+            return "Text Choice Validator";
+        }
+
+        @Override
         public HelpPopup createHelpPopup()
         {
-            return new HelpPopup("Text Choice Validator", "Text Choice validators allow you to specify a set of text values that are used to constrain values for a given domain field, like a light-weight lookup.");
+            return new HelpPopup(getLabel(), "Text Choice validators allow you to specify a set of text values that are used to constrain values for a given domain field, like a light-weight lookup.");
         }
     };
 
     public abstract HelpPopup createHelpPopup();
+
+    public abstract String getLabel();
 
     public String getTypeName()
     {

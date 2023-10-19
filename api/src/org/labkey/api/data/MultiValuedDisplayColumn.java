@@ -135,9 +135,13 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
 
             while (mvCtx.next())
             {
-                out.append(sep);
-                super.renderGridCellContents(mvCtx, out);
-                sep = ", ";
+                Object o = getValue(mvCtx);
+                if (o != null)
+                {
+                    out.append(sep);
+                    super.renderGridCellContents(mvCtx, out);
+                    sep = ", ";
+                }
             }
         }
         finally
@@ -176,7 +180,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     @Override
     public String getTsvFormattedValue(RenderContext ctx)
     {
-        return getTsvFormattedValues(ctx).stream().collect(Collectors.joining(", "));
+        return String.join(", ", getTsvFormattedValues(ctx));
     }
 
     @Override

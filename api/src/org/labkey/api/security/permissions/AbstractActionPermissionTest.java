@@ -35,12 +35,14 @@ import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.AuthorRole;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ImpersonatingTroubleshooterRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.security.roles.SubmitterRole;
+import org.labkey.api.security.roles.TroubleshooterRole;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
@@ -67,9 +69,12 @@ public abstract class AbstractActionPermissionTest extends Assert
     private static final String SUBMITTER_EMAIL = "submitter@actionpermission.test";
     private static final String TRUSTED_EDITOR_EMAIL = "trustededitor@actionpermission.test";
     private static final String TRUSTED_AUTHOR_EMAIL = "trustedauthor@actionpermission.test";
+    private static final String TROUBLESHOOTER_EMAIL = "troubleshooter@actionpermission.test";
+    private static final String IMPERSONATING_TROUBLESHOOTER_EMAIL = "impersonating_troubleshooter@actionpermission.test";
     protected static final String[] LKS_ROLE_EMAILS = {
             SITE_ADMIN_EMAIL, APPLICATION_ADMIN_EMAIL, PROJECT_ADMIN_EMAIL, FOLDER_ADMIN_EMAIL, EDITOR_EMAIL,
-            AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL, TRUSTED_EDITOR_EMAIL, TRUSTED_AUTHOR_EMAIL
+            AUTHOR_EMAIL, READER_EMAIL, SUBMITTER_EMAIL, TRUSTED_EDITOR_EMAIL, TRUSTED_AUTHOR_EMAIL, TROUBLESHOOTER_EMAIL,
+            IMPERSONATING_TROUBLESHOOTER_EMAIL
     };
 
     protected static Container _c;
@@ -105,6 +110,8 @@ public abstract class AbstractActionPermissionTest extends Assert
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
         rootPolicy.addRoleAssignment(users.get(SITE_ADMIN_EMAIL), SiteAdminRole.class);
         rootPolicy.addRoleAssignment(users.get(APPLICATION_ADMIN_EMAIL), ApplicationAdminRole.class);
+        rootPolicy.addRoleAssignment(users.get(TROUBLESHOOTER_EMAIL), TroubleshooterRole.class);
+        rootPolicy.addRoleAssignment(users.get(IMPERSONATING_TROUBLESHOOTER_EMAIL), ImpersonatingTroubleshooterRole.class);
         if (null != TRUSTED_ANALYST_ROLE)
         {
             rootPolicy.addRoleAssignment(users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
@@ -122,6 +129,8 @@ public abstract class AbstractActionPermissionTest extends Assert
         MutableSecurityPolicy rootPolicy = new MutableSecurityPolicy(ContainerManager.getRoot(), ContainerManager.getRoot().getPolicy());
         rootPolicy.removeRoleAssignment(_users.get(SITE_ADMIN_EMAIL), RoleManager.getRole(SiteAdminRole.class));
         rootPolicy.removeRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), RoleManager.getRole(ApplicationAdminRole.class));
+        rootPolicy.removeRoleAssignment(_users.get(TROUBLESHOOTER_EMAIL), RoleManager.getRole(TroubleshooterRole.class));
+        rootPolicy.removeRoleAssignment(_users.get(IMPERSONATING_TROUBLESHOOTER_EMAIL), RoleManager.getRole(ImpersonatingTroubleshooterRole.class));
         if (null != TRUSTED_ANALYST_ROLE)
         {
             rootPolicy.removeRoleAssignment(_users.get(TRUSTED_EDITOR_EMAIL), TRUSTED_ANALYST_ROLE);
@@ -309,6 +318,27 @@ public abstract class AbstractActionPermissionTest extends Assert
                     _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
                     _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL),
                     _users.get(APPLICATION_ADMIN_EMAIL)
+            );
+        }
+    }
+
+    public void assertForTroubleshooterPermission(Container c, User user, PermissionCheckableAction... actions)
+    {
+        for (PermissionCheckableAction action : actions)
+        {
+            assertPermission(c, action, user);
+
+            assertPermission(c, action,
+                _users.get(SITE_ADMIN_EMAIL),
+                _users.get(APPLICATION_ADMIN_EMAIL),
+                _users.get(IMPERSONATING_TROUBLESHOOTER_EMAIL),
+                _users.get(TROUBLESHOOTER_EMAIL)
+            );
+
+            assertNoPermission(c, action,
+                _users.get(SUBMITTER_EMAIL), _users.get(READER_EMAIL),
+                _users.get(AUTHOR_EMAIL), _users.get(EDITOR_EMAIL),
+                _users.get(FOLDER_ADMIN_EMAIL), _users.get(PROJECT_ADMIN_EMAIL)
             );
         }
     }
