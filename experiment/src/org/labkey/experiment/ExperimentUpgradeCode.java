@@ -340,24 +340,30 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     private static void addRowIdColumn(@NotNull DbScope scope, @NotNull TableInfo tableInfo, @NotNull ExpSampleTypeImpl st)
     {
-        // TODO: Support SQLServer upgrade
-        SQLFragment addColumn = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ADD COLUMN RowId INTEGER\n");
+        SQLFragment addColumn;
+        if (scope.getSqlDialect().isSqlServer())
+            addColumn = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ADD COLUMN rowid INT NULL\n");
+        else
+            addColumn = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ADD COLUMN rowid INTEGER\n");
 
         SQLFragment update = new SQLFragment("UPDATE ")
-                .append(tableInfo, "ST")
-                .append(" SET RowId = (SELECT RowId FROM exp.material AS ExpMatFrom WHERE ST.LSID = ExpMatFrom.LSID)\n");
+                .append(tableInfo, "st")
+                .append(" SET rowid = (SELECT rowid FROM exp.material expmat WHERE st.lsid = expmat.lsid)\n");
 
-        SQLFragment notNull = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ALTER COLUMN RowId SET NOT NULL\n");
+        SQLFragment notNull;
+        if (scope.getSqlDialect().isSqlServer())
+            notNull = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ALTER COLUMN rowid INT NOT NULL\n");
+        else
+            notNull = new SQLFragment("ALTER TABLE ").append(tableInfo).append(" ALTER COLUMN rowid SET NOT NULL\n");
 
-        // TODO: Is there a better way to add an index programmatically?
-        SQLFragment addIndex = new SQLFragment("CREATE UNIQUE INDEX ")
-                .append(tableInfo.getName()).append("_rowId ON ")
-                .append(tableInfo).append(" (RowId)\n");
+        SQLFragment primaryKey = new SQLFragment("ALTER TABLE ").append(tableInfo)
+                .append(" ADD CONSTRAINT PK_").append(tableInfo.getName()).append(" PRIMARY KEY (rowid)\n");
 
         new SqlExecutor(scope).execute(addColumn);
         int count = new SqlExecutor(scope).execute(update);
         new SqlExecutor(scope).execute(notNull);
-        new SqlExecutor(scope).execute(addIndex); // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
+        new SqlExecutor(scope).execute(primaryKey); // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
+
         LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added 'rowId' column, count=" + count);
     }
 
