@@ -17,7 +17,7 @@ package org.labkey.api.security;
 
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,10 +27,8 @@ import java.lang.annotation.Target;
  * Provides custom permissions handling for standard admin console actions:
  *
  * - Current container must be the root
- * - Requires {@link TroubleShooterPermission} for GET operations
+ * - Requires {@link TroubleshooterPermission} for GET operations
  * - Requires {@link AdminPermission} (default) for POST operations
- * User: adam
- * Date: Mar 22, 2010
  */
 
 public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)

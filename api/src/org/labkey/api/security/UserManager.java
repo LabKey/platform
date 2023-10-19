@@ -30,6 +30,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -46,6 +48,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -790,7 +793,7 @@ public class UserManager
         if (SecurityManager.loginExists(currentEmail))
         {
             DbScope scope = CORE.getSchema().getScope();
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            try (Transaction transaction = scope.ensureTransaction())
             {
                 Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
@@ -814,7 +817,7 @@ public class UserManager
         newEmail = new ValidEmail(newEmail).getEmailAddress();
 
         DbScope scope = CORE.getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (!isAdmin)
             {
@@ -946,8 +949,10 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (Transaction transaction = CORE.getScope().beginTransaction())
         {
+            boolean needToEnsureSiteAdmins = user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
+
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
@@ -960,15 +965,19 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
+
+            // Clear user list immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            if (needToEnsureSiteAdmins)
+                SecurityManager.ensureAtLeastOneSiteAdminExists();
+
+            transaction.commit();
         }
         catch (Exception e)
         {
             LOG.error("deleteUser: " + e);
             throw new UserManagementException(user.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
 
         //TODO: Delete User files
@@ -1009,7 +1018,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);
@@ -1026,20 +1035,25 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
+            // Clear user list immediately (before the last site admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            // If deactivating a site admin or impersonating troubleshooter, ensure at least one site admin remains
+            if (!active && userToAdjust.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
+                SecurityManager.ensureAtLeastOneSiteAdminExists();
+
             removeRecentUser(userToAdjust);
 
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled") + " " + extendedMessage
             );
+
+            transaction.commit();
         }
         catch(RuntimeSQLException e)
         {
             LOG.error("setUserActive: " + e);
             throw new UserManagementException(userToAdjust.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
     }
 

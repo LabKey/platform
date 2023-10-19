@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Used to indicate that a user is impersonating a specific group (site or project), and are not operating as their
+ * Used to indicate that a user is impersonating a specific group (site or project), and is not operating as their
  * normal logged-in self.
  */
 public class GroupImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
@@ -54,7 +54,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 
     @JsonCreator
     protected GroupImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_groupId") int groupId,
             @JsonProperty("_returnURL") ActionURL returnURL
@@ -132,11 +132,11 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group.isGuests())
             return false;
 
-        // Impersonating the "Site: Administrators" group as a non-site admin is confusing as well.
-        if (group.isAdministrators() && !user.hasSiteAdminPermission())
+        // Impersonating "Site: Administrators" or any other group assigned a privileged role by a non-site admin is confusing as well.
+        if (group.hasPrivilegedRole() && !user.hasSiteAdminPermission())
             return false;
 
-        // Site/app admin can impersonate any group
+        // Site/app admin can impersonate any other group
         if (user.hasRootAdminPermission())
             return true;
 
@@ -220,12 +220,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            return false;
-        }
-
-        @Override
         public String getCacheKey()
         {
             // NavTree for user impersonating a group will be different for each group
@@ -239,9 +233,9 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
         {
-            return getFilteredContextualRoles(user.getStandardContextualRoles());
+            return getFilteredRoles(super.getAssignedRoles(user, policy));
         }
     }
 }

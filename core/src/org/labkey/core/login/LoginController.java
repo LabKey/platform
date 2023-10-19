@@ -60,7 +60,7 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -2579,7 +2579,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class GetDbLoginPropertiesAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -2619,7 +2619,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public static class InitialMountAction extends ReadOnlyApiAction<Object>
     {
         @Override

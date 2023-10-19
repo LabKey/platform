@@ -215,12 +215,7 @@ public class SecurityApiActions
                         Group parentGroup = SecurityManager.getGroup(parentGroupId);
                         if (parentGroup != null && parentGroup.getUserId() != group.getUserId())
                         {
-                            Map<String, Object> groupInfo = new HashMap<>();
-                            groupInfo.put("id", parentGroup.getUserId());
-                            groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(parentGroup));
-                            groupInfo.put("isProjectGroup", parentGroup.isProjectGroup());
-                            groupInfo.put("isSystemGroup", parentGroup.isSystemGroup());
-                            parentGroupInfos.add(groupInfo);
+                            parentGroupInfos.add(getGroupMap(parentGroup));
                         }
                     });
                     groupPerms.put("groups", parentGroupInfos);
@@ -231,6 +226,17 @@ public class SecurityApiActions
 
             return groupsPerms;
         }
+    }
+
+    private static Map<String, Object> getGroupMap(Group group)
+    {
+        Map<String, Object> groupInfo = new HashMap<>();
+        groupInfo.put("id", group.getUserId());
+        groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
+        groupInfo.put("isProjectGroup", group.isProjectGroup());
+        groupInfo.put("isSystemGroup", group.isSystemGroup());
+
+        return groupInfo;
     }
 
     public static class GetUserPermsForm
@@ -244,6 +250,7 @@ public class SecurityApiActions
             return _userId;
         }
 
+        @SuppressWarnings("unused")
         public void setUserId(Integer userId)
         {
             _userId = userId;
@@ -254,6 +261,7 @@ public class SecurityApiActions
             return _userEmail;
         }
 
+        @SuppressWarnings("unused")
         public void setUserEmail(String userEmail)
         {
             _userEmail = userEmail;
@@ -264,6 +272,7 @@ public class SecurityApiActions
             return _includeSubfolders;
         }
 
+        @SuppressWarnings("unused")
         public void setIncludeSubfolders(boolean includeSubfolders)
         {
             _includeSubfolders = includeSubfolders;
@@ -396,7 +405,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetGroupsForCurrentUserAction extends ReadOnlyApiAction
+    public static class GetGroupsForCurrentUserAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -404,14 +413,9 @@ public class SecurityApiActions
             List<Map<String, Object>> groupInfos = new ArrayList<>();
             //include both project and global groups
             List<Group> groups = SecurityManager.getGroups(getContainer(), getUser());
-            for(Group group : groups)
+            for (Group group : groups)
             {
-                Map<String, Object> groupInfo = new HashMap<>();
-                groupInfo.put("id", group.getUserId());
-                groupInfo.put("name", SecurityManager.getDisambiguatedGroupName(group));
-                groupInfo.put("isProjectGroup", group.isProjectGroup());
-                groupInfo.put("isSystemGroup", group.isSystemGroup());
-                groupInfos.add(groupInfo);
+                groupInfos.add(getGroupMap(group));
             }
 
             return new ApiSimpleResponse("groups", groupInfos);
@@ -420,7 +424,7 @@ public class SecurityApiActions
 
     @RequiresLogin
     @IgnoresTermsOfUse
-    public static class EnsureLoginAction extends ReadOnlyApiAction
+    public static class EnsureLoginAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -446,7 +450,7 @@ public class SecurityApiActions
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetRolesAction extends ReadOnlyApiAction
+    public static class GetRolesAction extends ReadOnlyApiAction<Object>
     {
         private final Set<Permission> _allPermissions = new HashSet<>();
 
@@ -714,7 +718,7 @@ public class SecurityApiActions
 
             //resolve the resource
             String resourceId = json.optString("resourceId", null);
-            if (null == resourceId || resourceId.length() == 0)
+            if (null == resourceId || resourceId.isEmpty())
                 throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
 
             SecurableResource resource = container.findSecurableResource(resourceId, user);
@@ -739,7 +743,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("Unable to load policy from map.");
 
             //if root container permissions update, check for app admin removal
-            if (container.isRoot() && resourceId.equals(container.getId()) && user.isApplicationAdmin()
+            if (container.isRoot() && resourceId.equals(container.getId()) && user.hasApplicationAdminPermission() && !user.hasSiteAdminPermission()
                     && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
             {
                 Map<String, Object> props = new HashMap<>();
@@ -783,7 +787,7 @@ public class SecurityApiActions
 
             //resolve the resource
             String resourceId = form.getResourceId();
-            if (null == resourceId || resourceId.length() == 0)
+            if (null == resourceId || resourceId.isEmpty())
                 throw new IllegalArgumentException("You must include a resourceId as a top-level property!");
 
             SecurableResource resource = container.findSecurableResource(resourceId, user);
@@ -969,6 +973,7 @@ public class SecurityApiActions
             return principalId;
         }
 
+        @SuppressWarnings("unused")
         public void setPrincipalId(Integer principalId)
         {
             this.principalId = principalId;
@@ -979,6 +984,7 @@ public class SecurityApiActions
             return email;
         }
 
+        @SuppressWarnings("unused")
         public void setEmail(String email)
         {
             this.email = email;
@@ -989,6 +995,7 @@ public class SecurityApiActions
             return roleClassName;
         }
 
+        @SuppressWarnings("unused")
         public void setRoleClassName(String roleClassName)
         {
             this.roleClassName = roleClassName;
@@ -999,6 +1006,7 @@ public class SecurityApiActions
             return confirm;
         }
 
+        @SuppressWarnings("unused")
         public void setConfirm(Boolean confirm)
         {
             this.confirm = confirm;
@@ -1234,7 +1242,7 @@ public class SecurityApiActions
             {
                 try
                 {
-                    UserPrincipal principal = member.getUserPrincipal(getContainer());
+                    UserPrincipal principal = member.getUserPrincipal();
 
                     if (principal == null)
                     {
@@ -1255,9 +1263,8 @@ public class SecurityApiActions
 
         private void addOrReplaceMembers(GroupForm form, Map<String, List<UserPrincipal>> members, Map<String, String> memberErrors, List<User> newUsers)
         {
-            List<UserPrincipal> originalMembers = new ArrayList<>();
-            originalMembers.addAll(SecurityManager.getGroupMembers(_group, MemberType.ALL_GROUPS_AND_USERS));
-            Boolean doReplacement = form.getMethod() == MemberEditOperation.replace;
+            List<UserPrincipal> originalMembers = new ArrayList<>(SecurityManager.getGroupMembers(_group, MemberType.ALL_GROUPS_AND_USERS));
+            boolean doReplacement = form.getMethod() == MemberEditOperation.replace;
             if (doReplacement)
             {
                 SecurityManager.deleteMembers(_group, originalMembers);
@@ -1268,7 +1275,7 @@ public class SecurityApiActions
             {
                 try
                 {
-                    UserPrincipal principal = member.getUserPrincipal(getContainer());
+                    UserPrincipal principal = member.getUserPrincipal();
 
                     if (principal == null && member.getEmail() != null) // create the user
                     {
@@ -1334,7 +1341,6 @@ public class SecurityApiActions
         delete,     // delete the given members; does not fail if member does not exist in group; does not delete group if it becomes empty
     }
 
-
     public static class GroupMember
     {
         private String _email;
@@ -1354,6 +1360,7 @@ public class SecurityApiActions
             return _description;
         }
 
+        @SuppressWarnings("unused")
         public void setDescription(String description)
         {
             _description = description;
@@ -1364,6 +1371,7 @@ public class SecurityApiActions
             return _displayName;
         }
 
+        @SuppressWarnings("unused")
         public void setDisplayName(String displayName)
         {
             _displayName = displayName;
@@ -1374,6 +1382,7 @@ public class SecurityApiActions
             return _email;
         }
 
+        @SuppressWarnings("unused")
         public void setEmail(String email)
         {
             _email = email;
@@ -1384,6 +1393,7 @@ public class SecurityApiActions
             return _firstName;
         }
 
+        @SuppressWarnings("unused")
         public void setFirstName(String firstName)
         {
             _firstName = firstName;
@@ -1394,6 +1404,7 @@ public class SecurityApiActions
             return _groupId;
         }
 
+        @SuppressWarnings("unused")
         public void setGroupId(Integer groupId)
         {
             _groupId = groupId;
@@ -1404,6 +1415,7 @@ public class SecurityApiActions
             return _im;
         }
 
+        @SuppressWarnings("unused")
         public void setIm(String im)
         {
             _im = im;
@@ -1414,6 +1426,7 @@ public class SecurityApiActions
             return _lastName;
         }
 
+        @SuppressWarnings("unused")
         public void setLastName(String lastName)
         {
             _lastName = lastName;
@@ -1424,6 +1437,7 @@ public class SecurityApiActions
             return _mobile;
         }
 
+        @SuppressWarnings("unused")
         public void setMobile(String mobile)
         {
             _mobile = mobile;
@@ -1434,6 +1448,7 @@ public class SecurityApiActions
             return _pager;
         }
 
+        @SuppressWarnings("unused")
         public void setPager(String pager)
         {
             _pager = pager;
@@ -1444,6 +1459,7 @@ public class SecurityApiActions
             return _phone;
         }
 
+        @SuppressWarnings("unused")
         public void setPhone(String phone)
         {
             _phone = phone;
@@ -1454,6 +1470,7 @@ public class SecurityApiActions
             return _userId;
         }
 
+        @SuppressWarnings("unused")
         public void setUserId(Integer userId)
         {
             _userId = userId;
@@ -1470,7 +1487,7 @@ public class SecurityApiActions
             else return "Unknown";
         }
 
-        public UserPrincipal getUserPrincipal(Container container) throws Exception
+        public UserPrincipal getUserPrincipal() throws Exception
         {
             if (getUserId() != null)
             {
@@ -1520,6 +1537,7 @@ public class SecurityApiActions
             return _groupName;
         }
 
+        @SuppressWarnings("unused")
         public void setGroupName(String groupName)
         {
             _groupName = groupName;
@@ -1530,6 +1548,7 @@ public class SecurityApiActions
             return _groupId;
         }
 
+        @SuppressWarnings("unused")
         public void setGroupId(Integer groupId)
         {
             _groupId = groupId;
@@ -1540,6 +1559,7 @@ public class SecurityApiActions
             return _createGroup;
         }
 
+        @SuppressWarnings("unused")
         public void setCreateGroup(Boolean createGroup)
         {
             _createGroup = createGroup;
@@ -1550,6 +1570,7 @@ public class SecurityApiActions
             return _members;
         }
 
+        @SuppressWarnings("unused")
         public void setMembers(List<GroupMember> members)
         {
             _members = members;
@@ -1560,6 +1581,7 @@ public class SecurityApiActions
             return _method;
         }
 
+        @SuppressWarnings("unused")
         public void setMethod(MemberEditOperation method)
         {
             _method = method;

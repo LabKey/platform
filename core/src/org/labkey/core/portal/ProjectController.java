@@ -59,6 +59,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
@@ -1247,13 +1248,33 @@ public class ProjectController extends SpringActionController
         }
 
         @Override
+        public void checkPermissions() throws UnauthorizedException
+        {
+            try
+            {
+                super.checkPermissions();
+            }
+            catch (UnauthorizedException e)
+            {
+                // Let Troubleshooters retrieve folder nav in root
+                if (!isTroubleshooterRetrievingFolderNav())
+                    throw e;
+            }
+        }
+
+        private boolean isTroubleshooterRetrievingFolderNav()
+        {
+            return getContainer().isRoot() && getUser().hasRootPermission(TroubleshooterPermission.class) && "FolderNav".equals(getViewContext().get("webpart.name"));
+        }
+
+        @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
             HttpServletRequest request = getViewContext().getRequest();
             String qs = request.getQueryString();
             String webPartName = request.getParameter(PARAM_WEBPART);
 
-            if (null == webPartName || webPartName.length() == 0)
+            if (null == webPartName || webPartName.isEmpty())
             {
                 // can't use errors.rejectValue() because of odd-ball class GetWebPartForm
                 // errors.rejectValue("name", SpringActionController.ERROR_REQUIRED);
@@ -1261,7 +1282,7 @@ public class ProjectController extends SpringActionController
                 return null;
             }
 
-            WebPartFactory factory = Portal.getPortalPartCaseInsensitive(webPartName);
+            WebPartFactory factory = Portal.getPortalPart(webPartName);
             if (null == factory)
             {
                 errors.reject(SpringActionController.ERROR_MSG, "Couldn't find a web part factory for requested web part.");
@@ -1286,19 +1307,19 @@ public class ProjectController extends SpringActionController
             }
 
             String frame = StringUtils.trimToEmpty(request.getParameter("webpart.frame"));
-            if (null != frame && frame.length() > 0 && _frameTypeMap.containsKey(frame))
+            if (null != frame && !frame.isEmpty() && _frameTypeMap.containsKey(frame))
                 view.setFrame(_frameTypeMap.get(frame));
 
             String bodyClass = StringUtils.trimToEmpty(request.getParameter("webpart.bodyClass"));
-            if (null != bodyClass && bodyClass.length() > 0)
+            if (null != bodyClass && !bodyClass.isEmpty())
                 view.setBodyClass(bodyClass);
 
             String title = StringUtils.trimToEmpty(request.getParameter("webpart.title"));
-            if (null != title && title.length() > 0)
+            if (null != title && !title.isEmpty())
                 view.setTitle(title);
 
             String titleHref = StringUtils.trimToEmpty(request.getParameter("webpart.titleHref"));
-            if (null != titleHref && titleHref.length() > 0)
+            if (null != titleHref && !titleHref.isEmpty())
                 view.setTitleHref(titleHref);
 
             return view.renderToApiResponse();
