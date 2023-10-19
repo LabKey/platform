@@ -740,6 +740,7 @@ public class XarReader extends AbstractXarImporter
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
         if (existingDomain != null)//
         {
+            Pair<String, String> lsidIgnoreSubStrs = useName ? getGPATLsidNameDiff(existingDomain.getTypeURI(), lsid) : null;
             Map<String, DomainProperty> newProps = new HashMap<>();
             for (DomainProperty prop : domain.getProperties())
             {
@@ -754,13 +755,39 @@ public class XarReader extends AbstractXarImporter
                 oldProps.put(oldProp.getPropertyURI(), oldProp);
             }
 
+            Set<String> thisKeys = oldProps.keySet();
+            Set<String> otherKeys = newProps.keySet();
+            Map<String, String> thisKeysMap = new HashMap<>(); // full lsid, cleaned lsid
+            Map<String, String> otherKeysMap = new HashMap<>(); // cleaned lsid, full lsid
+            if (lsidIgnoreSubStrs != null) // on folder/assay import, ${XarJobId} is added to lsid, which might result in lsid differences in protocols
+            {
+                String ignoreThis = lsidIgnoreSubStrs.first;
+                String ignoreOther = lsidIgnoreSubStrs.second;
+                for (String thisKey : thisKeys)
+                {
+                    thisKeysMap.put(thisKey, thisKey.replace(ignoreThis, ""));
+                }
+                for (String otherKey : otherKeys)
+                {
+                    otherKeysMap.put(otherKey.replace(ignoreOther, ""), otherKey);
+                }
+                thisKeys = new HashSet<>(thisKeysMap.values());
+                otherKeys = otherKeysMap.keySet();
+            }
+
             Map<DomainProperty, Object> existingDefaultValues = DefaultValueService.get().getDefaultValues(existingDomain.getContainer(), existingDomain);
-            if (!IdentifiableEntity.diff(oldProps.keySet(), newProps.keySet(), "Domain Properties", diffs))
+            if (!IdentifiableEntity.diff(thisKeys, otherKeys, "Domain Properties", diffs))
             {
                 for (String key : oldProps.keySet())
                 {
                     DomainProperty oldProp = oldProps.get(key);
-                    DomainProperty newProp = newProps.get(key);
+                    String otherURI = key;
+                    if (lsidIgnoreSubStrs != null)
+                    {
+                        String uriKey = thisKeysMap.get(key);
+                        otherURI = otherKeysMap.get(uriKey);
+                    }
+                    DomainProperty newProp = newProps.get(otherURI);
 
                     IdentifiableEntity.diff(oldProp.getDescription(), newProp.getDescription(), key + " description", diffs);
                     IdentifiableEntity.diff(oldProp.getFormat(), newProp.getFormat(), key + " format string", diffs);
@@ -770,7 +797,8 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " shown in details view", diffs);
                     IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " shown in insert view", diffs);
                     IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " shown in update view", diffs);
-                    IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
+                    if (lsidIgnoreSubStrs == null)
+                        IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
                     IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " missing value enabled", diffs);
@@ -2042,6 +2070,26 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+    private @Nullable Pair<String, String> getGPATLsidNameDiff(String existingLsid, String importLsid)
+    {
+        Pair<String, String> ignoreNameDiff = null;
+        String folderSubstr = ".Folder-" + getContainer().getRowId() + ".";
+        int existingStartInd = existingLsid.indexOf(folderSubstr);
+        int incomingStartInd = importLsid.indexOf(folderSubstr);
+        if (existingStartInd > -1 && incomingStartInd > -1)
+            ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), importLsid.substring(incomingStartInd));
+        else
+        {
+            folderSubstr = ".Folder-" + getContainer().getRowId() + ":";
+            existingStartInd = existingLsid.indexOf(folderSubstr);
+            incomingStartInd = importLsid.indexOf(folderSubstr);
+            if (existingStartInd > -1 && incomingStartInd > -1)
+                ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), importLsid.substring(incomingStartInd));
+        }
+
+        return ignoreNameDiff;
+    }
+
     private void loadProtocol(ProtocolBaseType p) throws ExperimentException, SQLException
     {
         String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
@@ -2054,14 +2102,7 @@ public class XarReader extends AbstractXarImporter
         {
             existingProtocol = ExperimentServiceImpl.get().getExpProtocol(getContainer(), p.getName());
             if (existingProtocol != null)
-            {
-                String existingLsid = existingProtocol.getLSID();
-                String folderSubstr = ".Folder-" + getContainer().getRowId() + ".";
-                int existingStartInd = existingLsid.indexOf(folderSubstr);
-                int incomingStartInd = protocolLSID.indexOf(folderSubstr);
-                if (existingStartInd > -1 && incomingStartInd > -1)
-                    ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), protocolLSID.substring(incomingStartInd));
-            }
+                ignoreNameDiff = getGPATLsidNameDiff(existingProtocol.getLSID(), protocolLSID);
         }
 
         Protocol xarProtocol = readProtocol(p);
