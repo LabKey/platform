@@ -37,6 +37,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.experiment.CompressedInputStreamXarSource;
 import org.labkey.experiment.XarReader;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.XarImportContext;
 
@@ -148,7 +149,10 @@ public abstract class AbstractExpFolderImporter implements FolderImporter
                     }
                     // handle aliquot rollup calculation for all sample types, this is a noop for the data class importer
                     for (ExpSampleType sampleType : typesReader.getSampleTypes())
+                    {
                         SampleTypeService.get().recomputeSampleTypeRollup(sampleType, ctx.getContainer());
+                        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                    }
                 }
                 else
                     log.info("No types XAR file to process.");

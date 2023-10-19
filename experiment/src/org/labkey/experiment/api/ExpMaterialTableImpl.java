@@ -1075,6 +1075,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
     public static void refreshMaterializedView(final String lsid, boolean schemaChange)
     {
+        /* NOTE: MaterailizedQueryHelper can detect data changes and refresh the materiaized view using the provided SQL.
+         * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
+         * MQH from the cache to force the SQL to be regenerated.
+         */
         var scope = ExperimentServiceImpl.getExpSchema().getScope();
         if (schemaChange)
             scope.addCommitTask(() -> _materializedQueries.remove(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
@@ -1164,12 +1168,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null==_ss ? "" : _ss.getName()) + ")>", getSqlDialect());
         sql.append("SELECT ");
         String comma = "";
-        for (String naterialCol : materialCols)
+        for (String materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
-            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, naterialCol)))
+            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, materialCol)))
             {
-                sql.append(comma).append("m.").appendIdentifier(naterialCol);
+                sql.append(comma).append("m.").appendIdentifier(materialCol);
                 comma = ", ";
             }
         }
