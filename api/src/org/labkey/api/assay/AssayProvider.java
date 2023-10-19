@@ -391,11 +391,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     {
     }
 
-    default boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
-    {
-        return false;
-    }
-
     default boolean canRename()
     {
         return false;

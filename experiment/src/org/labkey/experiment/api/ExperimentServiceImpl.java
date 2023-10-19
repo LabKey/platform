@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
@@ -9257,6 +9258,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         _renameAssayProtocols(newAssayName, oldAssayName, protocol, user, "Core");
         _renameAssayProtocols(newAssayName, oldAssayName, protocol, user, "Output");
+
+        SchemaKey newSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), newAssayName);
+        SchemaKey oldSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), oldAssayName);
+        QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, user, container);
     }
 
     public static class TestCase extends Assert

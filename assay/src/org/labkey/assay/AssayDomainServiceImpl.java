@@ -365,7 +365,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         {
             if (!props.containsKey(uri))
             {
-                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), uri, uri);//
+                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), uri, uri);
                 assayProvider.ensurePropertyDomainName(protocol, prop);
                 props.put(prop.getPropertyURI(), prop);
             }
@@ -418,7 +418,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                             }
                             else
                             {
-                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, isNew);
+                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, false);
                                 if (domainErrors.hasErrors())
                                 {
                                     throw domainErrors;
@@ -474,15 +474,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     protocol.setProtocolParameters(newParams.values());
 
                     if (hasNameChange)
-                    {
                         ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
-                        if (assayProvider != null)
-                        {
-                            SchemaKey newSchema = SchemaKey.fromParts(AssaySchema.NAME, assayProvider.getResourceName(), assay.getName());
-                            SchemaKey oldSchema = SchemaKey.fromParts(AssaySchema.NAME, assayProvider.getResourceName(), oldAssayName);
-                            QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, getUser(), getContainer());
-                        }
-                    }
 
                     AssayProvider provider = AssayService.get().getProvider(protocol);
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
@@ -582,7 +574,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     StringBuilder errors = new StringBuilder();
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
-                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, isNew);
+                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
 
                         // Need to bail out inside of the loop because some errors may have left the DB connection in
                         // an unusable state.
@@ -613,7 +605,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
     }
 
-    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean isNew)
+    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange)
     {
         GWTDomain<GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
@@ -623,15 +615,12 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                 prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocol.getName()));
             }
         }
-        boolean hasNameChange = !isNew && provider.hasDomainNameChanged(protocol, domain);
-        String oldName = domain.getName();
-        String newName = protocol.getName();
         provider.changeDomain(getUser(), protocol, previous, domain);
 
         String auditComment = null;
         if (hasNameChange)
         {
-            auditComment = "The name of the assay domain '" + oldName + "' was changed to '" + newName + "'.";
+            auditComment = "The name of the assay domain '" + previous.getName() + "' was changed to '" + domain.getName() + "'.";
         }
 
         return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser(), hasNameChange, auditComment);

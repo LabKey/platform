@@ -497,12 +497,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
-    {
-        return !(protocol.getName() + getDomainNameSuffix(domain)).equals(domain.getName());
-    }
-
-    @Override
     public boolean canRename()
     {
         return true;
