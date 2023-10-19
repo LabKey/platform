@@ -1215,20 +1215,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (hasAliquotColumns)
             sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.lsid = m_aliquot.lsid");
 
-        // WHERE
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        if (_ss != null)
-        {
-            /*
-            NOTE for the interested reader.
-            The cpasType filter might be redundant with the JOIN to the materialized table.
-            Without the redundant filter, we have seen Postgres optimizer do expensive whole table scan on exp.material during join of the provisioned table on lsid.
-            */
-            if (!filterFrag.isEmpty())
-                filterFrag.append(" AND ");
-            filterFrag.append("CpasType = ").appendValue(_ss.getLSID());
-        }
-        sql.append("\n").append(filterFrag).append(") ").append(alias);
         sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
     }
