@@ -859,14 +859,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             if (parent instanceof ExpData dataParent)
             {
                 ExpDataClass dataClass = dataParent.getDataClass(user);
-                if (dataClass != null)
-                    type = dataClass.getName();
+                if (dataClass == null)
+                    continue;
+                type = dataClass.getName();
             }
             else if (parent instanceof ExpMaterial materialParent)
             {
                 ExpSampleType sampleType = materialParent.getSampleType();
-                if (sampleType != null)
-                    type = sampleType.getName();
+                if (sampleType == null)
+                    continue;
+                type = sampleType.getName();
             }
 
             parentByType.computeIfAbsent(type, k -> new ArrayList<>());
