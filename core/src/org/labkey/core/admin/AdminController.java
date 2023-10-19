@@ -10952,10 +10952,16 @@ public class AdminController extends SpringActionController
             {
                 var jsonStr = jsonObj.toString();
                 JSONObject cspReport = jsonObj.getJSONObject("csp-report");
-                String urlString = cspReport.getString("source-file");
-                String path = new URLHelper(urlString).deleteParameters().getPath();
-                if (null == reports.put(path,Boolean.TRUE))
-                    _log.warn("ContentSecurityPolicy warning:\n" + jsonStr);
+                if (cspReport != null)
+                {
+                    String urlString = cspReport.getString("document-uri");
+                    if (urlString != null)
+                    {
+                        String path = new URLHelper(urlString).deleteParameters().getPath();
+                        if (null == reports.put(path, Boolean.TRUE))
+                            _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
+                    }
+                }
             }
             return new JSONObject().put("success",true);
         }
