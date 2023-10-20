@@ -102,28 +102,21 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
         RESERVED_NAMES.add("Created By");
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).toList());
+        RESERVED_NAMES.addAll(Arrays.stream(ExpMaterialTable.Column.values()).map(ExpMaterialTable.Column::name).toList());
         RESERVED_NAMES.add("Protocol"); // alias for "SourceProtocolApplication"
         RESERVED_NAMES.add("SampleTypeUnits"); // alias for MetricUnit
         RESERVED_NAMES.add("CpasType");
-        RESERVED_NAMES.add(ExpMaterialTable.Column.IsAliquot.name());
         RESERVED_NAMES.add("Is Aliquot");
         RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
-        RESERVED_NAMES.add(ExpMaterialTable.Column.AliquotedFromLSID.name());
         RESERVED_NAMES.add("Aliquoted From Parent");
         RESERVED_NAMES.add("Available Aliquot Count");
         RESERVED_NAMES.add("Available Aliquot Amount");
-        RESERVED_NAMES.add(ExpMaterialTable.Column.RootMaterialLSID.name());
-        RESERVED_NAMES.add(ExpMaterialTable.Column.RootMaterialRowId.name());
         RESERVED_NAMES.add("Root Material");
         RESERVED_NAMES.add("RecomputeRollup");
         RESERVED_NAMES.add("AliquotTotalVolume");
         RESERVED_NAMES.add("Aliquot Total Amount");
-        RESERVED_NAMES.add("AliquotCount");
         RESERVED_NAMES.add("Aliquots Created Count");
-        RESERVED_NAMES.add("AliquotVolume");
-        RESERVED_NAMES.add("AliquotUnit");
         RESERVED_NAMES.add("Aliquot Unit");
-        RESERVED_NAMES.add("MaterialExpDate");
         RESERVED_NAMES.add("ExpirationDate");
         RESERVED_NAMES.add("Expiration Date");
         RESERVED_NAMES.add("Ancestors");
@@ -131,19 +124,14 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         RESERVED_NAMES.add("SampleID");
         RESERVED_NAMES.add("Sample ID");
         RESERVED_NAMES.add("Status");
-        RESERVED_NAMES.add(ExpMaterialTable.Column.StoredAmount.name());
         RESERVED_NAMES.add("Amount");
-        RESERVED_NAMES.add(ExpMaterialTable.Column.RawAmount.name());
-        RESERVED_NAMES.add(ExpMaterialTable.Column.Units.name());
-        RESERVED_NAMES.add(ExpMaterialTable.Column.RawUnits.name());
-        RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_LABELS);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                // NOTE: We generate the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
-                new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false),
-                new PropertyStorageSpec.ForeignKey("rowId", "exp", "Material", "RowId", null, false)
+            // NOTE: We generate the LSID once on the server and insert into exp.object, exp.material, and the provisioned table at the same time.
+            new PropertyStorageSpec.ForeignKey("lsid", "exp", "Material", "LSID", null, false),
+            new PropertyStorageSpec.ForeignKey("rowId", "exp", "Material", "RowId", null, false)
         )));
 
         INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(

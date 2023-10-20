@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -90,7 +91,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    private static void setSampleName(ExpSampleTypeImpl st)
+    private record ProvisionedSampleTypeContext(DbScope scope, Domain domain, SampleTypeDomainKind kind, SchemaTableInfo provisionedTable) {}
+
+    private static @Nullable ProvisionedSampleTypeContext getProvisionedSampleTypeContext(@NotNull ExpSampleTypeImpl st)
     {
         Domain domain = st.getDomain();
         SampleTypeDomainKind kind = null;
@@ -102,8 +105,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             // pass
         }
-        if (null == kind || null == kind.getStorageSchemaName())
-            return;
+
+        if (kind == null)
+        {
+            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no domain kind.");
+            return null;
+        }
+        else if (kind.getStorageSchemaName() == null)
+        {
+            // e.g. SpecimenSampleTypeDomainKind is not provisioned
+            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned storage schema.");
+            return null;
+        }
 
         DbSchema schema = kind.getSchema();
         DbScope scope = kind.getSchema().getScope();
@@ -116,20 +129,32 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (provisionedTable == null)
         {
             LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
-            return;
+            return null;
         }
 
-        ColumnInfo nameCol = provisionedTable.getColumn("name");
+        return new ProvisionedSampleTypeContext(scope, domain, kind, provisionedTable);
+    }
+
+    private static void setSampleName(ExpSampleTypeImpl st)
+    {
+        ProvisionedSampleTypeContext provisionedContext = getProvisionedSampleTypeContext(st);
+        if (provisionedContext == null)
+            return;
+
+        Domain domain = provisionedContext.domain;
+        DbScope scope = provisionedContext.scope;
+        ColumnInfo nameCol = provisionedContext.provisionedTable.getColumn("name");
         if (nameCol == null)
         {
-            PropertyStorageSpec nameProp = kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
+            PropertyStorageSpec nameProp = provisionedContext.kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
             StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(nameProp), true);
             LOG.info("Added 'name' column to sample type '" + st.getName() + "' (" + st.getRowId() + ") provisioned table.");
         }
 
         uniquifySampleNames(st, scope);
 
-        fillSampleName(st, domain, scope);
+        int count = fillSampleName(domain, scope);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
 
         //addIndex
         Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name"))));
@@ -229,7 +254,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     // populate name on provisioned sample tables
-    private static void fillSampleName(ExpSampleTypeImpl st, Domain domain, DbScope scope)
+    private static int fillSampleName(@NotNull Domain domain, @NotNull DbScope scope)
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
@@ -241,9 +266,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 .append("  WHERE m.cpasType = ?\n").add(domain.getTypeURI())
                 .append(") AS i\n")
                 .append("WHERE i.lsid = ").append(tableName).append(".lsid");
-
-        int count = new SqlExecutor(scope).execute(update);
-        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
+        return new SqlExecutor(scope).execute(update);
     }
 
     /**
@@ -389,39 +412,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
     private static void addRowIdColumn(ExpSampleTypeImpl st)
     {
-        // TODO: Share all this code with above
-        Domain domain = st.getDomain();
-        SampleTypeDomainKind kind = null;
-        try
-        {
-            kind = (SampleTypeDomainKind) domain.getDomainKind();
-        }
-        catch (IllegalArgumentException e)
-        {
-            // pass
-        }
-        if (null == kind || null == kind.getStorageSchemaName())
+        ProvisionedSampleTypeContext provisionedContext = getProvisionedSampleTypeContext(st);
+        if (provisionedContext == null)
             return;
 
-        DbSchema schema = kind.getSchema();
-        DbScope scope = kind.getSchema().getScope();
-
-        StorageProvisioner.get().ensureStorageTable(domain, kind, scope);
-        domain = PropertyService.get().getDomain(domain.getTypeId());
-        assert (null != domain && null != domain.getStorageTableName());
-
-        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
-        if (provisionedTable == null)
-        {
-            LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
-            return;
-        }
-
-        int count = addRowIdColumn(scope, domain);
+        int count = addRowIdColumn(provisionedContext.domain, provisionedContext.scope);
         LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added 'rowId' column, count=" + count);
     }
 
-    private static int addRowIdColumn(@NotNull DbScope scope, @NotNull Domain domain)
+    private static int addRowIdColumn(@NotNull Domain domain, @NotNull DbScope scope)
     {
         String tableName = domain.getStorageTableName();
         SQLFragment table = new SQLFragment(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName);
@@ -450,13 +449,12 @@ public class ExperimentUpgradeCode implements UpgradeCode
             notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid SET NOT NULL").appendEOS().append("\n");
         }
 
-        SQLFragment primaryKey = new SQLFragment("ALTER TABLE ").append(table)
-                .append(" ADD CONSTRAINT PK_").append(tableName).append(" PRIMARY KEY (rowid)").appendEOS().append("\n");
-
         new SqlExecutor(scope).execute(addColumn);
         int count = new SqlExecutor(scope).execute(update);
         new SqlExecutor(scope).execute(notNull);
-        new SqlExecutor(scope).execute(primaryKey); // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
+
+        // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
+        // TODO: Do we need to manually create SampleTypeDomainKind.INDEXES here?
 
         return count;
     }
