@@ -65,7 +65,6 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -1469,7 +1468,7 @@ public class SecurityManager
             }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (!group.isProjectGroup())
-                ensureAtLeastOneSiteAdminExists();
+                ensureAtLeastOneRootAdminExists();
 
             transaction.commit();
         }
@@ -1529,7 +1528,7 @@ public class SecurityManager
                 transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
                 if (!group.isProjectGroup())
-                    ensureAtLeastOneSiteAdminExists();
+                    ensureAtLeastOneRootAdminExists();
 
                 transaction.commit();
             }
@@ -1542,18 +1541,26 @@ public class SecurityManager
     }
 
     /**
-     * Throws if the site current has no Site Admins and no Impersonating Troubleshooters
+     * Throws if the site has no Site Admins, no Application Admins, and no Impersonating Troubleshooters
      */
-    public static void ensureAtLeastOneSiteAdminExists()
+    public static void ensureAtLeastOneRootAdminExists()
     {
-        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(CanImpersonatePrivilegedSiteRolesPermission.class));
+        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(ROOT_ADMIN_PERMISSION));
         if (siteAdmins.isEmpty())
         {
             // Skip the check while bootstrapping since some policies are saved before any Site Admins exist
             boolean bootstrapping = ModuleLoader.getInstance().isNewInstall() && !ModuleLoader.getInstance().isStartupComplete();
             if (!bootstrapping)
-                throw new UnauthorizedException("You can't remove the last Site Admin from the site");
+                throw new UnauthorizedException("You can't remove the last root administrator from the site");
         }
+    }
+
+    // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION =  CanImpersonateSiteRolesPermission.class;
+
+    public static boolean isRootAdmin(User user)
+    {
+        return user.hasRootPermission(ROOT_ADMIN_PERMISSION);
     }
 
     // Returns a list of errors

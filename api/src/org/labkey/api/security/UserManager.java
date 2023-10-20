@@ -48,7 +48,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
-import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -951,7 +950,7 @@ public class UserManager
 
         try (Transaction transaction = CORE.getScope().beginTransaction())
         {
-            boolean needToEnsureSiteAdmins = user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
+            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(user);
 
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
@@ -969,8 +968,8 @@ public class UserManager
             // Clear user list immediately (before the last site admin check) and again after commit/rollback
             transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
-            if (needToEnsureSiteAdmins)
-                SecurityManager.ensureAtLeastOneSiteAdminExists();
+            if (needToEnsureRootAdmins)
+                SecurityManager.ensureAtLeastOneRootAdminExists();
 
             transaction.commit();
         }
@@ -1039,8 +1038,8 @@ public class UserManager
             transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             // If deactivating a site admin or impersonating troubleshooter, ensure at least one site admin remains
-            if (!active && userToAdjust.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
-                SecurityManager.ensureAtLeastOneSiteAdminExists();
+            if (!active && SecurityManager.isRootAdmin(userToAdjust))
+                SecurityManager.ensureAtLeastOneRootAdminExists();
 
             removeRecentUser(userToAdjust);
 
