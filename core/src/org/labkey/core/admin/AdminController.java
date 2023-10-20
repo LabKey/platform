@@ -10955,7 +10955,7 @@ public class AdminController extends SpringActionController
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
-                var jsonStr = jsonObj.toString();
+                var jsonStr = jsonObj.toString(2);
                 JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
