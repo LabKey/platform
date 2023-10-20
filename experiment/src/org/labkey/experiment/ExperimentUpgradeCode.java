@@ -356,6 +356,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
         s1.retainAll(s2);
         List<Integer> rootSamplesWithAvailableAliquotVolume = new ArrayList<>(s1);
 
+        // Exposed as "public" only for upgrade. When removing this code make this signature "private".
         return SampleTypeServiceImpl.get().recomputeSamplesRollup(
             Collections.emptyList(),
             rootSamplesWithAvailableAliquot,

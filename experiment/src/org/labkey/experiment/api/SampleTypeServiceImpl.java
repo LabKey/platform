@@ -1265,7 +1265,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return message + " " + operation.getDescription() + ".";
     }
 
-    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     @Override
     public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
@@ -1275,7 +1275,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return recomputeSamplesRollup(allParents, withAmountsParents, sampleType.getMetricUnit(), container);
     }
 
-    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     @Override
     public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException
     {
@@ -1286,14 +1286,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public record AliquotAvailableAmountUnit(Double amount, String unit, Double availableAmount) {}
 
-    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     private int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
     }
 
-    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
-    private int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
+    public int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         Map<Integer, String> sampleUnits = new HashMap<>();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
@@ -1427,7 +1427,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws SQLException
+    public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws SQLException
     {
         Set<Integer> rootSamplesToRecalc = getRootSampleIdsFromParents(sampleType.getLSID(), parentLsids, parentNames);
         return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit(), container);

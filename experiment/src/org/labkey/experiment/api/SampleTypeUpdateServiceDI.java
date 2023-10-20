@@ -1217,8 +1217,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Runnable runRecalc = () -> {
             try
             {
-                SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
-                SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, false);
+                if (_sampleType != null)
+                {
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, false);
+                }
             }
             catch (SQLException e)
             {
