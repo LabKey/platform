@@ -130,7 +130,6 @@ import static org.labkey.experiment.XarExporter.GPAT_ASSAY_PROTOCOL_LSID_SUB;
 
 public class XarReader extends AbstractXarImporter
 {
-    // TODO: Account for Import/Export of RootMaterialRowId
     private static final Logger LOG = LogHelper.getLogger(XarReader.class, "XAR parsing");
 
     private final Set<String> _experimentLSIDs = new HashSet<>();
@@ -1485,7 +1484,7 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterialImpl rootMaterial = ExperimentServiceImpl.get().getExpMaterial(rootMaterialLSID);
                 if (rootMaterial != null)
                 {
-                    m.setRootMaterialLSID(rootMaterial.getLSID()); // TODO: Remove this
+                    m.setRootMaterialLSID(rootMaterial.getLSID());
                     m.setRootMaterialRowId(rootMaterial.getRowId());
                 }
             }
@@ -1606,10 +1605,8 @@ public class XarReader extends AbstractXarImporter
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
                 getLog().debug("Updating " + description + " with aliquot root");
 
-                // TODO: Remove RootMaterialLSID processing
-                // String existingRootLsid = lsid.equals(((Material) output).getRootMaterialLSID()) ? null : ((Material) output).getRootMaterialLSID();
-                int newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : ((Material) output).getRowId();
-                int rowId = ((Material) output).getRowId();
+                int newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : output.getRowId();
+                int rowId = output.getRowId();
                 Integer existingRootRowId = ((Material) output).getRootMaterialRowId();
 
                 // When importing over existing samples, if the root rowId does not match the rowId, we only log an info message here and don't update.
@@ -1619,7 +1616,6 @@ public class XarReader extends AbstractXarImporter
                 }
                 else if (!Objects.equals(existingRootRowId, newRootRowId))
                 {
-                    // TODO: Remove RootMaterialLSID processing
                     String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
                     ((Material) output).setRootMaterialLSID(newRootLsid);
                     ((Material) output).setRootMaterialRowId(newRootRowId);
