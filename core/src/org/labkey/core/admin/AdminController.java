@@ -10959,7 +10959,7 @@ public class AdminController extends SpringActionController
                 JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
-                    String urlString = cspReport.optString("document-uri");
+                    String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {
                         String path = new URLHelper(urlString).deleteParameters().getPath();
