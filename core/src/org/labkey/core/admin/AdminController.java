@@ -182,7 +182,6 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
-import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -10946,15 +10945,21 @@ public class AdminController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
+            var ret = new JSONObject().put("success",true);
+
+            // fail fast
+            if (!_log.isWarnEnabled())
+                return ret;
+
             // NOTE User will always be "guest".  Seems like a bad design to force the server to accept guest w/o CSRF here.
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
                 var jsonStr = jsonObj.toString();
-                JSONObject cspReport = jsonObj.getJSONObject("csp-report");
+                JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
-                    String urlString = cspReport.getString("document-uri");
+                    String urlString = cspReport.optString("document-uri");
                     if (urlString != null)
                     {
                         String path = new URLHelper(urlString).deleteParameters().getPath();
@@ -10963,7 +10968,7 @@ public class AdminController extends SpringActionController
                     }
                 }
             }
-            return new JSONObject().put("success",true);
+            return ret;
         }
     }
 
