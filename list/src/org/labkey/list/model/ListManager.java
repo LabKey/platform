@@ -695,7 +695,18 @@ public class ListManager implements SearchService.DocumentProvider
                     @Override
                     public void setLastIndexed(long ms, long modified)
                     {
-                        ListManager.get().setItemLastIndexed(list, pk, listTable, ms, modified);
+                        try
+                        {
+                            ListManager.get().setItemLastIndexed(list, pk, listTable, ms, modified);
+                        }
+                        catch (RuntimeSQLException e)
+                        {
+                            // This may occur due to a race condition between enumeration and list deletion. Issue #48878
+                            if (e.isConstraintException())
+                                LOG.debug("Attempt to set LastIndexed on list table failed", e);
+                            else
+                                throw e;
+                        }
                     }
                 };
 
@@ -1088,13 +1099,8 @@ public class ListManager implements SearchService.DocumentProvider
             if (null != keyColumn)
             {
                 String keySelectName = keyColumn.getSelectName();
-
-                // May have a race condition where the list has been deleted prior to being indexed, but after being enumerated
-                String listName = getListTableName(sti);
-                new SQLFragment("UPDATE ").append(listName).append('\n')
-                        .append(" SET LastIndexed = ?").add(new Timestamp(ms)).append('\n')
-                        .append(" WHERE ").append("Exists (SELECT 1 FROM ").append(listName).append(" WHERE ").append(keySelectName).append(" = ? ").add(pk).append(")")
-                        .append(" AND ").append(keySelectName).append(" = ?").add(pk).append('\n');
+                new SqlExecutor(sti.getSchema()).execute("UPDATE " + getListTableName(sti) + " SET LastIndexed = ? WHERE " +
+                        keySelectName + " = ?", new Timestamp(ms), pk);
             }
             String warning = ms < modified ? ". WARNING: LastIndexed is less than Modified! " + ms + " vs. " + modified : "";
             LOG.debug("List \"" + list + "\": Set LastIndexed for item with PK = " + pk + warning);
