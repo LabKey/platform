@@ -1519,13 +1519,12 @@ public class SecurityManager
             try (Transaction transaction = core.getScope().beginTransaction())
             {
                 new SqlExecutor(core.getSchema()).execute(sql);
-                Runnable clearCaches = () -> {
-                    for (UserPrincipal member : membersToDelete)
-                        GroupMembershipCache.handleGroupChange(group, member);
-                };
 
                 // Clear caches immediately (before the last site admin check) and again after commit/rollback
-                transaction.addCommitTask(clearCaches, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+                transaction.addCommitTask( () -> {
+                    for (UserPrincipal member : membersToDelete)
+                        GroupMembershipCache.handleGroupChange(group, member);
+                }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
                 if (!group.isProjectGroup())
                     ensureAtLeastOneRootAdminExists();

@@ -826,7 +826,7 @@ public class SecurityController extends SpringActionController
                 //check for users to delete
                 if (removeNames != null)
                 {
-                    // Note: deleteMembers() will throw if removing this member will result in no Site Admins
+                    // Note: deleteMembers() will throw if removing this member will result in no root admins
                     SecurityManager.deleteMembers(_group, removeIds);
                 }
 
