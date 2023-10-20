@@ -665,7 +665,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         result.append(sql);
         if (includeNulls)
         {
-            result.append(" AS NVARCHAR), '')");
+            result.append(" AS NVARCHAR(MAX)), '')");
         }
         result.append(", ");
         result.append(delimiterSQL);
