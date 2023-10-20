@@ -16,11 +16,17 @@
 
 package org.labkey.api.security;
 
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -70,5 +76,32 @@ public class LimitedUser extends User
     public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
         return new HashSet<>(_roles);
+    }
+
+    // I don't love using LimitedUser, but at least we're no longer implementing this (incorrectly) in a ton of modules
+    @SafeVarargs
+    public static User getElevatedUser(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
+    {
+        List<Role> rolesToAdd = Arrays.stream(pairs)
+            .filter(pair -> !container.hasPermission(user, pair.first))
+            .map(pair -> RoleManager.getRole(pair.second))
+            .filter(Objects::nonNull)
+            .toList();
+
+        if (!rolesToAdd.isEmpty())
+        {
+            Set<Role> roles = new HashSet<>(user.getAssignedRoles(container.getPolicy()));
+            roles.addAll(rolesToAdd);
+            return new LimitedUser(user, user.getGroups(), roles);
+        }
+        else
+        {
+            return user;
+        }
+    }
+
+    public static User getCanSeeAuditLogUser(Container container, User user)
+    {
+        return getElevatedUser(container, user, Pair.of(CanSeeAuditLogPermission.class, CanSeeAuditLogRole.class));
     }
 }
