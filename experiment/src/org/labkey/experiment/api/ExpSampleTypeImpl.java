@@ -800,25 +800,28 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public void onSamplesChanged(User user, List<Material> materials)
     {
-        ExpProtocol[] protocols = getProtocols(user);
-        if (protocols.length == 0)
-            return;
-        List<ExpMaterialImpl> expMaterials = null;
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, false);
 
-        if (materials != null)
+        ExpProtocol[] protocols = getProtocols(user);
+        if (protocols.length != 0)
         {
-            expMaterials = new ArrayList<>(materials.size());
-            for (Material material : materials)
+            List<ExpMaterialImpl> expMaterials = null;
+
+            if (materials != null)
             {
-                expMaterials.add(new ExpMaterialImpl(material));
+                expMaterials = new ArrayList<>(materials.size());
+                for (Material material : materials)
+                {
+                    expMaterials.add(new ExpMaterialImpl(material));
+                }
             }
-        }
-        for (ExpProtocol protocol : protocols)
-        {
-            ProtocolImplementation impl = protocol.getImplementation();
-            if (impl == null)
-                continue;
-            impl.onSamplesChanged(user, protocol, expMaterials);
+            for (ExpProtocol protocol : protocols)
+            {
+                ProtocolImplementation impl = protocol.getImplementation();
+                if (impl == null)
+                    continue;
+                impl.onSamplesChanged(user, protocol, expMaterials);
+            }
         }
     }
 

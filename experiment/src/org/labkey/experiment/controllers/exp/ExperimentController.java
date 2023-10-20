@@ -7699,6 +7699,7 @@ public class ExperimentController extends SpringActionController
                 {
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
                     builder.append("<tr><td>")
                             .append(sampleType.getName())
                             .append("</td><td>")

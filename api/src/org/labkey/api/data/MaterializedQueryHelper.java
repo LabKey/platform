@@ -28,20 +28,23 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
-import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.UnexpectedException;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import static org.labkey.api.test.TestWhen.When.BVT;
@@ -58,6 +61,12 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         private final String _fromSql;
         private final String _tableName;
         private final ArrayList<Invalidator> _invalidators = new ArrayList<>(3);
+
+        private final Lock _loadingLock = new ReentrantLock();
+        enum LoadingState { BEFORELOAD, LOADING, LOADED, ERROR };
+        private final AtomicReference<LoadingState> _loadingState = new AtomicReference<>(LoadingState.BEFORELOAD);
+        private RuntimeException _loadException = null;
+
 
         Materialized(String tableName, String cacheKey, long created, String sql)
         {
@@ -91,7 +100,73 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             for (Invalidator i : _invalidators)
                 i.stillValid(now);
         }
+
+
+        /** return false if we did not acquire the loadingLock */
+        boolean load(SQLFragment selectQuery, boolean isSelectInto)
+        {
+            try
+            {
+                try
+                {
+                    if (!_loadingLock.tryLock(5, TimeUnit.MINUTES))
+                        return false;
+                }
+                catch (InterruptedException x)
+                {
+                    throw UnexpectedException.wrap(x);
+                }
+
+                if (LoadingState.LOADED == _loadingState.get())
+                    return true;
+                if (null != _loadException)
+                    throw _loadException;
+
+                assert LoadingState.LOADING != _loadingState.get();
+                _loadingState.set(LoadingState.LOADING);
+
+                DbSchema temp = DbSchema.getTemp();
+                TempTableTracker.track(_tableName, this);
+
+                SQLFragment selectInto;
+                if (isSelectInto)
+                {
+                    String sql = selectQuery.getSQL().replace("${NAME}", _tableName);
+                    List<Object> params = selectQuery.getParams();
+                    selectInto = new SQLFragment(sql,params);
+                }
+                else
+                {
+                    selectInto = new SQLFragment("SELECT * INTO ").appendIdentifier("\"" + temp.getName() + "\"").append(".").appendIdentifier("\"" + _tableName + "\"").append("\nFROM (\n");
+                    selectInto.append(selectQuery);
+                    selectInto.append("\n) _sql_");
+                }
+                new SqlExecutor(_scope).execute(selectInto);
+
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    for (String index : _indexes)
+                    {
+                        new SqlExecutor(_scope).execute(StringUtils.replace(index, "${NAME}", _tableName));
+                    }
+                }
+
+                _loadingState.set(LoadingState.LOADED);
+                return true;
+            }
+            catch (RuntimeException rex)
+            {
+                _loadException = rex;
+                _loadingState.set(LoadingState.ERROR);
+                throw _loadException;
+            }
+            finally
+            {
+                _loadingLock.unlock();
+            }
+        }
     }
+
 
     enum CacheCheck
     {
@@ -185,10 +260,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    private String makeKey(DbScope.Transaction t, Container c)
+    private String makeKey(DbScope.Transaction t)
     {
-        return (null == t ? "-" : t.getId()) + "/" + (null==c ? "-" : c.getRowId());
+        return (null == t ? "-" : t.getId());
     }
+
 
     private final String _prefix;
     private final DbScope _scope;
@@ -198,7 +274,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     private final Supplier<String> _supplier;
     private final List<String> _indexes = new ArrayList<>();
     private final long _maxTimeToCache;
-    private final LinkedHashMap<String, Materialized> _map = new LinkedHashMap<String,Materialized>()
+    private final Map<String, Materialized> _map = Collections.synchronizedMap(new LinkedHashMap<>()
     {
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, Materialized> eldest)
@@ -207,7 +283,9 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             if (_maxTimeToCache == -1) return true;
             return eldest.getValue()._created + _maxTimeToCache < HeartBeat.currentTimeMillis();
         }
-    };
+    });
+    private final ReentrantLock materializeLock = new ReentrantLock();
+
     // DEBUG variables
     private final AtomicInteger _countGetFromSql = new AtomicInteger();
     private final AtomicInteger _countSelectInto = new AtomicInteger();
@@ -254,42 +332,23 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
      */
     public synchronized void uncache(final Container c)
     {
-        final String txCacheKey = makeKey(_scope.getCurrentTransaction(), c);
-        _map.remove(txCacheKey);
-        if (_scope.isTransactionActive())
-            _scope.getCurrentTransaction().addCommitTask(() -> _map.remove(makeKey(null,c)), DbScope.CommitTaskOption.POSTCOMMIT);
+        assert null == c;
+        try
+        {
+            materializeLock.lock();
+            final String txCacheKey = makeKey(_scope.getCurrentTransaction());
+            _map.remove(txCacheKey);
+            if (_scope.isTransactionActive())
+                _scope.getCurrentTransaction().addCommitTask(() -> _map.remove(makeKey(null)), DbScope.CommitTaskOption.POSTCOMMIT);
+        }
+        finally
+        {
+            materializeLock.unlock();
+        }
     }
 
 
     private Set<Integer> _pending = null;
-
-    /** call uncache() first to force reload */
-    public synchronized void cacheInBackground(final Container c)
-    {
-        if (_closed)
-            throw new IllegalStateException();
-        if (null != c)
-            throw new UnsupportedOperationException();
-
-        if (_pending == null)
-            _pending = new HashSet<>();
-        if (!_pending.add(null==c ? 0 : c.getRowId()))
-            return;
-        JobRunner.getDefault().execute(() ->
-        {
-            _runCacheInBackground(c);
-        });
-    }
-
-
-    private synchronized void _runCacheInBackground(Container c)
-    {
-        _pending.remove(null==c ? 0 : c.getRowId());
-        if (_pending.isEmpty())
-            _pending = null;
-        getFromSql(null, c);
-    }
-
 
     // this is a method so you can subclass MaterializedQueryHelper
     protected String getUpToDateKey()
@@ -299,28 +358,29 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
         return null;
     }
 
-    public SQLFragment getFromSql(String tableAlias, Container c)
+    public SQLFragment getFromSql(String tableAlias)
     {
         if (null == _selectQuery)
             throw new IllegalStateException("Must specify source query in constructor or in getFromSql()");
-        return getFromSql(_selectQuery, _isSelectIntoSql, tableAlias, c);
-    }
-
-
-    public boolean isCached(Container c)
-    {
-        if (null == _selectQuery)
-            throw new IllegalStateException("Must specify source query in constructor or in getFromSql()");
-        return null != getMaterialized(makeKey(_scope.getCurrentTransaction(), c));
+        return getFromSql(_selectQuery, _isSelectIntoSql, tableAlias);
     }
 
 
     public void upsert(SQLFragment sqlf)
     {
-        String txCacheKey = makeKey(_scope.getCurrentTransaction(), null);
-        Materialized m = getMaterialized(txCacheKey);
-        if (null == m)
+        // We want to avoid materializing the table if it has never been used.
+        if (null == _map.get(makeKey(null)))
+        {
+            var tx = _scope.getCurrentTransaction();
+            if (null == tx || null == _map.get(makeKey(tx)))
+                return;
+        }
+        // We also don't want to execute the update if it will be materialized by the next user (e.g. after invalidtion check)
+        Materialized m = getMaterialized(true);
+        if (Materialized.LoadingState.BEFORELOAD == m._loadingState.get())
             return;
+
+        // execute incremental update
         SQLFragment copy = new SQLFragment(sqlf);
         copy.setSqlUnsafe(sqlf.getSQL().replace("${NAME}", m._tableName));
         new SqlExecutor(_scope).execute(copy);
@@ -328,120 +388,135 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
 
     /* used by FLow directly for some reason */
-    public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias, Container c)
+    public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, String tableAlias)
     {
-        return getFromSql(selectQuery, false, tableAlias, c);
+        return getFromSql(selectQuery, false, tableAlias);
     }
 
-    /* NOTE: we do not want to hold synchronized(this) while doing any SQL operations */
-    public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias, Container c)
+
+    public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
-        final String txCacheKey = makeKey(_scope.getCurrentTransaction(), c);
-        final long now = HeartBeat.currentTimeMillis();
-
-        Materialized materialized = getMaterialized(txCacheKey);
-
-        if (null == materialized)
-        {
-            _countSelectInto.incrementAndGet();
-            DbSchema temp = DbSchema.getTemp();
-            String name = _prefix + "_" + GUID.makeHash();
-            materialized = new Materialized(name, txCacheKey, now, "\"" + temp.getName() + "\".\"" + name + "\"");
-            materialized.addMaxTimeToCache(_maxTimeToCache);
-            materialized.addUpToDateQuery(_uptodateQuery);
-            materialized.addInvalidator(_supplier);
-            // CONSIDER: copy over old validators (if previous materialized) so we don't need to reset
-            materialized.reset();
-
-            TempTableTracker.track(name, materialized);
-
-            SQLFragment selectInto;
-            if (isSelectInto)
-            {
-                String sql = selectQuery.getSQL().replace("${NAME}", name);
-                List<Object> params = selectQuery.getParams();
-                selectInto = new SQLFragment(sql,params);
-            }
-            else
-            {
-                selectInto = new SQLFragment("SELECT * INTO \"" + temp.getName() + "\".\"" + name + "\"\nFROM (\n");
-                selectInto.append(selectQuery);
-                selectInto.append("\n) _sql_");
-            }
-            new SqlExecutor(_scope).execute(selectInto);
-
-            try (var ignored = SpringActionController.ignoreSqlUpdates())
-            {
-                for (String index : _indexes)
-                {
-                    new SqlExecutor(_scope).execute(StringUtils.replace(index, "${NAME}", name));
-                }
-            }
-
-            synchronized (this)
-            {
-                _map.put(materialized._cacheKey, materialized);
-            }
-        }
-
-        if (_scope.isTransactionActive())
-        {
-            _scope.getCurrentTransaction().addCommitTask(() -> _map.remove(txCacheKey), DbScope.CommitTaskOption.POSTCOMMIT);
-        }
+        Materialized materialized = getMaterializedAndLoad();
 
         _lastUsed.set(HeartBeat.currentTimeMillis());
         SQLFragment sqlf = new SQLFragment(materialized._fromSql);
         if (!StringUtils.isBlank(tableAlias))
-            sqlf.append(" " ).append(tableAlias);
+            sqlf.append(" ").append(tableAlias);
         sqlf.addTempToken(materialized);
+        _countGetFromSql.incrementAndGet();
         return sqlf;
     }
 
-    @Nullable
-    private Materialized getMaterialized(String txCacheKey)
+
+
+    /**
+     * A Materialized represents a particular instance of materialized view (stored in a temp table).
+     * We want to avoid two threads materializing the same view.  This is why we synchronize first creating the
+     * Materialized and then executing the SELECT INTO.  This is conceptually simple.  The tricky part is error
+     * handling.  When something goes wrong fall-back on using non-shared Materialized objects (and therefore non-shared temp
+     * tables) and toss out the cached Materialized if appropriate.
+     */
+    @NotNull
+    private Materialized getMaterialized(boolean forWrite)
     {
+        if (_closed)
+            throw new IllegalStateException();
+
         Materialized materialized = null;
+        String txCacheKey = makeKey(_scope.getCurrentTransaction());
+        boolean hasLock = false;
 
-        synchronized (this)
+        try
         {
-            if (_closed)
-                throw new IllegalStateException();
-
-            _countGetFromSql.incrementAndGet();
-
-            if (_scope.isTransactionActive())
-                materialized = _map.get(txCacheKey);
-
-            if (null == materialized)
-                materialized = _map.get(makeKey(null, null));
-        }
-
-        if (null != materialized)
-        {
-            boolean replace = false;
-            for (Invalidator i : materialized._invalidators)
+            try
             {
-                CacheCheck cc = i.checkValid(materialized._created);
-                if (cc != CacheCheck.OK)
-                    replace = true;
+                hasLock = materializeLock.tryLock(1, TimeUnit.MINUTES);
             }
-            if (replace)
+            catch (InterruptedException x)
             {
-                synchronized (this)
+                throw UnexpectedException.wrap(x);
+            }
+
+            // If we fail to get a lock, it could be due to contention on other threads.  We will
+            // skip using the cache and create a new one-time-use Materialized object.
+
+            if (hasLock)
+            {
+                if (!_scope.isTransactionActive())
                 {
-                    _map.remove(materialized._cacheKey);
-                    materialized = null;
+                    materialized = _map.get(makeKey(null));
+                    if (null != materialized && Materialized.LoadingState.ERROR == materialized._loadingState.get())
+                        materialized = null;
+                }
+                else
+                {
+                    materialized = _map.get(txCacheKey);
+                    if (null != materialized && Materialized.LoadingState.ERROR == materialized._loadingState.get())
+                        materialized = null;
+                    if (null == materialized && !forWrite)
+                        materialized = _map.get(makeKey(null));
+                    if (null != materialized && Materialized.LoadingState.ERROR == materialized._loadingState.get())
+                        materialized = null;
+                }
+
+                if (null != materialized)
+                {
+                    boolean replace = false;
+                    for (Invalidator i : materialized._invalidators)
+                    {
+                        CacheCheck cc = i.checkValid(materialized._created);
+                        if (cc != CacheCheck.OK)
+                            replace = true;
+                    }
+                    if (replace)
+                        materialized = null;
                 }
             }
+
+            if (null == materialized)
+            {
+                materialized = createMaterialized(txCacheKey);
+                if (hasLock)
+                    _map.put(materialized._cacheKey, materialized);
+            }
+
+            return materialized;
         }
-        return materialized;
+        finally
+        {
+            if (hasLock)
+                materializeLock.unlock();
+        }
     }
 
 
-    /* Do incremental update to existing cached data.  There is no provision for deleting rows. */
-    public void upsert()
+    private Materialized getMaterializedAndLoad()
     {
+        Materialized materialized = getMaterialized(false);
 
+        if (materialized.load(_selectQuery, _isSelectIntoSql))
+            return materialized;
+
+        // If there was a problem (but no thrown exception), try one more time from scratch;
+        materialized = createMaterialized(materialized._cacheKey);
+        if (materialized.load(_selectQuery, _isSelectIntoSql))
+            return materialized;
+
+        // load() shouldn't get here.  Materialized is not shared, so there should be no way to get a timeout.
+        throw new IllegalStateException("Failed to create materialized table");
+    }
+
+
+    Materialized createMaterialized(String txCacheKey)
+    {
+        DbSchema temp = DbSchema.getTemp();
+        String name = _prefix + "_" + GUID.makeHash();
+        Materialized materialized = new Materialized(name, txCacheKey, HeartBeat.currentTimeMillis(), "\"" + temp.getName() + "\".\"" + name + "\"");
+        materialized.addMaxTimeToCache(_maxTimeToCache);
+        materialized.addUpToDateQuery(_uptodateQuery);
+        materialized.addInvalidator(_supplier);
+        materialized.reset();
+        return materialized;
     }
 
 
@@ -556,11 +631,11 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
             SQLFragment uptodate = new SQLFragment("SELECT COALESCE(CAST(SUM(x) AS VARCHAR(40)),'-') FROM temp.MQH_TESTCASE");
             try (MaterializedQueryHelper  mqh = MaterializedQueryHelper.create("test", s,select,uptodate,null,CacheManager.UNLIMITED))
             {
-                SQLFragment emptyA = mqh.getFromSql("_", null);
-                SQLFragment emptyB = mqh.getFromSql("_", null);
+                SQLFragment emptyA = mqh.getFromSql("_");
+                SQLFragment emptyB = mqh.getFromSql("_");
                 assertEquals(emptyA,emptyB);
                 new SqlExecutor(temp).execute("INSERT INTO temp.MQH_TESTCASE (x) VALUES (1)");
-                SQLFragment one = mqh.getFromSql("_", null);
+                SQLFragment one = mqh.getFromSql("_");
                 assertNotEquals(emptyA, one);
             }
         }
@@ -601,7 +676,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
                     {
                         while (System.currentTimeMillis() < stop)
                         {
-                            new SqlSelector(temp, new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_", null))).getMapCollection();
+                            new SqlSelector(temp, new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_"))).getMapCollection();
                             queries.incrementAndGet();
                         }
                     }
