@@ -180,7 +180,9 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
         @Override
         public Set<Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(new Index(false, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID));
+            Set<Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new Index(false, COLUMN_NAME_ATTACHMENT_PARENT_ENTITY_ID));
+            return indexes;
         }
 
         @Override
