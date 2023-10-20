@@ -35,6 +35,8 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -204,6 +206,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
         if (providerConfig.isSetSaveHandler())
             setSaveHandlerClass(providerConfig.getSaveHandler());
+    }
+
+    @Override
+    protected String getAssayProtocolLsid(Container container, String assayName, XarContext context)
+    {
+        return new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), assayName).toString();
     }
 
     private AssayDataType createAssayDataTypeFromXML(org.labkey.study.assay.xml.AssayDataType inputConfig, String defaultRole, String defaultNamespace)

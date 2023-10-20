@@ -94,6 +94,12 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     }
 
     @Override
+    public void setSchema(String schemaName)
+    {
+        throw new UnsupportedOperationException("Can't set schemaName on a module-based custom view!");
+    }
+
+    @Override
     public void setCanInherit(boolean f)
     {
         throw new UnsupportedOperationException("Module-based custom views cannot inherit");

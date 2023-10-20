@@ -36,7 +36,6 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.r.ModuleRReportDescriptor;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -47,7 +46,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
@@ -583,9 +581,9 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return String.valueOf(value);
     }
 
-    // Let subclasses decide how they need to handle query name changes, return true if changes have been made to the
+    // Let subclasses decide how they need to handle query/schema name changes, return true if changes have been made to the
     // descriptor. It is up to the caller to save the report changes
-    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
     {
         return false;
     }

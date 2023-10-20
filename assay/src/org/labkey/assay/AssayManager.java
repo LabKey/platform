@@ -52,6 +52,7 @@ import org.labkey.api.exp.LsidManager.ExpRunLsidHandler;
 import org.labkey.api.exp.LsidManager.LsidHandler;
 import org.labkey.api.exp.LsidManager.LsidHandlerFinder;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -166,14 +167,14 @@ public class AssayManager implements AssayService
         return (AssayManager) AssayService.get();
     }
 
-    public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol) throws ExperimentException
+    public ExpProtocol createAssayDefinition(User user, Container container, GWTProtocol newProtocol, XarContext context) throws ExperimentException
     {
         ExpProtocol.Status status = ExpProtocol.Status.Active;
         if (newProtocol.getStatus() != null)
             status = ExpProtocol.Status.valueOf(newProtocol.getStatus());
 
         return getProvider(newProtocol.getProviderName()).createAssayDefinition(user, container, newProtocol.getName(),
-                newProtocol.getDescription(), status);
+                newProtocol.getDescription(), status, context);
     }
 
     @Override
