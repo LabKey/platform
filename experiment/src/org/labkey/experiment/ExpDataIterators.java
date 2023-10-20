@@ -189,7 +189,6 @@ public class ExpDataIterators
             Set<String> skipColumns = new CaseInsensitiveHashSet();
             Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(pre);
 
-
             for (CounterDefinition counterDefinition : _expTable.getCounterDefinitions())
             {
                 Set<String> attachedColumnNames = counterDefinition.getAttachedColumnNames();
@@ -358,7 +357,6 @@ public class ExpDataIterators
                         availableSampleStatuses.add(state.getRowId());
                 }
             }
-
         }
 
         @Override
@@ -372,7 +370,6 @@ public class ExpDataIterators
                         return get(_aliquotedFromCol); // recompute parent when new aliquot is created
                     return null;
                 }
-
 
                 if (_isUpdate)
                 {
@@ -392,9 +389,9 @@ public class ExpDataIterators
                     String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
                     String aliquotParent = (String) existingMap.get(AliquotedFromLSID.name());
                     String recalcLsid = rootAliquot != null ? rootAliquot : aliquotParent;
-                    Double existingAmount = (Double) existingMap.get("StoredAmount");
-                    String existingUnits = (String) existingMap.get("Units");
-                    Integer existingState = (Integer) existingMap.get("SampleState");
+                    Double existingAmount = (Double) existingMap.get(StoredAmount.name());
+                    String existingUnits = (String) existingMap.get(Units.name());
+                    Integer existingState = (Integer) existingMap.get(SampleState.name());
 
                     if (!availableSampleStatuses.isEmpty())
                     {
