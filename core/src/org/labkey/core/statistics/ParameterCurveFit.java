@@ -214,7 +214,7 @@ public class ParameterCurveFit extends DefaultCurveFit<ParameterCurveFit.Sigmoid
             {
                 double absoluteCutoff = min + (0.5 * (max - min));
                 double relativeEC50 = getInterpolatedCutoffXValue(absoluteCutoff);
-                if (relativeEC50 != Double.POSITIVE_INFINITY && relativeEC50 != Double.NEGATIVE_INFINITY)
+                if (!Double.isInfinite(relativeEC50) && !Double.isNaN(relativeEC50))
                 {
                     parameters.max = max;
                     parameters.inflection = relativeEC50;

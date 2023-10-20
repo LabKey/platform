@@ -238,7 +238,7 @@ public class JsonUtil
         json.put(key, translateNumber(value));
     }
 
-    private static Object translateNumber(Number value)
+    public static Object translateNumber(Number value)
     {
         if (value instanceof Double d)
         {
