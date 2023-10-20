@@ -3,7 +3,7 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React, { FC, memo, useCallback, useState, useMemo } from 'react';
-import { Col, FormControl, Row, Button } from "react-bootstrap";
+import { Col, FormControl, Row, Button } from 'react-bootstrap';
 import {
     Alert,
     DetailPanel,
@@ -17,11 +17,15 @@ import {
 } from '@labkey/components';
 
 interface Props {
-    editable: boolean
+    editable: boolean;
 }
 
 const DetailPageBody: FC<Props & InjectedQueryModels> = memo(props => {
-    const { actions, queryModels: { model }, editable } = props;
+    const {
+        actions,
+        queryModels: { model },
+        editable,
+    } = props;
     const { user } = useServerContext();
 
     const onUpdate = useCallback(() => {
@@ -35,7 +39,7 @@ const DetailPageBody: FC<Props & InjectedQueryModels> = memo(props => {
         return <Alert>{model.queryInfoError || model.rowsError}</Alert>;
     }
     if (model.isLoading) {
-        return <LoadingSpinner/>;
+        return <LoadingSpinner />;
     }
     if (!model.queryInfo.isAppEditable()) {
         return <Alert>This schema/query is not set as editable on this page.</Alert>;
@@ -44,9 +48,11 @@ const DetailPageBody: FC<Props & InjectedQueryModels> = memo(props => {
     return (
         <>
             {!editable && <DetailPanel asPanel actions={actions} model={model} />}
-            {editable && <EditableDetailPanel onUpdate={onUpdate} canUpdate={user.canUpdate} actions={actions} model={model} />}
+            {editable && (
+                <EditableDetailPanel onUpdate={onUpdate} canUpdate={user.canUpdate} actions={actions} model={model} />
+            )}
         </>
-    )
+    );
 });
 
 const DetailPageWithModels = withQueryModels<Props>(DetailPageBody);
@@ -56,19 +62,19 @@ export const DetailPage: FC<Props> = memo(props => {
     const [queryConfigs, setQueryConfigs] = useState<QueryConfigMap>({});
 
     const [schemaName, setSchemaName] = useState<string>();
-    const onSchemaNameChange = useCallback((evt) => {
+    const onSchemaNameChange = useCallback(evt => {
         const value = evt.target.value;
         setSchemaName(value);
     }, []);
 
     const [queryName, setQueryName] = useState<string>();
-    const onQueryNameChange = useCallback((evt) => {
+    const onQueryNameChange = useCallback(evt => {
         const value = evt.target.value;
         setQueryName(value);
     }, []);
 
     const [keyValue, setKeyValue] = useState<string>();
-    const onKeyValueChange = useCallback((evt) => {
+    const onKeyValueChange = useCallback(evt => {
         const value = evt.target.value;
         setKeyValue(value);
     }, []);
@@ -76,14 +82,13 @@ export const DetailPage: FC<Props> = memo(props => {
     const onApply = useCallback(() => {
         if (!schemaName || !queryName || !keyValue) {
             setError('You must enter a schema/query/key to view the detail form.');
-        }
-        else {
+        } else {
             setError(undefined);
             setQueryConfigs({
                 model: {
-                    keyValue: keyValue,
+                    keyValue,
                     schemaQuery: new SchemaQuery(schemaName, queryName),
-                }
+                },
             });
         }
     }, [schemaName, queryName, keyValue]);
@@ -100,12 +105,20 @@ export const DetailPage: FC<Props> = memo(props => {
     return (
         <>
             <Row>
-                <Col xs={4}>Schema: <FormControl name={'schemaNameField'} type="text" onChange={onSchemaNameChange}/></Col>
-                <Col xs={4}>Query: <FormControl name={'queryNameField'} type="text" onChange={onQueryNameChange}/></Col>
-                <Col xs={3}>Row Key: <FormControl name={'keyValueField'} type="text" onChange={onKeyValueChange}/></Col>
-                <Col xs={1}><Button onClick={onApply}>Apply</Button></Col>
+                <Col xs={4}>
+                    Schema: <FormControl name="schemaNameField" type="text" onChange={onSchemaNameChange} />
+                </Col>
+                <Col xs={4}>
+                    Query: <FormControl name="queryNameField" type="text" onChange={onQueryNameChange} />
+                </Col>
+                <Col xs={3}>
+                    Row Key: <FormControl name="keyValueField" type="text" onChange={onKeyValueChange} />
+                </Col>
+                <Col xs={1}>
+                    <Button onClick={onApply}>Apply</Button>
+                </Col>
             </Row>
-            <br/>
+            <br />
             {error && <Alert>{error}</Alert>}
             {!error && <DetailPageWithModels autoLoad key={key} queryConfigs={queryConfigs} {...props} />}
         </>
