@@ -738,7 +738,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
         // This closes the COALESCE that's injected a couple of lines down, and starts the SQL Server-specific
         // syntax that concludes later with FOR XML PATH
-        ret.insert(fromIndex, "AS NVARCHAR), '') AS [text()] ");
+        ret.insert(fromIndex, "AS NVARCHAR(MAX)), '') AS [text()] ");
         int selectIndex = sql.indexOf("SELECT");
         ret.insert(selectIndex + "SELECT".length(), "'" + delimiter + "' + COALESCE(CAST(");
         ret.insert(0, "SUBSTRING ((");
