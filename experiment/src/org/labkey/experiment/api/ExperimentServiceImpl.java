@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
@@ -1039,7 +1040,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
-        return getExpProtocol(generateLSID(container, ExpProtocol.class, name));
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        if (container != null)
+        {
+            filter.addCondition(FieldKey.fromParts("Container"), container);
+        }
+        List<Protocol> protocols = new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class);
+        
+        if (protocols.isEmpty())
+            return null;
+        
+        // should only find one protocol per container+name
+        return toExpProtocol(protocols.get(0));
     }
 
     @Override
@@ -1390,6 +1402,40 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(obj.getObjectURI());
     }
 
+    @Override
+    public ExpProtocol getEffectiveProtocol(Container definitionContainer, User user, String schemaName, Date effectiveDate, ContainerFilter cf)
+    {
+        Integer legacyObjectId = getObjectIdWithLegacyName(schemaName, ExperimentServiceImpl.getNamespacePrefix(ExpProtocol.class), effectiveDate, definitionContainer, cf);
+        if (legacyObjectId != null)
+            return getExpProtocol(legacyObjectId);
+
+        ExpProtocol protocol = getExpProtocol(definitionContainer, schemaName, cf);
+
+        if (protocol != null && protocol.getCreated().compareTo(effectiveDate) <= 0)
+            return protocol;
+
+        return null;
+    }
+
+    private ExpProtocol getExpProtocol(Container container, String name, @Nullable ContainerFilter cf)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
+        {
+            Collection<GUID> validContainerIds =  cfp.generateIds(container, ReadPermission.class, null);
+            filter.addCondition(FieldKey.fromParts("Container"), validContainerIds, CompareType.IN);
+        }
+        else
+            filter.addCondition(FieldKey.fromParts("Container"), container.getId());
+
+        List<Protocol> protocols = new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class);
+
+        if (protocols.isEmpty())
+            return null;
+
+        return toExpProtocol(protocols.get(0));
+
+    }
 
     @Override
     public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
@@ -6226,6 +6272,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
+                // if protocol exist, throw error
+                ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
+                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
+                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
+
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
             else
@@ -7673,10 +7724,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             LOG.debug("Saving data class", dataClass.getName());
             dataClass.save(u);
-            if (hasNameChange)
-                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
+            String auditComment = null;
+            if (hasNameChange)
+            {
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);
+                auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
+            }
+
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
@@ -8533,10 +8589,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
+        String objecIdSql = dataType.equals("Protocol") ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
+
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
                 "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
-                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ");
+                "AND ObjectId IN (SELECT " + objecIdSql + " WHERE Container ");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
@@ -9169,6 +9227,47 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return idLsids;
+    }
+
+    private void _renameAssayProtocols(String newAssayName, String oldAssayName, ExpProtocol protocol, User user, String type)
+    {
+        ExpProtocolImpl protocolImpl= getExpProtocol(protocol.getLSID() + "." + type);
+
+        if (protocolImpl != null)
+        {
+            String newProtName = newAssayName + " - " + type;
+            if (!newProtName.equals(protocolImpl.getName()))
+            {
+                Protocol updatedProtocol = protocolImpl.getDataObject();
+                updatedProtocol.setName(newProtName);
+
+                Map<String, ProtocolParameter> updatedParams = new HashMap<>(protocolImpl.getProtocolParameters());
+                ProtocolParameter nameParam = updatedParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                if (nameParam != null)
+                {
+                    String paramVal = nameParam.getStringValue();
+                    nameParam.setStringValue(paramVal.replace(oldAssayName, newAssayName));
+                    updatedProtocol.storeProtocolParameters(updatedParams.values());
+                }
+                saveProtocol(user, updatedProtocol);
+            }
+        }
+    }
+
+    @Override
+    public void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container)
+    {
+        if (!provider.canRename())
+            return;
+
+        addObjectLegacyName(protocol.getRowId(), ExperimentServiceImpl.getNamespacePrefix(ExpProtocol.class), oldAssayName, user);
+
+        _renameAssayProtocols(newAssayName, oldAssayName, protocol, user, "Core");
+        _renameAssayProtocols(newAssayName, oldAssayName, protocol, user, "Output");
+
+        SchemaKey newSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), newAssayName);
+        SchemaKey oldSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), oldAssayName);
+        QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, user, container);
     }
 
     public static class TestCase extends Assert

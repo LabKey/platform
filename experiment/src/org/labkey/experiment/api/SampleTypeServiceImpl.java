@@ -1030,10 +1030,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user, true);
+            String auditComment = null;
             if (hasNameChange)
+            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
+                auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
+            }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
             if (hasNameChange)
                 ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 

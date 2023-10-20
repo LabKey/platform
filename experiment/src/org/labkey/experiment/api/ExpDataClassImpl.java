@@ -530,7 +530,12 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setDataParentImportAliasMap(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+        setImportAliasMapJson(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+    }
+
+    public void setImportAliasMapJson(String aliasJson)
+    {
+        _object.setDataParentImportAliasMap(aliasJson);
     }
 
 }

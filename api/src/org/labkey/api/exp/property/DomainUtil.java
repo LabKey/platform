@@ -633,12 +633,12 @@ public class DomainUtil
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
-        return updateDomainDescriptor(orig, update, container, user, false);
+        return updateDomainDescriptor(orig, update, container, user, false, null);
     }
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment)
     {
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
@@ -665,8 +665,11 @@ public class DomainUtil
             return validationException;
         }
 
-        if (updateDomainName)
+        if (updateDomainName && !d.getName().equals(update.getName()))
+        {
+            DefaultValueService.get().clearDefaultValues(d.getContainer(), d); // default values exp.objects will be re-created
             d.setName(update.getName());
+        }
 
         d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
 
@@ -791,7 +794,7 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                d.save(user);
+                d.save(user, auditComment);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try

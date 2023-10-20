@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
@@ -60,6 +61,10 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
         if (property.equals(QueryProperty.Name))
         {
             _updateCustomViewQueryNameChange(user, container, schema, changes);
+        }
+        if (property.equals(QueryProperty.SchemaName))
+        {
+            _updateCustomViewSchemaNameChange(user, container, changes);
         }
     }
 
@@ -149,7 +154,7 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
     private void _updateCustomViewQueryNameChange(User user, Container container, SchemaKey schemaKey, Collection<QueryPropertyChange> changes)
     {
         // most property updates only care about the query name old value string and new value string
-        Map<String, String> queryNameChangeMap = new HashMap<>();
+        Map<String, String> queryNameChangeMap = new CaseInsensitiveHashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
@@ -186,5 +191,41 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             }
         }
     }
+
+    private void _updateCustomViewSchemaNameChange(User user, Container container, Collection<QueryPropertyChange> changes)
+    {
+        Map<String, String> schemaNameChangeMap = new CaseInsensitiveHashMap<>();
+        for (QueryPropertyChange qpc : changes)
+        {
+            if (qpc.getOldValue().equals(qpc.getNewValue()))
+                continue;
+            schemaNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+        }
+
+        if (schemaNameChangeMap.isEmpty())
+            return;
+
+        for (String oldSchema : schemaNameChangeMap.keySet())
+        {
+            String newSchema = schemaNameChangeMap.get(oldSchema);
+
+            List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, oldSchema, null, false, false);
+
+            for (CustomView customView : databaseCustomViews)
+            {
+                customView.setSchema(newSchema);
+                try
+                {
+                    HttpServletRequest request = new MockHttpServletRequest();
+                    customView.save(customView.getModifiedBy(), request);
+                }
+                catch (Exception e)
+                {
+                    LogManager.getLogger(CustomViewQueryChangeListener.class).error("An error occurred upgrading custom view properties: ", e);
+                }
+            }
+        }
+    }
+
 
 }

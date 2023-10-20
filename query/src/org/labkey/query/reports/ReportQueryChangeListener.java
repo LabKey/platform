@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
 * User: kevink
@@ -78,6 +79,10 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         if (property.equals(QueryProperty.Name))
         {
             _updateReportQueryNameChange(user, container, schema, changes);
+        }
+        if (property.equals(QueryProperty.SchemaName))
+        {
+            _updateReportSchemaNameChange(user, container, changes);
         }
     }
 
@@ -125,7 +130,10 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
         Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
-            queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+            String oldVal = (String)qpc.getOldValue();
+            String newVal = (String)qpc.getNewValue();
+            if (oldVal != null && !oldVal.equals(newVal))
+                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
         // passing in null for the user should get all reports (private and public, independent of the owner)
@@ -161,7 +169,79 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
                 }
 
                 // report specific migration for JSON config properties that contain queryName
-                hasUpdates = descriptor.updateQueryNameReferences(changes) || hasUpdates;
+                hasUpdates = descriptor.updateSchemaQueryNameReferences(changes, user, container, false) || hasUpdates;
+
+                if (hasUpdates)
+                {
+                    User reportOwner = UserManager.getUser(descriptor.getModifiedBy());
+                    if (reportOwner != null)
+                    {
+                        ContainerUser rptContext = new DefaultContainerUser(container, reportOwner);
+                        ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report, true);
+                    }
+                    else
+                    {
+                        logger.warn("The owner of the '" + descriptor.getReportName() + "' report does not exist: UserId " + descriptor.getModifiedBy());
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // This is meant to be a "best effort" method.  However, we shouldn't swallow exceptions while a transaction is active.
+                if (CoreSchema.getInstance().getScope().isTransactionActive())
+                    throw e;
+                logger.error("An error occurred upgrading report properties: ", e);
+            }
+        }
+    }
+
+    private void _updateReportSchemaNameChange(User user, Container container, Collection<QueryPropertyChange> changes)
+    {
+        Logger logger = LogManager.getLogger(ReportQueryChangeListener.class);
+
+        Map<String, String> schemaNameChangeMap = new HashMap<>();
+        for (QueryPropertyChange qpc : changes)
+        {
+            if (qpc.getOldValue().equals(qpc.getNewValue()))
+                continue;
+            schemaNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+        }
+
+        if (schemaNameChangeMap.isEmpty())
+            return;
+
+        Set<String> oldSchemasToChange = schemaNameChangeMap.keySet();
+        // passing in null for the user should get all reports (private and public, independent of the owner)
+        for (Report report : ReportService.get().getReports(null, container))
+        {
+            try
+            {
+                boolean hasUpdates = false;
+                ReportDescriptor descriptor = report.getDescriptor();
+
+                // update reportKey (stored in core.Report)
+                String[] keyParts = ReportUtil.splitReportKey(descriptor.getReportKey());
+                if (keyParts.length == 0)
+                    continue;
+                String oldSchemaKey = keyParts[0];
+                if (oldSchemasToChange.contains(oldSchemaKey))
+                {
+                    String newSchemaKey = schemaNameChangeMap.get(oldSchemaKey);
+                    String reportKeyQuery = keyParts[keyParts.length-1];
+                    descriptor.setReportKey(ReportUtil.getReportKey(newSchemaKey, reportKeyQuery));
+                    hasUpdates = true;
+                }
+
+                // update report queryName property
+                String oldSchemaName = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                if (oldSchemaName != null && oldSchemasToChange.contains(oldSchemaName))
+                {
+                    descriptor.setProperty(ReportDescriptor.Prop.schemaName, schemaNameChangeMap.get(oldSchemaKey));
+                    hasUpdates = true;
+                }
+
+                // report specific migration for JSON config properties that contain schemaName
+                hasUpdates = descriptor.updateSchemaQueryNameReferences(changes, user, container, true) || hasUpdates;
 
                 if (hasUpdates)
                 {
