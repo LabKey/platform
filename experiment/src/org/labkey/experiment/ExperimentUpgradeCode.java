@@ -449,12 +449,13 @@ public class ExperimentUpgradeCode implements UpgradeCode
             notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid SET NOT NULL").appendEOS().append("\n");
         }
 
+        SQLFragment createIndex = new SQLFragment("CREATE INDEX IF NOT EXISTS ").append(tableName).append("_rowid ")
+                .append("ON ").append(table).append(" (rowid)").appendEOS().append("\n");
+
         new SqlExecutor(scope).execute(addColumn);
         int count = new SqlExecutor(scope).execute(update);
         new SqlExecutor(scope).execute(notNull);
-
-        // TODO: Mark "exp.material.RootMaterialRowId" as required as it appears in the schema browser
-        // TODO: Do we need to manually create SampleTypeDomainKind.INDEXES here?
+        new SqlExecutor(scope).execute(createIndex);
 
         return count;
     }
@@ -462,12 +463,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
     /**
      * Called from exp-23.010-23.011.sql
      */
-    public static void addRowIdToMaterializedSampleTypes(ModuleContext context) throws Exception
+    public static void addRowIdToMaterializedSampleTypes(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
-
-        boolean alwaysFail = true;
 
         try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
         {
@@ -476,9 +475,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             new TableSelector(sampleTypeTable, null, null).stream(MaterialSource.class)
                     .map(ExpSampleTypeImpl::new)
                     .forEach(ExperimentUpgradeCode::addRowIdColumn);
-
-            if (alwaysFail)
-                throw new Exception("Successfully completed addRowIdToMaterializedSampleTypes. Not.");
 
             tx.commit();
         }
