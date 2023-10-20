@@ -41,18 +41,23 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -273,6 +278,70 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         return Collections.emptyMap();
     }
+
+    private static List<Integer> getRootLsidsWithAvailableAliquots(String sampleTypeLsid, Container container)
+    {
+        List<Integer> availableSampleStates = new ArrayList<>();
+
+        if (SampleStatusService.get().supportsSampleStatus())
+        {
+            for (DataState state : SampleStatusService.get().getAllProjectStates(container))
+            {
+                if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                    availableSampleStates.add(state.getRowId());
+            }
+        }
+
+        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+
+        SQLFragment inner = new SQLFragment("SELECT DISTINCT(rootmateriallsid) FROM ").append(tableInfo, "ali")
+                .append(" WHERE ali.cpastype = ").appendValue(sampleTypeLsid)
+                .append(" AND ali.rootmateriallsid <> ali.lsid ")
+                .append(" AND ali.container = ").appendValue(container)
+                .append(" AND ali.SampleState ").appendInClause(availableSampleStates, tableInfo.getSqlDialect());
+
+        SQLFragment sql = new SQLFragment("SELECT rowid FROM exp.material root WHERE root.lsid IN (")
+                .append(inner)
+                .append(")");
+
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private static List<Integer> getRootSampleIdsWithAliquotVolume(String sampleTypeLsid, Container container)
+    {
+        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+
+        SQLFragment sql = new SQLFragment("SELECT root.rowId FROM ").append(tableInfo, "root")
+                .append(" WHERE root.cpastype = ").appendValue(sampleTypeLsid)
+                .append(" AND aliquotedfromlsid IS NULL ")
+                .append(" AND aliquotVolume > 0 ")
+                .append(" AND root.container = ").appendValue(container);
+
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private static int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws SQLException
+    {
+        List<Integer> rootSamplesWithAvailableAliquot = getRootLsidsWithAvailableAliquots(sampleType.getLSID(), container);
+        if (rootSamplesWithAvailableAliquot.isEmpty())
+            return 0;
+
+        List<Integer> rootSamplesWithAliquotVolume = getRootSampleIdsWithAliquotVolume(sampleType.getLSID(), container);
+
+        Set<Integer> s1 = new HashSet<>(rootSamplesWithAvailableAliquot);
+        Set<Integer> s2 = new HashSet<>(rootSamplesWithAliquotVolume);
+        s1.retainAll(s2);
+        List<Integer> rootSamplesWithAvailableAliquotVolume = new ArrayList<>(s1);
+
+        return SampleTypeServiceImpl.get().recomputeSamplesRollup(
+            Collections.emptyList(),
+            rootSamplesWithAvailableAliquot,
+            rootSamplesWithAvailableAliquotVolume,
+            sampleType.getMetricUnit(),
+            container
+        );
+    }
+
     /**
      * Called from exp-23.007-23.008.sql
      */
@@ -296,22 +365,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 List<String> sampleTypes = containerSampleTypes.get(containerId);
                 LOG.info("** starting recalculating exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
 
-                try
+                for (String sampleTypeLsid : sampleTypes)
                 {
-                    for (String sampleTypeLsid : sampleTypes)
-                    {
-                        ExpSampleType sampleType = sampleTypeService.getSampleType(sampleTypeLsid);
-                        if (sampleType == null)
-                            continue;
+                    ExpSampleType sampleType = sampleTypeService.getSampleType(sampleTypeLsid);
+                    if (sampleType == null)
+                        continue;
 
-                        int syncedCount = sampleTypeService.recomputeSampleTypeAvailableAliquotRollup(sampleType, container);
-                        if (syncedCount > 0)
-                            LOG.info("*** recalculated aliquotAvailableCount/Volume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
-                    }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
+                    int syncedCount = recomputeSampleTypeAvailableAliquotRollup(sampleType, container);
+                    if (syncedCount > 0)
+                        LOG.info("*** recalculated aliquotAvailableCount/Volume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
                 }
 
                 LOG.info("** finished cleaning up exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
