@@ -124,6 +124,8 @@ public class XarExporter
 
     public static final String MATERIAL_PREFIX_PLACEHOLDER_SUFFIX = "sfx";
 
+    public static final String GPAT_ASSAY_PROTOCOL_LSID_SUB = ":GeneralAssayProtocol.Folder";
+
     /**
      * As we export objects to XML, we may transform the LSID so we need to remember the
      * original LSIDs
@@ -603,7 +605,7 @@ public class XarExporter
         {
             xMaterial.setAlias(String.join(",", aliases));
         }
-        PropertyCollectionType materialProperties = getProperties(objectProperties, material.getContainer());
+        PropertyCollectionType materialProperties = getProperties(objectProperties, material.getContainer(), false);
         if (materialProperties != null)
         {
             xMaterial.setProperties(materialProperties);
@@ -979,7 +981,8 @@ public class XarExporter
         }
         ProtocolBaseType xProtocol = protocolDefs.addNewProtocol();
 
-        xProtocol.setAbout(_relativizedLSIDs.relativize(protocol.getLSID()));
+        boolean useXarJobId = protocol.getLSID().indexOf(GPAT_ASSAY_PROTOCOL_LSID_SUB) > 0;
+        xProtocol.setAbout(_relativizedLSIDs.relativize(protocol.getLSID(), useXarJobId));
         xProtocol.setApplicationType(protocol.getApplicationType().toString());
         ContactType contactType = getContactType(protocol.getLSID(), protocol.getContainer());
         if (contactType != null)
@@ -991,7 +994,7 @@ public class XarExporter
             xProtocol.setInstrument(protocol.getInstrument());
         }
         xProtocol.setName(protocol.getName());
-        PropertyCollectionType properties = getProperties(protocol.getLSID(), protocol.getContainer(), XarReader.CONTACT_PROPERTY);
+        PropertyCollectionType properties = getProperties(protocol.getLSID(), protocol.getContainer(), useXarJobId, XarReader.CONTACT_PROPERTY);
         if (properties != null)
         {
             xProtocol.setProperties(properties);
@@ -1108,7 +1111,7 @@ public class XarExporter
                 actionSet.setParentProtocolLSID(_relativizedLSIDs.relativize(protocol.getLSID()));
                 for (ExpProtocolAction action : protocolActions)
                 {
-                    addProtocolAction(action, actionSet);
+                    addProtocolAction(action, actionSet, useXarJobId);
                 }
             }
         }
@@ -1178,7 +1181,7 @@ public class XarExporter
         }
     }
 
-    private void addProtocolAction(ExpProtocolAction protocolAction, ProtocolActionSetType actionSet) throws ExperimentException
+    private void addProtocolAction(ExpProtocolAction protocolAction, ProtocolActionSetType actionSet, boolean useXarJobId) throws ExperimentException
     {
         ExpProtocol protocol = protocolAction.getChildProtocol();
         ExpProtocol parentProtocol = protocolAction.getParentProtocol();
@@ -1186,7 +1189,7 @@ public class XarExporter
 
         ProtocolActionType xProtocolAction = actionSet.addNewProtocolAction();
         xProtocolAction.setActionSequence(protocolAction.getActionSequence());
-        xProtocolAction.setChildProtocolLSID(_relativizedLSIDs.relativize(lsid));
+        xProtocolAction.setChildProtocolLSID(_relativizedLSIDs.relativize(lsid, useXarJobId));
 
         for (ProtocolActionPredecessor predecessor : ExperimentServiceImpl.get().getProtocolActionPredecessors(parentProtocol.getLSID(), lsid))
         {
@@ -1248,15 +1251,19 @@ public class XarExporter
         }
     }
 
-
     private PropertyCollectionType getProperties(String lsid, Container parentContainer, String... ignoreProperties) throws ExperimentException
     {
+        return getProperties(lsid, parentContainer, false, ignoreProperties);
+    }
+
+    private PropertyCollectionType getProperties(String lsid, Container parentContainer, boolean useXarJobId, String... ignoreProperties) throws ExperimentException
+    {
         Map<String, ObjectProperty> properties = getObjectProperties(parentContainer, lsid);
-        return getProperties(properties, parentContainer, ignoreProperties);
+        return getProperties(properties, parentContainer, useXarJobId, ignoreProperties);
     }
 
 
-    private PropertyCollectionType getProperties(Map<String, ObjectProperty> properties, Container parentContainer, String... ignoreProperties) throws ExperimentException
+    private PropertyCollectionType getProperties(Map<String, ObjectProperty> properties, Container parentContainer, boolean useXarJobId, String... ignoreProperties) throws ExperimentException
     {
         Set<String> ignoreSet = new HashSet<>(Arrays.asList(ignoreProperties));
 
@@ -1303,7 +1310,7 @@ public class XarExporter
 
                 SimpleValueType simpleValue = result.addNewSimpleVal();
                 simpleValue.setName(value.getName());
-                simpleValue.setOntologyEntryURI(_relativizedLSIDs.relativize(value.getPropertyURI()));
+                simpleValue.setOntologyEntryURI(_relativizedLSIDs.relativize(value.getPropertyURI(), useXarJobId));
 
                 switch(value.getPropertyType())
                 {
