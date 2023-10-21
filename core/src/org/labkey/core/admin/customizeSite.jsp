@@ -186,7 +186,8 @@ Click the Save button at any time to accept the current settings and continue.</
         {
 %>
             <tr>
-                <td><span>Update checks and usage reporting are automatically <strong>on</strong> for servers running a community edition distribution.</span></td>
+                <td><span>Update checks and usage reporting are automatically <strong>on</strong> for servers running a LabKey Server Community Edition.</span></td>
+
             </tr>
 <%
         }
