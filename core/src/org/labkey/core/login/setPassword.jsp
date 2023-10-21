@@ -104,7 +104,9 @@
                     firstPassword = false;
 
         %>
-                    <canvas id="strengthGuidance" width="<%=gaugeWidth%>>" height="<%=gaugeHeight%>>">Password Strength Guidance</canvas>
+            <canvas id="strengthGuidance" width="<%=gaugeWidth%>" height="<%=gaugeHeight%>">
+                Your browser does not support the HTML5 canvas element.
+            </canvas>
         <%
                 }
             }
@@ -149,9 +151,6 @@
     </div>
 </labkey:form>
 <script type="application/javascript" <%=getScriptNonce()%>>
-    const gaugeWidth = <%=gaugeWidth%>;
-    const gaugeHeight = <%=gaugeHeight%>;
-
     LABKEY.Utils.onReady(function() {
         const canvas = document.getElementById("strengthGuidance");
 
@@ -159,17 +158,33 @@
             const ctx = canvas.getContext("2d");
 
             if (ctx) {
-                drawOutline(ctx);
+                const ratio = increaseResolution(canvas, ctx);
+                const gaugeWidth = canvas.width;
+                const gaugeHeight = canvas.height;
+
+                drawOutline(canvas, ctx, ratio);
+                ctx.lineWidth = 1;
+                ctx.font = 12 * ratio + "pt Sans-Serif"
+                ctx.textAlign = "center";
+                ctx.textBaseLine = "middle";
+
+                // testBaseLine = middle sets the text too high, IMO. Adjust by half the size of the vertical bound.
+                const metrics = ctx.measureText("H");
+                const textHeightFix = (metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2 - 1;
+
                 const firstPassword = document.getElementById(<%=q(firstPasswordId)%>);
                 firstPassword.addEventListener("input", function() {
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
                         method: 'POST',
-                        params: {password: firstPassword.value},
+                        params: {
+                            password: firstPassword.value,
+                            email: <%=q(bean.email)%>
+                        },
                         success: function (response)
                         {
                             const responseText = LABKEY.Utils.decode(response.responseText);
-                            if (responseText.score)
+                            if (responseText)
                             {
                                 // Clear everything inside the outline
                                 ctx.clearRect(2, 2, gaugeWidth - 4, gaugeHeight - 4);
@@ -182,14 +197,10 @@
                                 ctx.fillRect(2, 2, barWidth, (gaugeHeight - 4));
 
                                 // Render text
-                                ctx.fillStyle = "black";
-                                ctx.lineWidth = 1;
-                                ctx.font = "14pt Sans-Serif"
-                                ctx.textAlign = "center";
-                                ctx.textBaseLine = "middle";
+                                ctx.fillStyle = 2 === colorIndex ? "white" : "black";
                                 const textIndex = Math.floor(percent * 6);
                                 const text = ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
-                                ctx.fillText(text, gaugeWidth / 2, gaugeHeight / 2);
+                                ctx.fillText(text, gaugeWidth / 2, gaugeHeight / 2 + textHeightFix);
                             }
                         }
                     });
@@ -198,8 +209,34 @@
         }
     });
 
-    function drawOutline(ctx) {
+    function drawOutline(canvas, ctx, ratio) {
         ctx.lineWidth = 3;
-        ctx.strokeRect(0, 0, <%=gaugeWidth%>, <%=gaugeHeight%>);
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // Modifies a canvas element's resolution to match the native monitor resolution. This results in much clearer text.
+    // See https://stackoverflow.com/questions/15661339/how-do-i-fix-blurry-text-in-my-html5-canvas
+    function increaseResolution(canvas, ctx)
+    {
+        const dpr = window.devicePixelRatio || 1;
+        const bsr = ctx.webkitBackingStorePixelRatio ||
+            ctx.mozBackingStorePixelRatio ||
+            ctx.msBackingStorePixelRatio ||
+            ctx.oBackingStorePixelRatio ||
+            ctx.backingStorePixelRatio || 1;
+
+        const ratio = dpr / bsr;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+
+        // Uncomment if you want your coordinate system to be the original width and height instead of the new dimensions
+        //ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+        return ratio;
     }
 </script>

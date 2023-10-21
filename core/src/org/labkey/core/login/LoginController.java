@@ -1541,7 +1541,7 @@ public class LoginController extends SpringActionController
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
 
-    private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
+    public abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
         protected ValidEmail _email = null;
         protected boolean _unrecoverableError = false;
@@ -2041,7 +2041,7 @@ public class LoginController extends SpringActionController
         public final String message;
         public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
-        public final Class action;
+        public final Class<? extends AbstractSetPasswordAction> action;
         public final boolean cancellable;
         public final String buttonText;
         public final String title;
@@ -2715,6 +2715,7 @@ public class LoginController extends SpringActionController
     public static class PasswordForm
     {
         private String _password;
+        private String _email;
 
         public String getPassword()
         {
@@ -2725,6 +2726,16 @@ public class LoginController extends SpringActionController
         {
             _password = password;
         }
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
     }
 
     @RequiresNoPermission
@@ -2734,7 +2745,9 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(PasswordForm form, BindException errors) throws Exception
         {
-            return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), getUser()));
+            String email = form.getEmail();
+            User user = email != null ? UserManager.getUser(new ValidEmail(form.getEmail())) : User.guest;
+            return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), user));
         }
     }
 
