@@ -61,7 +61,6 @@ import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -110,9 +109,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -1553,14 +1549,7 @@ public class AssayController extends SpringActionController
                 if (form.getRuns().size() == 1)
                 {
                     // construct the audit log query view
-                    User user = getUser();
-                    if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
-                    {
-                        Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
-                        contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-                        user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
-                    }
-
+                    User user = LimitedUser.getCanSeeAuditLogUser(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
                     ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
                     if (run != null && schema != null)

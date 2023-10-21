@@ -23,9 +23,6 @@ import org.labkey.api.study.Study;
 /**
  * Used exclusively in dataset security, as a marker in the study policy to indicate a group has per-dataset permissions.
  * As a result, we don't directly surface this role anywhere in the product. See #42682.
- *
- * User: Dave
- * Date: Apr 30, 2009
  */
 public class RestrictedReaderRole extends AbstractRole
 {
