@@ -41,6 +41,9 @@
 <%
     SetPasswordBean bean = ((JspView<SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrorsStr("form");
+    int gaugeWidth = 350;
+    int gaugeHeight = 40;
+    String firstPasswordId = null;
 %>
 <style>
     .labkey-button {
@@ -52,7 +55,7 @@
         <div class="auth-header"><%=h(bean.title)%></div>
     <% } %>
 
-    <% if (errors.length() > 0) { %>
+    <% if (!errors.isEmpty()) { %>
         <%=text(errors)%>
     <% } %>
 
@@ -60,7 +63,9 @@
     <% if (!bean.unrecoverableError) { %>
         <p><%=h(bean.message)%></p>
 
-        <% for (NamedObject input : bean.nonPasswordInputs) { %>
+        <%
+            for (NamedObject input : bean.nonPasswordInputs)
+            { %>
             <label for="<%=h(input.getObject().toString())%>">
                 <%=h(input.getName())%>
             </label>
@@ -71,10 +76,12 @@
                 value="<%=h(input.getDefaultValue())%>"
                 class="input-block"
             />
-        <% } %>
+        <%  }
 
-        <% for (NamedObject input : bean.passwordInputs) {
-            HtmlString contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
+            boolean firstPassword = true;
+
+            for (NamedObject input : bean.passwordInputs) {
+                HtmlString contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
                     ? DbLoginManager.getPasswordRule().getSummaryRuleHtml() : null;
         %>
             <p>
@@ -90,7 +97,18 @@
                 class="input-block"
                 autocomplete="off"
             />
-        <% } %>
+        <%
+                if (firstPassword)
+                {
+                    firstPasswordId = input.getObject().toString();
+                    firstPassword = false;
+
+        %>
+                    <canvas id="strengthGuidance" width="<%=gaugeWidth%>>" height="<%=gaugeHeight%>>">Password Strength Guidance</canvas>
+        <%
+                }
+            }
+        %>
 
         <div>
         <% if (null != bean.email) { %>
@@ -130,3 +148,58 @@
     <% } %>
     </div>
 </labkey:form>
+<script type="application/javascript" <%=getScriptNonce()%>>
+    const gaugeWidth = <%=gaugeWidth%>;
+    const gaugeHeight = <%=gaugeHeight%>;
+
+    LABKEY.Utils.onReady(function() {
+        const canvas = document.getElementById("strengthGuidance");
+
+        if (canvas) {
+            const ctx = canvas.getContext("2d");
+
+            if (ctx) {
+                drawOutline(ctx);
+                const firstPassword = document.getElementById(<%=q(firstPasswordId)%>);
+                firstPassword.addEventListener("input", function() {
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
+                        method: 'POST',
+                        params: {password: firstPassword.value},
+                        success: function (response)
+                        {
+                            const responseText = LABKEY.Utils.decode(response.responseText);
+                            if (responseText.score)
+                            {
+                                // Clear everything inside the outline
+                                ctx.clearRect(2, 2, gaugeWidth - 4, gaugeHeight - 4);
+
+                                // Render bar
+                                const percent = Math.min(responseText.score / 90, 0.99999);
+                                const colorIndex = Math.floor(percent * 3);
+                                ctx.fillStyle = ["red", "yellow", "green"][colorIndex];
+                                const barWidth = percent * (gaugeWidth - 4);
+                                ctx.fillRect(2, 2, barWidth, (gaugeHeight - 4));
+
+                                // Render text
+                                ctx.fillStyle = "black";
+                                ctx.lineWidth = 1;
+                                ctx.font = "14pt Sans-Serif"
+                                ctx.textAlign = "center";
+                                ctx.textBaseLine = "middle";
+                                const textIndex = Math.floor(percent * 6);
+                                const text = ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
+                                ctx.fillText(text, gaugeWidth / 2, gaugeHeight / 2);
+                            }
+                        }
+                    });
+                })
+            }
+        }
+    });
+
+    function drawOutline(ctx) {
+        ctx.lineWidth = 3;
+        ctx.strokeRect(0, 0, <%=gaugeWidth%>, <%=gaugeHeight%>);
+    }
+</script>
