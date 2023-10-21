@@ -234,6 +234,10 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeObject(value);
         }
+        else if (value == JSONObject.NULL)
+        {
+            jg.writeNull();
+        }
         else
         {
             jg.writeString(value.toString());

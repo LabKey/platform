@@ -3,6 +3,7 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
@@ -33,6 +34,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -180,14 +182,14 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     public Object getDisplayValue(RenderContext ctx)
     {
         // see MultiValuedDisplayColumn.getDisplayValue()
-        return getDisplayValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));
+        return getDisplayValues(ctx).stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining(", "));
     }
 
     @Override
     public Object getJsonValue(RenderContext ctx)
     {
         // issue: 44337. Doesn't seem to be a reason to return the object ID, even in the extended API response
-        return new JSONArray(getJsonValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.toList()));
+        return new JSONArray(getJsonValues(ctx).stream().map(o -> o == null ? JSONObject.NULL : o.toString()).collect(Collectors.toList()));
     }
 
     @Override
