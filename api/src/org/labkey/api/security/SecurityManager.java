@@ -1459,7 +1459,7 @@ public class SecurityManager
             Table.delete(core.getTableInfoPrincipals(), principalsFilter);
             Container c = ContainerManager.getForId(group.getContainer());
 
-            // Clear caches immediately (before the last site admin check) and again after commit/rollback
+            // Clear caches immediately (before the last root admin check) and again after commit/rollback
             transaction.addCommitTask(() -> {
                 GroupCache.uncache(groupId);
                 ProjectAndSiteGroupsCache.uncache(c);
@@ -1520,7 +1520,7 @@ public class SecurityManager
             {
                 new SqlExecutor(core.getSchema()).execute(sql);
 
-                // Clear caches immediately (before the last site admin check) and again after commit/rollback
+                // Clear caches immediately (before the last root admin check) and again after commit/rollback
                 transaction.addCommitTask( () -> {
                     for (UserPrincipal member : membersToDelete)
                         GroupMembershipCache.handleGroupChange(group, member);

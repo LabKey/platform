@@ -236,12 +236,12 @@ public class SecurityPolicyManager
                 Table.insert(null, table, assignment);
             }
 
-            // Remove policy from cache immediately (before the last site admin check) and again after commit/rollback
+            // Remove policy from cache immediately (before the last root admin check) and again after commit/rollback
             transaction.addCommitTask(() -> remove(policy), CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
             // Notify on commit
             transaction.addCommitTask(() -> notifyPolicyChange(policy.getResourceId()), CommitTaskOption.POSTCOMMIT);
 
-            // Ensure at least one site admin will remain if attempting to modify the root container's policy
+            // Ensure at least one root admin will remain if attempting to modify the root container's policy
             if (policy.getResourceId().equals(ContainerManager.getRoot().getResourceId()))
                 SecurityManager.ensureAtLeastOneRootAdminExists();
 

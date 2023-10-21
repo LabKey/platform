@@ -965,7 +965,7 @@ public class UserManager
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
 
-            // Clear user list immediately (before the last site admin check) and again after commit/rollback
+            // Clear user list immediately (before the last root admin check) and again after commit/rollback
             transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
             if (needToEnsureRootAdmins)
@@ -1034,10 +1034,10 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
-            // Clear user list immediately (before the last site admin check) and again after commit/rollback
+            // Clear user list immediately (before the last root admin check) and again after commit/rollback
             transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
 
-            // If deactivating a site admin or impersonating troubleshooter, ensure at least one site admin remains
+            // If deactivating a root admin, ensure at least one root admin remains
             if (!active && SecurityManager.isRootAdmin(userToAdjust))
                 SecurityManager.ensureAtLeastOneRootAdminExists();
 

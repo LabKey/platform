@@ -1538,7 +1538,7 @@ public class SecurityController extends SpringActionController
     }
 
     // Delete all container permissions. Note: savePolicy() and deleteMember() throw on some unauthorized actions
-    // (e.g., App Admin attempting to delete Site Admin perms, deleting the last site admin)
+    // (e.g., App Admin attempting to delete Site Admin perms, deleting the last root admin)
     private void deletePermissions(User user)
     {
         if (user != null)
