@@ -477,7 +477,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls)
     {
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
@@ -493,9 +493,17 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             result.append("DISTINCT ");
         }
-        result.append("COALESCE(CAST(");
+        if (includeNulls)
+        {
+            result.append("COALESCE(CAST(");
+        }
         result.append(sql);
-        result.append(" AS VARCHAR), ''))");
+
+        if (includeNulls)
+        {
+            result.append(" AS VARCHAR), '')");
+        }
+        result.append(")");
         if (useSortFunction)
         {
             result.append(")");
