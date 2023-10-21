@@ -826,7 +826,7 @@ public class SecurityController extends SpringActionController
                 //check for users to delete
                 if (removeNames != null)
                 {
-                    // Note: deleteMembers() will throw if removing this member will result in no Site Admins
+                    // Note: deleteMembers() will throw if removing this member will result in no root admins
                     SecurityManager.deleteMembers(_group, removeIds);
                 }
 
@@ -1538,7 +1538,7 @@ public class SecurityController extends SpringActionController
     }
 
     // Delete all container permissions. Note: savePolicy() and deleteMember() throw on some unauthorized actions
-    // (e.g., App Admin attempting to delete Site Admin perms, deleting the last site admin)
+    // (e.g., App Admin attempting to delete Site Admin perms, deleting the last root admin)
     private void deletePermissions(User user)
     {
         if (user != null)
