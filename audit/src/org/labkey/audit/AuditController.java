@@ -71,11 +71,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: adam
- * Date: Jul 24, 2008
- * Time: 4:07:39 PM
- */
 public class AuditController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AuditController.class);

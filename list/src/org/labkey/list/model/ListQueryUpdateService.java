@@ -70,12 +70,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
-* User: Nick Arnold
-* Date: June 5, 2012
-* Time: 10:27:30 AM
-*/
-
 /**
  * Implementation of QueryUpdateService for Lists
  */
