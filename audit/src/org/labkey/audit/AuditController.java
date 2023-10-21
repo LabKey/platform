@@ -48,10 +48,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
@@ -71,10 +68,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: adam
@@ -387,11 +382,11 @@ public class AuditController extends SpringActionController
         }
 
         @Override
-        public Object execute(AuditTransactionForm form, BindException errors) throws Exception
+        public Object execute(AuditTransactionForm form, BindException errors)
         {
             List<Integer> rowIds;
             if (form.isSampleType())
-                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), getCanSeeAuditLogUser(getUser()), getContainer());
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), LimitedUser.getCanSeeAuditLogUser(getContainer(), getUser()), getContainer());
             else
                 rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());
 
@@ -400,19 +395,6 @@ public class AuditController extends SpringActionController
             response.put("rowIds", rowIds);
 
             return response;
-        }
-
-        private User getCanSeeAuditLogUser(User user)
-        {
-            User elevatedUser = user;
-            if (!getContainer().hasPermission(getUser(), CanSeeAuditLogPermission.class))
-            {
-                Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
-                contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-                elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, false);
-            }
-
-            return elevatedUser;
         }
     }
 

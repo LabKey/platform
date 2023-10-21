@@ -365,7 +365,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return User.getUserProps(this);
     }
 
-    @Deprecated // Confusing name... use getSiteRoles() instead
+    @Deprecated // Delete
     public Set<Role> getStandardContextualRoles()
     {
         return getSiteRoles();
