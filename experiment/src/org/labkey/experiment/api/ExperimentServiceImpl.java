@@ -4629,7 +4629,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
             }
 
-            Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
+            Map<ExpSampleType, Set<Integer>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleType> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
@@ -4669,11 +4669,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                 }
 
-                if (!isTruncate && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
+                if (!isTruncate && material.getRowId() != material.getRootMaterialRowId())
                 {
                     ExpSampleType sampleType = material.getSampleType();
                     sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
-                            .add(material.getRootMaterialLSID());
+                            .add(material.getRootMaterialRowId());
                 }
             }
 
@@ -4784,13 +4784,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
-                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeRoots: sampleTypeAliquotRoots.entrySet())
+                    for (Map.Entry<ExpSampleType, Set<Integer>> sampleTypeRoots: sampleTypeAliquotRoots.entrySet())
                     {
                         ExpSampleType parentSampleType = sampleTypeRoots.getKey();
-                        Set<String> rootLsids = sampleTypeRoots.getValue();
-                        List<ExpMaterialImpl> rootSamples = getExpMaterialsByLsid(rootLsids);
-                        Set<Integer> rootSampleIds = new HashSet<>();
-                        rootSamples.forEach(p -> rootSampleIds.add(p.getRowId()));
+                        Set<Integer> rootSampleIds = sampleTypeRoots.getValue();
                         SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
                     }
                 }
@@ -6908,7 +6905,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("Lsid"), parentLSIDS, IN).getSQLFragment(table, "m");
 
             new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialLSID, RootMaterialRowId FROM " + table + " ")
-                    .append(sqlfilter).append(" AND RootMaterialLSID IS NOT NULL")).forEach(rs ->
+                    .append(sqlfilter).append(" AND RootMaterialRowId <> RowId")).forEach(rs ->
             {
                 _aliquotRootCache.put(rs.getString("Lsid"), Pair.of(rs.getString("RootMaterialLSID"), rs.getInt("RootMaterialRowId")));
             });

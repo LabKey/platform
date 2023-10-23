@@ -1427,23 +1427,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws SQLException
+    public int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Integer> rootRowIds, Set<String> parentNames, Container container) throws SQLException
     {
-        Set<Integer> rootSamplesToRecalc = getRootSampleIdsFromParents(sampleType.getLSID(), parentLsids, parentNames);
+        Set<Integer> rootSamplesToRecalc = new HashSet<>();
+        if (rootRowIds != null)
+            rootSamplesToRecalc.addAll(rootRowIds);
+        if (parentNames != null)
+            rootSamplesToRecalc.addAll(getRootSampleIdsFromParentNames(sampleType.getLSID(), parentNames));
+
         return recomputeSamplesRollup(rootSamplesToRecalc, rootSamplesToRecalc, sampleType.getMetricUnit(), container);
     }
 
-    private Set<Integer> getRootSampleIdsFromParents(String sampleTypeLsid, Set<String> parentLsids, Set<String> parentNames)
+    private Set<Integer> getRootSampleIdsFromParentNames(String sampleTypeLsid, Set<String> parentNames)
     {
-        Set<Integer> rootIds = new HashSet<>();
-        rootIds.addAll(getRootSampleIdsFromParentKeys(sampleTypeLsid, parentLsids, true));
-        rootIds.addAll(getRootSampleIdsFromParentKeys(sampleTypeLsid, parentNames, false));
-        return rootIds;
-    }
-
-    private Set<Integer> getRootSampleIdsFromParentKeys(String sampleTypeLsid, Set<String> parentKeys, boolean isLsid)
-    {
-        if (parentKeys == null || parentKeys.isEmpty())
+        if (parentNames == null || parentNames.isEmpty())
             return Collections.emptySet();
 
         TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
@@ -1452,7 +1449,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(" WHERE cpastype = ").appendValue(sampleTypeLsid)
                 .append(" AND rowid IN (")
                 .append(" SELECT DISTINCT rootmaterialrowid FROM ").append(tableInfo, "")
-                .append(" WHERE ").append(isLsid ? "LSID" : "Name").appendInClause(parentKeys, tableInfo.getSqlDialect())
+                .append(" WHERE Name").appendInClause(parentNames, tableInfo.getSqlDialect())
                 .append(")");
 
         return new SqlSelector(tableInfo.getSchema(), sql).fillSet(new HashSet<>());

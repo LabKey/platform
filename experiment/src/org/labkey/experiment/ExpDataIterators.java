@@ -144,7 +144,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
-import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
+import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.ROOT_RECOMPUTE_ROWID_COL;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_NAME_COL;
 
 
@@ -328,8 +328,8 @@ public class ExpDataIterators
         private final Integer _unitsCol;
         private final Integer _sampleStateCol;
         private final Integer _aliquotedFromCol;
-        private final Integer _aliquotedFromLsidCol;
-        private final Integer _parentLsidToRecomputeCol;
+        private final Integer _rootMaterialRowIdCol;
+        private final Integer _rootIdToRecomputeCol;
         private final Integer _parentNameToRecomputeCol;
         private final boolean _isInsert;
         private final boolean _isUpdate;
@@ -345,8 +345,8 @@ public class ExpDataIterators
             _unitsCol = map.get(Units.name());
             _sampleStateCol = map.get(SampleState.name());
             _aliquotedFromCol = map.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-            _aliquotedFromLsidCol = map.get(AliquotedFromLSID.name());
-            _parentLsidToRecomputeCol = map.get(PARENT_RECOMPUTE_LSID_COL);
+            _rootMaterialRowIdCol = map.get(RootMaterialRowId.name());
+            _rootIdToRecomputeCol = map.get(ROOT_RECOMPUTE_ROWID_COL);
             _parentNameToRecomputeCol = map.get(PARENT_RECOMPUTE_NAME_COL);
 
             if (SampleStatusService.get().supportsSampleStatus())
@@ -362,7 +362,7 @@ public class ExpDataIterators
         @Override
         public Object get(int i)
         {
-            if (i == _parentLsidToRecomputeCol || i == _parentNameToRecomputeCol)
+            if (i == _rootIdToRecomputeCol || i == _parentNameToRecomputeCol)
             {
                 if (_isInsert)
                 {
@@ -386,9 +386,7 @@ public class ExpDataIterators
                     if (i == _parentNameToRecomputeCol) // only return lsid if existing map not null
                         return null;
 
-                    String rootAliquot = (String) existingMap.get(RootMaterialLSID.name());
-                    String aliquotParent = (String) existingMap.get(AliquotedFromLSID.name());
-                    String recalcLsid = rootAliquot != null ? rootAliquot : aliquotParent;
+                    Integer rootAliquot = (Integer) existingMap.get(RootMaterialRowId.name());
                     Double existingAmount = (Double) existingMap.get(StoredAmount.name());
                     String existingUnits = (String) existingMap.get(Units.name());
                     Integer existingState = (Integer) existingMap.get(SampleState.name());
@@ -397,7 +395,7 @@ public class ExpDataIterators
                     {
                         Integer newState = _sampleStateCol == null ? null : (Integer) get(_sampleStateCol);
                         if (SampleTypeUpdateServiceDI.isAliquotStatusChangeNeedRecalc(availableSampleStatuses, existingState, newState))
-                            return recalcLsid;
+                            return rootAliquot;
                     }
 
                     Double newAmount = _storedAmountCol == null ? null : (Double) get(_storedAmountCol);
@@ -412,7 +410,7 @@ public class ExpDataIterators
                             amountChanged = true;
                     }
 
-                    return amountChanged ? recalcLsid : null;
+                    return amountChanged ? rootAliquot : null;
                 }
 
                 // without existing record, we have to be conservative and assume this is a new aliquot, or a amount/status update
@@ -423,9 +421,9 @@ public class ExpDataIterators
                         return get(_aliquotedFromCol); // recompute parent when new aliquot is created
                     return null;
                 }
-                // update only, return lsid
-                if (_aliquotedFromLsidCol != null && get(_aliquotedFromLsidCol) != null && i == _parentLsidToRecomputeCol)
-                    return get(_aliquotedFromLsidCol);
+                // update only, return rootMaterialRowId that's queried from SampleUpdateAliquotedFromDataIterator
+                if (_rootMaterialRowIdCol != null && get(_rootMaterialRowIdCol) != null && i == _rootIdToRecomputeCol)
+                    return get(_rootMaterialRowIdCol);
 
                 return null;
             }
@@ -2299,7 +2297,7 @@ public class ExpDataIterators
             DataIteratorBuilder step6 = LoggingDataIterator.wrap(new ExpDataIterators.DerivationDataIteratorBuilder(step5, _container, _user, isSample, _dataTypeObject, false));
 
             DataIteratorBuilder step7 = step6;
-            boolean hasRollUpColumns = colNameMap.containsKey(PARENT_RECOMPUTE_LSID_COL);
+            boolean hasRollUpColumns = colNameMap.containsKey(ROOT_RECOMPUTE_ROWID_COL);
             if (isSample && !context.getConfigParameterBoolean(SampleTypeService.ConfigParameters.DeferAliquotRuns) && hasRollUpColumns)
                 step7 = LoggingDataIterator.wrap(new ExpDataIterators.AliquotRollupDataIteratorBuilder(step6, _container));
 

@@ -145,9 +145,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 {
     public static final Logger LOG = LogHelper.getLogger(SampleTypeUpdateServiceDI.class, "Sample type update service info");
 
-    public static final String PARENT_RECOMPUTE_LSID_COL = "ParentLsidToRecompute";
+    public static final String ROOT_RECOMPUTE_ROWID_COL = "RootIdToRecompute";
     public static final String PARENT_RECOMPUTE_NAME_COL = "ParentNameToRecompute";
-    public static final String PARENT_RECOMPUTE_LSID_SET = "ParentLsidToRecomputeSet";
+    public static final String ROOT_RECOMPUTE_ROWID_SET = "RootIdToRecomputeSet";
     public static final String PARENT_RECOMPUTE_NAME_SET = "ParentNameToRecomputeSet";
 
     public static final Map<String, String> SAMPLE_ALT_IMPORT_NAME_COLS;
@@ -228,16 +228,16 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return ret;
     }
 
-    private Pair<Set<String>, Set<String>> getSampleParentsForRecalc(List<Map<String, Object>> outputRows)
+    private Pair<Set<Integer>, Set<String>> getSampleParentsForRecalc(List<Map<String, Object>> outputRows)
     {
         if (outputRows == null || outputRows.isEmpty())
             return null;
 
-        Set<String> parentLsids = new HashSet<>();
+        Set<Integer> rootRowIds = new HashSet<>();
         Set<String> parentNames = new HashSet<>();
-        if (outputRows.size() == 1 && outputRows.get(0).containsKey(PARENT_RECOMPUTE_LSID_SET))
+        if (outputRows.size() == 1 && outputRows.get(0).containsKey(ROOT_RECOMPUTE_ROWID_SET))
         {
-            parentLsids.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_LSID_SET));
+            rootRowIds.addAll((Collection<? extends Integer>) outputRows.get(0).get(ROOT_RECOMPUTE_ROWID_SET));
             if (outputRows.get(0).containsKey(PARENT_RECOMPUTE_NAME_SET))
                 parentNames.addAll((Collection<? extends String>) outputRows.get(0).get(PARENT_RECOMPUTE_NAME_SET));
         }
@@ -245,18 +245,18 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             for (Map<String, Object> result : outputRows)
             {
-                if (!result.containsKey(PARENT_RECOMPUTE_LSID_COL))
+                if (!result.containsKey(ROOT_RECOMPUTE_ROWID_COL))
                     break;
-                Object lsidObj = result.get(PARENT_RECOMPUTE_LSID_COL);
+                Object rootIdObj = result.get(ROOT_RECOMPUTE_ROWID_COL);
                 Object nameObj = result.get(PARENT_RECOMPUTE_NAME_COL);
-                if (lsidObj != null)
-                    parentLsids.add((String) lsidObj);
+                if (rootIdObj != null)
+                    rootRowIds.add((Integer) rootIdObj);
                 if (nameObj != null)
                     parentNames.add((String) nameObj);
             }
         }
 
-        return new Pair<>(parentLsids, parentNames);
+        return new Pair<>(rootRowIds, parentNames);
     }
 
     @Override
@@ -271,11 +271,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 MapDataIterator maps = DataIteratorUtil.wrapMap(it, false);
                 Map<String, Integer> columnMap = DataIteratorUtil.createColumnNameMap(it);
-                Integer parentLsidToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_LSID_COL);
+                Integer parenRowIdToRecomputeCol = columnMap.get(ROOT_RECOMPUTE_ROWID_COL);
                 Integer parentNameToRecomputeCol = columnMap.get(PARENT_RECOMPUTE_NAME_COL);
 
-                boolean hasRollUpColumns = parentLsidToRecomputeCol != null && parentNameToRecomputeCol != null;
-                Set<String> lsidToRecompute = new HashSet<>();
+                boolean hasRollUpColumns = parenRowIdToRecomputeCol != null && parentNameToRecomputeCol != null;
+                Set<Integer> rowIdsToRecompute = new HashSet<>();
                 Set<String> nameToRecompute = new HashSet<>();
 
                 if (hasRollUpColumns)
@@ -283,7 +283,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     Map<String, Object> recomputeRes = new CaseInsensitiveHashMap<>();
                     if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
                     {
-                        recomputeRes.put(PARENT_RECOMPUTE_LSID_SET, lsidToRecompute);
+                        recomputeRes.put(ROOT_RECOMPUTE_ROWID_SET, rowIdsToRecompute);
                         recomputeRes.put(PARENT_RECOMPUTE_NAME_SET, nameToRecompute);
                         rows.add(recomputeRes);
                     }
@@ -301,9 +301,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                             {
                                 if (hasRollUpColumns && context.getConfigParameterBoolean(ExperimentService.QueryOptions.GetSampleRecomputeCol))
                                 {
-                                    Object lsidObj = (_delegate).get(parentLsidToRecomputeCol);
-                                    if (lsidObj != null)
-                                        lsidToRecompute.add((String) lsidObj);
+                                    Object rowIdObj = (_delegate).get(parenRowIdToRecomputeCol);
+                                    if (rowIdObj != null)
+                                        rowIdsToRecompute.add((Integer) rowIdObj);
                                     Object nameObj = (_delegate).get(parentNameToRecomputeCol);
                                     if (nameObj != null)
                                     {
@@ -548,12 +548,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
         boolean isAliquot = !StringUtils.isEmpty(oldAliquotedFromLSID);
 
-        String aliquotRollupRoot = null;
+        Integer aliquotRollupRoot = null;
 
         if (!_sampleType.isMedia() && isAliquot)
         {
-            // TODO: This needs to be converted to "RootMaterialRowId"
-            String aliquotRoot = (String) oldRow.get(RootMaterialLSID.name());
+            Integer aliquotRoot = (Integer) oldRow.get(RootMaterialRowId.name());
 
             if (row.containsKey(StoredAmount.name()) || row.containsKey(Units.name()))
             {
@@ -562,12 +561,12 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 if (!oldAmount.equals(newAmount))
                 {
-                    if (StringUtils.isNotEmpty(aliquotRoot))
+                    if (aliquotRoot != null)
                         aliquotRollupRoot = aliquotRoot;
                 }
             }
 
-            if (StringUtils.isEmpty(aliquotRollupRoot) && row.containsKey(SampleState.name()))
+            if (aliquotRollupRoot == null && row.containsKey(SampleState.name()))
             {
                 List<Integer> availableSampleStatuses = new ArrayList<>();
                 if (SampleStatusService.get().supportsSampleStatus())
@@ -615,7 +614,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, rowCopy, oldRow, keys));
 
         if (aliquotRollupRoot != null)
-            ret.put(PARENT_RECOMPUTE_LSID_COL, aliquotRollupRoot);
+            ret.put(ROOT_RECOMPUTE_ROWID_COL, aliquotRollupRoot);
 
         Map<String, Object> validRowCopy = new CaseInsensitiveHashMap<>();
         boolean hasNonStatusChange = false;
@@ -1172,7 +1171,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     private void onSamplesChanged(List<Map<String, Object>> results, Map<Enum, Object> params, Container container)
     {
         var tx = getSchema().getDbSchema().getScope().getCurrentTransaction();
-        Pair<Set<String>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
+        Pair<Set<Integer>, Set<String>> parentKeys = getSampleParentsForRecalc(results);
         boolean useBackgroundRecalc = false;
         if (parentKeys != null)
         {
@@ -1208,7 +1207,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
     }
 
-    private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, Container container)
+    private void handleRecalc(Set<Integer> rootRowIds, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
         // The caller of this handleRecalc() should generally be calling refreshSampleTypeMaterializedView().
         // However, we also need to call it after this async process runs
@@ -1219,7 +1218,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 if (_sampleType != null)
                 {
-                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
+                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, rootRowIds, parentNames, container);
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, false);
                 }
             }
@@ -1333,9 +1332,11 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
                 if (!columnNameMap.containsKey(AliquotedFromLSID.name()))
                     addAliquotedFrom.addNullColumn(AliquotedFromLSID.name(), JdbcType.VARCHAR);
+                if (!columnNameMap.containsKey(RootMaterialRowId.name()))
+                    addAliquotedFrom.addNullColumn(RootMaterialRowId.name(), JdbcType.INTEGER);
                 addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
-                addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
+                addAliquotedFrom.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
@@ -1363,7 +1364,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // only add when AliquotedFrom column is not null
             if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
             {
-                addGenId.addNullColumn(PARENT_RECOMPUTE_LSID_COL, JdbcType.VARCHAR);
+                addGenId.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.VARCHAR);
                 addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
             }
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
