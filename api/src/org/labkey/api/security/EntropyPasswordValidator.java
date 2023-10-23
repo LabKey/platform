@@ -44,6 +44,12 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         return false;
     }
 
+    @Override
+    public boolean shouldShowPasswordGuidance()
+    {
+        return true;
+    }
+
     private static final double BASE2_LOG = Math.log(2);
 
     public static double score(String password, User user)
