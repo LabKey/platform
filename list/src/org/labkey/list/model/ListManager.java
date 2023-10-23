@@ -76,6 +76,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.list.controllers.ListController;
 import org.labkey.list.model.ListImporter.ValidatorImporter;
 import org.labkey.list.view.ListItemAttachmentParent;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -699,10 +700,11 @@ public class ListManager implements SearchService.DocumentProvider
                         {
                             ListManager.get().setItemLastIndexed(list, pk, listTable, ms, modified);
                         }
-                        catch (RuntimeSQLException e)
+                        catch (BadSqlGrammarException e)
                         {
                             // This may occur due to a race condition between enumeration and list deletion. Issue #48878
-                            if (e.isConstraintException())
+                            // expected P-sql                                                expected MS-sql
+                            if (e.getCause().getMessage().contains("does not exist") || e.getCause().getMessage().contains("Invalid object name"))
                                 LOG.debug("Attempt to set LastIndexed on list table failed", e);
                             else
                                 throw e;
