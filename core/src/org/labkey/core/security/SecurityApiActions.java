@@ -1853,10 +1853,6 @@ public class SecurityApiActions
             if (group != null && group.isSystemGroup() && !getUser().hasSiteAdminPermission())
                 throw new UnauthorizedException("Can not update members of system group: " + group.getName());
 
-            //ensure there will still be someone in the admin group
-            if (group.isAdministrators() && SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS).size() == 1)
-                throw new IllegalArgumentException("The system administrators group must have at least one member!");
-
             for (int id : form.getPrincipalIds())
             {
                 UserPrincipal principal = getPrincipal(id);
