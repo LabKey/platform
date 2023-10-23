@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1354,30 +1353,7 @@ public class QueryController extends SpringActionController
 
                         if (!getUser().isTrustedBrowserDev())
                         {
-                            try
-                            {
-                                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-                                XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
-                                while (reader.hasNext())
-                                {
-                                    reader.next();
-                                    if (reader.isStartElement())
-                                    {
-                                        String localPath = reader.getName().getLocalPart();
-                                        // These three elements directly include JavaScript or pointers to script files
-                                        if ("onClick".equalsIgnoreCase(localPath) ||
-                                                "onRender".equalsIgnoreCase(localPath) ||
-                                                "includeScript".equalsIgnoreCase(localPath))
-                                        {
-                                            throw new UnauthorizedException("Illegal element <" + localPath + ">. For permissions to use this element, contact your system administrator");
-                                        }
-                                    }
-                                }
-                            }
-                            catch (XMLStreamException ignored)
-                            {
-                                // Let other XML validation and error feedback handle malformed XML
-                            }
+                            ensureNoJavaScript(metadataText);
                         }
 
                         queryDef.setMetadataXml(metadataText);
@@ -1433,6 +1409,63 @@ public class QueryController extends SpringActionController
             //if we got here, the query is OK
             response.put("success", true);
             return response;
+        }
+
+        private static final Set<String> DISALLOWED_SCRIPT_ELEMENTS = Collections.unmodifiableSet(new CaseInsensitiveHashSet("onClick", "onRender", "includeScript"));
+        private static final String CLASS_NAME_ELEMENT = "className";
+
+        private static void ensureNoJavaScript(String metadataText)
+        {
+            try
+            {
+                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+                XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
+
+                // Issue 48660 - disallow JavaScriptDisplayColumn for non-developers
+                // When we're inside a <className> element, accumulate the contents to check when we hit the closing tag
+                StringBuilder className = null;
+
+                while (reader.hasNext())
+                {
+                    reader.next();
+                    if (reader.isStartElement())
+                    {
+                        String localPath = reader.getName().getLocalPart();
+                        // These three elements directly include JavaScript or pointers to script files
+                        if (DISALLOWED_SCRIPT_ELEMENTS.contains(localPath))
+                        {
+                            throw new UnauthorizedException("Illegal element <" + localPath + ">. For permissions to use this element, contact your system administrator");
+                        }
+                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath))
+                        {
+                            className = new StringBuilder();
+                        }
+                    }
+
+                    if (reader.isCharacters() && className != null)
+                    {
+                        // Accumulate the content of the <className>
+                        className.append(reader.getText());
+                    }
+
+                    if (reader.isEndElement())
+                    {
+                        String localPath = reader.getName().getLocalPart();
+                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath) && className != null)
+                        {
+                            if (className.toString().contains(JavaScriptDisplayColumn.class.getName()))
+                            {
+                                throw new UnauthorizedException("For permissions to use JavaScriptDisplayColumn, contact your system administrator");
+                            }
+                            className = null;
+                        }
+                    }
+                }
+            }
+            catch (XMLStreamException ignored)
+            {
+                // Let other XML validation and error feedback handle malformed XML
+            }
         }
     }
 
