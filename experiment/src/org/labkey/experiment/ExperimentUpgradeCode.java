@@ -450,7 +450,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
             notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid SET NOT NULL").appendEOS().append("\n");
         }
 
-        SQLFragment createIndex = new SQLFragment("CREATE INDEX IF NOT EXISTS ").append(tableName).append("_rowid ")
+        SQLFragment createIndex = new SQLFragment("CREATE INDEX ").append(tableName).append("_rowid ")
                 .append("ON ").append(table).append(" (rowid)").appendEOS().append("\n");
 
         new SqlExecutor(scope).execute(addColumn);
