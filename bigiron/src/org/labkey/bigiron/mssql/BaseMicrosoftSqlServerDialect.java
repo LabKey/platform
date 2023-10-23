@@ -634,7 +634,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
@@ -658,7 +658,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             result.append("DISTINCT ");
         }
 
+        if (includeNulls)
+        {
+            result.append("COALESCE(CAST(");
+        }
         result.append(sql);
+        if (includeNulls)
+        {
+            result.append(" AS NVARCHAR(MAX)), '')");
+        }
         result.append(", ");
         result.append(delimiterSQL);
 
@@ -730,7 +738,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
         // This closes the COALESCE that's injected a couple of lines down, and starts the SQL Server-specific
         // syntax that concludes later with FOR XML PATH
-        ret.insert(fromIndex, "AS NVARCHAR), '') AS [text()] ");
+        ret.insert(fromIndex, "AS NVARCHAR(MAX)), '') AS [text()] ");
         int selectIndex = sql.indexOf("SELECT");
         ret.insert(selectIndex + "SELECT".length(), "'" + delimiter + "' + COALESCE(CAST(");
         ret.insert(0, "SUBSTRING ((");
