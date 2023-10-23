@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.collections.NamedObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -29,7 +30,6 @@
 <%@ page import="org.labkey.core.login.LoginController.SetPasswordBean" %>
 <%@ page import="org.labkey.core.portal.ProjectController.HomeAction" %>
 <%@ page import="org.labkey.core.portal.ProjectController.StartAction" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -158,11 +158,11 @@
             const ctx = canvas.getContext("2d");
 
             if (ctx) {
+                drawOutline(canvas, ctx);
                 const ratio = increaseResolution(canvas, ctx);
                 const gaugeWidth = canvas.width;
                 const gaugeHeight = canvas.height;
 
-                drawOutline(canvas, ctx, ratio);
                 ctx.lineWidth = 1;
                 ctx.font = 12 * ratio + "pt Sans-Serif"
                 ctx.textAlign = "center";
@@ -209,7 +209,7 @@
         }
     });
 
-    function drawOutline(canvas, ctx, ratio) {
+    function drawOutline(canvas, ctx) {
         ctx.lineWidth = 3;
         ctx.strokeRect(0, 0, canvas.width, canvas.height);
     }
@@ -234,7 +234,7 @@
         canvas.style.width = width + "px";
         canvas.style.height = height + "px";
 
-        // Uncomment if you want your coordinate system to be the original width and height instead of the new dimensions
+        // Uncomment if you want to draw using the original width + height resolution instead of the new high resolution
         //ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
         return ratio;
