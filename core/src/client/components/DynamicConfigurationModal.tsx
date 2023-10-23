@@ -1,8 +1,8 @@
 import React, { PureComponent } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { Ajax } from '@labkey/api';
+import { ToggleButtons } from '@labkey/components';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput } from './DynamicFields';
@@ -179,14 +179,13 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                 <Modal.Body>
                     <div className="modal__top">
                         <span className="bold-text"> Configuration Status </span>
-                        <ReactBootstrapToggle
-                            onClick={this.onToggle}
-                            on="Enabled"
-                            off="Disabled"
-                            onstyle="primary"
-                            active={fieldValues.enabled}
+                        <ToggleButtons
+                            first="Enabled"
+                            second="Disabled"
                             className="modal__enable-toggle"
+                            active={fieldValues.enabled ? 'Enabled' : 'Disabled'}
                             disabled={!canEdit}
+                            onClick={this.onToggle}
                         />
                     </div>
 
