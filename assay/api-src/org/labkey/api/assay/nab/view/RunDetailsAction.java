@@ -36,8 +36,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -49,13 +47,8 @@ import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.HashSet;
 import java.util.Set;
 
-/**
- * User: klum
- * Date: 5/15/13
- */
 public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends SimpleViewAction<FormType>
 {
     protected int _runRowId;
@@ -94,17 +87,11 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         User elevatedUser = getUser();
         if (!getContainer().hasPermission(getUser(), ReadPermission.class))
         {
-            User currentUser = getUser();
-            Set<Role> contextualRoles = new HashSet<>(currentUser.getSiteRoles());
-            contextualRoles.add(RoleManager.getRole(ReaderRole.class));
-            elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
+            elevatedUser = LimitedUser.getElevatedUser(getContainer(), getUser(), Set.of(ReaderRole.class));
         }
         else if (getUser().equals(run.getCreatedBy()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
         {
-            User currentUser = getUser();
-            Set<Role> contextualRoles = new HashSet<>(currentUser.getSiteRoles());
-            contextualRoles.add(RoleManager.getRole(EditorRole.class));
-            elevatedUser = new LimitedUser(currentUser, currentUser.getGroups(), contextualRoles, false);
+            elevatedUser = LimitedUser.getElevatedUser(getContainer(), getUser(), Set.of(EditorRole.class));
         }
 
         try

@@ -692,16 +692,13 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                 // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
                 if (!context.getContainer().hasPermission(user, QCAnalystPermission.class))
                 {
-                    Set<Role> contextualRoles = new HashSet<>(user.getSiteRoles());
                     Role qcRole = RoleManager.getRole("org.labkey.api.security.roles.QCAnalystRole");
                     Role readerRole = RoleManager.getRole("org.labkey.api.security.roles.ReaderRole");
                     if (qcRole != null && readerRole != null)
                     {
                         try
                         {
-                            contextualRoles.add(RoleManager.getRole(qcRole.getClass()));
-                            contextualRoles.add(RoleManager.getRole(readerRole.getClass()));
-                            User elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles);
+                            User elevatedUser = LimitedUser.getElevatedUser(context.getContainer(), user, Set.of(qcRole.getClass(), readerRole.getClass()));
 
                             ViewContext viewContext = new ViewContext(context);
                             viewContext.setUser(elevatedUser);
