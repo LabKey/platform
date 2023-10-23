@@ -262,7 +262,7 @@ public class ClosureQueryHelper
         return userSchema.getCachedLookupTableInfo(key, () ->
         {
             MaterializedQueryHelper helper = Objects.requireNonNull(getClosureHelper(type, sourceLSID, true));
-            final SQLFragment fromSQL = helper.getFromSql(ExprColumn.STR_TABLE_ALIAS, null);
+            final SQLFragment fromSQL = helper.getFromSql(ExprColumn.STR_TABLE_ALIAS);
             var ret = new VirtualTable<>(DbSchema.getTemp(), "--" + ClosureQueryHelper.class.getName() + "--", userSchema)
             {
                 @Override
@@ -286,7 +286,7 @@ public class ClosureQueryHelper
     {
         // if there's nothing cached, we don't need to do incremental
         MaterializedQueryHelper helper = getClosureHelper(null, sourceLSID, false);
-        if (null == helper || !helper.isCached(null))
+        if (null == helper)
             return;
 
         TempTableTracker ttt = null;

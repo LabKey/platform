@@ -19,8 +19,10 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.template.ClientDependency;
@@ -72,7 +74,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
     }
 
     @Override
-    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
     {
         if (getProperty(ParticipantReport.MEASURES_PROP) != null)
         {
@@ -82,7 +84,7 @@ public class ParticipantReportDescriptor extends ReportDescriptor
             for(int i = 0; i < jsonMeasuresArr.length(); i++)
             {
                 JSONObject measure = jsonMeasuresArr.getJSONObject(i).getJSONObject("measure");
-                boolean measureUpdates = updateJSONObjectQueryNameReference(measure, changes);
+                boolean measureUpdates = updateJSONObjectQueryNameReference(measure, changes, isSchemaUpdate);
                 // special case for measure queryname: reset the measure alias based on the schemaName_queryName_measureName
                 if (measureUpdates)
                 {
@@ -106,14 +108,23 @@ public class ParticipantReportDescriptor extends ReportDescriptor
         return false;
     }
 
-    private boolean updateJSONObjectQueryNameReference(JSONObject json, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    private boolean updateJSONObjectQueryNameReference(JSONObject json, Collection<QueryChangeListener.QueryPropertyChange> changes, boolean isSchemaUpdate)
     {
         String queryName = json.getString("queryName");
-        if (queryName != null)
+        String schemaName = json.getString("schemaName");
+        if ((queryName != null && !isSchemaUpdate) || (schemaName != null && isSchemaUpdate))
         {
             for (QueryChangeListener.QueryPropertyChange qpc : changes)
             {
-                if (queryName.equals(qpc.getOldValue()))
+                if (isSchemaUpdate)
+                {
+                    if (schemaName.equals(qpc.getOldValue()))
+                    {
+                        json.put("schemaName", qpc.getNewValue());
+                        return true;
+                    }
+                }
+                else if (queryName.equals(qpc.getOldValue()))
                 {
                     json.put("queryName", qpc.getNewValue());
                     return true;

@@ -339,6 +339,12 @@ public class IssuesQuerySchema extends UserSchema
         }
 
         @Override
+        public void setSchema(String schemaName)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public void setCanInherit(boolean f)
         {
             throw new UnsupportedOperationException();

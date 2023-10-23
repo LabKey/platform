@@ -1207,31 +1207,30 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
-        if (useBackgroundThread)
-        {
-            JobRunner.getDefault().execute(() -> {
-                try
-                {
-                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-            });
-        }
-        else
-        {
+        // The caller of this handleRecalc() should generally be calling refreshSampleTypeMaterializedView().
+        // However, we also need to call it after this async process runs
+        // Also, it's harmless to call it twice, so we can call it in the synchronous case as well.
+
+        Runnable runRecalc = () -> {
             try
             {
                 SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
+                SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, false);
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
             }
-        }
+        };
 
+        if (useBackgroundThread)
+        {
+            JobRunner.getDefault().execute(runRecalc);
+        }
+        else
+        {
+            runRecalc.run();
+        }
     }
 
     private void fireSamplesChanged()

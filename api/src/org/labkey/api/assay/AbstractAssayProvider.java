@@ -518,12 +518,27 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public static String getPresubstitutionLsid(String prefix)
     {
-        return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION;
+        return getPresubstitutionLsid(prefix, ASSAY_NAME_SUBSTITUTION);
+    }
+
+    public static String getPresubstitutionLsid(String prefix, String idSub)
+    {
+        return "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + idSub;
+    }
+
+    protected String getPresubstitutionRunLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN);
+    }
+
+    protected String getPresubstitutionBatchLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH);
     }
 
     protected Pair<Domain, Map<DomainProperty, Object>> createRunDomain(Container c, User user)
     {
-        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
+        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionRunLsid(), "Run Fields");
         domain.setDescription("Define the run fields for this assay design. The user is prompted for these fields once per run and they will be applied to all rows in the run.");
         return new Pair<>(domain, Collections.emptyMap());
     }
@@ -535,7 +550,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user, boolean includeStandardProperties)
     {
-        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
+        Domain domain = PropertyService.get().createDomain(c, getPresubstitutionBatchLsid(), "Batch Fields");
         domain.setDescription("Define the batch fields for this assay design. The user is prompted for these fields once for each set of runs they import to this assay.");
 
         if (includeStandardProperties)
@@ -700,10 +715,10 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, ExpProtocol.Status status)
+    public ExpProtocol createAssayDefinition(User user, Container container, String name, String description, ExpProtocol.Status status, XarContext context)
             throws ExperimentException
     {
-        String protocolLsid = new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), name).toString();
+        String protocolLsid = getAssayProtocolLsid(container, name, context);
 
         ExpProtocol protocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, name);
         protocol.setProtocolDescription(description);
@@ -713,6 +728,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         protocol.setStatus(status);
 
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
+    }
+
+    protected String getAssayProtocolLsid(Container container, String assayName, XarContext context)
+    {
+        return new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), assayName).toString();
     }
 
     @Override

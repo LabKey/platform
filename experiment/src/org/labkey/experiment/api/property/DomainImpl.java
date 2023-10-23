@@ -511,16 +511,22 @@ public class DomainImpl implements Domain
 
     public void saveIfNotExists(User user) throws ChangePropertyDescriptorException
     {
-        save(user, false, true);
+        save(user, false, true, null);
     }
 
     @Override
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
-        save(user, false, false);
+        save(user, false, false, null);
     }
 
-    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists) throws ChangePropertyDescriptorException
+    @Override
+    public void save(User user, @Nullable String auditComment) throws ChangePropertyDescriptorException
+    {
+        save(user, false, false, auditComment);
+    }
+
+    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists, @Nullable String auditComment) throws ChangePropertyDescriptorException
     {
         ExperimentService exp = ExperimentService.get();
 
@@ -789,21 +795,22 @@ public class DomainImpl implements Domain
             }
 
             final boolean finalPropChanged = propChanged;
+            final String extraAuditComment = auditComment == null ? "" : auditComment + ' ';
 
             // Move audit event creation to outside the transaction to avoid deadlocks involving audit storage table creation
             Runnable afterDomainCommit = () ->
             {
                 if (isDomainNew)
-                    addAuditEvent(user, String.format("The domain %s was created", _dd.getName()), null);
+                    addAuditEvent(user, extraAuditComment + String.format("The domain %s was created", _dd.getName()), null);
 
                 if (finalPropChanged)
                 {
-                    final Long domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()), null);
+                    final Long domainEventId = addAuditEvent(user, extraAuditComment + String.format("The column(s) of domain %s were modified", _dd.getName()), null);
                     propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
                 }
                 else if (!isDomainNew)
                 {
-                    addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()), null);
+                    addAuditEvent(user, extraAuditComment + String.format("The descriptor of domain %s was updated", _dd.getName()), null);
                 }
             };
             transaction.addCommitTask(afterDomainCommit, DbScope.CommitTaskOption.POSTCOMMIT);

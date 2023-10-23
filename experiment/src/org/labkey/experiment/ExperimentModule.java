@@ -60,6 +60,7 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -131,6 +132,7 @@ import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
+import org.labkey.experiment.samples.ExperimentQueryChangeListener;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
@@ -213,6 +215,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         QueryService.get().addCompareType(new LineageCompareType());
         QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), JdbcType.BOOLEAN, 2, 3);
         QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
+        QueryService.get().addQueryListener(new ExperimentQueryChangeListener());
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
@@ -227,6 +230,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
         AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
                 "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", false);
+        AdminConsole.addExperimentalFeatureFlag(ExpMaterialTable.USE_MATERIALIZED_SAMPLETYPE, "Use materialized views for sample type tables",
+                "PROTOTYPE: possible approach for improving query performance.", false);
+
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 

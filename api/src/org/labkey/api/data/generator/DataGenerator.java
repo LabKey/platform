@@ -14,6 +14,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -26,6 +27,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -747,7 +749,7 @@ public class DataGenerator<T extends DataGenerator.Config>
     protected int importRows(List<Map<String, Object>> rows, BatchValidationException errors, QueryUpdateService service, Container container) throws BatchValidationException, SQLException
     {
         ListofMapsDataIterator rowsDI = new ListofMapsDataIterator(rows.get(0).keySet(), rows);
-        var numImported = service.importRows(_user, container, rowsDI, errors, null, null);
+        var numImported = service.importRows(_user, container, rowsDI, errors, _config.getImportConfig(), null);
         if (errors.hasErrors())
             throw errors;
         return numImported;
@@ -877,6 +879,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         public static final String SAMPLE_TYPE_PARENTS = "sampleTypeParents";
         public static final String MIN_DATA_CLASS_PARENT_TYPES_PER_SAMPLE = "minDataClassParentTypesPerSample";
         public static final String MAX_DATA_CLASS_PARENT_TYPES_PER_SAMPLE = "maxDataClassParentTypesPerSample";
+        public static final String AUDIT_BEHAVIOR_TYPE = "auditBehaviorType";
 
         int _numFolders;
         int _numSampleTypes;
@@ -897,6 +900,7 @@ public class DataGenerator<T extends DataGenerator.Config>
         List<String> _sampleTypeParents;
         int _minDataClassParentTypesPerSample;
         int _maxDataClassParentTypesPerSample;
+        AuditBehaviorType _auditBehaviorType;
 
         public List<String> getSampleTypeNames()
         {
@@ -932,7 +936,22 @@ public class DataGenerator<T extends DataGenerator.Config>
             _sampleTypeParents = parseNameList(properties, SAMPLE_TYPE_PARENTS);
             _minDataClassParentTypesPerSample = Integer.parseInt(properties.getProperty(MIN_DATA_CLASS_PARENT_TYPES_PER_SAMPLE, "0"));
             _maxDataClassParentTypesPerSample = Integer.parseInt(properties.getProperty(MAX_DATA_CLASS_PARENT_TYPES_PER_SAMPLE, "1"));
+            String strAuditBehavior = properties.getProperty(AUDIT_BEHAVIOR_TYPE);
+            if (strAuditBehavior != null)
+                _auditBehaviorType = AuditBehaviorType.valueOf(strAuditBehavior.toUpperCase());
 
+        }
+
+        public Map<Enum, Object> getImportConfig()
+        {
+            if (_auditBehaviorType != null)
+            {
+                Map<Enum, Object> map = new HashMap<>();
+                map.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, _auditBehaviorType);
+                return map;
+            }
+            else
+                return null;
         }
 
         protected List<String> parseNameList(Properties properties, String propertyName)
@@ -1123,6 +1142,16 @@ public class DataGenerator<T extends DataGenerator.Config>
         public void setMaxDataClassParentTypesPerSample(int maxDataClassParentTypesPerSample)
         {
             _maxDataClassParentTypesPerSample = maxDataClassParentTypesPerSample;
+        }
+
+        public AuditBehaviorType getAuditBehaviorType()
+        {
+            return _auditBehaviorType;
+        }
+
+        public void setAuditBehaviorType(AuditBehaviorType auditBehaviorType)
+        {
+            _auditBehaviorType = auditBehaviorType;
         }
     }
 
