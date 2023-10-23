@@ -1499,7 +1499,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _batchSize = batchSize;
 
             if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
-                selectAll(CaseInsensitiveHashSet.of("name", "rootmateriallsid")); // TODO: Investigate this
+                selectAll(CaseInsensitiveHashSet.of("name", "rootmateriallsid"));
             else
                 selectAll(CaseInsensitiveHashSet.of("name", "lsid", "rootmateriallsid"));
 
