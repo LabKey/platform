@@ -255,7 +255,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                     state => ({
                         [configType]: state[configType].filter(auth => auth.configuration !== configuration),
                     }),
-                    () => this.resetSecondaryProviders()
+                    this.resetSecondaryProviders
                 );
             }),
         });
