@@ -33,6 +33,7 @@
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
+<%@ page import="org.labkey.api.util.MothershipReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -180,10 +181,24 @@ Click the Save button at any time to accept the current settings and continue.</
     </td>
     <td>
         <table>
+<%
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+%>
+            <tr>
+                <td><span>Update checks and usage reporting are automatically <strong>on</strong> for servers running a LabKey Server Community Edition.</span></td>
+
+            </tr>
+<%
+        }
+        else
+        {
+%>
             <tr>
                 <td style="vertical-align: top">
                     <label>
-                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "1")%>' onChange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>" />
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "1")%>' onChange="enableUsageTest();"
+                               value="<%=UsageReportingLevel.NONE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>" />
                         <strong>OFF</strong> - Do not check for updates or report any usage data.
                     </label>
                 </td>
@@ -197,6 +212,9 @@ Click the Save button at any time to accept the current settings and continue.</
                     </label>
                 </td>
             </tr>
+<%
+        }
+%>
             <tr>
                 <td style="padding: 5px 0 5px;" colspan="2">
                             <%=button("View").id("testUsageReport").onClick("testUsageReport(false); return false;")%>

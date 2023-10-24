@@ -64,6 +64,7 @@ public class MothershipManager
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
+    private static final String MARKETING_MESSAGE_PROP = "marketingMessage";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLockWithName(MothershipManager.class, "INSERT_EXCEPTION_LOCK");
 
     private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
@@ -472,6 +473,11 @@ public class MothershipManager
         return getStringProperty(c, UPGRADE_MESSAGE_PROP);
     }
 
+    public String getMarketingMessage(Container c)
+    {
+        return getStringProperty(c, MARKETING_MESSAGE_PROP);
+    }
+
     private void saveProperty(Container c, String name, String value)
     {
         PropertyManager.PropertyMap props = getWritableProperties(c);
@@ -487,6 +493,11 @@ public class MothershipManager
     public void setUpgradeMessage(Container c, String message)
     {
         saveProperty(c, UPGRADE_MESSAGE_PROP, message);
+    }
+
+    public void setMarketingMessage(Container c, String message)
+    {
+        saveProperty(c, MARKETING_MESSAGE_PROP, message);
     }
 
     public String getCreateIssueURL(Container c)
