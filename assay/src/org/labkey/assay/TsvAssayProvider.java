@@ -186,13 +186,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     protected String getPresubstitutionRunLsid()
     {
-        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN, ASSAY_DBSEQ_SUBSTITUTION);
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN, getLsidIdSub());
     }
 
     @Override
     protected String getPresubstitutionBatchLsid()
     {
-        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH, ASSAY_DBSEQ_SUBSTITUTION);
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH, getLsidIdSub());
     }
 
     @Override
@@ -277,9 +277,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
+    protected String getLsidIdSub()
+    {
+        return ASSAY_DBSEQ_SUBSTITUTION;
+    }
+
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, ASSAY_DBSEQ_SUBSTITUTION), "Data Fields");
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, getLsidIdSub()), "Data Fields");
         dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
