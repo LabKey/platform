@@ -216,8 +216,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
 
-    public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
-
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
 
