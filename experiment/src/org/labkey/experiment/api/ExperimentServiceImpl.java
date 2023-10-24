@@ -25,6 +25,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -782,7 +783,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result == null ? null : new ExpMaterialImpl(result);
     }
 
-    public List<ExpMaterialImpl> getIndexableMaterials(Container container, @Nullable Date modifiedSince)
+    private static final int INDEXING_LIMIT = 10_000;
+
+    public void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
     {
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
@@ -791,17 +794,42 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
+        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getSchema(), sql);
+        selector.setJdbcCaching(false);
+
+        int rowCount = selector.forEach(Material.class, m -> {
+            ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
+            task.addResource(expMaterial.createIndexDocument(), SearchService.PRIORITY.bulk);
+        });
+
+        if (rowCount == INDEXING_LIMIT)
+        {
+            task.addRunnable(() -> indexMaterials(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+        }
     }
 
-    public List<ExpDataImpl> getIndexableData(Container container, @Nullable Date modifiedSince)
+    public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL");
         sql.add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
+
+        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getSchema(), sql);
+        selector.setJdbcCaching(false);
+
+        int rowCount = selector.forEach(Data.class, d -> {
+            ExpDataImpl expData = new ExpDataImpl(d);
+            task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
+        });
+
+        if (rowCount == INDEXING_LIMIT)
+        {
+            task.addRunnable(() -> indexData(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+        }
     }
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)

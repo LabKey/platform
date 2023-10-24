@@ -863,9 +863,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }, SearchService.PRIORITY.bulk);
 
         task.addRunnable(() -> {
-            // batch by the 100's
-            List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
-            task.addResourceList(materials, 100, ExpMaterialImpl::createIndexDocument);
+            ExperimentServiceImpl.get().indexMaterials(task, c, modifiedSince);
         }, SearchService.PRIORITY.bulk);
 
         task.addRunnable(() -> {
@@ -876,8 +874,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }, SearchService.PRIORITY.bulk);
 
         task.addRunnable(() -> {
-            List<ExpDataImpl> dataObjects = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
-            task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
+            ExperimentServiceImpl.get().indexData(task, c, modifiedSince);
         }, SearchService.PRIORITY.bulk);
     }
 
