@@ -271,7 +271,7 @@ export class App extends PureComponent<{}, Partial<State>> {
                 const dirtinessData = { ...state.dirtinessData, [configType]: newState };
                 return { [configType]: newState, dirtinessData };
             },
-            () => this.resetSecondaryProviders()
+            this.resetSecondaryProviders
         );
     };
 
