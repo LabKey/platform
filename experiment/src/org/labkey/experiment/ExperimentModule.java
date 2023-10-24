@@ -30,7 +30,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -144,7 +143,6 @@ import org.labkey.experiment.xar.FolderXarWriterFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -161,7 +159,7 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
  * User: phussey (Peter Hussey)
  * Date: Jul 18, 2005
  */
-public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
+public class ExperimentModule extends SpringModule
 {
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
@@ -494,7 +492,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             addSampleTypeResourceResolver(ExpSampleTypeImpl.mediaSearchCategory.getName());
             addSampleResourceResolver(ExpMaterialImpl.searchCategory.getName());
             addSampleResourceResolver(ExpMaterialImpl.mediaSearchCategory.getName());
-            ss.addDocumentProvider(this);
+            ss.addDocumentProvider(ExperimentServiceImpl.get());
         }
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
@@ -851,51 +849,4 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME);
     }
-
-    @Override
-    public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
-    {
-        task.addRunnable(() -> {
-            for (ExpSampleTypeImpl sampleType : ExperimentServiceImpl.get().getIndexableSampleTypes(c, modifiedSince))
-            {
-                sampleType.index(task);
-            }
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(() -> {
-            ExperimentServiceImpl.get().indexMaterials(task, c, modifiedSince);
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(() -> {
-            for (ExpDataClassImpl dataClass : ExperimentServiceImpl.get().getIndexableDataClasses(c, modifiedSince))
-            {
-                dataClass.index(task);
-            }
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(() -> {
-            ExperimentServiceImpl.get().indexData(task, c, modifiedSince);
-        }, SearchService.PRIORITY.bulk);
-    }
-
-    @Override
-    public void indexDeleted()
-    {
-        // Clear the last indexed time on all material sources
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoSampleType() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-
-        // Clear the last indexed time on all data classes
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoDataClass() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-
-        // Clear the last indexed time on all materials
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-
-        // Clear the last indexed time on all data
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoData() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-    }
-
 }

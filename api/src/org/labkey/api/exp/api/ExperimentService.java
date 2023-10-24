@@ -899,9 +899,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Lock getProtocolImportLock();
 
-    HttpView createRunExportView(Container container, String defaultFilenamePrefix);
+    HttpView<?> createRunExportView(Container container, String defaultFilenamePrefix);
 
-    HttpView createFileExportView(Container container, String defaultFilenamePrefix);
+    HttpView<?> createFileExportView(Container container, String defaultFilenamePrefix);
 
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message, String userComment);
@@ -940,11 +940,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get the set of runs that can be deleted based on the materials supplied.
      * INCLUDES: Derivative runs, and if only remaining output/derivative the immediate precursor run
      * @param materials Set of materials to get runs for
-     * @return Set of runs that can be deleted based on the materials
+     * @return runs that can be deleted based on the materials
      */
     List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
-
-    boolean useUXDomainDesigner();
 
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
