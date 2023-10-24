@@ -228,6 +228,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.RootMaterialRowId.name()));
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), Column.RowId.name()));
                 columnInfo.setLabel("Root Material");
+                columnInfo.setUserEditable(false);
                 return columnInfo;
             }
             case AliquotedFromLSID ->
