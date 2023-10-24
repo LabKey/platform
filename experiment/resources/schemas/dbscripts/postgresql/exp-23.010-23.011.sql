@@ -8,6 +8,7 @@ DROP INDEX IF EXISTS exp.idx_material_AK;
 DROP INDEX IF EXISTS exp.idx_material_objectid;
 DROP INDEX IF EXISTS exp.IDX_material_name_sourceid;
 DROP INDEX IF EXISTS exp.IX_Material_RootRowId;
+DROP INDEX IF EXISTS exp.uq_material_rootlsid;
 
 -- Drop all constraints on exp.material EXCEPT UQ_Material_LSID as it is relied upon by other tables
 ALTER TABLE exp.material DROP CONSTRAINT FK_Material_ExperimentRun;
@@ -39,6 +40,12 @@ ALTER TABLE materialroottemp ADD CONSTRAINT PK_materialroottemp PRIMARY KEY (Row
 UPDATE exp.material AS mat SET RootMaterialRowId = (
     SELECT RootMaterialRowId FROM materialroottemp AS root WHERE mat.RowId = root.RowId
 );
+
+-- Add NOT NULL constraint to "RootMaterialRowId"
+ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
+
+-- Remove the "RootMaterialLSID" column
+ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
 
 -- Reintroduce constraints on exp.material
 ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ExperimentRun FOREIGN KEY(RunId) REFERENCES exp.ExperimentRun (RowId);

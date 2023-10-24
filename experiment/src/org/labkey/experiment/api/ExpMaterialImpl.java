@@ -174,18 +174,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public String getRootMaterialLSID()
-    {
-        return _object.getRootMaterialLSID();
-    }
-
-    @Override
-    public void setRootMaterialLSID(String lsid)
-    {
-        _object.setRootMaterialLSID(lsid);
-    }
-
-    @Override
     public Integer getRootMaterialRowId()
     {
         return _object.getRootMaterialRowId();
@@ -359,8 +347,6 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (longId > Integer.MAX_VALUE)
                 throw new OutOfRangeException(longId, 0, Integer.MAX_VALUE);
             setRowId((int) longId);
-            if (null == getRootMaterialLSID())
-                setRootMaterialLSID(getLSID());
             if (null == getRootMaterialRowId())
                 setRootMaterialRowId(getRowId());
         }

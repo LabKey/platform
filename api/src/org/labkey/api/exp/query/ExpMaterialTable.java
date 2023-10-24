@@ -57,7 +57,6 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         QueryableInputs,
         RawAmount,
         RawUnits,
-        RootMaterialLSID,
         RootMaterialRowId,
         RowId,
         Run,

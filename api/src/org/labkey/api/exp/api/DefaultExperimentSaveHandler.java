@@ -16,7 +16,6 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -407,7 +406,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
         boolean isAliquotProtocol = protocol != null && SAMPLE_ALIQUOT_PROTOCOL_LSID.equals(protocol.getLSID());
         String aliquotParentLsid = null;
-        String aliquotRootLsid = null;
         Integer aliquotRootRowId = null;
         if (isAliquotProtocol)
         {
@@ -416,8 +414,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
 
             ExpMaterial parent = inputMaterial.keySet().iterator().next();
             aliquotParentLsid = parent.getLSID();
-            aliquotRootLsid = StringUtils.isEmpty(parent.getRootMaterialLSID()) ? parent.getLSID() : parent.getRootMaterialLSID();
-            aliquotRootRowId = StringUtils.isEmpty(parent.getRootMaterialLSID()) ? parent.getRowId() : parent.getRootMaterialRowId();
+            aliquotRootRowId = parent.getRootMaterialRowId() == null ? parent.getRowId() : parent.getRootMaterialRowId();
         }
 
         run.deleteProtocolApplications(context.getUser());
@@ -443,7 +440,6 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
                 if (isAliquotProtocol)
                 {
                     material.setAliquotedFromLSID(aliquotParentLsid);
-                    material.setRootMaterialLSID(aliquotRootLsid);
                     material.setRootMaterialRowId(aliquotRootRowId);
                 }
 

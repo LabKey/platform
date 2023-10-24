@@ -32,7 +32,6 @@ import java.util.Date;
 public class Material extends RunItem
 {
     private Integer materialSourceId;
-    private String rootMaterialLSID;
     private Integer rootMaterialRowId;
     private String aliquotedFromLSID;
     private Integer sampleState;
@@ -59,16 +58,6 @@ public class Material extends RunItem
     public void setMaterialSourceId(Integer materialSourceId)
     {
         this.materialSourceId = materialSourceId;
-    }
-
-    public String getRootMaterialLSID()
-    {
-        return rootMaterialLSID;
-    }
-
-    public void setRootMaterialLSID(String rootMaterialLSID)
-    {
-        this.rootMaterialLSID = rootMaterialLSID;
     }
 
     public Integer getRootMaterialRowId()

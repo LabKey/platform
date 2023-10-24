@@ -48,10 +48,6 @@ public interface ExpMaterial extends ExpRunItem
     @Override
     void save(User user);
 
-    String getRootMaterialLSID();
-
-    void setRootMaterialLSID(String lsid);
-
     Integer getRootMaterialRowId();
 
     void setRootMaterialRowId(int rowId);

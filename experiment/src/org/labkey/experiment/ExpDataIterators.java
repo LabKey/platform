@@ -136,8 +136,6 @@ import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
@@ -552,7 +550,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), context, _schema, _container, _user, _sampleType));
+            return LoggingDataIterator.wrap(new AutoLinkToStudyDataIterator(DataIteratorUtil.wrapMap(pre, false), _schema, _container, _user, _sampleType));
         }
     }
 
@@ -565,11 +563,11 @@ public class ExpDataIterators
         final List<Map<FieldKey, Object>> _rows = new ArrayList<>();
         final List<Integer> _derivativeKeys = new ArrayList<>();
         final UserSchema _schema;
-        private boolean _hasParentInput;
+        final boolean _hasParentInput;
         final Integer _rowIdCol;
         final List<Integer> _parentCols = new ArrayList<>();
 
-        protected AutoLinkToStudyDataIterator(DataIterator di, DataIteratorContext context, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
+        protected AutoLinkToStudyDataIterator(DataIterator di, UserSchema schema, Container container, User user,  ExpSampleType sampleType)
         {
             super(di);
 
@@ -644,7 +642,6 @@ public class ExpDataIterators
             {
                 _derivativeKeys.add((Integer)get(_rowIdCol));
             }
-
 
             return true;
         }
@@ -2226,7 +2223,6 @@ public class ExpDataIterators
                 }
 
                 dontUpdate.addAll(((ExpMaterialTableImpl) _expTable).getUniqueIdFields());
-                dontUpdate.add(RootMaterialLSID.toString());
                 dontUpdate.add(RootMaterialRowId.toString());
                 dontUpdate.add(AliquotedFromLSID.toString());
             }
@@ -2246,21 +2242,9 @@ public class ExpDataIterators
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
             DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, true);
 
-            // Add RootMaterialLSID if it does not exist
+            // Add RootMaterialRowId if it does not exist
             DataIteratorBuilder step2b = ctx -> {
                 DataIterator in = step2a.getDataIterator(ctx);
-                var map = DataIteratorUtil.createColumnNameMap(in);
-                if (map.containsKey(RootMaterialLSID.toString()) || !map.containsKey(LSID.toString()))
-                    return in;
-                var ret = new SimpleTranslator(in, ctx);
-                ret.selectAll();
-                ret.addAliasColumn(RootMaterialLSID.toString(), map.get(LSID.toString()));
-                return ret;
-            };
-
-            // Add RootMaterialRowId if it does not exist
-            DataIteratorBuilder step2c = ctx -> {
-                DataIterator in = step2b.getDataIterator(ctx);
                 var map = DataIteratorUtil.createColumnNameMap(in);
                 if (map.containsKey(RootMaterialRowId.toString()) || !map.containsKey(RowId.toString()))
                     return in;
@@ -2272,7 +2256,7 @@ public class ExpDataIterators
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2c, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2b, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)

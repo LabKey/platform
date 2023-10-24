@@ -1484,7 +1484,6 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterialImpl rootMaterial = ExperimentServiceImpl.get().getExpMaterial(rootMaterialLSID);
                 if (rootMaterial != null)
                 {
-                    m.setRootMaterialLSID(rootMaterial.getLSID());
                     m.setRootMaterialRowId(rootMaterial.getRowId());
                 }
             }
@@ -1600,6 +1599,7 @@ public class XarReader extends AbstractXarImporter
         {
             if (rootMaterialLSID != null)
             {
+                // TODO: This isn't exactly right. Need to resolve the rootMaterialLSID back to an actual root material on the instance before we can get the rowId (rowId not available from _xarSource)
                 ExpMaterial rootMaterial = null;
                 if (run != null)
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
@@ -1616,8 +1616,6 @@ public class XarReader extends AbstractXarImporter
                 }
                 else if (!Objects.equals(existingRootRowId, newRootRowId))
                 {
-                    String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
-                    ((Material) output).setRootMaterialLSID(newRootLsid);
                     ((Material) output).setRootMaterialRowId(newRootRowId);
                     changed = true;
                 }

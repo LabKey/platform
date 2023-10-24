@@ -125,8 +125,8 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
-import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
@@ -500,7 +500,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         Domain domain = getDomain();
         Set<String> fields = domain.getProperties().stream()
-                .filter(dp -> !ExpMaterialTable.Column.LSID.name().equalsIgnoreCase(dp.getName())
+                .filter(dp -> !LSID.name().equalsIgnoreCase(dp.getName())
                                 && !ExpMaterialTable.Column.Name.name().equalsIgnoreCase(dp.getName())
                                 && (StringUtils.isEmpty(dp.getDerivationDataScope())
                                     || ExpSchema.DerivationDataScopeType.ParentOnly.name().equalsIgnoreCase(dp.getDerivationDataScope())))
@@ -600,7 +600,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!StringUtils.isEmpty(newAliquotedFromLSID) && !newAliquotedFromLSID.equals(oldAliquotedFromLSID))
             throw new ValidationException("Updating aliquotedFrom is not supported");
         rowCopy.remove(AliquotedFromLSID.name());
-        rowCopy.remove(RootMaterialLSID.name());
         rowCopy.remove(RootMaterialRowId.name());
         rowCopy.remove(ExpMaterial.ALIQUOTED_FROM_INPUT);
 
@@ -788,7 +787,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private @Nullable String getMaterialLsid(Map<String, Object> row)
     {
-        return getMaterialStringValue(row, ExpMaterialTable.Column.LSID.name());
+        return getMaterialStringValue(row, LSID.name());
     }
 
     private @Nullable String getMaterialName(Map<String, Object> row)
@@ -827,7 +826,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (rowId != null)
             filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowId);
         else if (lsid != null)
-            filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsid);
+            filter = new SimpleFilter(FieldKey.fromParts(LSID), lsid);
         else
             throw new QueryUpdateServiceException("Either RowId or LSID is required to get Sample Type Material.");
 
@@ -1050,7 +1049,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             useLsid = true;
             allKeys.addAll(lsidRowNumMap.keySet());
 
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.LSID), lsidRowNumMap.keySet(), CompareType.IN);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(LSID), lsidRowNumMap.keySet(), CompareType.IN);
             if (filterToCurrentContainer)
                 filter.addCondition(FieldKey.fromParts("Container"), container);
             Map<String, Object>[] rows = new TableSelector(queryTableInfo, selectColumns, filter, null).getMapArray();
@@ -1500,9 +1499,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             _batchSize = batchSize;
 
             if (context.getConfigParameterBoolean(ExperimentService.QueryOptions.UseLsidForUpdate))
-                selectAll(CaseInsensitiveHashSet.of("name", "rootmateriallsid"));
+                selectAll(CaseInsensitiveHashSet.of(Name.name(), RootMaterialRowId.name()));
             else
-                selectAll(CaseInsensitiveHashSet.of("name", "lsid", "rootmateriallsid"));
+                selectAll(CaseInsensitiveHashSet.of(Name.name(), LSID.name(), RootMaterialRowId.name()));
 
             _lsidDbSeq = sampleType.getSampleLsidDbSeq(_batchSize, _container);
 

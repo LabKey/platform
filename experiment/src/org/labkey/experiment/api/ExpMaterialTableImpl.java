@@ -215,14 +215,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setHidden(true);
                 return columnInfo;
             }
-            case RootMaterialLSID ->
-            {
-                var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.RootMaterialLSID.name()));
-                columnInfo.setSqlTypeName("lsidtype");
-                columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), Column.LSID.name()));
-                columnInfo.setLabel("Root Material");
-                return columnInfo;
-            }
             case RootMaterialRowId ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(Column.RootMaterialRowId.name()));
@@ -696,14 +688,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         colLSID.setShownInDetailsView(false);
         colLSID.setShownInUpdateView(false);
 
-        var rootLSID = addColumn(Column.RootMaterialLSID);
-        rootLSID.setHidden(true);
-        rootLSID.setReadOnly(true);
-        rootLSID.setUserEditable(false);
-        rootLSID.setShownInInsertView(false);
-        rootLSID.setShownInDetailsView(false);
-        rootLSID.setShownInUpdateView(false);
-
         var rootRowId = addColumn(Column.RootMaterialRowId);
         rootRowId.setHidden(true);
         rootRowId.setReadOnly(true);
@@ -1032,14 +1016,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return selectedColumns;
     }
 
-
     @NotNull
     @Override
     public SQLFragment getFromSQL(String alias)
     {
         return getFromSQL(alias, null);
     }
-
 
     @Override
     public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
@@ -1130,7 +1112,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-    /* SELECT and JOIN, does not include WHERE, same as get`JoinSQL() */
+    /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
     private SQLFragment getMaterializedSQL()
     {
         if (null == _ss)
@@ -1150,9 +1132,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
                 .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
                 .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
-                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmateriallsid)")
+                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmaterialrowid)")
                 .addInvalidCheck(() -> String.valueOf(getInvalidateCounter(_ss.getLSID()).get()))
-                .upToDateSql(new SQLFragment("SELECT CAST(COUNT(*) AS VARCHAR) FROM ").append(provisioned))  // MAX(modified) would probably be better if it were a) in the materailized table b) indexed
+                .upToDateSql(new SQLFragment("SELECT CAST(COUNT(*) AS VARCHAR) FROM ").append(provisioned))  // MAX(modified) would probably be better if it were a) in the materialized table b) indexed
                 .build();
         });
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));

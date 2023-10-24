@@ -289,7 +289,6 @@
           <description>Contains the time this material was last updated in the search index</description>
       </column>
       <column columnName="ObjectId"/>
-      <column columnName="RootMaterialLSID"/>
       <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState">
@@ -1023,7 +1022,6 @@
       <column columnName="Container"/>
       <column columnName="LastIndexed"/>
       <column columnName="ObjectId"/>
-      <column columnName="RootMaterialLSID"/>
       <column columnName="RootMaterialRowId"/>
       <column columnName="AliquotedFromLSID"/>
       <column columnName="SampleState"/>
