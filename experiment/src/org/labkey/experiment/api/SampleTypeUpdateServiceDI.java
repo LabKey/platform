@@ -1336,7 +1336,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     addAliquotedFrom.addNullColumn(RootMaterialRowId.name(), JdbcType.INTEGER);
                 addAliquotedFrom.addColumn(new BaseColumnInfo("cpasType", JdbcType.VARCHAR), new SimpleTranslator.ConstantColumn(sampleType.getLSID()));
                 addAliquotedFrom.addColumn(new BaseColumnInfo("materialSourceId", JdbcType.INTEGER), new SimpleTranslator.ConstantColumn(sampleType.getRowId()));
-                addAliquotedFrom.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.VARCHAR);
+                addAliquotedFrom.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addAliquotedFrom.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
                 addAliquotedFrom.selectAll();
 
@@ -1364,7 +1364,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // only add when AliquotedFrom column is not null
             if (columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
             {
-                addGenId.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.VARCHAR);
+                addGenId.addNullColumn(ROOT_RECOMPUTE_ROWID_COL, JdbcType.INTEGER);
                 addGenId.addNullColumn(PARENT_RECOMPUTE_NAME_COL, JdbcType.VARCHAR);
             }
             DataIterator dataIterator = LoggingDataIterator.wrap(addGenId);
