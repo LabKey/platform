@@ -7,8 +7,6 @@ import { Panel } from 'react-bootstrap';
 import { fromJS, List } from 'immutable';
 import {
     AppContextProvider,
-    FileAttachmentForm,
-    Grid,
     initQueryGridState,
     SelectInput,
     SelectInputOption,
@@ -20,19 +18,10 @@ import {
 } from '@labkey/components';
 import { getServerContext } from '@labkey/api';
 
-import { GRID_COLUMNS, GRID_DATA } from './constants';
 import { EditableGridPage } from './EditableGridPage';
-import { DetailPage } from './DetailPage';
 import { GridPanelPage } from './GridPanelPage';
 
-const COMPONENT_NAMES = List<SelectInputOption>([
-    { value: 'DetailPanel' },
-    { value: 'EditableDetailPanel' },
-    { value: 'EditableGridPanel' },
-    { value: 'FileAttachmentForm' },
-    { value: 'Grid' },
-    { value: 'GridPanel' },
-]);
+const COMPONENT_NAMES = List<SelectInputOption>([{ value: 'EditableGridPanel' }, { value: 'GridPanel' }]);
 
 type State = {
     selected: string;
@@ -120,45 +109,7 @@ export class App extends React.Component<any, State> {
 
                             <br />
 
-                            {selected === 'DetailPanel' && <DetailPage editable={false} />}
-                            {selected === 'EditableDetailPanel' && <DetailPage editable={true} />}
                             {selected === 'EditableGridPanel' && <EditableGridPage />}
-                            {selected === 'FileAttachmentForm' && (
-                                <>
-                                    {this.renderPanel(
-                                        'FileAttachmentForm',
-                                        <FileAttachmentForm
-                                            label="File Attachment"
-                                            acceptedFormats=".csv, .tsv, .txt, .xls, .xlsx, .fasta, .png, .pdf"
-                                            allowMultiple={false}
-                                            templateUrl="#fileattachmentform?downloadtemplate=clicked"
-                                            previewGridProps={{
-                                                previewCount: 3,
-                                                acceptedFormats: '.csv, .tsv, .txt, .xls, .xlsx, .fasta',
-                                            }}
-                                        />
-                                    )}
-                                    <p>
-                                        Note: this component also supports multiple file selection (in which case the
-                                        preview grid options are not available), showing an initial set of files on
-                                        component mount, and a compact display format.
-                                    </p>
-                                </>
-                            )}
-                            {selected === 'Grid' && (
-                                <>
-                                    {this.renderPanel('Grid', <Grid data={GRID_DATA} columns={GRID_COLUMNS} />)}
-                                    {this.renderPanel(
-                                        'Grid - transposed',
-                                        <Grid
-                                            data={GRID_DATA}
-                                            columns={GRID_COLUMNS}
-                                            transpose={true}
-                                            striped={false}
-                                        />
-                                    )}
-                                </>
-                            )}
                             {selected === 'GridPanel' && <GridPanelPage />}
                         </NotificationsContextProvider>
                     </GlobalStateContextProvider>
