@@ -10,23 +10,11 @@ DROP INDEX IF EXISTS exp.IDX_material_name_sourceid;
 DROP INDEX IF EXISTS exp.IX_Material_RootRowId;
 DROP INDEX IF EXISTS exp.uq_material_rootlsid;
 
--- Drop all constraints on exp.material EXCEPT UQ_Material_LSID as it is relied upon by other tables
-ALTER TABLE exp.material DROP CONSTRAINT FK_Material_ExperimentRun;
-ALTER TABLE exp.material DROP CONSTRAINT FK_Material_ProtocolApplication;
-ALTER TABLE exp.material DROP CONSTRAINT FK_Material_Containers;
-ALTER TABLE exp.material DROP CONSTRAINT FK_Material_Lsid;
-ALTER TABLE exp.material DROP CONSTRAINT FK_Material_ObjectId;
-ALTER TABLE exp.material DROP CONSTRAINT FK_Material_SampleState;
-
 -- Add new "RootMaterialRowId" column
 ALTER TABLE exp.material ADD COLUMN RootMaterialRowId INT;
 
 -- Create an unconstrained temporary table to write results
-CREATE TEMPORARY TABLE materialroottemp
-(
-    RowId INT,
-    RootMaterialRowId INT
-) ON COMMIT DROP;
+CREATE TEMPORARY TABLE materialroottemp (RowId INT, RootMaterialRowId INT);
 
 -- Compute "RootMaterialRowId"
 INSERT INTO materialroottemp (RowId, RootMaterialRowId)
@@ -41,19 +29,14 @@ UPDATE exp.material AS mat SET RootMaterialRowId = (
     SELECT RootMaterialRowId FROM materialroottemp AS root WHERE mat.RowId = root.RowId
 );
 
+-- Drop the temporary table
+DROP TABLE materialroottemp;
+
 -- Add NOT NULL constraint to "RootMaterialRowId"
 ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
 
 -- Remove the "RootMaterialLSID" column
 ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
-
--- Reintroduce constraints on exp.material
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ExperimentRun FOREIGN KEY(RunId) REFERENCES exp.ExperimentRun (RowId);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ProtocolApplication FOREIGN KEY (SourceApplicationID) REFERENCES exp.ProtocolApplication (RowId);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_Lsid FOREIGN KEY (lsid) REFERENCES exp.object (objecturi);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_ObjectId FOREIGN KEY (objectid) REFERENCES exp.object (objectid);
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_SampleState FOREIGN KEY (SampleState) REFERENCES core.DataStates (RowId);
 
 -- Recreate indices on exp.material
 CREATE INDEX IDX_CL_Material_RunId ON exp.material (RunId);
