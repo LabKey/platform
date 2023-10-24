@@ -81,7 +81,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 23.003;
+        return 23.004;
     }
 
     @Override
@@ -90,14 +90,12 @@ public class SearchModule extends DefaultModule
         return true;
     }
 
-
     @Override
     @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set("search");
     }
-
 
     @Override
     @NotNull
@@ -107,7 +105,6 @@ public class SearchModule extends DefaultModule
         return Collections.emptySet();
     }
 
-
     @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -115,7 +112,6 @@ public class SearchModule extends DefaultModule
         return List.of(new SearchWebPartFactory());
     }
 
-    
     @Override
     protected void init()
     {
@@ -124,7 +120,6 @@ public class SearchModule extends DefaultModule
         SearchService.setInstance(ss);
 
         LabKeyManagement.register(new StandardMBean(ss, SearchMXBean.class, true), "Search");
-
 
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
@@ -141,7 +136,6 @@ public class SearchModule extends DefaultModule
             }
         });
     }
-
 
     @Override
     public void doStartup(ModuleContext moduleContext)
@@ -204,7 +198,6 @@ public class SearchModule extends DefaultModule
 
         ContextListener.addStartupListener(_searchStartupListener);
     }
-
 
     @Override
     public void startBackgroundThreads()

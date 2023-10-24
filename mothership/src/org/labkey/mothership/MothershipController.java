@@ -34,8 +34,24 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.*;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -288,6 +304,7 @@ public class MothershipController extends SpringActionController
             form.setMessage(MothershipManager.get().getUpgradeMessage(getContainer()));
             form.setCreateIssueURL(MothershipManager.get().getCreateIssueURL(getContainer()));
             form.setIssuesContainer(MothershipManager.get().getIssuesContainer(getContainer()));
+            form.setMarketingMessage(MothershipManager.get().getMarketingMessage(getContainer()));
 
             return new VBox(new LinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
@@ -315,6 +332,7 @@ public class MothershipController extends SpringActionController
             MothershipManager.get().setUpgradeMessage(getContainer(), form.getMessage());
             MothershipManager.get().setCreateIssueURL(getContainer(), form.getCreateIssueURL());
             MothershipManager.get().setIssuesContainer(getContainer(), form.getIssuesContainer());
+            MothershipManager.get().setMarketingMessage(getContainer(), form.getMarketingMessage());
             return true;
         }
 
@@ -733,9 +751,21 @@ public class MothershipController extends SpringActionController
                 // First log this installation and session
                 var sessionAndRelease = saveSessionInfo(form);
                 setSuccessHeader();
-                getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
-            }
 
+                if (form.getApiVersion() >= 23.11)
+                {
+                    JSONObject response = new JSONObject();
+                    response.put("upgradeMessage", getUpgradeMessage(sessionAndRelease.second));
+                    response.put("marketingUpdate", MothershipManager.get().getMarketingMessage(getContainer()));
+
+                    return success(response);
+                }
+                else
+                {
+                    // respond in plain text
+                    getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
+                }
+            }
             return null;
         }
     }
@@ -918,6 +948,7 @@ public class MothershipController extends SpringActionController
         private String _logoLink;
         private String _organizationName;
         private String _systemShortName;
+        private float _apiVersion;             // used to pass along the api version being used
 
         public String getLogoLink()
         {
@@ -1155,6 +1186,16 @@ public class MothershipController extends SpringActionController
         public void setServerHostName(String serverHostName)
         {
             _serverHostName = serverHostName;
+        }
+
+        public float getApiVersion()
+        {
+            return _apiVersion;
+        }
+
+        public void setApiVersion(float apiVersion)
+        {
+            _apiVersion = apiVersion;
         }
 
         public Pair<ServerSession, SoftwareRelease> toSession(Container container)
@@ -1835,6 +1876,7 @@ public class MothershipController extends SpringActionController
         private String _message;
         private String _createIssueURL;
         private String _issuesContainer;
+        private String _marketingMessage;
 
         public Date getCurrentBuildDate()
         {
@@ -1874,6 +1916,16 @@ public class MothershipController extends SpringActionController
         public String getIssuesContainer()
         {
             return _issuesContainer;
+        }
+
+        public String getMarketingMessage()
+        {
+            return _marketingMessage;
+        }
+
+        public void setMarketingMessage(String marketingMessage)
+        {
+            _marketingMessage = marketingMessage;
         }
     }
 }

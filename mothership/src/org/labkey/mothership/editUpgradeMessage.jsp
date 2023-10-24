@@ -69,6 +69,14 @@
             </td>
         </tr>
         <tr>
+            <td>
+                Marketing message (HTML allowed):
+            </td>
+            <td>
+                <textarea rows="5" cols="50" name="marketingMessage"><%=h(form.getMarketingMessage())%></textarea>
+            </td>
+        </tr>
+        <tr>
             <td></td>
             <td>
                 <%= button("Save").submit(true) %>

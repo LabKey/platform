@@ -16,6 +16,7 @@
 package org.labkey.api.visualization;
 
 import org.json.JSONObject;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.DomainProperty;
@@ -30,6 +31,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -81,7 +83,7 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
     }
 
     @Override
-    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
     {
         if (getJSON() != null)
         {
@@ -90,16 +92,30 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
             JSONObject json = new JSONObject(getJSON());
             JSONObject queryJson = json.getJSONObject("queryConfig");
             String queryName = queryJson.optString("queryName", null);
-            if (queryName != null)
+            String schemaName = queryJson.optString("schemaName", null);
+            if ((queryName != null && !isSchemaUpdate) || (schemaName != null && isSchemaUpdate))
             {
                 for (QueryChangeListener.QueryPropertyChange qpc : changes)
                 {
-                    if (queryName.equals(qpc.getOldValue()))
+                    if (isSchemaUpdate)
                     {
-                        queryJson.put("queryName", qpc.getNewValue());
-                        queryJson.put("queryLabel", ReportUtil.getQueryLabelByName(qpc.getSource().getSchema(), qpc.getSource().getName()));
-                        setJSON(json.toString());
-                        return true;
+                        if (schemaName.equals(qpc.getOldValue()))
+                        {
+                            queryJson.put("schemaName", qpc.getNewValue());
+                            queryJson.put("queryLabel", ReportUtil.getQueryLabelByName(user, container, qpc.getNewValue().toString(), queryName));
+                            setJSON(json.toString());
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        if (queryName.equals(qpc.getOldValue()) && qpc.getSource() != null)
+                        {
+                            queryJson.put("queryName", qpc.getNewValue());
+                            queryJson.put("queryLabel", ReportUtil.getQueryLabelByName(qpc.getSource().getSchema(), qpc.getSource().getName()));
+                            setJSON(json.toString());
+                            return true;
+                        }
                     }
                 }
             }

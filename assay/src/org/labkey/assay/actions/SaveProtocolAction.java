@@ -56,6 +56,9 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
                 throw new UnauthorizedException("You do not have sufficient permissions to update this assay design.");
         }
 
+        if (protocol.getName() != null)
+            protocol.setName(protocol.getName().trim());
+
         AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
         GWTProtocol updated = svc.saveChanges(protocol, true);
         return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'", updated);

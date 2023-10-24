@@ -23,14 +23,17 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolInput;
+import org.labkey.api.util.Pair;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -280,7 +283,7 @@ public class Protocol extends IdentifiableEntity
         _status = status;
     }
 
-    public List<Difference> diff(Protocol other)
+    public List<Difference> diff(Protocol other, Pair<String, String> lsidIgnoreSubStrs)
     {
         List<Difference> result = new ArrayList<>();
         diff(_applicationType, other._applicationType, "Application Type", result);
@@ -328,32 +331,58 @@ public class Protocol extends IdentifiableEntity
 
         Map<String, ObjectProperty> thisProps = retrieveObjectProperties();
         Map<String, ObjectProperty> otherProps = other.retrieveObjectProperties();
-        diffProperties(thisProps, otherProps, getLSID(), result);
+        diffProperties(thisProps, otherProps, getLSID(), result, lsidIgnoreSubStrs);
 
         return result;
     }
 
-    private void diffProperties(Map<String, ObjectProperty> thisProps, Map<String, ObjectProperty> otherProps, String uri, List<Difference> result)
+    private void diffProperties(Map<String, ObjectProperty> thisProps, Map<String, ObjectProperty> otherProps, String uri, List<Difference> result, @Nullable Pair<String, String> lsidIgnoreSubStrs)
     {
-        if (!diff(thisProps.keySet(), otherProps.keySet(), "Properties for " + uri, result))
+        Set<String> thisKeys = thisProps.keySet();
+        Set<String> otherKeys = otherProps.keySet();
+        Map<String, String> thisKeysMap = new HashMap<>(); // full lsid, cleaned lsid
+        Map<String, String> otherKeysMap = new HashMap<>(); // cleaned lsid, full lsid
+        if (lsidIgnoreSubStrs != null) // on folder/assay import, ${XarJobId} is added to lsid, which might result in lsid differences in protocols
+        {
+            String ignoreThis = lsidIgnoreSubStrs.first;
+            String ignoreOther = lsidIgnoreSubStrs.second;
+            for (String thisKey : thisKeys)
+            {
+                thisKeysMap.put(thisKey, thisKey.replace(ignoreThis, ""));
+            }
+            for (String otherKey : otherKeys)
+            {
+                otherKeysMap.put(otherKey.replace(ignoreOther, ""), otherKey);
+            }
+            thisKeys = new HashSet<>(thisKeysMap.values());
+            otherKeys = otherKeysMap.keySet();
+        }
+        if (!diff(thisKeys, otherKeys, "Properties for " + uri, result))
         {
             for (String propertyURI : thisProps.keySet())
             {
                 ObjectProperty thisProp = thisProps.get(propertyURI);
-                ObjectProperty otherProp = otherProps.get(propertyURI);
+                String otherURI = propertyURI;
+                if (lsidIgnoreSubStrs != null)
+                {
+                    String uriKey = thisKeysMap.get(propertyURI);
+                    otherURI = otherKeysMap.get(uriKey);
+                }
+                ObjectProperty otherProp = otherProps.get(otherURI);
                 diff(thisProp.getPropertyType(), otherProp.getPropertyType(), "Properties type for " + thisProp.getPropertyURI() + " of " + uri, result);
 
                 if (thisProp.getPropertyType() == PropertyType.RESOURCE)
                 {
                     Map<String, ObjectProperty> thisChildren = thisProp.retrieveChildProperties();
                     Map<String, ObjectProperty> otherChildren = otherProp.retrieveChildProperties();
-                    diffProperties(thisChildren, otherChildren, thisProp.getStringValue(), result);
+                    diffProperties(thisChildren, otherChildren, thisProp.getStringValue(), result, lsidIgnoreSubStrs);
                 }
                 else
                 {
                     diff(thisProp.getDateTimeValue(), otherProp.getDateTimeValue(), "DateTime value for '" + thisProp.getPropertyURI() + "' of '" + uri + "'", result);
                     diff(thisProp.getFloatValue(), otherProp.getFloatValue(), "Float value for property ;" + thisProp.getPropertyURI() + "' of '" + uri + "'", result);
-                    diff(thisProp.getStringValue(), otherProp.getStringValue(), "String value for property '" + thisProp.getPropertyURI() + "' of '" + uri + "'", result);
+                    if (lsidIgnoreSubStrs == null || !propertyURI.equals(thisProp.getStringValue()))
+                        diff(thisProp.getStringValue(), otherProp.getStringValue(), "String value for property '" + thisProp.getPropertyURI() + "' of '" + uri + "'", result);
 //                    diff(thisProp.getTextValue(), otherProp.getTextValue(), "Text value for " + thisProp.getPropertyURI() + " of " + uri, result);
                 }
             }

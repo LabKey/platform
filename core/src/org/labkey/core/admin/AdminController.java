@@ -182,7 +182,6 @@ import org.labkey.core.security.BlockListFilter;
 import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.security.xml.GroupEnumType;
-import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -9921,8 +9920,8 @@ public class AdminController extends SpringActionController
                 {
                     report.setForwardedFor(form.getForwardedFor());
                     report.run();
-                    if (null != report.getContent())
-                        params.put("upgradeMessage", report.getContent());
+                    if (null != report.getUpgradeMessage())
+                        params.put("upgradeMessage", report.getUpgradeMessage());
                 }
             }
             if (form.isDownload())
@@ -10946,18 +10945,30 @@ public class AdminController extends SpringActionController
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
+            var ret = new JSONObject().put("success",true);
+
+            // fail fast
+            if (!_log.isWarnEnabled())
+                return ret;
+
             // NOTE User will always be "guest".  Seems like a bad design to force the server to accept guest w/o CSRF here.
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
-                var jsonStr = jsonObj.toString();
-                JSONObject cspReport = jsonObj.getJSONObject("csp-report");
-                String urlString = cspReport.getString("source-file");
-                String path = new URLHelper(urlString).deleteParameters().getPath();
-                if (null == reports.put(path,Boolean.TRUE))
-                    _log.warn("ContentSecurityPolicy warning:\n" + jsonStr);
+                var jsonStr = jsonObj.toString(2);
+                JSONObject cspReport = jsonObj.optJSONObject("csp-report");
+                if (cspReport != null)
+                {
+                    String urlString = cspReport.optString("document-uri", null);
+                    if (urlString != null)
+                    {
+                        String path = new URLHelper(urlString).deleteParameters().getPath();
+                        if (null == reports.put(path, Boolean.TRUE))
+                            _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
+                    }
+                }
             }
-            return new JSONObject().put("success",true);
+            return ret;
         }
     }
 

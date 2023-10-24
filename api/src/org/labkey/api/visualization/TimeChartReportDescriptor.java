@@ -22,11 +22,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -171,7 +173,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
     }
 
     @Override
-    public boolean updateQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public boolean updateSchemaQueryNameReferences(Collection<QueryChangeListener.QueryPropertyChange> changes, User user, Container container, boolean isSchemaUpdate)
     {
         if (getJSON() != null)
         {
@@ -185,15 +187,15 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             // filterUrl (as filter parameter fieldKeys)
 
             // most property updates only care about the query name old value string and new value string
-            Map<String, String> queryNameChangeMap = new HashMap<>();
+            Map<String, String> nameChangeMap = new HashMap<>();
             for (QueryChangeListener.QueryPropertyChange qpc : changes)
             {
-                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+                nameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
             }
 
             JSONObject json = new JSONObject(getJSON());
 
-            boolean hasUpdates = updateJSONObjectQueryNameReference(json.getJSONObject("subject"), "queryName", changes);
+            boolean hasUpdates = updateJSONObjectQueryNameReference(json.getJSONObject("subject"), isSchemaUpdate, changes);
 
             JSONArray measures = json.getJSONArray("measures");
             for (int i = 0; i < measures.length(); i++)
@@ -207,23 +209,23 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                     JSONObject dateOptions = measures.getJSONObject(i).getJSONObject("dateOptions");
                     if (dateOptions.has("dateCol"))
                     {
-                        dateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("dateCol"), "queryName", changes);
+                        dateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("dateCol"), isSchemaUpdate, changes);
                     }
                     if (dateOptions.has("zeroDateCol"))
                     {
-                        zeroDateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("zeroDateCol"), "queryName", changes);
+                        zeroDateColUpdates = updateJSONObjectQueryNameReference(dateOptions.getJSONObject("zeroDateCol"), isSchemaUpdate, changes);
                     }
                 }
 
                 // update dimension queryName
                 if (measures.getJSONObject(i).has("dimension") && !measures.getJSONObject(i).isNull("dimension"))
                 {
-                    dimensionUpdates = updateJSONObjectQueryNameReference(measures.getJSONObject(i).getJSONObject("dimension"), "queryName", changes);
+                    dimensionUpdates = updateJSONObjectQueryNameReference(measures.getJSONObject(i).getJSONObject("dimension"), isSchemaUpdate, changes);
                 }
 
                 // update measure queryName
                 JSONObject measureJson = measures.getJSONObject(i).getJSONObject("measure");
-                boolean measureUpdates = updateJSONObjectQueryNameReference(measureJson, "queryName", changes);
+                boolean measureUpdates = updateJSONObjectQueryNameReference(measureJson, isSchemaUpdate, changes);
                 // special case for measure queryname:
                 // reset the measure alias based on the schemaName_queryName_measureName and add a queryLabel
                 if (measureUpdates)
@@ -236,11 +238,23 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
 
                     for (QueryChangeListener.QueryPropertyChange qpc : changes)
                     {
-                        if (query.equals(qpc.getNewValue()))
+                        if (isSchemaUpdate)
                         {
-                            measureJson.put("queryLabel", ReportUtil.getQueryLabelByName(qpc.getSource().getSchema(), query));
-                            break;
+                            if (schema.equals(qpc.getNewValue()))
+                            {
+                                measureJson.put("queryLabel", ReportUtil.getQueryLabelByName(user, container, schema, query));
+                                break;
+                            }
                         }
+                        else
+                        {
+                            if (query.equals(qpc.getNewValue()))
+                            {
+                                measureJson.put("queryLabel", ReportUtil.getQueryLabelByName(qpc.getSource().getSchema(), query));
+                                break;
+                            }
+                        }
+
                     }
                 }
 
@@ -251,11 +265,26 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
             if (null != json.optString("filterQuery", null))
             {
                 String[] keyParts = json.getString("filterQuery").split("\\.");
-                if (keyParts.length == 2 && queryNameChangeMap.containsKey(keyParts[1]))
+                if (keyParts.length == 2 && nameChangeMap.containsKey(keyParts[1]))
                 {
-                    String queryKey = keyParts[0] + "." + queryNameChangeMap.get(keyParts[1]);
-                    json.put("filterQuery", queryKey);
-                    hasUpdates = true;
+                    if (isSchemaUpdate)
+                    {
+                        if (nameChangeMap.containsKey(keyParts[0]))
+                        {
+                            String queryKey = nameChangeMap.get(keyParts[0]) + "." + keyParts[1];
+                            json.put("filterQuery", queryKey);
+                            hasUpdates = true;
+                        }
+                    }
+                    else
+                    {
+                        if (nameChangeMap.containsKey(keyParts[1]))
+                        {
+                            String queryKey = keyParts[0] + "." + nameChangeMap.get(keyParts[1]);
+                            json.put("filterQuery", queryKey);
+                            hasUpdates = true;
+                        }
+                    }
                 }
             }
 
@@ -275,9 +304,9 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
                         String op = parts[1];
 
                         FieldKey filterTable = fieldKey.getTable();
-                        if (filterTable != null && filterTable.getName() != null && queryNameChangeMap.containsKey(filterTable.getName()))
+                        if (filterTable != null && filterTable.getName() != null && nameChangeMap.containsKey(filterTable.getName()))
                         {
-                            fieldKey = new FieldKey(new FieldKey(filterTable.getParent(), queryNameChangeMap.get(filterTable.getName())), fieldKey.getName());
+                            fieldKey = new FieldKey(new FieldKey(filterTable.getParent(), nameChangeMap.get(filterTable.getName())), fieldKey.getName());
                             filterUrl.deleteParameter(filterKey);
                             filterUrl.addParameter(dataRegionName + "." + fieldKey.toString() + "~" + op, value);
                             filterUrlChanges = true;
@@ -302,14 +331,15 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         return false;
     }
 
-    private boolean updateJSONObjectQueryNameReference(JSONObject json, String propName, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    private boolean updateJSONObjectQueryNameReference(JSONObject json, boolean isSchemaChange, Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
-        String queryName = json.optString(propName, null);
-        if (queryName != null)
+        String propName = isSchemaChange ? "schemaName" : "queryName";
+        String oldValue = json.optString(propName, null);
+        if (oldValue != null)
         {
             for (QueryChangeListener.QueryPropertyChange qpc : changes)
             {
-                if (queryName.equals(qpc.getOldValue()))
+                if (oldValue.equals(qpc.getOldValue()))
                 {
                     json.put(propName, qpc.getNewValue());
                     return true;
