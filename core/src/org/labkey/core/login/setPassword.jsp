@@ -187,6 +187,8 @@
             const textHeightFix = (metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2 - 1;
 
             const firstPassword = document.getElementById(<%=q(firstPasswordId)%>);
+            const email = <%=q(bean.email)%>;
+            const emailField = document.getElementById("email");
 
             // Remove existing event, if present (resize case)
             if (renderBarFunction)
@@ -198,7 +200,7 @@
                     method: 'POST',
                     params: {
                         password: firstPassword.value,
-                        email: <%=q(bean.email)%>
+                        email: email || emailField?.value
                     },
                     success: function (response)
                     {

@@ -2748,7 +2748,24 @@ public class LoginController extends SpringActionController
         public Object execute(PasswordForm form, BindException errors) throws Exception
         {
             String email = form.getEmail();
-            User user = email != null ? UserManager.getUser(new ValidEmail(form.getEmail())) : User.guest;
+            User user = null;
+
+            if (email != null)
+            {
+                try
+                {
+                    user = UserManager.getUser(new ValidEmail(email));
+                }
+                catch (InvalidEmailException e)
+                {
+                    // Ignore
+                }
+            }
+
+            // If user doesn't exist (initial user case) or email is invalid pass in a fake user to filter the email address
+            if (null == user)
+                user = new User(form.getEmail(), -9999);
+
             return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), user));
         }
     }

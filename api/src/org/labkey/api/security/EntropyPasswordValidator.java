@@ -371,7 +371,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         }
 
         // Convenience method that works with strings
-        private String filter(String password, User user)
+        private String filter(@NotNull String password, @NotNull User user)
         {
             return new String(concatenate(EntropyPasswordValidator.filter(password.toCharArray(), user)));
         }
