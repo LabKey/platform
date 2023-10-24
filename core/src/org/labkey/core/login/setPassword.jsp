@@ -80,11 +80,9 @@
             />
         <%  }
 
-            boolean firstPassword = true;
-
             for (NamedObject input : bean.passwordInputs) {
-                HtmlString contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
-                    ? rule.getSummaryRuleHtml() : null;
+                boolean firstPassword = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject());
+                HtmlString contextContent = firstPassword ? rule.getSummaryRuleHtml() : null;
         %>
             <p>
                 <%=h(contextContent)%>
@@ -103,7 +101,6 @@
                 if (rule.shouldShowPasswordGuidance() && firstPassword)
                 {
                     firstPasswordId = input.getObject().toString();
-                    firstPassword = false;
 
         %>
             <canvas id="strengthGuidance" width="<%=gaugeWidth%>" height="<%=gaugeHeight%>">

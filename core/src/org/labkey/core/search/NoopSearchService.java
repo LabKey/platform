@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.search.SearchResultTemplate;
-import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -31,7 +30,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
-import java.io.IOException;
 import java.io.Reader;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,11 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * User: matthewb
- * Date: Nov 18, 2009
- * Time: 1:10:55 PM
- */
 public class NoopSearchService implements SearchService
 {
     IndexTask _dummyTask = new IndexTask()

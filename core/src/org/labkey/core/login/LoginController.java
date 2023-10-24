@@ -2738,8 +2738,10 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("unused") // Called from setPassword.jsp
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public static class GetPasswordScoreAction extends ReadOnlyApiAction<PasswordForm>
     {
         @Override
