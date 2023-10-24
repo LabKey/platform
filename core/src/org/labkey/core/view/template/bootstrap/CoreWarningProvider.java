@@ -36,6 +36,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UsageReportingLevel;
@@ -112,6 +113,12 @@ public class CoreWarningProvider implements WarningProvider
     @Override
     public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
     {
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+            if (UsageReportingLevel.getMarketingUpdate() != null)
+                warnings.add(UsageReportingLevel.getMarketingUpdate());
+        }
+
         if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
         {
             getUserRequestedAdminOnlyModeWarnings(warnings, showAllWarnings, context.getUser().hasSiteAdminPermission());
