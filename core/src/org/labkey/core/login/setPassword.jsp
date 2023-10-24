@@ -195,6 +195,7 @@
                 firstPassword.removeEventListener('input', renderBarFunction);
 
             renderBarFunction = function() {
+                const showPlaceholderText = !firstPassword.value;
                 LABKEY.Ajax.request({
                     url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
                     method: 'POST',
@@ -202,7 +203,7 @@
                         password: firstPassword.value,
                         email: email || emailField?.value
                     },
-                    success: function (response)
+                    success: function(response)
                     {
                         const responseText = LABKEY.Utils.decode(response.responseText);
                         if (responseText)
@@ -218,9 +219,9 @@
                             ctx.fillRect(borderWidth, borderWidth, barWidth, barHeight);
 
                             // Render text
-                            ctx.fillStyle = 2 === colorIndex ? "white" : "black";
+                            ctx.fillStyle = 2 === colorIndex ? "white" : showPlaceholderText ? "gray" : "black";
                             const textIndex = Math.floor(percent * 6);
-                            const text = ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
+                            const text = showPlaceholderText ?  "Password Guidance" : ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
                             ctx.fillText(text, centerX, centerY + textHeightFix);
                             canvas.text = "Password Strength: " + text;
                         }
