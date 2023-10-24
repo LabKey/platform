@@ -240,10 +240,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
             case IsAliquot ->
             {
-                String rootMaterialLSIDField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RootMaterialLSID.toString();
-                String LSIDField = ExprColumn.STR_TABLE_ALIAS + "." + Column.LSID.toString();
-                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts("IsAliquot"), new SQLFragment(
-                        "(CASE WHEN (" + rootMaterialLSIDField + " = " + LSIDField + ") THEN ").append(getSqlDialect().getBooleanFALSE()).append(" ELSE ").append(getSqlDialect().getBooleanTRUE()).append(" END)"), JdbcType.BOOLEAN);
+                String rootMaterialRowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RootMaterialRowId.name();
+                String rowIdField = ExprColumn.STR_TABLE_ALIAS + "." + Column.RowId.name();
+                ExprColumn columnInfo = new ExprColumn(this, FieldKey.fromParts(Column.IsAliquot.name()), new SQLFragment(
+                        "(CASE WHEN (" + rootMaterialRowIdField + " = " + rowIdField + ") THEN ").append(getSqlDialect().getBooleanFALSE()).append(" ELSE ").append(getSqlDialect().getBooleanTRUE()).append(" END)"), JdbcType.BOOLEAN);
                 columnInfo.setLabel("Is Aliquot");
                 columnInfo.setDescription("Identifies if the material is a sample or an aliquot");
                 columnInfo.setUserEditable(false);
@@ -1024,7 +1024,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (selectedColumns.contains(new FieldKey(null, ExpMaterial.ALIQUOTED_FROM_INPUT)))
             selectedColumns.add(new FieldKey(null, Column.AliquotedFromLSID.name()));
         if (selectedColumns.contains(new FieldKey(null, Column.IsAliquot.name())))
-            selectedColumns.add(new FieldKey(null, Column.RootMaterialLSID.name()));
+            selectedColumns.add(new FieldKey(null, Column.RootMaterialRowId.name()));
         selectedColumns.addAll(wrappedFieldKeys);
         if (null != getFilter())
             selectedColumns.addAll(getFilter().getAllFieldKeys());
@@ -1084,7 +1084,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
     public static void refreshMaterializedView(final String lsid, boolean schemaChange)
     {
-        /* NOTE: MaterailizedQueryHelper can detect data changes and refresh the materiaized view using the provided SQL.
+        /* NOTE: MaterializedQueryHelper can detect data changes and refresh the materialized view using the provided SQL.
          * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
          * MQH from the cache to force the SQL to be regenerated.
          */
