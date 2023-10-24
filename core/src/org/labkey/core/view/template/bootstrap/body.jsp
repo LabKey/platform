@@ -116,7 +116,8 @@
             <% } %>
             <% if (hasContainerTabs) {%>
             <div style="float: right;">
-                <select title="subContainerTabs" onchange="window.location = this.options[this.selectedIndex].value;">
+                <% addHandler("subContainerTabs", "change", "window.location = this.options[this.selectedIndex].value;" ); %>
+                <select id="subContainerTabs" title="subContainerTabs">
                     <%for (NavTree tree : appBar.getSubContainerTabs())
                     {
                         String selectedText = tree.isSelected() ? "selected" : "";
