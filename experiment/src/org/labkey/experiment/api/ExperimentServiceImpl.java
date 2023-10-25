@@ -4725,15 +4725,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             try (Timing ignored = MiniProfiler.step("exp.edges"))
             {
-                SQLFragment objectIdFrag = new SQLFragment("IN (SELECT ObjectId FROM exp.Object WHERE ObjectURI ");
+                SQLFragment objectIdFrag = new SQLFragment();
                 objectIdFrag.append(lsidInFrag).append(")");
 
                 TableInfo edge = getTinfoEdge();
-                SQLFragment deleteEdgeSql = new SQLFragment("DELETE FROM ").append(String.valueOf(edge))
+                SQLFragment deleteEdgeSql = new SQLFragment("WITH X AS (SELECT ObjectId FROM exp.Object WHERE ObjectURI ")
+                        .append(lsidInFrag).append(")\n")
+                        .append("DELETE FROM ")
+                        .append(String.valueOf(edge))
                         .append(" WHERE ")
-                        .append(" fromObjectId ").append(objectIdFrag)
-                        .append(" OR toObjectId ").append(objectIdFrag)
-                        .append(" OR sourceId ").append(objectIdFrag);
+                        .append(" fromObjectId IN (SELECT ObjectId FROM X)\n")
+                        .append(" OR toObjectId IN (SELECT ObjectId FROM X)\n")
+                        .append(" OR sourceId  IN (SELECT ObjectId FROM X)");
                 executor.execute(deleteEdgeSql);
             }
 

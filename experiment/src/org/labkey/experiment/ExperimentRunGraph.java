@@ -202,10 +202,10 @@ public class ExperimentRunGraph
                         dg.setFocus(focusId, typeCode);
 
                     // add starting inputs to graph if they need grouping
-                    Map<ExpMaterial, String> materialRoles = run.getMaterialInputs();
+                    Map<? extends ExpMaterial, String> materialRoles = run.getMaterialInputs();
                     List<ExpMaterial> inputMaterials = new ArrayList<>(materialRoles.keySet());
                     inputMaterials.sort(new RoleAndNameComparator<>(materialRoles));
-                    Map<ExpData, String> dataRoles = run.getDataInputs();
+                    Map<? extends ExpData, String> dataRoles = run.getDataInputs();
                     List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
                     inputDatas.sort(new RoleAndNameComparator<>(dataRoles));
                     if (!run.getProtocolApplications().isEmpty())
@@ -372,9 +372,9 @@ public class ExperimentRunGraph
      */
     private static class RoleAndNameComparator<Type extends ExpRunItem> implements Comparator<Type>
     {
-        private final Map<Type, String> _roles;
+        private final Map<? extends Type, String> _roles;
 
-        private RoleAndNameComparator(Map<Type, String> roles)
+        private RoleAndNameComparator(Map<? extends Type, String> roles)
         {
             _roles = roles;
         }
@@ -540,14 +540,14 @@ public class ExperimentRunGraph
     private static void generateSummaryGraph(ExpRunImpl expRun, DotGraph dg, GraphCtrlProps ctrlProps)
     {
         int runId = expRun.getRowId();
-        Map<ExpMaterial, String> inputMaterials = expRun.getMaterialInputs();
-        Map<ExpData, String> inputDatas = expRun.getDataInputs();
+        Map<? extends ExpMaterial, String> inputMaterials = expRun.getMaterialInputs();
+        Map<? extends ExpData, String> inputDatas = expRun.getDataInputs();
         List<ExpMaterial> outputMaterials = expRun.getMaterialOutputs();
         List<ExpData> outputDatas = expRun.getDataOutputs();
         Integer groupId;
 
         int i = 0;
-        for (Map.Entry<ExpMaterial, String> entry : inputMaterials.entrySet())
+        for (Map.Entry<? extends ExpMaterial, String> entry : inputMaterials.entrySet())
         {
             ExpMaterial inputMaterial = entry.getKey();
             groupId=null;
@@ -565,7 +565,7 @@ public class ExperimentRunGraph
             i++;
         }
         i = 0;
-        for (Map.Entry<ExpData, String> entry : inputDatas.entrySet())
+        for (Map.Entry<? extends ExpData, String> entry : inputDatas.entrySet())
         {
             ExpData inputData = entry.getKey();
             groupId=null;

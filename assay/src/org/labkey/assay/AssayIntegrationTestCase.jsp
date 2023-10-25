@@ -334,7 +334,7 @@
 
         // create a sample that will be used as an input to the run
         log.info("creating material");
-        var material = createMaterial();
+        ExpMaterial material = createMaterial();
         final var materialName = material.getName();
 
         // create a file in the pipeline root to import
@@ -365,7 +365,7 @@
                 emptySet());
 
         // verify the material is an input and the file is an output
-        MatcherAssert.assertThat(run.getMaterialInputs().keySet(), hasItem(material));
+        assertTrue(run.getMaterialInputs().containsKey(material));
         MatcherAssert.assertThat(run.getDataOutputs(), hasItem(firstData));
 
 
@@ -385,8 +385,8 @@
         var assayRun = assayImportFile(c, user, provider, assayProtocol, file, true);
 
         // verify the first exp.data is attached as an input and not as an output
-        MatcherAssert.assertThat(assayRun.getMaterialInputs().keySet(), hasItem(material));
-        MatcherAssert.assertThat(assayRun.getDataInputs().keySet(), hasItem(firstData));
+        assertTrue(assayRun.getMaterialInputs().containsKey(material));
+        assertTrue(assayRun.getDataInputs().containsKey(firstData));
 
         // verify there is a new exp.data attached as the assay output
         // and that it has the same dataFileUrl as the input file

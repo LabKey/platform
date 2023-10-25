@@ -563,6 +563,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         clearCache();
 
+        // Clear the cache in a commit task, which allows us to do a single clear (which is semi-expensive) if multiple
+        // runs are being deleted in the same transaction, like deleting a container
         svc.getSchema().getScope().addCommitTask(ExperimentRunGraph.getCacheClearingCommitTask(getContainer()), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
