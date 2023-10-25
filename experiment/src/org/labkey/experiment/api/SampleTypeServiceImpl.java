@@ -548,14 +548,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             containerSql.add(source.getLSID());
             new SqlSelector(getExpSchema(), containerSql).forEach(String.class, cId -> containers.add(ContainerManager.getForId(cId)));
         }
+        else
+        {
+            containers.add(c);
+        }
 
         int count = 0;
-        for (Container containerInWhichToDelete : containers)
+        for (Container toDelete : containers)
         {
             SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
             sqlFilter.add(source.getLSID());
-            sqlFilter.add(containerInWhichToDelete);
-            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, containerInWhichToDelete, sqlFilter, true, false, source, true, true);
+            sqlFilter.add(toDelete);
+            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true);
         }
         return count;
     }
