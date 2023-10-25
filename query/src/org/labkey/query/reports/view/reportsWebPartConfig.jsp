@@ -79,7 +79,8 @@
         <tr>
             <td class="labkey-form-label">Report or Chart:</td>
             <td>
-                <select id="reportId" name="<%=Report.renderParam.reportId%>" onchange="getSectionNames(this);">
+                <% addHandler("reportId", "change", "getSectionNames(this);"); %>
+                <select id="reportId" name="<%=Report.renderParam.reportId%>">
                     <%
                         for (String reportName : reportNames)
                         {
@@ -154,11 +155,12 @@
             if (status && status.sectionNames)
             {
                 // build the selection for visible report sections
-                var select = "<select id=\"showSection\" width=\"150px\" multiple=\"true\" onchange=\"selectSection()\">";
+                var select = "<select id=\"showSection\" width=\"150px\" multiple=\"true\">";
                 select = select.concat(status.sectionNames);
                 select = select.concat("</select>");
 
                 td.innerHTML = select;
+                document.getElementById("showSection")['onchange'] = selectSection;
 
                 var showTabs = document.getElementById("showTabs");
                 if (showTabs)

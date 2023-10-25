@@ -127,7 +127,7 @@
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
                                 <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>>
                             Use a <%=text(getContainer().getContainerNoun())%>-level file root
-                            <input type="text" id="folderRootPath" name="folderRootPath" size="64" onchange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>"></td>
+                            <labkey:input type="text" id="folderRootPath" name="folderRootPath" size="64" onChange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>" /></td>
                         <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) + ");"); %>
                     </tr>
                     <% if (cloud != null) { %>
@@ -136,7 +136,8 @@
                                 type="radio" name="fileRootOption" id="optionCloudRoot" value="<%=FileRootProp.cloudRoot%>"
                                 <%=checked(FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()))%>>
                             Use cloud-based file storage
-                            <select name="cloudRootName" id="cloudRootName" onchange="updateSelection(true);">
+                            <% addHandler("cloudRootName", "change", "updateSelection(true);"); %>
+                            <select name="cloudRootName" id="cloudRootName">
                                 <% for (CloudStoreService.StoreInfo storeInfo : storeInfos.values())
                                     if (storeInfo.isEnabledInContainer())
                                     { %>
