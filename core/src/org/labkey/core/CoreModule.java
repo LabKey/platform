@@ -138,6 +138,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
@@ -291,6 +292,7 @@ import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebpar
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
+import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
 
 /**
  * User: migra
@@ -685,7 +687,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     String title = "My Menu";
-                    if (form.getTitle() != null && !form.getTitle().equals(""))
+                    if (form.getTitle() != null && !form.getTitle().isEmpty())
                         title = form.getTitle();
 
                     WebPartView<?> view;
@@ -792,10 +794,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
         home.setFolderType(collaborationType, null);
 
-        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, (User)null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, null);
 
         try
         {
@@ -831,7 +833,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void destroy()
     {
         super.destroy();
-        UsageReportingLevel.cancelUpgradeCheck();
+        UsageReportingLevel.shutdown();
     }
 
 
@@ -1047,6 +1049,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Deserialize objects from update forms",
                 "We no longer deserialize objects encoded into update forms. Turn this feature on if the removal of object deserialization is causing specific update operations to fail.",
                 false);
+        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true));
+
+        ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+            // update the timer task when this setting changes
+            MothershipReport.setSelfTestMarketingUpdates(enabled);
+            UsageReportingLevel.reportNow();
+        });
 
         if (null != PropertyService.get())
         {
@@ -1148,10 +1158,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+            if (AppProps.getInstance().getUsageReportingLevel() == UsageReportingLevel.NONE)
+            {
+                // force the usage reporting level to on for community edition distributions
+                WriteableAppProps appProps = AppProps.getWriteableInstance();
+                appProps.setUsageReportingLevel(UsageReportingLevel.ON);
+                appProps.save(User.getAdminServiceUser());
+            }
+        }
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
-        AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+        UsageReportingLevel.init();
         TempTableTracker.init();
     }
 

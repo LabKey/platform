@@ -87,11 +87,11 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         User elevatedUser = getUser();
         if (!getContainer().hasPermission(getUser(), ReadPermission.class))
         {
-            elevatedUser = LimitedUser.getElevatedUser(getContainer(), getUser(), Set.of(ReaderRole.class));
+            elevatedUser = LimitedUser.getElevatedUser(getUser(), Set.of(ReaderRole.class));
         }
         else if (getUser().equals(run.getCreatedBy()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
         {
-            elevatedUser = LimitedUser.getElevatedUser(getContainer(), getUser(), Set.of(EditorRole.class));
+            elevatedUser = LimitedUser.getElevatedUser(getUser(), Set.of(EditorRole.class));
         }
 
         try

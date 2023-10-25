@@ -406,6 +406,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
+    protected String getLsidIdSub()
+    {
+        return ASSAY_NAME_SUBSTITUTION;
+    }
+
+    @Override
     protected Pair<Domain, Map<DomainProperty, Object>> createResultDomain(Container c, User user)
     {
         Pair<Domain, Map<DomainProperty, Object>> result = createDomain(c, user, AssayDomainTypes.Result);

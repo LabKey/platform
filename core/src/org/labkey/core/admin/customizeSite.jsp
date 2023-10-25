@@ -33,6 +33,7 @@
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
+<%@ page import="org.labkey.api.util.MothershipReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -180,10 +181,24 @@ Click the Save button at any time to accept the current settings and continue.</
     </td>
     <td>
         <table>
+<%
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+%>
+            <tr>
+                <td><span>Update checks and usage reporting are automatically <strong>on</strong> for servers running a LabKey Server Community Edition.</span></td>
+
+            </tr>
+<%
+        }
+        else
+        {
+%>
             <tr>
                 <td style="vertical-align: top">
                     <label>
-                        <input type="radio" name="<%=usageReportingLevel%>" id="<%=usageReportingLevel%>1" onchange="enableUsageTest();" value="<%=UsageReportingLevel.NONE%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>>
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "1")%>' onChange="enableUsageTest();"
+                               value="<%=UsageReportingLevel.NONE%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.NONE)%>" />
                         <strong>OFF</strong> - Do not check for updates or report any usage data.
                     </label>
                 </td>
@@ -191,12 +206,15 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td style="vertical-align: top">
                     <label>
-                        <input type="radio" name="<%=usageReportingLevel%>" id="<%=usageReportingLevel%>2" onchange="enableUsageTest();"
-                               value="<%=UsageReportingLevel.ON%>"<%=checked(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>>
+                        <labkey:input formGroup="false" type="radio" name="<%=(usageReportingLevel.name())%>" id='<%=(usageReportingLevel + "2")%>' onChange="enableUsageTest();"
+                               value="<%=UsageReportingLevel.ON%>" checked="<%=(appProps.getUsageReportingLevel() == UsageReportingLevel.ON)%>" />
                         <strong>ON</strong> - Check for updates and report system information, usage data, and organization details.
                     </label>
                 </td>
             </tr>
+<%
+        }
+%>
             <tr>
                 <td style="padding: 5px 0 5px;" colspan="2">
                             <%=button("View").id("testUsageReport").onClick("testUsageReport(false); return false;")%>
@@ -220,7 +238,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>1" value="<%=NONE%>"<%=checked(appProps.getExceptionReportingLevel() == NONE)%>>
+                        <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "1")%>' value="<%=NONE%>" checked="<%=(appProps.getExceptionReportingLevel() == NONE)%>" />
                         <strong>OFF</strong> - Do not report exceptions.
                     </label>
                 </td>
@@ -228,7 +246,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>2" value="<%=LOW%>"<%=checked(appProps.getExceptionReportingLevel() == LOW)%>>
+                        <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "2")%>' value="<%=LOW%>" checked="<%=(appProps.getExceptionReportingLevel() == LOW)%>" />
                         <strong>ON, low</strong> - Include anonymous system and exception information.
                     </label>
                 </td>
@@ -236,7 +254,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>3" value="<%=MEDIUM%>"<%=checked(appProps.getExceptionReportingLevel() == MEDIUM)%>>
+                        <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "3")%>' value="<%=MEDIUM%>" checked="<%=(appProps.getExceptionReportingLevel() == MEDIUM)%>" />
                         <strong>ON, medium</strong> - Include anonymous system and exception information, as well as the URL that triggered the exception.
                     </label>
                 </td>
@@ -244,7 +262,7 @@ Click the Save button at any time to accept the current settings and continue.</
             <tr>
                 <td valign="top">
                     <label>
-                        <input type="radio" name="<%=exceptionReportingLevel%>" onchange="enableExceptionTest();" id="<%=exceptionReportingLevel%>4" value="<%=HIGH%>"<%=checked(appProps.getExceptionReportingLevel() == HIGH)%>>
+                        <labkey:input formGroup="false" type="radio" name="<%=exceptionReportingLevel.name()%>" onChange="enableExceptionTest();" id='<%=(exceptionReportingLevel + "4")%>' value="<%=HIGH%>" checked="<%=(appProps.getExceptionReportingLevel() == HIGH)%>" />
                         <strong>ON, high</strong> - Include the above, plus the user's email address. The user will be contacted only for assistance in reproducing the bug, if necessary.
                     </label>
                 </td>
@@ -263,7 +281,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr>
     <td class="labkey-form-label" valign="top">Report exceptions to the local server</td>
     <td>
-        <label for="selfReportExceptions">
+        <label for="<%=selfReportExceptions%>">
             <input type="checkbox" name="<%=selfReportExceptions%>" id="<%=selfReportExceptions%>"<%=checked(appProps.isSelfReportExceptions())%>/> Self-reporting is always at the "high" level described above
         </label>
     </td>

@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin.importer;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -23,19 +22,12 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
 import org.labkey.security.xml.GroupsType;
 
-import java.util.Collection;
-import java.util.Collections;
-
-/**
- * Created by susanh on 4/6/15.
- */
 public class SecurityGroupImporterFactory extends AbstractFolderImportFactory
 {
     @Override

@@ -26,7 +26,6 @@ import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,16 +43,10 @@ public class LimitedUser extends User
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
-        this(user, PrincipalArray.getEmptyPrincipalArray(), Arrays.stream(roleClasses).map(RoleManager::getRole).filter(Objects::nonNull).collect(Collectors.toSet()));
+        this(user, PrincipalArray.getEmptyPrincipalArray(), Set.of(roleClasses));
     }
 
-    @Deprecated // Delete
-    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles, boolean ignored)
-    {
-        this(user, groups, roles);
-    }
-
-    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles)
+    private LimitedUser(User user, PrincipalArray groups, Collection<Class<? extends Role>> rolesToAdd)
     {
         super(user.getEmail(), user.getUserId());
         setFirstName(user.getFirstName());
@@ -63,7 +56,10 @@ public class LimitedUser extends User
         setLastLogin(user.getLastLogin());
         setPhone(user.getPhone());
         _groups = groups;
-        _roles = roles;
+        _roles = rolesToAdd.stream()
+            .map(RoleManager::getRole)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     }
 
     @Override
@@ -75,13 +71,17 @@ public class LimitedUser extends User
     @Override
     public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
-        return new HashSet<>(_roles);
+        // Get all the roles in the root and this policy based on the supplied groups (often empty)
+        Set<Role> roles = super.getAssignedRoles(policy);
+        roles.addAll(_roles);
+
+        return roles;
     }
 
     /**
      * Conditionally add roles to the supplied user. For each permission + role pair, add the role if the user doesn't
-     * have the corresponding permission. I don't love using LimitedUser, but at least we're no longer implementing
-     * this (incorrectly) in a ton of modules.
+     * have the corresponding permission in the supplied container. I don't love using LimitedUser, but at least we're
+     * no longer implementing this (incorrectly) in a ton of modules.
      */
     @SafeVarargs
     public static User getElevatedUser(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
@@ -91,19 +91,19 @@ public class LimitedUser extends User
             .map(pair -> pair.second)
             .collect(Collectors.toSet());
 
-        return !rolesToAdd.isEmpty() ? getElevatedUser(container, user, rolesToAdd) : user;
+        return !rolesToAdd.isEmpty() ? getElevatedUser(user, rolesToAdd) : user;
+    }
+
+    @Deprecated // Call the other variant!
+    public static User getElevatedUser(Container container, User user, Collection<Class<? extends Role>> rolesToAdd)
+    {
+        return getElevatedUser(user, rolesToAdd);
     }
 
     /** Unconditionally add roles to the supplied user */
-    public static User getElevatedUser(Container container, User user, Collection<Class<? extends Role>> rolesToAdd)
+    public static User getElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
     {
-        Set<Role> roles = new HashSet<>(user.getAssignedRoles(container.getPolicy()));
-        rolesToAdd.stream()
-            .map(RoleManager::getRole)
-            .filter(Objects::nonNull)
-            .forEach(roles::add);
-
-        return new LimitedUser(user, user.getGroups(), roles);
+        return new LimitedUser(user, user.getGroups(), rolesToAdd);
     }
 
     public static User getCanSeeAuditLogUser(Container container, User user)
