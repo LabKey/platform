@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -539,7 +538,6 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
             factory.handleSqlException(e, null);
             return -1;
         }
-        return 100;
     }
 
     private static class BatchForEachBlock<T> implements ForEachBlock<T>, AutoCloseable

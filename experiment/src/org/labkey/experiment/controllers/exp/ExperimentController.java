@@ -3725,14 +3725,13 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            // HACK!!!!
-//            for (ExpRun run : getRuns(sampleTypes))
-//            {
-//                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
-//                {
-//                    throw new UnauthorizedException();
-//                }
-//            }
+            for (ExpRun run : getRuns(sampleTypes))
+            {
+                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
+                {
+                    throw new UnauthorizedException();
+                }
+            }
 
             for (ExpSampleType source : sampleTypes)
             {
@@ -3808,16 +3807,15 @@ public class ExperimentController extends SpringActionController
 
         private List<? extends ExpRun> getRuns(List<ExpSampleType> sampleTypes)
         {
-//            if (!sampleTypes.isEmpty())
-//            {
-                // HACK!
-//                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[sampleTypes.size()]));
-//                return ExperimentService.get().runsDeletedWithInput(runArray);
-//            }
-//            else
-//            {
+            if (!sampleTypes.isEmpty())
+            {
+                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[0]));
+                return ExperimentService.get().runsDeletedWithInput(runArray);
+            }
+            else
+            {
                 return Collections.emptyList();
-//            }
+            }
         }
     }
 
@@ -3966,7 +3964,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportSamplesAction extends AbstractExpDataImportAction
+    public static class ImportSamplesAction extends AbstractExpDataImportAction
     {
         DataIteratorContext _context;
 
@@ -4157,7 +4155,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportDataAction extends AbstractExpDataImportAction
+    public static class ImportDataAction extends AbstractExpDataImportAction
     {
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
@@ -4487,7 +4485,7 @@ public class ExperimentController extends SpringActionController
     private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable String fileName)
             throws ExperimentException, IOException, PipelineValidationException
     {
-        return exportXAR(selection, (LSIDRelativizer)null, (XarExportType)null, fileName);
+        return exportXAR(selection, null, null, fileName);
     }
 
     private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable LSIDRelativizer lsidRelativizer, @Nullable XarExportType exportType, @Nullable String fileName)
@@ -4499,7 +4497,7 @@ public class ExperimentController extends SpringActionController
         if (exportType == null)
             exportType = XarExportType.BROWSER_DOWNLOAD;
 
-        if (fileName == null || fileName.equals(""))
+        if (fileName == null || fileName.isEmpty())
             fileName = "export.xar";
 
         fileName = fixupExportName(fileName);
@@ -4791,7 +4789,7 @@ public class ExperimentController extends SpringActionController
                 runs.add(run);
             }
         }
-        exp.addRuns(getUser(), runs.toArray(new ExpRun[runs.size()]));
+        exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
     }
 
 
