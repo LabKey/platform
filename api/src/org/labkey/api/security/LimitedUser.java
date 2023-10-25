@@ -26,7 +26,6 @@ import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -75,13 +74,17 @@ public class LimitedUser extends User
     @Override
     public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
-        return new HashSet<>(_roles);
+        // Get all the roles in the root and this policy based on the supplied groups (often empty)
+        Set<Role> roles = super.getAssignedRoles(policy);
+        roles.addAll(_roles);
+
+        return roles;
     }
 
     /**
      * Conditionally add roles to the supplied user. For each permission + role pair, add the role if the user doesn't
-     * have the corresponding permission. I don't love using LimitedUser, but at least we're no longer implementing
-     * this (incorrectly) in a ton of modules.
+     * have the corresponding permission in the supplied container. I don't love using LimitedUser, but at least we're
+     * no longer implementing this (incorrectly) in a ton of modules.
      */
     @SafeVarargs
     public static User getElevatedUser(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
@@ -97,11 +100,10 @@ public class LimitedUser extends User
     /** Unconditionally add roles to the supplied user */
     public static User getElevatedUser(Container container, User user, Collection<Class<? extends Role>> rolesToAdd)
     {
-        Set<Role> roles = new HashSet<>(user.getAssignedRoles(container.getPolicy()));
-        rolesToAdd.stream()
+        Set<Role> roles = rolesToAdd.stream()
             .map(RoleManager::getRole)
             .filter(Objects::nonNull)
-            .forEach(roles::add);
+            .collect(Collectors.toSet());
 
         return new LimitedUser(user, user.getGroups(), roles);
     }
