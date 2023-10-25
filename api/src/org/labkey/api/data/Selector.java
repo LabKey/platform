@@ -131,13 +131,18 @@ public interface Selector
      */
     void forEachMapBatch(int batchSize, ForEachBatchBlock<Map<String, Object>> batchBlock);
 
-    /** Stream objects from the database. Convert each result row into an object specified by clazz and invoke block.exec() on it. */
-    <T> void forEach(Class<T> clazz, ForEachBlock<T> block);
+    /**
+     * Stream objects from the database.
+     * Convert each result row into an object specified by clazz and invoke block.exec() on it.
+     * @return the number of rows processed
+     */
+    <T> int forEach(Class<T> clazz, ForEachBlock<T> block);
 
     /**
      *  Stream objects from the database in batches. Convert rows to objects and pass them to batchBlock.exec() in batches
      *  no larger than batchSize. This is convenient for cases where streaming is desired, but processing in batches is more
      *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
+     *  @return the number of rows processed
      */
     <T> int forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock);
 

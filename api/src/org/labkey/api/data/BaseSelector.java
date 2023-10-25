@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMap;
@@ -189,6 +190,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
             {
                 Iterator<ResultSet> iter = new SimpleResultSetIterator(rs);
 
+                //noinspection Convert2Diamond
                 return new Iterator<T>()
                 {
                     @Override
@@ -217,6 +219,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
                 Iterator<Map<String, Object>> iter = new ResultSetIterator(rs);
                 ObjectFactory<T> factory = getObjectFactory(clazz);
 
+                //noinspection Convert2Diamond
                 return new Iterator<T>()
                 {
                     @Override
@@ -397,15 +400,20 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         forEachMap(getStandardResultSetFactory(), block);
     }
 
-    private void forEachMap(ResultSetFactory factory, final ForEachBlock<Map<String, Object>> block)
+    private int forEachMap(ResultSetFactory factory, final ForEachBlock<Map<String, Object>> block)
     {
+        MutableInt rowCount = new MutableInt();
+
         factory.handleResultSet((rs, conn) -> {
             ResultSetIterator iter = new ResultSetIterator(rs);
 
             try
             {
                 while (iter.hasNext())
+                {
                     block.exec(iter.next());
+                    rowCount.increment();
+                }
             }
             catch (StopIteratingException ignored)
             {
@@ -413,6 +421,8 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
 
             return null;
         });
+
+        return rowCount.intValue();
     }
 
     public interface ResultSetHandler<T>
@@ -421,25 +431,28 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     }
 
     @Override
-    public <T> void forEach(Class<T> clazz, final ForEachBlock<T> block)
+    public <T> int forEach(Class<T> clazz, final ForEachBlock<T> block)
     {
-        forEach(clazz, getStandardResultSetFactory(), block);
+        return forEach(clazz, getStandardResultSetFactory(), block);
     }
 
-    public <T> void forEach2(Class<T> clazz, final ForEachBlock<T> block)
+    public <T> int forEach2(Class<T> clazz, final ForEachBlock<T> block)
     {
-        forEach2(() -> uncachedStream(clazz), getStandardResultSetFactory(), block);
+        return forEach2(() -> uncachedStream(clazz), getStandardResultSetFactory(), block);
     }
 
     // Prototype general purpose forEach() built on an uncached stream (not used)
-    private <T> void forEach2(Supplier<Stream<T>> streamFactory, ResultSetFactory resultSetFactory, ForEachBlock<T> block)
+    private <T> int forEach2(Supplier<Stream<T>> streamFactory, ResultSetFactory resultSetFactory, ForEachBlock<T> block)
     {
+        MutableInt rowCount = new MutableInt();
+
         try (Stream<T> stream = streamFactory.get())
         {
             stream.forEach(t-> {
                 try
                 {
                     block.exec(t);
+                    rowCount.increment();
                 }
                 catch (SQLException | StopIteratingException e)
                 {
@@ -467,19 +480,23 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
                 throw e;
             }
         }
+        return rowCount.intValue();
     }
 
-    private <T> void forEach(Class<T> clazz, ResultSetFactory resultSetFactory, final ForEachBlock<T> block)
+    private <T> int forEach(Class<T> clazz, ResultSetFactory resultSetFactory, final ForEachBlock<T> block)
     {
         final Getter getter = Getter.forClass(clazz);
 
         // This is a simple object (Number, String, Date, etc.)
         if (null != getter)
         {
+            MutableInt rowCount = new MutableInt();
             forEach(resultSetFactory, rs -> {
                 //noinspection unchecked
                 block.exec((T)getter.getObject(rs));
+                rowCount.increment();
             });
+            return rowCount.intValue();
         }
         else
         {
@@ -487,7 +504,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
 
             ForEachBlock<Map<String, Object>> mapBlock = map -> block.exec(factory.fromMap(map));
 
-            forEachMap(resultSetFactory, mapBlock);
+            return forEachMap(resultSetFactory, mapBlock);
         }
     }
 
@@ -515,11 +532,12 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         // Try-with-resources ensures that the final batch gets processed (on close())
         try (BatchForEachBlock<T> bfeb = new BatchForEachBlock<>(batchSize, batchBlock))
         {
-            forEach(clazz, factory, bfeb);
+            return forEach(clazz, factory, bfeb);
         }
         catch (SQLException e)
         {
             factory.handleSqlException(e, null);
+            return -1;
         }
         return 100;
     }
