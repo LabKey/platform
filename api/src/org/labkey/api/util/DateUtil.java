@@ -1048,6 +1048,15 @@ validNum:       {
         return formatDateTime(date, ISO_DATE_TIME_FORMAT_STRING);
     }
 
+    /**
+     * Format date and time using ISO 8601 pattern including seconds. This is appropriate only for persisting dates in
+     * machine-readable form, for example, for export or in filenames. Most callers should use
+     * formatDateTime(Container c, Date d) instead.
+     */
+    public static String formatDateTimeISO8601WithSeconds(Date date)
+    {
+        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + LONG_TIME_FORMAT_STRING);
+    }
 
     /**
      * Format current date using folder-specified default pattern

@@ -73,9 +73,6 @@ import java.util.function.Consumer;
 
 /**
  * Data loader for Excel files -- can infer columns and return rows of data
- *
- * User: jgarms
- * Date: Oct 22, 2008
  */
 public class ExcelLoader extends DataLoader
 {
@@ -436,11 +433,11 @@ public class ExcelLoader extends DataLoader
     {
         try
         {
-                var md = getWorkbookMetadata(null);
-                if (md.isSpreadSheetML())
-                    return new XlsxIterator();
-                else
-                    return new ExcelIterator();
+            var md = getWorkbookMetadata(null);
+            if (md.isSpreadSheetML())
+                return new XlsxIterator();
+            else
+                return new ExcelIterator();
         }
         catch (InvalidFormatException | IOException e)
         {
@@ -702,6 +699,7 @@ public class ExcelLoader extends DataLoader
             assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xls")));
             assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xlsx")));
             assertTrue(isExcel(new File(excelSamplesRoot, "fruits.xls")));
+            assertTrue(isExcel(new File(excelSamplesRoot, "DatesWithSeconds.xlsx")));
 
             // Issue 22153: detect xls file without extension
             assertTrue(isExcel(JunitUtil.getSampleData(null, "Nab/seaman/MS010407")));
@@ -721,18 +719,23 @@ public class ExcelLoader extends DataLoader
         @Test
         public void testColumnTypes() throws Exception
         {
+            try (ExcelLoader loader = getExcelLoader("ExcelLoaderTest.xls"))
+            {
+                checkColumnMetadata(loader);
+                checkData(loader);
+            }
+        }
+
+        private ExcelLoader getExcelLoader(String filename) throws IOException
+        {
             File excelSamplesRoot = JunitUtil.getSampleData(null, "dataLoading/excel");
 
             if (!excelSamplesRoot.canRead())
                 throw new IOException("Could not read excel samples in: " + excelSamplesRoot);
 
-            File metadataSample = new File(excelSamplesRoot, "ExcelLoaderTest.xls");
+            File excelFile = new File(excelSamplesRoot, filename);
 
-            try (ExcelLoader loader = new ExcelLoader(metadataSample, true))
-            {
-                checkColumnMetadata(loader);
-                checkData(loader);
-            }
+            return new ExcelLoader(excelFile, true);
         }
 
         private static void checkColumnMetadata(ExcelLoader loader) throws IOException
@@ -770,16 +773,44 @@ public class ExcelLoader extends DataLoader
         @Test
         public void testDoubleToString()
         {
-            ExcelLoader xl = new ExcelLoader();
+            try (ExcelLoader xl = new ExcelLoader())
+            {
+                assertEquals("0", xl._toString("0.0", true));
+                assertEquals("1", xl._toString("1.0", true));
+                assertEquals(String.valueOf(Integer.MAX_VALUE), xl._toString(Integer.MAX_VALUE, true));
+                assertEquals("1.572", xl._toString("1.5720000000000001", true));
+                assertEquals("2.441", xl._toString("2.4409999999999998", true));
+                assertEquals("1.5720000000000001", xl._toString("1.5720000000000001", false));
+                assertEquals("2.4409999999999998", xl._toString("2.4409999999999998", false));
+                assertEquals("0.000001572", xl._toString("0.000001572", true));
+            }
+        }
 
-            assertEquals("0", xl._toString("0.0", true));
-            assertEquals("1", xl._toString("1.0", true));
-            assertEquals(String.valueOf(Integer.MAX_VALUE), xl._toString(Integer.MAX_VALUE, true));
-            assertEquals("1.572", xl._toString("1.5720000000000001", true));
-            assertEquals("2.441", xl._toString("2.4409999999999998", true));
-            assertEquals("1.5720000000000001", xl._toString("1.5720000000000001", false));
-            assertEquals("2.4409999999999998", xl._toString("2.4409999999999998", false));
-            assertEquals("0.000001572", xl._toString("0.000001572", true));
+        @Test
+        public void testDatesWithSeconds() throws Exception
+        {
+            try (ExcelLoader loader = getExcelLoader("DatesWithSeconds.xlsx"))
+            {
+                String date1 = "2023-01-02 09:14:34";
+                String date2 = "2023-01-02 15:14:15";
+                String date3 = "2023-01-02 09:28:30";
+
+                String[][] rows = loader.getFirstNLines(4);
+                assertEquals(date1, rows[1][0]);
+                assertEquals(date2, rows[2][0]);
+                assertEquals(date3, rows[3][0]);
+
+                List<Map<String, Object>> list = loader.load();
+                assertEquals(3, list.size());
+                assertEquals(date1, formatDate(list.get(0)));
+                assertEquals(date2, formatDate(list.get(1)));
+                assertEquals(date3, formatDate(list.get(2)));
+            }
+        }
+
+        private String formatDate(Map<String, Object> map)
+        {
+            return DateUtil.formatDateTimeISO8601WithSeconds((Date)map.get("MyDate"));
         }
     }
 
@@ -970,7 +1001,8 @@ public class ExcelLoader extends DataLoader
 
         final String getIsoStringDateFromExcelDouble(double value)
         {
-            return DateUtil.formatDateTimeISO8601(getDateFromExcelDouble(value));
+            // Format as date time with seconds, Issue #48930
+            return DateUtil.formatDateTimeISO8601WithSeconds(getDateFromExcelDouble(value));
         }
 
         /*
