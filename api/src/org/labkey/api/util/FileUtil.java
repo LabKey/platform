@@ -784,10 +784,16 @@ public class FileUtil
         }
     }
 
+    public static boolean createNewFile(File file) throws IOException
+    {
+        checkAllowedFileName(file.getName());
+        return file.createNewFile();
+    }
+
     // FileUtil.copyFile() does not use transferTo() or sync()
     public static void copyFile(ReadableByteChannel in, long size, File dst) throws IOException
     {
-        dst.createNewFile();
+        createNewFile(dst);
 
         boolean success = false;
         long expected = size;

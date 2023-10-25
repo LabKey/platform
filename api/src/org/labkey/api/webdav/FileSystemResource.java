@@ -278,7 +278,7 @@ public class FileSystemResource extends AbstractWebdavResource
             FileUtil.mkdirs(file.getParentFile());
             try
             {
-                file.createNewFile();
+                FileUtil.createNewFile(file);
                 created = true;
             }
             catch (IOException x)
