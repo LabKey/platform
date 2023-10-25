@@ -1060,7 +1060,7 @@ public class TestController extends SpringActionController
 
     /** fast abd simple to test sql and api w/o dealing with the schema browser */
     @RequiresLogin
-    public static class TestSQLAction extends SimpleViewAction<Object>
+    public static class SqlDataRegionAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1068,6 +1068,38 @@ public class TestController extends SpringActionController
             getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
             getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));
             return new HtmlView("<script src='" + AppProps.getInstance().getContextPath() + "/query/testquery.js'></script><div id=testQueryDiv style='min-height:600px;min-width:800px;' nonce='" + HttpView.currentPageConfig().getScriptNonce()  + "'></div>");
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+        }
+    }
+
+
+    @RequiresPermission(AdminPermission.class)
+    public static class SqlExecuteAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            HttpView.currentPageConfig().addHandler("sqlexecute", "click", "exec()");
+            return new HtmlView(HtmlString.unsafe("""
+                    <textarea cols=120 id=sql></textarea><br><button id='sqlexecute'>Query.executeSql()</button><pre id=result></pre>
+                    <script type="text/javascript" nonce="%s">
+                    function exec()
+                    {
+                      LABKEY.Query.executeSql(
+                      {
+                        schemaName: 'core',
+                        sql: document.getElementById('sql').value,
+                        success:function(r)
+                        {
+                         document.getElementById('result').innerHTML = LABKEY.Utils.encodeHtml(JSON.stringify(r, null, 2));
+                        }
+                      });
+                    }
+                    </script>""".formatted(HttpView.currentPageConfig().getScriptNonce())));
         }
 
         @Override
