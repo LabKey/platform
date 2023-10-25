@@ -594,7 +594,7 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
             [
               <MenuItem
                 bsClass="dropdown"
-                disabled={false}
+                disabled={true}
                 divider={false}
                 header={false}
                 onClick={[Function]}
@@ -602,10 +602,13 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                 0
                  : 
                 Require two-factor authentication via Duo
+                <i
+                  className="fa fa-question-circle"
+                />
               </MenuItem>,
               <MenuItem
                 bsClass="dropdown"
-                disabled={false}
+                disabled={true}
                 divider={false}
                 header={false}
                 onClick={[Function]}
@@ -613,6 +616,9 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                 1
                  : 
                 Adds a trivial, insecure secondary authentication requirement (for test purposes only)
+                <i
+                  className="fa fa-question-circle"
+                />
               </MenuItem>,
             ]
           }
