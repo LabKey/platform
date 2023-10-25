@@ -32,6 +32,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -128,7 +129,7 @@ public interface FileContentService
     boolean isFileRootSetViaStartupProperty();
 
     @NotNull
-    File getUserFilesRoot();
+    File getUserFilesRoot() throws IOException;
 
     void setUserFilesRoot(File root, User user);
 

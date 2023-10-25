@@ -168,7 +168,7 @@ public class PipeRootImpl implements PipeRoot
         {
             try
             {
-                Files.createDirectories(systemDir);
+                FileUtil.createDirectories(systemDir);
 
                 Path systemDirLegacy = root.resolve(SYSTEM_DIRECTORY_LEGACY);
                 if (Files.exists(systemDirLegacy))

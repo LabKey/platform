@@ -89,6 +89,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -98,6 +99,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -2048,15 +2050,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
-            if (!renameData.targetFile.getParentFile().mkdirs())
+            String errorMsg = String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.targetFile.getParent(),
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName);
+            try
             {
-                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
-                        renameData.targetFile.getParent(),
-                        renameData.sourceFile.getAbsolutePath(),
-                        renameData.sampleType.getName(),
-                        renameData.sampleName,
-                        renameData.fieldName));
-                return false;
+                if (!FileUtil.mkdirs(renameData.targetFile.getParentFile()))
+                {
+                    LOG.warn(errorMsg);
+                    return false;
+                }
+            }
+            catch (IOException e)
+            {
+                LOG.warn(errorMsg);
             }
         }
         if (!renameData.sourceFile.renameTo(renameData.targetFile))

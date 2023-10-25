@@ -45,6 +45,7 @@ import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -119,14 +120,14 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         if (!externalScriptEngine.supportsContext(LabKeyScriptEngineManager.EngineContext.pipeline))
                             throw new ValidationException("The script engine : " + externalScriptEngine.getEngineDefinition().getName() + " does not support running in a transform script." );
                     }
-
-                    File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
-                    // issue 13643: ensure script dir is initially empty
-                    FileUtil.deleteDirectoryContents(scriptDir);
-
+                    File scriptDir = null;
                     // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage (i.e., TransformSession)
                     try (TransformSession session = SecurityManager.createTransformSession(context))
                     {
+                        scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
+                        // issue 13643: ensure script dir is initially empty
+                        FileUtil.deleteDirectoryContents(scriptDir);
+
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
                         Pair<File, Set<File>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, batchProperties);
@@ -237,7 +238,7 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         return SecurityManager.TRANSFORM_SESSION_ID;
     }
 
-    protected File getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault)
+    protected File getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault) throws IOException
     {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
         File tempRoot = new File(tempDir, ExternalScriptEngine.DEFAULT_WORKING_DIRECTORY);
@@ -249,12 +250,12 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         }
 
         if (!tempRoot.exists())
-            tempRoot.mkdirs();
+            FileUtil.mkdir(tempRoot);
 
         File tempParent = new File(tempRoot.getAbsolutePath() + File.separator + "AssayId_" + protocol.getRowId());
         File tempFolder = AssayFileWriter.findUniqueFileName("work", tempParent);
         if (!tempFolder.exists())
-            tempFolder.mkdirs();
+            FileUtil.mkdirs(tempFolder);
 
         return tempFolder;
     }

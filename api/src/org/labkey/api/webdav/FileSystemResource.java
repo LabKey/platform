@@ -275,7 +275,7 @@ public class FileSystemResource extends AbstractWebdavResource
         boolean created = false;
         if (!file.exists())
         {
-            file.getParentFile().mkdirs();
+            FileUtil.mkdirs(file.getParentFile());
             try
             {
                 file.createNewFile();
