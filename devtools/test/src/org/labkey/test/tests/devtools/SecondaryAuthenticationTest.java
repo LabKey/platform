@@ -87,7 +87,6 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         configurePage
                 .addSecondaryConfiguration(new SecondaryAuthenticationProvider())
                 .setDescription("TestSecondary Configuration")
-                .setEnabled(true)
                 .clickApply();
         configurePage.clickSaveAndFinish();
 
