@@ -237,34 +237,30 @@ public class ExpDataIterators
 
     public static class ExpMaterialValidatorIterator extends ValidatorIterator
     {
-        private Integer _aliquotedFromColInd = null;
-        private final boolean _isUpdateOnly;
+        private final Integer _aliquotedFromColIdx;
 
         public ExpMaterialValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
         {
             super(data, context, c, user);
-            _isUpdateOnly = context.getInsertOption().updateOnly;
+            boolean isUpdateOnly = context.getInsertOption().updateOnly;
+
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
+            if (!isUpdateOnly && columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
+                _aliquotedFromColIdx = columnNameMap.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
+            else if (isUpdateOnly && columnNameMap.containsKey(AliquotedFromLSID.name()))
+                _aliquotedFromColIdx = columnNameMap.get(AliquotedFromLSID.name());
+            else
+                _aliquotedFromColIdx = -1;
         }
 
         @Override
         protected String validate(ColumnValidator v, int rowNum, Object value, DataIterator data)
         {
-            if (_aliquotedFromColInd == null)
-            {
-                Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(data);
-                if (!_isUpdateOnly && columnNameMap.containsKey(ExpMaterial.ALIQUOTED_FROM_INPUT))
-                    _aliquotedFromColInd = columnNameMap.get(ExpMaterial.ALIQUOTED_FROM_INPUT);
-                else if (_isUpdateOnly && columnNameMap.containsKey(AliquotedFromLSID.name()))
-                    _aliquotedFromColInd = columnNameMap.get(AliquotedFromLSID.name());
-                else
-                    _aliquotedFromColInd = -1;
-            }
-
-            if (!(v instanceof RequiredValidator) || _aliquotedFromColInd < 0)
+            if (!(v instanceof RequiredValidator) || _aliquotedFromColIdx < 0)
                 return super.validate(v, rowNum, value, data);
 
             String aliquotedFromValue = null;
-            Object aliquotedFromObj = data.get(_aliquotedFromColInd);
+            Object aliquotedFromObj = data.get(_aliquotedFromColIdx);
             if (aliquotedFromObj != null)
             {
                 if (aliquotedFromObj instanceof String)

@@ -221,6 +221,13 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 columnInfo.setFk(getExpSchema().getMaterialForeignKey(getLookupContainerFilter(), Column.RowId.name()));
                 columnInfo.setLabel("Root Material");
                 columnInfo.setUserEditable(false);
+
+                // NK: Here we mark the column as not required AND nullable which is the opposite of the database where
+                // a NOT NULL constraint is in place. This is done to avoid the RequiredValidator check upon updating a row.
+                // See ExpMaterialValidatorIterator.
+                columnInfo.setRequired(false);
+                columnInfo.setNullable(true);
+
                 return columnInfo;
             }
             case AliquotedFromLSID ->
