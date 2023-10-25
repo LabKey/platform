@@ -157,81 +157,79 @@
 
         if (canvas)
         {
-            // Stashing original width & height helps on resize
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            render(canvas, canvasWidth, canvasHeight);
-            window.addEventListener("resize", function() { render(canvas, canvasWidth, canvasHeight); });
+            const ctx = canvas.getContext("2d");
+
+            if (ctx) {
+                // Stashing original width & height helps on resize
+                const canvasWidth = canvas.width;
+                const canvasHeight = canvas.height;
+                render(canvas, ctx, canvasWidth, canvasHeight);
+                window.addEventListener("resize", function () {
+                    render(canvas, ctx, canvasWidth, canvasHeight);
+                });
+            }
         }
     });
 
-    function render(canvas, originalWidth, originalHeight)
+    function render(canvas, ctx, originalWidth, originalHeight)
     {
-        const ctx = canvas.getContext("2d");
+        const ratio = increaseResolution(canvas, ctx, originalWidth, originalHeight);
+        const borderWidth = drawOutline(canvas, ctx, ratio);
+        const maxBarWidth = canvas.width - 2 * borderWidth;
+        const barHeight = canvas.height - 2 * borderWidth;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
 
-        if (ctx) {
-            const ratio = increaseResolution(canvas, ctx, originalWidth, originalHeight);
-            const borderWidth = drawOutline(canvas, ctx, ratio);
-            const maxBarWidth = canvas.width - 2 * borderWidth;
-            const barHeight = canvas.height - 2 * borderWidth;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+        ctx.lineWidth = 1;
+        ctx.font = 12 * ratio + "pt Sans-Serif"
+        ctx.textAlign = "center";
+        ctx.textBaseLine = "middle";
 
-            ctx.lineWidth = 1;
-            ctx.font = 12 * ratio + "pt Sans-Serif"
-            ctx.textAlign = "center";
-            ctx.textBaseLine = "middle";
+        // testBaseLine = middle sets the text too high, IMO. Adjust by half the size of the vertical bound.
+        const metrics = ctx.measureText("H");
+        const textHeightFix = (metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2 - 1;
 
-            // testBaseLine = middle sets the text too high, IMO. Adjust by half the size of the vertical bound.
-            const metrics = ctx.measureText("H");
-            const textHeightFix = (metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2 - 1;
+        const firstPassword = document.getElementById(<%=q(firstPasswordId)%>);
+        const email = <%=q(bean.email)%>;
+        const emailField = document.getElementById("email");
 
-            const firstPassword = document.getElementById(<%=q(firstPasswordId)%>);
-            const email = <%=q(bean.email)%>;
-            const emailField = document.getElementById("email");
+        // Remove existing event, if present (resize case)
+        if (renderBarFunction)
+            firstPassword.removeEventListener('input', renderBarFunction);
 
-            // Remove existing event, if present (resize case)
-            if (renderBarFunction)
-                firstPassword.removeEventListener('input', renderBarFunction);
+        renderBarFunction = function() {
+            const showPlaceholderText = !firstPassword.value;
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
+                method: 'POST',
+                params: {
+                    password: firstPassword.value,
+                    email: email || emailField?.value
+                },
+                success: LABKEY.Utils.getCallbackWrapper(function(responseText)
+                {
+                    // Clear everything inside the outline
+                    ctx.clearRect(borderWidth, borderWidth, maxBarWidth, barHeight);
 
-            renderBarFunction = function() {
-                const showPlaceholderText = !firstPassword.value;
-                LABKEY.Ajax.request({
-                    url: LABKEY.ActionURL.buildURL("login", "getPasswordScore.api"),
-                    method: 'POST',
-                    params: {
-                        password: firstPassword.value,
-                        email: email || emailField?.value
-                    },
-                    success: function(response)
-                    {
-                        const responseText = LABKEY.Utils.decode(response.responseText);
-                        if (responseText)
-                        {
-                            // Clear everything inside the outline
-                            ctx.clearRect(borderWidth, borderWidth, maxBarWidth, barHeight);
+                    // Render bar
+                    const percent = Math.min(responseText.score / 90, 0.99999);
+                    const colorIndex = Math.floor(percent * 3);
+                    ctx.fillStyle = ["red", "yellow", "green"][colorIndex];
+                    const barWidth = percent * maxBarWidth;
+                    ctx.fillRect(borderWidth, borderWidth, barWidth, barHeight);
 
-                            // Render bar
-                            const percent = Math.min(responseText.score / 90, 0.99999);
-                            const colorIndex = Math.floor(percent * 3);
-                            ctx.fillStyle = ["red", "yellow", "green"][colorIndex];
-                            const barWidth = percent * maxBarWidth;
-                            ctx.fillRect(borderWidth, borderWidth, barWidth, barHeight);
+                    // Render text
+                    ctx.fillStyle = 2 === colorIndex ? "white" : showPlaceholderText ? "gray" : "black";
+                    const textIndex = Math.floor(percent * 6);
+                    const text = showPlaceholderText ?  "Password Guidance" : ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
+                    ctx.fillText(text, centerX, centerY + textHeightFix);
+                    canvas.text = "Password Strength: " + text;
+                })
+            });
+        };
 
-                            // Render text
-                            ctx.fillStyle = 2 === colorIndex ? "white" : showPlaceholderText ? "gray" : "black";
-                            const textIndex = Math.floor(percent * 6);
-                            const text = showPlaceholderText ?  "Password Guidance" : ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
-                            ctx.fillText(text, centerX, centerY + textHeightFix);
-                            canvas.text = "Password Strength: " + text;
-                        }
-                    }
-                });
-            };
-
-            firstPassword.addEventListener('input', renderBarFunction);
-            renderBarFunction(); // Proactive render otherwise box will be empty after resizing until next change
-        }
+        firstPassword.addEventListener('input', renderBarFunction);
+        renderBarFunction(); // Proactive render otherwise box will be empty after resizing until next change
     }
 
     function drawOutline(canvas, ctx, ratio) {
