@@ -186,8 +186,10 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
             <MenuItem
                 key={authOption}
                 onClick={() => this.setState({ secondaryModalOpen: true, addModalType: authOption })}
+                disabled={!secondaryProviders[authOption].allowInsert}
             >
                 {authOption} : {secondaryProviders[authOption].description}
+                {!secondaryProviders[authOption].allowInsert && <i className="fa fa-question-circle" />}
             </MenuItem>
         ));
 

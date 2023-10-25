@@ -200,7 +200,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplica
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
-public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer
+public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
@@ -215,8 +215,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
-
-    public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
@@ -275,14 +273,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public HttpView createRunExportView(Container container, String defaultFilenamePrefix)
+    public HttpView<?> createRunExportView(Container container, String defaultFilenamePrefix)
     {
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
         return new JspView<>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
     }
 
     @Override
-    public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
+    public HttpView<?> createFileExportView(Container container, String defaultFilenamePrefix)
     {
         Set<String> roles = getDataInputRoles(container, ContainerFilter.current(container));
         // Remove case-only dupes
@@ -516,7 +514,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull List<ExpDataImpl> getExpDatasByLSID(Collection<String> lsids)
     {
-        if (lsids.size() == 0)
+        if (lsids.isEmpty())
             return Collections.emptyList();
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN), null).getArrayList(Data.class));
     }
@@ -524,7 +522,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
     {
-        if (rowids.size() == 0)
+        if (rowids.isEmpty())
             return Collections.emptyList();
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowids, IN), null).getArrayList(Data.class));
     }
@@ -532,7 +530,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull List<? extends ExpData> getExpDatas(ExpDataClass dataClass, Collection<Integer> rowIds)
     {
-        if (rowIds.size() == 0)
+        if (rowIds.isEmpty())
             return Collections.emptyList();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, IN);
         filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
@@ -782,7 +780,47 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result == null ? null : new ExpMaterialImpl(result);
     }
 
-    public List<ExpMaterialImpl> getIndexableMaterials(Container container, @Nullable Date modifiedSince)
+    private static final int INDEXING_LIMIT = 10_000;
+
+    @Override
+    public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
+    {
+        task.addRunnable(() -> {
+            for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
+            {
+                sampleType.index(task);
+            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> indexMaterials(task, c, modifiedSince), SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> {
+            for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
+            {
+                dataClass.index(task);
+            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> indexData(task, c, modifiedSince), SearchService.PRIORITY.bulk);
+    }
+
+    @Override
+    public void indexDeleted()
+    {
+        List<TableInfo> indexedTables = List.of(getTinfoSampleType(),
+                getTinfoDataClass(),
+                getTinfoMaterial(),
+                getTinfoData());
+
+        // Clear the last indexed value on all tables that back a search document
+        for (TableInfo indexedTable : indexedTables)
+        {
+            new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + indexedTable +
+                    " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+        }
+    }
+
+    private void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
     {
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
@@ -791,17 +829,44 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
+        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getSchema(), sql);
+        selector.setJdbcCaching(false);
+
+        int rowCount = selector.forEach(Material.class, m -> {
+            ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
+            task.addResource(expMaterial.createIndexDocument(), SearchService.PRIORITY.bulk);
+        });
+
+        if (rowCount == INDEXING_LIMIT)
+        {
+            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+            task.addRunnable(() -> indexMaterials(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+        }
     }
 
-    public List<ExpDataImpl> getIndexableData(Container container, @Nullable Date modifiedSince)
+    public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL");
         sql.add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
+
+        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getSchema(), sql);
+        selector.setJdbcCaching(false);
+
+        int rowCount = selector.forEach(Data.class, d -> {
+            ExpDataImpl expData = new ExpDataImpl(d);
+            task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
+        });
+
+        if (rowCount == INDEXING_LIMIT)
+        {
+            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+            task.addRunnable(() -> indexData(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+        }
     }
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
@@ -813,7 +878,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpDataClassImpl.fromDataClasses(new SqlSelector(getSchema(), sql).getArrayList(DataClass.class));
     }
 
-    public Collection<ExpSampleTypeImpl> getIndexableSampleTypes(Container container, @Nullable Date modifiedSince)
+    private Collection<ExpSampleTypeImpl> getIndexableSampleTypes(@NotNull Container container, @Nullable Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " _st_ WHERE Container = ?").add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, "_st_").toSQLFragment(null, null);
@@ -1018,7 +1083,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return toExpProtocol(p);
     }
 
-    @NotNull
     private ExpProtocolImpl toExpProtocol(@Nullable Protocol p)
     {
         ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
@@ -1384,7 +1448,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
-        return classes.stream().map(ExpDataClassImpl::new).sorted().collect(Collectors.toUnmodifiableList());
+        return classes.stream().map(ExpDataClassImpl::new).sorted().toList();
     }
 
     @Override
@@ -1662,7 +1726,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // ignore
         }
-        if (0 < errors.length())
+        if (!errors.isEmpty())
             throw new ValidationException(errors.toString());
         return null;
     }
@@ -1715,7 +1779,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // ignore
         }
-        if (0 < errors.length())
+        if (!errors.isEmpty())
             throw new ValidationException(errors.toString());
 
         return null;
@@ -1958,7 +2022,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         String objectId = lsid.getObjectId();
-        if (objectId == null || objectId.length() == 0)
+        if (objectId == null || objectId.isEmpty())
             return null;
 
         String[] parts = StringUtils.split(objectId, ".");
@@ -2049,7 +2113,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         String objectId = lsid.getObjectId();
-        if (objectId == null || objectId.length() == 0)
+        if (objectId == null || objectId.isEmpty())
             return null;
 
         String[] parts = StringUtils.split(objectId, ".");
@@ -8319,12 +8383,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
     }
 
-    @Override
-    public boolean useUXDomainDesigner()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
-    }
-
     /*
     * this is used to register a query view in experiment-ShowRunText.view and this expects
     * the query to have RunId column
@@ -8636,7 +8694,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void addEdges(Collection<ExpLineageEdge> edges)
     {
-        if (edges == null || edges.size() == 0)
+        if (edges == null || edges.isEmpty())
             return;
 
         List<List<?>> params = new ArrayList<>();
@@ -9176,7 +9234,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
             if (tableInfo == null)
                 continue;
-            List<ColumnInfo> uniqueIdCols = provisioned.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
+            List<ColumnInfo> uniqueIdCols = provisioned.getColumns().stream().filter(ColumnInfo::isScannableField).toList();
             numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {

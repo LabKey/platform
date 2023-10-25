@@ -447,27 +447,4 @@ public class SqlController extends SpringActionController
         }
         out.flush();
     }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class TestSqlAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new HtmlView("<script src='/labkey/clientapi/core/SQL.js'></script>\n" +
-                    "<textarea cols=120 id=sql></textarea><br><button onClick='exec()'>exec</button>" +
-                    "<pre id=result></pre>" +
-                    "<script>"+
-                    "function exec(){\n"+
-                    "LABKEY.Query.experimental.SQL.execute(\n"+
-                    "  {schema:'core', sql:document.getElementById('sql').value,"+
-                    "  success:function(r){\ndocument.getElementById('result').setText(JSON.stringify(r));\n}});"+
-                    "}</script>");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-    }
 }

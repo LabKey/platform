@@ -1080,7 +1080,7 @@ public class SecurityApiActions
     @Marshal(Marshaller.Jackson)
     public static class BulkUpdateGroupAction extends MutatingApiAction<GroupForm>
     {
-        Group _group;
+        private Group _group;
 
         @Override
         public void validateForm(GroupForm form, Errors errors)
@@ -1156,10 +1156,7 @@ public class SecurityApiActions
                 throw new UnauthorizedException("You do not have permission to modify site-wide groups.");
             }
 
-            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
-            {
-                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
-            }
+            SecurityController.verifyUserCanModifyGroup(_group, getUser());
 
             Map<String, String> memberErrors = new HashMap<>();
             List<User> newUsers = new ArrayList<>();
@@ -1822,8 +1819,8 @@ public class SecurityApiActions
         {
             Group group = getGroup(form);
 
-            if (group != null && group.isSystemGroup() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+            if (group != null)
+                SecurityController.verifyUserCanModifyGroup(group, getUser());
 
             for (int id : form.getPrincipalIds())
             {
@@ -1850,8 +1847,8 @@ public class SecurityApiActions
         {
             Group group = getGroup(form);
 
-            if (group != null && group.isSystemGroup() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+            if (group != null)
+                SecurityController.verifyUserCanModifyGroup(group, getUser());
 
             for (int id : form.getPrincipalIds())
             {
@@ -1934,9 +1931,9 @@ public class SecurityApiActions
             List<String> invalidEmails = new ArrayList<>();
             List<ValidEmail> validEmails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
-            if (invalidEmails.size() > 0)
+            if (!invalidEmails.isEmpty())
                 throw new IllegalArgumentException("Invalid email address" + (invalidEmails.size() > 1 ? "es" : "") + ": " + PageFlowUtil.filter(StringUtils.join(invalidEmails)));
-            if (validEmails.size() == 0)
+            if (validEmails.isEmpty())
                 throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
 
             for (ValidEmail email : validEmails)
@@ -1968,16 +1965,16 @@ public class SecurityApiActions
                         response.put("message", htmlMsg);
                     }
                     responses.add(Map.of(
-                            "userId", user.getUserId(),
-                            "email", user.getEmail(),
-                            "message", htmlMsg,
-                            "isNew", isNew
+                        "userId", user.getUserId(),
+                        "email", user.getEmail(),
+                        "message", htmlMsg,
+                        "isNew", isNew
                     ));
                 }
             }
 
-            if (htmlErrors.size() > 0) response.put("htmlErrors", htmlErrors);
-            response.put("success", htmlErrors.size() == 0);
+            if (!htmlErrors.isEmpty()) response.put("htmlErrors", htmlErrors);
+            response.put("success", htmlErrors.isEmpty());
             response.put("users", responses);
             return response;
         }
@@ -2045,7 +2042,7 @@ public class SecurityApiActions
 
             //Convert to a json convertible map
             List<Map<String, Object>> responseGroups = groups.stream().map(group -> {
-                Map<String, Object> props = new HashMap();
+                Map<String, Object> props = new HashMap<>();
                 props.put("Name", group.getName());
                 props.put("Id", group.getUserId());
                 props.put("Container", group.getContainer());

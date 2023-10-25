@@ -139,7 +139,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     @Override
     @Nullable
-    public ExpProtocolApplication getSourceApplication()
+    public ExpProtocolApplicationImpl getSourceApplication()
     {
         if (null != _sourceApp)
         {

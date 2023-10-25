@@ -27,6 +27,7 @@ export interface AuthConfigProvider {
     settingsFields: AuthConfigField[];
     sso?: boolean;
     testLink?: string;
+    allowInsert?: boolean;
 }
 
 export interface GlobalSettingsOptions {

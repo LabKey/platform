@@ -209,3 +209,21 @@
 .global-settings__default-domain-field {
   margin-left: 30px;
 }
+
+.configurations__dropdown .dropdown .dropdown-menu .disabled::after {
+  content: "Only one configuration of this type is allowed";
+  display: none;
+  position: absolute;
+  top: -0px;
+  right: -30px;
+  width: 150px;
+  text-align: center;
+  background-color: #575858;
+  border: 1px solid #888888;
+  color: #eeeeee;
+  border-radius: 2px;
+  font-size: 0.8em;
+}
+.configurations__dropdown .dropdown .dropdown-menu .disabled:hover::after {
+  display: inline;
+}
