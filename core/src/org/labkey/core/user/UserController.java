@@ -2501,6 +2501,7 @@ public class UserController extends SpringActionController
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
         private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
+        private boolean _includeDeactivated; // Should we include inactive members (relevant if permissions is not empty)
 
         public String getGroup()
         {
@@ -2569,6 +2570,16 @@ public class UserController extends SpringActionController
         public void setActive(boolean active)
         {
             _active = active;
+        }
+
+        public boolean getIncludeDeactivated()
+        {
+            return _includeDeactivated;
+        }
+
+        public void setIncludeDeactivated(boolean includeDeactivated)
+        {
+            _includeDeactivated = includeDeactivated;
         }
     }
 
@@ -2752,7 +2763,7 @@ public class UserController extends SpringActionController
             }
             else
             {
-                users = SecurityManager.getUsersWithPermissions(container, form.getPermissionClasses());
+                users = SecurityManager.getUsersWithPermissions(container, form.getIncludeDeactivated(), form.getPermissionClasses());
             }
 
             this.setUsersList(form, users, response);
