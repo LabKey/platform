@@ -80,13 +80,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static org.labkey.experiment.api.ExperimentServiceImpl.getExpSchema;
+
 public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> implements ExpRun
 {
     private boolean _populated;
 
     private List<ExpProtocolApplicationImpl> _protocolSteps;
-    private Map<ExpMaterial, String> _materialInputs = new HashMap<>();
-    private Map<ExpData, String> _dataInputs = new HashMap<>();
+    private Map<ExpMaterialImpl, String> _materialInputs = new HashMap<>();
+    private Map<ExpDataImpl, String> _dataInputs = new HashMap<>();
     private List<ExpMaterial> _materialOutputs = new ArrayList<>();
     private List<ExpData> _dataOutputs = new ArrayList<>();
     private ExpRunImpl _replacedByRun;
@@ -166,7 +168,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                         + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
                         + " WHERE ER.LSID = ? AND E.Hidden = ?";
 
-        return ExpExperimentImpl.fromExperiments(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
+        return ExpExperimentImpl.fromExperiments(new SqlSelector(getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
     }
 
     @Override
@@ -309,7 +311,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void save(User user) throws BatchValidationException
     {
         ExperimentServiceImpl expService = ExperimentServiceImpl.get();
-        try (DbScope.Transaction t = expService.getExpSchema().getScope().ensureTransaction())
+        try (DbScope.Transaction t = getExpSchema().getScope().ensureTransaction())
         {
             boolean newRun = getRowId() == 0;
             expService.onBeforeRunSaved(getProtocol(), this, getContainer(), user);
@@ -341,7 +343,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             throw new UnauthorizedException();
         }
-        ExperimentServiceImpl.get().deleteExperimentRunsByRowIds(getContainer(), user, auditUserComment, Arrays.asList(getRowId()));
+        ExperimentServiceImpl.get().deleteExperimentRuns(getContainer(), user, auditUserComment, Arrays.asList(this));
     }
 
     @Override
@@ -438,14 +440,14 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public @NotNull Map<ExpMaterial, String> getMaterialInputs()
+    public @NotNull Map<ExpMaterialImpl, String> getMaterialInputs()
     {
         ensureFullyPopulated();
         return _materialInputs;
     }
 
     @Override
-    public Map<ExpData, String> getDataInputs()
+    public Map<ExpDataImpl, String> getDataInputs()
     {
         ensureFullyPopulated();
         return _dataInputs;
@@ -542,10 +544,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         {
             throw new UnauthorizedException("Attempting to delete an ExperimentRun without having delete permissions for its container");
         }
-        DbCache.remove(ExperimentServiceImpl.get().getTinfoExperimentRun(), ExperimentServiceImpl.get().getCacheKey(getLSID()));
-
         final ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         final SqlDialect dialect = svc.getSchema().getSqlDialect();
+
+        DbCache.remove(svc.getTinfoExperimentRun(), svc.getCacheKey(getLSID()));
 
         deleteProtocolApplicationProvenance();
 
@@ -561,7 +563,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
         clearCache();
 
-        ExperimentRunGraph.clearCache(getContainer());
+        svc.getSchema().getScope().addCommitTask(ExperimentRunGraph.getCacheClearingCommitTask(getContainer()), DbScope.CommitTaskOption.POSTCOMMIT);
     }
 
     @Override
@@ -576,25 +578,38 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     // Clean up DataInput and MaterialInput exp.object and properties
     private void deleteInputObjects(ExperimentServiceImpl svc, SqlDialect dialect)
     {
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+        SQLFragment materialSQL = new SQLFragment("SELECT " +
                 dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
                         "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+                " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)", getRowId());
 
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+        SQLFragment materialInputSQL = new SQLFragment("SELECT " +
                 dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
                         "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+                " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)", + getRowId());
 
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+        SQLFragment dataSQL = new SQLFragment("SELECT " +
                 dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
                         "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoDataInput() + " WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+                " FROM " + svc.getTinfoDataInput() + " WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = ?)", getRowId());
 
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
+        SQLFragment dataInputSQL = new SQLFragment("SELECT " +
                 dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
                         "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                " FROM " + svc.getTinfoMaterialInput() + " WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+                " FROM " + svc.getTinfoMaterialInput() + " WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = ?)", getRowId());
+
+        // Build a single UNION to help reduce DB round trips
+        SQLFragment unionSQL = new SQLFragment("(")
+                .append(materialSQL)
+                .append("\n UNION \n")
+                    .append(materialInputSQL)
+                .append("\n UNION \n")
+                .append(dataSQL)
+                .append("\n UNION \n")
+                .append(dataInputSQL)
+                .append(")");
+
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), unionSQL, getContainer(), false);
     }
 
     private void deleteProtocolApplicationProvenance()
@@ -605,22 +620,19 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private void deleteAppParametersAndInputs()
     {
-        String sql = " ";
-        sql += "DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
+        SQLFragment sql = new SQLFragment();
+        sql.append("DELETE FROM exp.ProtocolApplicationParameter WHERE ProtocolApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
 
         //per Josh: break relation between all datas with this run id and don't delete them
-        sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoData() + " SET SourceApplicationId = NULL, RunId = NULL " +
-                " WHERE RunId = " + getRowId() + ";\n";
+        sql.append("UPDATE exp.Data SET SourceApplicationId = NULL, RunId = NULL WHERE RunId = ?").add(getRowId()).appendEOS();
+        sql.append("UPDATE exp.Material SET SourceApplicationId = NULL, RunId = NULL WHERE RunId = ?").add(getRowId()).appendEOS();
 
-        sql += "UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial() + " SET SourceApplicationId = NULL, RunId = NULL " +
-                " WHERE RunId = " + getRowId() + ";\n";
+        sql.append("DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.append("DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.append("DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = ?)").add(getRowId()).appendEOS();
+        sql.append("DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = ?)").add(getRowId()).appendEOS();
 
-        sql += "DELETE FROM exp.DataInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
-        sql += "DELETE FROM exp.MaterialInput WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ");\n";
-        sql += "DELETE FROM exp.DataInput WHERE DataId IN (SELECT RowId FROM exp.Data WHERE RunId = " + getRowId() + ");\n";
-        sql += "DELETE FROM exp.MaterialInput WHERE MaterialId IN (SELECT RowId FROM exp.Material WHERE RunId = " + getRowId() + ");\n";
-
-        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(SQLFragment.unsafe(sql));
+        new SqlExecutor(getExpSchema()).execute(sql);
     }
 
     private void deleteRunMaterials(User user)
@@ -633,7 +645,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     private void deleteRunProtocolApps()
     {
-        new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = " + getRowId());
+        new SqlExecutor(getExpSchema()).execute("DELETE FROM exp.ProtocolApplication WHERE RunId = ?", getRowId());
     }
 
 
@@ -664,10 +676,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     {
         ensureUnlocked();
         List<ExpProtocolApplication> listPA = new ArrayList<>();
-        List<ExpMaterial> listM = new ArrayList<>();
+        List<ExpMaterialImpl> listM = new ArrayList<>();
         List<ExpData> listD = new ArrayList<>();
-        Set<ExpProtocolApplication> ancestorPAStack = new LinkedHashSet<>();
-        Set<ExpProtocolApplication> descendantPAStack = new LinkedHashSet<>();
+        Set<ExpProtocolApplicationImpl> ancestorPAStack = new LinkedHashSet<>();
+        Set<ExpProtocolApplicationImpl> descendantPAStack = new LinkedHashSet<>();
         List<ExpProtocolApplicationImpl> apps = getProtocolApplications();
 
         boolean found = false;
@@ -675,7 +687,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         // support focus on a starting material that is not part of the run
         if (type == null || DotGraph.TYPECODE_MATERIAL.equalsIgnoreCase(type))
         {
-            for (ExpMaterial m : getMaterialInputs().keySet())
+            for (ExpMaterialImpl m : getMaterialInputs().keySet())
                 if (m.getRowId() == id.intValue())
                 {
                     found = true;
@@ -687,7 +699,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
         if (type == null || DotGraph.TYPECODE_DATA.equalsIgnoreCase(type))
         {
-            for (ExpData d : getDataInputs().keySet())
+            for (ExpDataImpl d : getDataInputs().keySet())
                 if (d.getRowId() == id.intValue())
                 {
                     found = true;
@@ -699,11 +711,11 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
         if (!found)
         {
-            for (ExpProtocolApplication app : apps)
+            for (ExpProtocolApplicationImpl app : apps)
             {
                 if (type == null || DotGraph.TYPECODE_MATERIAL.equalsIgnoreCase(type))
                 {
-                    for (ExpMaterial m : app.getOutputMaterials())
+                    for (ExpMaterialImpl m : app.getOutputMaterials())
                         if (m.getRowId() == id.intValue())
                         {
                             found = true;
@@ -720,7 +732,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 }
                 if (type == null || DotGraph.TYPECODE_DATA.equalsIgnoreCase(type))
                 {
-                    for (ExpData d : app.getOutputDatas())
+                    for (ExpDataImpl d : app.getOutputDatas())
                     {
                         if (d.getRowId() == id.intValue())
                         {
@@ -756,20 +768,20 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             throw new ExperimentException("Specified node not found in Experiment Run");
 
         int loopCount = 0;
-        while (descendantPAStack.size() > 0)
+        while (!descendantPAStack.isEmpty())
         {
             if (loopCount++ > 10000)
             {
                 throw new IllegalStateException("Infinite loop detected for run " + getRowId());
             }
 
-            ExpProtocolApplication pa = descendantPAStack.iterator().next();
-            for (ExpMaterial m : pa.getOutputMaterials())
+            ExpProtocolApplicationImpl pa = descendantPAStack.iterator().next();
+            for (ExpMaterialImpl m : pa.getOutputMaterials())
             {
                 listM.add(m);
                 descendantPAStack.addAll(m.getSuccessorApps());
             }
-            for (ExpData d : pa.getOutputDatas())
+            for (ExpDataImpl d : pa.getOutputDatas())
             {
                 listD.add(d);
                 descendantPAStack.addAll(d.getSuccessorApps());
@@ -783,17 +795,17 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         }
 
         loopCount = 0;
-        while (ancestorPAStack.size() > 0)
+        while (!ancestorPAStack.isEmpty())
         {
             if (loopCount++ > 10000)
             {
                 throw new IllegalStateException("Infinite loop detected for run " + getRowId());
             }
 
-            ExpProtocolApplication pa = ancestorPAStack.iterator().next();
+            ExpProtocolApplicationImpl pa = ancestorPAStack.iterator().next();
             if (pa.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
                 break;
-            for (ExpMaterial m : pa.getInputMaterials())
+            for (ExpMaterialImpl m : pa.getInputMaterials())
             {
                 listM.add(m);
                 if (getMaterialInputs().containsKey(m))
@@ -806,7 +818,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 if (null != m.getSourceApplication() && m.getRun() != null && getRowId() == m.getRun().getRowId())
                     ancestorPAStack.add(m.getSourceApplication());
             }
-            for (ExpData d : pa.getInputDatas())
+            for (ExpDataImpl d : pa.getInputDatas())
             {
                 listD.add(d);
                 if (getDataInputs().containsKey(d))
@@ -823,10 +835,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             listPA.add(pa);
         }
 
-        ArrayList<ExpProtocolApplicationImpl> allPA = new ArrayList<>();
-        ArrayList<ExpProtocolApplication> deletePA;
-        ArrayList<ExpMaterial> deleteM;
-        ArrayList<ExpData> deleteD;
+        List<ExpProtocolApplicationImpl> allPA = new ArrayList<>();
+        List<ExpProtocolApplicationImpl> deletePA;
+        List<ExpMaterialImpl> deleteM;
+        List<ExpDataImpl> deleteD;
 
         setProtocolApplications(null);
 
@@ -836,64 +848,64 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
             {
                 allPA.add(app);
                 deleteM = new ArrayList<>();
-                for (ExpMaterial m : app.getInputMaterials())
+                for (ExpMaterialImpl m : app.getInputMaterials())
                 {
                     if (listM.contains(m))
                     {
                         deletePA = new ArrayList<>();
-                        for (ExpProtocolApplication p : m.getSuccessorApps())
+                        for (ExpProtocolApplicationImpl p : m.getSuccessorApps())
                             if (!listPA.contains(p))
                                 deletePA.add(p);
-                        for (ExpProtocolApplication p : deletePA)
+                        for (ExpProtocolApplicationImpl p : deletePA)
                             m.getSuccessorApps().remove(p);
                     }
                     else
                         deleteM.add(m);
                 }
-                for (ExpMaterial m : deleteM)
+                for (ExpMaterialImpl m : deleteM)
                 {
                     app.getInputMaterials().remove(m);
                     getMaterialInputs().remove(m);
                 }
 
                 deleteD = new ArrayList<>();
-                for (ExpData d : app.getInputDatas())
+                for (ExpDataImpl d : app.getInputDatas())
                 {
                     if (listD.contains(d))
                     {
                         deletePA = new ArrayList<>();
-                        for (ExpProtocolApplication p : d.getSuccessorApps())
+                        for (ExpProtocolApplicationImpl p : d.getSuccessorApps())
                             if (!listPA.contains(p))
                                 deletePA.add(p);
-                        for (ExpProtocolApplication p : deletePA)
+                        for (ExpProtocolApplicationImpl p : deletePA)
                             d.getSuccessorApps().remove(p);
                     }
                     else
                         deleteD.add(d);
                 }
-                for (ExpData d : deleteD)
+                for (ExpDataImpl d : deleteD)
                 {
                     app.getInputDatas().remove(d);
                     getDataInputs().remove(d);
                 }
 
                 deleteM = new ArrayList<>();
-                for (ExpMaterial m : app.getOutputMaterials())
+                for (ExpMaterialImpl m : app.getOutputMaterials())
                 {
                     if (!listM.contains(m))
                         deleteM.add(m);
                 }
-                for (ExpMaterial m : deleteM)
+                for (ExpMaterialImpl m : deleteM)
                     app.getOutputMaterials().remove(m);
 
 
                 deleteD = new ArrayList<>();
-                for (ExpData d : app.getOutputDatas())
+                for (ExpDataImpl d : app.getOutputDatas())
                 {
                     if (!listD.contains(d))
                         deleteD.add(d);
                 }
-                for (ExpData d : deleteD)
+                for (ExpDataImpl d : deleteD)
                     app.getOutputDatas().remove(d);
             }
         }
@@ -939,7 +951,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                     File file = expData.getFile();
                     // If we can find the file on disk, and it's in the assaydata directory or was created by this run,
                     // and there aren't any other usages, move it into an archived subdirectory.
-                    if (file != null && NetworkDrive.exists(file) && file.isFile() &&
+                    if (NetworkDrive.exists(file) && file.isFile() &&
                             (inAssayData(file) || isGeneratedByRun(expData)) &&
                             !hasOtherRunUsing(expData, this))
                     {

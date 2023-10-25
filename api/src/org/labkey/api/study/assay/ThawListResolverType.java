@@ -92,8 +92,8 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             AbstractAssayProvider.DATE_PROPERTY_NAME));
 
     @Override
-    public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
-                                                   Collection<ExpData> inputDatas,
+    public ParticipantVisitResolver createResolver(Collection<? extends ExpMaterial> inputMaterials,
+                                                   Collection<? extends ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
                                                    Collection<ExpData> outputDatas,
                                                    Container runContainer,

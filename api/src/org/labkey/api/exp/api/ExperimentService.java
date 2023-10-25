@@ -775,11 +775,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param log             output log target
      * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
      */
-    ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+    ExpRun saveSimpleExperimentRun(ExpRun run, Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
 
     ExpRun saveSimpleExperimentRun(ExpRun run,
-                                   Map<ExpMaterial, String> inputMaterials,
-                                   Map<ExpData, String> inputDatas,
+                                   Map<? extends ExpMaterial, String> inputMaterials,
+                                   Map<? extends ExpData, String> inputDatas,
                                    Map<ExpMaterial, String> outputMaterials,
                                    Map<ExpData, String> outputDatas,
                                    Map<ExpData, String> transformedDatas,
@@ -802,7 +802,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
-    ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+    ExpRun derive(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
                   Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
                   ViewBackgroundInfo info, Logger log)
             throws ExperimentException;

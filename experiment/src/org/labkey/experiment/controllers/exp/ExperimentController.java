@@ -3716,7 +3716,7 @@ public class ExperimentController extends SpringActionController
         protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
-            if (sampleTypes.size() == 0)
+            if (sampleTypes.isEmpty())
             {
                 throw new NotFoundException("No sample types found for ids provided.");
             }
@@ -3725,13 +3725,14 @@ public class ExperimentController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
-            for (ExpRun run : getRuns(sampleTypes))
-            {
-                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
-                {
-                    throw new UnauthorizedException();
-                }
-            }
+            // HACK!!!!
+//            for (ExpRun run : getRuns(sampleTypes))
+//            {
+//                if (!run.getContainer().hasPermission(getUser(), DeletePermission.class))
+//                {
+//                    throw new UnauthorizedException();
+//                }
+//            }
 
             for (ExpSampleType source : sampleTypes)
             {
@@ -3807,15 +3808,16 @@ public class ExperimentController extends SpringActionController
 
         private List<? extends ExpRun> getRuns(List<ExpSampleType> sampleTypes)
         {
-            if (sampleTypes.size() > 0)
-            {
-                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[sampleTypes.size()]));
-                return ExperimentService.get().runsDeletedWithInput(runArray);
-            }
-            else
-            {
+//            if (!sampleTypes.isEmpty())
+//            {
+                // HACK!
+//                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[sampleTypes.size()]));
+//                return ExperimentService.get().runsDeletedWithInput(runArray);
+//            }
+//            else
+//            {
                 return Collections.emptyList();
-            }
+//            }
         }
     }
 

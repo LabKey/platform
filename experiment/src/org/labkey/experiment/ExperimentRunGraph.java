@@ -52,6 +52,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -306,9 +307,45 @@ public class ExperimentRunGraph
         }
     }
 
+    private static class CacheClearer implements Runnable
+    {
+        private final Container _container;
+
+        public CacheClearer(Container container)
+        {
+            _container = container;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CacheClearer that = (CacheClearer) o;
+            return Objects.equals(_container, that._container);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_container);
+        }
+
+        @Override
+        public void run()
+        {
+            clearCache(_container);
+        }
+    }
+
+    public static Runnable getCacheClearingCommitTask(Container c)
+    {
+        return new CacheClearer(c);
+    }
+
     /**
      * Clears out the cache of files for this container. Must be called after any operation that changes the way a graph
-     * would be generated. Typically this includes deleting or inserting any run in the container, because that
+     * would be generated. Typically, this includes deleting or inserting any run in the container, because that
      * can change the connections between the runs, which is reflected in the graphs.
      */
     public static void clearCache(Container container)

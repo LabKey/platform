@@ -139,7 +139,7 @@ public interface Selector
      *  no larger than batchSize. This is convenient for cases where streaming is desired, but processing in batches is more
      *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
      */
-    <T> void forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock);
+    <T> int forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock);
 
     /**
      * Return a new value map. If the query selects a single column, return an identity map. If the query selects

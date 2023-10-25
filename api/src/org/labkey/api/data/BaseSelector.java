@@ -508,7 +508,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
     }
 
     @Override
-    public <T> void forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock)
+    public <T> int forEachBatch(Class<T> clazz, int batchSize, ForEachBatchBlock<T> batchBlock)
     {
         ResultSetFactory factory = getStandardResultSetFactory();
 
@@ -521,12 +521,13 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
         {
             factory.handleSqlException(e, null);
         }
+        return 100;
     }
 
     private static class BatchForEachBlock<T> implements ForEachBlock<T>, AutoCloseable
     {
         private final int _batchSize;
-        private final List<T> _batch;
+        private List<T> _batch;
         private final ForEachBatchBlock<T> _batchBlock;
 
         private BatchForEachBlock(int batchSize, ForEachBatchBlock<T> batchBlock)
@@ -545,17 +546,26 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector<?>> extends Jdb
 
                 if (_batch.size() == _batchSize)
                 {
-                    _batchBlock.exec(new LinkedList<>(_batch));  // Make a defensive copy... _batchBlock might process _batch asynchronously
-                    _batch.clear();
+                    processBatch();
                 }
             }
+        }
+
+        private void processBatch() throws SQLException
+        {
+            // Reset batch before executing so that if an exception is thrown, we don't try to reprocess when
+            // close() is called, and so that the execution can mutate the list or process asynchronously without us caring
+            List<T> currentBatch = _batch;
+            _batch = new ArrayList<>(_batchSize);
+
+            _batchBlock.exec(currentBatch);
         }
 
         @Override
         public void close() throws SQLException
         {
             if (!_batch.isEmpty())
-                _batchBlock.exec(_batch);
+                processBatch();
         }
     }
 

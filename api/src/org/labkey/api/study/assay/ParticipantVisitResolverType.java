@@ -48,8 +48,8 @@ public interface ParticipantVisitResolverType
 {
     ParticipantVisitResolver createResolver(ExpRun run, Container targetStudyContainer, User user) throws IOException, ExperimentException;
 
-    ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
-                                                   Collection<ExpData> inputDatas,
+    ParticipantVisitResolver createResolver(Collection<? extends ExpMaterial> inputMaterials,
+                                                   Collection<? extends ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
                                                    Collection<ExpData> outputDatas,
                                                    Container runContainer,
