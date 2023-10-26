@@ -2183,7 +2183,7 @@ public class SecurityManager
     }
 
     /**
-     * @return an immutable list of Users who have been assigned all the requested permissions in the given container
+     * @return an immutable list of active Users who have been assigned all the requested permissions in the given container
      */
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
