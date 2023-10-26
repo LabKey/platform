@@ -787,8 +787,6 @@ public class DomainUtil
             addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
         }
 
-        // TODO: update indices -- drop and re-add?
-
         try
         {
             if (validationException.getErrors().isEmpty())
@@ -823,6 +821,14 @@ public class DomainUtil
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
                         updateTextChoiceValueRows(d, user, entry.getKey().getName(), valueUpdate, validationException);
+                }
+
+                // update indices - add missing and drop those that aren't include with domain info
+                if (update.getIndices() != null)
+                {
+                    d.setPropertyIndices(update.getIndices(), null);
+                    StorageProvisioner.get().addMissingRequiredIndices(d);
+                    StorageProvisioner.get().dropNotRequiredIndices(d);
                 }
             }
         }
