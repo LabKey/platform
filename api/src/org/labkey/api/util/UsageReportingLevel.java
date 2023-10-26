@@ -65,17 +65,11 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         {
             return false;
         }
-
-        @Override
-        public TimerTask createTimerTask()
-        {
-            return null;
-        }
     },
 
     /**
-     * Captures basic User info, container count information and Site Settings info to help identify the organization running the install,
-     * and more detailed stats about how many items exist or actions have been invoked.
+     * Captures basic User info, container count information and Site Settings info to help identify the organization
+     * running the installation, and more detailed stats about how many items exist or actions have been invoked.
      *
      * May capture site-wide usage information, including counts for certain data types, such as assay designs,
      * reports of a specific type, or lists. May also capture the number of times a certain feature was used in a
@@ -136,41 +130,37 @@ public enum UsageReportingLevel implements SafeToRenderEnum
     }
 
     private static final Logger LOG = LogHelper.getLogger(UsageReportingLevel.class, "Submits usage metrics to labkey.org");
-    private static Timer _timer;
+    private static final Timer _timer = new Timer("UpgradeCheck", true);
+    private static UsageTimerTask _task;
     private static HtmlString _upgradeMessage;
     private static HtmlString _marketingUpdate;
     private static String _marketingMessageDefault = "Do more with LabKey Server. <a href='https://www.labkey.com/products-services/labkey-server/'>Click here</a> to learn about our Premium Editions.";
 
-    public static void cancelUpgradeCheck()
+    public static void shutdown()
     {
-        if (_timer != null)
-        {
-            _timer.cancel();
-        }
-        _timer = null;
-        _upgradeMessage = null;
-        _marketingUpdate = null;
+        _timer.cancel();
     }
 
-    public void scheduleUpgradeCheck()
+    public static void init()
     {
-        cancelUpgradeCheck();
-        TimerTask task;
-        // override the configured reporting level if the self test experimental feature is on
-        if (MothershipReport.isSelfTestMarketingUpdates())
-            task = ON.createTimerTask();
-        else
-            task = createTimerTask();
-        if (task != null)
+        if (_task != null)
         {
-            _timer = new Timer("UpgradeCheck", true);
-            _timer.scheduleAtFixedRate(task, 0, DateUtils.MILLIS_PER_DAY);
+            throw new IllegalStateException("Already initialized");
         }
+        reportNow();
     }
 
-    protected TimerTask createTimerTask()
+    /** Reset the timer and immediately check in (or not) based on current configuration */
+    public static void reportNow()
     {
-        return new UsageTimerTask(this);
+        // Tasks can't be reused, so cancel any active task before creating a new one
+        if (_task != null)
+        {
+            _task.cancel();
+        }
+
+        _task = new UsageTimerTask();
+        _timer.scheduleAtFixedRate(_task, 0, DateUtils.MILLIS_PER_DAY);
     }
 
     public static @Nullable HtmlString getUpgradeMessage()
@@ -215,37 +205,54 @@ public enum UsageReportingLevel implements SafeToRenderEnum
 
     private static class UsageTimerTask extends TimerTask
     {
-        private final UsageReportingLevel _level;
-
-        UsageTimerTask(UsageReportingLevel level)
-        {
-            _level = level;
-        }
-
         @Override
         public void run()
         {
-            LOG.debug("Starting to generate metrics report for " + _level);
-            MothershipReport.Target target = MothershipReport.isSelfTestMarketingUpdates()
-                    ? MothershipReport.Target.local
-                    : MothershipReport.Target.remote;
-            MothershipReport report = generateReport(_level, target);
-            if (report != null)
+            try
             {
-                _upgradeMessage = null;
-                _marketingUpdate = null;
+                UsageReportingLevel level;
+                MothershipReport.Target target;
 
-                report.run();
-                if (!StringUtils.isEmpty(report.getUpgradeMessage()))
-                    _upgradeMessage = HtmlString.unsafe(report.getUpgradeMessage());
-
-                if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+                if (MothershipReport.isSelfTestMarketingUpdates())
                 {
-                    if (!StringUtils.isEmpty(report.getMarketingUpdate()))
-                        _marketingUpdate = HtmlString.unsafe(report.getMarketingUpdate());
-                    else
-                        _marketingUpdate = HtmlString.unsafe(_marketingMessageDefault);
+                    target = MothershipReport.Target.local;
+                    level = UsageReportingLevel.ON;
                 }
+                else
+                {
+                    target = MothershipReport.Target.remote;
+                    level = AppProps.getInstance().getUsageReportingLevel();
+                }
+
+                LOG.debug("Checking whether to report metrics. Level: " + level);
+                MothershipReport report = generateReport(level, target);
+                if (report != null)
+                {
+                    report.run();
+
+                    _upgradeMessage = null;
+                    _marketingUpdate = null;
+
+                    report.run();
+                    if (!StringUtils.isEmpty(report.getUpgradeMessage()))
+                        _upgradeMessage = HtmlString.unsafe(report.getUpgradeMessage());
+
+                    if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+                    {
+                        if (!StringUtils.isEmpty(report.getMarketingUpdate()))
+                            _marketingUpdate = HtmlString.unsafe(report.getMarketingUpdate());
+                        else
+                            _marketingUpdate = HtmlString.unsafe(_marketingMessageDefault);
+                    }
+                }
+                else
+                {
+                    _upgradeMessage = null;
+                }
+            }
+            catch (RuntimeException e)
+            {
+                LOG.error("Failed to report metrics", e);
             }
          }
     }
@@ -299,7 +306,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         {
             MothershipReport report = UsageReportingLevel.generateReport(level, MothershipReport.Target.test);
             if (null == report && level.doGeneration())
-                throw new ApiUsageException("No report generated for level " + level.toString());
+                throw new ApiUsageException("No report generated for level " + level);
             else
                 return report;
         }

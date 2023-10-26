@@ -687,7 +687,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     String title = "My Menu";
-                    if (form.getTitle() != null && !form.getTitle().equals(""))
+                    if (form.getTitle() != null && !form.getTitle().isEmpty())
                         title = form.getTitle();
 
                     WebPartView<?> view;
@@ -794,10 +794,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
         home.setFolderType(collaborationType, null);
 
-        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, (User)null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, null);
 
         try
         {
@@ -833,7 +833,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void destroy()
     {
         super.destroy();
-        UsageReportingLevel.cancelUpgradeCheck();
+        UsageReportingLevel.shutdown();
     }
 
 
@@ -1055,7 +1055,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
             MothershipReport.setSelfTestMarketingUpdates(enabled);
-            AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+            UsageReportingLevel.reportNow();
         });
 
         if (null != PropertyService.get())
@@ -1171,7 +1171,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
-        AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+        UsageReportingLevel.init();
         TempTableTracker.init();
     }
 
