@@ -453,4 +453,10 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     {
         return true;
     }
+
+    @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
 }

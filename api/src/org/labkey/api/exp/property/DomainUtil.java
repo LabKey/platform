@@ -340,12 +340,15 @@ public class DomainUtil
 
         d.setDisabledSystemFields(domain.getDisabledSystemFields());
 
-        SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
-        Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
-        if (allIndices.size() > 0)
+        if (domainKind.allowUniqueConstraintProperties())
         {
-            List<Pair<TableInfo.IndexType, List<ColumnInfo>>> indices = allIndices.values().stream().filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary)).toList();
-            d.setIndices(indices.stream().map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique())).toList());
+            SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+            if (allIndices.size() > 0)
+            {
+                List<Pair<TableInfo.IndexType, List<ColumnInfo>>> indices = allIndices.values().stream().filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary)).toList();
+                d.setIndices(indices.stream().map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique())).toList());
+            }
         }
 
         return d;
@@ -372,6 +375,7 @@ public class DomainUtil
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
+            gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
@@ -389,6 +393,7 @@ public class DomainUtil
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+        gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
         return gwtDomain;
@@ -824,7 +829,7 @@ public class DomainUtil
                 }
 
                 // update indices - add missing and drop those that aren't include with domain info
-                if (update.getIndices() != null)
+                if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
                 {
                     d.setPropertyIndices(update.getIndices(), null);
                     StorageProvisioner.get().addMissingRequiredIndices(d);

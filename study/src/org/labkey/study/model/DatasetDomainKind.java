@@ -264,6 +264,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return true;
     }
 
+    @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
         return StudyManager.getInstance().getDatasetDefinition(domainURI);

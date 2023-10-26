@@ -158,6 +158,12 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
     public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);
