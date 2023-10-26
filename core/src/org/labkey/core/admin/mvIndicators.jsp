@@ -171,7 +171,7 @@
         var cellLeft = row.insertCell(0);
         var imgNode = document.createElement('img');
         imgNode.src = '<%=getWebappURL("_images/partdelete.gif")%>';
-        imgNode.setAttribute("onclick", 'removeRow(' + maxRowId + ');');
+        imgNode["onclick"] = removeRow.bind(null, maxRowId);
         imgNode.setAttribute("alt", "delete");
         imgNode.setAttribute("style", "margin-right: 8px; cursor: pointer");
         cellLeft.appendChild(imgNode);
