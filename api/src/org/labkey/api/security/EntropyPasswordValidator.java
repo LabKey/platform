@@ -102,7 +102,8 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             "abcdefghijklmnopqrstuvwxyz"
         )
             .flatMap(s -> Stream.of(s, new StringBuilder(s).reverse().toString())) // Forward and reverse
-            .sorted(Comparator.comparingInt(String::length)) // Shortest to longest
+            // Sort longest to shortest - we want the full alphabet before the keyboard rows (which contain "fgh" and "jkl")
+            .sorted(Comparator.comparingInt(String::length).reversed())
             .map(String::toCharArray)
             .toArray(char[][]::new);
     }

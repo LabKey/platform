@@ -174,18 +174,18 @@
     function render(canvas, ctx, originalWidth, originalHeight)
     {
         const ratio = increaseResolution(canvas, ctx, originalWidth, originalHeight);
-        const borderWidth = drawOutline(canvas, ctx, ratio);
+        const borderWidth = drawOutline(canvas, ctx, ratio) + ratio; // leave one css pixel between border and bar
         const maxBarWidth = canvas.width - 2 * borderWidth;
         const barHeight = canvas.height - 2 * borderWidth;
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
-        ctx.lineWidth = 1;
+        ctx.lineWidth = ratio;
         ctx.font = 12 * ratio + "pt Sans-Serif"
         ctx.textAlign = "center";
         ctx.textBaseLine = "middle";
 
-        // testBaseLine = middle sets the text too high, IMO. Adjust by half the size of the vertical bound.
+        // textBaseLine = middle sets the text too high, IMO. Adjust by half the size of the vertical bound.
         const metrics = ctx.measureText("H");
         const textHeightFix = (metrics.fontBoundingBoxAscent - metrics.fontBoundingBoxDescent) / 2 - 1;
 
@@ -208,8 +208,10 @@
                 },
                 success: LABKEY.Utils.getCallbackWrapper(function(responseText)
                 {
-                    // Clear everything inside the outline
-                    ctx.clearRect(borderWidth, borderWidth, maxBarWidth, barHeight);
+                    // Clear everything inside the border. You might think I could clear using the same coordinates as
+                    // I fill below (that's what I thought, anyway), but this tended to leave single-pixel trails of
+                    // color behind. I clear a larger rectangle than what I filled to erase these trails.
+                    ctx.clearRect(borderWidth - ratio, borderWidth - ratio, maxBarWidth + 2 * ratio, barHeight + 2 * ratio);
 
                     // Render bar
                     const percent = Math.min(responseText.score / 90, 0.99999);
