@@ -742,14 +742,7 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
-            if (!getUser().hasSiteAdminPermission())
-            {
-                if (_group.isSystemGroup())
-                    throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
-
-                if (_group.hasPrivilegedRole())
-                    throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + _group.getName());
-            }
+            verifyUserCanModifyGroup(_group, getUser());
 
             _messages = new ArrayList<>();
 
@@ -886,6 +879,23 @@ public class SecurityController extends SpringActionController
         public URLHelper getSuccessURL(UpdateMembersForm updateMembersForm)
         {
             return _messages.isEmpty() ? _successURL : null;
+        }
+    }
+
+    /**
+     * Throws UnauthorizedException if user is not allowed to modify this group
+     * @param group the Group being modified
+     * @param user the current admin user
+     */
+    public static void verifyUserCanModifyGroup(Group group, User user)
+    {
+        if (!user.hasSiteAdminPermission())
+        {
+            if (group.isSystemGroup())
+                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+
+            if (group.hasPrivilegedRole())
+                throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + group.getName());
         }
     }
 

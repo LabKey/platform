@@ -1196,7 +1196,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             columns: [
                 sm,
                 new Ext.grid.TemplateColumn({
-                    header: '<a href="javascript:void(0);">[All]</a>',
+                    header: '<span class="labkey-link">[All]</span>',
                     dataIndex: 'value',
                     menuDisabled: true,
                     resizable: false,

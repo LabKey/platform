@@ -79,7 +79,8 @@
     <% } %>
     <table class="lk-fields-table" width="85%">
         <tr><td class="labkey-form-label" style="width: 85px">Email Type:</td>
-            <td><select id="templateClass" name="templateClass" onchange="changeEmailTemplate();">
+            <% addHandler("templateClass", "change", "changeEmailTemplate();"); %>
+            <td><select id="templateClass" name="templateClass">
 <%
         for (EmailTemplate et : emailTemplates)
         {
