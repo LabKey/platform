@@ -405,7 +405,7 @@ public class ExcelLoader extends DataLoader
 
                         // Use ISO format instead of Date.toString(), #21232
                         if (value instanceof Date)
-                            data = DateUtil.formatDateTimeISO8601((Date)value);
+                            data = DateUtil.formatIsoDateShortTime((Date)value);
                         else
                             data = String.valueOf(value);
 
@@ -810,7 +810,7 @@ public class ExcelLoader extends DataLoader
 
         private String formatDate(Map<String, Object> map)
         {
-            return DateUtil.formatDateTimeISO8601WithSeconds((Date)map.get("MyDate"));
+            return DateUtil.formatIsoDateLongTime((Date)map.get("MyDate"));
         }
     }
 
@@ -1002,7 +1002,7 @@ public class ExcelLoader extends DataLoader
         final String getIsoStringDateFromExcelDouble(double value)
         {
             // Format as date time with seconds, Issue #48930
-            return DateUtil.formatDateTimeISO8601WithSeconds(getDateFromExcelDouble(value));
+            return DateUtil.formatIsoDateLongTime(getDateFromExcelDouble(value));
         }
 
         /*

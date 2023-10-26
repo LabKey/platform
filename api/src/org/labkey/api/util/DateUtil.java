@@ -75,9 +75,9 @@ public class DateUtil
     private static final int defaultCentury = (currentYear - 80) - twoDigitCutoff;
 
     private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
-    private static final String ISO_TIME_FORMAT_STRING = "HH:mm";
-    private static final String ISO_DATE_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_TIME_FORMAT_STRING;
-    private static final String LONG_TIME_FORMAT_STRING = "HH:mm:ss";
+    private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
+    private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
+    private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss";
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
@@ -992,7 +992,7 @@ validNum:       {
 
     public static String getStandardDateTimeFormatString()
     {
-        return ISO_DATE_TIME_FORMAT_STRING;
+        return ISO_DATE_SHORT_TIME_FORMAT_STRING;
     }
 
 
@@ -1016,36 +1016,43 @@ validNum:       {
         return "yyyy-MM-dd'T'HH:mm:ss.SSS";
     }
 
-
-    // TODO: Combine these format ISO methods with toISO() and nowISO()?
-
     /**
      * Format current date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
      * form, for example, for export or in filenames. Most callers should use formatDate(Container c) instead.
      */
-    public static String formatDateISO8601()
+    public static String formatIsoDate()
     {
-        return formatDateISO8601(new Date());
+        return formatIsoDate(new Date());
     }
 
+    @Deprecated // Use formatIsoDate();
+    public static String formatDateISO8601(@Nullable Date date)
+    {
+        return formatIsoDate(date);
+    }
 
     /**
      * Format date using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable form,
      * for example, for export or in filenames. Most callers should use formatDate(Container c, Date d) instead.
      */
-    public static String formatDateISO8601(@Nullable Date date)
+    public static String formatIsoDate(@Nullable Date date)
     {
         return formatDateTime(date, ISO_DATE_FORMAT_STRING);
     }
 
+    @Deprecated // Use formatIsoDateShortTime() instead
+    public static String formatDateTimeISO8601(Date date)
+    {
+        return formatIsoDateShortTime(date);
+    }
 
     /**
      * Format date and time using ISO 8601 pattern. This is appropriate only for persisting dates in machine-readable
      * form, for example, for export or in filenames. Most callers should use formatDateTime(Container c, Date d) instead.
      */
-    public static String formatDateTimeISO8601(Date date)
+    public static String formatIsoDateShortTime(Date date)
     {
-        return formatDateTime(date, ISO_DATE_TIME_FORMAT_STRING);
+        return formatDateTime(date, ISO_DATE_SHORT_TIME_FORMAT_STRING);
     }
 
     /**
@@ -1053,9 +1060,9 @@ validNum:       {
      * machine-readable form, for example, for export or in filenames. Most callers should use
      * formatDateTime(Container c, Date d) instead.
      */
-    public static String formatDateTimeISO8601WithSeconds(Date date)
+    public static String formatIsoDateLongTime(Date date)
     {
-        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + LONG_TIME_FORMAT_STRING);
+        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING);
     }
 
     /**
@@ -1161,7 +1168,7 @@ validNum:       {
 
     public static String getTimeFormatString(Container c)
     {
-        return LONG_TIME_FORMAT_STRING;
+        return ISO_LONG_TIME_FORMAT_STRING;
     }
 
 

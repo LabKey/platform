@@ -3363,7 +3363,7 @@ public class AdminController extends SpringActionController
             RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
             if (runtimeBean != null)
             {
-                systemProperties.add(new Pair<>("VM Start Time", DateUtil.formatDateTimeISO8601(new Date(runtimeBean.getStartTime()))));
+                systemProperties.add(new Pair<>("VM Start Time", DateUtil.formatIsoDateShortTime(new Date(runtimeBean.getStartTime()))));
                 long upTime = runtimeBean.getUptime(); // round to sec
                 upTime = upTime - (upTime % 1000);
                 systemProperties.add(new Pair<>("VM Uptime", DateUtil.formatDuration(upTime)));
