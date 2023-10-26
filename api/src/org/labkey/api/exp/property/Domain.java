@@ -27,6 +27,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -111,6 +112,7 @@ public interface Domain extends IPropertyType
      * Currently, the indices are not saved as a part of the domain definition.
      */
     void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> indices);
+    void setPropertyIndices(@NotNull List<GWTIndex> indices, @Nullable Set<String> lowerReservedNames);
     @NotNull Set<PropertyStorageSpec.Index> getPropertyIndices();
 
     /**

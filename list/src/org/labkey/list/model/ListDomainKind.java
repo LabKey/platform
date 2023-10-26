@@ -427,13 +427,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
             }
 
-            Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-            for (GWTIndex index : indices)
-            {
-                PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-                propertyIndices.add(propIndex);
-            }
-            d.setPropertyIndices(propertyIndices);
+            d.setPropertyIndices(indices, lowerReservedNames);
 
             // TODO: This looks like the wrong order to me -- we should updateListProperties() (persist the indexing
             // settings and handle potential transitions) before calling save() (which indexes the list). Since this is

@@ -59,6 +59,7 @@ import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -1350,6 +1351,28 @@ public class DomainImpl implements Domain
     public void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> propertyIndices)
     {
         _propertyIndices = propertyIndices;
+    }
+
+    @Override
+    public void setPropertyIndices(@NotNull List<GWTIndex> indices, @Nullable Set<String> lowerReservedNames)
+    {
+        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
+        for (GWTIndex index : indices)
+        {
+            // issue 25273: verify that each index column name exists in the domain
+            if (lowerReservedNames != null)
+            {
+                for (String indexColName : index.getColumnNames())
+                {
+                    if (!lowerReservedNames.contains(indexColName.toLowerCase()) && getPropertyByName(indexColName) == null)
+                        throw new IllegalArgumentException("Index column name '" + indexColName + "' does not exist.");
+                }
+            }
+
+            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
+            propertyIndices.add(propIndex);
+        }
+        setPropertyIndices(propertyIndices);
     }
 
     @Override

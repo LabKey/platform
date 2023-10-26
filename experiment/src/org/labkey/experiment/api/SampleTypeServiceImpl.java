@@ -813,13 +813,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-        for (GWTIndex index : indices)
-        {
-            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-            propertyIndices.add(propIndex);
-        }
-        domain.setPropertyIndices(propertyIndices);
+        domain.setPropertyIndices(indices, lowerReservedNames);
 
         if (!hasNameProperty && idUri1 == null)
             throw new ExperimentException("Either a 'Name' property or an index for idCol1 is required");

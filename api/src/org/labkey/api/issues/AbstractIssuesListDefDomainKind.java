@@ -342,13 +342,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                     DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                 }
 
-                Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-                for (GWTIndex index : indices)
-                {
-                    PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-                    propertyIndices.add(propIndex);
-                }
-                newDomain.setPropertyIndices(propertyIndices);
+                newDomain.setPropertyIndices(indices, lowerReservedNames);
 
                 // set default values on the base properties
                 DomainKind domainKind = newDomain.getDomainKind();
