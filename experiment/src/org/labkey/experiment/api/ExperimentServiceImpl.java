@@ -707,9 +707,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return materials;
     }
 
-    @Override
-    @NotNull
-    public List<ExpMaterialImpl> getExpMaterialsByLsid(Collection<String> lsids)
+    private List<ExpMaterialImpl> _getExpMaterialsByLSID(Collection<String> lsids)
     {
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
         TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
@@ -720,14 +718,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return materials;
     }
 
+    @Override
     @NotNull
-    public List<ExpMaterialImpl> getExpMaterialsByLSID(Collection<String> lsids)
+    public List<ExpMaterialImpl> getExpMaterialsByLsid(Collection<String> lsids)
     {
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
-        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
-
-        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
-        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
+        List<ExpMaterialImpl> materials = new ArrayList<>();
+        Iterables.partition(lsids, 100).forEach(sublist ->
+                        materials.addAll(_getExpMaterialsByLSID(sublist))
+        );
 
         return materials;
     }
