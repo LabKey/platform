@@ -101,7 +101,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -1549,7 +1549,7 @@ public class AssayController extends SpringActionController
                 if (form.getRuns().size() == 1)
                 {
                     // construct the audit log query view
-                    User user = LimitedUser.getCanSeeAuditLogUser(getContainer(), getUser());
+                    User user = ElevatedUser.getCanSeeAuditLogUser(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
                     ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
                     if (run != null && schema != null)

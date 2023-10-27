@@ -73,7 +73,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -439,7 +439,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 // we allow linking data to a study even if the study security is set to read-only datasets, since the
                 // underlying insert uses the QUS, we add a contextual role to allow the insert to succeed
-                user = LimitedUser.getElevatedUser(user, Set.of(FolderAdminRole.class));
+                user = ElevatedUser.getElevatedUser(user, Set.of(FolderAdminRole.class));
             }
             datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false, false);
             StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);

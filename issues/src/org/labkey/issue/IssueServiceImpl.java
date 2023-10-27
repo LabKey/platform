@@ -10,7 +10,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssueService;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -301,7 +301,7 @@ public class IssueServiceImpl implements IssueService
         if (relatedContainer == null)
             relatedContainer = container;
 
-        return LimitedUser.getElevatedUser(relatedContainer, user, Pair.of(UpdatePermission.class, EditorRole.class));
+        return ElevatedUser.getElevatedUser(relatedContainer, user, Pair.of(UpdatePermission.class, EditorRole.class));
     }
 
     @Nullable

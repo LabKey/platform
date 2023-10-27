@@ -30,7 +30,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -87,11 +87,11 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         User elevatedUser = getUser();
         if (!getContainer().hasPermission(getUser(), ReadPermission.class))
         {
-            elevatedUser = LimitedUser.getElevatedUser(getUser(), Set.of(ReaderRole.class));
+            elevatedUser = ElevatedUser.getElevatedUser(getUser(), Set.of(ReaderRole.class));
         }
         else if (getUser().equals(run.getCreatedBy()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
         {
-            elevatedUser = LimitedUser.getElevatedUser(getUser(), Set.of(EditorRole.class));
+            elevatedUser = ElevatedUser.getElevatedUser(getUser(), Set.of(EditorRole.class));
         }
 
         try

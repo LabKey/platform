@@ -42,7 +42,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -381,7 +381,7 @@ public class AuditController extends SpringActionController
         {
             List<Integer> rowIds;
             if (form.isSampleType())
-                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), LimitedUser.getCanSeeAuditLogUser(getContainer(), getUser()), getContainer());
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.getCanSeeAuditLogUser(getContainer(), getUser()), getContainer());
             else
                 rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());
 

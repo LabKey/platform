@@ -81,13 +81,6 @@ public class LimitedUser extends ClonedUser
         return ElevatedUser.getElevatedUser(user, rolesToAdd);
     }
 
-    /** Unconditionally add roles to the supplied user */
-    @Deprecated // Call ElevatedUser!
-    public static User getElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
-    {
-        return ElevatedUser.getElevatedUser(user, rolesToAdd);
-    }
-
     @Deprecated // Call ElevatedUser!
     public static User getCanSeeAuditLogUser(Container container, User user)
     {
