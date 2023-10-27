@@ -88,6 +88,7 @@ import org.labkey.api.security.AvatarType;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.EntropyPasswordValidator;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
@@ -198,6 +199,7 @@ public class ApiModule extends CodeOnlyModule
             JavaVersion.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             Measurement.TestCase.class,

@@ -37,81 +37,80 @@ import java.util.stream.Stream;
  */
 public class WrappedImpersonationContext implements ImpersonationContext
 {
-    final ImpersonationContext delegate;
-    final Set<Role> additionalRoles;
+    private final ImpersonationContext _delegate;
+    private final Set<Role> _additionalRoles;
 
-    public WrappedImpersonationContext(ImpersonationContext delegate)
+    public WrappedImpersonationContext(ImpersonationContext delegate, Set<Role> additionalRoles)
     {
-        this.delegate = delegate;
-        additionalRoles = Set.of();
+        _delegate = delegate;
+        _additionalRoles = additionalRoles;
     }
 
     public WrappedImpersonationContext(ImpersonationContext delegate, Role additionalRole)
     {
-        this.delegate = delegate;
-        additionalRoles = Set.of(additionalRole);
+        this(delegate, Set.of(additionalRole));
     }
 
     @Override
     public boolean isImpersonating()
     {
-        return delegate.isImpersonating();
+        return _delegate.isImpersonating();
     }
 
     @Override
     @Nullable
     public Container getImpersonationProject()
     {
-        return delegate.getImpersonationProject();
+        return _delegate.getImpersonationProject();
     }
 
     @Override
     public User getAdminUser()
     {
-        return delegate.getAdminUser();
+        return _delegate.getAdminUser();
     }
 
     @Override
     public String getCacheKey()
     {
-        return delegate.getCacheKey();
+        return _delegate.getCacheKey();
     }
 
     @Override
     public ActionURL getReturnURL()
     {
-        return delegate.getReturnURL();
+        return _delegate.getReturnURL();
     }
 
     @Override
     public PrincipalArray getGroups(User user)
     {
-        return delegate.getGroups(user);
+        return _delegate.getGroups(user);
     }
 
     @Override
     public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
-        Set<Role> ret = new HashSet<>(additionalRoles);
-        ret.addAll(delegate.getAssignedRoles(user, policy));
+        Set<Role> ret = new HashSet<>(_additionalRoles);
+        ret.addAll(_delegate.getAssignedRoles(user, policy));
         return ret;
     }
 
     @Override
     public ImpersonationContextFactory getFactory()
     {
-        return delegate.getFactory();
+        return _delegate.getFactory();
     }
 
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        delegate.addMenu(menu, c, user, currentURL);
+        _delegate.addMenu(menu, c, user, currentURL);
     }
 
     @Override
     public Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
-        return delegate.filterPermissions(perms);
+        return _delegate.filterPermissions(perms);
     }
 }
