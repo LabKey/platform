@@ -25,10 +25,12 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -68,10 +70,10 @@ public class StudyDatasetIndexTest extends StudyBaseTest
     @LogMethod
     protected void doVerifySteps() throws Exception
     {
-        beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
-        selectQuery("study", "DEM-1");
-        waitForText(10000, "view raw table metadata");
-        clickAndWait(Locator.linkWithText("view raw table metadata"));
+        viewRawTableMetadata("DEM-1");
+        verifyStandardDatasetIndices("dem_minus_1_");
+
+        // verify column specific index
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
 
         // Issue: 44363 - we are expecting the import to fail because we are trying to change dataset keys on a
@@ -93,10 +95,8 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         deleteAllPipelineJobs();
         reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX, true, 1, false);
 
-        beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
-        selectQuery("study", "DEM-1");
-        waitForText(10000, "view raw table metadata");
-        clickAndWait(Locator.linkWithText("view raw table metadata"));
+        viewRawTableMetadata("DEM-1");
+        verifyStandardDatasetIndices("dem_minus_1_");
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
         assertTextPresentCaseInsensitive("dem_minus_1_sharedColumn");
 
@@ -120,11 +120,64 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         assertTableRowInNonDataRegionTable(METADATA, "flagcolumn", 33, colNameIndex);
         assertTableRowInNonDataRegionTable(METADATA, "4000", 33, colSizeIndex);
 
+        viewRawTableMetadata("DEM-2");
+        assertTextNotPresent("indexedColumn");
+        verifyStandardDatasetIndices("dem_minus_2_");
+        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
+
+        // add a new field to the dataset and set it to have a unique constraint
+        goBack();
+        DatasetDesignerPage datasetDesignerPage = goToEditDatasetDefinition("DEM-2");
+        datasetDesignerPage.getFieldsPanel()
+                .addField("uniqueColumn test")
+                .expand()
+                .clickAdvancedSettings()
+                .setUniqueConstraint(true)
+                .apply();
+        datasetDesignerPage.clickSave();
+
+        viewRawTableMetadata("DEM-2");
+        verifyStandardDatasetIndices("dem_minus_2_");
+        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
+        assertTextPresentCaseInsensitive("dem_minus_2_uniquecolumn_test");
+
+        // go back to edit the dataset definition and verify that the unique constraint can be removed
+        goBack();
+        datasetDesignerPage = goToEditDatasetDefinition("DEM-2");
+        datasetDesignerPage.getFieldsPanel()
+                .getField("uniqueColumn test")
+                .expand()
+                .clickAdvancedSettings()
+                .setUniqueConstraint(false)
+                .apply();
+        datasetDesignerPage.clickSave();
+
+        viewRawTableMetadata("DEM-2");
+        verifyStandardDatasetIndices("dem_minus_2_");
+        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
+        assertTextNotPresent("dem_minus_2_uniquecolumn_test");
+    }
+
+    private DatasetDesignerPage goToEditDatasetDefinition(String datasetName)
+    {
+        return goToManageStudy()
+                .manageDatasets()
+                .selectDatasetByName(datasetName)
+                .clickEditDefinition();
+    }
+
+    private void viewRawTableMetadata(String datasetName)
+    {
         beginAt("/query/" + getProjectName() + "/" + getFolderName()  + "/schema.view?schemaName=study");
-        selectQuery("study", "DEM-2");
+        selectQuery("study", datasetName);
         waitForText(10000, "view raw table metadata");
         clickAndWait(Locator.linkWithText("view raw table metadata"));
-        assertTextNotPresent("indexedColumn");
-        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
+    }
+
+    private void verifyStandardDatasetIndices(String prefix)
+    {
+        List<String> suffixes  = List.of("lsid", "participantid_sequencenum__key", "pk", "participantid_date", "date", "participantsequencenum", "qcstate");
+        for (String suffix : suffixes)
+            assertTextPresentCaseInsensitive(prefix + suffix);
     }
 }
