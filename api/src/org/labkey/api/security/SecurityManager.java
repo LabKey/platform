@@ -3239,7 +3239,7 @@ public class SecurityManager
         Stream<Role> roles = principal.getAssignedRoles(policy).stream()
             .filter(Objects::nonNull);
 
-        if (null != contextualRoles)
+        if (null != contextualRoles && !contextualRoles.isEmpty())
             roles = Stream.concat(roles, contextualRoles.stream());
 
         Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
