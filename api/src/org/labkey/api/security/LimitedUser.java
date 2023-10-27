@@ -72,7 +72,7 @@ public class LimitedUser extends ClonedUser
     @SafeVarargs
     public static User getElevatedUser(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
     {
-        return ElevatedUser.getElevatedUser(container, user, pairs);
+        return ElevatedUser.ensureContextualRoles(container, user, pairs);
     }
 
     @Deprecated // Call ElevatedUser!
@@ -84,7 +84,7 @@ public class LimitedUser extends ClonedUser
     @Deprecated // Call ElevatedUser!
     public static User getCanSeeAuditLogUser(Container container, User user)
     {
-        return ElevatedUser.getCanSeeAuditLogUser(container, user);
+        return ElevatedUser.ensureCanSeeAuditLogRole(container, user);
     }
 
     public static class TestCase extends Assert
@@ -101,9 +101,9 @@ public class LimitedUser extends ClonedUser
             testPermissions(new LimitedUser(new LimitedUser(user, FolderAdminRole.class), ReaderRole.class), 1, true, false, false, false, false);
 
             Container c = JunitUtil.getTestContainer();
-            testPermissions(ElevatedUser.getCanSeeAuditLogUser(c, new LimitedUser(user)), 1, false, false, false, false, true);
-            testPermissions(ElevatedUser.getCanSeeAuditLogUser(c, new LimitedUser(user, ReaderRole.class)), 2, true, false, false, false, true);
-            testPermissions(ElevatedUser.getCanSeeAuditLogUser(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), Set.of(EditorRole.class))), 3, true, true, true, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, false, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, true, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), Set.of(EditorRole.class))), 3, true, true, true, false, true);
 
             int groupCount = (int)user.getGroups().stream().count();
             int roleCount = user.getAssignedRoles(c.getPolicy()).size();

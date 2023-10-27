@@ -301,7 +301,7 @@ public class IssueServiceImpl implements IssueService
         if (relatedContainer == null)
             relatedContainer = container;
 
-        return ElevatedUser.getElevatedUser(relatedContainer, user, Pair.of(UpdatePermission.class, EditorRole.class));
+        return ElevatedUser.ensureContextualRoles(relatedContainer, user, Pair.of(UpdatePermission.class, EditorRole.class));
     }
 
     @Nullable

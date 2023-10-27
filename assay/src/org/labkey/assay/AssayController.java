@@ -1549,7 +1549,7 @@ public class AssayController extends SpringActionController
                 if (form.getRuns().size() == 1)
                 {
                     // construct the audit log query view
-                    User user = ElevatedUser.getCanSeeAuditLogUser(getContainer(), getUser());
+                    User user = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
                     ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
                     if (run != null && schema != null)

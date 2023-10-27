@@ -14,7 +14,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A wrapped user that possesses all the permissions associated with that user plus one or more contextual roles
+ * A wrapped user that possesses all the security aspects (groups, roles, impersonation status, etc.) of the underlying
+ * user and adds one or more contextual roles. Use this class as a last resort; preference is to use contextual roles
+ * in individual permissions checks or LimitedUser.
  */
 public class ElevatedUser extends ClonedUser
 {
@@ -24,11 +26,20 @@ public class ElevatedUser extends ClonedUser
     }
 
     /**
-     * Conditionally add roles to the supplied user. For each permission + role pair, add the role if the user doesn't
-     * have the corresponding permission in the supplied container.
+     * Wrap the supplied user and unconditionally add the supplied role(s). Always returns an ElevatedUser.
+     */
+    public static ElevatedUser getElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
+    {
+        return new ElevatedUser(user, rolesToAdd);
+    }
+
+    /**
+     * Ensure the supplied user has the supplied permissions. If so, return that user. If not, wrap the user with
+     * ElevatedUser and, for each pair of permission + role, add the role if the user doesn't have the corresponding
+     * permission in the supplied container.
      */
     @SafeVarargs
-    public static User getElevatedUser(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
+    public static User ensureContextualRoles(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
     {
         Set<Class<? extends Role>> rolesToAdd = Arrays.stream(pairs)
             .filter(pair -> !container.hasPermission(user, pair.first))
@@ -38,13 +49,11 @@ public class ElevatedUser extends ClonedUser
         return !rolesToAdd.isEmpty() ? getElevatedUser(user, rolesToAdd) : user;
     }
 
-    public static User getElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
+    /**
+     * Ensure the supplied user can read the audit log
+     */
+    public static User ensureCanSeeAuditLogRole(Container container, User user)
     {
-        return new ElevatedUser(user, rolesToAdd);
-    }
-
-    public static User getCanSeeAuditLogUser(Container container, User user)
-    {
-        return getElevatedUser(container, user, Pair.of(CanSeeAuditLogPermission.class, CanSeeAuditLogRole.class));
+        return ensureContextualRoles(container, user, Pair.of(CanSeeAuditLogPermission.class, CanSeeAuditLogRole.class));
     }
 }

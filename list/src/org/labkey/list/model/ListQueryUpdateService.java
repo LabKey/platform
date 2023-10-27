@@ -178,7 +178,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             // if the list is a picklist and you have permission to manage picklists, that equates
             // to having editor permission.
-            return ElevatedUser.getElevatedUser(container, user, Pair.of(DeletePermission.class, EditorRole.class));
+            return ElevatedUser.ensureContextualRoles(container, user, Pair.of(DeletePermission.class, EditorRole.class));
         }
         return user;
     }
