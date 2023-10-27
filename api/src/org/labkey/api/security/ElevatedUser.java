@@ -14,9 +14,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A wrapped user that possesses all the security aspects (groups, roles, impersonation status, etc.) of the underlying
- * user and adds one or more contextual roles. Use this class as a last resort; preference is to use contextual roles
- * in individual permissions checks or LimitedUser.
+ * A wrapped user that possesses all the security properties (groups, roles, impersonation status, etc.) of the
+ * underlying user and adds one or more contextual roles. Use this class as a last resort; preference is to use
+ * contextual roles in individual permission checks or LimitedUser.
  */
 public class ElevatedUser extends ClonedUser
 {
