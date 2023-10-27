@@ -4515,7 +4515,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             executor.execute("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")");
 
-            deleteProtocolInputs(c, protocolIds);
+            deleteAllProtocolInputs(c, protocolIds);
 
             for (Protocol protocol : protocols)
             {
@@ -4558,10 +4558,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
-    private void deleteProtocolInputs(Container c, String protocolIdsInClause)
+    private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
     {
         OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c, false);
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
+    }
+
+    private void deleteProtocolInputs(@NotNull Protocol protocol, Collection<? extends ExpProtocolInput> protocolInputsToDelete)
+    {
+        if (protocolInputsToDelete == null || protocolInputsToDelete.isEmpty())
+            return;
+
+        var protocolInputRowIds = protocolInputsToDelete.stream().map(ExpObject::getRowId).filter(rowId -> rowId != 0).toList();
+        if (protocolInputRowIds.isEmpty())
+            return;
+
+        var table = getTinfoProtocolInput();
+        SQLFragment ontologyLSIDSql = new SQLFragment("SELECT LSID FROM ").append(getTinfoProtocolInput(), "")
+                .append(" WHERE ProtocolId = ?").add(protocol.getRowId())
+                .append(" AND RowId ");
+        table.getSqlDialect().appendInClauseSql(ontologyLSIDSql, protocolInputRowIds);
+
+        SQLFragment deleteSql = new SQLFragment("DELETE FROM ").append(getTinfoProtocolInput(), "")
+                        .append(" WHERE ProtocolId = ?").add(protocol.getRowId())
+                        .append(" AND RowId ");
+        table.getSqlDialect().appendInClauseSql(deleteSql, protocolInputRowIds);
+
+        OntologyManager.deleteOntologyObjects(getSchema(), ontologyLSIDSql, protocol.getContainer(), false);
+        new SqlExecutor(getSchema()).execute(deleteSql);
     }
 
     public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
@@ -6365,7 +6389,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public Protocol saveProtocol(User user, Protocol protocol)
     {
-        return saveProtocol(user, protocol, true);
+        return saveProtocol(user, protocol, true, null);
     }
 
     // saveProperties is exposed due to how the transactions are handled for setting properties on protocols.
@@ -6373,7 +6397,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     // been saved to the database. The result is that it can cause the save to fail if this API attempts to save
     // the properties again. The only current recourse is for the caller to enforce their own transaction boundaries
     // using ensureTransaction().
-    public Protocol saveProtocol(User user, Protocol protocol, boolean saveProperties)
+    public Protocol saveProtocol(
+        User user,
+        Protocol protocol,
+        boolean saveProperties,
+        @Nullable Collection<? extends ExpProtocolInput> protocolInputsToDeleteOnUpdate
+    )
     {
         Protocol result;
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -6408,10 +6437,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (saveProperties)
                 savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
 
-
             Collection<? extends ExpProtocolInputImpl> protocolInputs = protocol.retrieveProtocolInputs();
             if (!newProtocol)
-                deleteProtocolInputs(protocol.getContainer(), String.valueOf(protocol.getRowId()));
+            {
+                if (null == protocolInputsToDeleteOnUpdate)
+                    deleteAllProtocolInputs(protocol.getContainer(), String.valueOf(protocol.getRowId()));
+                else
+                    deleteProtocolInputs(protocol, protocolInputsToDeleteOnUpdate);
+            }
+
             for (ExpProtocolInputImpl input : protocolInputs)
             {
                 AbstractProtocolInput obj = (AbstractProtocolInput)input.getDataObject();
@@ -8187,7 +8221,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             baseProtocol.storeProtocolParameters(baseParams.values());
         }
 
-        return saveProtocol(user, baseProtocol, false);
+        return saveProtocol(user, baseProtocol, false, null);
     }
 
     /**
