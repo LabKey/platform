@@ -237,18 +237,12 @@ public class NestedGroupsTest extends Assert
         expected(divB, user);
         SecurityManager.deleteMember(divB, user);
 
-        // Test that we protect against concurrent threads making independent group adds that result in a cycle.  We
+        // Test that we protect against concurrent threads making independent group adds that result in a cycle. We
         // simulate this by adding two groups that result in a cycle, forcing the second add to occur just after the
         // first add, but before the final validation of the first add.
         try
         {
-            SecurityManager.addMember(projectX, cycleTest, new Runnable() {
-                @Override
-                public void run()
-                {
-                    SecurityManager.addMemberWithoutValidation(cycleTest, all);
-                }
-            });
+            SecurityManager.addMember(projectX, cycleTest, () -> SecurityManager.addMemberWithoutValidation(cycleTest, all));
             fail("Add member of circular group addition should have throw IllegalStateException");
         }
         catch (InvalidGroupMembershipException e)

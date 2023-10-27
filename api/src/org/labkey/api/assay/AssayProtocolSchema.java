@@ -698,7 +698,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                     {
                         try
                         {
-                            User elevatedUser = LimitedUser.getElevatedUser(context.getContainer(), user, Set.of(qcRole.getClass(), readerRole.getClass()));
+                            User elevatedUser = LimitedUser.getElevatedUser(user, Set.of(qcRole.getClass(), readerRole.getClass()));
 
                             ViewContext viewContext = new ViewContext(context);
                             viewContext.setUser(elevatedUser);

@@ -1255,9 +1255,7 @@ public class AdminController extends SpringActionController
             props.setXFrameOption(frameOption);
 
             props.save(getViewContext().getUser());
-
-            if (null != level)
-                level.scheduleUpgradeCheck();
+            UsageReportingLevel.reportNow();
 
             return true;
         }
@@ -2217,7 +2215,7 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class ShowThreadsAction extends SimpleViewAction
+    public class ShowThreadsAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -2236,13 +2234,13 @@ public class AdminController extends SpringActionController
     }
 
     @AdminConsoleAction
-    public class DumpHeapAction extends SimpleViewAction
+    public class DumpHeapAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             File destination = DebugInfoDumper.dumpHeap();
-            return new HtmlView(PageFlowUtil.filter("Heap dumped to " + destination.getAbsolutePath()));
+            return new HtmlView(HtmlString.of("Heap dumped to " + destination.getAbsolutePath()));
         }
 
         @Override
@@ -3816,7 +3814,7 @@ public class AdminController extends SpringActionController
                 lafProps.save();
 
                 // Send an immediate report now that they've set up their account and defaults, and then every 24 hours after.
-                AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+                UsageReportingLevel.reportNow();
 
                 return true;
             }

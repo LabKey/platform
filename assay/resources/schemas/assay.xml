@@ -73,9 +73,11 @@
       </column>
       <column columnName="Rows">
         <description>The number of rows in each plate.</description>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="Columns">
         <description>The number of columns in each plate.</description>
+        <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="DataFileId">
         <isUserEditable>false</isUserEditable>
