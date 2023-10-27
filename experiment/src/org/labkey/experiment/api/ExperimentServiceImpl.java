@@ -25,6 +25,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -792,7 +793,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }, SearchService.PRIORITY.bulk);
 
-        task.addRunnable(() -> indexMaterials(task, c, modifiedSince), SearchService.PRIORITY.bulk);
+        task.addRunnable(() -> indexMaterials(task, c, modifiedSince, 0), SearchService.PRIORITY.bulk);
 
         task.addRunnable(() -> {
             for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
@@ -801,7 +802,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
         }, SearchService.PRIORITY.bulk);
 
-        task.addRunnable(() -> indexData(task, c, modifiedSince), SearchService.PRIORITY.bulk);
+        task.addRunnable(() -> indexData(task, c, modifiedSince, 0), SearchService.PRIORITY.bulk);
     }
 
     @Override
@@ -820,52 +821,60 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
     }
 
-    private void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
+    private void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince, int minRowId)
     {
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
-                + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material'");
+                + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
+        sql.add(minRowId);
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
+        sql.append(" ORDER BY RowId");
         sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
+        MutableInt maxRowIdProcessed = new MutableInt(minRowId);
 
         int rowCount = selector.forEach(Material.class, m -> {
             ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
             task.addResource(expMaterial.createIndexDocument(), SearchService.PRIORITY.bulk);
+            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expMaterial.getRowId()));
         });
 
         if (rowCount == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            task.addRunnable(() -> indexMaterials(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+            task.addRunnable(() -> indexMaterials(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
         }
     }
 
-    public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
+    public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince, int minRowId)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL");
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL AND RowId > ?");
         sql.add(container.getId());
+        sql.add(minRowId);
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
+        sql.append(" ORDER BY RowId");
 
         sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
         SqlSelector selector = new SqlSelector(getSchema(), sql);
         selector.setJdbcCaching(false);
+        MutableInt maxRowIdProcessed = new MutableInt(minRowId);
 
         int rowCount = selector.forEach(Data.class, d -> {
             ExpDataImpl expData = new ExpDataImpl(d);
             task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
+            maxRowIdProcessed.setValue(Math.max(maxRowIdProcessed.getValue(), expData.getRowId()));
         });
 
         if (rowCount == INDEXING_LIMIT)
         {
             // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
-            task.addRunnable(() -> indexData(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+            task.addRunnable(() -> indexData(task, container, modifiedSince, maxRowIdProcessed.getValue()), SearchService.PRIORITY.bulk);
         }
     }
 
