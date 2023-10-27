@@ -504,7 +504,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     {
                         JobRunner.getDefault().execute(1000, () ->
                         {
-                            List<Pair<Integer, Long>> copy = null;
+                            List<Pair<Integer, Long>> copy;
                             synchronized (updateLastIndexedList)
                             {
                                 copy = List.copyOf(updateLastIndexedList);
