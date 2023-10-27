@@ -1271,7 +1271,8 @@ public class NameGenerator
 
         if (!ancestorTypes.isEmpty())
         {
-            if (!hasLookupColumn || fieldParts.size() < 2 || fieldParts.size() > 4)
+            if (!hasLookupColumn || fieldParts.size() < 2 /* should be at least 2 parts, /alias/Name */
+                    || fieldParts.size() > 4 /* should be at most 3 parts, for example /MaterialInputs/Type1/Name */)
             {
                 _syntaxErrors.add("Invalid substitution token, lookup column name not specified: ${" + fkTokDisplay + "}.");
                 return fieldParts;
