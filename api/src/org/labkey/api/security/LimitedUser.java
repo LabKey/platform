@@ -34,18 +34,23 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * A cloned user that limits the permissions associated with that user to only the passed in roles
+ * A cloned user that limits the permissions associated with that user to only the passed in roles.
+ * WARNING: The supplied roles apply UNCONDITIONALLY, in all containers and resources. You must ensure
+ * that the scope of use is constrained appropriately.
  */
 public class LimitedUser extends ClonedUser
 {
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
-        this(user, Set.of(roleClasses));
+        this(user, Arrays.stream(roleClasses).filter(Objects::nonNull).collect(Collectors.toSet()));
     }
 
     private LimitedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
@@ -94,21 +99,27 @@ public class LimitedUser extends ClonedUser
         {
             User user = TestContext.get().getUser();
 
-            testPermissions(new LimitedUser(user),0, false, false, false, false, false);
+            testPermissions(new LimitedUser(user), 0, false, false, false, false, false);
             testPermissions(new LimitedUser(user, ReaderRole.class), 1, true, false, false, false, false);
             testPermissions(new LimitedUser(user, EditorRole.class), 1, true, true, true, false, false);
             testPermissions(new LimitedUser(user, FolderAdminRole.class), 1, true, true, true, true, true);
             testPermissions(new LimitedUser(new LimitedUser(user, FolderAdminRole.class), ReaderRole.class), 1, true, false, false, false, false);
+        }
 
+        @Test
+        public void testElevatedUser()
+        {
+            User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
+
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, false, false, false, false, true);
             testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, true, false, false, false, true);
-            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), Set.of(EditorRole.class))), 3, true, true, true, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, true, true, true, false, true);
 
             int groupCount = (int)user.getGroups().stream().count();
             int roleCount = user.getAssignedRoles(c.getPolicy()).size();
             int siteRolesCount = user.getSiteRoles().size();
-            User elevated = ElevatedUser.getElevatedUser(user, Set.of());
+            User elevated = ElevatedUser.getElevatedUser(user);
             assertEquals(groupCount, elevated.getGroups().stream().count());
             assertEquals(roleCount, elevated.getAssignedRoles(c.getPolicy()).size());
             assertEquals(siteRolesCount, elevated.getSiteRoles().size());

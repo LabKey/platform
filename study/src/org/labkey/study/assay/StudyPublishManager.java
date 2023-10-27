@@ -439,7 +439,7 @@ public class StudyPublishManager implements StudyPublishService
             {
                 // we allow linking data to a study even if the study security is set to read-only datasets, since the
                 // underlying insert uses the QUS, we add a contextual role to allow the insert to succeed
-                user = ElevatedUser.getElevatedUser(user, Set.of(FolderAdminRole.class));
+                user = ElevatedUser.getElevatedUser(user, FolderAdminRole.class);
             }
             datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false, false);
             StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);

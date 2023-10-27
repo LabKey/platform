@@ -10,19 +10,30 @@ import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * A wrapped user that possesses all the security properties (groups, roles, impersonation status, etc.) of the
- * underlying user and adds one or more contextual roles. Use this class as a last resort; preference is to use
- * contextual roles in individual permission checks or LimitedUser.
+ * underlying user and adds one or more roles. WARNING: The additional roles apply UNCONDITIONALLY, in all containers
+ * and resources. You must ensure that the scope of use is constrained appropriately. Use this class as a last resort;
+ * preference is to use contextual roles in individual permission checks or LimitedUser.
  */
 public class ElevatedUser extends ClonedUser
 {
     private ElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
     {
         super(user, new WrappedImpersonationContext(user.getImpersonationContext(), getRoles(rolesToAdd)));
+    }
+
+    /**
+     * Wrap the supplied user and unconditionally add the supplied role(s). Always returns an ElevatedUser.
+     */
+    @SafeVarargs
+    public static ElevatedUser getElevatedUser(User user, Class<? extends Role>... rolesToAdd)
+    {
+        return new ElevatedUser(user, Arrays.stream(rolesToAdd).filter(Objects::nonNull).collect(Collectors.toSet()));
     }
 
     /**

@@ -30,10 +30,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating as
- * themselves. This class can be used to grant a user a contextual role for the duration of a request. This should not
- * be first tool to reach for. It is usually better to find a way to provide the additional contextual roles in a more
- * limited scope.
+ * Do not use this class directly; use ElevatedUser instead.
  */
 public class WrappedImpersonationContext implements ImpersonationContext
 {

@@ -47,8 +47,6 @@ import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.util.Set;
-
 public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends SimpleViewAction<FormType>
 {
     protected int _runRowId;
@@ -87,11 +85,11 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         User elevatedUser = getUser();
         if (!getContainer().hasPermission(getUser(), ReadPermission.class))
         {
-            elevatedUser = ElevatedUser.getElevatedUser(getUser(), Set.of(ReaderRole.class));
+            elevatedUser = ElevatedUser.getElevatedUser(getUser(), ReaderRole.class);
         }
         else if (getUser().equals(run.getCreatedBy()) && !getContainer().hasPermission(getUser(), DeletePermission.class))
         {
-            elevatedUser = ElevatedUser.getElevatedUser(getUser(), Set.of(EditorRole.class));
+            elevatedUser = ElevatedUser.getElevatedUser(getUser(), EditorRole.class);
         }
 
         try
