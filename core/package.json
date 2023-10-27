@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@labkey/api": "1.26.1",
-    "@labkey/components": "2.386.0-fb-toggleButtonTweaks.2",
+    "@labkey/components": "2.386.0-fb-toggleButtonTweaks.3",
     "@labkey/themes": "1.3.2"
   },
   "devDependencies": {
