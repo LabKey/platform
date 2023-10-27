@@ -984,7 +984,7 @@ public class CoreController extends SpringActionController
             {
                 //suggest a name
                 //per spec it should be "<user-display-name> YYYY-MM-DD"
-                bean.setTitle(getUser().getDisplayName(getUser()) + " " + DateUtil.formatDateISO8601());
+                bean.setTitle(getUser().getDisplayName(getUser()) + " " + DateUtil.formatIsoDate());
             }
 
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
