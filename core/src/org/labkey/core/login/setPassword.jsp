@@ -149,7 +149,7 @@
     <% } %>
     </div>
 </labkey:form>
-<script type="application/javascript" <%=getScriptNonce()%>>
+<labkey:script>
     let renderBarFunction;
 
     LABKEY.Utils.onReady(function() {
@@ -263,4 +263,4 @@
 
         return ratio;
     }
-</script>
+</labkey:script>
