@@ -298,12 +298,12 @@ public class FileUtil
         return null;
     }
 
-    public static void checkAllowedFileName(String s)
+    public static void checkAllowedFileName(String s) throws IOException
     {
         String msg = isAllowedFileName(s);
         if (null == msg)
             return;
-        throw new IllegalArgumentException(msg);
+        throw new IOException(msg);
     }
 
     public static boolean mkdir(File file) throws IOException

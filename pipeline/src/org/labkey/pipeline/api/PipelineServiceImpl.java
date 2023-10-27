@@ -1095,7 +1095,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
          * and points to the customized file root location.
          */
         @Test
-        public void testPipelineRootWithCustomizedFileRootInProject()
+        public void testPipelineRootWithCustomizedFileRootInProject() throws IOException
         {
             // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
             if (ContainerManager.getForPath(PROJECT_NAME) != null)
@@ -1165,7 +1165,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
          * same location as the subfolder file root.
          */
         @Test
-        public void testSubfolderWhenCustomizedFileRootInProject()
+        public void testSubfolderWhenCustomizedFileRootInProject() throws Exception
         {
             // make sure the project doesnt already exist and create a new project that will have pipeline root and file root set to their defaults
             if (ContainerManager.getForPath(PROJECT_NAME) != null)
@@ -1253,7 +1253,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             ContainerManager.deleteAll(_project, _user);
         }
 
-        private File getTestRoot(String rootSufix)
+        private File getTestRoot(String rootSufix) throws IOException
         {
             FileContentService svc = FileContentService.get();
             File siteRoot = svc.getSiteDefaultRoot();

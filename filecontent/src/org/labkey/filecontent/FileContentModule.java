@@ -187,7 +187,17 @@ public class FileContentModule extends DefaultModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
-            File root = FileContentService.get().getSiteDefaultRoot();
+            File root = null;
+            try
+            {
+                root = FileContentService.get().getSiteDefaultRoot();
+                results.put("fileRootCrawlSucceeded", false);
+                return results;
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
             if (root.isDirectory())
             {
                 long startTime = HeartBeat.currentTimeMillis();

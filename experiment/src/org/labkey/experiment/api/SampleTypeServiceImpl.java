@@ -2066,7 +2066,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
             catch (IOException e)
             {
-                LOG.warn(errorMsg);
+                LOG.warn(errorMsg + e.getMessage());
             }
         }
         if (!renameData.sourceFile.renameTo(renameData.targetFile))
