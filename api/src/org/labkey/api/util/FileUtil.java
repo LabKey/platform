@@ -293,7 +293,7 @@ public class FileUtil
             return "Filename may not contain 'tab', 'new line', or 'return' characters.";
         if (StringUtils.contains("-$", s.charAt(0)))
             return "Filename may not begin with any of these characters: -$";
-        if (Pattern.matches(".*\\s-[^ ].*",s))
+        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)",s))
             return "Filename may not contain space followed by dash.";
         return null;
     }
@@ -340,6 +340,12 @@ public class FileUtil
             parent = parent.getParent();
         }
         return Files.createDirectories(path);
+    }
+
+    public static boolean createNewFile(File file) throws IOException
+    {
+        checkAllowedFileName(file.getName());
+        return file.createNewFile();
     }
 
     public static Path createFile(Path path, FileAttribute<?>... attrs) throws IOException
@@ -782,12 +788,6 @@ public class FileUtil
             copyFile(in, in.size(), dst);
             dst.setLastModified(src.lastModified());
         }
-    }
-
-    public static boolean createNewFile(File file) throws IOException
-    {
-        checkAllowedFileName(file.getName());
-        return file.createNewFile();
     }
 
     // FileUtil.copyFile() does not use transferTo() or sync()
@@ -1821,6 +1821,12 @@ quickScan:
         {
             assertNull(isAllowedFileName("a"));
             assertNull(isAllowedFileName("a-b"));
+            assertNull(isAllowedFileName("a - b"));
+            assertNull(isAllowedFileName("a- b"));
+            assertNull(isAllowedFileName("a--b"));
+            assertNull(isAllowedFileName("a -- b"));
+            assertNull(isAllowedFileName("a-- b"));
+            assertNull(isAllowedFileName("a -- b"));
             assertNull(isAllowedFileName("a b"));
             assertNull(isAllowedFileName("a%b"));
             assertNull(isAllowedFileName("a$b"));
@@ -1831,7 +1837,12 @@ quickScan:
             assertNotNull(isAllowedFileName(" "));
             assertNotNull(isAllowedFileName("a\tb"));
             assertNotNull(isAllowedFileName("-a"));
+            assertNotNull(isAllowedFileName(" -a"));
             assertNotNull(isAllowedFileName("a -b"));
+            assertNotNull(isAllowedFileName("--a"));
+            assertNotNull(isAllowedFileName(" --a"));
+            assertNotNull(isAllowedFileName("a --b"));
+            assertNotNull(isAllowedFileName("a ---b"));
             assertNotNull(isAllowedFileName("a/b"));
             assertNotNull(isAllowedFileName("a\b"));
             assertNotNull(isAllowedFileName("a:b"));
