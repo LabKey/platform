@@ -141,7 +141,7 @@ public class FileContentServiceImpl implements FileContentService
 
     @Override
     @NotNull
-    public List<Container> getContainersForFilePath(java.nio.file.Path path) throws IOException
+    public List<Container> getContainersForFilePath(java.nio.file.Path path)
     {
         // Ignore cloud files for now
         if (FileUtil.hasCloudScheme(path))
@@ -270,14 +270,7 @@ public class FileContentServiceImpl implements FileContentService
 
         if (c.isRoot())
         {
-            try
-            {
-                return getSiteDefaultRootPath();
-            }
-            catch (IOException e)
-            {
-                throw new IllegalStateException(e);
-            }
+            return getSiteDefaultRootPath();
         }
 
         if (!isFileRootDisabled(c))
@@ -287,14 +280,7 @@ public class FileContentServiceImpl implements FileContentService
             // check if there is a site wide file root
             if (root.getPath() == null || isUseDefaultRoot(c))
             {
-                try
-                {
-                    return getDefaultRootPath(c, true);
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalStateException(e);
-                }
+                return getDefaultRootPath(c, true);
             }
             else
                 return getNioPath(c, root.getPath());
@@ -303,13 +289,13 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public File getDefaultRoot(Container c, boolean createDir) throws IOException
+    public File getDefaultRoot(Container c, boolean createDir)
     {
         return getDefaultRootPath(c, createDir).toFile();
     }
 
     @Override
-    public java.nio.file.Path getDefaultRootPath(Container c, boolean createDir) throws IOException
+    public java.nio.file.Path getDefaultRootPath(Container c, boolean createDir)
     {
         Container firstOverride = getFirstAncestorWithOverride(c);
 
@@ -355,7 +341,7 @@ public class FileContentServiceImpl implements FileContentService
 
     // Return pretty path string for defaultFileRoot and boolean true if defaultFileRoot is cloud
     @Override
-    public DefaultRootInfo getDefaultRootInfo(Container container) throws IOException
+    public DefaultRootInfo getDefaultRootInfo(Container container)
     {
         String defaultRoot = "";
         boolean isDefaultRootCloud = false;
@@ -589,23 +575,30 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public @NotNull java.nio.file.Path getSiteDefaultRootPath() throws IOException
+    public @NotNull java.nio.file.Path getSiteDefaultRootPath()
     {
         return getSiteDefaultRoot().toPath();
     }
 
     @Override
-    public @NotNull File getSiteDefaultRoot() throws IOException
+    public @NotNull File getSiteDefaultRoot()
     {
         // Site default is always on file system
         File root = AppProps.getInstance().getFileSystemRoot();
 
-        if (root == null || !root.exists())
-            root = getDefaultRoot();
-
-        if (!root.exists())
+        try
         {
-            FileUtil.mkdirs(root);
+            if (root == null || !root.exists())
+                root = getDefaultRoot();
+
+            if (!root.exists())
+            {
+                FileUtil.mkdirs(root);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Unable to create file root directory", e);
         }
 
         return root;
@@ -652,15 +645,7 @@ public class FileContentServiceImpl implements FileContentService
         if (!root.exists())
             throw new IllegalArgumentException("Invalid site root: " + root.getAbsolutePath() + " does not exist");
 
-        File prevRoot = null;
-        try
-        {
-            prevRoot = getSiteDefaultRoot();
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException(e);
-        }
+        File prevRoot = getSiteDefaultRoot();
         WriteableAppProps props = AppProps.getWriteableInstance();
 
         props.setFileSystemRoot(root.getAbsolutePath());
@@ -685,7 +670,7 @@ public class FileContentServiceImpl implements FileContentService
         }
         catch (IOException e)
         {
-            throw new IllegalArgumentException("Invalid site root: does not exist. " + e.getMessage());
+            throw new IllegalArgumentException("Invalid site root: does not exist. ", e);
         }
         WriteableAppProps props = AppProps.getWriteableInstance();
 
@@ -1682,7 +1667,7 @@ public class FileContentServiceImpl implements FileContentService
         private Map<Container, File> _expectedPaths;
 
         @Test
-        public void fileRootsTest() throws Exception
+        public void fileRootsTest()
         {
             //pre-clean
             cleanup();
@@ -1746,7 +1731,7 @@ public class FileContentServiceImpl implements FileContentService
             Assert.assertEquals(msg, expectedPath, actualPath);
         }
 
-        private File getTestRoot() throws IOException
+        private File getTestRoot()
         {
             FileContentService svc = FileContentService.get();
             File siteRoot = svc.getSiteDefaultRoot();
@@ -1845,7 +1830,7 @@ public class FileContentServiceImpl implements FileContentService
         }
 
         @Test
-        public void testWorkbooksAndTabs() throws Exception
+        public void testWorkbooksAndTabs()
         {
             //pre-clean
             cleanup();
@@ -1902,7 +1887,7 @@ public class FileContentServiceImpl implements FileContentService
         }
 
         @After
-        public void cleanup() throws Exception
+        public void cleanup()
         {
             FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);

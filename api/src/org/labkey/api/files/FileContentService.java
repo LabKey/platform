@@ -69,7 +69,7 @@ public interface FileContentService
      * Returns a list of Container in which the path resides.
      */
     @NotNull
-    List<Container> getContainersForFilePath(java.nio.file.Path path) throws IOException;
+    List<Container> getContainersForFilePath(java.nio.file.Path path);
 
     /**
      * Returns the file root of the specified container. If not explicitly defined,
@@ -117,10 +117,10 @@ public interface FileContentService
 
 
     @NotNull
-    File getSiteDefaultRoot() throws IOException;
+    File getSiteDefaultRoot();
 
     @NotNull
-    Path getSiteDefaultRootPath() throws IOException;
+    Path getSiteDefaultRootPath();
 
     void setSiteDefaultRoot(File root, User user);
 
@@ -213,8 +213,8 @@ public interface FileContentService
      * Returns the default file root of the specified container.  This will default to a path
      * relative to the first parent container with an override
      */
-    File getDefaultRoot(Container c, boolean createDir) throws IOException;
-    Path getDefaultRootPath(Container c, boolean createDir) throws IOException;
+    File getDefaultRoot(Container c, boolean createDir);
+    Path getDefaultRootPath(Container c, boolean createDir);
 
     class DefaultRootInfo
     {
@@ -252,7 +252,7 @@ public interface FileContentService
         }
     }
 
-    DefaultRootInfo getDefaultRootInfo(Container container) throws IOException;
+    DefaultRootInfo getDefaultRootInfo(Container container);
 
     String getDomainURI(Container c);
 

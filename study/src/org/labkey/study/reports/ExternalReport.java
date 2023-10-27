@@ -388,7 +388,7 @@ public class ExternalReport extends AbstractReport
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("Pipeline root directory cannot be created");
+                throw new IllegalStateException("Pipeline root directory cannot be created", e);
             }
         }
 

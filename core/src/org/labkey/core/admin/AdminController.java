@@ -3822,7 +3822,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(NewInstallSiteSettingsForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(NewInstallSiteSettingsForm form, boolean reshow, BindException errors)
         {
             if (!reshow)
             {
@@ -5464,17 +5464,8 @@ public class AdminController extends SpringActionController
             String cloudRootName = form.getCloudRootName();
             if (!isOrDefaultsToCloudRoot && form.hasSiteDefaultRoot())
             {
-                Path defaultRootPath = null;
-                try
-                {
-                    defaultRootPath = service.getDefaultRootPath(container, false);
-                    cloudRootName = service.getDefaultRootInfo(container).getCloudName();
-                }
-                catch (IOException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                    return;
-                }
+                Path defaultRootPath = service.getDefaultRootPath(container, false);
+                cloudRootName = service.getDefaultRootInfo(container).getCloudName();
                 isOrDefaultsToCloudRoot = (null != defaultRootPath && FileUtil.hasCloudScheme(defaultRootPath));
             }
 
