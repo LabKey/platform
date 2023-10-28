@@ -5,6 +5,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.PageFlowUtil;
 
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.id;
@@ -41,10 +42,18 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
         return _fullRuleHtml;
     }
 
-    private final HtmlString _intro = HtmlStringBuilder.of()
+    private final HtmlString _tipsIntro = HtmlStringBuilder.of()
         .append("Secure passwords are long and use multiple character types. The password strength gauge will turn green when your new password meets the complexity requirements.")
         .append(HtmlString.BR)
         .getHtmlString();
+
+    private final String _tipsLinkText = "Click to show tips for creating a secure password";
+    private final String _tipsLinkOnClick = """
+        const tips = document.getElementById('passwordTips');
+        if (tips) tips.style.display = (tips.style.display === 'none' ? 'block' : 'none');
+        this.text = (this.text.includes('show') ?
+        """ + PageFlowUtil.jsString(_tipsLinkText.replace("show", "hide")) + " : " + PageFlowUtil.jsString(_tipsLinkText) + ");";
+    private final LinkBuilder _tipsLink = new LinkBuilder(_tipsLinkText).id("tipsLink").onClick(_tipsLinkOnClick).clearClasses();
 
     private final HtmlString _tips = DOM.createHtml(DOM.createHtmlFragment(
         DIV(id("passwordTips").at(DOM.Attribute.style, "display:none;"),
@@ -61,17 +70,9 @@ public class StrongPasswordValidator extends EntropyPasswordValidator
     @Override
     public @NotNull HtmlString getSummaryRuleHtml()
     {
-        // We have to regenerate the link on every request because of per-page handling of the onClick event for CSP purposes
-        String onClick = """
-            const tips = document.getElementById('passwordTips');
-            if (tips) tips.style.display = (tips.style.display === 'none' ? 'block' : 'none');
-            const tipsLink = document.getElementById('tipsLink');
-            if (tipsLink) tipsLink.text = (tipsLink.text = (tipsLink.text.includes('show') ? 'Click to hide' : 'Click to show') + ' tips for creating a secure password');
-            """;
-
-        LinkBuilder builder = new LinkBuilder("Click to show tips for creating a secure password").id("tipsLink").onClick(onClick).clearClasses();
-        return HtmlStringBuilder.of(_intro)
-            .append(builder.getHtmlString())
+        // We have to re-render the link on every request because of per-page handling of the onClick event for CSP purposes
+        return HtmlStringBuilder.of(_tipsIntro)
+            .append(_tipsLink.getHtmlString())
             .append(_tips)
             .getHtmlString();
     }
