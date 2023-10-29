@@ -11,6 +11,7 @@ import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.util.FileUtil;
 import org.labkey.specimen.importer.AbstractSpecimenTask;
 import org.labkey.specimen.importer.AbstractSpecimenTaskFactory;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
@@ -97,7 +98,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
                         ctx.getLogger().info("Single specimen file detected, moving to a temp folder for processing.");
                         String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
                         _tempDir = inputFile.getParent().resolve(tempDirName);
-                        Files.createDirectory(_tempDir);
+                        FileUtil.createDirectory(_tempDir);
                         Files.copy(inputFile, _tempDir.resolve(inputFile.getFileName()));
 
                         return new FileSystemFile(_tempDir);

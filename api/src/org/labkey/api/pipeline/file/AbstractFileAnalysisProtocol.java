@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.PrintWriters;
 import org.xml.sax.InputSource;
@@ -219,7 +220,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         {
             try
             {
-                Files.createDirectories(dir);
+                FileUtil.createDirectories(dir);
             }
             catch (IOException e)
             {

@@ -6231,7 +6231,7 @@ public class ExperimentController extends SpringActionController
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
             Path systemDir = pipeRoot.ensureSystemDirectoryPath();
             Path uploadDir = systemDir.resolve("UploadedXARs");
-            Files.createDirectories(uploadDir);
+            FileUtil.createDirectories(uploadDir);
             if (!Files.isDirectory(uploadDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
@@ -6243,7 +6243,7 @@ public class ExperimentController extends SpringActionController
                 userDirName = GUEST_DIRECTORY_NAME;
             }
             Path userDir = uploadDir.resolve(userDirName);
-            Files.createDirectories(userDir);
+            FileUtil.createDirectories(userDir);
             if (!Files.isDirectory(userDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");

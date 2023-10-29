@@ -944,12 +944,12 @@ public class AssayController extends SpringActionController
             return null;
         }
 
-        private File getTempFolder()
+        private File getTempFolder() throws IOException
         {
             File tempDir = new File(System.getProperty("java.io.tmpdir"));
             File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
-                tempFolder.mkdirs();
+                FileUtil.mkdirs(tempFolder);
 
             return tempFolder;
         }

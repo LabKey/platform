@@ -24,6 +24,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
@@ -140,14 +141,22 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
             File tempDir = ensureSubdirectory(context.getContainer(), TEMP_DIR_NAME);
             File uploadAttemptDir = new File(tempDir, ((AssayRunUploadForm)context).getUploadAttemptID());
 
-            if (!NetworkDrive.exists(uploadAttemptDir))
+            try
             {
-                uploadAttemptDir.mkdir();
+                if (!NetworkDrive.exists(uploadAttemptDir))
+                {
+                    FileUtil.mkdir(uploadAttemptDir);
+                }
+                if (!uploadAttemptDir.isDirectory())
+                {
+                    throw new IOException();
+                }
             }
-            if (!uploadAttemptDir.isDirectory())
+            catch (IOException e)
             {
                 throw new ExperimentException("Unable to create temporary assay directory " + uploadAttemptDir);
             }
+
             return uploadAttemptDir;
         }
         else
