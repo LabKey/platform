@@ -1552,7 +1552,7 @@ public class XarExporter
                 {
                     logProgress("Adding data file to archive: " + fileInfo.getName());
                     File fileEntry = new File(dir, fileInfo.getName());
-                    fileEntry.getParentFile().mkdirs();
+                    FileUtil.mkdirs(fileEntry.getParentFile());
                     try (FileOutputStream os = new FileOutputStream(fileEntry))
                     {
                         fileInfo.writeFile(os);

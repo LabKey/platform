@@ -118,7 +118,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         protected boolean hasAccess(User user)
         {
-            return user.hasRootPermission(AdminOperationsPermission.class) || SecurityManager.getPermissions(c.getPolicy(), user, Set.of()).size() > 0;
+            return user.hasRootPermission(AdminOperationsPermission.class) || !SecurityManager.getPermissions(c.getPolicy(), user, Set.of()).isEmpty();
         }
 
         @Override

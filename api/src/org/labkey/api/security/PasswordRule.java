@@ -101,4 +101,9 @@ public enum PasswordRule
     {
         return _validator.isDeprecated();
     }
+
+    public boolean shouldShowPasswordGuidance()
+    {
+        return _validator.shouldShowPasswordGuidance();
+    }
 }

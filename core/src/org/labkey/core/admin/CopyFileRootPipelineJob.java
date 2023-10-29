@@ -281,7 +281,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
         {
             try
             {
-                Files.createDirectory(destDir);
+                FileUtil.createDirectory(destDir);
             }
             catch (IllegalArgumentException | IOException e)
             {

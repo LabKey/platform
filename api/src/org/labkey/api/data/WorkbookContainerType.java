@@ -36,6 +36,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -452,7 +453,7 @@ public class WorkbookContainerType implements ContainerType
             File test = new File(FileContentService.get().getFileRoot(wbOverride), "/@files/test.txt");
             if (!test.getParentFile().exists())
             {
-                test.getParentFile().mkdirs();
+                FileUtil.mkdirs(test.getParentFile());
             }
 
             Files.touch(test);

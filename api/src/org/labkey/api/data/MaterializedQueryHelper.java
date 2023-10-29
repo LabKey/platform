@@ -396,7 +396,7 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
 
     public SQLFragment getFromSql(@NotNull SQLFragment selectQuery, boolean isSelectInto, String tableAlias)
     {
-        Materialized materialized = getMaterializedAndLoad();
+        Materialized materialized = getMaterializedAndLoad(selectQuery, isSelectInto);
 
         _lastUsed.set(HeartBeat.currentTimeMillis());
         SQLFragment sqlf = new SQLFragment(materialized._fromSql);
@@ -490,16 +490,16 @@ public class MaterializedQueryHelper implements CacheListener, AutoCloseable
     }
 
 
-    private Materialized getMaterializedAndLoad()
+    private Materialized getMaterializedAndLoad(SQLFragment selectQuery, boolean isSelectIntoSql)
     {
         Materialized materialized = getMaterialized(false);
 
-        if (materialized.load(_selectQuery, _isSelectIntoSql))
+        if (materialized.load(selectQuery, isSelectIntoSql))
             return materialized;
 
         // If there was a problem (but no thrown exception), try one more time from scratch;
         materialized = createMaterialized(materialized._cacheKey);
-        if (materialized.load(_selectQuery, _isSelectIntoSql))
+        if (materialized.load(selectQuery, isSelectIntoSql))
             return materialized;
 
         // load() shouldn't get here.  Materialized is not shared, so there should be no way to get a timeout.

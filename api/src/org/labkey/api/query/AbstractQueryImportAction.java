@@ -527,13 +527,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                         if (dataFileDir.isFile())
                         {
                             dataFileDir = AssayFileWriter.findUniqueFileName("QueryImportFiles", root.getRootPath());
-                            if (!dataFileDir.mkdir())
+                            if (!FileUtil.mkdir(dataFileDir))
                                 throw new RuntimeException("Error attempting to create directory " + dataFileDir.getAbsolutePath()
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }
                         else if (!dataFileDir.exists())
                         {
-                            if (!dataFileDir.mkdir())
+                            if (!FileUtil.mkdir(dataFileDir))
                                 throw new RuntimeException("Error attempting to create directory " + dataFileDir.getAbsolutePath()
                                         + " for uploaded query import file " + multipartfile.getOriginalFilename());
                         }

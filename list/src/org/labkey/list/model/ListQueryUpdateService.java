@@ -51,7 +51,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -178,7 +178,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             // if the list is a picklist and you have permission to manage picklists, that equates
             // to having editor permission.
-            return LimitedUser.getElevatedUser(container, user, Pair.of(DeletePermission.class, EditorRole.class));
+            return ElevatedUser.ensureContextualRoles(container, user, Pair.of(DeletePermission.class, EditorRole.class));
         }
         return user;
     }

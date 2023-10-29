@@ -721,18 +721,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return materials;
     }
 
-    @NotNull
-    public List<ExpMaterialImpl> getExpMaterialsByLSID(Collection<String> lsids)
-    {
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
-        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
-
-        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
-        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
-
-        return materials;
-    }
-
     @Override
     @Nullable
     public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType)

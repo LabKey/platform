@@ -192,7 +192,16 @@ public class ExternalScriptEngine extends AbstractScriptEngine implements LabKey
             }
 
             if (!_workingDirectory.exists())
-                _workingDirectory.mkdirs();
+            {
+                try
+                {
+                    FileUtil.mkdirs(_workingDirectory);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Unable to create working directory");
+                }
+            }
         }
         return _workingDirectory;
     }

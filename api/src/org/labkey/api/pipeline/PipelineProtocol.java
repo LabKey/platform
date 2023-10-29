@@ -18,6 +18,7 @@ package org.labkey.api.pipeline;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.pipeline.protocol.xml.PipelineProtocolPropsDocument;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 
 import java.beans.PropertyDescriptor;
@@ -163,7 +164,7 @@ public abstract class PipelineProtocol
         {
             if (!Files.exists(dir))
             {
-                Files.createDirectories(dir);
+                FileUtil.createDirectories(dir);
             }
         }
         catch (IOException e)
