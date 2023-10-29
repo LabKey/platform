@@ -170,7 +170,7 @@ public class DbLoginManager implements DbLoginService
         }
     }
 
-    static @NotNull Map<String, String> getProperties()
+    public static @NotNull Map<String, String> getProperties()
     {
         return PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
     }
