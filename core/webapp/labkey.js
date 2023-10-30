@@ -741,34 +741,27 @@ if (typeof LABKEY == "undefined")
                 scriptCache.callbacksOnCache(file);
             };
 
-            if (configs.isDocumentClosed || callback)
-            {
-                //create a new script element and append it to the head element
-                var script = addElemToHead("script", {
-                    src: src,
-                    type: "text/javascript"
-                });
+            //create a new script element and append it to the head element
+            var script = addElemToHead("script", {
+                src: src,
+                type: "text/javascript"
+            });
 
-                // IE has a different way of handling <script> loads
-                if (script.readyState)
-                {
-                    script.onreadystatechange = function() {
-                        if (script.readyState == "loaded" || script.readyState == "complete") {
-                            script.onreadystatechange = null;
-                            cacheLoader();
-                        }
-                    };
-                }
-                else
-                {
-                    script.onload = cacheLoader;
-                }
+            // IE has a different way of handling <script> loads
+            if (script.readyState)
+            {
+                script.onreadystatechange = function() {
+                    if (script.readyState === "loaded" || script.readyState === "complete") {
+                        script.onreadystatechange = null;
+                        cacheLoader();
+                    }
+                };
             }
             else
             {
-                document.write('\n<script type="text/javascript" src="' + src + '"></script>\n');
-                cacheLoader();
+                script.onload = cacheLoader;
             }
+
         };
 
         var requiresVisualization = function(callback, scope)
