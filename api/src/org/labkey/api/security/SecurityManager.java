@@ -2173,11 +2173,11 @@ public class SecurityManager
     /**
      * @return an immutable list of Users who have been assigned all the requested permissions in the given container
      */
-    public static List<User> getUsersWithPermissions(Container c, boolean includeDeactivated, Set<Class<? extends Permission>> perms)
+    public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
         SecurityPolicy policy = c.getPolicy();
-        return UserManager.getUsers(includeDeactivated).stream()
+        return UserManager.getUsers(includeInactive).stream()
             .filter(user -> SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
             .toList();
     }

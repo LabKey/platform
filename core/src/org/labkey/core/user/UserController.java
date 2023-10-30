@@ -2502,7 +2502,7 @@ public class UserController extends SpringActionController
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
         private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
-        private boolean _includeDeactivated; // Should we include inactive members, only used in the 23.11 version of GetUsersWithPermissionsAction
+        private boolean _includeInactive; // Should we include inactive members, only used in the 23.11 version of GetUsersWithPermissionsAction
 
         public String getGroup()
         {
@@ -2573,14 +2573,14 @@ public class UserController extends SpringActionController
             _active = active;
         }
 
-        public boolean getIncludeDeactivated()
+        public boolean getIncludeInactive()
         {
-            return _includeDeactivated;
+            return _includeInactive;
         }
 
-        public void setIncludeDeactivated(boolean includeDeactivated)
+        public void setIncludeInactive(boolean includeInactive)
         {
-            _includeDeactivated = includeDeactivated;
+            _includeInactive = includeInactive;
         }
     }
 
@@ -2775,17 +2775,17 @@ public class UserController extends SpringActionController
          */
         private ApiResponse response2311(ApiSimpleResponse response, GetUsersForm form)
         {
-            boolean includeDeactivated = form.getIncludeDeactivated();
+            boolean includeInactive = form.getIncludeInactive();
             Collection<User> users;
 
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = filterForPermissions(form, getProjectGroupUsers(form, response, includeDeactivated));
+                users = filterForPermissions(form, getProjectGroupUsers(form, response, includeInactive));
             }
             else
             {
-                users = SecurityManager.getUsersWithPermissions(getContainer(), includeDeactivated, form.getPermissionClasses());
+                users = SecurityManager.getUsersWithPermissions(getContainer(), includeInactive, form.getPermissionClasses());
             }
 
             this.setUsersList(form, users, response);
