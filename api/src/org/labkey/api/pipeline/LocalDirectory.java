@@ -144,7 +144,7 @@ public class LocalDirectory implements Serializable
                 }
                 else
                 {
-                    Files.createFile(_logFile);
+                    FileUtil.createFile(_logFile);
                 }
             }
             catch (IOException e)
@@ -199,7 +199,7 @@ public class LocalDirectory implements Serializable
     private void ensureLocalDirectory() throws IOException
     {
         if (_isTemporary && !Files.exists(_localDirectoryFile.toPath()))
-            Files.createDirectory(_localDirectoryFile.toPath());     // TODO Should we set file permissions?
+            FileUtil.createDirectory(_localDirectoryFile.toPath());     // TODO Should we set file permissions?
     }
 
     // If LocalDirectory isTemporary, copies the file to the temp directory for this container.
@@ -241,13 +241,13 @@ public class LocalDirectory implements Serializable
         File moduleDir = getModuleLocalTempDirectory();
         if (!Files.exists(moduleDir.toPath()))
         {
-            Files.createDirectory(moduleDir.toPath());
+            FileUtil.createDirectory(moduleDir.toPath());
         }
 
         File containerDir = getContainerLocalTempDirectory(container);
         if (!Files.exists(containerDir.toPath()))
         {
-            Files.createDirectory(containerDir.toPath());
+            FileUtil.createDirectory(containerDir.toPath());
         }
         return containerDir;
     }

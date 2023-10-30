@@ -74,7 +74,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         {
             throw new ExperimentException("Failed to clean up old directory " + outputDir);
         }
-        Files.createDirectories(outputDir);
+        FileUtil.createDirectories(outputDir);
         if (!Files.isDirectory(outputDir))
         {
             throw new ExperimentException("Failed to create directory " + outputDir);

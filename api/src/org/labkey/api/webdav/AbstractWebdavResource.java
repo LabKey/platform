@@ -115,7 +115,14 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     @Override
     public boolean createCollection(User user) throws DavException
     {
-        return this.getFile() != null && this.getFile().mkdirs();
+        try
+        {
+            return this.getFile() != null && FileUtil.mkdirs(this.getFile());
+        }
+        catch (IOException e)
+        {
+            throw new DavException(e.getCause());
+        }
     }
 
     @Override

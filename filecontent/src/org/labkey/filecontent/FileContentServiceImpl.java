@@ -326,7 +326,7 @@ public class FileContentServiceImpl implements FileContentService
                 try
                 {
                     if (createDir && !Files.exists(fileRootPath))
-                        Files.createDirectories(fileRootPath);
+                        FileUtil.createDirectories(fileRootPath);
                 }
                 catch (IOException e)
                 {
@@ -586,17 +586,26 @@ public class FileContentServiceImpl implements FileContentService
         // Site default is always on file system
         File root = AppProps.getInstance().getFileSystemRoot();
 
-        if (root == null || !root.exists())
-            root = getDefaultRoot();
+        try
+        {
+            if (root == null || !root.exists())
+                root = getDefaultRoot();
 
-        if (!root.exists())
-            root.mkdirs();
+            if (!root.exists())
+            {
+                FileUtil.mkdirs(root);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Unable to create file root directory", e);
+        }
 
         return root;
     }
 
     @Override
-    public @NotNull File getUserFilesRoot()
+    public @NotNull File getUserFilesRoot() throws IOException
     {
         // Always on the file system
         File root = AppProps.getInstance().getUserFilesRoot();
@@ -605,12 +614,12 @@ public class FileContentServiceImpl implements FileContentService
             root = getDefaultRoot();
 
         if (!root.exists())
-            root.mkdirs();
+            FileUtil.mkdirs(root);
 
         return root;
     }
 
-    private @NotNull File getDefaultRoot()
+    private @NotNull File getDefaultRoot() throws IOException
     {
         File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
 
@@ -622,7 +631,7 @@ public class FileContentServiceImpl implements FileContentService
         }
         File defaultRoot = new File(root, "files");
         if (!defaultRoot.exists())
-            defaultRoot.mkdirs();
+            FileUtil.mkdirs(defaultRoot);
 
         return defaultRoot;
     }
@@ -654,7 +663,15 @@ public class FileContentServiceImpl implements FileContentService
         if (root == null || !root.exists())
             throw new IllegalArgumentException("Invalid site root: does not exist");
 
-        File prevRoot = getUserFilesRoot();
+        File prevRoot = null;
+        try
+        {
+            prevRoot = getUserFilesRoot();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalArgumentException("Invalid site root: does not exist. ", e);
+        }
         WriteableAppProps props = AppProps.getWriteableInstance();
 
         props.setUserFilesRoot(root.getAbsolutePath());
@@ -902,28 +919,29 @@ public class FileContentServiceImpl implements FileContentService
                     try
                     {
                         location = getMappedDirectory(c, false);
+                        if (location != null && !FileUtil.hasCloudScheme(location))    // If cloud, folder name for container not dependent on Name
+                        {
+                            //Don't rely on container object. Seems not to point to the
+                            //new location even AFTER rename. Just construct new file paths
+                            File locationFile = location.toFile();
+                            File parentDir = locationFile.getParentFile();
+                            File oldLocation = new File(parentDir, oldValue);
+                            File newLocation = new File(parentDir, newValue);
+                            if (newLocation.exists())
+                                moveToDeleted(newLocation);
+
+                            if (oldLocation.exists())
+                            {
+                                oldLocation.renameTo(newLocation);
+                                fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
+                            }
+                        }
                     }
                     catch (IOException ex)
                     {
                         _log.error(ex);
                     }
-                    if (location != null && !FileUtil.hasCloudScheme(location))    // If cloud, folder name for container not dependent on Name
-                    {
-                        //Don't rely on container object. Seems not to point to the
-                        //new location even AFTER rename. Just construct new file paths
-                        File locationFile = location.toFile();
-                        File parentDir = locationFile.getParentFile();
-                        File oldLocation = new File(parentDir, oldValue);
-                        File newLocation = new File(parentDir, newValue);
-                        if (newLocation.exists())
-                            moveToDeleted(newLocation);
 
-                        if (oldLocation.exists())
-                        {
-                            oldLocation.renameTo(newLocation);
-                            fireFileMoveEvent(oldLocation, newLocation, evt.user, evt.container);
-                        }
-                    }
                     break;
                 }
             }
@@ -944,7 +962,7 @@ public class FileContentServiceImpl implements FileContentService
      * Move the file or directory into a ".deleted" directory under the parent directory.
      * @return True if successfully moved.
      */
-    private static boolean moveToDeleted(File fileToMove)
+    private static boolean moveToDeleted(File fileToMove) throws IOException
     {
         if (!fileToMove.exists())
             return false;
@@ -953,7 +971,7 @@ public class FileContentServiceImpl implements FileContentService
 
         File deletedDir = new File(parent, ".deleted");
         if (!deletedDir.exists())
-            if (!deletedDir.mkdir())
+            if (!FileUtil.mkdir(deletedDir))
                 return false;
 
         File newLocation = new File(deletedDir, fileToMove.getName());
