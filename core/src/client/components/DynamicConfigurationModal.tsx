@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 
 import { Ajax } from '@labkey/api';
-import { ToggleButtons } from '@labkey/components';
+import { ToggleIcon } from '@labkey/components';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput } from './DynamicFields';
@@ -179,14 +179,10 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
                 <Modal.Body>
                     <div className="modal__top">
                         <span className="bold-text"> Configuration Status </span>
-                        <ToggleButtons
-                            first="Enabled"
-                            second="Disabled"
-                            className="modal__enable-toggle"
-                            active={fieldValues.enabled ? 'Enabled' : 'Disabled'}
-                            disabled={!canEdit}
-                            onClick={this.onToggle}
-                        />
+                        <div className="modal__enable-toggle">
+                            Enabled:&nbsp;
+                            <ToggleIcon active={fieldValues.enabled ? 'on' : 'off'} onClick={this.onToggle} />
+                        </div>
                     </div>
 
                     <div className="bold-text modal__settings-text"> Settings </div>
