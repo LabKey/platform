@@ -381,7 +381,16 @@ public class ExternalReport extends AbstractReport
 
         File reportDir = pipelineRoot.resolvePath(REPORT_DIR);
         if (!reportDir.exists())
-            reportDir.mkdirs();
+        {
+            try
+            {
+                FileUtil.mkdirs(reportDir);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("Pipeline root directory cannot be created", e);
+            }
+        }
 
         return reportDir;
     }

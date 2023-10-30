@@ -916,7 +916,7 @@ public class StudyPublishManager implements StudyPublishService
 
         if (!Files.exists(dir))
         {
-            Files.createDirectory(dir);
+            FileUtil.createDirectory(dir);
         }
 
         //File name is studyname_datasetname_date_hhmm.ss

@@ -52,7 +52,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
     }
 
     @Override
-    public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors)
+    public ModelAndView getView(FileSettingsForm form, boolean reshow, BindException errors) throws Exception
     {
         if (form.isUpgrade())
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
