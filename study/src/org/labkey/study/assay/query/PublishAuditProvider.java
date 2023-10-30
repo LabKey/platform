@@ -366,10 +366,10 @@ public class PublishAuditProvider extends AbstractAuditTypeProvider implements A
         @Override
         public Set<Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(
-                    new Index(false, COLUMN_NAME_PROTOCOL),
-                    new Index(false, COLUMN_NAME_SAMPLE_TYPE_ID)
-            );
+            Set<Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new Index(false, COLUMN_NAME_PROTOCOL));
+            indexes.add(new Index(false, COLUMN_NAME_SAMPLE_TYPE_ID));
+            return indexes;
         }
 
         @Override

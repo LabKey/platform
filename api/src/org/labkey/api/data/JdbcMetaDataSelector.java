@@ -60,7 +60,7 @@ public class JdbcMetaDataSelector
 
     public void forEach(final ForEachBlock<ResultSet> block) throws SQLException
     {
-        handleResultSet(new ResultSetHandler<Object>()
+        handleResultSet(new ResultSetHandler<>()
         {
             @Override
             public Object handle(ResultSet rs) throws SQLException

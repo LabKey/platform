@@ -798,12 +798,12 @@ public class PublishResultsQueryView extends QueryView
 
                     // render our own input tag and attach the completions div lazily when the input receives
                     // focus
+                    HttpView.currentPageConfig().addHandler(inputId, "focus", "onCompletionFocus(this);");
                     sb.append("<input type=\"text\"");
                     sb.append(" id=\"").append(PageFlowUtil.filter(inputId)).append("\"");
                     sb.append(" name=\"" + _formElementName + "\"");
                     sb.append(" completionid=\"").append(PageFlowUtil.filter(completionId)).append("\"");
                     sb.append(" value=\"" + value + "\"");
-                    sb.append(" onfocus=\"onCompletionFocus(this);\"");
                     sb.append(" completion=\"").append(PageFlowUtil.filter(completionBase)).append("\">");
 
                     // the div we will lazily wire up completions to (needs to be a sibling to the input)

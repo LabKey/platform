@@ -70,7 +70,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
@@ -692,16 +692,13 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                 // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
                 if (!context.getContainer().hasPermission(user, QCAnalystPermission.class))
                 {
-                    Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
                     Role qcRole = RoleManager.getRole("org.labkey.api.security.roles.QCAnalystRole");
                     Role readerRole = RoleManager.getRole("org.labkey.api.security.roles.ReaderRole");
                     if (qcRole != null && readerRole != null)
                     {
                         try
                         {
-                            contextualRoles.add(RoleManager.getRole(qcRole.getClass()));
-                            contextualRoles.add(RoleManager.getRole(readerRole.getClass()));
-                            User elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, true);
+                            User elevatedUser = ElevatedUser.getElevatedUser(user, qcRole.getClass(), readerRole.getClass());
 
                             ViewContext viewContext = new ViewContext(context);
                             viewContext.setUser(elevatedUser);

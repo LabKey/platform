@@ -1,6 +1,6 @@
-import React, {ChangeEvent} from 'react';
-import {Col, FormControl, Row, Button} from "react-bootstrap";
-import {Alert, QueryConfig, SchemaQuery} from "@labkey/components";
+import React, { ChangeEvent } from 'react';
+import { Col, FormControl, Row, Button } from 'react-bootstrap';
+import { Alert, QueryConfig, SchemaQuery } from '@labkey/components';
 
 const Context = React.createContext<SchemaQueryInputContext>(undefined);
 const SchemaQueryInputContextProvider = Context.Provider;
@@ -8,10 +8,10 @@ const SchemaQueryInputContextProvider = Context.Provider;
 interface Props {}
 
 interface State {
-    schemaName: string,
-    queryName: string,
-    error: string,
-    queryConfig: QueryConfig,
+    schemaName: string;
+    queryName: string;
+    error: string;
+    queryConfig: QueryConfig;
 }
 
 export type SchemaQueryInputContext = State;
@@ -31,7 +31,7 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
                 ...this.state,
                 error: undefined,
                 queryConfig: undefined,
-                [name]: value
+                [name]: value,
             }));
         };
 
@@ -40,14 +40,17 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
 
             let error, queryConfig;
             if (!schemaName || !queryName) {
-                error = 'You must enter a schema/query to view the grid panel.'
-            }
-            else {
+                error = 'You must enter a schema/query to view the grid panel.';
+            } else {
                 const schemaQuery = new SchemaQuery(schemaName, queryName);
-                queryConfig = { id: `components-queryconfig-${schemaName}-${queryName}`, schemaQuery, includeTotalCount: true };
+                queryConfig = {
+                    id: `components-queryconfig-${schemaName}-${queryName}`,
+                    schemaQuery,
+                    includeTotalCount: true,
+                };
             }
 
-            this.setState(() => ({queryConfig, error}));
+            this.setState(() => ({ queryConfig, error }));
         };
 
         render() {
@@ -56,15 +59,21 @@ export const SchemaQueryInputProvider = (Component: React.ComponentType) => {
             return (
                 <SchemaQueryInputContextProvider value={this.state}>
                     <Row>
-                        <Col xs={4}>Schema: <FormControl name={'schemaName'} type="text" onChange={this.onFormChange}/></Col>
-                        <Col xs={4}>Query: <FormControl name={'queryName'} type="text" onChange={this.onFormChange}/></Col>
-                        <Col xs={4}><Button onClick={this.onApply}>Apply</Button></Col>
+                        <Col xs={4}>
+                            Schema: <FormControl name="schemaName" type="text" onChange={this.onFormChange} />
+                        </Col>
+                        <Col xs={4}>
+                            Query: <FormControl name="queryName" type="text" onChange={this.onFormChange} />
+                        </Col>
+                        <Col xs={4}>
+                            <Button onClick={this.onApply}>Apply</Button>
+                        </Col>
                     </Row>
-                    <br/>
+                    <br />
                     {error && <Alert>{error}</Alert>}
-                    <Component {...this.props} {...this.state}/>
+                    <Component {...this.props} {...this.state} />
                 </SchemaQueryInputContextProvider>
-            )
+            );
         }
-    }
+    };
 };

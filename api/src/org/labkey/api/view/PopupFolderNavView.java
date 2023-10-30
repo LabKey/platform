@@ -27,7 +27,7 @@ import java.io.Writer;
 
 public class PopupFolderNavView extends PopupMenuView
 {
-    private ViewContext _context;
+    private final ViewContext _context;
 
     public PopupFolderNavView(ViewContext context)
     {

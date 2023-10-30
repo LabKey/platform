@@ -2489,7 +2489,7 @@ public class ExperimentController extends SpringActionController
                 try (Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType))
                 {
                     response.setContentType(docType.getMimeType());
-                    response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+                    ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
@@ -2686,8 +2686,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getSuccessView(ConvertHtmlToExcelForm form)
         {
-            // CONSIDER <base href="form.getBaseURL()" />
-            getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + form.getName() + "\"");
+            ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, form.getName());
             getPageConfig().setTemplate(PageConfig.Template.None);
             HtmlView v = new HtmlView(_responseHtml);
             v.setContentType("application/vnd.ms-excel");
@@ -4512,7 +4511,7 @@ public class ExperimentController extends SpringActionController
                 XarExporter exporter = new XarExporter(lsidRelativizer, selection, getUser(), xarXmlFileName, null);
 
                 getViewContext().getResponse().setContentType("application/zip");
-                getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+                ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, fileName);
                 ResponseHelper.setPrivate(getViewContext().getResponse());
 
                 exporter.writeAsArchive(getViewContext().getResponse().getOutputStream());
@@ -6232,7 +6231,7 @@ public class ExperimentController extends SpringActionController
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
             Path systemDir = pipeRoot.ensureSystemDirectoryPath();
             Path uploadDir = systemDir.resolve("UploadedXARs");
-            Files.createDirectories(uploadDir);
+            FileUtil.createDirectories(uploadDir);
             if (!Files.isDirectory(uploadDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
@@ -6244,7 +6243,7 @@ public class ExperimentController extends SpringActionController
                 userDirName = GUEST_DIRECTORY_NAME;
             }
             Path userDir = uploadDir.resolve(userDirName);
-            Files.createDirectories(userDir);
+            FileUtil.createDirectories(userDir);
             if (!Files.isDirectory(userDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
@@ -7700,6 +7699,7 @@ public class ExperimentController extends SpringActionController
                 {
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
                     builder.append("<tr><td>")
                             .append(sampleType.getName())
                             .append("</td><td>")
@@ -7880,10 +7880,11 @@ public class ExperimentController extends SpringActionController
                 if (dataClass != null) // dataclass might have been renamed
                     effectiveQueryName = dataClass.getName();
             }
-            else if ("assay.general".equalsIgnoreCase(schemaName))
+            else if (schemaName.toLowerCase().startsWith("assay.general."))
             {
-                // TODO: get effective schemaname, when assay design renaming is supported
-                // effectiveSchemaName = getEffectiveExpProtocol
+                ExpProtocol protocol = experimentService.getEffectiveProtocol(container, user, schemaName.substring("assay.general.".length()), effectiveDate, dataTypeCF);
+                if (protocol != null)
+                    effectiveSchemaName = "assay.general." + protocol.getName();
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();

@@ -554,11 +554,6 @@ public class DavController extends SpringActionController
             ResponseHelper.setPrivate(this.getResponse());
         }
 
-        void setContentDisposition(String value)
-        {
-            super.setHeader("Content-Disposition", value);
-        }
-
         @Override
         public void setContentType(String contentType)
         {
@@ -1002,7 +997,7 @@ public class DavController extends SpringActionController
             HttpServletResponse response = getViewContext().getResponse();
             response.reset();
             response.setContentType("application/zip");
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + zipName + ".zip\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, zipName + ".zip");
 
             try (ZipOutputStream out = new ZipOutputStream(response.getOutputStream()))
             {
@@ -1116,7 +1111,7 @@ public class DavController extends SpringActionController
                 sb.append("</dm:mount>\n");
 
                 getResponse().setContentType("application/davmount+xml");
-                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".davmount\"");
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".davmount");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
                 close(w, "response writer");
@@ -1144,7 +1139,7 @@ public class DavController extends SpringActionController
                         "</plist>\n");
 
                 getResponse().setContentType("application/x-cyberduck+xml");
-                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".duck\"");
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".duck");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
                 close(w, "response writer");
@@ -5080,7 +5075,7 @@ public class DavController extends SpringActionController
 
         if (!StringUtils.isEmpty(contentDisposition))
         {
-            getResponse().setContentDisposition(contentDisposition);
+            ResponseHelper.setContentDisposition(getResponse(), contentDisposition);
         }
 
         // Find content type
@@ -6758,33 +6753,10 @@ public class DavController extends SpringActionController
 
     void checkAllowedFileName(String s) throws DavException
     {
-        String msg = isAllowedFileName(s);
+        String msg = FileUtil.isAllowedFileName(s);
         if (null == msg)
             return;
         throw new DavException(WebdavStatus.SC_BAD_REQUEST, msg);
-    }
-
-
-    static private final String windowsRestricted = "\\/:*?\"<>|`";
-    // and ` seems like a bad idea for linux?
-    static private final String linuxRestricted = "`";
-    static private final String restrictedPrintable = windowsRestricted + linuxRestricted;
-
-    public static String isAllowedFileName(String s)
-    {
-        if (StringUtils.isBlank(s))
-            return "Filename must not be blank";
-        if (!ViewServlet.validChars(s))
-            return "Filename must contain only valid unicode characters.";
-        if (StringUtils.containsAny(s, restrictedPrintable))
-            return "Filename may not contain any of these characters: " + restrictedPrintable;
-        if (StringUtils.containsAny(s, "\t\n\r"))
-            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
-        if (StringUtils.contains("-$", s.charAt(0)))
-            return "Filename may not begin with any of these characters: -$";
-        if (Pattern.matches(".*\\s-[^ ].*",s))
-            return "Filename may not contain space followed by dash.";
-        return null;
     }
 
 
@@ -6829,35 +6801,5 @@ public class DavController extends SpringActionController
             assertFalse(XMLWriter.isValidXmlElementName("xml_"));
         }
 
-        @Test
-        public void testAllowedFileName()
-        {
-            assertNull(isAllowedFileName("a"));
-            assertNull(isAllowedFileName("a-b"));
-            assertNull(isAllowedFileName("a b"));
-            assertNull(isAllowedFileName("a%b"));
-            assertNull(isAllowedFileName("a$b"));
-            assertNull(isAllowedFileName("%ab"));                               
-
-            assertNotNull(isAllowedFileName(null));
-            assertNotNull(isAllowedFileName(""));
-            assertNotNull(isAllowedFileName(" "));
-            assertNotNull(isAllowedFileName("a\tb"));
-            assertNotNull(isAllowedFileName("-a"));
-            assertNotNull(isAllowedFileName("a -b"));
-            assertNotNull(isAllowedFileName("a/b"));
-            assertNotNull(isAllowedFileName("a\b"));
-            assertNotNull(isAllowedFileName("a:b"));
-            assertNotNull(isAllowedFileName("a*b"));
-            assertNotNull(isAllowedFileName("a?b"));
-            assertNotNull(isAllowedFileName("a<b"));
-            assertNotNull(isAllowedFileName("a>b"));
-            assertNotNull(isAllowedFileName("a\"b"));
-            assertNotNull(isAllowedFileName("a|b"));
-            assertNotNull(isAllowedFileName("a`b"));
-            assertNotNull(isAllowedFileName("$ab"));
-            assertNotNull(isAllowedFileName("-ab"));
-            assertNotNull(isAllowedFileName("a`b"));
-        }
     }
 }

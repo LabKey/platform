@@ -300,10 +300,10 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         @Override
         public Set<Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(
-                    new Index(false, COLUMN_NAME_USER),
-                    new Index(false, COLUMN_NAME_GROUP)
-            );
+            Set<Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new Index(false, COLUMN_NAME_USER));
+            indexes.add(new Index(false, COLUMN_NAME_GROUP));
+            return indexes;
         }
 
         @Override
@@ -349,7 +349,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
                         Group g = SecurityManager.getGroup(id);
                         if (g == null)
                             return;
-                        Container groupContainer = g.isAdministrators() ? ContainerManager.getRoot() : ContainerManager.getForId(g.getContainer());
+                        Container groupContainer = g.isProjectGroup() ? ContainerManager.getForId(g.getContainer()) : ContainerManager.getRoot();
                         String displayText = PageFlowUtil.filter(g.getName());
 
                         // Link to security-group action ONLY for standard security groups (not module groups, like actors). See #26351.

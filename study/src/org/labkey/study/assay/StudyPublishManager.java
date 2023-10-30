@@ -73,7 +73,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -81,7 +81,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -145,8 +144,6 @@ import static org.labkey.study.query.DatasetTableImpl.SOURCE_ROW_LSID;
 /**
  * Manages the link to study operation that links assay rows into datasets in the target study, creating the dataset
  * if needed.
- * User: Mark Igra
- * Date: Aug 16, 2006
  */
 public class StudyPublishManager implements StudyPublishService
 {
@@ -441,10 +438,8 @@ public class StudyPublishManager implements StudyPublishService
             if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
             {
                 // we allow linking data to a study even if the study security is set to read-only datasets, since the
-                // underlying insert uses the QUS, we pass in a contextual role to allow the insert to succeed
-                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-                contextualRoles.add(RoleManager.getRole(FolderAdminRole.class));
-                user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
+                // underlying insert uses the QUS, we add a contextual role to allow the insert to succeed
+                user = ElevatedUser.getElevatedUser(user, FolderAdminRole.class);
             }
             datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false, false);
             StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);
@@ -455,7 +450,7 @@ public class StudyPublishManager implements StudyPublishService
             if (!errors.isEmpty())
                 return null;
 
-            if (datasetLsids.size() > 0)
+            if (!datasetLsids.isEmpty())
             {
                 logPublishEvent(publishSource.first, source, dataMaps, user, sourceContainer, targetContainer, dataset);
             }
@@ -921,7 +916,7 @@ public class StudyPublishManager implements StudyPublishService
 
         if (!Files.exists(dir))
         {
-            Files.createDirectory(dir);
+            FileUtil.createDirectory(dir);
         }
 
         //File name is studyname_datasetname_date_hhmm.ss

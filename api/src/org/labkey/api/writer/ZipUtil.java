@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.CheckedInputStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ResponseHelper;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
@@ -113,7 +114,7 @@ public class ZipUtil
 
                 if (entry.isDirectory())
                 {
-                    Files.createDirectories(destFile);
+                    FileUtil.createDirectories(destFile);
                     if (!Files.isDirectory(destFile))
                     {
                         throw new IOException("Failed to create directory: " + destFile.getFileName().toString());
@@ -126,7 +127,7 @@ public class ZipUtil
                 if (null != log)
                     log.info("Expanding " + entry.getName());
 
-                Files.createDirectories(destFile.getParent());
+                FileUtil.createDirectories(destFile.getParent());
                 if (Files.exists(destFile))
                 {
                     throw new IOException("File already exists: " + destFile.getFileName().toString());
@@ -134,7 +135,7 @@ public class ZipUtil
 
                 try
                 {
-                    Files.createFile(destFile);
+                    FileUtil.createFile(destFile);
                 }
                 catch (FileAlreadyExistsException e)
                 {
@@ -161,7 +162,7 @@ public class ZipUtil
     public static void zipToStream(HttpServletResponse response, File file, boolean preZipped) throws IOException
     {
         response.setContentType("application/zip");
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + file.getName() + (preZipped ? "" : ".zip") + "\"");
+        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, file.getName() + (preZipped ? "" : ".zip"));
 
         if (preZipped)
         {

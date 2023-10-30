@@ -10,15 +10,14 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.issues.Issue;
 import org.labkey.api.issues.IssueService;
 import org.labkey.api.issues.IssuesSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.issue.actions.ChangeSummary;
@@ -302,13 +301,7 @@ public class IssueServiceImpl implements IssueService
         if (relatedContainer == null)
             relatedContainer = container;
 
-        if (!relatedContainer.hasPermission(user, UpdatePermission.class))
-        {
-            Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-            contextualRoles.add(RoleManager.getRole(EditorRole.class));
-            return new LimitedUser(user, user.getGroups(), contextualRoles, false);
-        }
-        return user;
+        return ElevatedUser.ensureContextualRoles(relatedContainer, user, Pair.of(UpdatePermission.class, EditorRole.class));
     }
 
     @Nullable

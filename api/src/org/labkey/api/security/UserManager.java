@@ -30,6 +30,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -790,7 +792,7 @@ public class UserManager
         if (SecurityManager.loginExists(currentEmail))
         {
             DbScope scope = CORE.getSchema().getScope();
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            try (Transaction transaction = scope.ensureTransaction())
             {
                 Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
@@ -814,7 +816,7 @@ public class UserManager
         newEmail = new ValidEmail(newEmail).getEmailAddress();
 
         DbScope scope = CORE.getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (!isAdmin)
             {
@@ -946,8 +948,10 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (Transaction transaction = CORE.getScope().beginTransaction())
         {
+            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(user);
+
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
@@ -960,15 +964,19 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
+
+            // Clear user list immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            if (needToEnsureRootAdmins)
+                SecurityManager.ensureAtLeastOneRootAdminExists();
+
+            transaction.commit();
         }
         catch (Exception e)
         {
             LOG.error("deleteUser: " + e);
             throw new UserManagementException(user.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
 
         //TODO: Delete User files
@@ -1009,7 +1017,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);
@@ -1026,20 +1034,25 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
+            // Clear user list immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            // If deactivating a root admin, ensure at least one root admin remains
+            if (!active && SecurityManager.isRootAdmin(userToAdjust))
+                SecurityManager.ensureAtLeastOneRootAdminExists();
+
             removeRecentUser(userToAdjust);
 
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled") + " " + extendedMessage
             );
+
+            transaction.commit();
         }
         catch(RuntimeSQLException e)
         {
             LOG.error("setUserActive: " + e);
             throw new UserManagementException(userToAdjust.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
     }
 

@@ -83,7 +83,8 @@ public interface Domain extends IPropertyType
         delete(user);
     }
     void save(User user) throws ChangePropertyDescriptorException;
-    void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException;
+    void save(User user, boolean auditComment) throws ChangePropertyDescriptorException;
+    void save(User user, @Nullable String allowAddBaseProperty) throws ChangePropertyDescriptorException;
 
     /**
      * This returns a map of names -> PropertyDescriptor that is useful for import that includes all of the

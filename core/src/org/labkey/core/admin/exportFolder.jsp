@@ -65,6 +65,25 @@ boolean isCloudRoot = FileContentService.get().isCloudRoot(c);
 
 Ext4.onReady(function(){
 
+    // javascript version of PageFlowUtil.helpPopup(), returns html and callback to be invoked after element is inserted into page.
+    // Useful for including LabKey-style help in Ext components
+    // CONSIDER: move to dom/Utils.js if this can be used elsewhere
+    function helpPopup(title, helpText)
+    {
+        const h = Ext4.util.Format.htmlEncode;
+        const id = Ext4.id();
+        const htmlTitle = h(title);
+        const htmlText = h(helpText);
+        const html = '<a id="' + id + '" href="#" tabindex="-1" class="_helpPopup"><span class="labkey-help-pop-up">?</span></a>';
+        const callback = function()
+        {
+            LABKEY.Utils.attachEventHandler(id, "click", function() {return showHelpDivDelay(this, htmlTitle, htmlText, 'auto');});
+            LABKEY.Utils.attachEventHandler(id, "mouseover", function() {return showHelpDivDelay(this, htmlTitle, htmlText, 'auto');});
+            LABKEY.Utils.attachEventHandler(id, "mouseout", hideHelpDivDelay);
+        };
+        return {"html":html, "callback":callback};
+    }
+
     // Literals for PHI
     var restrictedPhi = <%=PHI.Restricted.ordinal()%>;
     var fullPhi = <%=PHI.PHI.ordinal()%>;
@@ -135,9 +154,17 @@ Ext4.onReady(function(){
         if (maxAllowedPhiLevel >= limitedPhi)
             phiStore.add({value: 'Limited', label: 'Limited PHI'});
 
+        const subjectNoun = <%=q(subjectNoun)%>;
+        const subjectNounLowercase = <%=q(subjectNounLowercase)%>;
+        const popupSubfolder = helpPopup("Include Subfolders", "Recursively export subfolders.");
+        const popupPHI = helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.");
+        const popupShiftDate = helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + subjectNounLowercase + " by a random, " + subjectNounLowercase + " specific, offset (from 1 to 365 days).");
+        const popupAlternate = helpPopup("Export Alternate " + subjectNoun + " IDs", "Selecting this option will replace each " + subjectNounLowercase + " id by an alternate randomly generated id.");
+        const popupClinic = helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).");
+
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Options:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=helpPopup("Include Subfolders", "Recursively export subfolders.").inlineScript()%>', name: 'includeSubfolders', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders' + popupSubfolder.html, name: 'includeSubfolders', objectType: 'otherOptions'});
 
         formItemsCol2.push({
             xtype: 'container',
@@ -146,7 +173,7 @@ Ext4.onReady(function(){
                 xtype: 'checkbox',
                 hideLabel: true,
                 // CONSIDER using <a data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>
-                boxLabel: 'Include PHI Columns:<%=helpPopup("Include PHI Columns", "Include all dataset and list columns, study properties, and specimen data that have been tagged with this PHI level or below.").inlineScript()%>&nbsp&nbsp',
+                boxLabel: 'Include PHI Columns: ' + popupPHI.html + '&nbsp&nbsp',
                 itemId: 'includePhi',
                 name: 'includePhi',
                 objectType: 'otherOptions',
@@ -178,9 +205,9 @@ Ext4.onReady(function(){
             }
         ]});
 
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates<%=helpPopup("Shift Date Columns", "Selecting this option will shift selected date values associated with a " + h(subjectNounLowercase) + " by a random, " + h(subjectNounLowercase) + " specific, offset (from 1 to 365 days).").inlineScript()%>', fieldCls: 'shift-dates', name: 'shiftDates', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs<%=helpPopup("Export Alternate " + h(subjectNoun) + " IDs", "Selecting this option will replace each " + h(subjectNounLowercase) + " id by an alternate randomly generated id.").inlineScript()%>', fieldCls: 'alternate-ids', name: 'alternateIds', objectType: 'otherOptions'});
-        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Mask Clinic Names<%=helpPopup("Mask Clinic Names", "Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).").inlineScript()%>', name: 'maskClinic', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Shift <%=h(subjectNoun)%> Dates' + popupShiftDate.html, fieldCls: 'shift-dates', name: 'shiftDates', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Export Alternate <%=h(subjectNoun)%> IDs' + popupAlternate.html, fieldCls: 'alternate-ids', name: 'alternateIds', objectType: 'otherOptions'});
+        formItemsCol2.push({xtype: 'checkbox', hideLabel: true, hidden: !showStudyOptions, boxLabel: 'Mask Clinic Names' + popupClinic.html, name: 'maskClinic', objectType: 'otherOptions'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-announcement-title', html: '<span>Export to:</span>'});
         formItemsCol2.push({xtype: 'box', cls: 'labkey-title-area-line', html: ''});
         formItemsCol2.push({
@@ -254,6 +281,12 @@ Ext4.onReady(function(){
                 }
             }
         });
+
+        popupSubfolder.callback();
+        popupPHI.callback();
+        popupShiftDate.callback();
+        popupAlternate.callback();
+        popupClinic.callback();
     };
 
     var getPhiValue = function(ordinal) {

@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveHashSetValuedMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
@@ -119,7 +120,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -140,13 +140,11 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Drives the process of initializing all the modules at startup time and otherwise managing their life cycle.
- * User: migra
- * Date: Jul 13, 2005
  */
 public class ModuleLoader implements Filter, MemTrackerListener
 {
     private static final Logger _log = LogHelper.getLogger(ModuleLoader.class, "Initializes and starts up all modules");
-    private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
+    private static final Map<String, Throwable> _moduleFailures = new CopyOnWriteHashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new CaseInsensitiveHashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
@@ -589,6 +587,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
         // been bootstrapped/upgraded to ensure that AppProps is ready
+        _log.info("Starting LabKey Server " + AppProps.getInstance().getReleaseVersion());
         _log.info("Server installation GUID: " + AppProps.getInstance().getServerGUID() + ", server session GUID: " + AppProps.getInstance().getServerSessionGUID());
         _log.info("Deploying to context path " + AppProps.getInstance().getContextPath());
 

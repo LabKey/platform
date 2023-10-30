@@ -89,6 +89,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -98,6 +99,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1030,10 +1032,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user, true);
+            String auditComment = null;
             if (hasNameChange)
+            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
+                auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
+            }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
             if (hasNameChange)
                 ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
@@ -1061,6 +1067,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
+                refreshSampleTypeMaterializedView(st, true);
             }
         }
 
@@ -1258,6 +1265,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return message + " " + operation.getDescription() + ".";
     }
 
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
     @Override
     public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
@@ -1267,6 +1275,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return recomputeSamplesRollup(allParents, withAmountsParents, sampleType.getMetricUnit(), container);
     }
 
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
     @Override
     public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException
     {
@@ -1277,12 +1286,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public record AliquotAvailableAmountUnit(Double amount, String unit, Double availableAmount) {}
 
-    public int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    private int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
     }
 
-    public int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    private int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         Map<Integer, String> sampleUnits = new HashMap<>();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
@@ -2039,15 +2050,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
-            if (!renameData.targetFile.getParentFile().mkdirs())
+            String errorMsg = String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.targetFile.getParent(),
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName);
+            try
             {
-                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
-                        renameData.targetFile.getParent(),
-                        renameData.sourceFile.getAbsolutePath(),
-                        renameData.sampleType.getName(),
-                        renameData.sampleName,
-                        renameData.fieldName));
-                return false;
+                if (!FileUtil.mkdirs(renameData.targetFile.getParentFile()))
+                {
+                    LOG.warn(errorMsg);
+                    return false;
+                }
+            }
+            catch (IOException e)
+            {
+                LOG.warn(errorMsg + e.getMessage());
             }
         }
         if (!renameData.sourceFile.renameTo(renameData.targetFile))
@@ -2091,7 +2110,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
 
        return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);
-
     }
 
     @Override
@@ -2176,5 +2194,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
+    }
+
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, boolean schemaChange)
+    {
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), schemaChange);
     }
 }

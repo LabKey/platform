@@ -42,7 +42,15 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -61,6 +69,7 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
@@ -88,6 +97,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.CompareType.STARTS_WITH;
+
 /**
  * User: brittp
  * Date: Jul 11, 2007
@@ -105,6 +116,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     private static final Set<String> dateImportAliases;
 
     public static final Class<Module> assayModuleClass;
+
+    public static final String ASSAY_DBSEQ = "GpatAssayDBSeq";
+    public static final String ASSAY_DBSEQ_SUBSTITUTION = "${" + ASSAY_DBSEQ + "}";
 
     static
     {
@@ -170,6 +184,59 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
+    protected String getPresubstitutionRunLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN, getLsidIdSub());
+    }
+
+    @Override
+    protected String getPresubstitutionBatchLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH, getLsidIdSub());
+    }
+
+    @Override
+    protected String getAssayProtocolLsid(Container container, String assayName, XarContext context)
+    {
+        Container projectContainer = container;
+        if (!container.isProject() && container.getProject() != null)
+            projectContainer = container.getProject();
+
+        DbSequence sequence = DbSequenceManager.get(projectContainer, ASSAY_DBSEQ);
+        sequence.ensureMinimum(getMaxExistingAssayDesignId(container));
+
+        String assayDesignDBSeq = String.valueOf(sequence.next());
+        context.addSubstitution(ASSAY_DBSEQ, assayDesignDBSeq);
+        return new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), assayDesignDBSeq).toString();
+    }
+
+    private Long getMaxExistingAssayDesignId(Container container)
+    {
+        long max = 0;
+        TableInfo protocolTable = ExperimentService.get().getTinfoProtocol();
+        String lsidPrefix = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + _protocolLSIDPrefix + ".Folder-" + container.getRowId() + ":";
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("LSID"), lsidPrefix, STARTS_WITH);
+
+        TableSelector selector = new TableSelector(protocolTable, Collections.singleton("LSID"), filter, null);
+        final List<String> nameSuffixes = new ArrayList<>();
+        selector.forEach(String.class, fullname -> nameSuffixes.add(fullname.replace(lsidPrefix, "")));
+
+        for (String nameSuffix : nameSuffixes)
+        {
+            if (nameSuffix.matches("\\d+"))
+            {
+                long id = Long.parseLong(nameSuffix);
+                if (id > max)
+                    max = id;
+            }
+        }
+
+        return max;
+    }
+
+    @Override
     public String getLabel()
     {
         // Hack because there are many subclasses where we want to keep showing their name in the UI, but we want to
@@ -210,9 +277,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
+    protected String getLsidIdSub()
+    {
+        return ASSAY_DBSEQ_SUBSTITUTION;
+    }
+
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA), "Data Fields");
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, getLsidIdSub()), "Data Fields");
         dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
@@ -335,10 +407,20 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return true;
     }
 
+    private boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        return !(protocol.getName() + getDomainNameSuffix(domain)).equals(domain.getName());
+    }
+
     @Override
     public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
         super.changeDomain(user, protocol, orig, update);
+
+        if (hasDomainNameChanged(protocol, orig))
+        {
+            update.setName(protocol.getName() + getDomainNameSuffix(orig));
+        }
 
         if (isPlateMetadataEnabled(protocol))
         {
@@ -402,6 +484,32 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 }
             }
         }
+    }
+
+    @Override
+    public void ensurePropertyDomainName(ExpProtocol protocol, ObjectProperty prop)
+    {
+        if (prop.getName() == null)
+            prop.setName(protocol.getName()); // set domain name to match assay design name
+    }
+
+    private String getDomainNameSuffix(GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        String domainKindName = domain.getDomainKindName();
+        String nameSuffix = switch (domainKindName)
+                {
+                    case "Assay Batches" -> "Batch";
+                    case "Assay Runs" -> "Run";
+                    case "Assay Results" -> "Data";
+                    default -> "";
+                };
+        return " " + nameSuffix + " Fields";
+    }
+
+    @Override
+    public boolean canRename()
+    {
+        return true;
     }
 
     public static class TestCase extends Assert

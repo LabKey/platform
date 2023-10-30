@@ -214,6 +214,27 @@ export class App extends PureComponent<{}, Partial<State>> {
         });
     };
 
+    resetSecondaryProviders = (): void => {
+        Ajax.request({
+            url: ActionURL.buildURL('login', 'initialMount.api'),
+            failure: Utils.getCallbackWrapper(
+                error => {
+                    console.error('Failed to load data', error);
+                    this.setState({
+                        loading: false,
+                        initError: resolveErrorMessage(error),
+                    });
+                },
+                undefined,
+                true
+            ),
+            success: Utils.getCallbackWrapper(response => {
+                const { secondaryProviders } = response;
+                this.setState({ secondaryProviders });
+            }),
+        });
+    };
+
     onDelete = (configuration: number, configType: string): void => {
         Ajax.request({
             url: ActionURL.buildURL('login', 'deleteConfiguration.api'),
@@ -230,22 +251,28 @@ export class App extends PureComponent<{}, Partial<State>> {
                 true
             ),
             success: Utils.getCallbackWrapper(() => {
-                this.setState(state => ({
-                    [configType]: state[configType].filter(auth => auth.configuration !== configuration),
-                }));
+                this.setState(
+                    state => ({
+                        [configType]: state[configType].filter(auth => auth.configuration !== configuration),
+                    }),
+                    this.resetSecondaryProviders
+                );
             }),
         });
     };
 
     updateAuthRowsAfterSave = (config: string, configType: string): void => {
-        this.setState(state => {
-            const prevState = state[configType];
-            const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
+        this.setState(
+            state => {
+                const prevState = state[configType];
+                const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
 
-            // Update our dirtiness information with added modal, since dirtiness should only track reordering
-            const dirtinessData = { ...state.dirtinessData, [configType]: newState };
-            return { [configType]: newState, dirtinessData };
-        });
+                // Update our dirtiness information with added modal, since dirtiness should only track reordering
+                const dirtinessData = { ...state.dirtinessData, [configType]: newState };
+                return { [configType]: newState, dirtinessData };
+            },
+            this.resetSecondaryProviders
+        );
     };
 
     render() {

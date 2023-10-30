@@ -16,74 +16,135 @@
 
 package org.labkey.api.security;
 
-import org.labkey.api.security.roles.AbstractRootContainerRole;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
+import org.labkey.api.data.Container;
+import org.labkey.api.security.impersonation.NotImpersonatingContext;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
+import org.labkey.api.security.roles.FolderAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A wrapper around another user that limits the permissions associated that that user, and thus
- * the operations that the user is allowed to perform.
+ * A cloned user that limits the permissions associated with that user to only the passed in roles.
+ * WARNING: The supplied roles apply UNCONDITIONALLY, in all containers and resources. You must ensure
+ * that the scope of use is constrained appropriately.
  */
-public class LimitedUser extends User
+public class LimitedUser extends ClonedUser
 {
-    private final PrincipalArray _groups;
-    private final Set<Role> _roles;
-    private final boolean _allowedGlobalRoles;
-
-    // LimitedUser that's granted one or more roles (no groups)
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
-        this(user, Arrays.stream(roleClasses).map(RoleManager::getRole).filter(Objects::nonNull).collect(Collectors.toSet()));
+        this(user, Arrays.stream(roleClasses).filter(Objects::nonNull).collect(Collectors.toSet()));
     }
 
-    @Deprecated // TODO: Make private once uses in all other repos have been converted
-    public LimitedUser(User user, Set<Role> roles)
+    private LimitedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
     {
-        this(user, PrincipalArray.getEmptyPrincipalArray(), roles, roles.stream().anyMatch(r -> r instanceof AbstractRootContainerRole));
+        super(user, new NotImpersonatingContext()
+        {
+            private final Set<Role> _roles = getRoles(rolesToAdd);
+
+            @Override
+            public PrincipalArray getGroups(User user)
+            {
+                return PrincipalArray.getEmptyPrincipalArray(); // No groups!
+            }
+
+            @Override
+            public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+            {
+                return _roles;
+            }
+        });
     }
 
-    @Deprecated // Leave in place temporarily until the many uses in other repos have been converted
-    public LimitedUser(User user, int[] groups, Set<Role> roles, boolean allowedGlobalRoles)
+    @Deprecated // Call ElevatedUser!
+    @SafeVarargs
+    public static User getElevatedUser(Container container, User user, Pair<Class<? extends Permission>, Class<? extends Role>>... pairs)
     {
-        this(user, new PrincipalArray(Arrays.stream(groups).boxed().toList()), roles, allowedGlobalRoles);
+        return ElevatedUser.ensureContextualRoles(container, user, pairs);
     }
 
-    public LimitedUser(User user, PrincipalArray groups, Set<Role> roles, boolean allowedGlobalRoles)
+    @Deprecated // Call ElevatedUser!
+    public static User getElevatedUser(Container container, User user, Collection<Class<? extends Role>> rolesToAdd)
     {
-        super(user.getEmail(), user.getUserId());
-        setFirstName(user.getFirstName());
-        setLastName(user.getLastName());
-        setActive(user.isActive());
-        setDisplayName(user.getFriendlyName());
-        setLastLogin(user.getLastLogin());
-        setPhone(user.getPhone());
-        _groups = groups;
-        _roles = roles;
-        _allowedGlobalRoles = allowedGlobalRoles;
+        return ElevatedUser.getElevatedUser(user, rolesToAdd);
     }
 
-    @Override
-    public boolean isAllowedGlobalRoles()
+    @Deprecated // Call ElevatedUser!
+    public static User getCanSeeAuditLogUser(Container container, User user)
     {
-        return _allowedGlobalRoles;
+        return ElevatedUser.ensureCanSeeAuditLogRole(container, user);
     }
 
-    @Override
-    public PrincipalArray getGroups()
+    public static class TestCase extends Assert
     {
-        return _groups;
-    }
+        @Test
+        public void testLimitedUser()
+        {
+            User user = TestContext.get().getUser();
 
-    @Override
-    public Set<Role> getContextualRoles(SecurityPolicy policy)
-    {
-        return new HashSet<>(_roles);
+            testPermissions(new LimitedUser(user), 0, false, false, false, false, false);
+            testPermissions(new LimitedUser(user, ReaderRole.class), 1, true, false, false, false, false);
+            testPermissions(new LimitedUser(user, EditorRole.class), 1, true, true, true, false, false);
+            testPermissions(new LimitedUser(user, FolderAdminRole.class), 1, true, true, true, true, true);
+            testPermissions(new LimitedUser(new LimitedUser(user, FolderAdminRole.class), ReaderRole.class), 1, true, false, false, false, false);
+        }
+
+        @Test
+        public void testElevatedUser()
+        {
+            User user = TestContext.get().getUser();
+            Container c = JunitUtil.getTestContainer();
+
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user)), 1, false, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, new LimitedUser(user, ReaderRole.class)), 2, true, false, false, false, true);
+            testPermissions(ElevatedUser.ensureCanSeeAuditLogRole(c, ElevatedUser.getElevatedUser(new LimitedUser(user, ReaderRole.class), EditorRole.class)), 3, true, true, true, false, true);
+
+            int groupCount = (int)user.getGroups().stream().count();
+            int roleCount = user.getAssignedRoles(c.getPolicy()).size();
+            int siteRolesCount = user.getSiteRoles().size();
+            User elevated = ElevatedUser.getElevatedUser(user);
+            assertEquals(groupCount, elevated.getGroups().stream().count());
+            assertEquals(roleCount, elevated.getAssignedRoles(c.getPolicy()).size());
+            assertEquals(siteRolesCount, elevated.getSiteRoles().size());
+        }
+
+        private void testPermissions(User user, int roleCount, boolean hasRead, boolean hasInsert, boolean hasUpdate, boolean hasAdmin, boolean hasCanSeeAuditLog)
+        {
+            Container c = JunitUtil.getTestContainer();
+            assertEquals(roleCount, user.getAssignedRoles(c.getPolicy()).size());
+            assertTrue(user.getSiteRoles().isEmpty());
+            assertFalse(user.hasSiteAdminPermission());
+            assertEquals(0, user.getGroups().stream().count());
+            assertFalse(user.hasPrivilegedRole());
+            assertFalse(user.isPlatformDeveloper());
+            assertFalse(user.isInGroup(Group.groupAdministrators));
+            assertFalse(user.isImpersonated());
+            assertNull(user.getImpersonatingUser());
+            assertNull(user.getImpersonationProject());
+            assertFalse(user.isGuest());
+
+            assertEquals(hasRead, c.hasPermission(user, ReadPermission.class));
+            assertEquals(hasInsert, c.hasPermission(user, InsertPermission.class));
+            assertEquals(hasUpdate, c.hasPermission(user, UpdatePermission.class));
+            assertEquals(hasAdmin, c.hasPermission(user, AdminPermission.class));
+            assertEquals(hasCanSeeAuditLog, c.hasPermission(user, CanSeeAuditLogPermission.class));
+        }
     }
 }

@@ -31,6 +31,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.Crypt;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.ViewServlet;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -72,6 +73,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -84,6 +86,11 @@ public class FileUtil
     private static final Logger LOG = LogHelper.getLogger(FileUtil.class, "FileUtil.java logger");
 
     private static File _tempDir = null;
+
+    static private final String windowsRestricted = "\\/:*?\"<>|`";
+    // and ` seems like a bad idea for linux?
+    static private final String linuxRestricted = "`";
+    static private final String restrictedPrintable = windowsRestricted + linuxRestricted;
 
     private static final ThreadLocal<HashSet<Path>> tempPaths = ThreadLocal.withInitial(HashSet::new);
 
@@ -260,7 +267,7 @@ public class FileUtil
     {
         // Will replace existing files
         if (!Files.exists(destPath))
-            Files.createDirectory(destPath);
+            FileUtil.createDirectory(destPath);
         try (Stream<Path> list = Files.list(srcPath))
         {
             for (Path srcChild : list.collect(Collectors.toList()))
@@ -272,6 +279,79 @@ public class FileUtil
                     Files.copy(srcChild, destChild, StandardCopyOption.REPLACE_EXISTING);
             }
         }
+    }
+
+    public static String isAllowedFileName(String s)
+    {
+        if (StringUtils.isBlank(s))
+            return "Filename must not be blank";
+        if (!ViewServlet.validChars(s))
+            return "Filename must contain only valid unicode characters.";
+        if (StringUtils.containsAny(s, restrictedPrintable))
+            return "Filename may not contain any of these characters: " + restrictedPrintable;
+        if (StringUtils.containsAny(s, "\t\n\r"))
+            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
+        if (StringUtils.contains("-$", s.charAt(0)))
+            return "Filename may not begin with any of these characters: -$";
+        if (Pattern.matches("(.*\\s--[^ ].*)|(.*\\s-[^- ].*)",s))
+            return "Filename may not contain space followed by dash.";
+        return null;
+    }
+
+    public static void checkAllowedFileName(String s) throws IOException
+    {
+        String msg = isAllowedFileName(s);
+        if (null == msg)
+            return;
+        throw new IOException(msg);
+    }
+
+    public static boolean mkdir(File file) throws IOException
+    {
+        checkAllowedFileName(file.getName());
+        return file.mkdir();
+    }
+
+    public static boolean mkdirs(File file) throws IOException
+    {
+        File parent = file;
+        while (!Files.exists(parent.toPath()))
+        {
+            checkAllowedFileName(parent.getName());
+            parent = parent.getParentFile();
+        }
+        return file.mkdirs();
+    }
+
+    public static Path createDirectory(Path path) throws IOException
+    {
+        checkAllowedFileName(getFileName(path));
+        if (!Files.exists(path))
+            return Files.createDirectory(path);
+        return path;
+    }
+
+    public static Path createDirectories(Path path) throws IOException
+    {
+        Path parent = path;
+        while (!Files.exists(parent))
+        {
+            checkAllowedFileName(getFileName(parent));
+            parent = parent.getParent();
+        }
+        return Files.createDirectories(path);
+    }
+
+    public static boolean createNewFile(File file) throws IOException
+    {
+        checkAllowedFileName(file.getName());
+        return file.createNewFile();
+    }
+
+    public static Path createFile(Path path, FileAttribute<?>... attrs) throws IOException
+    {
+        checkAllowedFileName(getFileName(path));
+        return Files.createFile(path, attrs);
     }
 
     // return true if file exists and is not a directory
@@ -713,7 +793,7 @@ public class FileUtil
     // FileUtil.copyFile() does not use transferTo() or sync()
     public static void copyFile(ReadableByteChannel in, long size, File dst) throws IOException
     {
-        dst.createNewFile();
+        createNewFile(dst);
 
         boolean success = false;
         long expected = size;
@@ -786,7 +866,7 @@ public class FileUtil
         if(!contentsOnly)
         {
             dest = new File(dest, src.getName());
-            dest.mkdirs();
+            mkdirs(dest);
             if(!dest.isDirectory())
                 throw new IOException("Unable to create the directory " + dest.toString() + "!");
         }
@@ -1097,7 +1177,7 @@ quickScan:
             os.write(buf,0,r);
     }
 
-    private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^'};
+    private static final char[] ILLEGAL_CHARS = {'/','\\',':','?','<','>','*','|','"','^', '\n', '\r'};
     private static final String ILLEGAL_CHARS_STRING = new String(ILLEGAL_CHARS);
 
     public static boolean isLegalName(String name)
@@ -1274,11 +1354,11 @@ quickScan:
     {
         if (file.exists())
             return false;
-        file.getParentFile().mkdirs();
+        mkdirs(file.getParentFile());
         if (isPosix)
-            Files.createFile(file.toPath(), tempFileAttributes);
+            createFile(file.toPath(), tempFileAttributes);
         else
-            Files.createFile(file.toPath());
+            createFile(file.toPath());
         return true;
     }
 
@@ -1735,5 +1815,48 @@ quickScan:
             assertEquals(StringUtils.repeat('.', 254) + "_", makeLegalName(StringUtils.repeat('.', 500)));
             assertEquals(StringUtils.repeat(' ', 254) + "_", makeLegalName(StringUtils.repeat(' ', 500)));
         }
+
+        @Test
+        public void testAllowedFileName()
+        {
+            assertNull(isAllowedFileName("a"));
+            assertNull(isAllowedFileName("a-b"));
+            assertNull(isAllowedFileName("a - b"));
+            assertNull(isAllowedFileName("a- b"));
+            assertNull(isAllowedFileName("a--b"));
+            assertNull(isAllowedFileName("a -- b"));
+            assertNull(isAllowedFileName("a-- b"));
+            assertNull(isAllowedFileName("a -- b"));
+            assertNull(isAllowedFileName("a b"));
+            assertNull(isAllowedFileName("a%b"));
+            assertNull(isAllowedFileName("a$b"));
+            assertNull(isAllowedFileName("%ab"));
+
+            assertNotNull(isAllowedFileName(null));
+            assertNotNull(isAllowedFileName(""));
+            assertNotNull(isAllowedFileName(" "));
+            assertNotNull(isAllowedFileName("a\tb"));
+            assertNotNull(isAllowedFileName("-a"));
+            assertNotNull(isAllowedFileName(" -a"));
+            assertNotNull(isAllowedFileName("a -b"));
+            assertNotNull(isAllowedFileName("--a"));
+            assertNotNull(isAllowedFileName(" --a"));
+            assertNotNull(isAllowedFileName("a --b"));
+            assertNotNull(isAllowedFileName("a ---b"));
+            assertNotNull(isAllowedFileName("a/b"));
+            assertNotNull(isAllowedFileName("a\b"));
+            assertNotNull(isAllowedFileName("a:b"));
+            assertNotNull(isAllowedFileName("a*b"));
+            assertNotNull(isAllowedFileName("a?b"));
+            assertNotNull(isAllowedFileName("a<b"));
+            assertNotNull(isAllowedFileName("a>b"));
+            assertNotNull(isAllowedFileName("a\"b"));
+            assertNotNull(isAllowedFileName("a|b"));
+            assertNotNull(isAllowedFileName("a`b"));
+            assertNotNull(isAllowedFileName("$ab"));
+            assertNotNull(isAllowedFileName("-ab"));
+            assertNotNull(isAllowedFileName("a`b"));
+        }
+
     }
 }

@@ -61,7 +61,6 @@ import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -102,7 +101,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -110,9 +109,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
@@ -123,6 +119,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -918,7 +915,7 @@ public class AssayController extends SpringActionController
 
                         response.reset();
                         response.setContentType("application/zip");
-                        response.setHeader("Content-Disposition", "attachment; filename=\"" + "sampleQCData" + ".zip\"");
+                        ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, "sampleQCData.zip");
                         ZipOutputStream stream = new ZipOutputStream(response.getOutputStream());
                         byte[] buffer = new byte[1024];
                         for (File file : files)
@@ -947,12 +944,12 @@ public class AssayController extends SpringActionController
             return null;
         }
 
-        private File getTempFolder()
+        private File getTempFolder() throws IOException
         {
             File tempDir = new File(System.getProperty("java.io.tmpdir"));
             File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
-                tempFolder.mkdirs();
+                FileUtil.mkdirs(tempFolder);
 
             return tempFolder;
         }
@@ -1552,14 +1549,7 @@ public class AssayController extends SpringActionController
                 if (form.getRuns().size() == 1)
                 {
                     // construct the audit log query view
-                    User user = getUser();
-                    if (!getContainer().hasPermission(user, CanSeeAuditLogPermission.class))
-                    {
-                        Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-                        contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-                        user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
-                    }
-
+                    User user = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
                     ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
                     if (run != null && schema != null)

@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.assay.AssayWellExclusionService;
@@ -199,7 +200,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplica
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
-public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer
+public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
@@ -214,8 +215,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoDataClass(), filter, null).getCollection(DataClass.class)));
     });
-
-    public static final String EXPERIMENTAL_DOMAIN_DESIGNER = "experimental-uxdomaindesigner";
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLockWithName(ExperimentServiceImpl.class, "XAR_IMPORT_LOCK");
@@ -274,14 +273,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public HttpView createRunExportView(Container container, String defaultFilenamePrefix)
+    public HttpView<?> createRunExportView(Container container, String defaultFilenamePrefix)
     {
         ActionURL postURL = new ActionURL(ExperimentController.ExportRunsAction.class, container);
         return new JspView<>("/org/labkey/experiment/XARExportOptions.jsp", new ExperimentController.ExportBean(LSIDRelativizer.FOLDER_RELATIVE, XarExportType.BROWSER_DOWNLOAD, defaultFilenamePrefix + ".xar", new ExperimentController.ExportOptionsForm(), null, postURL));
     }
 
     @Override
-    public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
+    public HttpView<?> createFileExportView(Container container, String defaultFilenamePrefix)
     {
         Set<String> roles = getDataInputRoles(container, ContainerFilter.current(container));
         // Remove case-only dupes
@@ -515,7 +514,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull List<ExpDataImpl> getExpDatasByLSID(Collection<String> lsids)
     {
-        if (lsids.size() == 0)
+        if (lsids.isEmpty())
             return Collections.emptyList();
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("LSID"), lsids, IN), null).getArrayList(Data.class));
     }
@@ -523,7 +522,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull List<ExpDataImpl> getExpDatas(Collection<Integer> rowids)
     {
-        if (rowids.size() == 0)
+        if (rowids.isEmpty())
             return Collections.emptyList();
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), new SimpleFilter(FieldKey.fromParts("RowId"), rowids, IN), null).getArrayList(Data.class));
     }
@@ -531,7 +530,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public @NotNull List<? extends ExpData> getExpDatas(ExpDataClass dataClass, Collection<Integer> rowIds)
     {
-        if (rowIds.size() == 0)
+        if (rowIds.isEmpty())
             return Collections.emptyList();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, IN);
         filter.addCondition(FieldKey.fromParts("classId"), dataClass.getRowId());
@@ -721,18 +720,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return materials;
     }
 
-    @NotNull
-    public List<ExpMaterialImpl> getExpMaterialsByLSID(Collection<String> lsids)
-    {
-        SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.LSID.name()), lsids);
-        TableSelector selector = new TableSelector(getTinfoMaterial(), filter, null);
-
-        final List<ExpMaterialImpl> materials = new ArrayList<>(lsids.size());
-        selector.forEach(Material.class, material -> materials.add(new ExpMaterialImpl(material)));
-
-        return materials;
-    }
-
     @Override
     @Nullable
     public List<ExpMaterialImpl> getExpMaterials(Container container, User user, Collection<Integer> rowIds, @Nullable ExpSampleType sampleType)
@@ -781,7 +768,47 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return result == null ? null : new ExpMaterialImpl(result);
     }
 
-    public List<ExpMaterialImpl> getIndexableMaterials(Container container, @Nullable Date modifiedSince)
+    private static final int INDEXING_LIMIT = 10_000;
+
+    @Override
+    public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
+    {
+        task.addRunnable(() -> {
+            for (ExpSampleTypeImpl sampleType : getIndexableSampleTypes(c, modifiedSince))
+            {
+                sampleType.index(task);
+            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> indexMaterials(task, c, modifiedSince), SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> {
+            for (ExpDataClassImpl dataClass : getIndexableDataClasses(c, modifiedSince))
+            {
+                dataClass.index(task);
+            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> indexData(task, c, modifiedSince), SearchService.PRIORITY.bulk);
+    }
+
+    @Override
+    public void indexDeleted()
+    {
+        List<TableInfo> indexedTables = List.of(getTinfoSampleType(),
+                getTinfoDataClass(),
+                getTinfoMaterial(),
+                getTinfoData());
+
+        // Clear the last indexed value on all tables that back a search document
+        for (TableInfo indexedTable : indexedTables)
+        {
+            new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + indexedTable +
+                    " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+        }
+    }
+
+    private void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
     {
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
@@ -790,17 +817,44 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpMaterialImpl.fromMaterials(new SqlSelector(getSchema(), sql).getArrayList(Material.class));
+        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getSchema(), sql);
+        selector.setJdbcCaching(false);
+
+        int rowCount = selector.forEach(Material.class, m -> {
+            ExpMaterialImpl expMaterial = new ExpMaterialImpl(m);
+            task.addResource(expMaterial.createIndexDocument(), SearchService.PRIORITY.bulk);
+        });
+
+        if (rowCount == INDEXING_LIMIT)
+        {
+            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+            task.addRunnable(() -> indexMaterials(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+        }
     }
 
-    public List<ExpDataImpl> getIndexableData(Container container, @Nullable Date modifiedSince)
+    public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL");
         sql.add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
-        return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
+
+        sql = getSchema().getSqlDialect().limitRows(sql, INDEXING_LIMIT);
+        SqlSelector selector = new SqlSelector(getSchema(), sql);
+        selector.setJdbcCaching(false);
+
+        int rowCount = selector.forEach(Data.class, d -> {
+            ExpDataImpl expData = new ExpDataImpl(d);
+            task.addResource(expData.createDocument(), SearchService.PRIORITY.bulk);
+        });
+
+        if (rowCount == INDEXING_LIMIT)
+        {
+            // Requeue for the next batch. This avoids overwhelming the indexer's queue with documents
+            task.addRunnable(() -> indexData(task, container, modifiedSince), SearchService.PRIORITY.bulk);
+        }
     }
 
     public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
@@ -812,7 +866,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpDataClassImpl.fromDataClasses(new SqlSelector(getSchema(), sql).getArrayList(DataClass.class));
     }
 
-    public Collection<ExpSampleTypeImpl> getIndexableSampleTypes(Container container, @Nullable Date modifiedSince)
+    private Collection<ExpSampleTypeImpl> getIndexableSampleTypes(@NotNull Container container, @Nullable Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoSampleType() + " _st_ WHERE Container = ?").add(container.getId());
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoSampleType(), modifiedSince, "_st_").toSQLFragment(null, null);
@@ -1017,7 +1071,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return toExpProtocol(p);
     }
 
-    @NotNull
     private ExpProtocolImpl toExpProtocol(@Nullable Protocol p)
     {
         ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
@@ -1039,7 +1092,18 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocolImpl getExpProtocol(Container container, String name)
     {
-        return getExpProtocol(generateLSID(container, ExpProtocol.class, name));
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        if (container != null)
+        {
+            filter.addCondition(FieldKey.fromParts("Container"), container);
+        }
+        List<Protocol> protocols = new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class);
+        
+        if (protocols.isEmpty())
+            return null;
+        
+        // should only find one protocol per container+name
+        return toExpProtocol(protocols.get(0));
     }
 
     @Override
@@ -1372,7 +1436,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         // Do the sort on the Java side to make sure it's always case-insensitive, even on Postgres
-        return classes.stream().map(ExpDataClassImpl::new).sorted().collect(Collectors.toUnmodifiableList());
+        return classes.stream().map(ExpDataClassImpl::new).sorted().toList();
     }
 
     @Override
@@ -1390,6 +1454,40 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getDataClass(obj.getObjectURI());
     }
 
+    @Override
+    public ExpProtocol getEffectiveProtocol(Container definitionContainer, User user, String schemaName, Date effectiveDate, ContainerFilter cf)
+    {
+        Integer legacyObjectId = getObjectIdWithLegacyName(schemaName, ExperimentServiceImpl.getNamespacePrefix(ExpProtocol.class), effectiveDate, definitionContainer, cf);
+        if (legacyObjectId != null)
+            return getExpProtocol(legacyObjectId);
+
+        ExpProtocol protocol = getExpProtocol(definitionContainer, schemaName, cf);
+
+        if (protocol != null && protocol.getCreated().compareTo(effectiveDate) <= 0)
+            return protocol;
+
+        return null;
+    }
+
+    private ExpProtocol getExpProtocol(Container container, String name, @Nullable ContainerFilter cf)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Name"), name);
+        if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
+        {
+            Collection<GUID> validContainerIds =  cfp.generateIds(container, ReadPermission.class, null);
+            filter.addCondition(FieldKey.fromParts("Container"), validContainerIds, CompareType.IN);
+        }
+        else
+            filter.addCondition(FieldKey.fromParts("Container"), container.getId());
+
+        List<Protocol> protocols = new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class);
+
+        if (protocols.isEmpty())
+            return null;
+
+        return toExpProtocol(protocols.get(0));
+
+    }
 
     @Override
     public ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf)
@@ -1616,7 +1714,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // ignore
         }
-        if (0 < errors.length())
+        if (!errors.isEmpty())
             throw new ValidationException(errors.toString());
         return null;
     }
@@ -1669,7 +1767,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             // ignore
         }
-        if (0 < errors.length())
+        if (!errors.isEmpty())
             throw new ValidationException(errors.toString());
 
         return null;
@@ -1912,7 +2010,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         String objectId = lsid.getObjectId();
-        if (objectId == null || objectId.length() == 0)
+        if (objectId == null || objectId.isEmpty())
             return null;
 
         String[] parts = StringUtils.split(objectId, ".");
@@ -2003,7 +2101,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
 
         String objectId = lsid.getObjectId();
-        if (objectId == null || objectId.length() == 0)
+        if (objectId == null || objectId.isEmpty())
             return null;
 
         String[] parts = StringUtils.split(objectId, ".");
@@ -4754,6 +4852,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            // since we don't call onSamplesChanged() for deleted rows, need to tell someone to refresh the materialized view (if any)
+            var exp = SampleTypeServiceImpl.get();
+            for (var st : sampleTypes.values())
+                if (null != st)
+                    exp.refreshSampleTypeMaterializedView(st, false);
+
             // On successful commit, start task to remove items from search index
             final SearchService ss = SearchService.get();
             if (null != ss)
@@ -6220,6 +6324,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             boolean newProtocol = protocol.getRowId() == 0;
             if (newProtocol)
             {
+                // if protocol exist, throw error
+                ExpProtocol existing = getExpProtocol(protocol.getContainer(), protocol.getName());
+                if (existing != null && protocol.getLSIDNamespacePrefix().equals("GeneralAssayProtocol"))
+                    throw new RuntimeSQLException(new SQLException("Assay design with name '" + existing.getName() + "' already exists."));
+
                 result = Table.insert(user, getTinfoProtocol(), protocol);
             }
             else
@@ -7667,10 +7776,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             LOG.debug("Saving data class", dataClass.getName());
             dataClass.save(u);
-            if (hasNameChange)
-                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange);
+            String auditComment = null;
+            if (hasNameChange)
+            {
+                QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldDataClassName, newName, SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, DataClassUserSchema.NAME), u, c);
+                auditComment = "The name of the data class '" + oldDataClassName + "' was changed to '" + newName + "'.";
+            }
+
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u, hasNameChange, auditComment);
 
             if (hasNameChange)
                 addObjectLegacyName(dataClass.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpDataClass.class), oldDataClassName, u);
@@ -8257,12 +8371,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return new ArrayList<>(runsDeletedWithInput(runsUsingItems));
     }
 
-    @Override
-    public boolean useUXDomainDesigner()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DOMAIN_DESIGNER);
-    }
-
     /*
     * this is used to register a query view in experiment-ShowRunText.view and this expects
     * the query to have RunId column
@@ -8527,10 +8635,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         TableInfo tableInfo = getTinfoObjectLegacyNames();
 
+        String objecIdSql = dataType.equals("Protocol") ? "RowId FROM exp.Protocol" : "ObjectId FROM exp.Object";
+
         // find the last ObjectLegacyNames record with matched name and timestamp
         SQLFragment sql = new SQLFragment("SELECT ObjectId, Created FROM exp.ObjectLegacyNames " +
                 "WHERE Name = ? AND ObjectType = ? AND Created >= ? " +
-                "AND ObjectId IN (SELECT ObjectId FROM exp.Object WHERE Container ");
+                "AND ObjectId IN (SELECT " + objecIdSql + " WHERE Container ");
         sql.add(name);
         sql.add(dataType);
         sql.add(effectiveDate);
@@ -8572,7 +8682,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void addEdges(Collection<ExpLineageEdge> edges)
     {
-        if (edges == null || edges.size() == 0)
+        if (edges == null || edges.isEmpty())
             return;
 
         List<List<?>> params = new ArrayList<>();
@@ -9112,7 +9222,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo tableInfo = samplesUserSchema.getTable(type.getName());
             if (tableInfo == null)
                 continue;
-            List<ColumnInfo> uniqueIdCols = provisioned.getColumns().stream().filter(ColumnInfo::isScannableField).collect(Collectors.toList());
+            List<ColumnInfo> uniqueIdCols = provisioned.getColumns().stream().filter(ColumnInfo::isScannableField).toList();
             numUniqueIdCols += uniqueIdCols.size();
             for (ColumnInfo col : uniqueIdCols)
             {
@@ -9163,6 +9273,47 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         }
 
         return idLsids;
+    }
+
+    private void _renameAssayProtocols(String newAssayName, String oldAssayName, ExpProtocol protocol, User user, String type)
+    {
+        ExpProtocolImpl protocolImpl= getExpProtocol(protocol.getLSID() + "." + type);
+
+        if (protocolImpl != null)
+        {
+            String newProtName = newAssayName + " - " + type;
+            if (!newProtName.equals(protocolImpl.getName()))
+            {
+                Protocol updatedProtocol = protocolImpl.getDataObject();
+                updatedProtocol.setName(newProtName);
+
+                Map<String, ProtocolParameter> updatedParams = new HashMap<>(protocolImpl.getProtocolParameters());
+                ProtocolParameter nameParam = updatedParams.get(XarConstants.APPLICATION_NAME_TEMPLATE_URI);
+                if (nameParam != null)
+                {
+                    String paramVal = nameParam.getStringValue();
+                    nameParam.setStringValue(paramVal.replace(oldAssayName, newAssayName));
+                    updatedProtocol.storeProtocolParameters(updatedParams.values());
+                }
+                saveProtocol(user, updatedProtocol);
+            }
+        }
+    }
+
+    @Override
+    public void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container)
+    {
+        if (!provider.canRename())
+            return;
+
+        addObjectLegacyName(protocol.getRowId(), ExperimentServiceImpl.getNamespacePrefix(ExpProtocol.class), oldAssayName, user);
+
+        _renameAssayProtocols(newAssayName, oldAssayName, protocol, user, "Core");
+        _renameAssayProtocols(newAssayName, oldAssayName, protocol, user, "Output");
+
+        SchemaKey newSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), newAssayName);
+        SchemaKey oldSchema = SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), oldAssayName);
+        QueryChangeListener.QueryPropertyChange.handleSchemaNameChange(oldSchema.toString(), newSchema.toString(), newSchema, user, container);
     }
 
     public static class TestCase extends Assert

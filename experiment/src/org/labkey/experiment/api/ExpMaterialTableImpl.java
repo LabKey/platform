@@ -21,28 +21,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnHeaderType;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MutableColumnInfo;
-import org.labkey.api.data.PHI;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.LoggingDataIterator;
@@ -89,6 +72,7 @@ import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -109,8 +93,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -1008,14 +995,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-    @NotNull
-    @Override
-    public SQLFragment getFromSQL(String alias)
-    {
-        return getFromSQL(alias, null);
-    }
-
-
     // These are mostly fields that are wrapped by fields with different names (see createColumn())
     // we could handle each case separately, but this is easier
     static final Set<FieldKey> wrappedFieldKeys = Set.of(
@@ -1044,8 +1023,134 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        return getFromSQL(alias, null);
+    }
+
+
     @Override
     public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    {
+        SQLFragment sql = new SQLFragment("(");
+        boolean usedMaterialized;
+
+        // SELECT FROM
+        if (AppProps._instance.isExperimentalFeatureEnabled(USE_MATERIALIZED_SAMPLETYPE) && null != _ss && !getExpSchema().getDbSchema().getScope().isTransactionActive())
+        {
+            sql.append(getMaterializedSQL());
+            usedMaterialized = true;
+        }
+        else
+        {
+            sql.append(getJoinSQL(selectedColumns));
+            usedMaterialized = false;
+        }
+
+        // WHERE
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
+        sql.append("\n").append(filterFrag);
+        if (_ss != null && !usedMaterialized)
+        {
+            if (!filterFrag.isEmpty())
+                sql.append(" AND ");
+            else
+                sql.append(" WHERE ");
+            sql.append("CpasType = ").appendValue(_ss.getLSID());
+        }
+        sql.append(") ").append(alias);
+
+        return sql;
+    }
+
+
+    static final BlockingCache<String,MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
+    static final Map<String, AtomicLong> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
+    static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
+
+
+
+    // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
+    public static void refreshMaterializedView(final String lsid, boolean schemaChange)
+    {
+        /* NOTE: MaterailizedQueryHelper can detect data changes and refresh the materiaized view using the provided SQL.
+         * It does not handle schema changes where the SQL itself needs to be updated.  In this case, we remove the
+         * MQH from the cache to force the SQL to be regenerated.
+         */
+        var scope = ExperimentServiceImpl.getExpSchema().getScope();
+        if (schemaChange)
+            scope.addCommitTask(() -> _materializedQueries.remove(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
+        scope.addCommitTask(new RefreshMaterializedViewRunnable(lsid), DbScope.CommitTaskOption.POSTCOMMIT);
+    }
+
+    private static class RefreshMaterializedViewRunnable implements Runnable
+    {
+        private final String _lsid;
+
+        public RefreshMaterializedViewRunnable(String lsid)
+        {
+            _lsid = lsid;
+        }
+
+        @Override
+        public void run()
+        {
+            getInvalidateCounter(_lsid).incrementAndGet();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return obj instanceof RefreshMaterializedViewRunnable other && _lsid.equals(other._lsid);
+        }
+    }
+
+
+    private static AtomicLong getInvalidateCounter(String lsid)
+    {
+        if (!initializedListeners.getAndSet(true))
+        {
+            CacheManager.addListener(_invalidationCounters::clear);
+        }
+        return _invalidationCounters.computeIfAbsent(lsid, (unused) ->
+                new AtomicLong(System.currentTimeMillis())
+        );
+    }
+
+
+    /* SELECT and JOIN, does not include WHERE, same as get`JoinSQL() */
+    private SQLFragment getMaterializedSQL()
+    {
+        if (null == _ss)
+            return getJoinSQL(null);
+
+        var mqh = _materializedQueries.get(_ss.getLSID(), null, (unusedKey, unusedArg) ->
+        {
+            /* NOTE: MaterializedQueryHelper does have a pattern to help with detecting schema changes.
+             * Previously it has been used on non-provisioned tables.  It might be helpful to have a pattern,
+             * even if just to help with race-conditions.
+             *
+             * Maybe have a callback to generate the SQL dynamically, and verify that the sql is unchanged.
+             */
+            SQLFragment viewSql = getJoinSQL(null).append(" WHERE CpasType = ").appendValue(_ss.getLSID());
+            SQLFragment provisioned = Objects.requireNonNull(_ss.getTinfo().getSQLName());
+            return new MaterializedQueryHelper.Builder("", getExpSchema().getDbSchema().getScope(), viewSql)
+                .addIndex("CREATE UNIQUE INDEX uq_${NAME}_rowid ON temp.${NAME} (rowid)")
+                .addIndex("CREATE UNIQUE INDEX uq_${NAME}_lsid ON temp.${NAME} (lsid)")
+                .addIndex("CREATE INDEX idx_${NAME}_container ON temp.${NAME} (container)")
+                .addIndex("CREATE INDEX idx_${NAME}_root ON temp.${NAME} (rootmateriallsid)")
+                .addInvalidCheck(() -> String.valueOf(getInvalidateCounter(_ss.getLSID()).get()))
+                .upToDateSql(new SQLFragment("SELECT CAST(COUNT(*) AS VARCHAR) FROM ").append(provisioned))  // MAX(modified) would probably be better if it were a) in the materailized table b) indexed
+                .build();
+        });
+        return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
+    }
+
+
+    /* SELECT and JOIN, does not include WHERE */
+    private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
     {
         TableInfo provisioned = null == _ss ? null : _ss.getTinfo();
         Set<String> provisionedCols = new CaseInsensitiveHashSet(provisioned != null ? provisioned.getColumnNameSet() : Collections.emptySet());
@@ -1056,21 +1161,19 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean hasSampleColumns = false;
         boolean hasAliquotColumns = false;
 
-        // all columns from exp.material except lsid
-        Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
-
+        Set<String> materialCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
         selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         SQLFragment sql = new SQLFragment();
-        sql.appendComment("<ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
-        sql.append("(SELECT ");
+        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null==_ss ? "" : _ss.getName()) + ")>", getSqlDialect());
+        sql.append("SELECT ");
         String comma = "";
-        for (String dataCol : dataCols)
+        for (String materialCol : materialCols)
         {
             // don't need to generate SQL for columns that aren't selected
-            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, dataCol)))
+            if (ALL_COLUMNS == selectedColumns || selectedColumns.contains(new FieldKey(null, materialCol)))
             {
-                sql.append(comma).append("m.").append(dataCol);
+                sql.append(comma).append("m.").appendIdentifier(materialCol);
                 comma = ", ";
             }
         }
@@ -1109,28 +1212,14 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             }
         }
 
-        sql.append(" FROM ");
+        sql.append("\nFROM ");
         sql.append(_rootTable, "m");
         if (hasSampleColumns)
             sql.append(" INNER JOIN ").append(provisioned, "m_sample").append(" ON m.rootmateriallsid = m_sample.lsid");
         if (hasAliquotColumns)
             sql.append(" INNER JOIN ").append(provisioned, "m_aliquot").append(" ON m.lsid = m_aliquot.lsid");
 
-        // WHERE
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
-        if (_ss != null)
-        {
-            /*
-            NOTE for the interested reader.
-            The cpasType filter might be redundant with the JOIN to the materialized table.
-            Without the redundant filter, we have seen Postgres optimizer do expensive whole table scan on exp.material during join of the provisioned table on lsid.
-            */
-            if (!filterFrag.isEmpty())
-                filterFrag.append(" AND ");
-            filterFrag.append("CpasType = ").appendValue(_ss.getLSID());
-        }
-        sql.append("\n").append(filterFrag).append(") ").append(alias);
-        sql.appendComment("</ExpMaterialTableImpl.getFromSQL()>", getSqlDialect());
+        sql.appendComment("</ExpMaterialTableImpl.getJoinSQL()>", getSqlDialect());
         return sql;
     }
 
@@ -1164,7 +1253,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
 
-
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
@@ -1184,6 +1272,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return super.hasPermission(user, perm);
         }
     }
+
 
     @NotNull
     @Override
@@ -1266,7 +1355,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     ListUtils.partition(lsids, 100).forEach(sublist ->
                         searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLsid(sublist))
                                 expMaterial.index(searchService.defaultTask());
                         })
                     );

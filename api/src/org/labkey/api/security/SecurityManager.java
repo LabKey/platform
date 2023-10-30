@@ -37,6 +37,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -54,7 +56,7 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
+import org.labkey.api.security.impersonation.DisallowPrivilegedRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
@@ -63,6 +65,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -103,6 +106,7 @@ import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
@@ -133,8 +137,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -316,7 +323,6 @@ public class SecurityManager
         UserManager.addUserListener(new SecurityUserListener());
     }
 
-
     //
     // GroupListener
     //
@@ -415,7 +421,6 @@ public class SecurityManager
                 "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
     }
 
-
     /** Move is handled by direct call from ContainerManager into SecurityManager */
     private static class SecurityContainerListener extends ContainerManager.AbstractContainerListener
     {
@@ -425,7 +430,6 @@ public class SecurityManager
             deleteGroups(c, null);
         }
     }
-
 
     private static class SecurityUserListener implements UserManager.UserListener
     {
@@ -572,7 +576,7 @@ public class SecurityManager
             }
             else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
             {
-                sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
+                sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
             }
 
             List<AuthenticationValidator> validators = getValidators(session);
@@ -813,7 +817,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission())
+        if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
@@ -890,7 +894,7 @@ public class SecurityManager
         return verificationUrl;
     }
 
-    // Test if non-LDAP email has been verified
+    // Test if user has been verified for database authentication
     public static boolean isVerified(ValidEmail email)
     {
         return (null == getVerification(email));
@@ -1047,7 +1051,7 @@ public class SecurityManager
         User newUser;
         DbScope scope = core.getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (createLogin && !status.isLdapOrSsoEmail())
             {
@@ -1139,7 +1143,7 @@ public class SecurityManager
         if (null != email.getPersonal())
             displayName = email.getPersonal();
         else if (email.getEmailAddress().indexOf("@") > 0)
-            displayName = email.getEmailAddress().substring(0,email.getEmailAddress().indexOf("@"));
+            displayName = email.getEmailAddress().substring(0, email.getEmailAddress().indexOf("@"));
         else
             displayName = email.getEmailAddress();
 
@@ -1204,7 +1208,7 @@ public class SecurityManager
         }
     }
 
-    // Create record for non-LDAP login, saving email address and hashed password. Return verification token.
+    // Create record for database login, saving email address and hashed password. Return verification token.
     public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
@@ -1415,52 +1419,68 @@ public class SecurityManager
                 groupId == Group.groupDevelopers)
             throw new IllegalArgumentException("The global groups cannot be deleted.");
 
-        Group group = getGroup(groupId);
-
-        // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
-        GroupMembershipCache.handleGroupChange(group, group);
-
-        // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
-        // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
-        // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
-
-        SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?",groupId);
-        List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
-
-        Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
-
-        // make sure we didn't empty out any policies completely
-        // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
-        // NOTE: handy, so we'd have to rework the API/caching a bit
-
-        FieldKey resourceId = new FieldKey(null,"resourceid");
-        for (String id : resources)
+        try (Transaction transaction = core.getScope().beginTransaction())
         {
-            SimpleFilter f = new SimpleFilter(resourceId, id);
-            if (!new TableSelector(core.getTableInfoRoleAssignments(),f,null).exists())
+            Group group = getGroup(groupId);
+            if (null == group)
+                return;
+
+            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+            GroupMembershipCache.handleGroupChange(group, group);
+
+            // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
+            // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
+            // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
+
+            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?", groupId);
+            List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
+
+            Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
+
+            // make sure we didn't empty out any policies completely
+            // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
+            // NOTE: handy, so we'd have to rework the API/caching a bit
+
+            FieldKey resourceId = new FieldKey(null, "resourceid");
+            for (String id : resources)
             {
-                SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid,userid,role) VALUES (?,-3,'org.labkey.api.security.roles.NoPermissionsRole')",id);
-                new SqlExecutor(core.getSchema()).execute(insert);
+                SimpleFilter f = new SimpleFilter(resourceId, id);
+                if (!new TableSelector(core.getTableInfoRoleAssignments(), f, null).exists())
+                {
+                    SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid, userid, role) VALUES (?, -3, 'org.labkey.api.security.roles.NoPermissionsRole')", id);
+                    new SqlExecutor(core.getSchema()).execute(insert);
+                }
             }
+
+            Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
+            Table.delete(core.getTableInfoMembers(), groupFilter);
+
+            Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
+            Table.delete(core.getTableInfoPrincipals(), principalsFilter);
+            Container c = ContainerManager.getForId(group.getContainer());
+
+            // Clear caches immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(() -> {
+                GroupCache.uncache(groupId);
+                ProjectAndSiteGroupsCache.uncache(c);
+                // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
+                SecurityPolicyManager.notifyPolicyChanges(resources);
+            }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            if (!group.isProjectGroup())
+                ensureAtLeastOneRootAdminExists();
+
+            transaction.commit();
         }
-
-        Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
-        Table.delete(core.getTableInfoMembers(), groupFilter);
-
-        Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
-        Table.delete(core.getTableInfoPrincipals(), principalsFilter);
-
-        GroupCache.uncache(groupId);
-        Container c = ContainerManager.getForId(group.getContainer());
-        ProjectAndSiteGroupsCache.uncache(c);
-        // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
-        SecurityPolicyManager.notifyPolicyChanges(resources);
     }
 
     public static void deleteGroups(Container c, @Nullable PrincipalType type)
     {
         if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
             throw new IllegalArgumentException("Illegal group type: " + type);
+
+        if (c.isRoot())
+            throw new IllegalArgumentException("Should not call deleteGroups() on the root");
 
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
 
@@ -1480,15 +1500,14 @@ public class SecurityManager
     }
 
 
-    public static void deleteMembers(Group group, List<UserPrincipal> membersToDelete)
+    public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)
     {
         int groupId = group.getUserId();
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
             SQLFragment sql = new SQLFragment(
-            "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId = ? AND UserId ");
+            "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
             List<Integer> userIds = new ArrayList<>(membersToDelete.size());
             for (UserPrincipal userPrincipal : membersToDelete)
@@ -1497,19 +1516,50 @@ public class SecurityManager
             }
             core.getSqlDialect().appendInClauseSql(sql, userIds);
 
-            new SqlExecutor(core.getSchema()).execute(sql);
+            try (Transaction transaction = core.getScope().beginTransaction())
+            {
+                new SqlExecutor(core.getSchema()).execute(sql);
 
-            for (UserPrincipal member : membersToDelete)
-                fireDeletePrincipalFromGroup(groupId, member);
+                // Clear caches immediately (before the last root admin check) and again after commit/rollback
+                transaction.addCommitTask( () -> {
+                    for (UserPrincipal member : membersToDelete)
+                        GroupMembershipCache.handleGroupChange(group, member);
+                }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+                if (!group.isProjectGroup())
+                    ensureAtLeastOneRootAdminExists();
+
+                transaction.commit();
+            }
         }
     }
 
     public static void deleteMember(Group group, UserPrincipal principal)
     {
-        int groupId = group.getUserId();
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-            "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId());
-        fireDeletePrincipalFromGroup(groupId, principal);
+        deleteMembers(group, Set.of(principal));
+    }
+
+    /**
+     * Throws if the site has no Site Admins, no Application Admins, and no Impersonating Troubleshooters
+     */
+    public static void ensureAtLeastOneRootAdminExists()
+    {
+        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(ROOT_ADMIN_PERMISSION));
+        if (siteAdmins.isEmpty())
+        {
+            // Skip the check while bootstrapping since some policies are saved before any Site Admins exist
+            boolean bootstrapping = ModuleLoader.getInstance().isNewInstall() && !ModuleLoader.getInstance().isStartupComplete();
+            if (!bootstrapping)
+                throw new UnauthorizedException("You can't remove the last root administrator from the site");
+        }
+    }
+
+    // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION =  CanImpersonateSiteRolesPermission.class;
+
+    public static boolean isRootAdmin(User user)
+    {
+        return user.hasRootPermission(ROOT_ADMIN_PERMISSION);
     }
 
     // Returns a list of errors
@@ -2120,37 +2170,27 @@ public class SecurityManager
         return userIds;
     }
 
+    /**
+     * @return an immutable list of Users who have been assigned all the requested permissions in the given container
+     */
     public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
-
-        for (User user : allUsers)
-            if (SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
-                users.add(user);
-
-        return users;
+        return UserManager.getActiveUsers().stream()
+            .filter(user -> SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
+            .toList();
     }
 
+    /**
+     * @return an immutable list of Users who have been assigned any of the requested permissions in the given container
+     */
     public static List<User> getUsersWithOneOf(Container c, Set<Class<? extends Permission>> perms)
     {
-        Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
-
-        for (User user : allUsers)
-            if (SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
-                users.add(user);
-
-        return users;
-    }
-
-    /** Returns both users and groups, but direct members only (not recursive) */
-    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
-    {
-        return getGroupMemberNamesAndIds(path, false);
+        return UserManager.getActiveUsers().stream()
+            .filter(user -> SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
+            .toList();
     }
 
     /** Returns both users and groups, but direct members only (not recursive) */
@@ -2502,6 +2542,7 @@ public class SecurityManager
         return message.getHtmlString();
     }
 
+    @SuppressWarnings("unused") // Called from mGAP
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
     {
         sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
@@ -3016,7 +3057,7 @@ public class SecurityManager
                     }
                 }
                 String[] roles = prop.getValue().split(",");
-                MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
                 for (String roleName : roles)
                 {
                     roleName = StringUtils.trimToNull(roleName);
@@ -3195,16 +3236,21 @@ public class SecurityManager
         if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
             return Set.of();
 
-        var granted = policy.getOwnPermissions(principal);
-        principal.getContextualRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
-        if (null != contextualRoles)
-            contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
-        if (principal instanceof User)
-            return ((User)principal).getImpersonationContext().filterPermissions(granted);
-        return granted;
+        Stream<Role> roles = principal.getAssignedRoles(policy).stream()
+            .filter(Objects::nonNull);
+
+        if (null != contextualRoles && !contextualRoles.isEmpty())
+            roles = Stream.concat(roles, contextualRoles.stream());
+
+        Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
+
+        if (principal instanceof User user)
+            permissions = user.getImpersonationContext().filterPermissions(permissions);
+
+        return permissions.collect(Collectors.toSet());
     }
 
-    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
@@ -3256,7 +3302,7 @@ public class SecurityManager
         Set<Role> roles = policy.getRoles(principal.getGroups());
         roles.addAll(policy.getAssignedRoles(principal));
         if (includeContextualRoles)
-            roles.addAll(principal.getContextualRoles(policy));
+            roles.addAll(principal.getAssignedRoles(policy));
         return roles;
     }
 
@@ -3334,7 +3380,6 @@ public class SecurityManager
 
         private void attemptRenameGroupExpectErrors(String newName, String expectedErrorMessage)
         {
-
             try
             {
                 renameGroup(groupA, newName, null);
@@ -3353,7 +3398,6 @@ public class SecurityManager
                             "' to '" + groupA.getName() + "' because that name is already used by another group!"},
                     {groupB.getName(), "Cannot rename group '" + groupA.getName() +
                             "' to '" + groupB.getName() + "' because that name is already used by another group!"}
-
             };
         }
 
@@ -3504,9 +3548,9 @@ public class SecurityManager
                 }
 
                 @Override
-                public Set<Role> getContextualRoles(SecurityPolicy policy)
+                public Set<Role> getAssignedRoles(SecurityPolicy policy)
                 {
-                    return Set.of();
+                    return policy.getRoles(getGroups());
                 }
 
                 @Override
@@ -3659,9 +3703,9 @@ public class SecurityManager
         @Test
         public void testDisplayName() throws Exception
         {
-            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"),1));
-            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"),1));
-            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"),1));
+            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"), 1));
+            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"), 1));
+            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"), 1));
         }
 
         /**
@@ -3788,9 +3832,9 @@ public class SecurityManager
         {
             Container parent = JunitUtil.getTestContainer();
             Container test;
-            Pair<ValidEmail,User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
-            Pair<ValidEmail,User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
-            Pair<ValidEmail,User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
+            Pair<ValidEmail, User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
+            Pair<ValidEmail, User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
+            Pair<ValidEmail, User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
 
             try
             {

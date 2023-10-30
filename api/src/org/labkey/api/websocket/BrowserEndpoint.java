@@ -235,48 +235,38 @@ public abstract class BrowserEndpoint extends Endpoint
                     }
                 }
             });
-            from.addMessageHandler(new MessageHandler.Whole<ByteBuffer>()
-            {
-                @Override
-                public void onMessage(ByteBuffer byteBuffer)
+            from.addMessageHandler(ByteBuffer.class, byteBuffer -> {
+                try
                 {
-                    try
+                    synchronized (to)
                     {
-                        synchronized (to)
-                        {
-                            if (to.isOpen())
-                                to.getBasicRemote().sendBinary(byteBuffer);
-                        }
-                        LOG.trace(debugName + ".onMessage(<binary>)");
+                        if (to.isOpen())
+                            to.getBasicRemote().sendBinary(byteBuffer);
                     }
-                    catch (IOException x)
-                    {
-                        try { from.close(); } catch (IOException io) {/* */}
-                        try { to.close(); } catch (IOException io) {/* */}
-                        LOG.warn("websocket proxy exception", x);
-                    }
+                    LOG.trace(debugName + ".onMessage(<binary>)");
+                }
+                catch (IOException x)
+                {
+                    try { from.close(); } catch (IOException io) {/* */}
+                    try { to.close(); } catch (IOException io) {/* */}
+                    LOG.warn("websocket proxy exception", x);
                 }
             });
-            from.addMessageHandler(new MessageHandler.Whole<PongMessage>()
-            {
-                @Override
-                public void onMessage(PongMessage pongMessage)
+            from.addMessageHandler(PongMessage.class, pongMessage -> {
+                try
                 {
-                    try
+                    synchronized (to)
                     {
-                        synchronized (to)
-                        {
-                            if (to.isOpen())
-                                to.getBasicRemote().sendPong(pongMessage.getApplicationData());
-                        }
-                        LOG.trace(debugName + ".pong()");
+                        if (to.isOpen())
+                            to.getBasicRemote().sendPong(pongMessage.getApplicationData());
                     }
-                    catch (IOException x)
-                    {
-                        try { from.close(); } catch (IOException io) {/* */}
-                        try { to.close(); } catch (IOException io) {/* */}
-                        LOG.warn("websocket proxy exception", x);
-                    }
+                    LOG.trace(debugName + ".pong()");
+                }
+                catch (IOException x)
+                {
+                    try { from.close(); } catch (IOException io) {/* */}
+                    try { to.close(); } catch (IOException io) {/* */}
+                    LOG.warn("websocket proxy exception", x);
                 }
             });
         }

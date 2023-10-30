@@ -9,6 +9,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AbstractWriteableSettingsGroup;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
@@ -184,7 +185,7 @@ public class LimitActiveUsersSettings extends AbstractWriteableSettingsGroup
 
     public static @Nullable HtmlString getWarningMessage(Container c, User user, boolean showAllWarnings)
     {
-        if (c.hasPermission(user, AddUserPermission.class))
+        if (c.hasPermission(user, AddUserPermission.class) || user.hasRootPermission(TroubleshooterPermission.class))
         {
             LimitActiveUsersSettings settings = new LimitActiveUsersSettings();
             int activeUsers = getActiveUserCount();

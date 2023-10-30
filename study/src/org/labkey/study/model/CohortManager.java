@@ -57,6 +57,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static org.labkey.api.util.PageFlowUtil.jsString;
+
 /**
  * User: adam
  * Date: May 13, 2009
@@ -267,14 +269,12 @@ public class CohortManager
 
     private String getSelectionScript(String dataRegionName, Pair<FieldKey, String> filterColValue)
     {
-        StringBuilder script = new StringBuilder();
-        script.append("(function() { ")
-              .append(DataRegion.getJavaScriptObjectReference(dataRegionName)).append("._replaceAdvCohortFilter(")
-              .append("LABKEY.Filter.create('")
-              .append(filterColValue.first).append("', '").append(filterColValue.second)
-              .append("', LABKEY.Filter.Types.EQUAL)")
-              .append("); })(); ");
-        return script.toString();
+        return "(function() { " +
+                DataRegion.getJavaScriptObjectReference(dataRegionName) + "._replaceAdvCohortFilter(" +
+                "LABKEY.Filter.create(" +
+                jsString(filterColValue.first.toString()) + ", " + jsString(filterColValue.second) +
+                ", LABKEY.Filter.Types.EQUAL)" +
+                "); })(); ";
     }
 
     public void clearParticipantCohorts(Study study)

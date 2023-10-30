@@ -35,6 +35,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.BadRequestException;
@@ -312,8 +313,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             String contentType = getViewContext().getRequest().getContentType();
             if (null != contentType)
             {
-                if (contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
-                {
+                if (MimeMap.DEFAULT.isJsonContentTypeHeader(contentType))
+                    {
                     _reqFormat = ApiResponseWriter.Format.JSON;
                     return populateJsonForm();
                 }

@@ -35,7 +35,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ConfigurationException;
@@ -194,9 +194,9 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             Collections.addAll(permissionsRequired, requiresAllOf.value());
         }
 
-        // Special handling for admin console actions to support TroubleShooter role.
+        // Special handling for admin console actions to support Troubleshooter role.
         // Only users with the specified permission (AdminPermission.class by default) can POST,
-        // but those with AdminReadPermission (i.e., TroubleShooters) can GET.
+        // but those with AdminReadPermission (i.e., Troubleshooters) can GET.
         AdminConsoleAction adminConsoleAction = actionClass.getAnnotation(AdminConsoleAction.class);
         boolean isAdminConsoleAction = null != adminConsoleAction;
         if (isAdminConsoleAction)
@@ -207,7 +207,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             if (isPost())
                 permissionsRequired.add(adminConsoleAction.value());
             else
-                permissionsRequired.add(TroubleShooterPermission.class);
+                permissionsRequired.add(TroubleshooterPermission.class);
         }
 
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
