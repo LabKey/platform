@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "2.385.0-fb-eln-issues.8",
+    "@labkey/components": "1.82.0-fb-eln-issues.7",
     "@labkey/themes": "1.3.2"
   },
   "devDependencies": {
