@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
@@ -30,6 +31,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -135,6 +137,8 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         return true;
     }
 
+    protected static final Logger LOG = LogHelper.getLogger(UsageReportingLevel.class, "Timer for sending metric updates");
+
     private static Timer _timer;
     private static HtmlString _upgradeMessage;
 
@@ -201,6 +205,8 @@ public enum UsageReportingLevel implements SafeToRenderEnum
 
     private static class UsageTimerTask extends TimerTask
     {
+        private static boolean _running = false;
+
         private final UsageReportingLevel _level;
 
         UsageTimerTask(UsageReportingLevel level)
@@ -211,20 +217,33 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         @Override
         public void run()
         {
-            MothershipReport report = generateReport(_level, MothershipReport.Target.remote);
-            if (report != null)
+            if (_running)
             {
-                report.run();
-                String message = report.getContent();
-                if (StringUtils.isEmpty(message))
+                LOG.info("Usage reporting is already running, skipping");
+                return;
+            }
+            _running = true;
+            try
+            {
+                MothershipReport report = generateReport(_level, MothershipReport.Target.remote);
+                if (report != null)
                 {
-                    _upgradeMessage = null;
+                    report.run();
+                    String message = report.getContent();
+                    if (StringUtils.isEmpty(message))
+                    {
+                        _upgradeMessage = null;
+                    }
+                    else
+                    {
+                        // We assume labkey.org is sending back legal HTML
+                        _upgradeMessage = HtmlString.unsafe(message);
+                    }
                 }
-                else
-                {
-                    // We assume labkey.org is sending back legal HTML
-                    _upgradeMessage = HtmlString.unsafe(message);
-                }
+            }
+            finally
+            {
+                _running = false;
             }
          }
     }
