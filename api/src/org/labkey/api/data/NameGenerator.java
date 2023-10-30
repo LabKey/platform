@@ -1799,7 +1799,7 @@ public class NameGenerator
                         Identifiable seed = LsidManager.get().getObject(parentLsid);
                         ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
 
-                        Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths);
+                        Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths, _user);
 
                         for (Identifiable ancestorObject : ancestorObjects)
                         {
