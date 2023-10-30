@@ -962,7 +962,7 @@ public class NameGenerator
                 if (token instanceof FieldKey fkTok)
                 {
                     int previousErrorCount = _syntaxErrors.size();
-                    List<String> fieldParts = processFieldParts(fkTok, partAncestorOptions, user, dataClassLSIDs, sampleTypeLSIDs);
+                    List<String> fieldParts = processFieldParts(fkTok, partAncestorOptions, user, dataClassLSIDs, sampleTypeLSIDs, importAliases);
                     if (!_syntaxErrors.isEmpty() && _syntaxErrors.size() > previousErrorCount) // if ancestor lookup syntax error, continue
                         continue;
                     List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths = null;
@@ -1227,7 +1227,7 @@ public class NameGenerator
             _previewName = _parsedNameExpression.eval(previewCtx);
     }
 
-    private List<String> processFieldParts(FieldKey fkTok, Map<String, NameExpressionAncestorPartOption> partAncestorOptions, User user, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs)
+    private List<String> processFieldParts(FieldKey fkTok, Map<String, NameExpressionAncestorPartOption> partAncestorOptions, User user, Map<String, String> dataClassLSIDs, Map<String, String> sampleTypeLSIDs, @Nullable Map<String, String> importAliases)
     {
         List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorTypes = new ArrayList<>();
         List<String> allFieldParts = fkTok.getParts();
@@ -1256,9 +1256,9 @@ public class NameGenerator
                     return fieldParts;
                 }
 
-                if (ancestorLevel > 4) // 1 generation of direct parent + 4 extra generations of ancestors
+                if (ancestorLevel > 9) // 1 generation of direct parent + 9 extra generations of ancestors
                 {
-                    _syntaxErrors.add("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
+                    _syntaxErrors.add("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${" + fkTokDisplay + "}.");
                     return fieldParts;
                 }
 
@@ -1271,7 +1271,8 @@ public class NameGenerator
 
         if (!ancestorTypes.isEmpty())
         {
-            if (!hasLookupColumn)
+            if (!hasLookupColumn || fieldParts.size() < 2 /* should be at least 2 parts, /alias/Name */
+                    || fieldParts.size() > 4 /* should be at most 3 parts, for example /MaterialInputs/Type1/Name */)
             {
                 _syntaxErrors.add("Invalid substitution token, lookup column name not specified: ${" + fkTokDisplay + "}.");
                 return fieldParts;
@@ -1283,7 +1284,24 @@ public class NameGenerator
             options.setChildren(false);
             options.setDepth((ancestorTypes.size() + 1) * 2); // (ancestor + 1 direct parent) * 2 (1 for data, 1 for run)
 
-            partAncestorOptions.put(fkTok.encode(), new NameExpressionAncestorPartOption(options, ancestorTypes, allFieldParts.get(allFieldParts.size() - 1)));
+            List<String> parentParts = fieldParts.subList(0, fieldParts.size() - 1); // exclude lookup column
+            String parentTypeName = null;
+            if (parentParts.size() == 1) // alias, or one of Inputs/, MaterialInputs/, DataInputs/
+            {
+                String alias = parentParts.get(0);
+                boolean isParentAlias = importAliases != null && importAliases.containsKey(alias);
+                if (isParentAlias)
+                {
+                    String dataTypeToken = importAliases.get(alias);
+                    parentTypeName = dataTypeToken.substring(dataTypeToken.indexOf("/") + 1);
+                }
+            }
+            else
+            {
+                parentTypeName = parentParts.get(1);
+            }
+
+            partAncestorOptions.put(fkTok.encode(), new NameExpressionAncestorPartOption(options, parentTypeName, ancestorTypes, allFieldParts.get(allFieldParts.size() - 1)));
         }
 
         return fieldParts;
@@ -1753,6 +1771,20 @@ public class NameGenerator
                 NameExpressionAncestorPartOption ancestorOptions = _partAncestorOptions.get(ancestorFieldKey);
                 if (ancestorOptions != null)
                 {
+                    String parentType = ancestorOptions.parentType();
+                    if (!StringUtils.isEmpty(parentType))
+                    {
+                        if (parentObject instanceof ExpMaterial)
+                        {
+                            if (!((ExpMaterial) parentObject).getSampleType().getName().equalsIgnoreCase(parentType))
+                                continue;
+                        }
+                        else if (parentObject instanceof ExpData)
+                        {
+                            if (!((ExpData) parentObject).getDataClass(_user).getName().equalsIgnoreCase(parentType))
+                                continue;
+                        }
+                    }
                     String ancestorKey = ancestorFieldKey + "-" + parentObject.getObjectId();
 
                     ArrayList<Object> ancestorLookupValues = new ArrayList<>();
@@ -1767,7 +1799,7 @@ public class NameGenerator
                         Identifiable seed = LsidManager.get().getObject(parentLsid);
                         ExpLineage lineage = ExperimentService.get().getLineage(_container, _user, seed, options);
 
-                        Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths);
+                        Set<Identifiable> ancestorObjects = lineage.findAncestorObjects(parentObject, ancestorPaths, _user);
 
                         for (Identifiable ancestorObject : ancestorObjects)
                         {
@@ -2966,9 +2998,12 @@ public class NameGenerator
         public void testNameExpressionAncestorLookupFieldErrors()
         {
             validateNameResult("S-${..[MaterialInputs]/name}", withErrors("Invalid substitution token, parent input must be specified for ancestor lookup: ${..[MaterialInputs]/name}."));
-            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
-            validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
-            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}", withErrors("Invalid substitution token, a max of 5 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/name}."));
+            validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}",
+                    withErrors("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${MaterialInputs/CurrentType/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}",
+                    withErrors("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[DataInputs]/..[MaterialInputs]/..[MaterialInputs]/..[MaterialInputs]/name}."));
+            validateNameResult("S-${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/..[MaterialInputs/G6]/..[DataInputs/G7]/..[MaterialInputs/G8]/..[MaterialInputs/G9]/..[MaterialInputs/G10]/name}",
+                    withErrors("Invalid substitution token, a max of 10 generations of ancestor lookup is supported: ${parentAlias/..[MaterialInputs/G1]/..[DataInputs/G2]/..[MaterialInputs/G3]/..[MaterialInputs/G4]/..[MaterialInputs/G5]/..[MaterialInputs/G6]/..[DataInputs/G7]/..[MaterialInputs/G8]/..[MaterialInputs/G9]/..[MaterialInputs/G10]/name}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]}."));
             validateNameResult("S-${MaterialInputs/CurrentType/..[MaterialInputs]/}", withErrors("Invalid substitution token, lookup column name not specified: ${MaterialInputs/CurrentType/..[MaterialInputs]/}."));
 
