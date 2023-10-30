@@ -70,7 +70,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
@@ -698,7 +698,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                     {
                         try
                         {
-                            User elevatedUser = LimitedUser.getElevatedUser(user, Set.of(qcRole.getClass(), readerRole.getClass()));
+                            User elevatedUser = ElevatedUser.getElevatedUser(user, qcRole.getClass(), readerRole.getClass());
 
                             ViewContext viewContext = new ViewContext(context);
                             viewContext.setUser(elevatedUser);

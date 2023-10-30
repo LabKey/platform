@@ -106,6 +106,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final boolean _needsWrapping;
     private final String _onClick;
     private final String _onChange;
+    private final String _onFocus;
     private final String _onKeyUp;
     private final String _placeholder;
     private final boolean _readOnly;
@@ -151,6 +152,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         _name = builder._name;
         _onClick = builder._onClick;
         _onChange = builder._onChange;
+        _onFocus = builder._onFocus;
         _onKeyUp = builder._onKeyUp;
         _placeholder = builder._placeholder;
         _readOnly = builder._readOnly == null ? false : builder._readOnly;
@@ -255,6 +257,11 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     public String getOnChange()
     {
         return _onChange;
+    }
+
+    public String getOnFocus()
+    {
+        return _onFocus;
     }
 
     public String getOnKeyUp()
@@ -601,6 +608,8 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
             pageConfig.addHandler(id, "click", getOnClick());
         if (StringUtils.isNotEmpty(getOnChange()))
             pageConfig.addHandler(id, "change", getOnChange());
+        if (StringUtils.isNotEmpty(getOnFocus()))
+            pageConfig.addHandler(id, "focus", getOnFocus());
         if (StringUtils.isNotEmpty(getOnKeyUp()))
             pageConfig.addHandler(id, "keyup", getOnKeyUp());
     }
@@ -724,6 +733,7 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         private String _name;
         private String _onClick;
         private String _onChange;
+        private String _onFocus;
         private String _onKeyUp;
         private String _placeholder;
         private Boolean _readOnly;
@@ -833,6 +843,12 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         public T onChange(String onChange)
         {
             _onChange = onChange;
+            return (T)this;
+        }
+
+        public T onFocus(String onFocus)
+        {
+            _onFocus = onFocus;
             return (T)this;
         }
 

@@ -27,6 +27,7 @@ import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
@@ -320,7 +321,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         }
 
         Path fileDefault = getDefaultParametersFile(root);
-        Files.createDirectories(fileDefault.getParent());
+        FileUtil.createDirectories(fileDefault.getParent());
 
         try (BufferedWriter writer = Files.newBufferedWriter(fileDefault, Charset.defaultCharset(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE))
         {

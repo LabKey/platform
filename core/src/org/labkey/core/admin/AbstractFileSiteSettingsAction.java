@@ -229,7 +229,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
                                 if (!child.renameTo(newChild))
                                 {
                                     if (!dest.exists())
-                                        dest.mkdirs();
+                                        FileUtil.mkdirs(dest);
 
                                     FileUtil.copyBranch(child, dest);
                                     if (child.isDirectory())

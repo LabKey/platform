@@ -188,4 +188,10 @@ abstract class RuleBasedPasswordValidator implements PasswordValidator
     {
         return _summaryRuleHtml;
     }
+
+    @Override
+    public boolean shouldShowPasswordGuidance()
+    {
+        return false;
+    }
 }

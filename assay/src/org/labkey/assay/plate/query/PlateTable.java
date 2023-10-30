@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -231,6 +232,13 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+
+            // disallow plate size changes
+            if ((row.containsKey("rows") && ObjectUtils.notEqual(oldRow.get("rows"), row.get("rows"))) ||
+                    (row.containsKey("columns") && ObjectUtils.notEqual(oldRow.get("columns"), row.get("columns"))))
+            {
+                throw new QueryUpdateServiceException("Changing the plate size (rows or columns) is not allowed.");
+            }
 
             // if the name is changing, check for duplicates
             String oldName = (String) oldRow.get("Name");

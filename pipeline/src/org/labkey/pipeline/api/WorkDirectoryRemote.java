@@ -140,7 +140,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                         else
                         {
                             dirParent.delete();
-                            dirParent.mkdirs();
+                            FileUtil.mkdirs(dirParent);
                         }
                     }
 
@@ -174,7 +174,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                     else
                     {
                         tempDir.delete();
-                        tempDir.mkdirs();
+                        FileUtil.mkdirs(tempDir);
                     }
                 }
                 catch (IOException e)
