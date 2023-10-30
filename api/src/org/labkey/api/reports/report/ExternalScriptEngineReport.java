@@ -544,7 +544,16 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         File cacheDir = new File(getTempRoot(getDescriptor()), executingContainerId + File.separator + "Report_" + FileUtil.makeLegalName(getDescriptor().getReportId().toString()) + File.separator + CACHE_DIR);
 
         if (!cacheDir.exists())
-            cacheDir.mkdirs();
+        {
+            try
+            {
+                FileUtil.mkdirs(cacheDir);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Unable to create cache directory");
+            }
+        }
 
         return cacheDir;
     }

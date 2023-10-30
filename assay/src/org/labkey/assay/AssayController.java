@@ -101,7 +101,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -944,12 +944,12 @@ public class AssayController extends SpringActionController
             return null;
         }
 
-        private File getTempFolder()
+        private File getTempFolder() throws IOException
         {
             File tempDir = new File(System.getProperty("java.io.tmpdir"));
             File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
-                tempFolder.mkdirs();
+                FileUtil.mkdirs(tempFolder);
 
             return tempFolder;
         }
@@ -1549,7 +1549,7 @@ public class AssayController extends SpringActionController
                 if (form.getRuns().size() == 1)
                 {
                     // construct the audit log query view
-                    User user = LimitedUser.getCanSeeAuditLogUser(getContainer(), getUser());
+                    User user = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
                     ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
                     if (run != null && schema != null)

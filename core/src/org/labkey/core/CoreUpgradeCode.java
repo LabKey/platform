@@ -29,21 +29,21 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.PasswordRule;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.core.login.DbLoginManager;
+import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: Nov 21, 2008
- * Time: 9:57:49 PM
- */
 public class CoreUpgradeCode implements UpgradeCode
 {
     private static final Logger LOG = LogHelper.getLogger(CoreUpgradeCode.class, "Custom core upgrade steps");
@@ -114,5 +114,33 @@ public class CoreUpgradeCode implements UpgradeCode
                         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute(new SQLFragment("UPDATE core.Modules SET Name = ? WHERE Name = ?", newName, oldName));
                     });
             });
+    }
+
+    /**
+     * Called from prop-23.008-23.009.sql to explicitly set the default database authentication properties to the old
+     * defaults (Strength = Weak, Expiration = Never) on servers where the strength property has never been saved. This
+     * ensures that these existing servers don't switch to the new default, Strength = Strong, on upgrade to 23.11.
+     */
+    @SuppressWarnings("unused")
+    public static void saveNullStrengthAsWeak(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        LOG.info("Upgrading an existing installation and checking current password strength");
+        Map<String, String> properties = DbLoginManager.getProperties();
+        String strength = properties.get(DbLoginManager.Key.Strength.toString());
+        if (null == strength)
+        {
+            LOG.info("Password strength has not been saved; setting to Weak, the previous default value.");
+            SaveDbLoginPropertiesForm form = new SaveDbLoginPropertiesForm();
+            form.setStrength(PasswordRule.Weak.toString());
+            form.setExpiration(properties.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
+            DbLoginManager.saveProperties(context.getUpgradeUser(), form);
+        }
+        else
+        {
+            LOG.info("Password strength is currently set to " + strength + "; taking no action.");
+        }
     }
 }
