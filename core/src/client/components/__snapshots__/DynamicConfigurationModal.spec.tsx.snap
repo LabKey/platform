@@ -50,14 +50,15 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       >
          Configuration Status 
       </span>
-      <Memo()
-        active="Enabled"
+      <div
         className="modal__enable-toggle"
-        disabled={false}
-        first="Enabled"
-        onClick={[Function]}
-        second="Disabled"
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="on"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
@@ -257,14 +258,15 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       >
          Configuration Status 
       </span>
-      <Memo()
-        active="Enabled"
+      <div
         className="modal__enable-toggle"
-        disabled={true}
-        first="Enabled"
-        onClick={[Function]}
-        second="Disabled"
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="on"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
@@ -453,14 +455,15 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       >
          Configuration Status 
       </span>
-      <Memo()
-        active="Disabled"
+      <div
         className="modal__enable-toggle"
-        disabled={false}
-        first="Enabled"
-        onClick={[Function]}
-        second="Disabled"
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="off"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
@@ -691,14 +694,15 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       >
          Configuration Status 
       </span>
-      <Memo()
-        active="Disabled"
+      <div
         className="modal__enable-toggle"
-        disabled={true}
-        first="Enabled"
-        onClick={[Function]}
-        second="Disabled"
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="off"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
