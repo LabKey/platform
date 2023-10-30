@@ -68,11 +68,11 @@ public enum PasswordRule
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean isValidToStore(String password1, String password2, User user, @NotNull Collection<String> messages)
+    public boolean isValidToStore(String password1, String password2, User user, boolean changeOperation, @NotNull Collection<String> messages)
     {
         if (StringUtils.isBlank(password1))
         {
-            messages.add("You must enter a new password.");
+            messages.add("You must enter a " + (changeOperation ? "new " : "") + "password.");
             return false;
         }
 
