@@ -28,6 +28,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
@@ -72,7 +73,7 @@ public class FileImporter implements FolderImporter
             FileContentService service = FileContentService.get();
             Path rootFile = service.getFileRootPath(ctx.getContainer(), FileContentService.ContentType.files);
             if (!Files.exists(rootFile))
-                Files.createDirectories(rootFile);
+                FileUtil.createDirectories(rootFile);
             if (Files.isDirectory(rootFile))
             {
                 ctx.getLogger().info("Starting to copy files");
@@ -112,7 +113,7 @@ public class FileImporter implements FolderImporter
         {
             Path realChildDir = realPath.resolve(childDir);
             if (!Files.exists(realChildDir))
-                Files.createDirectories(realChildDir);
+                FileUtil.createDirectories(realChildDir);
             if (!Files.isDirectory(realChildDir))
             {
                 throw new IOException("Failed to create directory " + realChildDir);        // TODO probably unnecessary

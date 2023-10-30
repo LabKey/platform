@@ -196,7 +196,7 @@ public abstract class PipelineProtocolFactory<T extends PipelineProtocol>
                Path archiveDir = getProtocolDir(root, true);
                if (!Files.exists(archiveDir))
                {
-                   Files.createDirectories(archiveDir);
+                   FileUtil.createDirectories(archiveDir);
                }
                else if (Files.isRegularFile(archiveDir))
                {

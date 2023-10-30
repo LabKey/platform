@@ -251,7 +251,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                             Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
                             // Create the @files subdirectory if needed
                             if (!Files.exists(dir))
-                                Files.createDirectories(dir);
+                                FileUtil.createDirectories(dir);
                             return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir)), true);
                         }
                     }
@@ -896,7 +896,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
             dirData = dirData.resolve(form.getProtocolName() + "_" + FileUtil.getTimestamp());
-            if (!Files.exists(Files.createDirectories(dirData)))
+            if (!Files.exists(FileUtil.createDirectories(dirData)))
             {
                 throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
             }

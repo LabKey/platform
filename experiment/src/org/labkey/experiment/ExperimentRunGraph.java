@@ -90,7 +90,7 @@ public class ExperimentRunGraph
             }
             else
             {
-                if (!tempDir.mkdirs())
+                if (!FileUtil.mkdirs(tempDir))
                 {
                     throw new IOException("Unable to create temporary directory for experiment run graphs: " + tempDir.getPath());
                 }
@@ -103,7 +103,7 @@ public class ExperimentRunGraph
     private synchronized static File getFolderDirectory(Container container) throws IOException
     {
         File result = new File(getBaseDirectory(), "Folder" + container.getRowId());
-        result.mkdirs();
+        FileUtil.mkdirs(result);
         for (int i = 0; i < 5; i++)
         {
             if (result.isDirectory())
@@ -117,7 +117,7 @@ public class ExperimentRunGraph
                     Thread.sleep(1);
                 }
                 catch (InterruptedException e) {}
-                result.mkdirs();
+                FileUtil.mkdirs(result);
             }
         }
         if (!result.isDirectory())
