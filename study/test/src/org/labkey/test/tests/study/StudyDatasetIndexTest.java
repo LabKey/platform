@@ -30,6 +30,8 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -71,7 +73,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
     protected void doVerifySteps() throws Exception
     {
         viewRawTableMetadata("DEM-1");
-        verifyStandardDatasetIndices("dem_minus_1_");
+        verifyTableIndices("dem_minus_1_", Collections.emptyList());
 
         // verify column specific index
         assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
@@ -96,9 +98,7 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         reloadStudyFromZip(STUDY_WITH_DATASET_SHARED_INDEX, true, 1, false);
 
         viewRawTableMetadata("DEM-1");
-        verifyStandardDatasetIndices("dem_minus_1_");
-        assertTextPresentCaseInsensitive("dem_minus_1_indexedColumn");
-        assertTextPresentCaseInsensitive("dem_minus_1_sharedColumn");
+        verifyTableIndices("dem_minus_1_", List.of("indexedcolumn", "sharedcolumn"));
 
         int colNameIndex = 0;
         int colSizeIndex = 3;
@@ -122,40 +122,48 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
         viewRawTableMetadata("DEM-2");
         assertTextNotPresent("indexedColumn");
-        verifyStandardDatasetIndices("dem_minus_2_");
-        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
+        verifyTableIndices("dem_minus_2_", List.of("sharedcolumn"));
 
-        // add a new field to the dataset and set it to have a unique constraint
-        goBack();
-        DatasetDesignerPage datasetDesignerPage = goToEditDatasetDefinition("DEM-2");
+        // create a new dataset with 2 fields that initially have a unique constraint
+        DatasetDesignerPage datasetDesignerPage = goToManageStudy().manageDatasets().clickCreateNewDataset();
+        datasetDesignerPage.setName("DEM-3");
+        String fieldName1 = "field Name1";
+        String fieldName2 = "fieldName_2";
+        String fieldName3 = "FieldName@3";
         datasetDesignerPage.getFieldsPanel()
-                .addField("uniqueColumn test")
+                .addField(fieldName1)
                 .expand()
                 .clickAdvancedSettings()
                 .setUniqueConstraint(true)
                 .apply();
-        datasetDesignerPage.clickSave();
-
-        viewRawTableMetadata("DEM-2");
-        verifyStandardDatasetIndices("dem_minus_2_");
-        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
-        assertTextPresentCaseInsensitive("dem_minus_2_uniquecolumn_test");
-
-        // go back to edit the dataset definition and verify that the unique constraint can be removed
-        goBack();
-        datasetDesignerPage = goToEditDatasetDefinition("DEM-2");
         datasetDesignerPage.getFieldsPanel()
-                .getField("uniqueColumn test")
+                .addField(fieldName2)
                 .expand()
                 .clickAdvancedSettings()
-                .setUniqueConstraint(false)
+                .setUniqueConstraint(true)
+                .apply();
+        datasetDesignerPage.getFieldsPanel()
+                .addField(fieldName3);
+        datasetDesignerPage.clickSave();
+
+        viewRawTableMetadata("DEM-3");
+        verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_2"));
+        assertTextNotPresent("dem_minus_3_fieldname_3");
+
+        // remove a field unique constraint and add a new one
+        goBack();
+        datasetDesignerPage = goToEditDatasetDefinition("DEM-3");
+        datasetDesignerPage.getFieldsPanel()
+                .getField(fieldName2).expand().clickAdvancedSettings().setUniqueConstraint(false)
+                .apply();
+        datasetDesignerPage.getFieldsPanel()
+                .getField(fieldName3).expand().clickAdvancedSettings().setUniqueConstraint(true)
                 .apply();
         datasetDesignerPage.clickSave();
 
-        viewRawTableMetadata("DEM-2");
-        verifyStandardDatasetIndices("dem_minus_2_");
-        assertTextPresentCaseInsensitive("dem_minus_2_sharedColumn");
-        assertTextNotPresent("dem_minus_2_uniquecolumn_test");
+        viewRawTableMetadata("DEM-3");
+        verifyTableIndices("dem_minus_3_", List.of("field_name1", "fieldname_3"));
+        assertTextNotPresent("dem_minus_3_fieldname_2");
     }
 
     private DatasetDesignerPage goToEditDatasetDefinition(String datasetName)
@@ -174,9 +182,18 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         clickAndWait(Locator.linkWithText("view raw table metadata"));
     }
 
-    private void verifyStandardDatasetIndices(String prefix)
+    private void verifyTableIndices(String prefix, List<String> indexSuffixes)
     {
-        List<String> suffixes  = List.of("lsid", "participantid_sequencenum__key", "pk", "participantid_date", "date", "participantsequencenum", "qcstate");
+        List<String> suffixes  = new ArrayList<>();
+        suffixes.add("lsid");
+        suffixes.add("participantid_sequencenum__key");
+        suffixes.add("pk");
+        suffixes.add("participantid_date");
+        suffixes.add("date");
+        suffixes.add("participantsequencenum");
+        suffixes.add("qcstate");
+        suffixes.addAll(indexSuffixes);
+
         for (String suffix : suffixes)
             assertTextPresentCaseInsensitive(prefix + suffix);
     }

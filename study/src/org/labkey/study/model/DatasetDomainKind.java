@@ -37,6 +37,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -496,7 +497,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if (def.getDomain() != null)
             {
                 List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
-                List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
@@ -518,9 +518,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
 
-                    newDomain.setPropertyIndices(indices, lowerReservedNames);
-
                     newDomain.save(user);
+
+                    List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+                    newDomain.setPropertyIndices(indices, lowerReservedNames);
+                    StorageProvisioner.get().addMissingRequiredIndices(newDomain);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
