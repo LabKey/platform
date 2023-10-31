@@ -135,7 +135,6 @@
             </column>
             <column columnName="RuntimeOS"/>
             <column columnName="JavaVersion"/>
-            <column columnName="EnterprisePipelineEnabled"/>
             <column columnName="UserCount"/>
             <column columnName="RecentUserCount"/>
             <column columnName="ProjectCount"/>

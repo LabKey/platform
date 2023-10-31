@@ -332,7 +332,6 @@ public class MothershipManager
         session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), form.getRecentUserCount()));
         session.setUserCount(getBestInteger(session.getUserCount(), form.getUserCount()));
         session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), form.getAdministratorEmail()));
-        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), form.isEnterprisePipelineEnabled()));
         session.setDistribution(getBestString(session.getDistribution(), form.getDistribution()));
         session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), form.getUsageReportingLevel()));
         session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), form.getExceptionReportingLevel()));
