@@ -26,6 +26,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.pipeline.PipelineStatusDetailsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
@@ -132,18 +133,21 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         String fieldName3 = "FieldName@3";
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName1)
+                .setType(FieldDefinition.ColumnType.Integer)
                 .expand()
                 .clickAdvancedSettings()
                 .setUniqueConstraint(true)
                 .apply();
         datasetDesignerPage.getFieldsPanel()
                 .addField(fieldName2)
+                .setType(FieldDefinition.ColumnType.DateAndTime)
                 .expand()
                 .clickAdvancedSettings()
                 .setUniqueConstraint(true)
                 .apply();
         datasetDesignerPage.getFieldsPanel()
-                .addField(fieldName3);
+                .addField(fieldName3)
+                .setType(FieldDefinition.ColumnType.Boolean);
         datasetDesignerPage.clickSave();
 
         viewRawTableMetadata("DEM-3");
