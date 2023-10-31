@@ -294,9 +294,10 @@ public class DefaultValueServiceImpl implements DefaultValueService
         // get two expressions to delete all user-based defaults in this container:
         String userParentLsid = getUserDefaultsWildcardLSID(container, domain, true);
         String userScopesLsid = getUserDefaultsWildcardLSID(container, domain, false);
-        StringBuilder sql = new StringBuilder("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ?");
-        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userParentLsid), container, false);
-        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userScopesLsid), container, false);
+        // Do a single call with both LIKE filters since it's faster than two separate calls
+        SQLFragment sql = new SQLFragment("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ? OR ObjectURI LIKE ?",
+                userParentLsid, userScopesLsid);
+        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), sql, container, false);
     }
 
     @Override

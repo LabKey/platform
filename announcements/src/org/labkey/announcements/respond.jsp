@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="java.util.Arrays" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -85,16 +86,19 @@ else
 
 if (settings.hasStatus())
 {
+    addHandler("status", "change", "LABKEY.setDirty(true);");
     %><tr><td class="labkey-form-label">Status</td><td colspan="2"><%=bean.statusSelect%></td></tr><%
 }
 
 if (settings.hasAssignedTo())
 {
+    addHandler("assignedTo", "change", "LABKEY.setDirty(true);");
     %><tr><td class="labkey-form-label">Assigned&nbsp;To</td><td colspan="2"><%=bean.assignedToSelect%></td></tr><%
 }
 
 if (settings.hasMemberList())
 {
+    addHandler("memberListInput", "change", "LABKEY.setDirty(true);");
     %><tr><td class="labkey-form-label">Notify</td><td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="40" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td><td><i><%
     if (settings.isSecureWithoutEmailOn())
     {
@@ -109,7 +113,7 @@ if (settings.hasMemberList())
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input type="text" size="23" name="expires" value='<%=form.get("expires")%>' /></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input type="text" size="23" name="expires" value='<%=form.get("expires")%>' onChange="LABKEY.setDirty(true);"/></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>
@@ -126,7 +130,8 @@ if (settings.hasExpires())
             </ul>
             <div class="tab-content" id="messageTabsContent">
                 <div class="tab-pane active" id="source" role="tabpanel" aria-labelledby="source-tab">
-                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;" onChange="LABKEY.setDirty(true);"><%=h(form.get("body"))%></textarea>
+                    <% addHandler("body", "change", "LABKEY.setDirty(true);"); %>
+                    <textarea cols='120' rows='15' id="body" name='body' style="width: 100%;"><%=h(form.get("body"))%></textarea>
                 </div>
                 <div class="tab-pane message-preview form-control" id="preview" role="tabpanel" aria-labelledby="preview-tab">
                 </div>
@@ -140,17 +145,15 @@ if (settings.hasFormatPicker())
 %><tr>
     <td class="labkey-form-label">Render As</td>
     <td colspan="2">
-        <select name="rendererType" id="rendererType" onChange="LABKEY.setDirty(true);">
-              <%
-                  for (WikiRendererType type : bean.renderers)
-                  {
-                      String displayName = type.getDisplayName();
-                  %>
-                      <option<%=selected(type == bean.currentRendererType)%> value="<%=type%>"><%=h(displayName)%></option>
-                  <%
-              }%>
-        </select>
-    </td>
+        <%=select()
+            .name("rendererType")
+            .id("rendererType")
+            .addOptions(Arrays.stream(bean.renderers).map(WikiRendererType::getDisplayName))
+            .selected(bean.currentRendererType.getDisplayName())
+            .onChange("LABKEY.setDirty(true);")
+            .className(null)
+        %>
+     </td>
 </tr>
 <%}%>
     <tr>

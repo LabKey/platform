@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -117,7 +118,7 @@ public class NetworkDrive
     /**
      * @return whether the file exists, mounting the drive if needed
      */
-    public static boolean exists(File f)
+    public static boolean exists(@Nullable File f)
     {
         if (f == null)
             return false;

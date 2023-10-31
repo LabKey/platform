@@ -48,7 +48,7 @@ import java.util.List;
 public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdentifiableBaseImpl<Type> implements ExpRunItem
 {
     private ExpProtocolApplicationImpl _sourceApp;
-    private List<ExpProtocolApplication> _successorAppList;
+    private List<ExpProtocolApplicationImpl> _successorAppList;
     private List<Integer> _successorRunIdList = null;
 
     // For serialization
@@ -73,7 +73,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     }
 
     @Override
-    public List<ExpProtocolApplication> getSuccessorApps()
+    public List<ExpProtocolApplicationImpl> getSuccessorApps()
     {
         if (null == _successorAppList)
             throw new IllegalStateException("successorAppList not populated");
@@ -102,7 +102,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         _successorRunIdList.add(runId);
     }
 
-    public void setSuccessorAppList(ArrayList<ExpProtocolApplication> successorAppList)
+    public void setSuccessorAppList(List<ExpProtocolApplicationImpl> successorAppList)
     {
         ensureUnlocked();
         _successorAppList = successorAppList;

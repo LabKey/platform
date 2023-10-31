@@ -10,7 +10,6 @@ import org.labkey.api.util.Pair;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,26 +21,26 @@ import java.util.stream.Collectors;
  */
 public class ElevatedUser extends ClonedUser
 {
-    private ElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
+    private ElevatedUser(User user, Set<Role> rolesToAdd)
     {
-        super(user, new WrappedImpersonationContext(user.getImpersonationContext(), getRoles(rolesToAdd)));
+        super(user, new WrappedImpersonationContext(user.getImpersonationContext(), rolesToAdd));
     }
 
     /**
      * Wrap the supplied user and unconditionally add the supplied role(s). Always returns an ElevatedUser.
      */
     @SafeVarargs
-    public static ElevatedUser getElevatedUser(User user, Class<? extends Role>... rolesToAdd)
+    public static ElevatedUser getElevatedUser(User user, Class<? extends Role>... roleClassesToAdd)
     {
-        return new ElevatedUser(user, Arrays.stream(rolesToAdd).filter(Objects::nonNull).collect(Collectors.toSet()));
+        return new ElevatedUser(user, getRoles(roleClassesToAdd));
     }
 
     /**
      * Wrap the supplied user and unconditionally add the supplied role(s). Always returns an ElevatedUser.
      */
-    public static ElevatedUser getElevatedUser(User user, Collection<Class<? extends Role>> rolesToAdd)
+    public static ElevatedUser getElevatedUser(User user, Collection<Class<? extends Role>> roleClassesToAdd)
     {
-        return new ElevatedUser(user, rolesToAdd);
+        return new ElevatedUser(user, getRoles(roleClassesToAdd));
     }
 
     /**
@@ -61,7 +60,7 @@ public class ElevatedUser extends ClonedUser
     }
 
     /**
-     * Ensure the supplied user can read the audit log
+     * Ensure the supplied user can read the audit log in all containers
      */
     public static User ensureCanSeeAuditLogRole(Container container, User user)
     {

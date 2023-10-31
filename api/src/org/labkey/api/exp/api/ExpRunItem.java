@@ -68,7 +68,7 @@ public interface ExpRunItem extends ExpObject, Identifiable
 
     void setRun(ExpRun run);
 
-    List<ExpProtocolApplication> getSuccessorApps();
+    List<? extends ExpProtocolApplication> getSuccessorApps();
 
     List<ExpRun> getSuccessorRuns();
 
