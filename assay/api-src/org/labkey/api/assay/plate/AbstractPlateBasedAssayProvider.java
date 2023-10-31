@@ -138,7 +138,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         if (!(provider instanceof AbstractPlateBasedAssayProvider))
             return null;
 
-        Map<ExpMaterial, String> materials = run.getMaterialInputs();
+        Map<? extends ExpMaterial, String> materials = run.getMaterialInputs();
         if (materials.isEmpty())
             return null;
 
@@ -146,9 +146,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
         ExpRun sampleDerivationRun = firstMaterial.getRun();
 
-        Map<ExpData, String> sampleDerivationInputs = sampleDerivationRun.getDataInputs();
+        Map<? extends ExpData, String> sampleDerivationInputs = sampleDerivationRun.getDataInputs();
 
-        for (Map.Entry<ExpData, String> entry : sampleDerivationInputs.entrySet())
+        for (Map.Entry<? extends ExpData, String> entry : sampleDerivationInputs.entrySet())
         {
             if (SAMPLE_METADATA_INPUT_ROLE.equals(entry.getValue()))
                 return entry.getKey().getFile();

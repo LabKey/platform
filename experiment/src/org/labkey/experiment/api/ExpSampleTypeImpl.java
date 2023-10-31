@@ -232,7 +232,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (_object.getNameExpression() != null)
             throw new IllegalArgumentException("Can't set both a name expression and idCols");
 
-        if (propertyURIs.size() > 0)
+        if (!propertyURIs.isEmpty())
         {
             _object.setIdCol1(getPropertyOrThrow(propertyURIs.get(0)).getPropertyURI());
             if (propertyURIs.size() > 1)
@@ -696,7 +696,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         if (cf != null)
-            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
@@ -708,7 +708,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         if (cf != null)
-            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
         TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
         return new TableSelector(tInfo, tInfo.getPkColumns(), filter, null).getRowCount();
@@ -725,7 +725,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
         filter.addCondition(FieldKey.fromParts("Name"), name);
         if (cf != null)
-            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
         Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
         if (material == null)
@@ -773,7 +773,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -855,7 +855,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -893,7 +893,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public TableInfo getTinfo()
     {
         Domain d = getDomain();
-        DomainKind dk = d.getDomainKind();
+        DomainKind<?> dk = d.getDomainKind();
         if (null == dk || null == dk.getStorageSchemaName())
             return null;
         return StorageProvisioner.createTableInfo(d);

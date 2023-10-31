@@ -1017,7 +1017,7 @@ public class OntologyManager
 
         try
         {
-            // if uris is long, split it up
+            // if it's a long list, split it up
             if (objectIds.length > 1000)
             {
                 int countBatches = objectIds.length / 1000;
@@ -1033,43 +1033,45 @@ public class OntologyManager
                 return;
             }
 
-            StringBuilder in = new StringBuilder();
-
-            for (int objectId : objectIds)
-            {
-                in.append(objectId);
-                in.append(", ");
-            }
-
-            in.setLength(in.length() - 2);
+            SQLFragment objectIdInClause = new SQLFragment();
+            getExpSchema().getSqlDialect().appendInClauseSql(objectIdInClause, Arrays.stream(objectIds).boxed().toList());
 
             if (deleteOwnedObjects)
             {
                 // NOTE: owned objects should never be in a different container than the owner, that would be a problem
-                StringBuilder sqlDeleteOwnedProperties = new StringBuilder();
-                sqlDeleteOwnedProperties.append("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
-                sqlDeleteOwnedProperties.append(in);
-                sqlDeleteOwnedProperties.append("))");
+                SQLFragment sqlDeleteOwnedProperties = new SQLFragment("DELETE FROM ")
+                    .append(getTinfoObjectProperty())
+                    .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                    .append(getTinfoObject())
+                    .append(" WHERE Container = ? AND OwnerObjectId ")
+                    .add(c)
+                    .append(objectIdInClause)
+                    .append(")");
+
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
 
-                StringBuilder sqlDeleteOwnedObjects = new StringBuilder();
-                sqlDeleteOwnedObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
-                sqlDeleteOwnedObjects.append(in);
-                sqlDeleteOwnedObjects.append(")");
+                SQLFragment sqlDeleteOwnedObjects = new SQLFragment("DELETE FROM ")
+                    .append(getTinfoObject())
+                    .append(" WHERE Container = ? AND OwnerObjectId ")
+                    .add(c)
+                    .append(objectIdInClause);
+
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedObjects);
             }
 
             if (deleteObjectProperties)
             {
-                deleteProperties(c, objectIds);
+                deleteProperties(c, objectIdInClause);
             }
 
             if (deleteObjects)
             {
-                StringBuilder sqlDeleteObjects = new StringBuilder();
-                sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
-                sqlDeleteObjects.append(in);
-                sqlDeleteObjects.append(")");
+                SQLFragment sqlDeleteObjects = new SQLFragment("DELETE FROM ")
+                    .append(getTinfoObject())
+                    .append(" WHERE Container = ? AND ObjectId ")
+                    .add(c)
+                    .append(objectIdInClause);
+
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
             }
         }
@@ -2054,23 +2056,28 @@ public class OntologyManager
     /**
      * Delete properties owned by the objects.
      */
-    public static void deleteProperties(Container objContainer, int... objectIDs)
+    public static void deleteProperties(Container objContainer, int objectId)
     {
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("ObjectID"), Arrays.asList(ArrayUtils.toObject(objectIDs))));
-        String[] objectURIs = new TableSelector(getTinfoObject(), Collections.singleton("ObjectURI"), filter, null).getArray(String.class);
+        deleteProperties(objContainer, new SQLFragment(" = ?", objectId));
+    }
+    public static void deleteProperties(Container objContainer, SQLFragment objectIdClause)
+    {
+        SQLFragment objectUriSql = new SQLFragment("SELECT ObjectURI FROM ")
+                .append(getTinfoObject(), "o")
+                .append(" WHERE ObjectId ");
+        objectUriSql.append(objectIdClause);
 
-        StringBuilder in = new StringBuilder();
-        for (Integer objectID : objectIDs)
-        {
-            in.append(objectID);
-            in.append(",");
-        }
-        in.setLength(in.length() - 1);
+        List<String> objectURIs = new SqlSelector(getExpSchema(), objectUriSql).getArrayList(String.class);
 
-        StringBuilder sqlDeleteProperties = new StringBuilder();
-        sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(objContainer.getId()).append("' AND ObjectId IN (");
-        sqlDeleteProperties.append(in);
-        sqlDeleteProperties.append("))");
+        SQLFragment sqlDeleteProperties = new SQLFragment("DELETE FROM ")
+                .append(getTinfoObjectProperty())
+                .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                .append(getTinfoObject())
+                .append(" WHERE Container = ? AND ObjectId ")
+                .add(objContainer)
+                .append(objectIdClause)
+                .append(")");
+
         new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
         for (String uri : objectURIs)

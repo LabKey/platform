@@ -280,13 +280,13 @@ public class XarExporter
             xRun.setReplacedByRunLSID(_relativizedLSIDs.relativize(replacedByRun.getLSID()));
         }
 
-        Set<Map.Entry<ExpData, String>> inputData = run.getDataInputs().entrySet();
+        Set<? extends Map.Entry<? extends ExpData, String>> inputData = run.getDataInputs().entrySet();
         ExperimentArchiveType.StartingInputDefinitions inputDefs = _archive.getStartingInputDefinitions();
-        if (inputData.size() > 0 && inputDefs == null)
+        if (!inputData.isEmpty() && inputDefs == null)
         {
             inputDefs = _archive.addNewStartingInputDefinitions();
         }
-        for (Map.Entry<ExpData, String> entry : inputData)
+        for (Map.Entry<? extends ExpData, String> entry : inputData)
         {
             ExpData data = entry.getKey();
             if (!_inputDataLSIDs.contains(data.getLSID()))

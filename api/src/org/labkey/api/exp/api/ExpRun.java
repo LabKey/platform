@@ -66,10 +66,10 @@ public interface ExpRun extends ExpObject, Identifiable
     String getEntityId();
 
     /** @return map from material object to role name. Multiple inputs might use the same role name, hence the direction of the map */
-    @NotNull Map<ExpMaterial, String> getMaterialInputs();
+    @NotNull Map<? extends ExpMaterial, String> getMaterialInputs();
 
     /** @return map from data object to role name. Multiple inputs might use the same role name, hence the direction of the map */
-    Map<ExpData, String> getDataInputs();
+    Map<? extends ExpData, String> getDataInputs();
 
     /**
      * @return all of the materials objects marked as outputs of this run.

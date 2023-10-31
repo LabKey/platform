@@ -3716,7 +3716,7 @@ public class ExperimentController extends SpringActionController
         protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
-            if (sampleTypes.size() == 0)
+            if (sampleTypes.isEmpty())
             {
                 throw new NotFoundException("No sample types found for ids provided.");
             }
@@ -3807,9 +3807,9 @@ public class ExperimentController extends SpringActionController
 
         private List<? extends ExpRun> getRuns(List<ExpSampleType> sampleTypes)
         {
-            if (sampleTypes.size() > 0)
+            if (!sampleTypes.isEmpty())
             {
-                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[sampleTypes.size()]));
+                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[0]));
                 return ExperimentService.get().runsDeletedWithInput(runArray);
             }
             else
@@ -3964,7 +3964,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportSamplesAction extends AbstractExpDataImportAction
+    public static class ImportSamplesAction extends AbstractExpDataImportAction
     {
         DataIteratorContext _context;
 
@@ -4155,7 +4155,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportDataAction extends AbstractExpDataImportAction
+    public static class ImportDataAction extends AbstractExpDataImportAction
     {
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
@@ -4485,7 +4485,7 @@ public class ExperimentController extends SpringActionController
     private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable String fileName)
             throws ExperimentException, IOException, PipelineValidationException
     {
-        return exportXAR(selection, (LSIDRelativizer)null, (XarExportType)null, fileName);
+        return exportXAR(selection, null, null, fileName);
     }
 
     private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable LSIDRelativizer lsidRelativizer, @Nullable XarExportType exportType, @Nullable String fileName)
@@ -4497,7 +4497,7 @@ public class ExperimentController extends SpringActionController
         if (exportType == null)
             exportType = XarExportType.BROWSER_DOWNLOAD;
 
-        if (fileName == null || fileName.equals(""))
+        if (fileName == null || fileName.isEmpty())
             fileName = "export.xar";
 
         fileName = fixupExportName(fileName);
@@ -4789,7 +4789,7 @@ public class ExperimentController extends SpringActionController
                 runs.add(run);
             }
         }
-        exp.addRuns(getUser(), runs.toArray(new ExpRun[runs.size()]));
+        exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
     }
 
 

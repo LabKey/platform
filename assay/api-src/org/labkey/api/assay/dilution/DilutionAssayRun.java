@@ -239,7 +239,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     {
         Map<String, Map<PropertyDescriptor, Object>> samplePropertyMap = new HashMap<>();
 
-        Collection<ExpMaterial> inputs = _run.getMaterialInputs().keySet();
+        Collection<? extends ExpMaterial> inputs = _run.getMaterialInputs().keySet();
         Domain sampleDomain = _provider.getSampleWellGroupDomain(_protocol);
 
         for (ExpMaterial material : inputs)
