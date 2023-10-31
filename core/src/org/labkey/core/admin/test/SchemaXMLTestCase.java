@@ -35,6 +35,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.admin.AdminController;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.TableType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,18 +88,41 @@ public class SchemaXMLTestCase extends Assert
         }
 
         StringBuilder typeErrors = new StringBuilder();
+        var xmlTableMap = schema.getTableXmlMap();
 
         for (var tableName : schema.getTableNames())
         {
             SchemaTableInfo ti = schema.getTable(tableName);
+            var xmlColMap = new CaseInsensitiveHashMap<ColumnType>();
+            TableType xmlTable = xmlTableMap.get(ti.getMetaDataName());
+            if (null != xmlTable)
+            {
+                for (ColumnType ct : xmlTable.getColumns().getColumnArray())
+                    xmlColMap.put(ct.getColumnName(), ct);
+            }
+
             for (ColumnInfo ci : ti.getColumns())
             {
                 if ( DatabaseTableType.NOT_IN_DB == ti.getTableType())
                     continue;
                 String sqlTypeName = ci.getSqlTypeName();
                 var jdbcType = ci.getJdbcType();
-                if ("OTHER".equals(sqlTypeName) || JdbcType.OTHER == jdbcType)
-                    typeErrors.append("%s.%s: getSqlTypeName() returned '%s', getSqlTypeInt() returned '%s'<br>".formatted(ti.getName(), ci.getColumnName(), sqlTypeName, jdbcType.name()));
+                if ("OTHER".equalsIgnoreCase(sqlTypeName) || JdbcType.OTHER == jdbcType)
+                {
+                    // postgres "interval" really is OTHER (for now at least), see Fermentation.Timezones
+                    if ("INTERVAL".equalsIgnoreCase(sqlTypeName))
+                        /* pass; this is fine */;
+                    else
+                        typeErrors.append("%s.%s: getSqlTypeName() returned '%s', getJdbcType() returned '%s'<br>".formatted(ti.getName(), ci.getColumnName(), sqlTypeName, jdbcType.name()));
+                }
+                if ("TIMESTAMP".equalsIgnoreCase(sqlTypeName))
+                {
+                    // TIMESTAMP is a legal type, however we discourage its use in xml schema because of the non-standard SQL Server usage of the name
+                    var colType = xmlColMap.get(ci.getColumnName());
+                    var xmlDatatype = null != colType && colType.isSetDatatype() ? colType.getDatatype() : null;
+                    if ("TIMESTAMP".equalsIgnoreCase(xmlDatatype))
+                        typeErrors.append("%s.%s: use DATETIME rather than TIMESTAMP in schema xml file<br>".formatted(ti.getName(), ci.getColumnName()));
+                }
             }
         }
         assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
