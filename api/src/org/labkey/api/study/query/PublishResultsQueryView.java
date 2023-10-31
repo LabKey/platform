@@ -476,7 +476,7 @@ public class PublishResultsQueryView extends QueryView
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
-            return includeTimestamp ? DateUtil.formatDateTimeISO8601(result) : DateUtil.formatDateISO8601(result);
+            return includeTimestamp ? DateUtil.formatIsoDateShortTime(result) : DateUtil.formatIsoDate(result);
         }
 
         public Container getUserTargetStudy(RenderContext ctx)
