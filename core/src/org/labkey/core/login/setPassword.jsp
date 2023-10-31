@@ -43,7 +43,7 @@
     SetPasswordBean bean = ((JspView<SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrorsStr("form");
     int gaugeWidth = 350;
-    int gaugeHeight = 40;
+    int gaugeHeight = 30;
     String firstPasswordId = null;
     PasswordRule rule = DbLoginManager.getPasswordRule();
 %>
@@ -82,10 +82,10 @@
 
             for (NamedObject input : bean.passwordInputs) {
                 boolean firstPassword = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject());
-                HtmlString contextContent = firstPassword ? rule.getSummaryRuleHtml() : null;
+                HtmlString contextContent = firstPassword ? rule.getSummaryRuleHtml() : HtmlString.EMPTY_STRING;
         %>
             <p>
-                <%=h(contextContent)%>
+                <%=contextContent%>
             </p>
             <label for="<%=h(input.getObject().toString())%>">
                 <%=h(input.getName())%>
@@ -223,7 +223,7 @@
                     // Render text
                     ctx.fillStyle = 2 === colorIndex ? "white" : showPlaceholderText ? "gray" : "black";
                     const textIndex = Math.floor(percent * 6);
-                    const text = showPlaceholderText ?  "Password Guidance" : ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
+                    const text = showPlaceholderText ?  "Password Strength Gauge" : ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
                     ctx.fillText(text, centerX, centerY + textHeightFix);
                     canvas.text = "Password Strength: " + text;
                 })
