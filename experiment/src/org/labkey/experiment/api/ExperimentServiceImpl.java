@@ -4850,6 +4850,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            // Stash the ObjectURIs that we're going to delete after we delete from exp.material
+            final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
+            final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectURI" + suffix;
+            try (Timing ignored = MiniProfiler.step("create object temp table"))
+            {
+                executor.execute(new SQLFragment("CREATE ")
+                        .append(getSchema().getSqlDialect().getTempTableKeyword())
+                        .append(" TABLE ")
+                        .append(objectTempTableName)
+                        .append("(ObjectURI LSIDType NOT NULL PRIMARY KEY)"));
+
+                executor.execute(new SQLFragment("INSERT INTO ")
+                        .append(objectTempTableName)
+                        .append("(ObjectURI) SELECT LSID FROM exp.Material WHERE ")
+                        .append(materialFilterSQL));
+            }
+
             try (Timing ignored = MiniProfiler.step("exp.Material"))
             {
                 SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE ");
@@ -4863,9 +4880,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // delete exp.objects
             try (Timing ignored = MiniProfiler.step("exp.object"))
             {
-                SQLFragment lsidFragFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
-                lsidFragFrag.append(lsidInFrag);
+                SQLFragment lsidFragFrag = new SQLFragment("SELECT ObjectUri FROM ")
+                        .append(objectTempTableName);
                 OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+            }
+
+            // Get rid of our temp table
+            try (Timing ignored = MiniProfiler.step("drop object temp table"))
+            {
+                executor.execute("DROP TABLE " + objectTempTableName);
             }
 
             // recalculate rollup
