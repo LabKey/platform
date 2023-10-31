@@ -230,7 +230,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         Map<String, MetadataLayer> rawPlateMetadata = context.getRawPlateMetadata();
 
         // For now, only one of uploadedData or rawData is used, not both at the same time.
-        Collection<ExpData> dataInputs = Collections.emptyList();
+        Collection<? extends ExpData> dataInputs = Collections.emptyList();
         if (uploadedData.isEmpty() && rawData != null && !rawData.isEmpty())
         {
             dataInputs = run.getDataInputs().keySet();

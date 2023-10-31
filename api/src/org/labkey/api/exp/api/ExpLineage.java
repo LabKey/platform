@@ -194,13 +194,13 @@ public class ExpLineage
         return outputEdges.stream().map(e -> nodes.get(e.child)).collect(Collectors.toSet());
     }
 
-    public Set<Identifiable> findAncestorObjects(ExpRunItem seed, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths)
+    public Set<Identifiable> findAncestorObjects(ExpRunItem seed, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, User user)
     {
         if (!_seeds.contains(seed))
             throw new UnsupportedOperationException();
 
         ExpLineageTree ancestorTree = ExpLineageTree.getAncestorTree(this, seed);
-        return ExpLineageTree.getNodes(ancestorTree, ancestorPaths);
+        return ExpLineageTree.getNodes(ancestorTree, ancestorPaths, user);
     }
 
     /**
@@ -564,7 +564,7 @@ public class ExpLineage
             return new ExpLineageTree(seed, children);
         }
 
-        private static boolean isValidNode(Identifiable expObject, ExpLineageOptions.LineageExpType expType, String cpas)
+        private static boolean isValidNode(Identifiable expObject, ExpLineageOptions.LineageExpType expType, String cpas, User user)
         {
             boolean isValidNode = false;
 
@@ -590,7 +590,7 @@ public class ExpLineage
                             isValidNode = true;
                         else
                         {
-                            ExpDataClass dataClass = data.getDataClass(null);
+                            ExpDataClass dataClass = data.getDataClass(user);
                             if (dataClass != null)
                                 isValidNode = dataClass.getLSID().equals(cpas);
                         }
@@ -603,7 +603,7 @@ public class ExpLineage
             return isValidNode;
         }
 
-        public static Set<Identifiable> getNodes(ExpLineageTree tree, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths)
+        public static Set<Identifiable> getNodes(ExpLineageTree tree, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, User user)
         {
             Set<Identifiable> targetNodes = new HashSet<>();
             if (ancestorPaths == null || ancestorPaths.isEmpty())
@@ -618,8 +618,8 @@ public class ExpLineage
 
             for (ExpLineageTree child : tree.getChildren())
             {
-                if (isValidNode(child.getExpObject(), expType, cpas))
-                    targetNodes.addAll(getNodes(child, ancestorPaths.subList(1, ancestorPaths.size())));
+                if (isValidNode(child.getExpObject(), expType, cpas, user))
+                    targetNodes.addAll(getNodes(child, ancestorPaths.subList(1, ancestorPaths.size()), user));
             }
 
             return targetNodes;
