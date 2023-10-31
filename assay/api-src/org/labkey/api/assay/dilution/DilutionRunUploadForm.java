@@ -81,7 +81,7 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
         if (reRun != null)
         {
             ExpMaterial selected = null;
-            for (Map.Entry<ExpMaterial, String> entry : reRun.getMaterialInputs().entrySet())
+            for (Map.Entry<? extends ExpMaterial, String> entry : reRun.getMaterialInputs().entrySet())
             {
                 if (entry.getValue().equals(scope))
                 {

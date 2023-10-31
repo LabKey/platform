@@ -76,7 +76,7 @@ public class DbLoginManager implements DbLoginService
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
     @Override
-    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
+    public AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException
     {
         String password = StringUtils.trimToEmpty(rawPassword);
         String password2 = StringUtils.trimToEmpty(rawPassword2);
@@ -84,7 +84,7 @@ public class DbLoginManager implements DbLoginService
         Collection<String> messages = new LinkedList<>();
         User user = UserManager.getUser(email);
 
-        if (!getPasswordRule().isValidToStore(password, password2, user, messages))
+        if (!getPasswordRule().isValidToStore(password, password2, user, changeOperation, messages))
         {
             for (String message : messages)
                 errors.reject("setPassword", message);

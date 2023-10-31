@@ -19,7 +19,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 
     protected int getCharacterCountEstimate()
     {
-        return (int)Math.ceil(getRequiredBitsOfEntropy() / (Math.log(26) / BASE2_LOG));
+        return (int)Math.ceil(getRequiredBitsOfEntropy() / (Math.log(52) / BASE2_LOG));
     }
 
     @Override

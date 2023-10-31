@@ -541,20 +541,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         assert getExpSchema().getScope().isTransactionActive();
 
-        SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("CpasType"), source.getLSID());
-
-        MultiValuedMap<String, Integer> byContainer = new ArrayListValuedHashMap<>();
-        TableSelector ts = new TableSelector(SampleTypeServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
-        ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
+        Set<Container> containers = new HashSet<>();
+        if (c == null)
+        {
+            SQLFragment containerSql = new SQLFragment("SELECT DISTINCT Container FROM ");
+            containerSql.append(getTinfoMaterial(), "m");
+            containerSql.append(" WHERE CpasType = ?");
+            containerSql.add(source.getLSID());
+            new SqlSelector(getExpSchema(), containerSql).forEach(String.class, cId -> containers.add(ContainerManager.getForId(cId)));
+        }
+        else
+        {
+            containers.add(c);
+        }
 
         int count = 0;
-        for (Map.Entry<String, Collection<Integer>> entry : byContainer.asMap().entrySet())
+        for (Container toDelete : containers)
         {
-            Container container = ContainerManager.getForId(entry.getKey());
-            // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true, true);
-            count += entry.getValue().size();
+            SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
+            sqlFilter.add(source.getLSID());
+            sqlFilter.add(toDelete);
+            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true);
         }
         return count;
     }
