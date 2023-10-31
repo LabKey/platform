@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
@@ -2501,6 +2502,7 @@ public class UserController extends SpringActionController
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
         private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
+        private boolean _includeInactive; // Should we include inactive members, only used in the 23.11 version of GetUsersWithPermissionsAction
 
         public String getGroup()
         {
@@ -2570,6 +2572,16 @@ public class UserController extends SpringActionController
         {
             _active = active;
         }
+
+        public boolean getIncludeInactive()
+        {
+            return _includeInactive;
+        }
+
+        public void setIncludeInactive(boolean includeInactive)
+        {
+            _includeInactive = includeInactive;
+        }
     }
 
 
@@ -2603,7 +2615,7 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = getProjectGroupUsers(form, response);
+                users = getProjectGroupUsers(form, response, !form.getActive());
             }
             else
             {
@@ -2640,7 +2652,7 @@ public class UserController extends SpringActionController
         }
 
         @NotNull
-        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response)
+        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response, boolean includeDeactivated)
         {
             Container project = getContainer().getProject();
 
@@ -2664,10 +2676,10 @@ public class UserController extends SpringActionController
             response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
             MemberType<User> userMemberType;
-            if (form.getActive())
-                userMemberType = MemberType.ACTIVE_USERS;
-            else
+            if (includeDeactivated)
                 userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
+            else
+                userMemberType = MemberType.ACTIVE_USERS;
 
             // if the allMembers flag is set, then recurse and if group is site users group then return all site users
             Collection<User> users;
@@ -2716,6 +2728,7 @@ public class UserController extends SpringActionController
      */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
+    @ApiVersion(23.10)
     public static class GetUsersWithPermissionsAction extends GetUsersAction
     {
         @Override
@@ -2731,6 +2744,55 @@ public class UserController extends SpringActionController
             }
         }
 
+        /**
+         * The older 23.10 response format does not honor the newer includeDeactivated flag. It only honors the active
+         * flag when requesting users of a group, and ignores the flag (only ever returning active users) when not
+         * requesting a group.
+         */
+        private ApiResponse response2310(ApiSimpleResponse response, GetUsersForm form)
+        {
+            Collection<User> users;
+
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response, !form.getActive()));
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(getContainer(), form.getPermissionClasses());
+            }
+
+            this.setUsersList(form, users, response);
+
+            return response;
+        }
+
+        /**
+         * The 23.11 response format does not honor the active flag, instead it honors the includeDeactivated flag, and
+         * it honors it when requesting users or groups. The flag defaults to false, so by default only active users
+         * will be returned.
+         */
+        private ApiResponse response2311(ApiSimpleResponse response, GetUsersForm form)
+        {
+            boolean includeInactive = form.getIncludeInactive();
+            Collection<User> users;
+
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response, includeInactive));
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(getContainer(), includeInactive, form.getPermissionClasses());
+            }
+
+            this.setUsersList(form, users, response);
+
+            return response;
+        }
+
         @Override
         public ApiResponse execute(GetUsersForm form, BindException errors)
         {
@@ -2743,20 +2805,10 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());
 
-            Collection<User> users;
+            if (getRequestedApiVersion() <= 23.10)
+                return response2310(response, form);
 
-            //if requesting users in a specific group...
-            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
-            {
-                users = filterForPermissions(form, getProjectGroupUsers(form, response));
-            }
-            else
-            {
-                users = SecurityManager.getUsersWithPermissions(container, form.getPermissionClasses());
-            }
-
-            this.setUsersList(form, users, response);
-            return response;
+            return response2311(response, form);
         }
     }
 
