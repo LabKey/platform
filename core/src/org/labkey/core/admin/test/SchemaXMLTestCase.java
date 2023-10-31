@@ -20,15 +20,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.labkey.api.admin.TableXmlUtils;
-import org.labkey.api.admin.sitevalidation.SiteValidationResult;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DOM;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.admin.AdminController;
+import org.labkey.data.xml.ColumnType;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -77,30 +83,24 @@ public class SchemaXMLTestCase extends Assert
                     DOM.A(DOM.at(DOM.Attribute.href, url), "Click here for an XML doc with fixes"),
                     DOM.BR(),
                     mismatches.getResults().stream().map(r -> DOM.DIV(r.getMessage()))
-                    ).renderToString());
+            ).renderToString());
         }
-
-/* TODO: Uncomment once we change to all generic type names in schema .xml files
 
         StringBuilder typeErrors = new StringBuilder();
 
-        for (TableInfo ti : schema.getTables())
+        for (var tableName : schema.getTableNames())
         {
+            SchemaTableInfo ti = schema.getTable(tableName);
             for (ColumnInfo ci : ti.getColumns())
             {
+                if ( DatabaseTableType.NOT_IN_DB == ti.getTableType())
+                    continue;
                 String sqlTypeName = ci.getSqlTypeName();
-
-                if ("OTHER".equals(sqlTypeName))
-                    typeErrors.append(ti.getName()).append(".").append(ci.getColumnName()).append(": getSqlTypeName() returned 'OTHER'<br>");
-
-                int sqlTypeInt = ci.getSqlTypeInt();
-
-                if (Types.OTHER == sqlTypeInt)
-                    typeErrors.append(ti.getName()).append(".").append(ci.getColumnName()).append(": getSqlTypeInt() returned 'Types.OTHER'<br>");
+                var jdbcType = ci.getJdbcType();
+                if ("OTHER".equals(sqlTypeName) || JdbcType.OTHER == jdbcType)
+                    typeErrors.append("%s.%s: getSqlTypeName() returned '%s', getSqlTypeInt() returned '%s'<br>".formatted(ti.getName(), ci.getColumnName(), sqlTypeName, jdbcType.name()));
             }
         }
-
         assertTrue("<div>Type errors in schema " + schema.getName() + ":<br><br>" + typeErrors + "<div>", "".equals(typeErrors.toString()));
-*/
     }
 }

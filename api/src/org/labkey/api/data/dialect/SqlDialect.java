@@ -1371,13 +1371,29 @@ public abstract class SqlDialect
                 StringUtils.equalsIgnoreCase("uniqueidentifier", sqlTypeName);
     }
 
+    public static boolean isJSONType(String sqlTypeName)
+    {
+        return StringUtils.equalsIgnoreCase("json", sqlTypeName) ||
+                StringUtils.equalsIgnoreCase("jsonb", sqlTypeName);
+    }
+
     public JdbcType getJdbcType(int type, String typeName)
     {
         JdbcType t = JdbcType.valueOf(type);
-        if ((t == JdbcType.VARCHAR || t == JdbcType.CHAR) && null != typeName)
+
+        if (null != typeName)
         {
-            if (isGUIDType(typeName))
-                t = JdbcType.GUID;
+            if (t == JdbcType.VARCHAR || t == JdbcType.CHAR)
+            {
+                if (isGUIDType(typeName))
+                    t = JdbcType.GUID;
+            }
+            else if (t == JdbcType.OTHER)
+            {
+                // CONSIDER is it useful to have an internal JSON type?
+                if (isJSONType(typeName))
+                    t = JdbcType.VARCHAR;
+            }
         }
         return t;
     }
