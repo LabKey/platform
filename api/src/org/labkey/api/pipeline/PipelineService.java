@@ -131,6 +131,11 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     boolean isEnterprisePipeline();
 
+    enum JmsType { none, inProcess, external, unknown }
+    @NotNull
+    JmsType getJmsType();
+
+
     @NotNull
     PipelineQueue getPipelineQueue();
 

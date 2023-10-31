@@ -440,7 +440,6 @@ public class MothershipReport implements Runnable
     {
         addParam("runtimeOS", System.getProperty("os.name"));
         addParam("javaVersion", System.getProperty("java.version"));
-        addParam("enterprisePipelineEnabled", PipelineService.get() != null && PipelineService.get().isEnterprisePipeline());
 
         addParam("heapSize", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax() / 1024 / 1024);
 
