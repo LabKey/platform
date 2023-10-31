@@ -137,6 +137,12 @@ public class PlateBasedAssaySampleTypeDomainKind extends SampleTypeDomainKind
     }
 
     @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return false;
+    }
+
+    @Override
     public Domain createDomain(GWTDomain domain, SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         JSONObject args = arguments != null ? arguments.toJSONObject() : null;

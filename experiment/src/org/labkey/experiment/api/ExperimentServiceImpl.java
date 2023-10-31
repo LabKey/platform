@@ -7720,20 +7720,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
 
-        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-        for (GWTIndex index : indices)
-        {
-            // issue 25273: verify that each index column name exists in the domain
-            for (String indexColName : index.getColumnNames())
-            {
-                if (!lowerReservedNames.contains(indexColName.toLowerCase()) && domain.getPropertyByName(indexColName) == null)
-                    throw new IllegalArgumentException("Index column name '" + indexColName + "' does not exist.");
-            }
-
-            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-            propertyIndices.add(propIndex);
-        }
-        domain.setPropertyIndices(propertyIndices);
+        domain.setPropertyIndices(indices, lowerReservedNames);
 
         String importAliasJson = ExperimentJSONConverter.getAliasJson(importAliases, name);
 

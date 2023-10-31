@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -47,12 +48,14 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -70,6 +73,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
@@ -336,6 +340,17 @@ public class DomainUtil
 
         d.setDisabledSystemFields(domain.getDisabledSystemFields());
 
+        if (domainKind.allowUniqueConstraintProperties())
+        {
+            SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+            if (allIndices.size() > 0)
+            {
+                List<Pair<TableInfo.IndexType, List<ColumnInfo>>> indices = allIndices.values().stream().filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary)).toList();
+                d.setIndices(indices.stream().map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique())).toList());
+            }
+        }
+
         return d;
     }
 
@@ -360,6 +375,7 @@ public class DomainUtil
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
+            gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
@@ -377,6 +393,7 @@ public class DomainUtil
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+        gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
         return gwtDomain;
@@ -775,8 +792,6 @@ public class DomainUtil
             addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
         }
 
-        // TODO: update indices -- drop and re-add?
-
         try
         {
             if (validationException.getErrors().isEmpty())
@@ -811,6 +826,14 @@ public class DomainUtil
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
                         updateTextChoiceValueRows(d, user, entry.getKey().getName(), valueUpdate, validationException);
+                }
+
+                // update indices - add missing and drop those that aren't include with domain info
+                if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
+                {
+                    d.setPropertyIndices(update.getIndices(), null);
+                    StorageProvisioner.get().addMissingRequiredIndices(d);
+                    StorageProvisioner.get().dropNotRequiredIndices(d);
                 }
             }
         }
