@@ -1259,7 +1259,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         nameIndex(change.getTableName(), new String[] { columnName }, false),
                         tableName,
                         hashedColumn,
-                        columnName));
+                        legalColumnName));
 
                 // Create trigger to enforce uniqueness using the hashed column index
                 statements.add(String.format(
