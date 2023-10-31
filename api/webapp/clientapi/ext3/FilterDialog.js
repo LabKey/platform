@@ -930,7 +930,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 return "At most " + maxOccurs + " '" + multiValueSeparator + "' separated values are allowed";
         }
 
-        if (!Ext.isEmpty(inputValues) && typeof inputValues === 'string' && inputValues.trim().length > 1000)
+        if (!Ext.isEmpty(inputValues) && typeof inputValues === 'string' && inputValues.trim().length > 2000)
             return "Value is too long";
 
         //If we make it out of the for loop we had no errors.
@@ -969,7 +969,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             if (invalid != null)
                 return "Invalid value: " + invalid;
 
-            if (!Ext.isEmpty(value) && typeof value === 'string' && value.trim().length > 1000)
+            if (!Ext.isEmpty(value) && typeof value === 'string' && value.trim().length > 2000)
                 return "Value is too long";
         }
         else {
