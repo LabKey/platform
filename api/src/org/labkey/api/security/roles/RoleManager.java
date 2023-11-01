@@ -99,8 +99,23 @@ public class RoleManager
     //register all core roles
     static
     {
+        // Privileged site roles first
         registerAdminRole(siteAdminRole);
+        registerRole(new PlatformDeveloperRole(), false);
+        registerRole(new ImpersonatingTroubleshooterRole(), false);
+
+        // Other site roles
         registerAdminRole(new ApplicationAdminRole());
+        registerRole(new TroubleshooterRole(), false);
+        registerRole(new SeeUserAndGroupDetailsRole());
+        registerRole(new CanSeeAuditLogRole());
+        registerRole(new SharedViewEditorRole());
+        registerRole(new EmailNonUsersRole(), false);
+        registerRole(new SeeFilePathsRole(), false);
+        registerRole(new CanUseSendMessageApi(), false);
+        registerRole(new ProjectCreatorRole());
+
+        // Project and folder roles
         registerAdminRole(new ProjectAdminRole());
         registerAdminRole(new FolderAdminRole());
         registerRole(new EditorRole());
@@ -111,16 +126,6 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
-        registerRole(new ImpersonatingTroubleshooterRole(), false);
-        registerRole(new TroubleshooterRole(), false);
-        registerRole(new PlatformDeveloperRole(), false);
-        registerRole(new SeeUserAndGroupDetailsRole());
-        registerRole(new CanSeeAuditLogRole());
-        registerRole(new SharedViewEditorRole());
-        registerRole(new EmailNonUsersRole(), false);
-        registerRole(new SeeFilePathsRole(), false);
-        registerRole(new CanUseSendMessageApi(), false);
-        registerRole(new ProjectCreatorRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)
