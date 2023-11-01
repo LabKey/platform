@@ -16,10 +16,14 @@
 
 package org.labkey.api.security;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -42,25 +46,40 @@ import java.util.Set;
  */
 public class LimitedUser extends ClonedUser
 {
+    // Must be a named class to allow Jackson deserialization (e.g., Evaluation Content loads folder archives via the pipeline using AdminUser)
+    private static class LimitedUserImpersonatingContext extends NotImpersonatingContext
+    {
+        private final Set<Role> _roles;
+
+        @SuppressWarnings("unused") // Needed for deserialization
+        private LimitedUserImpersonatingContext()
+        {
+            _roles = null;
+        }
+
+        private LimitedUserImpersonatingContext(Set<Role> roles)
+        {
+            _roles = roles;
+        }
+
+        @Override
+        public PrincipalArray getGroups(User user)
+        {
+            return PrincipalArray.getEmptyPrincipalArray(); // No groups!
+        }
+
+        @Override
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+        {
+            return _roles;
+        }
+
+    }
+
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
-        super(user, new NotImpersonatingContext()
-        {
-            private final Set<Role> _roles = getRoles(roleClasses);
-
-            @Override
-            public PrincipalArray getGroups(User user)
-            {
-                return PrincipalArray.getEmptyPrincipalArray(); // No groups!
-            }
-
-            @Override
-            public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
-            {
-                return _roles;
-            }
-        });
+        super(user, new LimitedUserImpersonatingContext(getRoles(roleClasses)));
     }
 
     public static class TestCase extends Assert
@@ -117,6 +136,18 @@ public class LimitedUser extends ClonedUser
             assertEquals(hasUpdate, c.hasPermission(user, UpdatePermission.class));
             assertEquals(hasAdmin, c.hasPermission(user, AdminPermission.class));
             assertEquals(hasCanSeeAuditLog, c.hasPermission(user, CanSeeAuditLogPermission.class));
+        }
+
+        @Test
+        public void testSerialization() throws JsonProcessingException
+        {
+            SecurityPolicy rootPolicy = ContainerManager.getRoot().getPolicy();
+            User admin = User.getAdminServiceUser();
+            ObjectMapper mapper = PipelineJob.createObjectMapper();
+            String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(admin);
+            User reconstitutedAdmin = mapper.readValue(serialized, User.class);
+            assertEquals(admin, reconstitutedAdmin);
+            assertEquals(admin.getAssignedRoles(rootPolicy), reconstitutedAdmin.getAssignedRoles(rootPolicy));
         }
     }
 }
