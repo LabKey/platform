@@ -491,6 +491,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         OntologyManager.deleteOntologyObjects(getContainer(), lsid);
 
         removeInputs(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId", List.of(data.getRowId()));
+        _inputDatas = null;
     }
 
     @Override
@@ -508,7 +509,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer(), false);
 
         removeInputs(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId", rowIds);
-
+        _inputDatas = null;
     }
 
     @Override
@@ -519,6 +520,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         OntologyManager.deleteOntologyObjects(getContainer(), lsid);
 
         removeInputs(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId", List.of(material.getRowId()));
+        _inputMaterials = null;
     }
 
     @Override
@@ -536,6 +538,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer(), false);
 
         removeInputs(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId", rowIds);
+        _inputMaterials = null;
     }
 
     public static List<ExpProtocolApplicationImpl> fromProtocolApplications(List<ProtocolApplication> apps)
