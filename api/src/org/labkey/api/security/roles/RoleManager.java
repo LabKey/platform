@@ -99,10 +99,14 @@ public class RoleManager
     //register all core roles
     static
     {
-        // Privileged site roles first
+        // Privileged site roles first, so they appear at the top of the site permissions page
         registerAdminRole(siteAdminRole);
         registerRole(new PlatformDeveloperRole(), false);
         registerRole(new ImpersonatingTroubleshooterRole(), false);
+
+        // Now project and folder admin roles, so they pick up appropriate site roles
+        registerAdminRole(new ProjectAdminRole());
+        registerAdminRole(new FolderAdminRole());
 
         // Other site roles
         registerAdminRole(new ApplicationAdminRole());
@@ -116,8 +120,6 @@ public class RoleManager
         registerRole(new ProjectCreatorRole());
 
         // Project and folder roles
-        registerAdminRole(new ProjectAdminRole());
-        registerAdminRole(new FolderAdminRole());
         registerRole(new EditorRole());
         registerRole(new EditorWithoutDeleteRole());
         registerRole(new AuthorRole());
