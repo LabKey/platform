@@ -110,6 +110,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MailHelper;
@@ -135,6 +136,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.core.CoreModule;
 import org.labkey.core.login.DbLoginConfiguration;
 import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
@@ -2652,7 +2654,7 @@ public class UserController extends SpringActionController
         }
 
         @NotNull
-        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response, boolean includeDeactivated)
+        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response, boolean includeInactive)
         {
             Container project = getContainer().getProject();
 
@@ -2676,7 +2678,7 @@ public class UserController extends SpringActionController
             response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
             MemberType<User> userMemberType;
-            if (includeDeactivated)
+            if (includeInactive)
                 userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
             else
                 userMemberType = MemberType.ACTIVE_USERS;
@@ -2700,7 +2702,7 @@ public class UserController extends SpringActionController
             //and convert to lower-case for the compare below
             String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
 
-            if (nameFilter.length() > 0)
+            if (!nameFilter.isEmpty())
                 response.put("name", nameFilter);
 
             for (User user : users)
@@ -2745,12 +2747,13 @@ public class UserController extends SpringActionController
         }
 
         /**
-         * The older 23.10 response format does not honor the newer includeDeactivated flag. It only honors the active
+         * The older 23.10 response format does not honor the newer includeInactive flag. It only honors the active
          * flag when requesting users of a group, and ignores the flag (only ever returning active users) when not
          * requesting a group.
          */
         private ApiResponse response2310(ApiSimpleResponse response, GetUsersForm form)
         {
+            SimpleMetricsService.get().increment(CoreModule.CORE_MODULE_NAME, "GetUsersWithPermissionsAction", "OldVersionCalls");
             Collection<User> users;
 
             //if requesting users in a specific group...
@@ -2769,7 +2772,7 @@ public class UserController extends SpringActionController
         }
 
         /**
-         * The 23.11 response format does not honor the active flag, instead it honors the includeDeactivated flag, and
+         * The 23.11 response format does not honor the active flag, instead it honors the includeInactive flag, and
          * it honors it when requesting users or groups. The flag defaults to false, so by default only active users
          * will be returned.
          */
