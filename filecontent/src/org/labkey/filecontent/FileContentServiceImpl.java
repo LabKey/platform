@@ -69,6 +69,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -123,6 +124,7 @@ public class FileContentServiceImpl implements FileContentService
     private final List<DirectoryPattern> _ziploaderPattern = new CopyOnWriteArrayList<>();
 
     private volatile boolean _fileRootSetViaStartupProperty = false;
+    private File _lastLoggedProblematicFileRoot;
 
     enum FileAction
     {
@@ -589,11 +591,26 @@ public class FileContentServiceImpl implements FileContentService
         try
         {
             if (root == null || !root.exists())
+            {
+                File configuredRoot = root;
                 root = getDefaultRoot();
+                if (configuredRoot != null && !configuredRoot.equals(root) && !configuredRoot.equals(_lastLoggedProblematicFileRoot))
+                {
+                    _lastLoggedProblematicFileRoot = configuredRoot;
+                    _log.warn("Configured site-wide file root " + configuredRoot + " does not exist. Falling back to " + root);
+                }
+            }
+            else
+            {
+                _lastLoggedProblematicFileRoot = null;
+            }
 
             if (!root.exists())
             {
-                FileUtil.mkdirs(root);
+                if (FileUtil.mkdirs(root))
+                {
+                    _log.info("Created site-wide file root " + root);
+                }
             }
         }
         catch (IOException e)
@@ -603,6 +620,12 @@ public class FileContentServiceImpl implements FileContentService
 
         return root;
     }
+
+    public boolean hasInvalidConfiguredFileRoot()
+    {
+        return _lastLoggedProblematicFileRoot != null;
+    }
+
 
     @Override
     public @NotNull File getUserFilesRoot() throws IOException
@@ -663,7 +686,7 @@ public class FileContentServiceImpl implements FileContentService
         if (root == null || !root.exists())
             throw new IllegalArgumentException("Invalid site root: does not exist");
 
-        File prevRoot = null;
+        File prevRoot;
         try
         {
             prevRoot = getUserFilesRoot();
@@ -1085,11 +1108,7 @@ public class FileContentServiceImpl implements FileContentService
     public boolean isValidProjectRoot(String root)
     {
         File f = new File(root);
-        if (!f.exists() || !f.isDirectory())
-        {
-            return false;
-        }
-        return true;
+        return f.exists() && f.isDirectory();
     }
 
     @Override
@@ -1329,10 +1348,7 @@ public class FileContentServiceImpl implements FileContentService
                 }
             }
         }
-        catch (IOException | UnsetRootDirectoryException e)
-        {
-
-        }
+        catch (IOException | UnsetRootDirectoryException ignored) {}
         return children;
     }
 
@@ -1388,7 +1404,6 @@ public class FileContentServiceImpl implements FileContentService
                             case folderRelative -> relPath;
                             case serverRelative -> Path.parse(root.getWebdavURL()).encode() + relPath;
                             case full -> AppProps.getInstance().getBaseServerUrl() + Path.parse(root.getWebdavURL()).encode() + relPath;
-                            default -> throw new IllegalArgumentException("Unexpected path type: " + type);
                         };
             }
         }
@@ -1608,8 +1623,7 @@ public class FileContentServiceImpl implements FileContentService
             if (existingUrls.contains(legacyUrl))      // Legacy URI format (file:/users/...)
                 return true;
 
-            if (existingUrls.contains(file.getPath()))
-                return true;
+            return existingUrls.contains(file.getPath());
         }
         return false;
     }

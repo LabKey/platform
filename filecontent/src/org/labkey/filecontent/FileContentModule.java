@@ -187,7 +187,7 @@ public class FileContentModule extends DefaultModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
-            File root = FileContentService.get().getSiteDefaultRoot();
+            File root = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
             if (root.isDirectory())
             {
                 long startTime = HeartBeat.currentTimeMillis();
@@ -217,6 +217,7 @@ public class FileContentModule extends DefaultModule
                 {
                     succeeded = false;
                 }
+                results.put("invalidConfiguredFileRoot", FileContentServiceImpl.getInstance().hasInvalidConfiguredFileRoot());
                 results.put("fileRootSize", totalSize.longValue());
                 results.put("fileRootFileCount", fileCount.longValue());
                 results.put("fileRootCrawlTimedOut", timedOut);
