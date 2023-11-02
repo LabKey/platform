@@ -1214,12 +1214,12 @@ public class StatementUtils
         }
         if (value instanceof java.sql.Date)
         {
-            f.append("{d '").append(DateUtil.formatDateISO8601((java.sql.Date)value)).append("'}");
+            f.append("{d '").append(DateUtil.formatIsoDate((java.sql.Date)value)).append("'}");
             return;
         }
         else if (value instanceof java.util.Date)
         {
-            f.append("{ts '").append(DateUtil.formatDateTimeISO8601((java.util.Date)value)).append("'}");
+            f.append("{ts '").append(DateUtil.formatIsoDateShortTime((java.util.Date)value)).append("'}");
             return;
         }
         assert value instanceof String;

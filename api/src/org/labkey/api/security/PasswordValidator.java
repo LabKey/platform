@@ -16,4 +16,5 @@ public interface PasswordValidator
     boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages);
     boolean isPreviousPasswordForbidden();
     boolean isDeprecated();
+    boolean shouldShowPasswordGuidance();
 }

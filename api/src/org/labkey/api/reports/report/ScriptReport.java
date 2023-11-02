@@ -252,14 +252,14 @@ public abstract class ScriptReport extends AbstractReport
                 tempRoot = root.resolvePath(REPORT_DIR);
 
                 if (!tempRoot.exists())
-                    tempRoot.mkdirs();
+                    FileUtil.mkdirs(tempRoot);
             }
             else
             {
                 tempRoot = getDefaultTempRoot();
 
                 if (!tempRoot.exists())
-                    tempRoot.mkdirs();
+                    FileUtil.mkdirs(tempRoot);
             }
         }
         catch (Exception e)

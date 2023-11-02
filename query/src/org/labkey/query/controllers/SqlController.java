@@ -305,7 +305,7 @@ public class SqlController extends SpringActionController
                                     out.print(date.getTime());
                                 else
                                     //out.write(DateUtil.formatJsonDateTime(date));
-                                    out.write(DateUtil.formatDateTimeISO8601(date));
+                                    out.write(DateUtil.formatIsoDateShortTime(date));
                             }
                             break printValue;
                         }
@@ -408,7 +408,7 @@ public class SqlController extends SpringActionController
                             row[column] = Long.toString(date.getTime());
                         else
                         {
-                            String d = DateUtil.formatDateTimeISO8601(date);
+                            String d = DateUtil.formatIsoDateShortTime(date);
                             if (d.endsWith(" 00:00"))
                                 d = d.substring(0,d.length()-6);
                             row[column] = d;

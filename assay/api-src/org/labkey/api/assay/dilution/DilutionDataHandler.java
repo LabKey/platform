@@ -438,12 +438,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
 
     protected abstract void prepareWellGroups(List<WellGroup> wellgroups, ExpMaterial material, Map<String, DomainProperty> samplePropertyMap) throws ExperimentException;
 
-    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider<?> provider, List<Plate> plates, Map<ExpMaterial,String> sampleInputs)throws ExperimentException
+    protected Map<ExpMaterial, List<WellGroup>> getMaterialWellGroupMapping(DilutionAssayProvider<?> provider, List<Plate> plates, Map<? extends ExpMaterial, String> sampleInputs)throws ExperimentException
     {
         Plate plate = plates.get(0);
         List<? extends WellGroup> wellgroups = plate.getWellGroups(WellGroup.Type.SPECIMEN);
         Map<String, ExpMaterial> nameToMaterial = new HashMap<>();
-        for (Map.Entry<ExpMaterial,String> e : sampleInputs.entrySet())
+        for (Map.Entry<? extends ExpMaterial,String> e : sampleInputs.entrySet())
         {
             ExpMaterial material = e.getKey();
             String wellGroup = e.getValue();

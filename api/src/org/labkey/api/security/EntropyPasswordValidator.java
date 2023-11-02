@@ -19,7 +19,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
 
     protected int getCharacterCountEstimate()
     {
-        return (int)Math.ceil(getRequiredBitsOfEntropy() / (Math.log(26) / BASE2_LOG));
+        return (int)Math.ceil(getRequiredBitsOfEntropy() / (Math.log(52) / BASE2_LOG));
     }
 
     @Override
@@ -42,6 +42,12 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
     public boolean isDeprecated()
     {
         return false;
+    }
+
+    @Override
+    public boolean shouldShowPasswordGuidance()
+    {
+        return true;
     }
 
     private static final double BASE2_LOG = Math.log(2);
@@ -96,7 +102,8 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
             "abcdefghijklmnopqrstuvwxyz"
         )
             .flatMap(s -> Stream.of(s, new StringBuilder(s).reverse().toString())) // Forward and reverse
-            .sorted(Comparator.comparingInt(String::length)) // Shortest to longest
+            // Sort longest to shortest - we want the full alphabet before the keyboard rows (which contain "fgh" and "jkl")
+            .sorted(Comparator.comparingInt(String::length).reversed())
             .map(String::toCharArray)
             .toArray(char[][]::new);
     }
@@ -365,7 +372,7 @@ public abstract class EntropyPasswordValidator implements PasswordValidator
         }
 
         // Convenience method that works with strings
-        private String filter(String password, User user)
+        private String filter(@NotNull String password, @NotNull User user)
         {
             return new String(concatenate(EntropyPasswordValidator.filter(password.toCharArray(), user)));
         }

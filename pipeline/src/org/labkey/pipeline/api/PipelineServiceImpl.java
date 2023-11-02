@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -136,6 +137,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 
     private final List<PipelineProviderSupplier> _suppliers = new CopyOnWriteArrayList<>();
     private final PipelineQueue _queue;
+    private final JmsType _jmsType;
 
     public static PipelineServiceImpl get()
     {
@@ -170,11 +172,20 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (factory == null)
         {
             _queue = new PipelineQueueImpl();
+            _jmsType = JmsType.none;
         }
         else
         {
-            LOG.info("Found JMS queue; running Enterprise Pipeline.");
             _queue = new EPipelineQueueImpl(factory);
+            if (factory instanceof ActiveMQConnectionFactory a && a.getBrokerURL() != null)
+            {
+                _jmsType = a.getBrokerURL().startsWith("vm:") ? JmsType.inProcess : JmsType.external;
+            }
+            else
+            {
+                _jmsType = JmsType.unknown;
+            }
+            LOG.info("Found " + _jmsType + " JMS queue.");
         }
     }
 
@@ -251,7 +262,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                             Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
                             // Create the @files subdirectory if needed
                             if (!Files.exists(dir))
-                                Files.createDirectories(dir);
+                                FileUtil.createDirectories(dir);
                             return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir)), true);
                         }
                     }
@@ -432,6 +443,12 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     public boolean isEnterprisePipeline()
     {
         return (getPipelineQueue() instanceof EPipelineQueueImpl);
+    }
+
+    @Override
+    public @NotNull JmsType getJmsType()
+    {
+        return _jmsType;
     }
 
     @NotNull
@@ -896,7 +913,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
             dirData = dirData.resolve(form.getProtocolName() + "_" + FileUtil.getTimestamp());
-            if (!Files.exists(Files.createDirectories(dirData)))
+            if (!Files.exists(FileUtil.createDirectories(dirData)))
             {
                 throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
             }

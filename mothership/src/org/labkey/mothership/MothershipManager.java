@@ -332,7 +332,6 @@ public class MothershipManager
         session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), form.getRecentUserCount()));
         session.setUserCount(getBestInteger(session.getUserCount(), form.getUserCount()));
         session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), form.getAdministratorEmail()));
-        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), form.isEnterprisePipelineEnabled()));
         session.setDistribution(getBestString(session.getDistribution(), form.getDistribution()));
         session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), form.getUsageReportingLevel()));
         session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), form.getExceptionReportingLevel()));
@@ -487,7 +486,7 @@ public class MothershipManager
 
     public void setCurrentBuildDate(Container c, Date buildDate)
     {
-        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatDateTimeISO8601(buildDate));
+        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatIsoDateShortTime(buildDate));
     }
 
     public void setUpgradeMessage(Container c, String message)

@@ -1360,7 +1360,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     ListUtils.partition(lsids, 100).forEach(sublist ->
                         searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
                         {
-                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLSID(sublist))
+                            for (ExpMaterialImpl expMaterial : ExperimentServiceImpl.get().getExpMaterialsByLsid(sublist))
                                 expMaterial.index(searchService.defaultTask());
                         })
                     );

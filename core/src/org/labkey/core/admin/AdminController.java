@@ -3401,7 +3401,7 @@ public class AdminController extends SpringActionController
             RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
             if (runtimeBean != null)
             {
-                systemProperties.add(new Pair<>("VM Start Time", DateUtil.formatDateTimeISO8601(new Date(runtimeBean.getStartTime()))));
+                systemProperties.add(new Pair<>("VM Start Time", DateUtil.formatIsoDateShortTime(new Date(runtimeBean.getStartTime()))));
                 long upTime = runtimeBean.getUptime(); // round to sec
                 upTime = upTime - (upTime % 1000);
                 systemProperties.add(new Pair<>("VM Uptime", DateUtil.formatDuration(upTime)));
@@ -4432,7 +4432,7 @@ public class AdminController extends SpringActionController
                     throw new NotFoundException("No valid pipeline root found");
                 }
                 Path exportDir = root.resolveToNioPath(PipelineService.EXPORT_DIR);
-                Files.createDirectories(exportDir);
+                FileUtil.createDirectories(exportDir);
                 exportFolderToFile(exportDir, container, writer, ctx, errors);
                 return urlProvider(PipelineUrls.class).urlBrowse(container);
             }
@@ -4784,8 +4784,8 @@ public class AdminController extends SpringActionController
             try
             {
                 Path pipelineUnzipFile = pipelineUnzipDir.resolve(zipFile.getOriginalFilename());
-                Files.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
-                Files.createFile(pipelineUnzipFile);
+                FileUtil.createDirectories(pipelineUnzipFile.getParent()); // Non-pipeline import sometimes fails here on Windows (shrug)
+                FileUtil.createFile(pipelineUnzipFile);
                 try (OutputStream os = Files.newOutputStream(pipelineUnzipFile))
                 {
                     FileUtil.copyData(zipFile.getInputStream(), os);

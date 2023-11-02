@@ -68,23 +68,25 @@ public enum PasswordRule
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean isValidToStore(String password1, String password2, User user, @NotNull Collection<String> messages)
+    public boolean isValidToStore(String password1, String password2, User user, boolean changeOperation, @NotNull Collection<String> messages)
     {
-        if (StringUtils.isBlank(password1) || StringUtils.isBlank(password2))
+        if (StringUtils.isBlank(password1))
         {
-            messages.add("You must enter a password.");
-            return false;
-        }
-
-        if (StringUtils.isBlank(password1) || StringUtils.isBlank(password2))
-        {
-            messages.add("You must enter your password twice.");
+            messages.add("You must enter a " + (changeOperation ? "new " : "") + "password.");
             return false;
         }
 
         if (!password1.equals(password2))
         {
-            messages.add("Your password entries didn't match.");
+            if (StringUtils.isBlank(password2))
+            {
+                messages.add("You must confirm your password.");
+            }
+            else
+            {
+                messages.add("Your password entries didn't match.");
+            }
+
             return false;
         }
 
@@ -100,5 +102,10 @@ public enum PasswordRule
     public boolean isDeprecated()
     {
         return _validator.isDeprecated();
+    }
+
+    public boolean shouldShowPasswordGuidance()
+    {
+        return _validator.shouldShowPasswordGuidance();
     }
 }

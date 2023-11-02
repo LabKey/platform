@@ -71,8 +71,16 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         File subDir = new File(uploadDir, subName);
         if (!NetworkDrive.exists(subDir))
         {
-            boolean success = subDir.mkdir();
-            if (!success) throw new ExperimentException("Could not create directory: " + subDir);
+            try
+            {
+                boolean success = FileUtil.mkdir(subDir);
+                if (!success)
+                    throw new IOException();
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException("Could not create directory: " + subDir);
+            }
         }
         return subDir;
     }
@@ -100,7 +108,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         {
             try
             {
-                dir = Files.createDirectory(dir);
+                dir = FileUtil.createDirectory(dir);
             }
             catch (IOException e)
             {

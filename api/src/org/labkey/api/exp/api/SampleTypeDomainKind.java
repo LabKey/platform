@@ -212,6 +212,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     }
 
     @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
+    @Override
     public @Nullable ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleType st = getSampleType(domain);

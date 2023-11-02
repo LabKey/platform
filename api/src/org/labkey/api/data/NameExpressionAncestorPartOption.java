@@ -13,6 +13,6 @@ import java.util.List;
  * ancestorPaths: [{'Material', 'GrandParentType-LSID'}, {'Data', 'GreatGrandParentType-LSID'}]
  * lookupColumn: barcode
  */
-public record NameExpressionAncestorPartOption(ExpLineageOptions options, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, String lookupColumn)
+public record NameExpressionAncestorPartOption(ExpLineageOptions options, String parentType, List<Pair<ExpLineageOptions.LineageExpType, String>> ancestorPaths, String lookupColumn)
 {
 }

@@ -312,6 +312,7 @@ abstract public class DomainKind<T>  implements Handler<String>
     public boolean allowTextChoiceProperties() { return true; }
     public boolean allowSampleSubjectProperties() { return true; }
     public boolean allowTimepointProperties() { return false; }
+    public boolean allowUniqueConstraintProperties() { return false; }
     public boolean showDefaultValueSettings() { return false; }
 
     public List<String> getDisabledSystemFields(List<String> disabledSystemFields)

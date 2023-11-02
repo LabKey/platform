@@ -22,6 +22,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.xar.LSIDRelativizer;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -58,7 +59,7 @@ public class XarExportPipelineJob extends PipelineJob
         _xarXmlFileName = xarXmlFileName;
     }
 
-    public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName)
+    public XarExportPipelineJob(ViewBackgroundInfo info, PipeRoot root, String fileName, LSIDRelativizer lsidRelativizer, XarExportSelection selection, String xarXmlFileName) throws IOException
     {
         super(ExperimentPipelineProvider.NAME, info, root);
         _fileName = fileName;
@@ -67,7 +68,7 @@ public class XarExportPipelineJob extends PipelineJob
         _selection = selection;
 
         File exportedXarsDir = root.resolvePath("exportedXars");
-        exportedXarsDir.mkdir();
+        FileUtil.mkdir(exportedXarsDir);
 
         _exportFile = new File(exportedXarsDir, _fileName);
 
@@ -97,7 +98,7 @@ public class XarExportPipelineJob extends PipelineJob
         {
             getLogger().info("Starting to write XAR to " + _exportFile.getPath());
             XarExporter exporter = new XarExporter(_lsidRelativizer, _selection, getUser(), _xarXmlFileName, getLogger());
-            _exportFile.getParentFile().mkdirs();
+            FileUtil.mkdirs(_exportFile.getParentFile());
             try (FileOutputStream fOut = new FileOutputStream(_exportFile);
                  ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(getUser(), getContainer(), getInfo().getURL()))
             {

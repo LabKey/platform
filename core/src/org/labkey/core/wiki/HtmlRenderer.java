@@ -203,7 +203,7 @@ public class HtmlRenderer implements WikiRenderer
             String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
 
             // Issue 12160: if there were any link decoding exceptions, replace the link with the error message
-            if (linkExceptions.size() > 0)
+            if (!linkExceptions.isEmpty())
             {
                 for (Map.Entry<Element, String> link : linkExceptions.entrySet())
                 {
@@ -212,7 +212,8 @@ public class HtmlRenderer implements WikiRenderer
                 }
             }
 
-            innerHtml.append(bodyHtml, "<body>".length(), bodyHtml.length()-"</body>".length());
+            assert bodyHtml.startsWith("<body") && bodyHtml.endsWith("</body>") : "bodyHtml did not start with \"<body\" and end with \"</body>\"";
+            innerHtml.append(bodyHtml, bodyHtml.indexOf('>') + 1, bodyHtml.length()-"</body>".length());
         }
         catch (Exception e)
         {

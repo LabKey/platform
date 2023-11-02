@@ -1,3 +1,6 @@
+CREATE INDEX IDX_ExperimentRun_WorkflowTask ON exp.ExperimentRun(WorkflowTask);
+CREATE INDEX IDX_Edge_RunId ON exp.Edge(RunId);
+
 -- Drop all indices on exp.material
 DROP INDEX IF EXISTS exp.IDX_CL_Material_RunId;
 DROP INDEX IF EXISTS exp.IX_Material_Container;
@@ -49,3 +52,4 @@ CREATE INDEX IDX_material_name_sourceid ON exp.material (name, materialSourceId)
 CREATE INDEX IX_Material_RootRowId ON exp.material (RootMaterialRowId);
 
 SELECT core.executeJavaUpgradeCode('addRowIdToMaterializedSampleTypes');
+

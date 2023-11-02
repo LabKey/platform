@@ -165,7 +165,7 @@
         }
     }
 </script>
-<input type="checkbox" id="deleteRuns" name="deleteRuns" value="true" <%=checked(form.isDeleteRuns())%> onchange="onDeleteRunsChange(this);">
+<labkey:input type="checkbox" id="deleteRuns" name="deleteRuns" value="true" checked="<%=(form.isDeleteRuns())%>" onChange="onDeleteRunsChange(this);" />
 <label for="deleteRuns">Delete associated experiment runs when deleting jobs?<br>
 <span style="margin-left:1.5em;">When checked, both the job and the associated experiment run will be deleted.</span>
 </label>

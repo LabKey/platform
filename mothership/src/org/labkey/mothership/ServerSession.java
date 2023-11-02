@@ -40,8 +40,6 @@ public class ServerSession
     private String _runtimeOS;
     private String _javaVersion;
 
-    private Boolean _enterprisePipelineEnabled;
-
     private Integer _userCount;
     private Integer _recentUserCount;
     private Integer _projectCount;
@@ -250,16 +248,6 @@ public class ServerSession
     public void setAdministratorEmail(String administratorEmail)
     {
         _administratorEmail = administratorEmail;
-    }
-
-    public Boolean isEnterprisePipelineEnabled()
-    {
-        return _enterprisePipelineEnabled;
-    }
-
-    public void setEnterprisePipelineEnabled(Boolean enterprisePipelineEnabled)
-    {
-        _enterprisePipelineEnabled = enterprisePipelineEnabled;
     }
 
     public Integer getHeapSize()

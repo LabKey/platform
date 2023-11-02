@@ -779,7 +779,7 @@ public class ExperimentModule extends SpringModule
         Map<String, Object> tsSamplesResults = new TableSelector(sampleTypeTable, sampleTypeTable.getColumns("Name,SampleCount"), null, null).getValueMap();
         for (String k : tsSamplesResults.keySet())
         {
-            int count = ((Long) tsSamplesResults.get(k)).intValue();
+            int count = ((Number) tsSamplesResults.get(k)).intValue();
             if (count != 0)
             {
                 Summary s = k.equals("MixtureBatches")

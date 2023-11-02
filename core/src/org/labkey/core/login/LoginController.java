@@ -1541,7 +1541,7 @@ public class LoginController extends SpringActionController
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
 
-    private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
+    public abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
         protected ValidEmail _email = null;
         protected boolean _unrecoverableError = false;
@@ -1668,8 +1668,9 @@ public class LoginController extends SpringActionController
     private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
+        boolean changeOperation = StringUtils.startsWithIgnoreCase(auditMessage, "change");
 
-        return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, email, returnUrlHelper, auditMessage, clearVerification, errors);
+        return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, email, returnUrlHelper, auditMessage, clearVerification, changeOperation, errors);
     }
 
     @RequiresNoPermission
@@ -2041,7 +2042,7 @@ public class LoginController extends SpringActionController
         public final String message;
         public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
-        public final Class action;
+        public final Class<? extends AbstractSetPasswordAction> action;
         public final boolean cancellable;
         public final String buttonText;
         public final String title;
@@ -2715,6 +2716,7 @@ public class LoginController extends SpringActionController
     public static class PasswordForm
     {
         private String _password;
+        private String _email;
 
         public String getPassword()
         {
@@ -2725,16 +2727,47 @@ public class LoginController extends SpringActionController
         {
             _password = password;
         }
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
     }
 
+    @SuppressWarnings("unused") // Called from setPassword.jsp
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
     public static class GetPasswordScoreAction extends ReadOnlyApiAction<PasswordForm>
     {
         @Override
         public Object execute(PasswordForm form, BindException errors) throws Exception
         {
-            return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), getUser()));
+            String email = form.getEmail();
+            User user = null;
+
+            if (email != null)
+            {
+                try
+                {
+                    user = UserManager.getUser(new ValidEmail(email));
+                }
+                catch (InvalidEmailException e)
+                {
+                    // Ignore
+                }
+            }
+
+            // If user doesn't exist (initial user case) or email is invalid pass in a fake user to filter the email address
+            if (null == user)
+                user = new User(form.getEmail(), -9999);
+
+            return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), user));
         }
     }
 

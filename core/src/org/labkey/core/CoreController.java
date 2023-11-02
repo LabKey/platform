@@ -985,7 +985,7 @@ public class CoreController extends SpringActionController
             {
                 //suggest a name
                 //per spec it should be "<user-display-name> YYYY-MM-DD"
-                bean.setTitle(getUser().getDisplayName(getUser()) + " " + DateUtil.formatDateISO8601());
+                bean.setTitle(getUser().getDisplayName(getUser()) + " " + DateUtil.formatIsoDate());
             }
 
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
@@ -2134,31 +2134,14 @@ public class CoreController extends SpringActionController
     // use of illegal filename chars is intentional
     private static final String TOKEN_PREFIX = "upload://";
 
-    static File getUploadDir(User user, String session)
+    static File getUploadDir(User user, String session) throws IOException
     {
         if (user.isGuest())
             throw new UnauthorizedException();
         File tmpDir = FileUtil.getTempDirectory();
         File userDir = new File(tmpDir,"loadingDock/" + session);
-        userDir.mkdirs();
+        FileUtil.mkdirs(userDir);
         return userDir;
-    }
-
-
-    public static File getUploadedFileForUser(User user, String session, String token)
-    {
-        if (!token.startsWith(TOKEN_PREFIX))
-            return null;
-        token = token.substring(TOKEN_PREFIX.length());
-
-        File uploadDir = getUploadDir(user, session);
-        File tokenDir = new File(uploadDir, token);
-        if (!tokenDir.isDirectory())
-            return null;
-        File[] files = tokenDir.listFiles();
-        if (null == files || files.length != 1)
-            return null;
-        return files[0];
     }
 
 
@@ -2212,7 +2195,7 @@ public class CoreController extends SpringActionController
                 location = new File(uploadDir, uniq);
             }
             while (location.exists());    // pretty unlikely to have a collision...
-            location.mkdir();
+            FileUtil.mkdir(location);
             location.deleteOnExit();
 
             Map.Entry<String, MultipartFile> entry = map.entrySet().iterator().next();

@@ -1371,13 +1371,34 @@ public abstract class SqlDialect
                 StringUtils.equalsIgnoreCase("uniqueidentifier", sqlTypeName);
     }
 
+    public static boolean isJSONType(String sqlTypeName)
+    {
+        return StringUtils.equalsIgnoreCase("json", sqlTypeName) ||
+                StringUtils.equalsIgnoreCase("jsonb", sqlTypeName);
+    }
+
     public JdbcType getJdbcType(int type, String typeName)
     {
         JdbcType t = JdbcType.valueOf(type);
-        if ((t == JdbcType.VARCHAR || t == JdbcType.CHAR) && null != typeName)
+
+        if (null != typeName)
         {
-            if (isGUIDType(typeName))
-                t = JdbcType.GUID;
+            if (t == JdbcType.VARCHAR || t == JdbcType.CHAR)
+            {
+                if (isGUIDType(typeName))
+                    t = JdbcType.GUID;
+            }
+            else if (t == JdbcType.OTHER)
+            {
+                // CONSIDER is it useful to have an internal JSON type? (yes, this is a no-op)
+                if (isJSONType(typeName))
+                {
+                    // NOTE: LabKey SQL doesn't understand JSON types and treats them like VARCHAR (much like SQL Server)
+                    // However, for a INSERT (jsonb) PreparedStatement(i, OTHER, "{JSON}") works but PreparedStatement(i, VARCHAR, "{JSON}") does not.
+                    //use JdbcType.OTHER
+                    t = JdbcType.OTHER;
+                }
+            }
         }
         return t;
     }

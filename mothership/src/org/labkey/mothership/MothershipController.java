@@ -934,7 +934,6 @@ public class MothershipController extends SpringActionController
         private Integer _containerCount;
         private Integer _heapSize;
         private String _administratorEmail;
-        private boolean _enterprisePipelineEnabled;
         private String _servletContainer;
         private String _description;
         private String _distribution;
@@ -1284,7 +1283,6 @@ public class MothershipController extends SpringActionController
             session.setProjectCount(getProjectCount());
             session.setContainerCount(getContainerCount());
             session.setAdministratorEmail(getAdministratorEmail());
-            session.setEnterprisePipelineEnabled(isEnterprisePipelineEnabled());
             session.setHeapSize(getHeapSize());
             session.setServletContainer(getServletContainer());
             session.setDistribution(getDistribution());
@@ -1293,16 +1291,6 @@ public class MothershipController extends SpringActionController
             session.setJsonMetrics(getJsonMetrics());
 
             return new Pair<>(session, release);
-        }
-
-        public boolean isEnterprisePipelineEnabled()
-        {
-            return _enterprisePipelineEnabled;
-        }
-
-        public void setEnterprisePipelineEnabled(boolean enterprisePipelineEnabled)
-        {
-            _enterprisePipelineEnabled = enterprisePipelineEnabled;
         }
 
         public String getServletContainer()
@@ -1650,7 +1638,7 @@ public class MothershipController extends SpringActionController
         {
             super(new DataRegion(), form);
             getDataRegion().setTable(MothershipManager.get().getTableInfoServerSession());
-            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,EnterprisePipelineEnabled,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime");
+            getDataRegion().addColumns(MothershipManager.get().getTableInfoServerSession(), "ServerSessionId,ServerSessionGUID,ServerInstallationId,EarliestKnownTime,LastKnownTime,DatabaseProductName,DatabaseProductVersion,DatabaseDriverName,DatabaseDriverVersion,RuntimeOS,JavaVersion,SoftwareReleaseId,UserCount,ActiveUserCount,ProjectCount,ContainerCount,AdministratorEmail,Distribution,ServerIP,ServerHostName,ServletContainer,BuildTime");
             final DisplayColumn defaultServerInstallationColumn = getDataRegion().getDisplayColumn("ServerInstallationId");
             defaultServerInstallationColumn.setVisible(false);
             DataColumn replacementServerInstallationColumn = new DataColumn(defaultServerInstallationColumn.getColumnInfo())

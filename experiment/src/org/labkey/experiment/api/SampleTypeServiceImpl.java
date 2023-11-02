@@ -89,6 +89,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -98,6 +99,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -541,20 +543,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         assert getExpSchema().getScope().isTransactionActive();
 
-        SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("CpasType"), source.getLSID());
-
-        MultiValuedMap<String, Integer> byContainer = new ArrayListValuedHashMap<>();
-        TableSelector ts = new TableSelector(SampleTypeServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
-        ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
+        Set<Container> containers = new HashSet<>();
+        if (c == null)
+        {
+            SQLFragment containerSql = new SQLFragment("SELECT DISTINCT Container FROM ");
+            containerSql.append(getTinfoMaterial(), "m");
+            containerSql.append(" WHERE CpasType = ?");
+            containerSql.add(source.getLSID());
+            new SqlSelector(getExpSchema(), containerSql).forEach(String.class, cId -> containers.add(ContainerManager.getForId(cId)));
+        }
+        else
+        {
+            containers.add(c);
+        }
 
         int count = 0;
-        for (Map.Entry<String, Collection<Integer>> entry : byContainer.asMap().entrySet())
+        for (Container toDelete : containers)
         {
-            Container container = ContainerManager.getForId(entry.getKey());
-            // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true, true);
-            count += entry.getValue().size();
+            SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
+            sqlFilter.add(source.getLSID());
+            sqlFilter.add(toDelete);
+            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true);
         }
         return count;
     }
@@ -815,13 +824,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-        for (GWTIndex index : indices)
-        {
-            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-            propertyIndices.add(propIndex);
-        }
-        domain.setPropertyIndices(propertyIndices);
+        domain.setPropertyIndices(indices, lowerReservedNames);
 
         if (!hasNameProperty && idUri1 == null)
             throw new ExperimentException("Either a 'Name' property or an index for idCol1 is required");
@@ -1983,15 +1986,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
-            if (!renameData.targetFile.getParentFile().mkdirs())
+            String errorMsg = String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.targetFile.getParent(),
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName);
+            try
             {
-                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
-                        renameData.targetFile.getParent(),
-                        renameData.sourceFile.getAbsolutePath(),
-                        renameData.sampleType.getName(),
-                        renameData.sampleName,
-                        renameData.fieldName));
-                return false;
+                if (!FileUtil.mkdirs(renameData.targetFile.getParentFile()))
+                {
+                    LOG.warn(errorMsg);
+                    return false;
+                }
+            }
+            catch (IOException e)
+            {
+                LOG.warn(errorMsg + e.getMessage());
             }
         }
         if (!renameData.sourceFile.renameTo(renameData.targetFile))

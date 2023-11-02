@@ -728,11 +728,6 @@ if (typeof LABKEY == "undefined")
                 scriptCache.loadCache(file, callback, scope);
             }
 
-            // although FireFox and Safari allow scripts to use the DOM
-            // during parse time, IE does not. So if the document is
-            // closed, use the DOM to create a script element and append it
-            // to the head element. Otherwise (still parsing), use document.write()
-
             // Support both LabKey and external JavaScript files
             var src = file.substr(0, 4) != "http" ? configs.contextPath + "/" + file + '?' + configs.hash : file;
 
@@ -741,34 +736,13 @@ if (typeof LABKEY == "undefined")
                 scriptCache.callbacksOnCache(file);
             };
 
-            if (configs.isDocumentClosed || callback)
-            {
-                //create a new script element and append it to the head element
-                var script = addElemToHead("script", {
-                    src: src,
-                    type: "text/javascript"
-                });
+            // create a new script element and append it to the head element
+            var script = addElemToHead('script', {
+                src: src,
+                type: 'text/javascript',
+            });
 
-                // IE has a different way of handling <script> loads
-                if (script.readyState)
-                {
-                    script.onreadystatechange = function() {
-                        if (script.readyState == "loaded" || script.readyState == "complete") {
-                            script.onreadystatechange = null;
-                            cacheLoader();
-                        }
-                    };
-                }
-                else
-                {
-                    script.onload = cacheLoader;
-                }
-            }
-            else
-            {
-                document.write('\n<script type="text/javascript" src="' + src + '"></script>\n');
-                cacheLoader();
-            }
+            script.onload = cacheLoader;
         };
 
         var requiresVisualization = function(callback, scope)

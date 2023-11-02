@@ -46,6 +46,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private boolean allowTextChoiceProperties;
     private boolean allowSampleSubjectProperties;
     private boolean allowTimepointProperties;
+    private boolean allowUniqueConstraintProperties;
     private boolean showDefaultValueSettings;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
@@ -94,6 +95,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.allowTextChoiceProperties = src.allowTextChoiceProperties;
         this.allowSampleSubjectProperties = src.allowSampleSubjectProperties;
         this.allowTimepointProperties = src.allowTimepointProperties;
+        this.allowUniqueConstraintProperties = src.allowUniqueConstraintProperties;
         this.showDefaultValueSettings = src.showDefaultValueSettings;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
@@ -335,6 +337,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowTimepointProperties(boolean allowTimepointProperties)
     {
         this.allowTimepointProperties = allowTimepointProperties;
+    }
+
+    public boolean isAllowUniqueConstraintProperties()
+    {
+        return allowUniqueConstraintProperties;
+    }
+
+    public void setAllowUniqueConstraintProperties(boolean allowUniqueConstraintProperties)
+    {
+        this.allowUniqueConstraintProperties = allowUniqueConstraintProperties;
     }
 
     /**

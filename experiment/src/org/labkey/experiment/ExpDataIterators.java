@@ -997,7 +997,7 @@ public class ExpDataIterators
             // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
             if (_context.getInsertOption().allowUpdate && pair.first.doClear())
             {
-                Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
                 String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
                 lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
                 if (!lockCheckMessage.isEmpty())
@@ -1007,7 +1007,7 @@ public class ExpDataIterators
             {
                 ExpMaterial currentMaterial = null;
                 Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
+                Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
                 Map<ExpData, String> currentDataMap = Collections.emptyMap();
 
                 if (_context.getInsertOption().allowUpdate)
@@ -1427,7 +1427,7 @@ public class ExpDataIterators
 
     }
 
-    private static String checkForLockedSampleRelativeChange(Set<ExpMaterial> previousSampleRelatives, Set<ExpMaterial> currentSampleRelatives, String sampleName, String relationPlural)
+    private static String checkForLockedSampleRelativeChange(Set<? extends ExpMaterial> previousSampleRelatives, Set<? extends ExpMaterial> currentSampleRelatives, String sampleName, String relationPlural)
     {
         List<String> messages = new ArrayList<>();
         // get the relatives whose lineage cannot change
@@ -1471,11 +1471,11 @@ public class ExpDataIterators
      * otherwise the run will be deleted.
      */
     @NotNull
-    private static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
+    private static Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
     {
         ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
-        Set<ExpMaterial> previousMaterialParents = Collections.emptySet();
-        Set<ExpMaterial> previousMaterialChildren = Collections.emptySet();
+        Set<? extends ExpMaterial> previousMaterialParents = Collections.emptySet();
+        Set<? extends ExpMaterial> previousMaterialChildren = Collections.emptySet();
         if (existingSourceApp == null)
             return Pair.of(previousMaterialParents, previousMaterialChildren);
 

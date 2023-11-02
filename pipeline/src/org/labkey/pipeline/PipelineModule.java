@@ -254,6 +254,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                     m.put("Jobs", rs.getLong("Jobs"));
                 });
             result.put("triggerCounts", triggerCounts);
+            result.put("jmsType", PipelineService.get().getJmsType().toString());
 
             return result;
         });

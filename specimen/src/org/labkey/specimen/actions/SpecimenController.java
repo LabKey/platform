@@ -665,7 +665,7 @@ public class SpecimenController extends SpringActionController
     {
         StringBuilder filename = new StringBuilder();
         filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
-        filename.append("_").append(DateUtil.formatDateISO8601());
+        filename.append("_").append(DateUtil.formatIsoDate());
         return filename.toString();
     }
 

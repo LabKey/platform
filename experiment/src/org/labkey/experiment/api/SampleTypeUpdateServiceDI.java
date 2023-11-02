@@ -1124,7 +1124,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!existingRowSelect.includeParent)
             return sampleRows;
 
-        List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
+        List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLsid(rowNumLsid.values());
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 

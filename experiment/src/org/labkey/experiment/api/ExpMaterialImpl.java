@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -502,7 +503,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     {
                         JobRunner.getDefault().execute(1000, () ->
                         {
-                            List<Pair<Integer, Long>> copy = null;
+                            List<Pair<Integer, Long>> copy;
                             synchronized (updateLastIndexedList)
                             {
                                 copy = List.copyOf(updateLastIndexedList);

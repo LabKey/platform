@@ -101,7 +101,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
@@ -121,6 +121,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataViewSnapshotSelectionForm;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -944,12 +945,12 @@ public class AssayController extends SpringActionController
             return null;
         }
 
-        private File getTempFolder()
+        private File getTempFolder() throws IOException
         {
             File tempDir = new File(System.getProperty("java.io.tmpdir"));
             File tempFolder = new File(tempDir.getAbsolutePath() + File.separator + "QCSampleData", String.valueOf(Thread.currentThread().getId()));
             if (!tempFolder.exists())
-                tempFolder.mkdirs();
+                FileUtil.mkdirs(tempFolder);
 
             return tempFolder;
         }
@@ -1549,7 +1550,7 @@ public class AssayController extends SpringActionController
                 if (form.getRuns().size() == 1)
                 {
                     // construct the audit log query view
-                    User user = LimitedUser.getCanSeeAuditLogUser(getContainer(), getUser());
+                    User user = ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser());
                     UserSchema schema = AuditLogService.getAuditLogSchema(user, getContainer());
                     ExpRun run = ExperimentService.get().getExpRun(form.getRuns().stream().findFirst().get());
                     if (run != null && schema != null)
@@ -1698,11 +1699,11 @@ public class AssayController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class GetAssayRunDeletionConfirmationDataAction extends ReadOnlyApiAction<OperationConfirmationForm>
+    public static class GetAssayRunDeletionConfirmationDataAction extends ReadOnlyApiAction<DataViewSnapshotSelectionForm>
     {
 
         @Override
-        public Object execute(OperationConfirmationForm form, BindException errors) throws Exception
+        public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
         {
             Collection<Integer> permittedIds = form.getIds(false);
 
@@ -1713,37 +1714,6 @@ public class AssayController extends SpringActionController
             permittedIds.removeAll(notPermittedIds);
             return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
 
-        }
-    }
-
-    public static class OperationConfirmationForm extends ViewForm
-    {
-        private String _dataRegionSelectionKey;
-        private Set<Integer> _rowIds;
-
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
-        }
-
-        public Set<Integer> getRowIds()
-        {
-            return _rowIds;
-        }
-
-        public void setRowIds(Set<Integer> rowIds)
-        {
-            _rowIds = rowIds;
-        }
-
-        public Set<Integer> getIds(boolean clear)
-        {
-            return (_rowIds != null) ? _rowIds : DataRegionSelection.getSelectedIntegers(getViewContext(), getDataRegionSelectionKey(), clear);
         }
     }
 }

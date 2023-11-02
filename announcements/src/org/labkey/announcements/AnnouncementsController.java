@@ -982,7 +982,7 @@ public class AnnouncementsController extends SpringActionController
 
     private static SelectBuilder getStatusSelect(String currentValue)
     {
-        return new SelectBuilder().name("status").className(null).selected(currentValue)
+        return new SelectBuilder().name("status").id("status").className(null).selected(currentValue)
             .addOptions(Arrays.stream(StatusOption.values()).map(Enum::name));
     }
 
@@ -994,7 +994,7 @@ public class AnnouncementsController extends SpringActionController
         List<User> possibleAssignedTo = new ArrayList<>(SecurityManager.getUsersWithPermissions(c, perms));
         possibleAssignedTo.sort(Comparator.comparing(user -> user.getDisplayName(currentUser), String.CASE_INSENSITIVE_ORDER));
 
-        SelectBuilder builder = new SelectBuilder().name(name).className(null)
+        SelectBuilder builder = new SelectBuilder().name(name).id(name).className(null)
             .addOption(new OptionBuilder("", "").selected(null == assignedTo));
 
         return builder.addOptions(possibleAssignedTo.stream()

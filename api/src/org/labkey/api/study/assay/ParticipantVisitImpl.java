@@ -116,7 +116,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
                     name.append(".");
                 }
                 name.append("Date-");
-                name.append(DateUtil.formatDateISO8601(_date)); // Use fixed format since we use it in LSIDs
+                name.append(DateUtil.formatIsoDate(_date)); // Use fixed format since we use it in LSIDs
             }
             if (_specimenID != null)
             {
