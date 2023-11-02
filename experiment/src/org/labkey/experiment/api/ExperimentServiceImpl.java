@@ -7918,7 +7918,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol()).getArrayList(Protocol.class));
     }
 
-    rride
+    @Override
     public List<? extends ExpProtocol> getExpProtocolsWithParameterValue(
         @NotNull String parameterURI,
         @NotNull String parameterValue,
