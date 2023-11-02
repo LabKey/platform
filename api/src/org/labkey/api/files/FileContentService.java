@@ -122,6 +122,9 @@ public interface FileContentService
     @NotNull
     Path getSiteDefaultRootPath();
 
+    @Nullable
+    String getProblematicFileRootMessage();
+
     void setSiteDefaultRoot(File root, User user);
 
     public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);

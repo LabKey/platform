@@ -69,21 +69,27 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.RandomSiteSettingsPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.WarningProvider;
+import org.labkey.api.view.template.WarningService;
+import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -111,8 +117,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.labkey.api.settings.AppProps.SCOPE_SITE_SETTINGS;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.at;
 
-public class FileContentServiceImpl implements FileContentService
+public class FileContentServiceImpl implements FileContentService, WarningProvider
 {
     private static final Logger _log = LogManager.getLogger(FileContentServiceImpl.class);
     private static final String UPLOAD_LOG = ".upload.log";
@@ -124,7 +132,7 @@ public class FileContentServiceImpl implements FileContentService
     private final List<DirectoryPattern> _ziploaderPattern = new CopyOnWriteArrayList<>();
 
     private volatile boolean _fileRootSetViaStartupProperty = false;
-    private File _lastLoggedProblematicFileRoot;
+    private String _problematicFileRootMessage;
 
     enum FileAction
     {
@@ -139,6 +147,7 @@ public class FileContentServiceImpl implements FileContentService
 
     private FileContentServiceImpl()
     {
+        WarningService.get().register(this);
     }
 
     @Override
@@ -594,15 +603,19 @@ public class FileContentServiceImpl implements FileContentService
             {
                 File configuredRoot = root;
                 root = getDefaultRoot();
-                if (configuredRoot != null && !configuredRoot.equals(root) && !configuredRoot.equals(_lastLoggedProblematicFileRoot))
+                if (configuredRoot != null && !configuredRoot.equals(root))
                 {
-                    _lastLoggedProblematicFileRoot = configuredRoot;
-                    _log.warn("Configured site-wide file root " + configuredRoot + " does not exist. Falling back to " + root);
+                    String message = "The configured site-wide file root " + configuredRoot + " does not exist. Falling back to " + root;
+                    if (!message.equals(_problematicFileRootMessage))
+                    {
+                        _problematicFileRootMessage = message;
+                        _log.error(_problematicFileRootMessage);
+                    }
                 }
             }
             else
             {
-                _lastLoggedProblematicFileRoot = null;
+                _problematicFileRootMessage = null;
             }
 
             if (!root.exists())
@@ -610,6 +623,10 @@ public class FileContentServiceImpl implements FileContentService
                 if (FileUtil.mkdirs(root))
                 {
                     _log.info("Created site-wide file root " + root);
+                }
+                else
+                {
+                    _log.error("Failed when attempting to create site-wide file root " + root);
                 }
             }
         }
@@ -621,11 +638,11 @@ public class FileContentServiceImpl implements FileContentService
         return root;
     }
 
-    public boolean hasInvalidConfiguredFileRoot()
+    @Override
+    public String getProblematicFileRootMessage()
     {
-        return _lastLoggedProblematicFileRoot != null;
+        return _problematicFileRootMessage;
     }
-
 
     @Override
     public @NotNull File getUserFilesRoot() throws IOException
@@ -1658,6 +1675,23 @@ public class FileContentServiceImpl implements FileContentService
         String targetPath = absoluteFilePath.replace(sourceRootPath, targetFileRoot.getAbsolutePath());
         File targetFile = new File(targetPath);
         return AssayFileWriter.findUniqueFileName(file.getName(), targetFile.getParentFile().toPath()).toFile();
+    }
+
+    @Override
+    public void addDynamicWarnings(@NotNull Warnings warnings, @Nullable ViewContext context, boolean showAllWarnings)
+    {
+        if (_problematicFileRootMessage != null && context != null && ContainerManager.getRoot().hasPermission(context.getUser(), AdminOperationsPermission.class))
+        {
+            warnings.add(DOM.createHtmlFragment(_problematicFileRootMessage, " ", DOM.A(at(href, PageFlowUtil.urlProvider(AdminUrls.class).getFilesSiteSettingsURL(false)), "Configure File System Access")));
+        }
+        else if (showAllWarnings)
+        {
+            try
+            {
+                warnings.add(HtmlString.of("Configured site-wide file root " + getDefaultRoot() + " does not exist. Falling back to " + getDefaultRoot()));
+            }
+            catch (IOException ignored) {}
+        }
     }
 
     // Cache with short-lived entries so that exp.files can perform reasonably
