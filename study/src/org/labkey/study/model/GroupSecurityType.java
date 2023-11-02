@@ -22,11 +22,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 
-/**
- * User: bimber
- * Date: 8/23/13
- * Time: 8:15 PM
- */
 public enum GroupSecurityType
 {
     UPDATE_ALL("UPDATE"),
@@ -34,7 +29,7 @@ public enum GroupSecurityType
     PER_DATASET("READOWN"),
     NONE("NONE");
 
-    private String _paramName;
+    private final String _paramName;
 
     GroupSecurityType(String paramName)
     {
@@ -62,11 +57,9 @@ public enum GroupSecurityType
             return GroupSecurityType.UPDATE_ALL;
         else if (hasReadAllPerm)
             return GroupSecurityType.READ_ALL;
-        else if (!hasReadAllPerm && !hasUpdatePerm && hasReadSomePerm)
+        else if (hasReadSomePerm)
             return GroupSecurityType.PER_DATASET;
-        else if (!hasReadAllPerm && !hasReadSomePerm)
+        else
             return GroupSecurityType.NONE;
-
-        return null;
     }
 }
