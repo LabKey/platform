@@ -29,6 +29,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DOM;
@@ -110,10 +111,14 @@ public class SchemaXMLTestCase extends Assert
                 if ("OTHER".equalsIgnoreCase(sqlTypeName) || JdbcType.OTHER == jdbcType)
                 {
                     // postgres "interval" really is OTHER (for now at least), see Fermentation.Timezones
-                    if ("INTERVAL".equalsIgnoreCase(sqlTypeName))
-                        /* pass; this is fine */;
+                    if ("INTERVAL".equalsIgnoreCase(sqlTypeName) || SqlDialect.isJSONType(sqlTypeName))
+                    {
+                        /* pass; this is fine */
+                    }
                     else
+                    {
                         typeErrors.append("%s.%s: getSqlTypeName() returned '%s', getJdbcType() returned '%s'<br>".formatted(ti.getName(), ci.getColumnName(), sqlTypeName, jdbcType.name()));
+                    }
                 }
                 if ("TIMESTAMP".equalsIgnoreCase(sqlTypeName))
                 {
