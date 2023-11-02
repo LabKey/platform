@@ -1390,9 +1390,14 @@ public abstract class SqlDialect
             }
             else if (t == JdbcType.OTHER)
             {
-                // CONSIDER is it useful to have an internal JSON type?
+                // CONSIDER is it useful to have an internal JSON type? (yes, this is a no-op)
                 if (isJSONType(typeName))
-                    t = JdbcType.VARCHAR;
+                {
+                    // NOTE: LabKey SQL doesn't understand JSON types and treats them like VARCHAR (much like SQL Server)
+                    // However, for a INSERT (jsonb) PreparedStatement(i, OTHER, "{JSON}") works but PreparedStatement(i, VARCHAR, "{JSON}") does not.
+                    //use JdbcType.OTHER
+                    t = JdbcType.OTHER;
+                }
             }
         }
         return t;
