@@ -4560,7 +4560,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     private void deleteProtocolInputs(Container c, String protocolIdsInClause)
     {
-        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c, false);
+        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c);
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
@@ -4656,7 +4656,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                       Container container,
                                       Collection<Integer> selectedMaterialIds,
                                       boolean deleteRunsUsingMaterials,
-                                      @Nullable ExpSampleType stDeleteFrom,
+                                      @Nullable ExpSampleTypeImpl stDeleteFrom,
                                       boolean ignoreStatus,
                                       boolean isTruncate)
     {
@@ -4678,7 +4678,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment materialFilterSQL,
         boolean deleteRunsUsingMaterials,
         boolean deleteFromAllSampleTypes,
-        @Nullable ExpSampleType stDeleteFrom,
+        @Nullable ExpSampleTypeImpl stDeleteFrom,
         boolean ignoreStatus,
         boolean isTruncate
     )
@@ -4695,7 +4695,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
 
-            Map<String, ExpSampleType> sampleTypes = new HashMap<>();
+            Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
@@ -4707,7 +4707,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             int count = new SqlSelector(getExpSchema(), sql).setJdbcCaching(false).forEachBatch(Material.class, 10_000, rawMaterials ->
                     {
                         List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(rawMaterials);
-                        for (ExpMaterial material : materials)
+                        for (ExpMaterialImpl material : materials)
                         {
                             if (!material.getContainer().hasPermission(user, DeletePermission.class))
                                 throw new UnauthorizedException();
@@ -4724,7 +4724,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                     String cpasType = material.getCpasType();
                                     if (!sampleTypes.containsKey(cpasType))
                                     {
-                                        ExpSampleType st = material.getSampleType();
+                                        ExpSampleTypeImpl st = material.getSampleType();
                                         if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
                                             LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
                                         sampleTypes.put(cpasType, st);
@@ -4784,21 +4784,29 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 executor.execute(deleteAliasSql);
             }
 
+            // Stash the ObjectIds that we're going to delete after we delete from exp.material
+            final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
+            final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectId" + suffix;
+            try (Timing ignored = MiniProfiler.step("create object temp table"))
+            {
+                executor.execute(new SQLFragment("CREATE ")
+                        .append(getSchema().getSqlDialect().getTempTableKeyword())
+                        .append(" TABLE ")
+                        .append(objectTempTableName)
+                        .append("(ObjectId INT NOT NULL PRIMARY KEY)"));
+
+                executor.execute(new SQLFragment("INSERT INTO ")
+                        .append(objectTempTableName)
+                        .append("(ObjectId) SELECT ObjectId FROM exp.Material WHERE ")
+                        .append(materialFilterSQL));
+            }
+
             try (Timing ignored = MiniProfiler.step("exp.edges"))
             {
-                SQLFragment objectIdFrag = new SQLFragment();
-                objectIdFrag.append(lsidInFrag).append(")");
-
                 TableInfo edge = getTinfoEdge();
-                SQLFragment deleteEdgeSql = new SQLFragment("WITH X AS (SELECT ObjectId FROM exp.Object WHERE ObjectURI ")
-                        .append(lsidInFrag).append(")\n")
-                        .append("DELETE FROM ")
-                        .append(String.valueOf(edge))
-                        .append(" WHERE ")
-                        .append(" fromObjectId IN (SELECT ObjectId FROM X)\n")
-                        .append(" OR toObjectId IN (SELECT ObjectId FROM X)\n")
-                        .append(" OR sourceId  IN (SELECT ObjectId FROM X)");
-                executor.execute(deleteEdgeSql);
+                executor.execute(new SQLFragment("DELETE FROM ").append(edge).append(" WHERE fromObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).append(")"));
+                executor.execute(new SQLFragment("DELETE FROM ").append(edge).append(" WHERE toObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).append(")"));
+                executor.execute(new SQLFragment("DELETE FROM ").append(edge).append(" WHERE sourceId IN (SELECT ObjectId FROM ").append(objectTempTableName).append(")"));
             }
 
             SQLFragment materialIdSql = new SQLFragment("(SELECT RowId FROM ");
@@ -4819,7 +4827,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         .append(" FROM ").append(getTinfoMaterialInput(), "mi")
                         .append(" WHERE mi.materialId IN ")
                         .append(materialIdSql);
-                OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+                OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
             }
 
             // delete exp.MaterialInput
@@ -4832,39 +4840,29 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
             {
-                for (ExpSampleType st : sampleTypes.values())
+                for (ExpSampleTypeImpl st : sampleTypes.values())
                 {
                     // Material may have been orphaned from its SampleType
                     if (st == null)
                         continue;
 
-                    TableInfo dbTinfo = ((ExpSampleTypeImpl)st).getTinfo();
+                    TableInfo dbTinfo = st.getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
-                        SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
-                        sampleTypeSQL.append(materialFilterSQL);
-                        sampleTypeSQL.append(")");
-                        executor.execute(sampleTypeSQL);
+                        if (isTruncate)
+                        {
+                            executor.execute(new SQLFragment("TRUNCATE " + dbTinfo));
+                        }
+                        else
+                        {
+                            SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
+                            sampleTypeSQL.append(materialFilterSQL);
+                            sampleTypeSQL.append(")");
+                            executor.execute(sampleTypeSQL);
+                        }
                     }
                 }
-            }
-
-            // Stash the ObjectURIs that we're going to delete after we delete from exp.material
-            final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
-            final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectURI" + suffix;
-            try (Timing ignored = MiniProfiler.step("create object temp table"))
-            {
-                executor.execute(new SQLFragment("CREATE ")
-                        .append(getSchema().getSqlDialect().getTempTableKeyword())
-                        .append(" TABLE ")
-                        .append(objectTempTableName)
-                        .append("(ObjectURI LSIDType NOT NULL PRIMARY KEY)"));
-
-                executor.execute(new SQLFragment("INSERT INTO ")
-                        .append(objectTempTableName)
-                        .append("(ObjectURI) SELECT LSID FROM exp.Material WHERE ")
-                        .append(materialFilterSQL));
             }
 
             try (Timing ignored = MiniProfiler.step("exp.Material"))
@@ -4880,9 +4878,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // delete exp.objects
             try (Timing ignored = MiniProfiler.step("exp.object"))
             {
-                SQLFragment lsidFragFrag = new SQLFragment("SELECT ObjectUri FROM ")
+                SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM ")
                         .append(objectTempTableName);
-                OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+                OntologyManager.deleteOntologyObjectsByObjectIdSql(getSchema(), objectIdSql);
             }
 
             // Get rid of our temp table
@@ -5255,7 +5253,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 new SQLFragment("CAST(di.targetApplicationId AS VARCHAR)")))
                     .append(" FROM ").append(getTinfoDataInput(), "di").append(" WHERE di.DataId ");
             dialect.appendInClauseSql(inputObjects, selectedDataIds);
-            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
@@ -5287,7 +5285,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // generate in clause for the Material LSIDs
             SQLFragment lsidInFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
             dialect.appendInClauseSql(lsidInFrag, allLsids);
-            OntologyManager.deleteOntologyObjects(getSchema(), lsidInFrag, container, false);
+            OntologyManager.deleteOntologyObjects(getSchema(), lsidInFrag, container);
 
             afterDeleteData(user, container, expDatas);
 

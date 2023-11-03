@@ -365,12 +365,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
                     dialect.concatenate("'" + DataInput.lsidPrefix() + "'",
                             "CAST(dataId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                    " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+                    " FROM " + svc.getTinfoDataInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
 
             OntologyManager.deleteOntologyObjects(svc.getSchema(), new SQLFragment("SELECT " +
                     dialect.concatenate("'" + MaterialInput.lsidPrefix() + "'",
                             "CAST(materialId AS VARCHAR)", "'.'", "CAST(targetApplicationId AS VARCHAR)") +
-                    " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer(), false);
+                    " FROM " + svc.getTinfoMaterialInput() + " WHERE TargetApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId = " + getRowId() + ")"), getContainer());
 
             long countInputs = 0;
             countInputs += Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter(FieldKey.fromParts("TargetApplicationId"), getRowId()));
@@ -505,7 +505,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
                 .append(" AND ObjectURI ");
         expSchema.getSqlDialect().appendInClauseSql(lsidsSql, inputLsids);
-        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer(), false);
+        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
 
         removeInputs(ExperimentServiceImpl.get().getTinfoDataInput(), "DataId", rowIds);
 
@@ -533,7 +533,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         SQLFragment lsidsSql = new SQLFragment().append("SELECT ObjectUri FROM exp.Object WHERE Container = ").appendValue(getContainer())
                 .append(" AND ObjectURI ");
         expSchema.getSqlDialect().appendInClauseSql(lsidsSql, inputLsids);
-        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer(), false);
+        OntologyManager.deleteOntologyObjects(expSchema, lsidsSql, getContainer());
 
         removeInputs(ExperimentServiceImpl.get().getTinfoMaterialInput(), "MaterialId", rowIds);
     }
