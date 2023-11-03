@@ -26,9 +26,11 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UnexpectedException;
 
 import java.beans.Introspector;
 import java.lang.reflect.Array;
@@ -162,7 +164,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
     public K fromMap(Map<String, ?> m)
     {
         Builder<K> builder = (Builder<K>)newInstance();
-        if (!(m instanceof CaseInsensitiveHashMap))
+        if (!(m instanceof CaseInsensitiveHashMap || m instanceof RowMap))
             m = new CaseInsensitiveHashMap<>(m);
 
         for (Map.Entry<String,MethodAndConverter> e : _writeableProperties.entrySet())
@@ -182,11 +184,11 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
             }
             catch (IllegalAccessException | InvocationTargetException x)
             {
-                assert null == "unexpected exception";
+                throw UnexpectedException.wrap(x);
             }
             catch (IllegalArgumentException x)
             {
-                _log.error("could not set property: " + name + "=" + String.valueOf(value), x);
+                _log.error("could not set property: " + name + "=" + value, x);
             }
         }
 
@@ -403,7 +405,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
         {
             Foo foo = new Foo("ONE", 1, 1.0);
             ObjectFactory<Foo> f = new BuilderObjectFactory<>(Foo.class, FooBuilder.class);
-            Map<String, Object> m = f.toMap(foo, new CaseInsensitiveHashMap<Object>());
+            Map<String, Object> m = f.toMap(foo, new CaseInsensitiveHashMap<>());
             assertEquals("ONE", m.get("s"));
             assertEquals(1, m.get("I"));
             assertEquals(String.valueOf(1.0), String.valueOf(m.get("F")));
