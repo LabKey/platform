@@ -569,7 +569,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         else
         {
             SQLFragment sql = new SQLFragment();
-            sql.append("RowID IN (");
+            sql.append("m.RowId IN (");
             String separator = "";
             for (ExpMaterial material : materials)
             {
