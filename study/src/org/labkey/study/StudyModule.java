@@ -141,25 +141,7 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.CohortDomainKind;
-import org.labkey.study.model.ContinuousDatasetDomainKind;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DateDatasetDomainKind;
-import org.labkey.study.model.ImportHelperServiceImpl;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.ParticipantGroupServiceImpl;
-import org.labkey.study.model.ParticipantIdImportHelper;
-import org.labkey.study.model.ProtocolDocumentType;
-import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.StudyDomainKind;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyLsidHandler;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TestDatasetDomainKind;
-import org.labkey.study.model.TreatmentManager;
-import org.labkey.study.model.VisitDatasetDomainKind;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -488,14 +470,22 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
                     }
                 });
-                Long cloudBackedStudies = allStudies.stream()
-                        .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
-                        .count();
+                Map<String, Integer> notificationMap = notifyOptionCounts.entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
+                metric.put("reportAndDatasetNotificationOptions", notificationMap);
+
+                long cloudBackedStudies = allStudies.stream()
+                    .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
+                    .count();
                 metric.put("cloudBackedStudies", cloudBackedStudies);
 
-                Map<String, Integer> notificationMap = new HashMap<>();
-                notifyOptionCounts.forEach((key, value) -> notificationMap.put(key.name(), value));
-                metric.put("reportAndDatasetNotificationOptions", notificationMap);
+                // Count the studies that have configured at least one group for per-dataset access control
+                long studiesWithAnyPerDatasetGroup = allStudies.stream()
+                    .filter(study -> study.getSecurityType().isSupportsPerDatasetPermissions())
+                    .filter(study -> SecurityManager.getGroups(study.getContainer().getProject(), true).stream()
+                        .anyMatch(group -> GroupSecurityType.getTypeForGroup(group, study) == GroupSecurityType.PER_DATASET))
+                    .count();
+                metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
 
                 // TODO: Move to specimen module and switch to top-level stats
                 // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
