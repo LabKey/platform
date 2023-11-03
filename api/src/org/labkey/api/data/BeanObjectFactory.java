@@ -25,7 +25,9 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UnexpectedException;
@@ -130,7 +132,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     @Override
     public K fromMap(K bean, Map<String, ?> m)
     {
-        if (!(m instanceof CaseInsensitiveHashMap))
+        if (!(m instanceof CaseInsensitiveCollection))
             m = new CaseInsensitiveHashMap<>(m);
 
         for (var prop : _writeableProperties)
@@ -169,7 +171,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 }
                 catch (IllegalAccessException | InvocationTargetException x)
                 {
-                    throw new UnexpectedException(x);
+                    throw UnexpectedException.wrap(x);
                 }
                 catch (IllegalArgumentException | ConversionException x)
                 {
@@ -192,7 +194,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
 
     public @NotNull Map<String, String> toStringMap(K bean, @Nullable Map<String, String> m)
     {
-        //noinspection unchecked
+        //noinspection unchecked,rawtypes
         return (Map)_toMap(bean, (Map)m, true);
     }
 
@@ -312,7 +314,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     public K[] handleArray(ResultSet rs) throws SQLException
     {
         ArrayList<K> list = handleArrayList(rs);
-        K[] array = (K[]) Array.newInstance(_class, list.size());
+        @SuppressWarnings("unchecked") K[] array = (K[]) Array.newInstance(_class, list.size());
         return list.toArray(array);
     }
 

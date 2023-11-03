@@ -33,7 +33,7 @@ import java.util.Random;
  * User: arauch
  * Date: Dec 25, 2004
  */
-public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> implements Serializable
+public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> implements Serializable, CaseInsensitiveCollection
 {
     public CaseInsensitiveHashMap()
     {
