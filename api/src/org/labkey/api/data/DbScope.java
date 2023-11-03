@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -2087,7 +2088,10 @@ public class DbScope
         @Nullable
         Long getAuditId();
 
-        void setAuditId(Long auditId);
+        @Nullable
+        TransactionAuditProvider.TransactionAuditEvent getAuditEvent();
+
+        void setAuditEvent(TransactionAuditProvider.TransactionAuditEvent event);
     }
 
     /** A dummy object for swap-in usage when no transaction is actually desired */
@@ -2141,8 +2145,14 @@ public class DbScope
             return null;
         }
 
+        @Override @Nullable
+        public TransactionAuditProvider.TransactionAuditEvent getAuditEvent()
+        {
+            return null;
+        }
+
         @Override
-        public void setAuditId(Long auditId)
+        public void setAuditEvent(TransactionAuditProvider.TransactionAuditEvent event)
         {
 
         }
@@ -2204,7 +2214,7 @@ public class DbScope
 
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
-        private Long _auditId;
+        private TransactionAuditProvider.TransactionAuditEvent _auditEvent = null;
 
         private int _lockTimeout = 5;
         private TimeUnit _lockTimeoutUnit = TimeUnit.MINUTES;
@@ -2225,13 +2235,19 @@ public class DbScope
         @Override @Nullable
         public Long getAuditId()
         {
-            return _auditId;
+            return _auditEvent == null ? null : _auditEvent.getRowId();
+        }
+
+        @Override @Nullable
+        public TransactionAuditProvider.TransactionAuditEvent getAuditEvent()
+        {
+            return _auditEvent;
         }
 
         @Override
-        public void setAuditId(Long auditId)
+        public void setAuditEvent(TransactionAuditProvider.TransactionAuditEvent event)
         {
-            _auditId = auditId;
+            _auditEvent = event;
         }
 
         <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)

@@ -445,6 +445,11 @@ public interface QueryService
             return _verbPastTense;
         }
 
+        public String getDefaultCommentSummary()
+        {
+            return String.format(getCommentSummary(), "Some");
+        }
+
     }
 
     /**

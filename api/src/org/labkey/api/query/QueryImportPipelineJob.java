@@ -282,7 +282,12 @@ public class QueryImportPipelineJob extends PipelineJob
                 Map<String, Object> results = new HashMap<>();
                 results.put("rowCount", importedCount);
                 if (_transactionAuditId > 0)
+                {
                     results.put("transactionAuditId", _transactionAuditId);
+                    if (auditEvent != null)
+                        results.put("reselectRowCount", auditEvent.hasMultiActions());
+                }
+
                 if (!diContext.getResponseInfo().isEmpty())
                     results.putAll(diContext.getResponseInfo());
                 notificationProvider.onJobSuccess(this, results);

@@ -1,5 +1,7 @@
 package org.labkey.api.audit;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ContainerFilter;
@@ -102,7 +104,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         private QueryService.AuditAction _auditAction;
         private String _transactionType;
 
-        private int rowCount;
+        private boolean _multiActions; // if the audit event comment is updated/appended multiple times, for example, the original insert triggers additional insert/update via trigger scripts
 
         public TransactionAuditEvent()
         {
@@ -111,7 +113,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
 
         public TransactionAuditEvent(String container, QueryService.AuditAction auditAction, long transactionId)
         {
-            super(EVENT_TYPE, container, String.format(auditAction.getCommentSummary(), "Some"));
+            super(EVENT_TYPE, container, auditAction.getDefaultCommentSummary());
             _auditAction = auditAction;
             _transactionType = auditAction.name();
             _startTime = new Date();
@@ -138,15 +140,36 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             _transactionType = transactionType;
         }
 
-        public int getRowCount()
-        {
-            return rowCount;
-        }
-
         public void setRowCount(int rowCount)
         {
-            this.rowCount = rowCount;
-            setComment(String.format(_auditAction.getCommentSummary(), getRowCount()));
+            setComment(String.format(_auditAction.getCommentSummary(), rowCount));
+        }
+
+        public void addComment(@Nullable QueryService.AuditAction action, int rowCount)
+        {
+            String existingComment = this.getComment();
+            QueryService.AuditAction newAction = action == null ? _auditAction : action;
+            boolean isDefaultOrNullComment = StringUtils.isEmpty(existingComment) || newAction.getDefaultCommentSummary().equals(existingComment);
+
+            String newComment = String.format(newAction.getCommentSummary(), rowCount);
+
+            if (isDefaultOrNullComment) // if empty or default, replace
+                setRowCount(rowCount);
+            else // append
+            {
+                setComment(existingComment + " " + newComment);
+                _multiActions = true;
+            }
+        }
+
+        public boolean hasMultiActions()
+        {
+            return _multiActions;
+        }
+
+        public QueryService.AuditAction getAuditAction()
+        {
+            return _auditAction;
         }
     }
 
