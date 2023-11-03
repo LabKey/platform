@@ -24,7 +24,7 @@ import java.util.TreeSet;
 * Date: Nov 30, 2010
 * Time: 8:32:21 AM
 */
-public class CaseInsensitiveTreeSet extends TreeSet<String>
+public class CaseInsensitiveTreeSet extends TreeSet<String> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveTreeSet()
     {

@@ -23,7 +23,7 @@ import java.util.Set;
 /**
  * A case-insensitive version of org.apache.commons.collections4.multimap.HashSetValuedHashMap
  */
-public class CaseInsensitiveHashSetValuedMap<V> extends AbstractSetValuedMap<String, V>
+public class CaseInsensitiveHashSetValuedMap<V> extends AbstractSetValuedMap<String, V> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveHashSetValuedMap()
     {

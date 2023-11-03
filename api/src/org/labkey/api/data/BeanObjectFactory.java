@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
@@ -131,7 +132,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     @Override
     public K fromMap(K bean, Map<String, ?> m)
     {
-        if (!(m instanceof CaseInsensitiveHashMap || m instanceof RowMap))
+        if (!(m instanceof CaseInsensitiveCollection))
             m = new CaseInsensitiveHashMap<>(m);
 
         for (var prop : _writeableProperties)

@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveCollection;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMap;
 import org.labkey.api.module.ModuleLoader;
@@ -164,7 +165,7 @@ public class BuilderObjectFactory<K> implements ObjectFactory<K>
     public K fromMap(Map<String, ?> m)
     {
         Builder<K> builder = (Builder<K>)newInstance();
-        if (!(m instanceof CaseInsensitiveHashMap || m instanceof RowMap))
+        if (!(m instanceof CaseInsensitiveCollection))
             m = new CaseInsensitiveHashMap<>(m);
 
         for (Map.Entry<String,MethodAndConverter> e : _writeableProperties.entrySet())
