@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.core.admin.FileSettingsForm" %>
 <%@ page import="org.labkey.core.admin.FilesSiteSettingsAction" %>
 <%@ page import="org.labkey.core.admin.UpdateFilePathsAction" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -54,8 +55,8 @@
         <tr><td colspan="2">Set the site-level root for this server installation, or use the default provided. If the
             location does not exist, LabKey Server will create it for you.<br/><br/>
             When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
-            LabKey Server allows you to upload and process your data files, including flow, proteomics and
-            study-related files. By default, LabKey stores your files in a standard directory structure. You can
+            LabKey Server allows you to upload and process your data files, including assay and
+            study-related files. By default, LabKey Server stores your files in a standard directory structure. You can
             override this location for each project if you wish.
             </td></tr>
         <% } else { %>
@@ -64,7 +65,13 @@
             possible to <a href="<%= h(new ActionURL(UpdateFilePathsAction.class, getContainer())) %>">update paths stored in the database</a>.</td></tr>
         <% } %>
         <tr><td>&nbsp;</td></tr>
-        
+
+        <%
+            String problemMessage = FileContentService.get() == null ? null : FileContentService.get().getProblematicFileRootMessage();
+            if (problemMessage != null) { %>
+                <tr><td colspan="2"><span class="labkey-error"><%= h(problemMessage) %></span></td></tr>
+        <% } %>
+
         <tr><td class="labkey-form-label">Site-Level&nbsp;File&nbsp;Root&nbsp;<%=helpPopup("File Root", "Set a site-level file root. " +
                 "When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system." +
                 " A site-level file root may be overridden at the project level from 'Project Settings'.")%></td>
