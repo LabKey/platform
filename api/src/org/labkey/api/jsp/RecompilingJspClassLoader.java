@@ -46,12 +46,8 @@ import java.util.Set;
 
 /**
  * Checks if the JSP source has changed since the last time the JSP was compiled, and if so, recompiles the JSP and
- * uses that version to serve the request.
- *
- * Used in dev mode at runtime. Production mode servers assume that all JSPs have been precompiled and are up to date.
- *
- * User: adam
- * Date: Oct 25, 2008
+ * uses that version to serve the request. Used in dev mode at runtime. Production mode servers assume that all JSPs
+ * have been precompiled and are up-to-date.
  */
 public class RecompilingJspClassLoader extends JspClassLoader
 {
@@ -125,7 +121,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
                     File tomcatLib = ModuleLoader.getInstance().getTomcatLib();
                     if (null != tomcatLib)
                         cp.addDirectory(tomcatLib);
-                    // With the Gradle build, api and internal are first-class modules and their libraries are no longer
+                    // With the Gradle build, api is a first-class module and its libraries are no longer
                     // put into WEB-INF/lib so we include their individual lib directories in the classpath for the JSPs.
                     for (ResourceFinder apiFinder : apiResourceFinders)
                         cp.addDirectory(new File(apiFinder.getBuildPath(), "/explodedModule/lib"));
