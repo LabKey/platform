@@ -140,8 +140,8 @@
     <% }
        else
        {
-           Container c = getContainer().isRoot() ? ContainerManager.getHomeContainer() : getContainer();
-           URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(StartAction.class, c);
+            Container c = getContainer().isRoot() ? ContainerManager.getHomeContainer() : getContainer();
+            URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(StartAction.class, c);
     %>
             <div class="auth-item">
                 <%= unsafe(button("Home").href(homeURL).toString()) %>
