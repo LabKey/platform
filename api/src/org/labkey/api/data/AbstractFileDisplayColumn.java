@@ -21,12 +21,15 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Input;
+import org.labkey.api.view.HttpView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+
+import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * Provides a consistent UI for both attachment (BLOB) and file link (file system) files
@@ -217,9 +220,9 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             }
             if (getLinkTarget() != null)
             {
-                return "window.open(" + PageFlowUtil.jsString(_url) + "," + PageFlowUtil.jsString(getLinkTarget()) + ", 'noopener,noreferrer')";
+                return "window.open(" + jsString(_url) + "," + jsString(getLinkTarget()) + ", 'noopener,noreferrer')";
             }
-            return "window.location = " + PageFlowUtil.jsString(_url);
+            return "window.location = " + jsString(_url);
         }
     }
 
@@ -286,13 +289,13 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
     private void renderThumbnailAndRemoveLink(Writer out, RenderContext ctx, String filename, String filePicker) throws IOException
     {
         String divId = GUID.makeGUID();
+        String linkId = "remove" + divId;
 
         out.write("<div id=\"" + divId + "\">");
         renderIconAndFilename(ctx, out, filename, false, false);
-        out.write("&nbsp;[<a href=\"javascript:{}\" onClick=\"");
-        out.write("document.getElementById('" + divId + "').innerHTML = " + PageFlowUtil.filter(PageFlowUtil.jsString(filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>")) + "\"");
-        out.write(">remove");
-        out.write("</a>]");
+        out.write("&nbsp;[<a id=\"" + linkId + "\" href=\"#\">remove</a>]");
         out.write("</div>\n");
+        String innerHtml = filePicker + "<input type=\"hidden\" name=\"deletedAttachments\" value=\"" + filename + "\"><span class=\"labkey-message\">" + getRemovalWarningText(filename) + "</span>";
+        HttpView.currentPageConfig().addHandler(linkId, "click", "document.getElementById(" + jsString(divId) + ").innerHTML = " + jsString(innerHtml));
     }
 }

@@ -38,7 +38,9 @@ import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singleton;
 
@@ -67,22 +69,36 @@ public class ExperimentListenerImpl implements ExperimentListener
     public void beforeMaterialDelete(List<? extends ExpMaterial> materials, Container container, User user)
     {
         // Check for datasets that need rows deleted due to a linked Sample Type row-level deletion
+
+        // It's likely that we'll have multiple materials from the same sample type, so group them for efficient processing
+
+        Map<ExpSampleType, List<ExpMaterial>> typeToMaterials = new HashMap<>();
+
         for (ExpMaterial material: materials)
         {
             ExpSampleType sampleType = material.getSampleType();
             if (sampleType != null)
             {
-                for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(sampleType.getRowId(), Dataset.PublishSource.SampleType))
+                typeToMaterials.computeIfAbsent(sampleType, x -> new ArrayList<>()).add(material);
+            }
+        }
+
+        for (Map.Entry<ExpSampleType, List<ExpMaterial>> entry : typeToMaterials.entrySet())
+        {
+            for (Dataset dataset: StudyPublishService.get().getDatasetsForPublishSource(entry.getKey().getRowId(), Dataset.PublishSource.SampleType))
+            {
+                TableInfo t = dataset.getTableInfo(user);
+                if (null == t || !t.hasPermission(user, DeletePermission.class))
                 {
-                    TableInfo t = dataset.getTableInfo(user);
-                    if (null == t || !t.hasPermission(user, DeletePermission.class))
-                    {
-                        throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
-                    }
+                    throw new UnauthorizedException("Cannot delete rows from dataset " + dataset);
+                }
 
-                    UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
-                    TableInfo tableInfo = schema.getTable(dataset.getName());
+                UserSchema schema = QueryService.get().getUserSchema(user, dataset.getContainer(), "study");
+                TableInfo tableInfo = schema.getTable(dataset.getName());
 
+                // Future optimization - query for all the materials at once
+                for (ExpMaterial material : entry.getValue())
+                {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts(ExpMaterialTable.Column.RowId.toString()), material.getRowId());
                     String lsid = new TableSelector(tableInfo, singleton("LSID"), filter, null).getObject(String.class);
 

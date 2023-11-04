@@ -41,9 +41,12 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Helper methods for working with Jackson, JSONObject, and JSONArray
@@ -238,7 +241,7 @@ public class JsonUtil
         json.put(key, translateNumber(value));
     }
 
-    private static Object translateNumber(Number value)
+    public static Object translateNumber(Number value)
     {
         if (value instanceof Double d)
         {
@@ -260,6 +263,38 @@ public class JsonUtil
         }
 
         return value;
+    }
+
+    /**
+     * Sanitizes a mutable map by replacing +Infinity, -Infinity, and NaN values with JSON-legal values. Recursively
+     * sanitizes all embedded maps and lists as well; these must also be mutable.
+     * @param mutableMap mutable Map to sanitize
+     */
+    public static void sanitizeMap(Map<String, Object> mutableMap)
+    {
+        mutableMap.keySet().forEach(key -> sanitize(mutableMap.get(key), num -> mutableMap.put(key, translateNumber(num))));
+    }
+
+    /**
+     * Sanitizes a mutable list by replacing +Infinity, -Infinity, and NaN values with JSON-legal values. Recursively
+     * sanitizes all embedded maps and lists as well; these must also be mutable.
+     * @param mutableList mutable List to sanitize
+     */
+    public static void sanitizeList(List<Object> mutableList)
+    {
+        ListIterator<Object> iter = mutableList.listIterator();
+        while (iter.hasNext())
+            sanitize(iter.next(), num -> iter.set(translateNumber(num)));
+    }
+
+    private static void sanitize(Object obj, Consumer<Number> numberAction)
+    {
+        if (obj instanceof Map m)
+            sanitizeMap(m);
+        else if (obj instanceof List list)
+            sanitizeList(list);
+        else if (obj instanceof Number num)
+            numberAction.accept(num);
     }
 
     public static class TestCase extends Assert
@@ -421,6 +456,48 @@ public class JsonUtil
             assertEquals(url.toString(), roundTripJson.get("actionUrl"));
             assertEquals(html.toString(), roundTripJson.get("htmlString"));
             assertEquals(u.getUserId(), roundTripJson.get("user"));
+        }
+
+        @Test
+        public void testSanitize()
+        {
+            // Rough approximation of the map GetNabRunsAction generates
+            Map<String, Object> response = new HashMap<>();
+            response.put("assayName", "foobar");
+            response.put("assayDescription", "this is my assay");
+            response.put("assayId", 1234);
+            response.put("neg", Double.NEGATIVE_INFINITY);
+            response.put("pos", Double.POSITIVE_INFINITY);
+            response.put("nan", Double.NaN);
+
+            List<Map<String, Object>> runList = new ArrayList<>();
+            response.put("runs", runList);
+            runList.add(getDoubleRun());
+            runList.add(getFloatRun());
+
+            assertThrows(JSONException.class, () -> new JSONObject(response));
+            JsonUtil.sanitizeMap(response);
+            JSONObject json = new JSONObject(response);
+        }
+
+        private Map<String, Object> getFloatRun()
+        {
+            Map<String, Object> run = new HashMap<>();
+            run.put("cutoff", Float.NaN);
+            run.put("maxDilution", Float.NEGATIVE_INFINITY);
+            run.put("minDilution", Float.POSITIVE_INFINITY);
+
+            return run;
+        }
+
+        private Map<String, Object> getDoubleRun()
+        {
+            Map<String, Object> run = new HashMap<>();
+            run.put("cutoff", Double.NaN);
+            run.put("maxDilution", Double.NEGATIVE_INFINITY);
+            run.put("minDilution", Double.POSITIVE_INFINITY);
+
+            return run;
         }
     }
 }

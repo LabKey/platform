@@ -73,7 +73,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -81,7 +81,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -120,7 +119,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -145,8 +143,6 @@ import static org.labkey.study.query.DatasetTableImpl.SOURCE_ROW_LSID;
 /**
  * Manages the link to study operation that links assay rows into datasets in the target study, creating the dataset
  * if needed.
- * User: Mark Igra
- * Date: Aug 16, 2006
  */
 public class StudyPublishManager implements StudyPublishService
 {
@@ -441,10 +437,8 @@ public class StudyPublishManager implements StudyPublishService
             if (!targetContainer.hasPermission(user, AdminPermission.class) && targetContainer.hasPermission(user, InsertPermission.class))
             {
                 // we allow linking data to a study even if the study security is set to read-only datasets, since the
-                // underlying insert uses the QUS, we pass in a contextual role to allow the insert to succeed
-                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-                contextualRoles.add(RoleManager.getRole(FolderAdminRole.class));
-                user = new LimitedUser(user, user.getGroups(), contextualRoles, false);
+                // underlying insert uses the QUS, we add a contextual role to allow the insert to succeed
+                user = ElevatedUser.getElevatedUser(user, FolderAdminRole.class);
             }
             datasetLsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, validationException, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false, false);
             StudyManager.getInstance().batchValidateExceptionToList(validationException, errors);
@@ -455,7 +449,7 @@ public class StudyPublishManager implements StudyPublishService
             if (!errors.isEmpty())
                 return null;
 
-            if (datasetLsids.size() > 0)
+            if (!datasetLsids.isEmpty())
             {
                 logPublishEvent(publishSource.first, source, dataMaps, user, sourceContainer, targetContainer, dataset);
             }
@@ -902,7 +896,7 @@ public class StudyPublishManager implements StudyPublishService
 
         while (inUseNames.contains(name))
         {
-            name = assayName + Integer.toString(suffix);
+            name = assayName + suffix;
             suffix++;
         }
 
@@ -921,7 +915,7 @@ public class StudyPublishManager implements StudyPublishService
 
         if (!Files.exists(dir))
         {
-            Files.createDirectory(dir);
+            FileUtil.createDirectory(dir);
         }
 
         //File name is studyname_datasetname_date_hhmm.ss
@@ -1141,8 +1135,6 @@ public class StudyPublishManager implements StudyPublishService
      *
      * @param sampleType - the sample type to link
      * @param keys - the list of sample row IDs to link to the configured study
-     * @throws SQLException
-     * @throws IOException
      */
     @Override
     public void autoLinkDerivedSamples(ExpSampleType sampleType, List<Integer> keys, Container container, User user) throws ExperimentException
@@ -1402,13 +1394,12 @@ public class StudyPublishManager implements StudyPublishService
     @Override
     public ExpProtocol ensureStudyPublishProtocol(User user) throws ExperimentException
     {
-        String protocolName = STUDY_PUBLISH_PROTOCOL_NAME;
         String protocolLsid = STUDY_PUBLISH_PROTOCOL_LSID;
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolLsid);
 
         if (protocol == null)
         {
-            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, protocolName);
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(ContainerManager.getSharedContainer(), ExpProtocol.ApplicationType.ExperimentRun, STUDY_PUBLISH_PROTOCOL_NAME);
             baseProtocol.setLSID(protocolLsid);
             baseProtocol.setMaxInputMaterialPerInstance(0);
             baseProtocol.setProtocolDescription("Simple protocol for publishing study using link to study.");
@@ -1418,7 +1409,7 @@ public class StudyPublishManager implements StudyPublishService
     }
 
     @Override
-    public Set<DatasetDefinition> getDatasetsForPublishSource(Integer publishSourceId, Dataset.PublishSource publishSource)
+    public Set<DatasetDefinition> getDatasetsForPublishSource(int publishSourceId, Dataset.PublishSource publishSource)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("publishSourceId"), publishSourceId);
@@ -1441,7 +1432,7 @@ public class StudyPublishManager implements StudyPublishService
     {
         // Cache the datasets for a specific protocol (assay design)
         Map<ExpProtocol, Set<DatasetDefinition>> protocolDatasets = new HashMap<>();
-        // Remember all of the run RowIds for a given protocol (assay design)
+        // Remember all the run RowIds for a given protocol (assay design)
         Map<ExpProtocol, List<Integer>> allProtocolRunIds = new HashMap<>();
 
         // Go through the runs and figure out what protocols they belong to, and what datasets they could have been linked to
@@ -1454,12 +1445,7 @@ public class StudyPublishManager implements StudyPublishService
                 datasets = StudyPublishManager.getInstance().getDatasetsForPublishSource(protocol.getRowId(), Dataset.PublishSource.Assay);
                 protocolDatasets.put(protocol, datasets);
             }
-            List<Integer> protocolRunIds = allProtocolRunIds.get(protocol);
-            if (protocolRunIds == null)
-            {
-                protocolRunIds = new ArrayList<>();
-                allProtocolRunIds.put(protocol, protocolRunIds);
-            }
+            List<Integer> protocolRunIds = allProtocolRunIds.computeIfAbsent(protocol, k -> new ArrayList<>());
             protocolRunIds.add(run.getRowId());
         }
 
@@ -1661,7 +1647,7 @@ public class StudyPublishManager implements StudyPublishService
                 else
                     visibleColumnNames.add(studyLinkedColumn.getName());
             }
-            if (setVisibleColumns && visibleColumnNames.size() > 0)
+            if (setVisibleColumns && !visibleColumnNames.isEmpty())
             {
                 List<FieldKey> visibleColumns = new ArrayList<>(table.getDefaultVisibleColumns());
                 for (String columnName : visibleColumnNames)

@@ -120,7 +120,8 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
 
     private SQLFragment getPercentNeutralizationInitialDilution()
     {
-        return new SQLFragment("(SELECT PercentNeutralization FROM ")
+        // Issue 48437: Use AVG() since we can't guarantee that there will be just a single DilutionData row for the min dilution
+        return new SQLFragment("(SELECT AVG(PercentNeutralization) FROM ")
             .append(DilutionManager.getTableInfoDilutionData(), "dd")
             .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
             .append(" AND dd.Dilution = dd.MinDilution)");

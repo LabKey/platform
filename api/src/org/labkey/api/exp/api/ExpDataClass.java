@@ -18,6 +18,7 @@ package org.labkey.api.exp.api;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
@@ -50,6 +51,8 @@ public interface ExpDataClass extends ExpObject
     List<? extends ExpData> getDatas();
 
     ExpData getData(Container c, String name);
+
+    long getDataCount(Container c, @Nullable ContainerFilter cf);
 
     /** Get the SampleType related to this ExpDataClass. */
     @Nullable

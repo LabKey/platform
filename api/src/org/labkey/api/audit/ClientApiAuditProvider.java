@@ -291,7 +291,9 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
         @Override
         public Set<Index> getPropertyIndices(Domain domain)
         {
-            return PageFlowUtil.set(new Index(false, COLUMN_NAME_SUBTYPE));
+            Set<Index> indexes = super.getPropertyIndices(domain);
+            indexes.add(new Index(false, COLUMN_NAME_SUBTYPE));
+            return indexes;
         }
 
         @Override

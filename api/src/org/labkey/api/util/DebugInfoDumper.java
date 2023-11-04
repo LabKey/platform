@@ -22,6 +22,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatchers;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.writer.PrintWriters;
@@ -38,11 +39,13 @@ import java.nio.file.StandardWatchEventKinds;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Monitors the timestamp of the heapDumpRequest and threadDumpRequest files to see if an admin has requested
@@ -133,6 +136,55 @@ public class DebugInfoDumper
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
+
+
+    record ThreadExtraContext(String context, StackTraceElement[] stack) {}
+
+    /* Can't use class ThreadLocal, which is frustrating */
+    static final Map<Thread,List<ThreadExtraContext>> _threadDumpExtraContext = Collections.synchronizedMap(new WeakHashMap<>());
+
+
+    /**
+     * push a String onto a stack in ThreadLocal storage for adding context to a thread dump
+     * <br>
+     * This is primarily intended to help understand deadlocks.  Developers are encouraged to
+     * add information related to attaining locks or starting transactions.
+     */
+    public static _PopAutoCloseable pushThreadDumpContext(String context)
+    {
+        final var arr = _threadDumpExtraContext.computeIfAbsent(Thread.currentThread(), (p1) -> Collections.synchronizedList(new ArrayList<>()));
+        int size = arr.size();
+        arr.add(new ThreadExtraContext(context, MiniProfiler.getTroubleshootingStackTrace()));
+        return new _PopAutoCloseable(size);
+    }
+
+    public static void resetThreadDumpContext()
+    {
+        final var arr = _threadDumpExtraContext.get(Thread.currentThread());
+        if (null != arr)
+            arr.clear();
+    }
+
+
+    public static class _PopAutoCloseable implements AutoCloseable
+    {
+        final int _size;
+
+        _PopAutoCloseable(int size)
+        {
+            _size = size;
+        }
+
+        @Override
+        public void close()
+        {
+            var arr = _threadDumpExtraContext.get(Thread.currentThread());
+            assert null != arr;
+            while (arr.size() > _size)
+                arr.remove(arr.size() - 1);
+        }
+    }
+
 
     private void checkForRequests()
     {
@@ -266,6 +318,8 @@ public class DebugInfoDumper
         List<Thread> threads = new ArrayList<>(stackTraces.keySet());
         threads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
 
+        Set<String> skipMethods = Set.of("pushThreadDumpContext", "beginTransaction", "ensureTransaction", "execute", "getTroubleshootingStackTrace");
+
         for (Thread thread : threads)
         {
             logWriter.debug("");
@@ -284,9 +338,32 @@ public class DebugInfoDumper
             ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
             if (null != uri)
                 logWriter.debug(uri.toString());
-            for (StackTraceElement stackTraceElement : stackTraces.get(thread))
+            var stack = stackTraces.get(thread);
+            for (var i=0 ; i<stack.length ; i++)
             {
-                logWriter.debug("\t" + stackTraceElement.toString());
+                // subtract 1 because dumpThreads includes Thread.run() in the stack trace
+                logWriter.debug(String.format("%3d\t\t%s", stack.length-i-1, stack[i].toString()));
+            }
+            var extraInfo = _threadDumpExtraContext.get(thread);
+            if (null != extraInfo && !extraInfo.isEmpty())
+            {
+                logWriter.debug("extra stack context (may not match stacktrace if thread is not blocked)");
+                var messages = extraInfo.toArray(new ThreadExtraContext[0]);
+                for (var i = messages.length-1 ; i>= 0 ; i--)
+                {
+                    logWriter.debug("\t" + messages[i].context.replace('\n',' '));
+                    var messageStack = messages[i].stack();
+                    if (null != messageStack)
+                    {
+                        for (int j=0, count=0 ; j<messageStack.length && count < 4; j++)
+                        {
+                            if (skipMethods.contains(messageStack[j].getMethodName()))
+                                continue;
+                            logWriter.debug(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
+                            count++;
+                        }
+                    }
+                }
             }
 
             if (ConnectionWrapper.getProbableLeakCount() > 0)

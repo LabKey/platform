@@ -56,7 +56,6 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -417,7 +416,7 @@ public class ServerManager
             else
             {
                 // OK: to leave OlapConnection null as it is not used in any configuration except Mondrian
-                warmCubeUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+                warmCubeUser = new LimitedUser(User.guest, ReaderRole.class);
                 warmCubeUser.setPrincipalType(PrincipalType.SERVICE);
                 warmCubeUser.setDisplayName("Warm OLAP Cache User");
                 warmCubeUser.setEmail("warmolapcache@labkey.org");

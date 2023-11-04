@@ -31,7 +31,6 @@ import org.labkey.api.assay.AssayPipelineProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProviderSchema;
 import org.labkey.api.assay.AssayResultDomainKind;
-import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -40,9 +39,18 @@ import org.labkey.api.assay.PipelineDataCollector;
 import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -61,6 +69,7 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
@@ -84,7 +93,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 /**
  * User: brittp
@@ -103,6 +116,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     private static final Set<String> dateImportAliases;
 
     public static final Class<Module> assayModuleClass;
+
+    public static final String ASSAY_DBSEQ = "GpatAssayDBSeq";
+    public static final String ASSAY_DBSEQ_SUBSTITUTION = "${" + ASSAY_DBSEQ + "}";
 
     static
     {
@@ -156,15 +172,68 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     }
 
     @Override
-    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container, ExpProtocol protocol)
     {
-        return new ActionURL(AssayPlateMetadataTemplateAction.class, container);
+        return new ActionURL(AssayPlateMetadataTemplateAction.class, container).addParameter("protocol", protocol.getRowId());
     }
 
     @Override
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    protected String getPresubstitutionRunLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN, getLsidIdSub());
+    }
+
+    @Override
+    protected String getPresubstitutionBatchLsid()
+    {
+        return getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH, getLsidIdSub());
+    }
+
+    @Override
+    protected String getAssayProtocolLsid(Container container, String assayName, XarContext context)
+    {
+        Container projectContainer = container;
+        if (!container.isProject() && container.getProject() != null)
+            projectContainer = container.getProject();
+
+        DbSequence sequence = DbSequenceManager.get(projectContainer, ASSAY_DBSEQ);
+        sequence.ensureMinimum(getMaxExistingAssayDesignId(container));
+
+        String assayDesignDBSeq = String.valueOf(sequence.next());
+        context.addSubstitution(ASSAY_DBSEQ, assayDesignDBSeq);
+        return new Lsid(_protocolLSIDPrefix, "Folder-" + container.getRowId(), assayDesignDBSeq).toString();
+    }
+
+    private Long getMaxExistingAssayDesignId(Container container)
+    {
+        long max = 0;
+        TableInfo protocolTable = ExperimentService.get().getTinfoProtocol();
+        String lsidPrefix = "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":" + _protocolLSIDPrefix + ".Folder-" + container.getRowId() + ":";
+
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("LSID"), lsidPrefix, STARTS_WITH);
+
+        TableSelector selector = new TableSelector(protocolTable, Collections.singleton("LSID"), filter, null);
+        final List<String> nameSuffixes = new ArrayList<>();
+        selector.forEach(String.class, fullname -> nameSuffixes.add(fullname.replace(lsidPrefix, "")));
+
+        for (String nameSuffix : nameSuffixes)
+        {
+            if (nameSuffix.matches("\\d+"))
+            {
+                long id = Long.parseLong(nameSuffix);
+                if (id > max)
+                    max = id;
+            }
+        }
+
+        return max;
     }
 
     @Override
@@ -208,9 +277,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
+    protected String getLsidIdSub()
+    {
+        return ASSAY_DBSEQ_SUBSTITUTION;
+    }
+
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA), "Data Fields");
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA, getLsidIdSub()), "Data Fields");
         dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
@@ -333,10 +407,20 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return true;
     }
 
+    private boolean hasDomainNameChanged(ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        return !(protocol.getName() + getDomainNameSuffix(domain)).equals(domain.getName());
+    }
+
     @Override
     public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
         super.changeDomain(user, protocol, orig, update);
+
+        if (hasDomainNameChanged(protocol, orig))
+        {
+            update.setName(protocol.getName() + getDomainNameSuffix(orig));
+        }
 
         if (isPlateMetadataEnabled(protocol))
         {
@@ -344,13 +428,21 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain runDomain = getRunDomain(protocol);
             if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME)))
+                Optional<GWTPropertyDescriptor> plateTemplateColumn = update.getFields().stream().filter(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).findFirst();
+                if (plateTemplateColumn.isPresent())
                 {
-                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    // Ensure the lookup container is null, so it defaults to "Current Folder" to more easily support
+                    // cross-folder support.
+                    GWTPropertyDescriptor plateTemplate = plateTemplateColumn.get();
+                    plateTemplate.setLookupContainer(null);
+                }
+                else
+                {
+                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
-                    plateTemplate.setLookupContainer(protocol.getContainer().getId());
-                    plateTemplate.setRequired(true);
+                    plateTemplate.setLookupContainer(null);
+                    plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
                     plateTemplate.setShownInUpdateView(false);
 
                     ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
@@ -364,19 +456,60 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain resultsDomain = getResultsDomain(protocol);
             if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)))
+                ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
+                Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
+
+                if (!existingFields.contains(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
                 {
                     GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     wellLocation.setShownInUpdateView(false);
 
-                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
                     newFields.add(wellLocation);
-                    newFields.addAll(update.getFields());
+                }
 
+                if (!existingFields.contains(AssayResultDomainKind.WELL_LSID_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor wellLsid = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LSID_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLsid.setShownInInsertView(false);
+                    wellLsid.setShownInUpdateView(false);
+                    wellLsid.setHidden(true);
+
+                    newFields.add(wellLsid);
+                }
+
+                if (!newFields.isEmpty())
+                {
+                    newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
             }
         }
+    }
+
+    @Override
+    public void ensurePropertyDomainName(ExpProtocol protocol, ObjectProperty prop)
+    {
+        if (prop.getName() == null)
+            prop.setName(protocol.getName()); // set domain name to match assay design name
+    }
+
+    private String getDomainNameSuffix(GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        String domainKindName = domain.getDomainKindName();
+        String nameSuffix = switch (domainKindName)
+                {
+                    case "Assay Batches" -> "Batch";
+                    case "Assay Runs" -> "Run";
+                    case "Assay Results" -> "Data";
+                    default -> "";
+                };
+        return " " + nameSuffix + " Fields";
+    }
+
+    @Override
+    public boolean canRename()
+    {
+        return true;
     }
 
     public static class TestCase extends Assert

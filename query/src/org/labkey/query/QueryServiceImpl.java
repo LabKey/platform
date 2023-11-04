@@ -2949,7 +2949,7 @@ public class QueryServiceImpl implements QueryService
             @Override
             protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, int rowCount, @Nullable Map<String, Object> row)
             {
-                DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row);
+                DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, String.format(action.getCommentSummary(), rowCount), row, null);
                 event.setUserComment(userComment);
                 return event;
             }
@@ -2957,12 +2957,12 @@ public class QueryServiceImpl implements QueryService
             @Override
             protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable String userComment, @Nullable Map<String, Object> updatedRow, Map<String, Object> existingRow)
             {
-                DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow);
+                DetailedAuditTypeEvent event = createAuditRecord(c, tinfo, action.getCommentDetailed(), updatedRow, existingRow);
                 event.setUserComment(userComment);
                 return event;
             }
 
-            private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
+            private QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row, @Nullable Map<String, Object> existingRow)
             {
                 QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
                 DbScope.Transaction tx = tinfo.getSchema().getScope().getCurrentTransaction();
@@ -2975,13 +2975,20 @@ public class QueryServiceImpl implements QueryService
                 event.setQueryName(tinfo.getPublicName());
 
                 FieldKey rowPk = tinfo.getAuditRowPk();
-                if (rowPk != null && row != null)
+                if (rowPk != null)
                 {
-                    if (row.containsKey(rowPk.toString()))
+                    String rowPkStr = rowPk.toString();
+                    Object pk = null;
+                    if (row != null && row.containsKey(rowPkStr))
                     {
-                        Object pk = row.get(rowPk.toString());
-                        event.setRowPk(String.valueOf(pk));
+                        pk = row.get(rowPkStr);
                     }
+                    if (pk == null && existingRow != null && existingRow.containsKey(rowPkStr))
+                    {
+                        pk = existingRow.get(rowPkStr);
+                    }
+                    if (pk != null)
+                        event.setRowPk(String.valueOf(pk));
                 }
                 return event;
             }

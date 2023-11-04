@@ -67,8 +67,10 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.python.ModuleIpynbReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.MutableSecurityPolicy;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
@@ -138,6 +140,16 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     private ReportServiceImpl()
     {
         ContainerManager.addContainerListener(this);
+        ContainerManager.addSecurableResourceProvider((c, u) -> {
+            List<ReportDescriptor> ret = new ArrayList<>();
+            for (Report report : ReportService.get().getReports(u, c))
+            {
+                SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
+                if (policy.hasPermission(u, AdminPermission.class))
+                    ret.add(report.getDescriptor());
+            }
+            return ret;
+        });
         ConvertUtils.register(new ReportIdentifierConverter(), ReportIdentifier.class);
         ReportQueryChangeListener listener = new ReportQueryChangeListener();
         QueryService.get().addQueryListener(listener);

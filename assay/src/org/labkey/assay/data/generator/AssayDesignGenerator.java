@@ -3,6 +3,7 @@ package org.labkey.assay.data.generator;
 import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.data.generator.DataGenerator;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -18,6 +19,8 @@ import org.labkey.assay.AssayManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+
+import static org.labkey.api.gwt.client.ui.PropertyType.SAMPLE_CONCEPT_URI;
 
 public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Config>
 {
@@ -49,6 +52,7 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
                 numGenerated++;
             }
             index++;
+            checkAlive(_job);
         }
         timer.stop();
         _log.info(String.format("Generating %d assay designs took %s", numAssayDesigns, timer.getDuration() + "."));
@@ -74,9 +78,23 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         // clear the result domain fields and add a sample lookup
         GWTDomain<GWTPropertyDescriptor> resultDomain = domains.stream().filter(d -> "Data Fields".equals(d.getName())).findFirst().orElseThrow();
         resultDomain.getFields().clear();
-        GWTPropertyDescriptor sampleLookup = new GWTPropertyDescriptor("SampleLookup", "int");
-        sampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
-        sampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
+        GWTPropertyDescriptor sampleLookup = new GWTPropertyDescriptor("SampleID", "int");
+        sampleLookup.setConceptURI(SAMPLE_CONCEPT_URI);
+        sampleLookup.setLabel("Sample ID");
+        if (_config.getAssayDesignSampleTypes().isEmpty())
+        {
+            sampleLookup.setLookupSchema(ExpSchema.SCHEMA_NAME);
+            sampleLookup.setLookupQuery(ExpSchema.TableType.Materials.name());
+            assayTemplate.setDescription("Assay design for All Samples");
+        }
+        else
+        {
+            sampleLookup.setLookupSchema(SamplesSchema.SCHEMA_NAME);
+            sampleLookup.setLookupQuery(randomIndex(_config.getAssayDesignSampleTypes()));
+            assayTemplate.setDescription("Assay design for " + sampleLookup.getLookupQuery() + " samples");
+        }
+        assayTemplate.setName(name);
+
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(sampleLookup);
         addDomainProperties(props, randomInt(_config.getMinFields(), _config.getMaxFields()));
@@ -89,12 +107,16 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
     public static class Config extends DataGenerator.Config
     {
         public static final String NUM_ASSAY_DESIGNS = "numAssayDesigns";
+        public static final String ASSAY_DESIGN_SAMPLE_TYPES = "assayDesignSampleTypes";
+
         int _numAssayDesigns = 0;
+        List<String> _assayDesignSampleTypes;
 
         public Config(Properties properties)
         {
             super(properties);
             _numAssayDesigns = Integer.parseInt(properties.getProperty(NUM_ASSAY_DESIGNS, "0"));
+            _assayDesignSampleTypes = parseNameList(properties, ASSAY_DESIGN_SAMPLE_TYPES);
         }
 
 
@@ -106,6 +128,16 @@ public class AssayDesignGenerator extends DataGenerator<AssayDesignGenerator.Con
         public void setNumAssayDesigns(int numAssayDesigns)
         {
             _numAssayDesigns = numAssayDesigns;
+        }
+
+        public List<String> getAssayDesignSampleTypes()
+        {
+            return _assayDesignSampleTypes;
+        }
+
+        public void setAssayDesignSampleTypes(List<String> assayDesignSampleTypes)
+        {
+            _assayDesignSampleTypes = assayDesignSampleTypes;
         }
     }
 

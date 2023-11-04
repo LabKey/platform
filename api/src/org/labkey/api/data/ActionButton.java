@@ -54,7 +54,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         /** Run a JavaScript snippet */
         SCRIPT("script");
 
-        private String _description;
+        private final String _description;
 
         Action(String desc)
         {
@@ -450,8 +450,6 @@ public class ActionButton extends DisplayElement implements Cloneable
                 button.onClick(renderDefaultScript(ctx) + getScript(ctx));
             else
                 button.onClick(getScript(ctx));
-
-            button.href("javascript:void(0);");
         }
 
         button.attributes(attributes);

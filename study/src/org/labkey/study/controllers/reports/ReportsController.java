@@ -206,7 +206,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public class ExternalReportBean extends CreateQueryReportBean
+    public static class ExternalReportBean extends CreateQueryReportBean
     {
         private ExternalReport extReport;
 
@@ -223,7 +223,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class StreamFileAction extends SimpleViewAction
+    public static class StreamFileAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -238,7 +238,7 @@ public class ReportsController extends BaseStudyController
             File file = (File) getViewContext().getRequest().getSession().getAttribute(sessionKey);
             if (file.exists())
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), file, false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), file.toPath(), false);
                 file.delete();
             }
             return null;
@@ -382,7 +382,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowReportAction extends SimpleViewAction<ShowReportForm>
+    public static class ShowReportAction extends SimpleViewAction<ShowReportForm>
     {
         @Override
         public ModelAndView getView(ShowReportForm form, BindException errors) throws Exception
@@ -498,7 +498,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
+    public static class ParticipantCrosstabAction extends FormViewAction<CrosstabDesignBean>
     {
         @Override
         public ModelAndView getView(CrosstabDesignBean form, boolean reshow, BindException errors) throws Exception
@@ -1260,7 +1260,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(ParticipantReportForm form, BindException errors)
         {
             form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
-            form.setExpanded(!(getViewContext().get("reportWebPart") != null));
+            form.setExpanded(getViewContext().get("reportWebPart") == null);
 
             if (StudyService.get().getStudy(getContainer()) != null)
             {
@@ -1269,8 +1269,9 @@ public class ReportsController extends BaseStudyController
                 view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
-                String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
-                NavTree edit = new NavTree("Edit", script, null, "fa fa-pencil");
+                NavTree edit = new NavTree("Edit", null, null, "fa fa-pencil");
+                edit.setScript(String.format("customizeParticipantReport('%s'); return false;", form.getComponentId()));
+
                 view.addCustomMenu(edit);
 
                 if (getViewContext().hasPermission(InsertPermission.class))
@@ -1296,7 +1297,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class SaveParticipantReportAction extends MutatingApiAction<ParticipantReportForm>
+    public static class SaveParticipantReportAction extends MutatingApiAction<ParticipantReportForm>
     {
         @Override
         public void validateForm(ParticipantReportForm form, Errors errors)
@@ -1510,7 +1511,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class AssayProgressReportAction extends SimpleViewAction<ProgressReportForm>
+    public static class AssayProgressReportAction extends SimpleViewAction<ProgressReportForm>
     {
         private String _actionName = "Create ";
 
@@ -1533,7 +1534,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class SaveAssayProgressReportAction extends MutatingApiAction<ProgressReportForm>
+    public static class SaveAssayProgressReportAction extends MutatingApiAction<ProgressReportForm>
     {
         @Override
         public ApiResponse execute(ProgressReportForm form, BindException errors)
@@ -1581,7 +1582,7 @@ public class ReportsController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportAssayProgressReportAction extends ExportAction<ProgressReportForm>
+    public static class ExportAssayProgressReportAction extends ExportAction<ProgressReportForm>
     {
         @Override
         public void export(ProgressReportForm form, HttpServletResponse response, BindException errors)
@@ -1655,7 +1656,7 @@ public class ReportsController extends BaseStudyController
 
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class GetAssayReportDataAction extends ReadOnlyApiAction<ProgressReportForm>
+    public static class GetAssayReportDataAction extends ReadOnlyApiAction<ProgressReportForm>
     {
         @Override
         public ApiResponse execute(ProgressReportForm form, BindException errors)

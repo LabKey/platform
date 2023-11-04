@@ -22,12 +22,14 @@ import org.labkey.api.Constants;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.GroupAuditProvider;
-import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -39,8 +41,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.logging.LogHelper;
@@ -72,7 +72,26 @@ public class SecurityPolicyManager
 {
     private static final Logger logger = LogHelper.getLogger(SecurityPolicyManager.class, "Security policy information");
     private static final CoreSchema core = CoreSchema.getInstance();
-    private static final Cache<String, SecurityPolicy> CACHE = new DatabaseCache<>(core.getSchema().getScope(), Constants.getMaxContainers()*3, "Security policies");
+    private static final BlockingCache<String, SecurityPolicy> CACHE;
+
+    static
+    {
+        CACHE = DatabaseCache.get(core.getSchema().getScope(), Constants.getMaxContainers() * 3, "Security policies", (resourceId, argument) -> {
+            Container c = (Container) argument;
+            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
+
+            if (null != policyBean)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resourceId);
+                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
+                Collection<RoleAssignment> assignments = selector.getCollection(RoleAssignment.class);
+
+                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments, policyBean.getModified());
+            }
+
+            return null;
+        });
+    }
 
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
@@ -87,20 +106,7 @@ public class SecurityPolicyManager
     @Nullable
     public static SecurityPolicy getPolicy(@NotNull Container c, @NotNull String resourceId)
     {
-        return CACHE.get(cacheKey(resourceId), null, (key, argument) -> {
-            SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies(), SimpleFilter.createContainerFilter(c), null).getObject(resourceId, SecurityPolicyBean.class);
-
-            if (null != policyBean)
-            {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resourceId);
-                Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
-                Collection<RoleAssignment> assignments = selector.getCollection(RoleAssignment.class);
-
-                return new SecurityPolicy(policyBean.getResourceId(), policyBean.getResourceClass(), policyBean.getContainer().getId(), assignments, policyBean.getModified());
-            }
-
-            return null;
-        });
+        return CACHE.get(resourceId, c);
     }
 
     @NotNull
@@ -134,13 +140,13 @@ public class SecurityPolicyManager
         return policy.getResourceId();
     }
 
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy)
+    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user)
     {
-        savePolicy(policy, true);
+        return savePolicy(policy, user, true);
     }
 
-    // Preferred method: this one validates, creates audit events, and returns whether roles were changed
-    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, User user)
+    public static boolean savePolicy(@NotNull MutableSecurityPolicy policy, @NotNull User user, boolean validateUsers)
     {
         Container c = ContainerManager.getForId(policy.getContainerId());
         if (null == c)
@@ -170,25 +176,23 @@ public class SecurityPolicyManager
         {
             for (Role changedRole : changedRoles)
             {
-                // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
-                if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                    throw new UnauthorizedException("You do not have permission to modify the Site Admin role or permission.");
-                if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                    throw new UnauthorizedException("You do not have permission to modify the Platform Developer role or permission.");
+                // AppAdmin cannot change assignments to privileged roles (e.g., Site Admin, Platform Developer, Impersonating Troubleshooter)
+                if (changedRole.isPrivileged())
+                    throw new UnauthorizedException("You do not have permission to modify the " + changedRole.getName() + " role.");
             }
         }
 
-        savePolicy(policy, true);
+        savePolicyToDBAndValidate(policy, validateUsers);
         writeToAuditLog(c, user, resource, oldPolicy, policy);
 
         return !changedRoles.isEmpty();
     }
 
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
+    private static void savePolicyToDBAndValidate(@NotNull MutableSecurityPolicy policy, boolean validateUsers)
     {
         DbScope scope = core.getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             //if the policy to save has a version, check to see if it's the current one
             //(note that this may be a new policy so there might not be an existing one)
@@ -232,12 +236,17 @@ public class SecurityPolicyManager
                 Table.insert(null, table, assignment);
             }
 
-            //commit transaction
+            // Remove policy from cache immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(() -> remove(policy), CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+            // Notify on commit
+            transaction.addCommitTask(() -> notifyPolicyChange(policy.getResourceId()), CommitTaskOption.POSTCOMMIT);
+
+            // Ensure at least one root admin will remain if attempting to modify the root container's policy
+            if (policy.getResourceId().equals(ContainerManager.getRoot().getResourceId()))
+                SecurityManager.ensureAtLeastOneRootAdminExists();
+
             transaction.commit();
         }
-        //remove the resource-oriented policy from cache
-        remove(policy);
-        notifyPolicyChange(policy.getResourceId());
     }
 
     protected enum RoleModification
@@ -246,18 +255,12 @@ public class SecurityPolicyManager
         Removed
     }
 
-    private static void writeToAuditLog(Container c, User user, SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
+    private static void writeToAuditLog(Container c, @Nullable User user, SecurableResource resource, @Nullable SecurityPolicy oldPolicy, SecurityPolicy newPolicy)
     {
         //if moving from inherited to not-inherited, just log the new role assignments
         if (null == oldPolicy || !(oldPolicy.getResourceId().equals(newPolicy.getResourceId())))
         {
-            SecurableResource parent = resource.getParentResource();
-            String parentName = parent != null ? parent.getResourceName() : "root";
-            GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(),
-                    "A new security policy was established for " +
-                            resource.getResourceName() + ". It will no longer inherit permissions from " +
-                            parentName);
-            event.setResourceEntityId(resource.getResourceId());
+            GroupAuditProvider.GroupAuditEvent event = getGroupAuditEvent(c, resource);
             AuditLogService.get().addEvent(user, event);
 
             for (RoleAssignment newAsgn : newPolicy.getAssignments())
@@ -328,6 +331,19 @@ public class SecurityPolicyManager
         }
     }
 
+    @NotNull
+    private static GroupAuditProvider.GroupAuditEvent getGroupAuditEvent(Container c, SecurableResource resource)
+    {
+        SecurableResource parent = resource.getParentResource();
+        String parentName = parent != null ? parent.getResourceName() : "root";
+        GroupAuditProvider.GroupAuditEvent event = new GroupAuditProvider.GroupAuditEvent(c.getId(),
+                "A new security policy was established for " +
+                        resource.getResourceName() + ". It will no longer inherit permissions from " +
+                        parentName);
+        event.setResourceEntityId(resource.getResourceId());
+        return event;
+    }
+
     protected static void writeAuditEvent(Container c, User user, int principalId, Role role, RoleModification mod, SecurableResource resource)
     {
         UserPrincipal principal = SecurityManager.getPrincipal(principalId);
@@ -370,7 +386,7 @@ public class SecurityPolicyManager
 
     public static void deletePolicy(@NotNull SecurableResource resource)
     {
-        try (DbScope.Transaction transaction = core.getSchema().getScope().ensureTransaction())
+        try (Transaction transaction = core.getSchema().getScope().ensureTransaction())
         {
             //delete all rows where resourceid = resource.getResourceId()
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
@@ -396,7 +412,7 @@ public class SecurityPolicyManager
      */
     public static void clearRoleAssignments(@NotNull Set<SecurableResource> resources, @NotNull Set<UserPrincipal> principals)
     {
-        if (resources.size() == 0 || principals.size() == 0)
+        if (resources.isEmpty() || principals.isEmpty())
             return;
 
         SQLFragment sql = new SQLFragment("DELETE FROM ");
@@ -579,6 +595,6 @@ public class SecurityPolicyManager
                 ctx.getLogger().warn(x.getMessage());
             }
         }
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, ctx.getUser());
     }
 }

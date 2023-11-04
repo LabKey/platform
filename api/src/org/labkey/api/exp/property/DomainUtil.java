@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.data.PHI;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -47,12 +48,14 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
@@ -70,6 +73,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
@@ -336,6 +340,17 @@ public class DomainUtil
 
         d.setDisabledSystemFields(domain.getDisabledSystemFields());
 
+        if (domainKind.allowUniqueConstraintProperties())
+        {
+            SchemaTableInfo schemaTableInfo = StorageProvisioner.get().getSchemaTableInfo(domain);
+            Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> allIndices = schemaTableInfo.getAllIndices();
+            if (allIndices.size() > 0)
+            {
+                List<Pair<TableInfo.IndexType, List<ColumnInfo>>> indices = allIndices.values().stream().filter(index -> !index.getKey().equals(TableInfo.IndexType.Primary)).toList();
+                d.setIndices(indices.stream().map(index -> new GWTIndex(index.getValue().stream().map(ColumnInfo::getColumnName).toList(), index.getKey().isUnique())).toList());
+            }
+        }
+
         return d;
     }
 
@@ -360,6 +375,7 @@ public class DomainUtil
             gwtDomain.setAllowTextChoiceProperties(kind.allowTextChoiceProperties());
             gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
             gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
+            gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
@@ -377,6 +393,7 @@ public class DomainUtil
         gwtDomain.setAllowSampleSubjectProperties(kind.allowSampleSubjectProperties());
         gwtDomain.setAllowTimepointProperties(kind.allowTimepointProperties());
         gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+        gwtDomain.setAllowUniqueConstraintProperties(kind.allowUniqueConstraintProperties());
         gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
         return gwtDomain;
@@ -633,12 +650,12 @@ public class DomainUtil
     @NotNull
     public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
-        return updateDomainDescriptor(orig, update, container, user, false);
+        return updateDomainDescriptor(orig, update, container, user, false, null);
     }
 
     /** @return Errors encountered during the save attempt */
     @NotNull
-    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName)
+    public static ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean updateDomainName, @Nullable String auditComment)
     {
         LOG.info("Updating domain descriptor for " + orig.getName());
         assert orig.getDomainURI().equals(update.getDomainURI());
@@ -665,8 +682,11 @@ public class DomainUtil
             return validationException;
         }
 
-        if (updateDomainName)
+        if (updateDomainName && !d.getName().equals(update.getName()))
+        {
+            DefaultValueService.get().clearDefaultValues(d.getContainer(), d); // default values exp.objects will be re-created
             d.setName(update.getName());
+        }
 
         d.setDisabledSystemFields(kind.getDisabledSystemFields(update.getDisabledSystemFields()));
 
@@ -772,8 +792,6 @@ public class DomainUtil
             addProperty(d, pd, defaultValues, propertyUrisInUse, validationException);
         }
 
-        // TODO: update indices -- drop and re-add?
-
         try
         {
             if (validationException.getErrors().isEmpty())
@@ -791,7 +809,7 @@ public class DomainUtil
                     d.setPropertyIndex(dp, index++);
                 }
 
-                d.save(user);
+                d.save(user, auditComment);
                 // Rebucket the hash map with the real property ids
                 defaultValues = new HashMap<>(defaultValues);
                 try
@@ -808,6 +826,14 @@ public class DomainUtil
                 {
                     for (Map<String, Object> valueUpdate : entry.getValue())
                         updateTextChoiceValueRows(d, user, entry.getKey().getName(), valueUpdate, validationException);
+                }
+
+                // update indices - add missing and drop those that aren't include with domain info
+                if (kind.allowUniqueConstraintProperties() && update.getIndices() != null)
+                {
+                    d.setPropertyIndices(update.getIndices(), null);
+                    StorageProvisioner.get().addMissingRequiredIndices(d);
+                    StorageProvisioner.get().dropNotRequiredIndices(d);
                 }
             }
         }
@@ -1240,10 +1266,8 @@ public class DomainUtil
                 String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
-                continue;
             }
-
-            if (!namePropertyIdMap.containsKey(name))
+            else
             {
                 namePropertyIdMap.put(name, field.getPropertyId());
             }

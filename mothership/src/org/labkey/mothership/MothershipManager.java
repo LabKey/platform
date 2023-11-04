@@ -43,12 +43,10 @@ import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
@@ -66,6 +64,7 @@ public class MothershipManager
     private static final String UPGRADE_MESSAGE_PROP = "upgradeMessage";
     private static final String CREATE_ISSUE_URL_PROP = "createIssueURL";
     private static final String ISSUES_CONTAINER_PROP = "issuesContainer";
+    private static final String MARKETING_MESSAGE_PROP = "marketingMessage";
     private static final ReentrantLock INSERT_EXCEPTION_LOCK = new ReentrantLockWithName(MothershipManager.class, "INSERT_EXCEPTION_LOCK");
 
     private static final Logger log = LogHelper.getLogger(MothershipManager.class, "Persists mothership records like sessions and installs");
@@ -173,20 +172,28 @@ public class MothershipManager
     {
         synchronized (ENSURE_SOFTWARE_RELEASE_LOCK)
         {
+            // Issue 48270 - transform empty strings to nulls before querying for existing row
+            revision = StringUtils.trimToNull(revision);
+            url = StringUtils.trimToNull(url);
+            branch = StringUtils.trimToNull(branch);
+            tag = StringUtils.trimToNull(tag);
+            revision = StringUtils.trimToNull(revision);
+            buildNumber = StringUtils.trimToNull(buildNumber);
+
             // Filter on the columns that are part of the unique constraint
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-            addFilter(filter,"VcsRevision", revision);
-            addFilter(filter,"VcsUrl", url);
-            addFilter(filter,"VcsBranch", branch);
-            addFilter(filter,"VcsTag", tag);
-            addFilter(filter,"BuildTime", buildTime);
+            addFilter(filter, "VcsRevision", revision);
+            addFilter(filter, "VcsUrl", url);
+            addFilter(filter, "VcsBranch", branch);
+            addFilter(filter, "VcsTag", tag);
+            addFilter(filter, "BuildTime", buildTime);
 
             SoftwareRelease result = new TableSelector(getTableInfoSoftwareRelease(), filter, null).getObject(SoftwareRelease.class);
             if (result == null)
             {
                 if (buildNumber == null)
                 {
-                    buildNumber = fabricateDescription(container, revision, url, branch, tag, buildTime);
+                    buildNumber = "Unknown VCS";
                 }
 
                 result = new SoftwareRelease();
@@ -201,47 +208,6 @@ public class MothershipManager
             }
             return result;
         }
-    }
-
-    private String fabricateDescription(Container container, String revision, String url, String branch, String tag, Date buildTime)
-    {
-        // TODO we can possibly remove the hedgehog reference after some amount of time has lapsed.
-        List<String> svnHostPrefixes = Arrays.asList(
-                "https://hedgehog.fhcrc.org/tor/stedi/",
-                "https://svn.mgt.labkey.host/stedi/");
-
-        if (url != null)
-        {
-            Optional<String> hostPrefixOption = svnHostPrefixes.stream().filter(url::startsWith).findFirst();
-
-            if (url.startsWith("https://github.com/LabKey/platform.git"))
-            {
-                return StringUtils.join(branch, tag, buildTime == null ? null : DateUtil.formatDate(container, buildTime));
-            }
-            else if (hostPrefixOption.isPresent())
-            {
-                String description = url.substring(hostPrefixOption.get().length());
-                if (description.endsWith("/server"))
-                {
-                    description = description.substring(0, description.length() - "/server".length());
-                }
-                if (description.startsWith("branches/"))
-                {
-                    description = description.substring("branches/".length());
-                }
-                if (revision != null)
-                {
-                    description = description + " - " + revision;
-                }
-                return description;
-            }
-            else
-            {
-                return "Unknown VCS";
-            }
-        }
-
-        return "No VCS URL";
     }
 
     public ServerInstallation getServerInstallation(@NotNull String serverGUID, @NotNull String serverHostName, @NotNull Container c)
@@ -366,7 +332,6 @@ public class MothershipManager
         session.setRecentUserCount(getBestInteger(session.getRecentUserCount(), form.getRecentUserCount()));
         session.setUserCount(getBestInteger(session.getUserCount(), form.getUserCount()));
         session.setAdministratorEmail(getBestString(session.getAdministratorEmail(), form.getAdministratorEmail()));
-        session.setEnterprisePipelineEnabled(getBestBoolean(session.isEnterprisePipelineEnabled(), form.isEnterprisePipelineEnabled()));
         session.setDistribution(getBestString(session.getDistribution(), form.getDistribution()));
         session.setUsageReportingLevel(getBestString(session.getUsageReportingLevel(), form.getUsageReportingLevel()));
         session.setExceptionReportingLevel(getBestString(session.getExceptionReportingLevel(), form.getExceptionReportingLevel()));
@@ -507,6 +472,11 @@ public class MothershipManager
         return getStringProperty(c, UPGRADE_MESSAGE_PROP);
     }
 
+    public String getMarketingMessage(Container c)
+    {
+        return getStringProperty(c, MARKETING_MESSAGE_PROP);
+    }
+
     private void saveProperty(Container c, String name, String value)
     {
         PropertyManager.PropertyMap props = getWritableProperties(c);
@@ -516,12 +486,17 @@ public class MothershipManager
 
     public void setCurrentBuildDate(Container c, Date buildDate)
     {
-        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatDateTimeISO8601(buildDate));
+        saveProperty(c, CURRENT_BUILD_DATE_PROP, DateUtil.formatIsoDateShortTime(buildDate));
     }
 
     public void setUpgradeMessage(Container c, String message)
     {
         saveProperty(c, UPGRADE_MESSAGE_PROP, message);
+    }
+
+    public void setMarketingMessage(Container c, String message)
+    {
+        saveProperty(c, MARKETING_MESSAGE_PROP, message);
     }
 
     public String getCreateIssueURL(Container c)

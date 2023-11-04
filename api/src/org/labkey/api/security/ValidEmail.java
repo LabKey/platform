@@ -42,9 +42,6 @@ import java.util.Map;
 /**
  * Represents an email address that is known to be valid according to RFC 822. Will automatically append
  * the default email domain from {@link AppProps} and do other normalization if needed.
- *
- * User: adam
- * Date: Aug 24, 2006
  */
 public class ValidEmail
 {
@@ -148,7 +145,7 @@ public class ValidEmail
             LOG.debug("Resolving user name '" + rawEmail + "' using default domain '" + getDefaultDomain() + "'");
             String domain = getDefaultDomain();
 
-            if (domain.length() > 0)
+            if (!domain.isEmpty())
                 return trimmed + "@" + domain;
         }
 
@@ -160,7 +157,7 @@ public class ValidEmail
     {
         String[] tokens = getEmailAddress().split("@");
 
-        return tokens.length == 2 && tokens[0].length() > 0 && tokens[1].length() > 0;
+        return tokens.length == 2 && !tokens[0].isEmpty() && !tokens[1].isEmpty();
     }
 
 

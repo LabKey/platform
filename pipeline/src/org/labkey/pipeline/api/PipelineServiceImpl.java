@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +46,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobNotificationProvider;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineMXBean;
 import org.labkey.api.pipeline.PipelineProtocolFactory;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
@@ -60,6 +62,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.FolderArchiveSource;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
@@ -113,7 +116,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.labkey.api.pipeline.PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider.DEFAULT_PIPELINE_JOB_NOTIFICATION_PROVIDER;
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
 
-public class PipelineServiceImpl implements PipelineService
+public class PipelineServiceImpl implements PipelineService, PipelineMXBean
 {
     private static final Logger LOG = LogHelper.getLogger(PipelineService.class, "Pipeline initialization and job requeuing during server startup");
 
@@ -134,6 +137,7 @@ public class PipelineServiceImpl implements PipelineService
 
     private final List<PipelineProviderSupplier> _suppliers = new CopyOnWriteArrayList<>();
     private final PipelineQueue _queue;
+    private final JmsType _jmsType;
 
     public static PipelineServiceImpl get()
     {
@@ -146,6 +150,16 @@ public class PipelineServiceImpl implements PipelineService
 
         registerPipelineJobNotificationProvider(new PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider());
 
+        ContainerManager.addSecurableResourceProvider((c, u) -> {
+            PipeRoot root = findPipelineRoot(c);
+            if (null != root)
+            {
+                if (root.hasPermission(u, AdminPermission.class))
+                    return Collections.singleton(root);
+            }
+            return Collections.emptyList();
+        });
+
         ConnectionFactory factory = null;
         try
         {
@@ -153,18 +167,25 @@ public class PipelineServiceImpl implements PipelineService
             Context env = (Context) initCtx.lookup("java:comp/env");
             factory = (ConnectionFactory) env.lookup("jms/ConnectionFactory");
         }
-        catch (NamingException e)
-        {
-        }
+        catch (NamingException ignored) {}
 
         if (factory == null)
         {
             _queue = new PipelineQueueImpl();
+            _jmsType = JmsType.none;
         }
         else
         {
-            LOG.info("Found JMS queue; running Enterprise Pipeline.");
             _queue = new EPipelineQueueImpl(factory);
+            if (factory instanceof ActiveMQConnectionFactory a && a.getBrokerURL() != null)
+            {
+                _jmsType = a.getBrokerURL().startsWith("vm:") ? JmsType.inProcess : JmsType.external;
+            }
+            else
+            {
+                _jmsType = JmsType.unknown;
+            }
+            LOG.info("Found " + _jmsType + " JMS queue.");
         }
     }
 
@@ -241,7 +262,7 @@ public class PipelineServiceImpl implements PipelineService
                             Path dir = root.resolve(svc.getFolderName(FileContentService.ContentType.files));
                             // Create the @files subdirectory if needed
                             if (!Files.exists(dir))
-                                Files.createDirectories(dir);
+                                FileUtil.createDirectories(dir);
                             return new PipeRootImpl(createPipelineRoot(container, FileUtil.pathToString(dir)), true);
                         }
                     }
@@ -263,6 +284,12 @@ public class PipelineServiceImpl implements PipelineService
         p.setPath(dir);
         p.setType(PRIMARY_ROOT);
         return p;
+    }
+
+    @Override
+    public int getPipelineQueueSize()
+    {
+        return getPipelineQueue().getQueuePositions().size();
     }
 
     @Override
@@ -416,6 +443,12 @@ public class PipelineServiceImpl implements PipelineService
     public boolean isEnterprisePipeline()
     {
         return (getPipelineQueue() instanceof EPipelineQueueImpl);
+    }
+
+    @Override
+    public @NotNull JmsType getJmsType()
+    {
+        return _jmsType;
     }
 
     @NotNull
@@ -880,7 +913,7 @@ public class PipelineServiceImpl implements PipelineService
         if (taskPipeline.isUseUniqueAnalysisDirectory())
         {
             dirData = dirData.resolve(form.getProtocolName() + "_" + FileUtil.getTimestamp());
-            if (!Files.exists(Files.createDirectories(dirData)))
+            if (!Files.exists(FileUtil.createDirectories(dirData)))
             {
                 throw new IOException("Failed to create unique analysis directory: " + FileUtil.getAbsoluteCaseSensitiveFile(dirData.toFile()).getAbsolutePath());
             }
@@ -1163,7 +1196,7 @@ public class PipelineServiceImpl implements PipelineService
             fileService.setFileRoot(_project, getTestRoot(FILE_ROOT_SUFFIX));
 
             // create a subfolder of this project
-            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME, TestContext.get().getUser());
 
             // obtain the customized file root of the project
             File projectFileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);
@@ -1210,7 +1243,7 @@ public class PipelineServiceImpl implements PipelineService
             PipelineService.get().setPipelineRoot(_user, _project, PRIMARY_ROOT, false, getTestRoot(PIPELINE_ROOT_SUFFIX).toURI());
 
             // create a subfolder of this project
-            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME, TestContext.get().getUser());
 
             // obtain the customized file root of the project
             File projectFileRoot = fileService.getFileRoot(_project, FileContentService.ContentType.files);

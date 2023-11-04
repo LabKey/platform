@@ -23,6 +23,7 @@ import org.labkey.api.data.TableViewForm;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -82,7 +83,9 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
 
         // Keep track of listeners that want to know when the resolver selection has changed
-        out.write("<script type=\"text/javascript\">var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }</script>");
+        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+        out.write("var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }\n");
+        out.write("</script>");
 
         if (_resolvers.size() < 2)
         {
@@ -103,23 +106,21 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 
             for (ParticipantVisitResolverType resolver : _resolvers)
             {
-                out.write("<tr><td>");
-                out.write("<input");
-                out.write(" onClick=\"typeElements = document.getElementsByName(" + PageFlowUtil.jsString(_typeInputName)+ "); " +
+                String script = "typeElements = document.getElementsByName(" + PageFlowUtil.jsString(_typeInputName)+ "); " +
                         "for (i = 0; i < typeElements.length; i++) " +
                         "{ var resolverSubSectionDiv = document.getElementById('ResolverDiv-' + typeElements[i].value); " +
-                        " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } "
-                );
+                        " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } ";
 
                 RenderSubSelectors renderSubs = renderResolverSubSelectors(resolver);
                 if (renderSubs != RenderSubSelectors.NONE)
-                    out.write("document.getElementById('ResolverDiv-' + this.value).style.display='block';");
+                    script += "document.getElementById('ResolverDiv-' + this.value).style.display='block';";
 
                 // Notify listeners that the selection has changed
-                out.write("for (i = 0; i < participantVisitResolverSelectionListeners.length; i++) { participantVisitResolverSelectionListeners[i].call(this); } ");
+                script += "for (i = 0; i < participantVisitResolverSelectionListeners.length; i++) { participantVisitResolverSelectionListeners[i].call(this); } ";
+                HttpView.currentPageConfig().addHandler("RadioBtn-" + resolver.getName(), "click", script);
 
-                out.write("\" ");
-                out.write(" type=\"radio\" " +
+                out.write("<tr><td>");
+                out.write("<input type=\"radio\" " +
                         "name=\"" + PageFlowUtil.filter(_typeInputName) + "\"" +
                         ( resolver == selected ? " checked=\"true\"" : "") + " " +
                         "value=\"" + PageFlowUtil.filter(resolver.getName()) + "\"" +

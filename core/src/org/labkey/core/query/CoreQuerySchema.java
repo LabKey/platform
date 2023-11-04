@@ -44,7 +44,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.Role;
@@ -93,6 +93,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
     public static final String VIEW_CATEGORY_TABLE_NAME = "ViewCategory";
+    public static final String SHORTURL_TABLE_NAME = "ShortURL";
 
     public CoreQuerySchema(User user, Container c)
     {
@@ -177,6 +178,9 @@ public class CoreQuerySchema extends UserSchema
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))
             return getMVIndicatorTable(cf);
+        if (SHORTURL_TABLE_NAME.equalsIgnoreCase(name) && ShortUrlTableInfo.canDisplayTable(getUser(), getContainer()))
+            return new ShortUrlTableInfo(this);
+
         return null;
     }
 
@@ -719,7 +723,7 @@ public class CoreQuerySchema extends UserSchema
             if (getContainer().isRoot())
             {
                 // NOTE: as usual does not override TableInfo.hasPermission()
-                if (getContainer().hasOneOf(user, Set.of(SeeUserDetailsPermission.class, TroubleShooterPermission.class)))
+                if (getContainer().hasOneOf(user, Set.of(SeeUserDetailsPermission.class, TroubleshooterPermission.class)))
                     return true;
             }
             return super.canReadSchema();

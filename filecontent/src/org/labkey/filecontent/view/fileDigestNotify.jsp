@@ -69,11 +69,9 @@
             int i=0;
             for (FileSystemAuditProvider.FileSystemAuditEvent event : record.getValue())
             {
-                // TODO: Just hard-code rowCls? It's always the same
-                String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
                 User user = event.getCreatedBy();
         %>
-                <tr class="<%=text(rowCls)%>"><td><%=h(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%></td><td><%=h(user.getDisplayName(user))%></td><td><%=h(event.getComment())%></td></tr>
+                <tr class="labkey-row"><td><%=h(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%></td><td><%=h(user.getDisplayName(user))%></td><td><%=h(event.getComment())%></td></tr>
         <%
             }
         %>

@@ -26,6 +26,7 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
 import org.labkey.api.assay.plate.Plate;
@@ -50,19 +51,22 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
+import org.labkey.api.exp.xar.XarConstants;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.AssayException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
+import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -71,6 +75,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.assay.actions.SetDefaultValuesAssayAction;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
@@ -335,7 +340,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
     }
 
-    private void setPropertyDomainURIs(ExpProtocol protocol, Set<String> uris)
+    private void setPropertyDomainURIs(ExpProtocol protocol, Set<String> uris, AssayProvider assayProvider)
     {
         if (getContainer() == null)
         {
@@ -361,6 +366,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
             if (!props.containsKey(uri))
             {
                 ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), uri, uri);
+                assayProvider.ensurePropertyDomainName(protocol, prop);
                 props.put(prop.getPropertyURI(), prop);
             }
         }
@@ -384,17 +390,21 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
 
                     ExpProtocol protocol;
                     boolean isNew = assay.getProtocolId() == null;
+                    boolean hasNameChange = false;
+                    AssayProvider assayProvider = AssayService.get().getProvider(assay.getProviderName());
+                    String oldAssayName = null;
                     if (isNew)
                     {
                         // check for existing assay protocol with the given name before creating
                         if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
                             throw new AssayException("Assay protocol already exists for this name.");
 
-                        protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay);
-                        assay.setProtocolId(protocol.getRowId());
-
                         XarContext context = new XarContext("Domains", getContainer(), getUser());
                         context.addSubstitution("AssayName", PageFlowUtil.encode(assay.getName()));
+
+                        protocol = AssayManager.get().createAssayDefinition(getUser(), getContainer(), assay, context);
+                        assay.setProtocolId(protocol.getRowId());
+
                         Set<String> domainURIs = new HashSet<>();
                         for (GWTDomain domain : assay.getDomains())
                         {
@@ -408,7 +418,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                             }
                             else
                             {
-                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, AssayService.get().getProvider(assay.getProviderName()));
+                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, assayProvider, false);
                                 if (domainErrors.hasErrors())
                                 {
                                     throw domainErrors;
@@ -417,7 +427,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                             }
 
                         }
-                        setPropertyDomainURIs(protocol, domainURIs);
+                        setPropertyDomainURIs(protocol, domainURIs, assayProvider);
                     }
                     else
                     {
@@ -435,6 +445,8 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                         if (!protocol.getContainer().equals(getContainer()))
                             throw new AssayException("Assays can only be edited in the folder where they were created.  " +
                                     "This assay was created in folder " + protocol.getContainer().getPath());
+                        oldAssayName = protocol.getName();
+                        hasNameChange = !assay.getName().equals(oldAssayName);
                         protocol.setName(assay.getName());
                         protocol.setProtocolDescription(assay.getDescription());
                         if (assay.getStatus() != null)
@@ -450,21 +462,29 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                             String uri = entry.getKey();
                             param.setOntologyEntryURI(uri);
                             param.setValue(SimpleTypeNames.STRING, entry.getValue());
+                            if (hasNameChange && assayProvider.canRename() && XarConstants.APPLICATION_NAME_TEMPLATE_URI.equals(uri) && entry.getValue() != null)
+                            {
+                                String updatedName = entry.getValue().replace(oldAssayName, assay.getName());
+                                param.setValue(SimpleTypeNames.STRING, updatedName);
+                            }
                             param.setName(uri.contains("#") ? uri.substring(uri.indexOf("#") + 1) : uri);
                             newParams.put(uri, param);
                         }
                     }
                     protocol.setProtocolParameters(newParams.values());
 
+                    if (hasNameChange)
+                        ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
+
                     AssayProvider provider = AssayService.get().getProvider(protocol);
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                     {
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
-                        Plate template = PlateService.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
-                        if (template != null)
-                            plateProvider.setPlate(getContainer(), protocol, template);
+                        Plate plate = PlateManager.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
+                        if (plate != null)
+                            plateProvider.setPlate(getContainer(), protocol, plate);
                         else
-                            throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
+                            throw new AssayException("The selected plate could not be found.  Perhaps it was deleted by another user?");
 
                         String selectedFormat = assay.getSelectedMetadataInputFormat();
                         SampleMetadataInputFormat inputFormat = SampleMetadataInputFormat.valueOf(selectedFormat);
@@ -554,7 +574,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     StringBuilder errors = new StringBuilder();
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
-                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider);
+                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider, hasNameChange);
 
                         // Need to bail out inside of the loop because some errors may have left the DB connection in
                         // an unusable state.
@@ -585,7 +605,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
         }
     }
 
-    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
+    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange)
     {
         GWTDomain<GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
@@ -596,7 +616,14 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
             }
         }
         provider.changeDomain(getUser(), protocol, previous, domain);
-        return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
+
+        String auditComment = null;
+        if (hasNameChange)
+        {
+            auditComment = "The name of the assay domain '" + previous.getName() + "' was changed to '" + domain.getName() + "'.";
+        }
+
+        return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser(), hasNameChange, auditComment);
     }
 
     private boolean canUpdateProtocols()

@@ -42,8 +42,8 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
 
 
     @Override
-    public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
-                                                   Collection<ExpData> inputDatas,
+    public ParticipantVisitResolver createResolver(Collection<? extends ExpMaterial> inputMaterials,
+                                                   Collection<? extends ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
                                                    Collection<ExpData> outputDatas,
                                                    Container runContainer,

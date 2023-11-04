@@ -23,12 +23,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -41,13 +44,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
 import org.labkey.api.settings.AppProps;
@@ -63,12 +61,12 @@ import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -78,12 +76,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -103,6 +103,14 @@ public class UserManager
     public static final int VERIFICATION_EMAIL_TIMEOUT = 60 * 24;  // in minutes, one day currently
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
+
+    public static void ensureSessionTracked(HttpSession s)
+    {
+        if (s != null)
+        {
+            _activeSessions.put(s.getId(), s);
+        }
+    }
 
     /**
      * Listener for user account related notifications. Typically registered during a module's startup via a call to
@@ -275,6 +283,44 @@ public class UserManager
         return errors;
     }
 
+    public interface UserDetailsButtonProvider
+    {
+        void addButton(ButtonBar bb, Container c, User currentUser, User detailsUser, ActionURL returnUrl);
+    }
+
+    public enum UserDetailsButtonCategory
+    {
+        Authentication, // Place custom button after the built-in authentication buttons ("Reset Password", "Delete Password", "Change Password", etc.)
+        Account,        // Place custom button after the built-in account buttons ("Change Email", "Deactivate", etc.)
+        Permissions     // Place custom button after the built-in permissions buttons ("View Permissions", "Clone Permissions", etc.)
+    }
+
+    private static final Map<UserDetailsButtonCategory, List<UserDetailsButtonProvider>> USER_DETAILS_BUTTON_PROVIDERS = new EnumMap<>(UserDetailsButtonCategory.class);
+
+    static
+    {
+        // Map each button category to a list of providers. This approach should be both thread-safe and performant,
+        // particularly for read operations (which is what we care about).
+        Arrays.stream(UserDetailsButtonCategory.values())
+            .forEach(cat -> USER_DETAILS_BUTTON_PROVIDERS.put(cat, new CopyOnWriteArrayList<>()));
+    }
+
+    /**
+     * Register a provider that can choose to add a button to the User Details button bar.
+     * @param category A UserDetailsButtonCategory that determines where on the button bar the button will appear
+     * @param provider A UserDetailsButtonProvider that's invoked with appropriate context every time a User Details
+     *                 button bar is rendered. The provider must perform its own permissions checks on the current user
+     *                 as well as other checks to determine if showing the button is appropriate.
+     */
+    public static void registerUserDetailsButtonProvider(UserDetailsButtonCategory category, UserDetailsButtonProvider provider)
+    {
+        USER_DETAILS_BUTTON_PROVIDERS.get(category).add(provider);
+    }
+
+    public static void addCustomButtons(UserDetailsButtonCategory category, ButtonBar bb, Container c, User currentUser, User detailsUser, ActionURL returnUrl)
+    {
+        USER_DETAILS_BUTTON_PROVIDERS.get(category).forEach(provider -> provider.addButton(bb, c, currentUser, detailsUser, returnUrl));
+    }
 
     public static @Nullable User getUser(int userId)
     {
@@ -325,7 +371,6 @@ public class UserManager
         }
     }
 
-
     // Includes users who have logged in during any server session
     public static int getRecentUserCount(Date since)
     {
@@ -359,6 +404,17 @@ public class UserManager
             recentUsers.sort(RECENT_USER_COMPARATOR);
 
             return recentUsers;
+        }
+    }
+
+    public static Long getMinutesSinceMostRecentUserActivity()
+    {
+        synchronized(RECENT_USERS)
+        {
+            Optional<Long> mostRecent = RECENT_USERS.values().stream().min(Comparator.naturalOrder());
+            return mostRecent.isPresent() ?
+                    TimeUnit.MILLISECONDS.toMinutes(HeartBeat.currentTimeMillis() - mostRecent.get().longValue()) :
+                    null;
         }
     }
 
@@ -438,16 +494,21 @@ public class UserManager
     /** In minutes */
     private static final AtomicLong _totalSessionDuration = new AtomicLong();
 
+    private static final Map<String, HttpSession> _activeSessions = Collections.synchronizedMap(new HashMap<>());
+
     public static class SessionListener implements HttpSessionListener
     {
         @Override
         public void sessionCreated(HttpSessionEvent event)
         {
+            _activeSessions.put(event.getSession().getId(), event.getSession());
         }
 
         @Override
         public void sessionDestroyed(HttpSessionEvent event)
         {
+            _activeSessions.remove(event.getSession().getId());
+
             // Issue 44761 - track session duration for authenticated users
             User user = SecurityManager.getSessionUser(event.getSession());
             if (user != null)
@@ -458,6 +519,22 @@ public class UserManager
                 _totalSessionDuration.addAndGet(duration);
             }
         }
+    }
+
+    public static int getActiveUserSessionCount()
+    {
+        int users = 0;
+        synchronized (_activeSessions)
+        {
+            for (HttpSession session : _activeSessions.values())
+            {
+                if (!AuthenticatedRequest.isGuestSession(session))
+                {
+                    users++;
+                }
+            }
+        }
+        return users;
     }
 
     public static Integer getAverageSessionDuration()
@@ -638,7 +715,7 @@ public class UserManager
 
     public static String validGroupName(String name, @NotNull PrincipalType type)
     {
-        if (null == name || name.length() == 0)
+        if (null == name || name.isEmpty())
             return "Name cannot be empty";
         if (!name.trim().equals(name))
             return "Name should not start or end with whitespace";
@@ -646,28 +723,26 @@ public class UserManager
         switch (type)
         {
             // USER
-            case USER:
-                throw new IllegalArgumentException("User names are not allowed");
+            case USER -> throw new IllegalArgumentException("User names are not allowed");
 
             // GROUP (regular project or global)
-            case ROLE:
-            case GROUP:
+            case ROLE, GROUP ->
+            {
                 // see renameGroup.jsp if you change this
                 if (!StringUtils.containsNone(name, GROUP_NAME_CHAR_EXCLUSION_LIST))
                     return "Group name should not contain punctuation.";
                 if (name.length() > VALID_GROUP_NAME_LENGTH) // issue 14147
                     return "Name value is too long, maximum length is " + VALID_GROUP_NAME_LENGTH + " characters, but supplied value was " + name.length() + " characters.";
-                break;
+            }
 
             // MODULE MANAGED
-            case MODULE:
-                // no validation, HOWEVER must be UNIQUE
-                // recommended start with @ or look like a GUID
-                // must contain punctuation, but not look like email
-                break;
-
-            default:
-                throw new IllegalArgumentException("Unknown principal type: '" + type + "'");
+            case MODULE ->
+            {
+            }
+            // no validation, HOWEVER must be UNIQUE
+            // recommended start with @ or look like a GUID
+            // must contain punctuation, but not look like email
+            default -> throw new IllegalArgumentException("Unknown principal type: '" + type + "'");
         }
         return null;
     }
@@ -717,7 +792,7 @@ public class UserManager
         if (SecurityManager.loginExists(currentEmail))
         {
             DbScope scope = CORE.getSchema().getScope();
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
+            try (Transaction transaction = scope.ensureTransaction())
             {
                 Instant timeoutDate = Instant.now().plus(VERIFICATION_EMAIL_TIMEOUT, ChronoUnit.MINUTES);
                 SqlExecutor executor = new SqlExecutor(CORE.getSchema());
@@ -741,7 +816,7 @@ public class UserManager
         newEmail = new ValidEmail(newEmail).getEmailAddress();
 
         DbScope scope = CORE.getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (!isAdmin)
             {
@@ -803,8 +878,7 @@ public class UserManager
     {
         SqlSelector sqlSelector = new SqlSelector(CORE.getSchema(), "SELECT Email, RequestedEmail, Verification, VerificationTimeout FROM " + CORE.getTableInfoLogins()
                 + " WHERE Email = ?", email.getEmailAddress());
-        VerifyEmail verifyEmail = sqlSelector.getObject(VerifyEmail.class);
-        return verifyEmail;
+        return sqlSelector.getObject(VerifyEmail.class);
     }
 
     public static class VerifyEmail
@@ -865,7 +939,7 @@ public class UserManager
 
         List<Throwable> errors = fireDeleteUser(user);
 
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             Throwable first = errors.get(0);
             if (first instanceof RuntimeException)
@@ -874,8 +948,10 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (Transaction transaction = CORE.getScope().beginTransaction())
         {
+            boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(user);
+
             SqlExecutor executor = new SqlExecutor(CORE.getSchema());
             executor.execute("DELETE FROM " + CORE.getTableInfoRoleAssignments() + " WHERE UserId=?", userId);
             executor.execute("DELETE FROM " + CORE.getTableInfoMembers() + " WHERE UserId=?", userId);
@@ -888,15 +964,19 @@ public class UserManager
             executor.execute("DELETE FROM " + CORE.getTableInfoPrincipalRelations() + " WHERE userid=?", userId);
 
             OntologyManager.deleteOntologyObject(user.getEntityId(), ContainerManager.getSharedContainer(), true);
+
+            // Clear user list immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            if (needToEnsureRootAdmins)
+                SecurityManager.ensureAtLeastOneRootAdminExists();
+
+            transaction.commit();
         }
         catch (Exception e)
         {
             LOG.error("deleteUser: " + e);
             throw new UserManagementException(user.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
 
         //TODO: Delete User files
@@ -928,7 +1008,7 @@ public class UserManager
 
         List<Throwable> errors = active ? fireUserEnabled(userToAdjust) : fireUserDisabled(userToAdjust);
 
-        if (errors.size() != 0)
+        if (!errors.isEmpty())
         {
             Throwable first = errors.get(0);
             if (first instanceof RuntimeException)
@@ -937,7 +1017,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try
+        try (Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);
@@ -954,20 +1034,25 @@ public class UserManager
             // Call update unconditionally to ensure Modified & ModifiedBy are always updated
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoUsers(), map, userId);
 
+            // Clear user list immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(UserManager::clearUserList, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            // If deactivating a root admin, ensure at least one root admin remains
+            if (!active && SecurityManager.isRootAdmin(userToAdjust))
+                SecurityManager.ensureAtLeastOneRootAdminExists();
+
             removeRecentUser(userToAdjust);
 
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
                     (active ? "re-enabled" : "disabled") + " " + extendedMessage
             );
+
+            transaction.commit();
         }
         catch(RuntimeSQLException e)
         {
             LOG.error("setUserActive: " + e);
             throw new UserManagementException(userToAdjust.getEmail(), e);
-        }
-        finally
-        {
-            clearUserList();
         }
     }
 
@@ -1048,6 +1133,7 @@ public class UserManager
     {
         public static final String LOGGED_IN = "logged in";
         public static final String LOGGED_OUT = "logged out";
+        public static final String API_KEY = "an API key";
 
         int _user;
 
@@ -1149,62 +1235,6 @@ public class UserManager
 
         Collection<UserRelationships> relationships = new SqlSelector(CORE.getScope(), sql).getCollection(UserRelationships.class);
         return new HashSet<>(relationships);
-    }
-
-    public static void ensureRelationship(User user, User other, UserRelationships relationship)
-    {
-        Set<UserRelationships> existing = getRelationships(user, other);
-        if (existing.contains(relationship))
-            return;
-
-        try
-        {
-            addRelationship(user, other, relationship);
-        }
-        catch (SQLException | QueryUpdateServiceException | BatchValidationException | DuplicateKeyException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    private static void addRelationship(User user, User other, UserRelationships relationship) throws SQLException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
-    {
-        Map<String, Object> values = new HashMap<>();
-        values.put("userid", user.getEntityId());
-        values.put("otherid", other.getEntityId());
-        values.put("relationship", relationship);
-
-        QueryUpdateService qus = CORE.getTableInfoPrincipalRelations().getUpdateService();
-        qus.insertRows(user, ContainerManager.getRoot(), Collections.singletonList(values), null, null, null);
-
-        addAuditEvent(user, ContainerManager.getRoot(), user,
-                String.format("Added [%1$s] relationship with user [%2$s]", relationship.name(), user.getEmail()));
-    }
-
-    public static void deleteRelationship(User user, User other, UserRelationships relationship) throws SQLException, QueryUpdateServiceException, BatchValidationException, InvalidKeyException
-    {
-        Map<String, Object> values = new HashMap<>();
-        values.put("userid", user.getEntityId());
-        values.put("otherid", other.getEntityId());
-        values.put("relationship", relationship);
-
-        QueryUpdateService qus = CORE.getTableInfoPrincipalRelations().getUpdateService();
-        qus.deleteRows(user, ContainerManager.getRoot(), Collections.singletonList(values), null, null);
-
-        addAuditEvent(user, ContainerManager.getRoot(), user,
-                String.format("Deleted [%1$s] relationship with user [%2$s]", relationship.name(), user.getEmail()));
-    }
-
-    public static boolean hasAllRelationships(User user, User other, Set<UserRelationships> relationships)
-    {
-        Set<UserRelationships> existing = getRelationships(user, other);
-        return existing.containsAll(relationships);
-    }
-
-    public static boolean hasAnyOfRelationships(User user, User other, Set<UserRelationships> relationships)
-    {
-        Set<UserRelationships> existing = getRelationships(user, other);
-        return relationships.stream().anyMatch(existing::contains);
     }
 
     /**

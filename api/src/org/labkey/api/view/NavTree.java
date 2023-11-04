@@ -167,7 +167,7 @@ public class NavTree implements Collapsible
 
     public String getHref()
     {
-        return _usePost ? "javascript:void(0);" : _href;
+        return _usePost ? null : _href;
     }
 
     public String getEscapedKey()
@@ -460,9 +460,10 @@ public class NavTree implements Collapsible
         return script;
    }
 
-    public void setScript(String script)
+    public NavTree setScript(String script)
     {
         _script = script;
+        return this;
     }
 
     public boolean isDisabled()
@@ -633,7 +634,7 @@ public class NavTree implements Collapsible
         if (isDisabled())
             sb.append(",disabled:true");
         sb.append(", showSeparator: false");
-        sb.append(",href:").append(null != getHref() && !isDisabled() ? PageFlowUtil.qh(getHref()) : "'javascript: void(0)'");
+        sb.append(",href:").append(null != getHref() && !isDisabled() ? PageFlowUtil.qh(getHref()) : "'#'");
         if (null != getTarget())
             sb.append(",hrefTarget:").append(PageFlowUtil.qh(getTarget()));
         if (null != getScript())

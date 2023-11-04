@@ -125,7 +125,7 @@
                     <tr>
                         <td>Select request:</td>
                         <td style="width:12em" ><span id="sample-request-list"></span></td>
-                        <td><%=link("Create new request").href("#").onClick("createRequest(); return false;").id("sample-request-create-link")%></td>
+                        <td><%=link("Create new request").onClick("createRequest(); return false;").id("sample-request-create-link")%></td>
                     </tr>
                 </table>
             </td>

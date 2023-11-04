@@ -80,11 +80,14 @@
     // If this is a folder then skip everything except default date & number formats
     if (!folder)
     {
-        HtmlString shortNameHelp = HtmlStringBuilder.of("The header short name supports string substitution of specific server properties. For example, the value:")
-            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion}</code><br><br>"))
+        HtmlString shortNameHelp = HtmlStringBuilder.of("The header short name supports string substitution of server properties. " +
+                "Note that the substituted values will be visible to all users including guests (e.g., on the login page).")
+            .append(HtmlString.unsafe("<br><br>"))
+            .append("As an example, a header short name set to:")
+            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion} built ${buildTime}</code><br><br>"))
             .append("will currently result in this header text:")
             .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;"))
-            .append("LabKey " + AdminBean.releaseVersion)
+            .append("LabKey " + AdminBean.releaseVersion + " built " + AdminBean.buildTime)
             .append(HtmlString.unsafe("</code><br><br>"))
             .append("The supported properties and their current values are listed in the table below.")
             .append(HtmlString.unsafe("<br><br>"))
@@ -140,10 +143,14 @@
 
     </td>
     <td>
-        <label><input onclick="document.getElementById('app-menu-warning').style.display='none'" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
-        <label><input onclick="document.getElementById('app-menu-warning').style.display='block'" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
+        <label><input id="menu_always" type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ALWAYS%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ALWAYS)%>> <%=h(FolderDisplayMode.ALWAYS.getDisplayString())%></label><br>
+        <label><input id="menu_admin"  type="radio" name="<%=applicationMenuDisplayMode%>" value="<%=FolderDisplayMode.ADMIN%>"<%=checked(currentMenuDisplayMode == FolderDisplayMode.ADMIN)%>>
             <%=h(FolderDisplayMode.ADMIN.getDisplayString())%> <div id="app-menu-warning" class="labkey-error" style=<%=currentMenuDisplayMode == FolderDisplayMode.ADMIN ? q("display:block;"): q("display:none;")%>>Users will not be able to navigate between applications and LabKey Server when this menu is hidden.</div>
         </label><br>
+        <%
+            addHandler("menu_always", "click", "document.getElementById('app-menu-warning').style.display='none';");
+            addHandler("menu_admin", "click", "document.getElementById('app-menu-warning').style.display='block';");
+        %>
     </td>
 </tr>
     <%

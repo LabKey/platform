@@ -308,13 +308,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
-            String name = domain.getName();
+            String name = StringUtils.trimToNull(domain.getName());
+
+            if (null == name)
+                throw new IllegalArgumentException("Issue name must not be null.");
+
             String providerName = getKindName();
             String singularNoun = (arguments != null && arguments.getSingularItemName() != null) ? arguments.getSingularItemName() : getDefaultSingularName();
             String pluralNoun = (arguments != null && arguments.getPluralItemName() != null) ? arguments.getPluralItemName() : getDefaultPluralName();
-
-            if (StringUtils.isBlank(name))
-                throw new IllegalArgumentException("Issue name must not be null.");
 
             IssuesListDefService.get().saveIssueProperties(container, arguments,  IssuesListDefService.get().getNameFromDomain(domain));
 
@@ -341,13 +342,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                     DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                 }
 
-                Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-                for (GWTIndex index : indices)
-                {
-                    PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-                    propertyIndices.add(propIndex);
-                }
-                newDomain.setPropertyIndices(propertyIndices);
+                newDomain.setPropertyIndices(indices, lowerReservedNames);
 
                 // set default values on the base properties
                 DomainKind domainKind = newDomain.getDomainKind();

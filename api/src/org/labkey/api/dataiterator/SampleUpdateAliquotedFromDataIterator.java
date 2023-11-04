@@ -10,7 +10,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.util.StringUtilsLabKey;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -108,9 +108,16 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         do
         {
             lastPrefetchRowNumber = (Integer) _delegate.get(0);
-            String key = (String) pkSupplier.get();
+            Object keyObj = pkSupplier.get();
+
+            String key = null;
+            if (keyObj instanceof String)
+                key = StringUtilsLabKey.unquoteString((String) keyObj);
+            else if (keyObj instanceof Number)
+                key = keyObj.toString();
             if (StringUtils.isEmpty(key))
                 throw new IllegalArgumentException("Key value not provided on row " + lastPrefetchRowNumber);
+
             rowKeyMap.put(lastPrefetchRowNumber, key);
             keyRowMap.put(key, lastPrefetchRowNumber);
             aliquotParents.put(lastPrefetchRowNumber, null);

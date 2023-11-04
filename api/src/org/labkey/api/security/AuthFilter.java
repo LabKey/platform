@@ -25,6 +25,7 @@ import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HttpUtil;
@@ -41,6 +42,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -59,13 +61,6 @@ public class AuthFilter implements Filter
     public void init(FilterConfig filterConfig)
     {
     }
-
-
-    @Override
-    public void destroy()
-    {
-    }
-
 
     // This is the first (and last) LabKey code invoked on a request.
     @Override
@@ -102,7 +97,7 @@ public class AuthFilter implements Filter
         // We need to handle it here otherwise the begin page redirect in index.html will fail: issue 25395
 
         // getServletPath() will return an empty String when a URL with a context path but no trailing slash is requested
-        if (req.getServletPath().equals(""))
+        if (req.getServletPath().isEmpty())
         {
             // now check if this is the case where the request URL contains only the context path
             if (req.getContextPath() != null && req.getRequestURL().toString().endsWith(req.getContextPath()))
@@ -247,8 +242,18 @@ public class AuthFilter implements Filter
                 _securityPointcut.afterProcessRequest(req, resp);
             }
 
+            // We don't get session creation events for sessions that were started earlier and serialized/deserialized
+            // across Tomcat restarts. Ensure that all authenticated users have their sessions tracked, so we can
+            // accurately assess if anyone is logged in
+            HttpSession s = req.getSession(false);
+            if (s != null && !AuthenticatedRequest.isGuestSession(s))
+            {
+                UserManager.ensureSessionTracked(s);
+            }
+
             SecurityLogger.popSecurityContext();
             QueryService.get().clearEnvironment();
+            DebugInfoDumper.resetThreadDumpContext();
 
             // Clear all the request attributes that have been set. This helps memtracker.  See #10747.
             assert clearRequestAttributes(req);

@@ -37,13 +37,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * A source of things that can be done to files in the pipeline directory. Standard use cases include doing analysis
- * of data files and importing results into the database.
- *
- * Implementations should be registered via a call to {@link PipelineService}'s registerPipelineProvider method during
- * module startup.
+ * of data files and importing results into the database. Implementations should be registered via a call to
+ * {@link PipelineService}'s registerPipelineProvider method during module startup.
  */
 abstract public class PipelineProvider
 {
@@ -157,16 +156,14 @@ abstract public class PipelineProvider
                         int indexMatch = ft.getIndexMatch(f);
                         if (checkSiblings && indexMatch > 0 && ft.isExtensionsMutuallyExclusive())
                         {
-                            try
+                            try (Stream<Path> pathStream = Files.walk(dir, 0, FileVisitOption.FOLLOW_LINKS))
                             {
-                                return Files.walk(
-                                        dir,
-                                        0,
-                                        FileVisitOption.FOLLOW_LINKS
-                                ).noneMatch(sibling -> !sibling.equals(f) &&
-                                        ft.getBaseName(sibling).equals(basename) &&
-                                        ft.isType(sibling.getFileName().toString()) &&
-                                        ft.getIndexMatch(sibling) < indexMatch);
+                                return pathStream.noneMatch(sibling ->
+                                    !sibling.equals(f) &&
+                                    ft.getBaseName(sibling).equals(basename) &&
+                                    ft.isType(sibling.getFileName().toString()) &&
+                                    ft.getIndexMatch(sibling) < indexMatch
+                                );
                             }
                             catch (IOException e)
                             {

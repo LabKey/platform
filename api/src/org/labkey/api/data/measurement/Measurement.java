@@ -6,6 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ConversionExceptionWithMessage;
 
+import java.math.BigDecimal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -305,6 +306,10 @@ public class Measurement
         else if (amountObj instanceof Double)
         {
             return (Double) amountObj;
+        }
+        else if (amountObj instanceof BigDecimal)
+        {
+            return ((BigDecimal) amountObj).doubleValue();
         }
         else if (amountObj instanceof String)
             try

@@ -39,6 +39,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.element.Input;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.ViewContext;
@@ -57,6 +58,9 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 /**
  * A column in a grid, details, insert, update, or similar view. May wrap a column from the underlying database,
@@ -803,7 +807,7 @@ public abstract class DisplayColumn extends RenderColumn
             style = "";
 
         // 34871: Support for column display width
-        if (!StringUtils.isBlank(getWidth()))
+        if (!isBlank(getWidth()))
             style += ";width:" + getWidth() + "px;";
 
         out.write("<div ");
@@ -1041,6 +1045,8 @@ public abstract class DisplayColumn extends RenderColumn
         return writer.toString();
     }
 
+    boolean foundHoverContent = false;
+
     public void renderGridDataCell(RenderContext ctx, Writer out) throws IOException
     {
         if (!_rowSpanner.shouldRenderInCurrentRow(ctx))
@@ -1050,9 +1056,11 @@ public abstract class DisplayColumn extends RenderColumn
         }
         out.write("<td");
         String displayClass = getDisplayClass(ctx);
-        if (!displayClass.isEmpty())
+        String hoverContent = getHoverContent(ctx);
+        if (!isBlank(displayClass) || !isBlank(hoverContent))
         {
-            out.write(" class='" + displayClass + "'");
+            var cssClass = trimToEmpty(displayClass) + (!isBlank(hoverContent) ? " lk-column-tt" : "");
+            out.write(" class='" + cssClass + "'");
         }
         if (_textAlign != null)
         {
@@ -1068,17 +1076,17 @@ public abstract class DisplayColumn extends RenderColumn
         {
             out.write(" rowspan=\"" + rowSpan + "\"");
         }
-        String hoverContent = getHoverContent(ctx);
         if (hoverContent != null)
         {
-            StringBuilder showHelpDivArgs = new StringBuilder("this, '" + getHoverTitle(ctx) + "',");
-            // The value of the javascript string literal is used to set the innerHTML of an element.  For this reason, if
-            // it is text, we escape it to make it HTML.  Then, we have to escape it to turn it into a javascript string.
-            // Finally, since this is script inside of an attribute, it must be HTML escaped again.
-            showHelpDivArgs.append(PageFlowUtil.filter(PageFlowUtil.jsString(hoverContent)));
-            showHelpDivArgs.append(", null, 1000");
-            out.append("\" onMouseOut=\"return hideHelpDivDelay();\" onMouseOver=\"return showHelpDivDelay(");
-            out.append(showHelpDivArgs).append(");\"");
+            out.write(" data-columntiptitle=\"" + PageFlowUtil.filter(getHoverTitle(ctx)) + "\"");
+            out.write(" data-columntipcontent=\"" + PageFlowUtil.filter(hoverContent) + "\"");
+            if (!foundHoverContent)
+            {
+                foundHoverContent=true;
+                HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseover",
+                        "showHelpDivDelay(this, this.dataset['columntiptitle'], this.dataset['columntipcontent'], null, 1000);");
+                HttpView.currentPageConfig().addHandlerForQuerySelector("TD.lk-column-tt", "mouseout", "return hideHelpDivDelay();");
+            }
         }
         out.write(">");
         renderGridCellContents(ctx, out);
@@ -1110,7 +1118,7 @@ public abstract class DisplayColumn extends RenderColumn
             style += "white-space:nowrap;";
 
         // 40893: Support for column display width
-        if (!StringUtils.isBlank(getWidth()))
+        if (!isBlank(getWidth()))
             style += "overflow-wrap:anywhere;";
 
         return style;

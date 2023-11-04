@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -47,13 +48,9 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.labkey.api.security.SecurityManager.API_KEY;
 import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY;
 
-/**
- * User: adam
- * Date: Oct 12, 2007
- * Time: 1:31:18 PM
- */
 public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
     @Override
@@ -100,36 +97,49 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     // id and password will not be blank (not null, not empty, not whitespace only)
     public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
-        ValidEmail email = new ValidEmail(id);
-        String hash = SecurityManager.getPasswordHash(email);
-        User user = UserManager.getUser(email);
-
-        if (null == hash || null == user)
-            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
-
-        if (!SecurityManager.matchPassword(password,hash))
-            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
-
-        // Password is correct for this user; now check password rules and expiration.
-
-        PasswordRule rule = configuration.getPasswordRule();
-        Collection<String> messages = new LinkedList<>();
-
-        if (!rule.isValidForLogin(password, user, messages))
+        // Check for API key first
+        if (API_KEY.equals(id))
         {
-            return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
+            User user = ApiKeyManager.get().authenticateFromApiKey(password);
+
+            // API keys are exempt from secondary authentication, Issue 48764
+            return user != null ?
+                AuthenticationResponse.createSuccessResponse(configuration, new ValidEmail(user.getEmail()), null, Map.of(), UserManager.UserAuditEvent.API_KEY, false) :
+                AuthenticationResponse.createFailureResponse(configuration, FailureReason.badApiKey);
         }
         else
         {
-            PasswordExpiration expiration = configuration.getExpiration();
+            ValidEmail email = new ValidEmail(id);
+            String hash = SecurityManager.getPasswordHash(email);
+            User user = UserManager.getUser(email);
 
-            if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
+            if (null == hash || null == user)
+                return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
+
+            if (!SecurityManager.matchPassword(password, hash))
+                return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
+
+            // Password is correct for this user; now check password rules and expiration.
+
+            PasswordRule rule = configuration.getPasswordRule();
+            Collection<String> messages = new LinkedList<>();
+
+            if (!rule.isValidForLogin(password, user, messages))
             {
-                return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
+                return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
             }
-        }
+            else
+            {
+                PasswordExpiration expiration = configuration.getExpiration();
 
-        return AuthenticationResponse.createSuccessResponse(configuration, email);
+                if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
+                {
+                    return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
+                }
+            }
+
+            return AuthenticationResponse.createSuccessResponse(configuration, email);
+        }
     }
 
     @Override

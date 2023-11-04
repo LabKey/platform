@@ -15,15 +15,17 @@
  */
 package org.labkey.core.view.template.bootstrap;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -114,7 +116,6 @@ public class WarningServiceImpl implements WarningService
 
     private static final String DISMISSAL_SCRIPT_FORMAT =
         """
-        <script type="text/javascript">
             (function($) {
                 function dismissMessage() {
                     var config = {
@@ -130,24 +131,23 @@ public class WarningServiceImpl implements WarningService
                     dismissMessage();
                 });
             })(jQuery);
-        </script>
         """;
 
     @Override
-    public Warnings getWarnings(ViewContext context)
+    public Warnings getWarnings(@Nullable ViewContext context)
     {
-        if (null == context)
-            throw new IllegalStateException("ViewContext was null");
-        if (null == context.getUser())
-            throw new IllegalStateException("ViewContext.getUser() was null");
-        if (null == context.getRequest())
-            throw new IllegalStateException("ViewContext.getUser() was null");
+        if (context != null)
+        {
+            if (null == context.getUser())
+                throw new IllegalStateException("ViewContext.getUser() was null");
+            if (null == context.getRequest())
+                throw new IllegalStateException("ViewContext.getUser() was null");
+        }
 
         // Collect warnings
         List<HtmlString> warningMessages = new LinkedList<>();
-        User user = context.getUser();
 
-        if (null != user && user.hasSiteAdminPermission())
+        if (context == null || context.getUser().hasRootPermission(TroubleshooterPermission.class))
             warningMessages.addAll(getStaticAdminWarnings());
 
         Warnings warnings = Warnings.of(warningMessages);
@@ -166,7 +166,9 @@ public class WarningServiceImpl implements WarningService
         if (coreUrls != null)
         {
             String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
+            html.append(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n"));
             html.append(HtmlString.unsafe(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL))));
+            html.append(HtmlString.unsafe("</script>\n"));
         }
         html.append(HtmlString.unsafe("</div>"));
 

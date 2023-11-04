@@ -22,10 +22,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -42,6 +45,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
@@ -217,6 +221,18 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public ExpDataImpl getData(Container c, String name)
     {
         return ExperimentServiceImpl.get().getExpData(this, /*c, */ name);
+    }
+
+    @Override
+    public long getDataCount(Container c, @Nullable ContainerFilter cf)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
+        if (cf != null)
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+
+        TableInfo tInfo = ExperimentServiceImpl.get().getTinfoData();
+        return new TableSelector(tInfo, tInfo.getPkColumns(), filter, null).getRowCount();
     }
 
     @Override
@@ -448,7 +464,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
     public long getMinGenId()
     {
-        return NameGenerator.getGenIdStartValue(_object.getNameExpression());
+        return NameGenerator.getCounterStartValue(_object.getNameExpression(), NameGenerator.EntityCounter.genId);
     }
 
     @Override
@@ -514,7 +530,12 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setDataParentImportAliasMap(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+        setImportAliasMapJson(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+    }
+
+    public void setImportAliasMapJson(String aliasJson)
+    {
+        _object.setDataParentImportAliasMap(aliasJson);
     }
 
 }

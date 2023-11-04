@@ -162,9 +162,7 @@ export class App extends React.PureComponent<any, State> {
                     onCancel={this.onCancel}
                     onChange={this.onChange}
                     includeDataClasses={true}
-                    useTheme={true}
                     showLinkToStudy={true}
-                    successBsStyle={'primary'}
                     showGenIdBanner={isUpdate}
                 />
             </BeforeUnload>

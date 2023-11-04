@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -77,6 +76,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.list.controllers.ListController;
 import org.labkey.list.model.ListImporter.ValidatorImporter;
 import org.labkey.list.view.ListItemAttachmentParent;
+import org.springframework.jdbc.BadSqlGrammarException;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -100,7 +100,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String LISTID_FIELD_NAME = "listId";
 
 
-    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions"), new ListDefCacheLoader()) ;
+    private final Cache<String, List<ListDef>> _listDefCache = DatabaseCache.get(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "List definitions", new ListDefCacheLoader()) ;
 
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {
@@ -696,7 +696,19 @@ public class ListManager implements SearchService.DocumentProvider
                     @Override
                     public void setLastIndexed(long ms, long modified)
                     {
-                        ListManager.get().setItemLastIndexed(list, pk, listTable, ms, modified);
+                        try
+                        {
+                            ListManager.get().setItemLastIndexed(list, pk, listTable, ms, modified);
+                        }
+                        catch (BadSqlGrammarException e)
+                        {
+                            // This may occur due to a race condition between enumeration and list deletion. Issue #48878
+                            // expected P-sql                                                expected MS-sql
+                            if (e.getCause().getMessage().contains("does not exist") || e.getCause().getMessage().contains("Invalid object name"))
+                                LOG.debug("Attempt to set LastIndexed on list table failed", e);
+                            else
+                                throw e;
+                        }
                     }
                 };
 

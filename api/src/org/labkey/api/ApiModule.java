@@ -25,6 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CachingTestCase;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -53,6 +54,8 @@ import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.markdown.MarkdownService;
+import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mbean.OperationsMXBean;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.JavaVersion;
@@ -83,7 +86,9 @@ import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.EntropyPasswordValidator;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
@@ -101,6 +106,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 
+import javax.management.StandardMBean;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -126,6 +132,8 @@ public class ApiModule extends CodeOnlyModule
 
         PropertyManager.registerEncryptionMigrationHandler();
         AuthenticationManager.registerEncryptionMigrationHandler();
+
+        LabKeyManagement.register(new StandardMBean(new OperationsMXBeanImpl(), OperationsMXBean.class, true), "Operations");
     }
 
     @NotNull
@@ -165,13 +173,14 @@ public class ApiModule extends CodeOnlyModule
             Compress.TestCase.class,
             Constants.TestCase.class,
             ConvertHelper.TestCase.class,
-            DatabaseCache.TestCase.class,
             DataIteratorUtil.TestCase.class,
+            DatabaseCache.TestCase.class,
             DateUtil.TestCase.class,
-            DetailsURL.TestCase.class,
             DbScope.DialectTestCase.class,
+            DetailsURL.TestCase.class,
             DiskCachingDataIterator.DiskTestCase.class,
             EmailTemplate.TestCase.class,
+            EntropyPasswordValidator.TestCase.class,
             ExcelFactory.ExcelFactoryTestCase.class,
             ExcelLoader.ExcelLoaderTestCase.class,
             ExistingRecordDataIterator.TestCase.class,
@@ -183,46 +192,48 @@ public class ApiModule extends CodeOnlyModule
             GenerateUniqueDataIterator.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
-            JavaVersion.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
+            JSoupUtil.TestCase.class,
+            JavaVersion.TestCase.class,
             JsonTest.class,
             JsonUtil.TestCase.class,
+            LimitedUser.TestCase.class,
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
-            Measurement.Unit.TestCase.class,
             Measurement.TestCase.class,
+            Measurement.Unit.TestCase.class,
             MemTracker.TestCase.class,
             ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
+            NameGenerator.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
             PageFlowUtil.TestCase.class,
             Pair.TestCase.class,
             PasswordExpiration.TestCase.class,
             Path.TestCase.class,
+            RReport.TestCase.class,
             RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
             ReplacedRunFilter.TestCase.class,
             ResultSetUtil.TestCase.class,
-            RReport.TestCase.class,
+            SQLFragment.UnitTestCase.class,
             Sampler.TestCase.class,
             SchemaKey.TestCase.class,
             SessionHelper.TestCase.class,
             SimpleFilter.BetweenClauseTestCase.class,
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
-            SQLFragment.UnitTestCase.class,
             SqlScanner.TestCase.class,
             StringExpressionFactory.TestCase.class,
-            NameGenerator.TestCase.class,
             StringUtilsLabKey.TestCase.class,
             SubfolderWriter.TestCase.class,
             SwapQueue.TestCase.class,
-            TabLoader.HeaderMatchTest.class,
-            JSoupUtil.TestCase.class,
             TSVMapWriter.Tests.class,
             TSVWriter.TestCase.class,
+            TabLoader.HeaderMatchTest.class,
+            Table.IsSelectTestCase.class,
             ValidEmail.TestCase.class
         );
     }
@@ -325,4 +336,11 @@ public class ApiModule extends CodeOnlyModule
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
     }
+
+    @Override
+    public void startBackgroundThreads()
+    {
+        Encryption.initEncryptionKeyTest();
+    }
+
 }

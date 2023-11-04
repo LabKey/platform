@@ -26,7 +26,7 @@ import java.util.Map;
  * User: daveb  
  * Date: 5/17/2018
  */
-public class CaseInsensitiveLinkedHashMap<V> extends CaseInsensitiveMapWrapper<V> implements Serializable
+public class CaseInsensitiveLinkedHashMap<V> extends CaseInsensitiveMapWrapper<V> implements Serializable, CaseInsensitiveCollection
 {
     public CaseInsensitiveLinkedHashMap()
     {

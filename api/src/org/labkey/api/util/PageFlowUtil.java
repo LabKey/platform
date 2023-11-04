@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -130,6 +131,7 @@ import java.lang.reflect.Proxy;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -154,6 +156,7 @@ import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.height;
@@ -638,6 +641,53 @@ public class PageFlowUtil
     }
 
 
+    // mime type concatenation, but ignoring "application/"
+    // Text that is first urlencoded to flatten UNICODE to ASCII then base64 encoded to avoid WAF rejection
+    public static final String WAF_PREFIX = "/*{{base64/x-www-form-urlencoded/wafText}}*/";
+
+    /**
+     * De-obfuscates content that's often intercepted by web application firewalls that are scanning for likely
+     * SQL or script injection. We have a handful of endpoints that intentionally accept SQL or script, so we
+     * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
+     * WAF scan for and reject malicious content on all other parameters. See issue 48509.
+     */
+    @Nullable
+    public static String wafDecode(@Nullable String encoded)
+    {
+        if (StringUtils.isBlank(encoded))
+            return null;
+
+        if (StringUtils.startsWith(encoded, WAF_PREFIX))
+        {
+            encoded = encoded.substring(WAF_PREFIX.length());
+            if (!Pattern.matches("[A-Za-z0-9+/=]*", encoded))
+                throw new ConversionException("Bad parameter encoding");
+            var step1 = java.util.Base64.getDecoder().decode(encoded);
+            var step2 = new String(step1, StandardCharsets.US_ASCII);
+            return PageFlowUtil.decode(step2);
+        }
+
+        return encoded;
+    }
+
+    /**
+     * Obfuscates content that's often intercepted by web application firewalls that are scanning for likely
+     * SQL or script injection. We have a handful of endpoints that intentionally accept SQL or script, so we
+     * encode the text to avoid tripping alarms. It's a simple BASE64 encoding that obscures the content, and lets the
+     * WAF scan for and reject malicious content on all other parameters. See issue 48509.
+     */
+    @Nullable
+    public static String wafEncode(@Nullable String plain)
+    {
+        if (StringUtils.isBlank(plain))
+        {
+            return null;
+        }
+        var step1 = PageFlowUtil.encodeURIComponent(plain);
+        var step2 = step1.getBytes(StandardCharsets.US_ASCII);
+        return WAF_PREFIX + java.util.Base64.getEncoder().encodeToString(step2);
+    }
+
     /**
      * URL Encode string.
      * NOTE! this should be used on parts of a url, not an entire url
@@ -977,11 +1027,11 @@ public class PageFlowUtil
         response.setContentType(contentType);
         if (asAttachment)
         {
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, fileName);
         }
         else
         {
-            response.setHeader("Content-Disposition", "filename=\"" + fileName + "\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.inline, fileName);
         }
         for (Map.Entry<String, String> entry : responseHeaders.entrySet())
             response.setHeader(entry.getKey(), entry.getValue());
@@ -1339,6 +1389,18 @@ public class PageFlowUtil
         return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
+    public static String postOnClickJavaScriptEvent()
+    {
+        return """
+               const href = this.dataset['href'];
+               const confirmMessage = this.dataset['confirmmessage'];
+               if (confirmMessage)
+                LABKEY.Utils.confirmAndPost(confirmMessage, href);
+               else
+                LABKEY.Utils.postToAction(href);
+               """;
+    }
+
     public static ButtonBuilder button(String text)
     {
         return new ButtonBuilder(text);
@@ -1402,7 +1464,7 @@ public class PageFlowUtil
 
     public static HtmlString generateBackButton(String text)
     {
-        return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
+        return button(text).onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
@@ -1550,6 +1612,10 @@ public class PageFlowUtil
     }
 
 
+    // NOTE: these are attached via query selector, so they must be the same for every popup
+    private static final String popupHideScript = "return hideHelpDivDelay();";
+    private static final String popupShowScript = "return showHelpDivDelay(this, 'popuptitle' in this.dataset ? this.dataset['popuptitle'] : '', this.dataset['popupcontent'], 'popupwidth' in this.dataset ? this.dataset['popupwidth'] : 'auto' );";
+
     public static class HelpPopupBuilder implements SafeToRender, HasHtmlString
     {
         final String helpText;
@@ -1637,28 +1703,29 @@ public class PageFlowUtil
             Objects.requireNonNull(helpHtml);
 
             String id = null;
-            StringBuilder showHelpDivArgs = new StringBuilder("this, ");
-            showHelpDivArgs.append(jsString(filter(titleText,true))).append(", ");
-            showHelpDivArgs.append(jsString(helpHtml.toString()));
-            if (width == 0)
-                showHelpDivArgs.append(", ").append("'auto'");
-            else
-                showHelpDivArgs.append(", ").append(jsString(width + "px"));
-            if (onClickScript == null)
-                onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
 
             if (!inlineScript)
             {
                 var config = HttpView.currentPageConfig();
-                id = config.makeId("helpPopup");
-                config.addHandler(id, "click", onClickScript);
-                config.addHandler(id, "mouseout", "return hideHelpDivDelay();");
-                config.addHandler(id, "mouseover", "return showHelpDivDelay(" + showHelpDivArgs + ");");
+                config.addHandlerForQuerySelector("A._helpPopup", "mouseout", popupHideScript);
+                config.addHandlerForQuerySelector("A._helpPopup", "mouseover", popupShowScript);
+                if (null == onClickScript)
+                {
+                    config.addHandlerForQuerySelector("A._helpPopup", "click", popupShowScript);
+                }
+                else
+                {
+                    id = config.makeId("helpPopup");
+                    config.addHandler(id, "click", onClickScript);
+                }
             }
-            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1")
-                    .at(inlineScript, onclick, onClickScript)
-                    .at(inlineScript, onmouseout, "return hideHelpDivDelay();")
-                    .at(inlineScript, onmouseover, "return showHelpDivDelay(" + showHelpDivArgs + ");"),
+            return DOM.createHtml(A(id(id).cl("_helpPopup").at(href,'#',tabindex,"-1")
+                    .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
+                    .at(inlineScript, onmouseout, popupHideScript)
+                    .at(inlineScript, onmouseover, popupShowScript)
+                    .data(width != 0, "popupwidth", width)
+                    .data(isNotBlank(titleText),"popuptitle", titleText)
+                    .data("popupcontent", helpHtml.toString()),
                     linkHtml));
         }
     }
@@ -2709,6 +2776,27 @@ public class PageFlowUtil
             assertEquals(filter("<>\"&"), "&lt;&gt;&quot;&amp;");
         }
 
+        @Test
+        public void testWafEncode()
+        {
+            var sb = new StringBuilder(0xFFFF);
+            for (int ch = 0 ; ch <= 0xFFFF ; ch++)
+            {
+                if (ch >= 0xD800 && ch <= 0xDFFF)   // surrogate characters (emojis etc)
+                    continue;
+                sb.append((char)ch);
+            }
+            String sql = sb.toString();
+            String enc = PageFlowUtil.wafEncode(sql);
+            String dec = PageFlowUtil.wafDecode(enc);
+            assertEquals(sql, dec);
+
+            String uri = PageFlowUtil.encodeURIComponent(sql);
+            byte[] bytes = uri.getBytes(StandardCharsets.US_ASCII);
+            assert(bytes.length == uri.length());
+            for (int i=0 ; i<uri.length() ; i++)
+                assertEquals("failed at index " + i, uri.charAt(i), bytes[i]);
+        }
 
         @Test
         public void testEncode()

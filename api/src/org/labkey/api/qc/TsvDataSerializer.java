@@ -70,7 +70,7 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                         if (o != null)
                         {
                             if (Date.class.isAssignableFrom(o.getClass()))
-                                pw.append(DateUtil.formatDateTimeISO8601((Date) o));  // Always ISO? Or should we apply display format?
+                                pw.append(DateUtil.formatIsoDateShortTime((Date) o));  // Always ISO? Or should we apply display format?
                             else if (MvFieldWrapper.class.isAssignableFrom(o.getClass()))
                                 pw.append(String.valueOf(((MvFieldWrapper)o).getOriginalValue()));
                             else if (Collection.class.isAssignableFrom(o.getClass()))

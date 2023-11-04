@@ -22,10 +22,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -55,6 +52,7 @@ import org.labkey.api.specimen.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
@@ -72,9 +70,12 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 {
@@ -171,14 +172,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         if (DemoMode.isDemoMode(_userSchema.getContainer(), _userSchema.getUser()))
         {
-            participantColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo column)
-                {
-                    return new PtidObfuscatingDisplayColumn(column);
-                }
-            });
+            participantColumn.setDisplayColumnFactory(PtidObfuscatingDisplayColumn::new);
         }
 
         return addColumn(participantColumn);
@@ -210,8 +204,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             @Override
             public TableInfo getLookupTableInfo()
             {
-                LocationTable result = new LocationTable(_userSchema, _userSchema.allowSetContainerFilter() ? getContainerFilter() : null);
-                return result;
+                return new LocationTable(_userSchema, _userSchema.allowSetContainerFilter() ? getContainerFilter() : null);
             }
         });
         return addColumn(locationColumn);
@@ -248,15 +241,15 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             @Override
             public TableInfo getLookupTableInfo()
             {
-                BaseStudyTable result;
-                if (rootTableColumnName.equals("PrimaryTypeId"))
-                    result = new PrimaryTypeTable(_userSchema, getLookupContainerFilter());
-                else if (rootTableColumnName.equals("DerivativeTypeId") || rootTableColumnName.equals("DerivativeTypeId2"))
-                    result = new DerivativeTypeTable(_userSchema, getLookupContainerFilter());
-                else if (rootTableColumnName.equals("AdditiveTypeId"))
-                    result = new AdditiveTypeTable(_userSchema, getLookupContainerFilter());
-                else
-                    throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
+                BaseStudyTable result = switch (rootTableColumnName)
+                {
+                    case "PrimaryTypeId" -> new PrimaryTypeTable(_userSchema, getLookupContainerFilter());
+                    case "DerivativeTypeId", "DerivativeTypeId2" ->
+                            new DerivativeTypeTable(_userSchema, getLookupContainerFilter());
+                    case "AdditiveTypeId" -> new AdditiveTypeTable(_userSchema, getLookupContainerFilter());
+                    default ->
+                            throw new IllegalStateException(rootTableColumnName + " is not recognized as a valid specimen type column.");
+                };
                 if (_userSchema.allowSetContainerFilter())
                     result.setContainerFilter(getLookupContainerFilter());
                 return result;
@@ -276,7 +269,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, MutableColumnInfo aliasVisitColumn, boolean isProvisioned)
     {
-        MutableColumnInfo visitColumn = null;
+        MutableColumnInfo visitColumn;
         var visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries
@@ -313,21 +306,15 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         visitColumn.setFk(visitFK);
         // Don't setKeyField. Use addQueryFieldKeys where needed
 
-        visitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo col)
-            {
-                return new VisitDisplayColumn(col, FieldKey.fromParts("SequenceNum"));
-            }
-        });
+        visitColumn.setDisplayColumnFactory(col -> new VisitDisplayColumn(col, FieldKey.fromParts("SequenceNum")));
 
         return visitColumn;
     }
 
     public static class VisitDisplayColumn extends DataColumn
     {
-        private FieldKey _seqNumMinFieldKey;
+        private final FieldKey _seqNumMinFieldKey;
+        private Map<Integer, VisitImpl> _visits;
 
         public VisitDisplayColumn(ColumnInfo col, FieldKey seqNumMinFieldKey)
         {
@@ -369,12 +356,26 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             Study study = StudyManager.getInstance().getStudy(ctx.getContainer());
             if (study != null && ctx.get(getColumnInfo().getAlias()) != null)
             {
-                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, Integer.parseInt(ctx.get(getColumnInfo().getAlias()).toString()));
+                VisitImpl visit = getVisits(study).get(Integer.parseInt(ctx.get(getColumnInfo().getAlias()).toString()));
                 if (visit != null && (visit.getDescription() != null || visit.getLabel() != null))
                     return PageFlowUtil.filter(visit.getDescription() != null ? visit.getDescription() : visit.getLabel());
             }
 
             return null;
+        }
+
+        /** Fetch the visits all at once, not once per row */
+        private Map<Integer, VisitImpl> getVisits(Study study)
+        {
+            if (_visits == null)
+            {
+                _visits = new HashMap<>();
+                for (VisitImpl visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
+                {
+                    _visits.put(visit.getRowId(), visit);
+                }
+            }
+            return _visits;
         }
 
         @Override
@@ -490,7 +491,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         private final boolean _includeVialComments;
         private final Container _container;
 
-        public SpecimenCommentColumn(FilteredTable parent, TableInfo ptidCommentTable, String ptidCommentProperty,
+        public SpecimenCommentColumn(BaseStudyTable parent, TableInfo ptidCommentTable, String ptidCommentProperty,
                                      TableInfo ptidVisitCommentTable, String ptidVisitCommentProperty, String name,
                                      boolean includeVialComments, boolean hidden)
         {
@@ -570,19 +571,22 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             {
                 switch (commentFields.size())
                 {
-                    case 1:
+                    case 1 ->
+                    {
                         sb.append("CASE");
                         appendCommentCaseSQL(sb, commentFields);
                         sb.append(" ELSE NULL END");
-                        break;
-                    case 2:
+                    }
+                    case 2 ->
+                    {
                         sb.append("CASE");
                         appendCommentCaseSQL(sb, commentFields);
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(0)));
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(1)));
                         sb.append(" ELSE NULL END");
-                        break;
-                    case 3:
+                    }
+                    case 3 ->
+                    {
                         sb.append("CASE");
                         appendCommentCaseSQL(sb, commentFields);
                         appendCommentCaseSQL(sb, Arrays.asList(commentFields.get(0), commentFields.get(1)));
@@ -592,11 +596,11 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(1)));
                         appendCommentCaseSQL(sb, Collections.singletonList(commentFields.get(2)));
                         sb.append(" ELSE NULL END");
-                        break;
+                    }
                 }
             }
             sql.append("(");
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sql.append(sb.toString());
             else
                 sql.append("' '");
@@ -703,18 +707,15 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         public Object getDisplayValue(RenderContext ctx)
         {
             Object value = getDisplayColumn().getValue(ctx);
-            if (value == null)
-                return "";
-            else
-                return value;
+            return Objects.requireNonNullElse(value, "");
         }
 
         @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Object value = getDisplayColumn().getValue(ctx);
-            if (value != null && value instanceof String)
-                out.write((String) value);
+            if (value instanceof String s)
+                out.write(s);
         }
     }
 
@@ -748,7 +749,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         String subjectNoun = StudyService.get().getSubjectNounSingular(ctx.getContainer());
         if (participantComment instanceof String)
         {
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append(lineSeparator);
             if (renderHtml)
             {
@@ -764,7 +765,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         }
         if (participantVisitComment instanceof String)
         {
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append(lineSeparator);
 
             if (renderHtml)
@@ -841,6 +842,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)
     {
         SqlDialect dialect = getSqlDialect();
+        Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
         for (DomainProperty domainProperty : optionalProperties)
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
@@ -848,7 +850,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             String legalName = property.getLegalSelectName(dialect);
             sql.append(".").append(legalName);
             var column = new ExprColumn(this, legalName, sql, property.getJdbcType());
-            PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null);
+            defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), column, domainProperty, getContainer(), null, defaultsSupplier);
             if (editable)
             {
                 // Make editable, but some should be read only

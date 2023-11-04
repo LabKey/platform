@@ -30,7 +30,6 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.attachments.FileAttachmentFile;
-import org.labkey.api.attachments.SecureDocumentParent;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
@@ -40,7 +39,6 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -49,24 +47,22 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationLogoAttachmentParent;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -84,9 +80,9 @@ import org.labkey.api.webdav.AbstractWebdavResourceCollection;
 import org.labkey.api.webdav.DavException;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.core.CoreModule;
 import org.labkey.core.admin.AdminController;
 import org.labkey.core.query.AttachmentAuditProvider;
+import org.springframework.http.ContentDisposition;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
@@ -101,6 +97,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1031,7 +1028,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
                     throw new NotFoundException("Could not find file " + alias);
 
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.attachment().filename(alias, StandardCharsets.UTF_8).build());
                 s = new FileInputStream(file);
             }
             else
@@ -1043,9 +1040,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
 
                 writer.setContentType(rs.getString("DocumentType"));
                 if (asAttachment)
-                    writer.setContentDisposition("attachment; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("attachment").filename(alias, StandardCharsets.UTF_8).build());
                 else
-                    writer.setContentDisposition("inline; filename=\"" + alias + "\"");
+                    writer.setContentDisposition(ContentDisposition.builder("inline").filename(alias, StandardCharsets.UTF_8).build());
 
                 int size = rs.getInt("DocumentSize");
                 if (size > 0)
@@ -1224,9 +1221,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
         }
 
         @Override
-        public void setContentDisposition(String value)
+        public void setContentDisposition(ContentDisposition value)
         {
-            _response.setHeader("Content-Disposition", value);
+            ResponseHelper.setContentDisposition(_response, value);
         }
 
         @Override
@@ -1742,8 +1739,8 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             if (null != ContainerManager.getForPath(_testDirName))
                 ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
 
-            Container proj = ContainerManager.ensureContainer(_testDirName);
-            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test");
+            Container proj = ContainerManager.ensureContainer(_testDirName, TestContext.get().getUser());
+            Container folder = ContainerManager.ensureContainer(_testDirName + "/Test", TestContext.get().getUser());
 
             FileContentService fileService = FileContentService.get();
             AttachmentService svc = AttachmentService.get();
@@ -1822,75 +1819,6 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             // clean up
             ContainerManager.deleteAll(proj, user);
         }
-
-        @Test
-        public void testSecureDocuments() throws IOException
-        {
-            User user = TestContext.get().getUser();
-            assertNotNull("Should have access to a user", user);
-
-            // clean up if anything was left over from last time
-            if (null != ContainerManager.getForPath(_testDirName))
-                ContainerManager.deleteAll(ContainerManager.getForPath(_testDirName), user);
-
-            Container proj = ContainerManager.ensureContainer(_testDirName);
-            Container container = ContainerManager.ensureContainer(_testDirName + "/Test");
-            AttachmentService service = AttachmentService.get();
-
-            String entityId = GUID.makeGUID();
-            SecureDocumentParent secureDocumentParent = new SecureDocumentParent(entityId, container, ModuleLoader.getInstance().getModule(CoreModule.CORE_MODULE_NAME));
-            secureDocumentParent.addRoleAssignment(user, ReaderRole.class);
-
-            MultipartFile f = new MockMultipartFile("file.txt", "file.txt", "text/plain", "Hello World".getBytes());
-            Map<String, MultipartFile> fileMap = new HashMap<>();
-            fileMap.put("file.txt", f);
-            List<AttachmentFile> files = SpringAttachmentFile.createList(fileMap);
-            service.addAttachments(secureDocumentParent, files, user);
-
-            Attachment attachment = service.getAttachment(secureDocumentParent, "file.txt");
-            assertNotNull("Attachment not found", attachment);
-
-            ViewContext context = HttpView.currentContext();
-            if (null != context)
-            {
-                User guest = UserManager.getGuestUser();
-                context.setUser(guest);
-                boolean guestDenied = false;
-                try
-                {
-                    service.getAttachment(secureDocumentParent, "file.txt");
-                }
-                catch (UnauthorizedException e)
-                {
-                    guestDenied = true;     // We expect this
-                }
-                assertTrue("Guest should not have access to attachment", guestDenied);
-
-                context.setUser(user);
-
-                // TODO: Would like to impersonate to test accessing the attachment when user is not SiteAdmin, but stopImpersonating
-                //       requires a factory object that you can't really get without getting a session attribute whose name you can't get from here
-/*                SecurityManager.impersonateRoles(context, Collections.singletonList(new ReaderRole()), null);
-                attachment = service.getAttachment(secureDocumentParent, "file.txt");
-                assertNotNull("Attachment not found", attachment);
-                User authenticatedUser = SecurityManager.getAuthenticatedUser(context.getRequest());
-                assertNotNull("Could not get authenticated user", authenticatedUser);
-                SecurityManager.stopImpersonating(context.getRequest(), authenticatedUser.getImpersonationContext().getFactory());
-*/
-            }
-
-            service.deleteAttachments(secureDocumentParent);
-            attachment = service.getAttachment(secureDocumentParent, "file.txt");
-            assertNull("Attachment should no longer exist", attachment);
-
-            SecurityPolicyManager.deletePolicy(secureDocumentParent);
-            SecurityPolicy policy = secureDocumentParent.getSecurityPolicy();
-            assertTrue("Security policy object should be returned empty", policy != null && policy.isEmpty());
-
-            // clean up
-            ContainerManager.deleteAll(proj, user);
-        }
-
 
         private void assertSameFile(File a, File b)
         {

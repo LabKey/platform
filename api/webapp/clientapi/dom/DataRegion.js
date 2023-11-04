@@ -3754,7 +3754,7 @@ if (!LABKEY.DataRegions) {
         var json = {};
 
         if (params.sql) {
-            json.sql = params.sql;
+            json.sql = LABKEY.Utils.wafEncode(params.sql);
         }
 
         _processButtonBar(region, json);
@@ -3777,7 +3777,10 @@ if (!LABKEY.DataRegions) {
         }
 
         if (region.metadata) {
-            json.metadata = region.metadata;
+            json.metadata = {
+                type: region.metadata.type,
+                value: LABKEY.Utils.wafEncode(region.metadata.value)
+            };
         }
 
         return json;

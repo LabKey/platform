@@ -76,7 +76,7 @@ public class CohortController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteCohortAction extends FormHandlerAction<CohortIdForm>
+    public static class DeleteCohortAction extends FormHandlerAction<CohortIdForm>
     {
         @Override
         public void validateCommand(CohortIdForm target, Errors errors)

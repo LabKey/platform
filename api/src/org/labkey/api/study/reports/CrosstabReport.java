@@ -162,8 +162,6 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
                     statSet.add(Stats.COUNT);
                 else if ("Sum".equals(stat))
                     statSet.add(Stats.SUM);
-                else if ("Sum".equals(stat))
-                    statSet.add(Stats.SUM);
                 else if ("Mean".equals(stat))
                     statSet.add(Stats.MEAN);
                 else if ("Min".equals(stat))

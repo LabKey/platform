@@ -118,7 +118,6 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
         private String _sourceLsid;
         private String _sampleSetName;
         private String _insertUpdateChoice;
-        private Long _transactionId;
 
         public SampleTypeAuditEvent()
         {
@@ -160,15 +159,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
             _insertUpdateChoice = insertUpdateChoice;
         }
 
-        public Long getTransactionId()
-        {
-            return _transactionId;
-        }
 
-        public void setTransactionId(Long transactionId)
-        {
-            _transactionId = transactionId;
-        }
 
         @Override
         public Map<String, Object> getAuditLogMessageElements()

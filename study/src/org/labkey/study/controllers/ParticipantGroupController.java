@@ -94,7 +94,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
+    public static class CreateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
@@ -153,7 +153,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
+    public static class UpdateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
@@ -183,7 +183,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     enum Modification {ADD, REMOVE};
 
-    private abstract class ModifyCategoryParticipants extends MutatingApiAction<ParticipantCategorySpecification>
+    private abstract static class ModifyCategoryParticipants extends MutatingApiAction<ParticipantCategorySpecification>
     {
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors, Modification modification) throws Exception
         {
@@ -238,7 +238,7 @@ public class ParticipantGroupController extends BaseStudyController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantCategory extends ReadOnlyApiAction<ParticipantCategoryImpl>
+    public static class GetParticipantCategory extends ReadOnlyApiAction<ParticipantCategoryImpl>
     {
         @Override
         public ApiResponse execute(ParticipantCategoryImpl form, BindException errors)
@@ -255,7 +255,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantCategories extends ReadOnlyApiAction<GetParticipantCategoriesForm>
+    public static class GetParticipantCategories extends ReadOnlyApiAction<GetParticipantCategoriesForm>
     {
         @Override
         public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors)
@@ -285,7 +285,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantGroupsWithLiveFilters extends ReadOnlyApiAction
+    public static class GetParticipantGroupsWithLiveFilters extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -328,7 +328,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategoryImpl>
+    public static class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategoryImpl>
     {
         @Override
         public ApiResponse execute(ParticipantCategoryImpl form, BindException errors) throws Exception
@@ -364,7 +364,7 @@ public class ParticipantGroupController extends BaseStudyController
      * deleted through the schema browser query views, until we can implement a UI to handle management of categories
      * and groups.
      */
-    public class DeleteParticipantCategories extends FormHandlerAction<QueryForm>
+    public static class DeleteParticipantCategories extends FormHandlerAction<QueryForm>
     {
         private ActionURL _returnURL;
 
@@ -403,7 +403,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetParticipantsFromSelectionAction extends MutatingApiAction<ParticipantSelection>
+    public static class GetParticipantsFromSelectionAction extends MutatingApiAction<ParticipantSelection>
     {
         @Override
         public ApiResponse execute(ParticipantSelection form, BindException errors)
@@ -983,7 +983,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class SaveParticipantGroup extends MutatingApiAction<ParticipantGroupSpecification>
+    public static class SaveParticipantGroup extends MutatingApiAction<ParticipantGroupSpecification>
     {
         ParticipantGroup _prevGroup;
 
@@ -1119,7 +1119,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class DeleteParticipantGroup extends MutatingApiAction<ParticipantGroup>
+    public static class DeleteParticipantGroup extends MutatingApiAction<ParticipantGroup>
     {
         @Override
         public ApiResponse execute(ParticipantGroup form, BindException errors) throws Exception
@@ -1227,7 +1227,7 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class UpdateParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
+    public static class UpdateParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         @Override
         public ApiResponse execute(UpdateParticipantGroupForm form, BindException errors) throws Exception
@@ -1277,7 +1277,7 @@ public class ParticipantGroupController extends BaseStudyController
      * deleted through the schema browser query views, until we can implement a UI to handle management of categories
      * and groups.
      */
-    public class DeleteParticipantGroups extends FormHandlerAction<QueryForm>
+    public static class DeleteParticipantGroups extends FormHandlerAction<QueryForm>
     {
         private ActionURL _returnURL;
 
@@ -1433,7 +1433,7 @@ public class ParticipantGroupController extends BaseStudyController
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     @MethodsAllowed({POST, DELETE})
-    public class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
+    public static class SessionParticipantGroupAction extends MutatingApiAction<UpdateParticipantGroupForm>
     {
         @Override
         public Object execute(UpdateParticipantGroupForm form, BindException errors)
@@ -1517,7 +1517,7 @@ public class ParticipantGroupController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetSessionParticipantGroupAction extends ReadOnlyApiAction<UpdateParticipantGroupForm>
+    public static class GetSessionParticipantGroupAction extends ReadOnlyApiAction<UpdateParticipantGroupForm>
     {
         @Override
         public Object execute(UpdateParticipantGroupForm form, BindException errors)

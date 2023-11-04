@@ -79,7 +79,8 @@
         <tr>
             <td class="labkey-form-label">Report or Chart:</td>
             <td>
-                <select id="reportId" name="<%=Report.renderParam.reportId%>" onchange="getSectionNames(this);">
+                <% addHandler("reportId", "change", "getSectionNames(this);"); %>
+                <select id="reportId" name="<%=Report.renderParam.reportId%>">
                     <%
                         for (String reportName : reportNames)
                         {
@@ -104,13 +105,15 @@
         <tr>
             <td class="labkey-form-label">Show Tabs:<%=helpPopup("Show tabs",
                     "Some reports/charts may be rendered with multiple tabs showing. Select this option to only show the primary one.")%></td>
-            <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%> onclick="onShowTabs(this.checked);"></td>
+            <% addHandler("showTabs", "click", "return onShowTabs(this.checked);"); %>
+            <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%>></td>
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=helpPopup("Show Report sections",
                     "Some reports/charts contain multiple sections such as: images, text, console output. For these types of report, you can select which section(s) to " +
                             "display by selecting them from the list.")%></td>
-            <td><select id="showSection" multiple="true" onchange="selectSection()"></select></td>
+            <% addHandler("showSection", "change", "return selectSection();"); %>
+            <td><select id="showSection" multiple="true"></select></td>
         </tr>
         <tr>
             <td/>
@@ -152,11 +155,12 @@
             if (status && status.sectionNames)
             {
                 // build the selection for visible report sections
-                var select = "<select id=\"showSection\" width=\"150px\" multiple=\"true\" onchange=\"selectSection()\">";
+                var select = "<select id=\"showSection\" width=\"150px\" multiple=\"true\">";
                 select = select.concat(status.sectionNames);
                 select = select.concat("</select>");
 
                 td.innerHTML = select;
+                document.getElementById("showSection")['onchange'] = selectSection;
 
                 var showTabs = document.getElementById("showTabs");
                 if (showTabs)

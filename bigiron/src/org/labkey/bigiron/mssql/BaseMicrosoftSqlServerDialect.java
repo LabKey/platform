@@ -634,7 +634,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
@@ -658,7 +658,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             result.append("DISTINCT ");
         }
 
+        if (includeNulls)
+        {
+            result.append("COALESCE(CAST(");
+        }
         result.append(sql);
+        if (includeNulls)
+        {
+            result.append(" AS NVARCHAR(MAX)), '')");
+        }
         result.append(", ");
         result.append(delimiterSQL);
 
@@ -687,7 +695,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public SQLFragment getSelectConcat(SQLFragment selectSql, String delimiter)
     {
-        String sql = selectSql.getSQL().toUpperCase();
+        String sql = selectSql.getRawSQL().toUpperCase();
 
         // Use SQLServer's FOR XML syntax to concat multiple values together
         // We want them separated by commas, so prefix each value with a comma and then use SUBSTRING to strip
@@ -728,9 +736,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             throw new IllegalArgumentException("Can't handle SQL: " + sql);
         }
-        ret.insert(fromIndex, "AS NVARCHAR) AS [text()] ");
+        // This closes the COALESCE that's injected a couple of lines down, and starts the SQL Server-specific
+        // syntax that concludes later with FOR XML PATH
+        ret.insert(fromIndex, "AS NVARCHAR(MAX)), '') AS [text()] ");
         int selectIndex = sql.indexOf("SELECT");
-        ret.insert(selectIndex + "SELECT".length(), "'" + delimiter + "' + CAST(");
+        ret.insert(selectIndex + "SELECT".length(), "'" + delimiter + "' + COALESCE(CAST(");
         ret.insert(0, "SUBSTRING ((");
         ret.append(" FOR XML PATH ('')), ");
         // Trim off the first delimiter
@@ -1249,7 +1259,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                         nameIndex(change.getTableName(), new String[] { columnName }, false),
                         tableName,
                         hashedColumn,
-                        columnName));
+                        legalColumnName));
 
                 // Create trigger to enforce uniqueness using the hashed column index
                 statements.add(String.format(

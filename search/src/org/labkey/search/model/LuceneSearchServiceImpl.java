@@ -33,6 +33,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -75,6 +76,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -150,7 +152,7 @@ import java.util.stream.Stream;
  * Date: Nov 18, 2009
  * Time: 1:14:44 PM
  */
-public class LuceneSearchServiceImpl extends AbstractSearchService
+public class LuceneSearchServiceImpl extends AbstractSearchService implements SearchMXBean
 {
     private static final Logger _log = LogHelper.getLogger(LuceneSearchServiceImpl.class, "Full-text searching indexing operations");
 
@@ -428,7 +430,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
      * Get the number of documents in the index
      * @return The number of documents
      */
-    private int getNumDocs() throws IOException
+    @Override
+    public int getNumDocs() throws IOException
     {
         IndexSearcher is = _indexManager.getSearcher();
 
@@ -1304,7 +1307,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             Query query = new TermQuery(new Term(FIELD_NAME.container.toString(), id));
 
-            // Run the query before delete, but only if Log4J debug level is set
+            // Count the docs and log before deleting them, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
             {
                 _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
@@ -1325,13 +1328,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             BooleanQuery query = new BooleanQuery.Builder()
-                    // Add container filter
-                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
-                    // Add files filter
-                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
-                    //Limit to just dav files and not attachments or other files
-                    .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
-                    .build();
+                // Add container filter
+                .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
+                // Add files filter
+                .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
+                //Limit to just dav files and not attachments or other files
+                .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
+                .build();
 
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled() && _indexManager.isReal())
@@ -1591,13 +1594,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private void processSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher, SearchResult result) throws IOException
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
-
         List<SearchHit> ret = new LinkedList<>();
+        StoredFields storedFields = searcher.getIndexReader().storedFields();
 
         for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
             ScoreDoc scoreDoc = hits[i];
-            Document doc = searcher.doc(scoreDoc.doc);
+            Document doc = storedFields.document(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
             hit.category = doc.get(FIELD_NAME.searchCategories.toString());
@@ -1646,11 +1649,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private void processSearchResultUniqueIds(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher, List<String> searchResultUniqueIds) throws IOException
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
+        StoredFields storedFields = searcher.getIndexReader().storedFields();
 
         for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
         {
             ScoreDoc scoreDoc = hits[i];
-            Document doc = searcher.doc(scoreDoc.doc);
+            Document doc = storedFields.document(scoreDoc.doc);
             String id = doc.get(FIELD_NAME.uniqueId.toString());
             if (id != null)
                 searchResultUniqueIds.add(id);

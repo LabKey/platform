@@ -47,13 +47,12 @@
     Map<Plate, Integer> plateTemplateRunCount = new HashMap<>();
     for (Plate template : plateTemplates)
     {
-        int count = PlateService.get().getRunCountUsingPlate(c, template);
+        int count = PlateService.get().getRunCountUsingPlate(c, getUser(), template);
         plateTemplateRunCount.put(template, count);
     }
 %>
 
-<script type="application/javascript">
-
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($){
 
         deletePlate = function(templateName, plateId){
@@ -157,7 +156,6 @@
             {
         %>
             <%= link("copy to another folder", new ActionURL(PlateController.CopyTemplateAction.class, getContainer()).
-                addParameter("templateName", template.getName()).
                 addParameter("plateId", template.getRowId())) %>
         <%
             }

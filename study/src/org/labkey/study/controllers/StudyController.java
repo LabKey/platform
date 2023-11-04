@@ -466,7 +466,7 @@ public class StudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDatasetAction extends ReadOnlyApiAction<DatasetForm>
+    public static class GetDatasetAction extends ReadOnlyApiAction<DatasetForm>
     {
         @Override
         public Object execute(DatasetForm form, BindException errors) throws Exception
@@ -665,7 +665,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class QueryReportAction extends QueryViewAction<QueryReportForm, QueryView>
+    public static class QueryReportAction extends QueryViewAction<QueryReportForm, QueryView>
     {
         protected Report _report;
 
@@ -952,8 +952,7 @@ public class StudyController extends BaseStudyController
             if (status != null)
             {
                 // inject the dataset status marker class, but it is up to the client to style the page accordingly
-                String statusCls = "labkey-dataset-status-" + PageFlowUtil.filter(status.toLowerCase());
-                HtmlView scriptLock = new HtmlView("<script type=\"text/javascript\">(function($) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString(statusCls) + "); })(jQuery);</script>");
+                HtmlView scriptLock = new HtmlView(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">(function($) { $(LABKEY.DataRegions['Dataset'].form).addClass(" + PageFlowUtil.jsString("labkey-dataset-status-" + status.toLowerCase()) + "); })(jQuery);</script>"));
                 view.addView(scriptLock);
             }
 
@@ -1013,7 +1012,7 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresNoPermission
-    public class ExpandStateNotifyAction extends SimpleViewAction
+    public static class ExpandStateNotifyAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -1768,7 +1767,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
+    public static class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
     {
         @Override
         public ModelAndView getConfirmView(LocationForm form, BindException errors)
@@ -2704,7 +2703,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class DownloadTsvAction extends SimpleViewAction<IdForm>
+    public static class DownloadTsvAction extends SimpleViewAction<IdForm>
     {
         @Override
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
@@ -2722,7 +2721,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DatasetItemDetailsAction extends SimpleViewAction<SourceLsidForm>
+    public static class DatasetItemDetailsAction extends SimpleViewAction<SourceLsidForm>
     {
         @Override
         public ModelAndView getView(SourceLsidForm form, BindException errors)
@@ -3766,7 +3765,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ResetPipelineAction extends FormHandlerAction<ResetPipelinePathForm>
+    public static class ResetPipelineAction extends FormHandlerAction<ResetPipelinePathForm>
     {
         @Override
         public void validateCommand(ResetPipelinePathForm form, Errors errors)
@@ -4487,7 +4486,7 @@ public class StudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class DeleteDatasetPropertyOverrideAction extends MutatingApiAction
+    public static class DeleteDatasetPropertyOverrideAction extends MutatingApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -4792,7 +4791,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CreateSnapshotAction extends FormViewAction<StudySnapshotForm>
+    public static class CreateSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
 
@@ -5005,7 +5004,7 @@ public class StudyController extends BaseStudyController
      * dataset properties editor can be shown in this view.
      */
     @RequiresPermission(AdminPermission.class)
-    public class EditSnapshotAction extends FormViewAction<StudySnapshotForm>
+    public static class EditSnapshotAction extends FormViewAction<StudySnapshotForm>
     {
         ActionURL _successURL;
 
@@ -6043,7 +6042,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ViewDataAction extends SimpleViewAction<Object>
+    public static class ViewDataAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -6104,7 +6103,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
+    public static class DatasetDetailRedirectAction extends SimpleRedirectAction<DatasetDetailRedirectForm>
     {
         @Override
         public URLHelper getRedirectURL(DatasetDetailRedirectForm form)
@@ -6608,7 +6607,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class SubjectListAction extends SimpleViewAction
+    public static class SubjectListAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -6623,7 +6622,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseStudyScheduleAction extends MutatingApiAction<BrowseStudyForm>
+    public static class BrowseStudyScheduleAction extends MutatingApiAction<BrowseStudyForm>
     {
         @Override
         public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors) throws Exception
@@ -6662,7 +6661,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class GetStudyTimepointsAction extends MutatingApiAction<BrowseStudyForm>
+    public static class GetStudyTimepointsAction extends MutatingApiAction<BrowseStudyForm>
     {
         @Override
         public ApiResponse execute(BrowseStudyForm browseDataForm, BindException errors)
@@ -6698,7 +6697,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class UpdateStudyScheduleAction extends MutatingApiAction<StudySchedule>
+    public static class UpdateStudyScheduleAction extends MutatingApiAction<StudySchedule>
     {
         @Override
         public void validateForm(StudySchedule form, Errors errors)
@@ -7119,7 +7118,7 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ExportParticipantTransformsAction extends FormHandlerAction<Object>
+    public static class ExportParticipantTransformsAction extends FormHandlerAction<Object>
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -7350,7 +7349,7 @@ public class StudyController extends BaseStudyController
      * Set up the site wide settings for a master patient provider
      */
     @RequiresPermission(AdminPermission.class)
-    public class MasterPatientProviderAction extends FormViewAction<MasterPatientProviderSettings>
+    public static class MasterPatientProviderAction extends FormViewAction<MasterPatientProviderSettings>
     {
         @Override
         public void validateCommand(MasterPatientProviderSettings form, Errors errors)
@@ -7402,7 +7401,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class TestMasterPatientProviderAction extends MutatingApiAction<MasterPatientProviderSettings>
+    public static class TestMasterPatientProviderAction extends MutatingApiAction<MasterPatientProviderSettings>
     {
         @Override
         public void validateForm(MasterPatientProviderSettings form, Errors errors)
@@ -7512,7 +7511,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RefreshMasterPatientIndexAction extends MutatingApiAction<Object>
+    public static class RefreshMasterPatientIndexAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
@@ -7548,7 +7547,7 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class DeleteMasterPatientRecordsAction extends MutatingApiAction<DeleteMPIForm>
+    public static class DeleteMasterPatientRecordsAction extends MutatingApiAction<DeleteMPIForm>
     {
         @Override
         public ApiResponse execute(DeleteMPIForm form, BindException errors) throws Exception

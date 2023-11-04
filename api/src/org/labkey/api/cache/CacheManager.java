@@ -66,7 +66,7 @@ public class CacheManager
     {
         CacheWrapper<K, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, false), debugName, null, Thread.currentThread().getStackTrace());
         addToKnownCaches(cache);  // Permanent cache -- hold onto it
-        LabKeyManagement.register(cache.createDynamicMBean(), "Cache", debugName);
+        LabKeyManagement.register(cache.createDynamicMBean(), debugName, "Cache");
         return cache;
     }
 
@@ -173,10 +173,6 @@ public class CacheManager
 
         String description = CollectionUtils.getModifiableCollectionMapOrArrayType(value);
 
-        // TODO: Stop caching arrays and remove this array check
-        if (null != value && value.getClass().isArray())
-            return;
-
         if (null != description)
         {
             LOG.warn(debugName + " attempted to cache " + description + ", which could be mutated by callers!");
@@ -184,7 +180,7 @@ public class CacheManager
     }
 
 
-    /* This interface allows a Collection to declare it self immutable when being added to a cache */
+    /* This interface allows a Collection to declare itself immutable when being added to a cache */
     public interface Sealable
     {
         boolean isSealed();

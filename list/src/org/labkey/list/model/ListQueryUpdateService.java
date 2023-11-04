@@ -51,12 +51,12 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.VirtualFile;
@@ -67,16 +67,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-/*
-* User: Nick Arnold
-* Date: June 5, 2012
-* Time: 10:27:30 AM
-*/
 
 /**
  * Implementation of QueryUpdateService for Lists
@@ -123,7 +115,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             {
                 Map<String, Object> raw = new TableSelector(getQueryTable(), keyFilter, null).getMap();
 
-                if (null != raw && raw.size() > 0)
+                if (null != raw && !raw.isEmpty())
                 {
                     ret = new CaseInsensitiveHashMap<>();
 
@@ -173,7 +165,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 }
             }
 
-            if (result.size() > 0 && !errors.hasErrors())
+            if (!result.isEmpty() && !errors.hasErrors())
                 mgr.indexList(_list);
         }
 
@@ -186,15 +178,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         {
             // if the list is a picklist and you have permission to manage picklists, that equates
             // to having editor permission.
-            Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-            contextualRoles.addAll(user.getContextualRoles(container.getPolicy()));
-            Role editorRole = RoleManager.getRole(EditorRole.class);
-            if (!contextualRoles.contains(editorRole))
-            {
-                contextualRoles.add(RoleManager.getRole(EditorRole.class));
-                return new LimitedUser(user, user.getGroups(), contextualRoles, false);
-            }
-            return user;
+            return ElevatedUser.ensureContextualRoles(container, user, Pair.of(DeletePermission.class, EditorRole.class));
         }
         return user;
     }
@@ -483,7 +467,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                     AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(entityId, container));
 
                 // Clean up Search indexer
-                if (result.size() > 0)
+                if (!result.isEmpty())
                     mgr.deleteItemIndex(_list, entityId);
             }
         }
@@ -598,7 +582,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     /**
      * Delegate class to generate an AttachmentParent
      */
-    public class ListItemAttachmentParentFactory implements AttachmentParentFactory
+    public static class ListItemAttachmentParentFactory implements AttachmentParentFactory
     {
         @Override
         public AttachmentParent generateAttachmentParent(String entityId, Container c)

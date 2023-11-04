@@ -31,6 +31,7 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
@@ -54,6 +55,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
@@ -62,9 +64,11 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.assay.data.generator.AssayDesignGenerator;
+import org.labkey.assay.data.generator.AssayRunDataGenerator;
 import org.labkey.assay.pipeline.AssayImportRunTask;
 import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
+import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.TsvPlateTypeHandler;
 import org.labkey.assay.plate.query.PlateSchema;
@@ -88,6 +92,7 @@ import java.util.Set;
 
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_COOKIE_NAME_REPLACEMENT;
 import static org.labkey.api.assay.DefaultDataTransformer.LEGACY_SESSION_ID_REPLACEMENT;
+import static org.labkey.api.assay.plate.AssayPlateMetadataService.EXPERIMENTAL_APP_PLATE_SUPPORT;
 
 public class AssayModule extends SpringModule
 {
@@ -102,7 +107,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 23.001;
+        return 23.003;
     }
 
     @Override
@@ -157,6 +162,7 @@ public class AssayModule extends SpringModule
         RoleManager.registerRole(new AssayDesignerRole());
 
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayDesigns, new AssayDesignGenerator.Driver());
+        DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayRunData, new AssayRunDataGenerator.Driver());
     }
 
     @Override
@@ -182,15 +188,25 @@ public class AssayModule extends SpringModule
 
         if (null != ss)
         {
+            // ASSAY_CATEGORY
             ss.addSearchCategory(AssayManager.get().ASSAY_CATEGORY);
-            ss.addSearchCategory(AssayManager.get().ASSAY_BATCH_CATEGORY);
-            ss.addSearchCategory(AssayManager.get().ASSAY_RUN_CATEGORY);
             ss.addResourceResolver(AssayManager.get().ASSAY_CATEGORY.getName(), AssayDocumentProvider.getSearchResolver());
-            ss.addResourceResolver(AssayManager.get().ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
-            ss.addResourceResolver(AssayManager.get().ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
             ss.addDocumentProvider(new AssayDocumentProvider());
-            ss.addDocumentProvider(new AssayBatchDocumentProvider());
+
+            // ASSAY_RUN_CATEGORY
+            ss.addSearchCategory(AssayManager.get().ASSAY_RUN_CATEGORY);
+            ss.addResourceResolver(AssayManager.get().ASSAY_RUN_CATEGORY.getName(), AssayRunDocumentProvider.getResourceResolver());
             ss.addDocumentProvider(new AssayRunDocumentProvider());
+
+            // ASSAY_BATCH_CATEGORY
+            ss.addSearchCategory(AssayManager.get().ASSAY_BATCH_CATEGORY);
+            ss.addResourceResolver(AssayManager.get().ASSAY_BATCH_CATEGORY.getName(), AssayBatchDocumentProvider.getResourceResolver());
+            ss.addDocumentProvider(new AssayBatchDocumentProvider());
+
+            // PLATE_CATEGORY
+            ss.addSearchCategory(PlateManager.get().PLATE_CATEGORY);
+            ss.addResourceResolver(PlateManager.get().PLATE_CATEGORY.getName(), PlateDocumentProvider.getResourceResolver());
+            ss.addDocumentProvider(new PlateDocumentProvider());
         }
 
         // add a container listener so we'll know when our container is deleted:
@@ -235,6 +251,9 @@ public class AssayModule extends SpringModule
         });
 
         ExperimentService.get().addExperimentListener(new AssayExperimentListener());
+
+        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
+                "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false, true));
     }
 
     @Override
@@ -291,7 +310,8 @@ public class AssayModule extends SpringModule
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
             AssayProviderSchema.TestCase.class,
-            PlateManager.TestCase.class
+            PlateManager.TestCase.class,
+            PositionImpl.TestCase.class
         );
     }
 

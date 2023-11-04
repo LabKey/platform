@@ -52,7 +52,9 @@ public class InputTag extends SimpleTagBase
     private Integer maxLength;
     private String min;
     private String name;
+    private String onClick;
     private String onChange;
+    private String onFocus;
     private String onKeyUp;
     private String placeholder;
     private String pattern; // regular expression
@@ -244,9 +246,19 @@ public class InputTag extends SimpleTagBase
         setValue(null != o ? o.toString() : null);
     }
 
+    public void setOnClick(String onClick)
+    {
+        this.onClick = onClick;
+    }
+
     public void setOnChange(String onChange)
     {
         this.onChange = onChange;
+    }
+
+    public void setOnFocus(String onFocus)
+    {
+        this.onFocus = onFocus;
     }
 
     public void setOnKeyUp(String onKeyUp)
@@ -307,7 +319,9 @@ public class InputTag extends SimpleTagBase
             .label(label)
             .stateMessage(stateMessage)
             .name(name)
+            .onClick(onClick)
             .onChange(onChange)
+            .onFocus(onFocus)
             .onKeyUp(onKeyUp)
             .placeholder(placeholder)
             .disabled(isDisabled)

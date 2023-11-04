@@ -26,27 +26,17 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-/**
- * FileDisplayColumn class
- * <p/>
- * Created: Oct 25, 2005
- *
- * @author bmaclean
- */
 public class FileDisplayColumn extends SimpleDisplayColumn
 {
     public FileDisplayColumn()
@@ -66,7 +56,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         String providerName = (String) cols.get("Provider");
         String containerId = (String) cols.get("Container");
 
-        if (rowIdI != null && filePath != null && filePath.length() > 0)
+        if (rowIdI != null && filePath != null && !filePath.isEmpty())
         {
             PipelineProvider provider = PipelineService.get().getPipelineProvider(providerName);
             Container container = ContainerManager.getForId(containerId);
@@ -122,15 +112,15 @@ public class FileDisplayColumn extends SimpleDisplayColumn
             try (Stream<Path> stream = Files.list(parent))
             {
                 return stream
-                        .filter(path -> {
-                            String name = path.getFileName().toString();
-                            if (provider != null)
-                                return provider.isStatusViewableFile(c, name, basename);
+                    .filter(path -> {
+                        String name = path.getFileName().toString();
+                        if (provider != null)
+                            return provider.isStatusViewableFile(c, name, basename);
 
-                            return StatusController.isVisibleFile(name, basename);
-                        })
-                        .sorted(Path::compareTo)
-                        .collect(toList());
+                        return StatusController.isVisibleFile(name, basename);
+                    })
+                    .sorted(Path::compareTo)
+                    .collect(toList());
             }
             catch (IOException e)
             {

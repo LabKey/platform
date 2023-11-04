@@ -26,11 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: 10/11/13
- * Time: 4:56 PM
- */
 public abstract class AbstractPropertyStore implements PropertyStore
 {
     private static final PropertySchema _prop = PropertySchema.getInstance();
@@ -52,33 +47,39 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     @NotNull
     @Override
-    public PropertyManager.PropertyMap getProperties(User user, Container container, String category)
+    public PropertyMap getProperties(User user, Container container, String category)
     {
         validateStore();
 
-        PropertyManager.PropertyMap map = _cache.getProperties(user, container, category);
+        PropertyMap map = _cache.getProperties(user, container, category);
 
         return null != map ? map : NULL_MAP;
     }
 
+    @Override
+    public @NotNull PropertyMap getProperties(User user, String category)
+    {
+        return getProperties(user, ContainerManager.getRoot(), category);
+    }
+
     @NotNull
     @Override
-    public PropertyManager.PropertyMap getProperties(Container container, String category)
+    public PropertyMap getProperties(Container container, String category)
     {
         return getProperties(PropertyManager.SHARED_USER, container, category);
     }
 
     @NotNull
     @Override
-    public PropertyManager.PropertyMap getProperties(String category)
+    public PropertyMap getProperties(String category)
     {
-        return getProperties(PropertyManager.SHARED_USER, ContainerManager.getRoot(), category);
+        return getProperties(ContainerManager.getRoot(), category);
     }
 
     @Override
     public PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
-        PropertyManager.PropertyMap existingMap = _cache.getProperties(user, container, category);
+        PropertyMap existingMap = _cache.getProperties(user, container, category);
         if (existingMap != null)
         {
             return new PropertyMap(existingMap);
@@ -87,12 +88,16 @@ public abstract class AbstractPropertyStore implements PropertyStore
         if (create)
         {
             // Assign a dummy ID we can use later to tell if we need to insert a brand new set during save
-            PropertyManager.PropertyMap result = new PropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
-
-            return result;
+            return new PropertyMap(-1, user, container.getId(), category, getPreferredPropertyEncryption(), this);
         }
 
         return null;
+    }
+
+    @Override
+    public PropertyMap getWritableProperties(User user, String category, boolean create)
+    {
+        return getWritableProperties(user, ContainerManager.getRoot(), category, create);
     }
 
     @Override
@@ -104,7 +109,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     @Override
     public PropertyMap getWritableProperties(String category, boolean create)
     {
-        return getWritableProperties(PropertyManager.SHARED_USER, ContainerManager.getRoot(), category, create);
+        return getWritableProperties(ContainerManager.getRoot(), category, create);
     }
 
     // Delete properties associated with this store
@@ -126,19 +131,6 @@ public abstract class AbstractPropertyStore implements PropertyStore
         _cache.removeAll(c);
     }
 
-
-    @Override
-    public void deletePropertySet(String category)
-    {
-        deletePropertySet(PropertyManager.SHARED_USER, ContainerManager.getRoot(), category);
-    }
-
-    @Override
-    public void deletePropertySet(Container container, String category)
-    {
-        deletePropertySet(PropertyManager.SHARED_USER, container, category);
-    }
-
     @Override
     public void deletePropertySet(User user, Container container, String category)
     {
@@ -157,13 +149,29 @@ public abstract class AbstractPropertyStore implements PropertyStore
         }
     }
 
+    @Override
+    public void deletePropertySet(User user, String category)
+    {
+        deletePropertySet(user, ContainerManager.getRoot(), category);
+    }
+
+    @Override
+    public void deletePropertySet(Container container, String category)
+    {
+        deletePropertySet(PropertyManager.SHARED_USER, container, category);
+    }
+
+    @Override
+    public void deletePropertySet(String category)
+    {
+        deletePropertySet(ContainerManager.getRoot(), category);
+    }
 
     protected void validatePropertyMap(PropertyMap map)
     {
         if (!isValidPropertyMap(map))
             throw new IllegalStateException("Invalid property map for this property store, " + this.getClass().getSimpleName());
     }
-
 
     static final PropertyMap NULL_MAP;
 
@@ -208,10 +216,10 @@ public abstract class AbstractPropertyStore implements PropertyStore
         _cache.clear();
     }
 
-    protected class PropertyLoader implements CacheLoader<String, PropertyManager.PropertyMap>
+    protected class PropertyLoader implements CacheLoader<String, PropertyMap>
     {
         @Override
-        public PropertyManager.PropertyMap load(@NotNull String key, Object argument)
+        public PropertyMap load(@NotNull String key, Object argument)
         {
             Object[] params = (Object[])argument;
             User user = (User)params[1];
@@ -229,7 +237,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
     }
 
     @Nullable
-    public PropertyManager.PropertyMap getPropertyMapFromDatabase(User user, Container container, String category)
+    public PropertyMap getPropertyMapFromDatabase(User user, Container container, String category)
     {
         ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
         String setSelectName = setColumn.getSelectName();   // Keyword in some dialects

@@ -26,6 +26,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<AssayRunUploadForm<? extends AssayProvider>> me = (JspView<AssayRunUploadForm<? extends AssayProvider>>) HttpView.currentView();
     AssayRunUploadForm<? extends AssayProvider> bean = me.getModelBean();
@@ -55,9 +56,13 @@
         { %>
         <tr>
             <% if (visibleCollectors.size() > 1)
-            { %>
-                <td><input value="<%= h(collector.getShortName()) %>" id="<%=makeHtmlId(collector.getShortName())%>" type="radio" name="dataCollectorName"<%=checked(first)%> onclick="hideAllCollectors(); showCollector('<%= h(collector.getShortName()) %>')"></td>
-            <% }
+            {
+                var id = makeHtmlId(collector.getShortName());
+                addHandler(id.toString(), "click", "hideAllCollectors(); showCollector(" +  q(collector.getShortName()) + ");");
+                %>
+                <td><input value="<%= h(collector.getShortName()) %>" id="<%=id%>" type="radio" name="dataCollectorName"<%=checked(first)%>></td>
+            <%
+            }
             else
             { %>
                 <td><input value="<%= h(collector.getShortName()) %>" id="<%=makeHtmlId(collector.getShortName())%>" type="hidden" name="dataCollectorName" /></td>

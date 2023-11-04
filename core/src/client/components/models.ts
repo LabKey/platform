@@ -27,6 +27,7 @@ export interface AuthConfigProvider {
     settingsFields: AuthConfigField[];
     sso?: boolean;
     testLink?: string;
+    allowInsert?: boolean;
 }
 
 export interface GlobalSettingsOptions {
@@ -40,11 +41,6 @@ export interface InputFieldProps extends AuthConfigField {
     canEdit: boolean;
     onChange?: (name: string, value: string | boolean) => void;
     value?: any;
-}
-
-export interface DatabasePasswordRules {
-    Strong: string;
-    Weak: string;
 }
 
 export interface DatabasePasswordSettings {

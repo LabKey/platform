@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.util.DeadlockPreventingException;
+import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.Filter;
 
 import java.util.HashMap;
@@ -33,8 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
  * (readers block while someone is creating an object)
- * User: matthewb
- * Date: Sep 16, 2010
  */
 public class BlockingCache<K, V> implements Cache<K, V>
 {
@@ -43,7 +42,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     protected CacheTimeChooser<K> _cacheTimeChooser;
     /**
      * Milliseconds to wait if some other thread is loading the cache before timing out.
-     * Note that we will NOT timeout the thread that is doing the load, but this can still help reduce deadlocks
+     * Note that we will NOT time out the thread that is doing the load, but this can still help reduce deadlocks
      */
     protected final long _timeout;
 
@@ -67,12 +66,10 @@ public class BlockingCache<K, V> implements Cache<K, V>
         _timeout = timeout;
     }
 
-
     public void setCacheTimeChooser(CacheTimeChooser<K> cacheTimeChooser)
     {
         _cacheTimeChooser = cacheTimeChooser;
     }
-
 
     protected Wrapper<V> createWrapper()
     {
@@ -98,92 +95,99 @@ public class BlockingCache<K, V> implements Cache<K, V>
     {
         Wrapper<V> w;
 
-        synchronized(_cache)
+        try (var ignored = DebugInfoDumper.pushThreadDumpContext(this.getClass().getSimpleName() + ".get(" + key + ")"))
         {
-            w = _cache.get(key);
-            if (null == w)
+            synchronized(_cache)
             {
-                w = createWrapper();
-                Long ttl;
-
-                // Override the default TTL if a CacheTimeChooser is present and provides a custom value
-                if (null == _cacheTimeChooser || null == (ttl = _cacheTimeChooser.getTimeToLive(key, argument)))
-                    _cache.put(key, w);
-                else
-                    _cache.put(key, w, ttl);
-            }
-        }
-
-        // there is a chance the wrapper can be removed from the cache
-        // we don't guarantee that two objects can't be loaded concurrently for the same key,
-        // just that it's unlikely
-
-        synchronized (w.getLockObject())
-        {
-            if (isInitialized(w))
-                return w.getValue();
-
-            long endTime = _timeout > 0 ? System.currentTimeMillis() + _timeout : Long.MAX_VALUE;
-            while (w.isLoading())
-            {
-                if (System.currentTimeMillis() > endTime)
+                w = _cache.get(key);
+                if (null == w)
                 {
-                    throw new DeadlockPreventingException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit for cache key " + key);
+                    w = createWrapper();
+                    Long ttl;
+
+                    // Override the default TTL if a CacheTimeChooser is present and provides a custom value
+                    if (null == _cacheTimeChooser || null == (ttl = _cacheTimeChooser.getTimeToLive(key, argument)))
+                        _cache.put(key, w);
+                    else
+                        _cache.put(key, w, ttl);
                 }
-                try
-                {
-                    // Wait either 1 second or 1 minute at a time, depending on the timeout value
-                    long waitTime = _timeout > 0 && _timeout < TimeUnit.MINUTES.toMillis(1) ? TimeUnit.SECONDS.toMillis(1) : TimeUnit.MINUTES.toMillis(1);
-                    w.getLockObject().wait(waitTime);
-                }
-                catch (InterruptedException x)
-                {/* */}
             }
 
-            if (isInitialized(w))
-                return w.getValue();
+            // there is a chance the wrapper can be removed from the cache
+            // we don't guarantee that two objects can't be loaded concurrently for the same key,
+            // just that it's unlikely
+
+            synchronized (w.getLockObject())
+            {
+                if (isInitialized(w))
+                    return w.getValue();
+
+                long endTime = _timeout > 0 ? System.currentTimeMillis() + _timeout : Long.MAX_VALUE;
+                while (w.isLoading())
+                {
+                    if (System.currentTimeMillis() > endTime)
+                    {
+                        throw new DeadlockPreventingException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit for cache key " + key);
+                    }
+                    try
+                    {
+                        // Wait either 1 second or 1 minute at a time, depending on the timeout value
+                        long waitTime = _timeout > 0 && _timeout < TimeUnit.MINUTES.toMillis(1) ? TimeUnit.SECONDS.toMillis(1) : TimeUnit.MINUTES.toMillis(1);
+                        w.getLockObject().wait(waitTime);
+                    }
+                    catch (InterruptedException x)
+                    {/* */}
+                }
+
+                if (isInitialized(w))
+                    return w.getValue();
 
                 // if we fall through here it means there _could_ be two threads trying to load the same object
                 // the cache loader needs to support that
 
-            w.setLoading();
-        }
-
-        boolean success = false;
-
-        try
-        {
-            if (null == loader)
-                loader = _loader;
-
-            if (null == loader)
-                throw new IllegalStateException("cache loader was not provided");
-
-            V value = loader.load(key, argument);
-            CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", value);
-
-            synchronized (w.getLockObject())
-            {
-                w.setValue(value);
-                w.getLockObject().notifyAll();
+                w.setLoading();
             }
-            success = true;
-            return value;
-        }
-        finally
-        {
-            //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            if (!success)
+
+            boolean success = false;
+
+            try
             {
+                if (null == loader)
+                    loader = _loader;
+
+                if (null == loader)
+                    throw new IllegalStateException("cache loader was not provided");
+
+                V value = load(key, argument, loader);
+                CacheManager.validate("BlockingCache over \"" + _cache + "\" cache", value);
+
                 synchronized (w.getLockObject())
                 {
-                    w.doneLoading();
+                    w.setValue(value);
                     w.getLockObject().notifyAll();
+                }
+                success = true;
+                return value;
+            }
+            finally
+            {
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                if (!success)
+                {
+                    synchronized (w.getLockObject())
+                    {
+                        w.doneLoading();
+                        w.getLockObject().notifyAll();
+                    }
                 }
             }
         }
     }
 
+    protected V load(@NotNull K key, @Nullable Object argument, CacheLoader<K, V> loader)
+    {
+        return loader.load(key, argument);
+    }
 
     /**
      * Preload or replace existing value at this key. Similar to remove() followed by get(), but doesn't block get() callers
@@ -195,7 +199,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         if (null == _loader)
             throw new IllegalStateException("cache loader is not set");
 
-        V value = _loader.load(key, argument);
+        V value = load(key, argument, _loader);
 
         put(key, value);
     }
@@ -328,7 +332,6 @@ public class BlockingCache<K, V> implements Cache<K, V>
             assertEquals(5, _map.size());
         }
 
-        @NotNull
         private void createAndStartThreads(Runnable r, Object start, int count)
         {
             Thread[] threads = new Thread[count];

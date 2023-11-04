@@ -22,8 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -49,6 +47,7 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -69,11 +68,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/*
-* User: adam
-* Date: Oct 14, 2009
-* Time: 6:31:40 PM
-*/
 public class QueryProfiler
 {
     private static final Logger LOG = LogHelper.getLogger(QueryProfiler.class, "Tracks SQL query execution and duration");
@@ -210,7 +204,7 @@ public class QueryProfiler
 
     @Nullable
     public StackTraceElement[] track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
-                      @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
+          @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
     {
         if (null == stackTrace)
             stackTrace = MiniProfiler.getTroubleshootingStackTrace();
@@ -375,29 +369,34 @@ public class QueryProfiler
             }
 
             HttpView<?> result = new HtmlView(DOM.DIV(
-                    DOM.TABLE(
-                        DOM.at(DOM.Attribute.style, "width: 100%"),
-                        DOM.TR(
-                                DOM.TD(DOM.at(DOM.Attribute.style, "white-space: nowrap; width: 50%;"), DOM.STRONG("SQL" + (tracker.isTruncated() ? " (truncated)" : ""))),
-                                DOM.TD(DOM.at(DOM.Attribute.style, "white-space: nowrap; width: 50%;"), DOM.STRONG("SQL With Parameters" + (tracker.isTruncated() ? " (truncated)" : "")))
-                        ),
-                        DOM.TR(
-                                DOM.TD(copyToClipboardLink("copyToClipboardNoParams", "sqlNoParams")),
-                                DOM.TD(copyToClipboardLink("copyToClipboardWithParams", "sqlWithParams"))
-                        ),
-                        DOM.TR(
-                                DOM.TD(DOM.at(DOM.Attribute.id, "sqlNoParams"),HtmlString.of(tracker.getSql(), true)),
-                                DOM.TD(DOM.at(DOM.Attribute.id, "sqlWithParams"), HtmlString.of(tracker.getSqlAndParameters(), true))
-                        )),
+                DOM.TABLE(
+                    DOM.at(DOM.Attribute.style, "width: 100%"),
+                    DOM.TR(
+                        DOM.TD(DOM.at(DOM.Attribute.style, "white-space: nowrap; width: 50%;"), DOM.STRONG("SQL" + (tracker.isTruncated() ? " (truncated)" : ""))),
+                        DOM.TD(DOM.at(DOM.Attribute.style, "white-space: nowrap; width: 50%;"), DOM.STRONG("SQL With Parameters" + (tracker.isTruncated() ? " (truncated)" : "")))
+                    ),
+                    DOM.TR(
+                        DOM.TD(copyToClipboardLink("copyToClipboardNoParams", "sqlNoParams")),
+                        DOM.TD(copyToClipboardLink("copyToClipboardWithParams", "sqlWithParams"))
+                    ),
+                    DOM.TR(
+                        DOM.TD(DOM.at(DOM.Attribute.id, "sqlNoParams"), HtmlString.of(tracker.getSql(), true)),
+                        DOM.TD(DOM.at(DOM.Attribute.id, "sqlWithParams"), HtmlString.of(tracker.getSqlAndParameters(), true))
+                    )
+                ),
 
-                    DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');")),
-                    DOM.BR(),
-                    Arrays.stream(ExecutionPlanType.values()).
-                            filter(tracker::canShowExecutionPlan).
-                            map(type -> DOM.DIV(new Link.LinkBuilder("Show " + type.getDescription()).
-                                    href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build())),
-                    DOM.BR(),
-                    tracker.renderStackTraces()
+                DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboardNoParams');new Clipboard('#copyToClipboardWithParams');")),
+                DOM.BR(),
+                Arrays.stream(ExecutionPlanType.values()).
+                    filter(tracker::canShowExecutionPlan).
+                    map(type -> DOM.DIV(
+                        new Link.LinkBuilder("Show " + type.getDescription()).
+                            href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name())).build(),
+                        ExecutionPlanType.Actual == type ? DOM.DIV(new Link.LinkBuilder("Log " + type.getDescription() + " to primary site log").
+                            href(executeFactory.getActionURL(tracker.getHash()).addParameter("type", type.name()).addParameter("log", true)).build()) : null
+                    )),
+                DOM.BR(),
+                tracker.renderStackTraces()
             ));
             result.addClientDependencies(Set.of(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js")));
             return result;
@@ -407,15 +406,16 @@ public class QueryProfiler
     private Link copyToClipboardLink(String linkId, String targetId)
     {
         return new Link.LinkBuilder("copy to clipboard").
-                onClick("return false;").
-                id(linkId).
-                attributes(Collections.singletonMap("data-clipboard-target", "#" + targetId)).
-                build();
+            onClick("return false;").
+            id(linkId).
+            attributes(Collections.singletonMap("data-clipboard-target", "#" + targetId)).
+            build();
     }
 
-    public HttpView<?> getExecutionPlanView(String sqlHash, ExecutionPlanType type)
+    public HttpView<?> getExecutionPlanView(String sqlHash, ExecutionPlanType type, boolean log)
     {
         SQLFragment sql;
+        String sqlWithParameters;
         DbScope scope;
 
         // Don't update anything while we're gathering the SQL and parameters
@@ -427,7 +427,7 @@ public class QueryProfiler
                 return new HtmlView(DOM.P(DOM.cl("labkey-error"), "Error: That query no longer exists"));
 
             if (!tracker.canShowExecutionPlan(type))
-                throw new IllegalStateException("Can't show the \"" + type.name() + "\" execution plan for this query");
+                throw new NotFoundException("Can't show the \"" + type.name() + "\" execution plan for this query");
 
             scope = tracker.getScope();
 
@@ -435,18 +435,32 @@ public class QueryProfiler
                 throw new IllegalStateException("Scope should not be null");
 
             sql = tracker.getSQLFragment();
+            sqlWithParameters = tracker.getSqlAndParameters() + "\n";
         }
 
         Collection<String> executionPlan = scope.getSqlDialect().getExecutionPlan(scope, sql, type);
-
         String fullPlan = StringUtils.join(executionPlan, "\n");
+        final HttpView<?> view;
 
-        HttpView<?> view = new HtmlView(
+        if (log)
+        {
+            // The log option is useful for retrieving actual timing information about very long-running queries when
+            // proxy timeouts prevent viewing the plan via the web page
+            LOG.info("An administrator initiated the logging of this query execution plan with actual timing:\n" + sqlWithParameters + fullPlan);
+            view = new HtmlView(HtmlString.of("Execution plan with actual timing was logged to the primary site log file"));
+        }
+        else
+        {
+            view = new HtmlView(
                 DOM.DIV(
-                        DOM.DIV(copyToClipboardLink("copyToClipboard", "executionPlan")),
-                        DOM.PRE(DOM.at(DOM.Attribute.id, "executionPlan"), fullPlan),
-                        DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboard');"))));
-        view.addClientDependencies(Set.of(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js")));
+                    DOM.DIV(copyToClipboardLink("copyToClipboard", "executionPlan")),
+                    DOM.PRE(DOM.at(DOM.Attribute.id, "executionPlan"), sqlWithParameters, fullPlan),
+                    DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboard');"))
+                )
+            );
+            view.addClientDependencies(Set.of(ClientDependency.fromPath("internal/clipboard/clipboard-1.5.9.min.js")));
+        }
+
         return view;
     }
 
@@ -533,7 +547,6 @@ public class QueryProfiler
 
                         String sql = query.getSql();
                         String hash = HashHelpers.hash(sql);
-
                         QueryTracker tracker = _queries.get(hash);
 
                         if (null == tracker)
@@ -597,7 +610,6 @@ public class QueryProfiler
         // stupid tomcat won't let me construct one of these at shutdown, so stash one statically
         private final QueryStatTsvWriter shutdownWriter = new QueryStatTsvWriter();
 
-
         @Override
         public void shutdownPre()
         {
@@ -608,12 +620,12 @@ public class QueryProfiler
         public void shutdownStarted()
         {
             Logger logger = LogManager.getLogger(QueryProfilerThread.class);
-            LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-            Configuration config = ctx.getConfiguration();
 
             if (null != logger)
             {
 //                LOG.info("Starting to log statistics for queries prior to web application shut down");
+//                LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+//                Configuration config = ctx.getConfiguration();
 //                Appender appender = config.getAppender("QUERY_STATS");
 //                if (null != appender && appender instanceof RollingFileAppender)
 //                    ((RollingFileAppender)appender).rollOver();

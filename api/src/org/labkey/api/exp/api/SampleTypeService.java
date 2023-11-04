@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -205,9 +206,11 @@ public interface SampleTypeService
     // used by DomainKind.invalidate()
     void indexSampleType(ExpSampleType sampleType);
 
-    DbSequence getRootSampleSequence();
+    @Nullable DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly);
 
-    long getRootSampleCount();
+    long getProjectSampleCount(Container container);
+
+    long getProjectRootSampleCount(Container container);
 
     ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
 
@@ -231,4 +234,8 @@ public interface SampleTypeService
     int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
 
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
+
+    long getCurrentCount(NameGenerator.EntityCounter counterType, Container container);
+
+    void ensureMinSampleCount(long newSeqValue, NameGenerator.EntityCounter counterType, Container container) throws ExperimentException;
 }

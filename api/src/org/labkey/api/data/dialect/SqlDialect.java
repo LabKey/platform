@@ -17,7 +17,6 @@
 package org.labkey.api.data.dialect;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,6 +35,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
@@ -68,12 +68,6 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * User: arauch
- * Date: Dec 28, 2004
- * Time: 8:58:25 AM
- */
-
 // Isolate the big SQL differences between database servers. A new SqlDialect instance is created for each DbScope; the
 // dialect holds state specific to each database, for example, reserved words, user defined type information, etc.
 public abstract class SqlDialect
@@ -81,7 +75,7 @@ public abstract class SqlDialect
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String CUSTOM_UNIQUE_ERROR_MESSAGE = "Constraint violation: cannot insert duplicate value for column";
 
-    protected static final Logger LOG = LogManager.getLogger(SqlDialect.class);
+    protected static final Logger LOG = LogHelper.getLogger(SqlDialect.class, "Database warnings and errors");
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
@@ -152,7 +146,7 @@ public abstract class SqlDialect
 
             if (!spids.isEmpty())
             {
-                if (sb.length() == 0)
+                if (sb.isEmpty())
                 {
                     sb.append("Other threads with active database connections:\n");
                 }
@@ -182,7 +176,7 @@ public abstract class SqlDialect
             }
         }
 
-        if (dbThreads.size() == 0)
+        if (dbThreads.isEmpty())
             sb.append("No other threads with active database connections to report.\n");
 
         sb.append("All other threads without active database connections:\n");
@@ -204,7 +198,7 @@ public abstract class SqlDialect
             }
         }
 
-        if (sb.length() > 0)
+        if (!sb.isEmpty())
         {
             sb.insert(0, SEPARATOR_BANNER + "\n\n");
         }
@@ -604,9 +598,6 @@ public abstract class SqlDialect
     /**
      * GroupConcat is usable as an aggregate function within a GROUP BY
      *
-     * @param sql
-     * @param distinct
-     * @param sorted
      * @param delimiter Simple Java string to use as a delimiter (not SQL!)
      * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
      */
@@ -619,13 +610,18 @@ public abstract class SqlDialect
     /**
      * GroupConcat is usable as an aggregate function within a GROUP BY
      *
-     * @param sql
-     * @param distinct
-     * @param sorted
      * @param delimiterSQL SQL expression to use as a delimiter
      * @return SQLFragment holding dialect-specific GROUP_CONCAT expression
      */
-    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL);
+    public final SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    {
+        return getGroupConcat(sql, distinct, sorted, delimiterSQL, false);
+    }
+
+    /**
+     * @param includeNulls whether to include null values as empty strings between delimeters
+     */
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls);
 
     public abstract boolean supportsSelectConcat();
 
@@ -1375,13 +1371,34 @@ public abstract class SqlDialect
                 StringUtils.equalsIgnoreCase("uniqueidentifier", sqlTypeName);
     }
 
+    public static boolean isJSONType(String sqlTypeName)
+    {
+        return StringUtils.equalsIgnoreCase("json", sqlTypeName) ||
+                StringUtils.equalsIgnoreCase("jsonb", sqlTypeName);
+    }
+
     public JdbcType getJdbcType(int type, String typeName)
     {
         JdbcType t = JdbcType.valueOf(type);
-        if ((t == JdbcType.VARCHAR || t == JdbcType.CHAR) && null != typeName)
+
+        if (null != typeName)
         {
-            if (isGUIDType(typeName))
-                t = JdbcType.GUID;
+            if (t == JdbcType.VARCHAR || t == JdbcType.CHAR)
+            {
+                if (isGUIDType(typeName))
+                    t = JdbcType.GUID;
+            }
+            else if (t == JdbcType.OTHER)
+            {
+                // CONSIDER is it useful to have an internal JSON type? (yes, this is a no-op)
+                if (isJSONType(typeName))
+                {
+                    // NOTE: LabKey SQL doesn't understand JSON types and treats them like VARCHAR (much like SQL Server)
+                    // However, for a INSERT (jsonb) PreparedStatement(i, OTHER, "{JSON}") works but PreparedStatement(i, VARCHAR, "{JSON}") does not.
+                    //use JdbcType.OTHER
+                    t = JdbcType.OTHER;
+                }
+            }
         }
         return t;
     }
@@ -1477,8 +1494,24 @@ public abstract class SqlDialect
 
     public enum ExecutionPlanType
     {
-        Estimated("Estimated Execution Plan"),
-        Actual("Execution Plan With Actual Timing");
+        Estimated("Estimated Execution Plan")
+        {
+            @Override
+            public boolean canShowExecutionPlan(String sql)
+            {
+                // Any query
+                return true;
+            }
+        },
+        Actual("Execution Plan With Actual Timing")
+        {
+            @Override
+            public boolean canShowExecutionPlan(String sql)
+            {
+                // Only SELECT statements. We don't want to re-execute INSERT, UPDATE, or DELETE statements.
+                return Table.isSelect(sql);
+            }
+        };
 
         private final String _description;
 
@@ -1491,6 +1524,8 @@ public abstract class SqlDialect
         {
             return _description;
         }
+
+        public abstract boolean canShowExecutionPlan(String sql);
     }
 
     public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql, ExecutionPlanType type)

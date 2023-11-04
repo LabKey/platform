@@ -22,9 +22,12 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -97,7 +100,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
         if (evaluatedURL != null && getValue(ctx) != null && hasAllRequiredValues)
         {
             String divId = GUID.makeGUID();
-            JSONObject props = new JSONObject(_properties);
+            JSONObject props = new JSONObject(_properties.toMap());
             JSONObject autoLoadProp = new JSONObject();
             autoLoadProp.put("url", evaluatedURL);
             props.put("autoLoad", autoLoadProp);
@@ -106,13 +109,13 @@ public class AJAXDetailsDisplayColumn extends DataColumn
             out.write("<span id=\"" + divId + "\">");
             super.renderGridCellContents(ctx, out);
             out.write("</span>");
-            out.write("<script type=\"text/javascript\"> \n" +
+            HttpView.currentPageConfig().addDocumentLoadHandler(JavaScriptFragment.unsafe(
                 "    Ext.onReady(function () { \n" +
-                "    var config = " + props.toString(0) + "\n" +
+                "    var config = " + props.toString(0) + ";\n" +
                 "    config.autoLoad.callback = function(el, success, response) { if (!success) el.update('Failed to load'); }; \n" +
                 "        var tip = new LABKEY.ext.CalloutTip(config); \n" +
-                "    }); \n" +
-                "    </script> ");
+                "    });"
+            ));
         }
         else if (!hasAllRequiredValues)
         {

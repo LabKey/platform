@@ -194,6 +194,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -202,6 +205,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -225,6 +229,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
@@ -1339,17 +1344,25 @@ public class QueryController extends SpringActionController
                 }
 
                 String metadataText = StringUtils.trimToNull(form.ff_metadataText);
-                if (queryDef.isMetadataEditable())
+                if (!Objects.equals(metadataText, queryDef.getMetadataXml()))
                 {
-                    if (!Objects.equals(metadataText, queryDef.getMetadataXml()) && !queryDef.canEditMetadata(getUser()))
-                        throw new UnauthorizedException("Edit metadata permissions are required.");
+                    if (queryDef.isMetadataEditable())
+                    {
+                        if (!queryDef.canEditMetadata(getUser()))
+                            throw new UnauthorizedException("Edit metadata permissions are required.");
 
-                    queryDef.setMetadataXml(metadataText);
-                }
-                else
-                {
-                    if (metadataText != null)
-                        throw new UnsupportedOperationException("Query metadata is not editable.");
+                        if (!getUser().isTrustedBrowserDev())
+                        {
+                            ensureNoJavaScript(metadataText);
+                        }
+
+                        queryDef.setMetadataXml(metadataText);
+                    }
+                    else
+                    {
+                        if (metadataText != null)
+                            throw new UnsupportedOperationException("Query metadata is not editable.");
+                    }
                 }
 
                 queryDef.save(getUser(), getContainer());
@@ -1396,6 +1409,63 @@ public class QueryController extends SpringActionController
             //if we got here, the query is OK
             response.put("success", true);
             return response;
+        }
+
+        private static final Set<String> DISALLOWED_SCRIPT_ELEMENTS = Collections.unmodifiableSet(new CaseInsensitiveHashSet("onClick", "onRender", "includeScript"));
+        private static final String CLASS_NAME_ELEMENT = "className";
+
+        private static void ensureNoJavaScript(String metadataText)
+        {
+            try
+            {
+                XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+                XMLStreamReader reader = inputFactory.createXMLStreamReader(new StringReader(metadataText));
+
+                // Issue 48660 - disallow JavaScriptDisplayColumn for non-developers
+                // When we're inside a <className> element, accumulate the contents to check when we hit the closing tag
+                StringBuilder className = null;
+
+                while (reader.hasNext())
+                {
+                    reader.next();
+                    if (reader.isStartElement())
+                    {
+                        String localPath = reader.getName().getLocalPart();
+                        // These three elements directly include JavaScript or pointers to script files
+                        if (DISALLOWED_SCRIPT_ELEMENTS.contains(localPath))
+                        {
+                            throw new UnauthorizedException("Illegal element <" + localPath + ">. For permissions to use this element, contact your system administrator");
+                        }
+                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath))
+                        {
+                            className = new StringBuilder();
+                        }
+                    }
+
+                    if (reader.isCharacters() && className != null)
+                    {
+                        // Accumulate the content of the <className>
+                        className.append(reader.getText());
+                    }
+
+                    if (reader.isEndElement())
+                    {
+                        String localPath = reader.getName().getLocalPart();
+                        if (CLASS_NAME_ELEMENT.equalsIgnoreCase(localPath) && className != null)
+                        {
+                            if (className.toString().contains(JavaScriptDisplayColumn.class.getName()))
+                            {
+                                throw new UnauthorizedException("For permissions to use JavaScriptDisplayColumn, contact your system administrator");
+                            }
+                            className = null;
+                        }
+                    }
+                }
+            }
+            catch (XMLStreamException ignored)
+            {
+                // Let other XML validation and error feedback handle malformed XML
+            }
         }
     }
 
@@ -1936,7 +2006,7 @@ public class QueryController extends SpringActionController
             getPageConfig().setTemplate(PageConfig.Template.None);
             HttpServletResponse response = getViewContext().getResponse();
             response.setHeader("X-Robots-Tag", "noindex");
-            response.setHeader("Content-Disposition", "attachment");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment);
             ViewContext viewContext = getViewContext();
 
             ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xlsx) {
@@ -2261,7 +2331,7 @@ public class QueryController extends SpringActionController
             }
             getViewContext().getResponse().setContentType("text/x-ms-iqy");
             String filename = FileUtil.makeFileNameWithTimestamp(form.getQueryName(), "iqy");
-            getViewContext().getResponse().setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+            ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, filename);
             PrintWriter writer = getViewContext().getResponse().getWriter();
             writer.println("WEB");
             writer.println("1");
@@ -3459,7 +3529,7 @@ public class QueryController extends SpringActionController
 
         public void setSql(String sql)
         {
-            _sql = sql;
+            _sql = PageFlowUtil.wafDecode(StringUtils.trim(sql));
         }
 
         public Integer getMaxRows()
@@ -3532,8 +3602,8 @@ public class QueryController extends SpringActionController
             String schemaName = StringUtils.trimToNull(form.getQuerySettings().getSchemaName());
             if (null == schemaName)
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
-            String sql = StringUtils.trimToNull(form.getSql());
-            if (null == sql)
+            String sql = form.getSql();
+            if (StringUtils.isBlank(sql))
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
 
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -3990,7 +4060,7 @@ public class QueryController extends SpringActionController
 
         public void setSql(String sql)
         {
-            _sql = sql;
+            _sql = PageFlowUtil.wafDecode(sql);
         }
 
         public String getSchemaName()
@@ -6080,7 +6150,10 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                int count = DataRegionSelection.setSelectionForAll(form, false);
+                // Note: DataRegionSelection.setSelectionForAll(form, false) will query for all rows in the region to remove those in context.
+                // Instead, get the selected values in context and then "uncheck" them directly
+                List<String> currentCtxSelection = DataRegionSelection.getSelected(form, false);
+                int count = DataRegionSelection.setSelected(getViewContext(), form.getQuerySettings().getSelectionKey(), currentCtxSelection, false);
                 return new DataRegionSelection.SelectionResponse(count);
             }
         }
@@ -6151,6 +6224,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
         {
+            getViewContext().getResponse().setHeader("Content-Type", CONTENT_TYPE_JSON);
             if (form.getQueryName() == null)
             {
                 Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), form.isClearSelected());
@@ -6901,8 +6975,12 @@ public class QueryController extends SpringActionController
             List<QueryParseException> qpe = new ArrayList<>();
             String expr = getViewContext().getRequest().getParameter("q");
             ArrayList<String> html = new ArrayList<>();
-            html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input type=submit onclick='Ext.getBody().mask();'></form>\n" +
-                    "<script>" +
+            PageConfig config = getPageConfig();
+            var inputId = config.makeId("submit_");
+            config.addHandler(inputId, "click", "Ext.getBody().mask();");
+            html.add("<form method=GET><textarea id=\"expression\" cols=100 rows=10 name=q>" + PageFlowUtil.filter(expr) + "</textarea><br><input id=\"" + inputId + "\" type=submit></form>\n" +
+                    "<script type=\"text/javascript\" nonce=\"" + config.getScriptNonce() + "\">" +
+
                     "    var resizer = new (Ext4||Ext).Resizable(\"expression\", {\n" +
                             "        handles: 'se',\n" +
                             "        minWidth: 200,\n" +
@@ -7870,8 +7948,8 @@ public class QueryController extends SpringActionController
         {
             doCleanup();
 
-            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1);
-            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2);
+            Container project1 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME1, TestContext.get().getUser());
+            Container project2 = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME2, TestContext.get().getUser());
 
             //disable search so we dont get conflicts when deleting folder quickly
             ContainerManager.updateSearchable(project1, false, TestContext.get().getUser());
@@ -7985,7 +8063,7 @@ public class QueryController extends SpringActionController
 
             MutableSecurityPolicy securityPolicy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(project1));
             securityPolicy.addRoleAssignment(withoutPermissions, EditorRole.class);
-            SecurityPolicyManager.savePolicy(securityPolicy);
+            SecurityPolicyManager.savePolicy(securityPolicy, TestContext.get().getUser());
 
             assertTrue("Should have insert permission", project1.hasPermission(withoutPermissions, InsertPermission.class));
             assertFalse("Should not have insert permission", project2.hasPermission(withoutPermissions, InsertPermission.class));

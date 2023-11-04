@@ -46,7 +46,7 @@ const EditableGridPageBody: FC<InjectedQueryModels> = memo(props => {
         })();
     }, [model]);
 
-    const onGridChange = useCallback<EditableGridChange>((changes, dataKeys?, data?) => {
+    const onGridChange = useCallback<EditableGridChange>((event, changes, dataKeys?, data?) => {
         setModels(models_ => {
             const { dataModels, editorModels } = applyEditableGridChangesToModels(
                 [models_.dataModel],

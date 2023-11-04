@@ -21,18 +21,22 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Transient;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PlateImpl extends PropertySetImpl implements Plate
+public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
     private String _name;
     private Integer _rowId;
@@ -59,8 +63,14 @@ public class PlateImpl extends PropertySetImpl implements Plate
     private List<WellGroupImpl> _deletedGroups;
 
     private WellImpl[][] _wells;
+    private Map<Integer, Well> _wellMap;
+
     private int _runId;      // NO_RUNID means no run yet, well data comes from file, dilution data must be calculated
     private int _plateNumber;
+    private List<PlateCustomField> _customFields = Collections.emptyList();
+    private Integer _metadataDomainId;
+
+    private Integer _runCount;
 
     public PlateImpl()
     {
@@ -81,32 +91,33 @@ public class PlateImpl extends PropertySetImpl implements Plate
         _dataFileId = GUID.makeGUID();
     }
 
-    public PlateImpl(PlateImpl template, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
+    public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        this(template.getContainer(), template.getName(), template.getType(), template.getRows(), template.getColumns());
+        this(plate.getContainer(), plate.getName(), plate.getType(), plate.getRows(), plate.getColumns());
 
         if (wellValues == null)
-            wellValues = new double[template.getRows()][template.getColumns()];
-        else if (wellValues.length != template.getRows() && wellValues[0].length != template.getColumns())
-            throw new IllegalArgumentException("Well values array size must match the template size");
+            wellValues = new double[plate.getRows()][plate.getColumns()];
+        else if (wellValues.length != plate.getRows() && wellValues[0].length != plate.getColumns())
+            throw new IllegalArgumentException("Well values array size must match the plate size");
 
-        if (excluded != null && (excluded.length != template.getRows() && excluded[0].length != template.getColumns()))
-            throw new IllegalArgumentException("Excluded values array size must match the template size");
+        if (excluded != null && (excluded.length != plate.getRows() && excluded[0].length != plate.getColumns()))
+            throw new IllegalArgumentException("Excluded values array size must match the plate size");
 
-        _wells = new WellImpl[template.getRows()][template.getColumns()];
+        _wells = new WellImpl[plate.getRows()][plate.getColumns()];
         _runId = runId;
         _plateNumber = plateNumber;
-        for (int row = 0; row < template.getRows(); row++)
+        for (int row = 0; row < plate.getRows(); row++)
         {
-            for (int col = 0; col < template.getColumns(); col++)
+            for (int col = 0; col < plate.getColumns(); col++)
                 _wells[row][col] = new WellImpl(this, row, col, wellValues[row][col], excluded != null && excluded[row][col]);
         }
-        for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
+        for (Map.Entry<String, Object> entry : plate.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());
 
-        for (WellGroup groupTemplate : template.getWellGroupTemplates(null))
-            addWellGroup(new WellGroupImpl(this, (WellGroupImpl) groupTemplate));
-        setContainer(template.getContainer());
+        for (WellGroup group : plate.getWellGroups())
+            addWellGroup(new WellGroupImpl(this, (WellGroupImpl) group));
+
+        setContainer(plate.getContainer());
     }
 
     @JsonIgnore
@@ -154,41 +165,41 @@ public class PlateImpl extends PropertySetImpl implements Plate
         return storeWellGroup(createWellGroup(name, type, positions));
     }
 
-    public WellGroup addWellGroup(WellGroupImpl template)
+    public WellGroup addWellGroup(WellGroupImpl group)
     {
-        return storeWellGroup(template);
+        return storeWellGroup(group);
     }
 
     @JsonIgnore
-    protected WellGroupImpl storeWellGroup(WellGroupImpl template)
+    protected WellGroupImpl storeWellGroup(WellGroupImpl group)
     {
-        template.setPlate(this);
+        group.setPlate(this);
 
         if (_groups == null)
             _groups = new HashMap<>();
-        Map<String, WellGroupImpl> templatesByType = _groups.computeIfAbsent(template.getType(), k -> new LinkedHashMap<>());
-        templatesByType.put(template.getName(), template);
-        if (!wellGroupsInOrder(templatesByType))
+        Map<String, WellGroupImpl> groupsByType = _groups.computeIfAbsent(group.getType(), k -> new LinkedHashMap<>());
+        groupsByType.put(group.getName(), group);
+        if (!wellGroupsInOrder(groupsByType))
         {
-            List<WellGroupImpl> sortedWellGroups = new ArrayList<>(templatesByType.values());
+            List<WellGroupImpl> sortedWellGroups = new ArrayList<>(groupsByType.values());
             sortedWellGroups.sort(new WellGroupComparator());
-            templatesByType.clear();
+            groupsByType.clear();
             for (WellGroupImpl wellGroup : sortedWellGroups)
-                templatesByType.put(wellGroup.getName(), wellGroup);
+                groupsByType.put(wellGroup.getName(), wellGroup);
         }
-        if (!wellGroupsInOrder(templatesByType))
-            throw new IllegalArgumentException("WellGroupTemplates are out of order.");
-        return template;
+        if (!wellGroupsInOrder(groupsByType))
+            throw new IllegalArgumentException("WellGroups are out of order.");
+        return group;
     }
 
-    private boolean wellGroupsInOrder(Map<String, WellGroupImpl> templates)
+    private boolean wellGroupsInOrder(Map<String, WellGroupImpl> groups)
     {
         int row = -1;
         int col = -1;
-        for (String name : templates.keySet())
+        for (String name : groups.keySet())
         {
-            WellGroupImpl template = templates.get(name);
-            Position topLeft = template.getTopLeft();
+            WellGroupImpl group = groups.get(name);
+            Position topLeft = group.getTopLeft();
             if (topLeft != null)
             {
                 if (col > topLeft.getColumn())
@@ -207,10 +218,10 @@ public class PlateImpl extends PropertySetImpl implements Plate
     public List<WellGroup> getWellGroups(Position position)
     {
         List<WellGroup> groups = new ArrayList<>();
-        for (WellGroup template : getWellGroupTemplates(null))
+        for (WellGroup group : getWellGroups())
         {
-            if (template.contains(position))
-                groups.add(template);
+            if (group.contains(position))
+                groups.add(group);
         }
         return groups;
     }
@@ -219,14 +230,20 @@ public class PlateImpl extends PropertySetImpl implements Plate
     @Override
     public List<WellGroup> getWellGroups()
     {
-        return getWellGroupTemplates(null);
+        List<WellGroup> allGroups = new ArrayList<>();
+        if (_groups != null)
+        {
+            for (Map<String, WellGroupImpl> groups : _groups.values())
+                allGroups.addAll(groups.values());
+        }
+        return allGroups;
     }
 
     @JsonIgnore
     @Override
     public @Nullable WellGroup getWellGroup(int rowId)
     {
-        return getWellGroupTemplates(null)
+        return getWellGroups()
                 .stream()
                 .filter(wg -> wg.getRowId() != null && wg.getRowId() == rowId)
                 .findFirst()
@@ -237,54 +254,27 @@ public class PlateImpl extends PropertySetImpl implements Plate
     @Override
     public List<WellGroup> getWellGroups(WellGroup.Type type)
     {
-        return getWellGroupTemplates(type);
-    }
-
-    @JsonIgnore
-    @Nullable
-    public WellGroup getWellGroupTemplate(WellGroup.Type type, String name)
-    {
-        if (_groups == null)
-            return null;
-        Map<String, WellGroupImpl> typedGroups = _groups.get(type);
-        if (typedGroups == null)
-            return null;
-        return typedGroups.get(name);
-    }
-
-    @JsonIgnore
-    @NotNull
-    public List<WellGroup> getWellGroupTemplates(@Nullable WellGroup.Type type)
-    {
-        List<WellGroup> allGroupTemplates = new ArrayList<>();
+        List<WellGroup> allGroups = new ArrayList<>();
         if (_groups != null)
         {
-            if (type != null)
-            {
-                var typedGroupTemplates = _groups.get(type);
-                if (typedGroupTemplates != null && !typedGroupTemplates.isEmpty())
-                    allGroupTemplates.addAll(typedGroupTemplates.values());
-            }
-            else
-            {
-                for (Map<String, WellGroupImpl> typedGroupTemplates : _groups.values())
-                    allGroupTemplates.addAll(typedGroupTemplates.values());
-            }
+            var typedGroups = _groups.get(type);
+            if (typedGroups != null && !typedGroups.isEmpty())
+                allGroups.addAll(typedGroups.values());
         }
-        return allGroupTemplates;
+        return allGroups;
     }
 
     @JsonIgnore
     @Override
-    public Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupTemplateMap()
+    public Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupMap()
     {
         Map<WellGroup.Type, Map<String, WellGroup>> wellgroupTypeMap = new HashMap<>();
         if (_groups != null)
         {
-            for (Map.Entry<WellGroup.Type, Map<String, WellGroupImpl>> templateEntry : _groups.entrySet())
+            for (Map.Entry<WellGroup.Type, Map<String, WellGroupImpl>> groupEntry : _groups.entrySet())
             {
-                Map<String, WellGroup> templateMap = new HashMap<>(templateEntry.getValue());
-                wellgroupTypeMap.put(templateEntry.getKey(), templateMap);
+                Map<String, WellGroup> groupMap = new HashMap<>(groupEntry.getValue());
+                wellgroupTypeMap.put(groupEntry.getKey(), groupMap);
             }
         }
         return wellgroupTypeMap;
@@ -480,14 +470,23 @@ public class PlateImpl extends PropertySetImpl implements Plate
         }
     }
 
+    @Override
+    @Nullable
+    public Well getWell(int rowId)
+    {
+        return _wellMap != null ? _wellMap.get(rowId) : null;
+    }
+
     @JsonIgnore
     @Override
     public WellGroup getWellGroup(WellGroup.Type type, String wellGroupName)
     {
-        WellGroup groupTemplate = getWellGroupTemplate(type, wellGroupName);
-        if (groupTemplate == null)
+        if (_groups == null)
             return null;
-        return (WellGroupImpl) groupTemplate;
+        Map<String, WellGroupImpl> typedGroups = _groups.get(type);
+        if (typedGroups == null)
+            return null;
+        return typedGroups.get(wellGroupName);
     }
 
     @JsonIgnore
@@ -500,12 +499,25 @@ public class PlateImpl extends PropertySetImpl implements Plate
     public void setWells(WellImpl[][] wells)
     {
         _wells = wells;
+
+        // create a rowId to well map
+        _wellMap = new HashMap<>();
+        Arrays.stream(_wells).forEach(w -> {
+            Arrays.stream(w).forEach(well -> {
+                if (well != null)
+                    _wellMap.put(well.getRowId(), well);
+            });
+        });
     }
 
     @JsonIgnore
-    public WellImpl[][] getWells()
+    @Override
+    public List<Well> getWells()
     {
-        return _wells;
+        if (_wellMap != null)
+            return _wellMap.values().stream().toList();
+        else
+            return Collections.emptyList();
     }
 
     @Override
@@ -535,5 +547,52 @@ public class PlateImpl extends PropertySetImpl implements Plate
     public int getPlateNumber()
     {
         return _plateNumber;
+    }
+
+    @Override
+    public @NotNull List<PlateCustomField> getCustomFields()
+    {
+        return _customFields;
+    }
+
+    public void setCustomFields(List<PlateCustomField> customFields)
+    {
+        _customFields = customFields;
+    }
+
+    public PlateImpl copy()
+    {
+        try
+        {
+            return (PlateImpl)super.clone();
+        }
+        catch (CloneNotSupportedException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
+    }
+
+    @Nullable
+    @Override
+    public Integer getMetadataDomainId()
+    {
+        return _metadataDomainId;
+    }
+
+    public void setMetadataDomainId(Integer metadataDomainId)
+    {
+        _metadataDomainId = metadataDomainId;
+    }
+
+    @Nullable
+    @Override
+    public Integer getRunCount()
+    {
+        return _runCount;
+    }
+
+    public void setRunCount(Integer runCount)
+    {
+        _runCount = runCount;
     }
 }

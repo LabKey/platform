@@ -929,7 +929,7 @@ public class WikiController extends SpringActionController
         if (null == c)
         {
             // Ensure the destination container and set collaboration folder type, #30597
-            c = ContainerManager.ensureContainer(destContainer);
+            c = ContainerManager.ensureContainer(destContainer, User.getAdminServiceUser());
             FolderType collaboration = FolderTypeManager.get().getFolderType("Collaboration");
 
             if (null != collaboration)
@@ -2094,7 +2094,7 @@ public class WikiController extends SpringActionController
         @SuppressWarnings({"UnusedDeclaration"})
         public void setBody(String body)
         {
-            _body = body;
+            _body = PageFlowUtil.wafDecode(body);
         }
 
         public boolean isNew()

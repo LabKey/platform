@@ -47,6 +47,7 @@ public interface QuerySnapshotDefinition
     List<Integer> getParticipantGroups();
     void setParticipantGroups(List<Integer> groups);
     void setQueryTableName(String queryTableName);
+    void setSchema(String schema);
     void setName(String name);
 
     Date getCreated();

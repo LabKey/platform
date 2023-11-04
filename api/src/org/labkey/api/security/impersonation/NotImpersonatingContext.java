@@ -19,22 +19,17 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.LoginUrls;
-import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.Set;
-
 /**
- * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
- * as themselves.
- *
- * User: adam
- * Date: 11/9/11
+ * Used when a user is not impersonating another user, group, or role. That is, they are logged in normally, and
+ * operating as themselves.
  */
 public class NotImpersonatingContext implements ImpersonationContext
 {
@@ -62,12 +57,6 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return true;
-    }
-
-    @Override
     public User getAdminUser()
     {
         return null;
@@ -92,15 +81,9 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public int[] getGroups(User user)
+    public PrincipalArray getGroups(User user)
     {
         return GroupManager.getAllGroupsForPrincipal(user);
-    }
-
-    @Override
-    public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
-    {
-        return user.getStandardContextualRoles();
     }
 
     @Override
@@ -114,6 +97,13 @@ public class NotImpersonatingContext implements ImpersonationContext
             NavTree impersonateMenu = new NavTree("Impersonate");
             UserImpersonationContextFactory.addMenu(impersonateMenu);
             GroupImpersonationContextFactory.addMenu(impersonateMenu);
+            RoleImpersonationContextFactory.addMenu(impersonateMenu);
+            menu.addChild(impersonateMenu);
+        }
+        // Or Impersonating Troubleshooter to impersonate site roles only
+        else if (null == project && user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
+        {
+            NavTree impersonateMenu = new NavTree("Impersonate");
             RoleImpersonationContextFactory.addMenu(impersonateMenu);
             menu.addChild(impersonateMenu);
         }

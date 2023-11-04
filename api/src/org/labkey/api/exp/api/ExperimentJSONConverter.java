@@ -75,6 +75,7 @@ public class ExperimentJSONConverter
     public static final String ID = "id";
     public static final String ROW_ID = "rowId";
     public static final String CONTAINER = "container";
+    public static final String CONTAINER_PATH = "containerPath";
     public static final String CREATED = "created";
     public static final String CREATED_BY = "createdBy";
     public static final String MODIFIED = "modified";
@@ -521,6 +522,7 @@ public class ExperimentJSONConverter
             json.put(URL, url);
 
         json.put(CONTAINER, obj.getContainer().getId());
+        json.put(CONTAINER_PATH, obj.getContainer().getId());
 
         QueryRowReference rowRef = obj.getQueryRowReference(user);
         if (rowRef != null)
@@ -603,9 +605,17 @@ public class ExperimentJSONConverter
 
     /**
      * Serialize the custom ontology properties associated with the object.
+     * NOTE: If properties of the object are explicitly passed into this method then the value of
+     * those properties will only be sourced from the ontology store. Conversely, if values for those properties
+     * are persisted somewhere else (e.g. a provisioned table) then those values will be ignored. You're most likely
+     * better off passing in null for properties unless you are wanting to ignore other value sources for some reason.
      */
     @NotNull
-    private static JSONObject serializeOntologyProperties(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull ExperimentJSONConverter.Settings settings)
+    private static JSONObject serializeOntologyProperties(
+        @NotNull ExpObject object,
+        @Nullable List<? extends DomainProperty> properties,
+        @NotNull ExperimentJSONConverter.Settings settings
+    )
     {
         Set<String> seenPropertyURIs = new HashSet<>();
         JSONObject propertiesObject = new JSONObject();
@@ -626,9 +636,13 @@ public class ExperimentJSONConverter
         return propertiesObject;
     }
 
-    private static void serializeOntologyProperties(JSONObject json, Container c,
-                                                    Set<String> seenPropertyURIs, Map<String, ObjectProperty> objectProps,
-                                                    Settings settings)
+    private static void serializeOntologyProperties(
+        JSONObject json,
+        Container c,
+        Set<String> seenPropertyURIs,
+        Map<String, ObjectProperty> objectProps,
+        Settings settings
+    )
     {
         for (var propPair : objectProps.entrySet())
         {
@@ -678,15 +692,14 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = null;
+        JSONObject jsonObject = serializeExpObject(data, null, settings, user);
+
         if (settings.isIncludeProperties())
         {
             ExpDataClass dataClass = data.getDataClass(user);
 
             if (dataClass != null)
             {
-                jsonObject = serializeExpObject(data, dataClass.getDomain().getProperties(), settings, user);
-
                 JSONObject dataClassJsonObject = serializeExpObject(dataClass, null, settings.withIncludeProperties(false), user);
                 if (dataClass.getCategory() != null)
                     dataClassJsonObject.put(DATA_CLASS_CATEGORY, dataClass.getCategory());
@@ -694,11 +707,8 @@ public class ExperimentJSONConverter
             }
         }
 
-        if (jsonObject == null)
-            jsonObject = serializeExpObject(data, null, settings, user);
-
         jsonObject.put(CPAS_TYPE, data.getCpasType());
-        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
+        jsonObject.put(EXP_TYPE, "Data");
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
 
         File f = data.getFile();
@@ -720,16 +730,11 @@ public class ExperimentJSONConverter
     @NotNull
     public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @Nullable User user, @NotNull Settings settings)
     {
-        ExpSampleType sampleType = material.getSampleType();
+        JSONObject jsonObject = serializeExpObject(material, null, settings, user);
 
-        JSONObject jsonObject;
-        if (sampleType == null)
+        ExpSampleType sampleType = material.getSampleType();
+        if (sampleType != null)
         {
-            jsonObject = serializeExpObject(material, null, settings, user);
-        }
-        else
-        {
-            jsonObject = serializeExpObject(material, sampleType.getDomain().getProperties(), settings, user);
             if (sampleType.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);

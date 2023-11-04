@@ -9,15 +9,15 @@
     "start-link": "cross-env LINK=true npm run start",
     "build-dev": "npm run clean && cross-env NODE_ENV=development webpack --config node_modules/@labkey/build/webpack/dev.config.js --color",
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile",
-    "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen"
+    "clean": "rimraf resources/web/assay/gen && rimraf resources/views/gen && rimraf resources/web/gen"
   },
   "dependencies": {
-    "@labkey/components": "2.349.3"
+    "@labkey/components": "2.384.0"
   },
   "devDependencies": {
-    "@labkey/build": "6.12.0",
-    "@types/jest": "29.2.0",
-    "@types/react": "16.14.34",
-    "@types/react-dom": "16.9.17"
+    "@labkey/build": "6.16.1",
+    "@types/jest": "29.5.4",
+    "@types/react": "16.14.46",
+    "@types/react-dom": "16.9.19"
   }
 }

@@ -232,7 +232,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         if (_object.getNameExpression() != null)
             throw new IllegalArgumentException("Can't set both a name expression and idCols");
 
-        if (propertyURIs.size() > 0)
+        if (!propertyURIs.isEmpty())
         {
             _object.setIdCol1(getPropertyOrThrow(propertyURIs.get(0)).getPropertyURI());
             if (propertyURIs.size() > 1)
@@ -492,9 +492,24 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
      */
     public long getMinGenId()
     {
-        long nameGenMin = NameGenerator.getGenIdStartValue(_object.getNameExpression());
-        long aliquotGenMin = NameGenerator.getGenIdStartValue(_object.getAliquotNameExpression());
-        return Math.max(nameGenMin, aliquotGenMin);
+        return getMinCounterValue(NameGenerator.EntityCounter.genId);
+    }
+
+    private long getMinCounterValue(NameGenerator.EntityCounter type)
+    {
+        long nameMin = NameGenerator.getCounterStartValue(_object.getNameExpression(), type);
+        long aliquotNameMin = NameGenerator.getCounterStartValue(_object.getAliquotNameExpression(), type);
+        return Math.max(nameMin, aliquotNameMin);
+    }
+
+    public long getMinSampleCounter()
+    {
+        return getMinCounterValue(NameGenerator.EntityCounter.sampleCount);
+    }
+
+    public long getMinRootSampleCounter()
+    {
+        return getMinCounterValue(NameGenerator.EntityCounter.rootSampleCount);
     }
 
     @Override
@@ -681,7 +696,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         if (cf != null)
-            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
@@ -693,7 +708,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         if (cf != null)
-            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
         TableInfo tInfo = ExperimentServiceImpl.get().getTinfoMaterial();
         return new TableSelector(tInfo, tInfo.getPkColumns(), filter, null).getRowCount();
@@ -710,7 +725,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("CpasType"), getLSID());
         filter.addCondition(FieldKey.fromParts("Name"), name);
         if (cf != null)
-            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.get().getExpSchema(), FieldKey.fromParts("Container")));
+            filter.addCondition(cf.createFilterClause(ExperimentServiceImpl.getExpSchema(), FieldKey.fromParts("Container")));
 
         Material material = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, null).getObject(Material.class);
         if (material == null)
@@ -758,7 +773,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -785,25 +800,28 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
     public void onSamplesChanged(User user, List<Material> materials)
     {
-        ExpProtocol[] protocols = getProtocols(user);
-        if (protocols.length == 0)
-            return;
-        List<ExpMaterialImpl> expMaterials = null;
+        SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(this, false);
 
-        if (materials != null)
+        ExpProtocol[] protocols = getProtocols(user);
+        if (protocols.length != 0)
         {
-            expMaterials = new ArrayList<>(materials.size());
-            for (Material material : materials)
+            List<ExpMaterialImpl> expMaterials = null;
+
+            if (materials != null)
             {
-                expMaterials.add(new ExpMaterialImpl(material));
+                expMaterials = new ArrayList<>(materials.size());
+                for (Material material : materials)
+                {
+                    expMaterials.add(new ExpMaterialImpl(material));
+                }
             }
-        }
-        for (ExpProtocol protocol : protocols)
-        {
-            ProtocolImplementation impl = protocol.getImplementation();
-            if (impl == null)
-                continue;
-            impl.onSamplesChanged(user, protocol, expMaterials);
+            for (ExpProtocol protocol : protocols)
+            {
+                ProtocolImplementation impl = protocol.getImplementation();
+                if (impl == null)
+                    continue;
+                impl.onSamplesChanged(user, protocol, expMaterials);
+            }
         }
     }
 
@@ -837,7 +855,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
                 }
                 catch (ChangePropertyDescriptorException e)
                 {
-                    throw new UnexpectedException(e);
+                    throw UnexpectedException.wrap(e);
                 }
             }
         }
@@ -875,7 +893,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     public TableInfo getTinfo()
     {
         Domain d = getDomain();
-        DomainKind dk = d.getDomainKind();
+        DomainKind<?> dk = d.getDomainKind();
         if (null == dk || null == dk.getStorageSchemaName())
             return null;
         return StorageProvisioner.createTableInfo(d);
@@ -1012,7 +1030,12 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+        setImportAliasMapJson(ExperimentJSONConverter.getAliasJson(aliasMap, _object.getName()));
+    }
+
+    public void setImportAliasMapJson(String aliasJon)
+    {
+        _object.setMaterialParentImportAliasMap(aliasJon);
     }
 
     @Override

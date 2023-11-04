@@ -50,6 +50,10 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
         {
             _updateQuerySnapshotQueryNameChange(user, container, schema, changes);
         }
+        if (property.equals(QueryProperty.SchemaName))
+        {
+            _updateQuerySnapshotSchemaNameChange(user, container, changes);
+        }
     }
 
     @Override
@@ -70,7 +74,10 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
         Map<String, String> queryNameChangeMap = new HashMap<>();
         for (QueryPropertyChange qpc : changes)
         {
-            queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+            String oldVal = (String)qpc.getOldValue();
+            String newVal = (String)qpc.getNewValue();
+            if (oldVal != null && !oldVal.equals(newVal))
+                queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
         for (QuerySnapshotDefinition qsd : QueryService.get().getQuerySnapshotDefs(container, schemaKey.toString()))
@@ -97,6 +104,37 @@ public class QuerySnapshotQueryChangeListener implements QueryChangeListener
             catch (Exception e)
             {
                 LogManager.getLogger(QuerySnapshotQueryChangeListener.class).error("An error occurred upgrading query snapshot properties: ", e);
+            }
+        }
+    }
+
+    private void _updateQuerySnapshotSchemaNameChange(User user, Container container, Collection<QueryPropertyChange> changes)
+    {
+        Map<String, String> schemaNameChangeMap = new HashMap<>();
+        for (QueryPropertyChange qpc : changes)
+        {
+            if (qpc.getOldValue().equals(qpc.getNewValue()))
+                continue;
+            schemaNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
+        }
+
+        if (schemaNameChangeMap.isEmpty())
+            return;
+
+        for (String oldSchema : schemaNameChangeMap.keySet())
+        {
+            String newSchema = schemaNameChangeMap.get(oldSchema);
+            for (QuerySnapshotDefinition qsd : QueryService.get().getQuerySnapshotDefs(container, oldSchema))
+            {
+                qsd.setSchema(newSchema);
+                try
+                {
+                    qsd.save(qsd.getModifiedBy());
+                }
+                catch (Exception e)
+                {
+                    LogManager.getLogger(QuerySnapshotQueryChangeListener.class).error("An error occurred upgrading query snapshot properties: ", e);
+                }
             }
         }
     }

@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -283,6 +284,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get a DataClass with name at a specific time.
      */
     ExpDataClass getEffectiveDataClass(@NotNull Container definitionContainer, @NotNull User user, @NotNull String dataClassName, @NotNull Date effectiveDate, @Nullable ContainerFilter cf);
+
+    /**
+     * Get a ExpProtocol with name at a specific time.
+     */
+    ExpProtocol getEffectiveProtocol(Container container, User user, String schemaName, Date effectiveDate, ContainerFilter dataTypeCF);
 
     /**
      * Get a DataClass by name within scope -- current, project, and shared.
@@ -583,6 +589,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
 
+    /**
+     *
+     * @return pair of LSID and DBSeq string
+     */
     Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz);
 
     String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
@@ -765,11 +775,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param log             output log target
      * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
      */
-    ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+    ExpRun saveSimpleExperimentRun(ExpRun run, Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
 
     ExpRun saveSimpleExperimentRun(ExpRun run,
-                                   Map<ExpMaterial, String> inputMaterials,
-                                   Map<ExpData, String> inputDatas,
+                                   Map<? extends ExpMaterial, String> inputMaterials,
+                                   Map<? extends ExpData, String> inputDatas,
                                    Map<ExpMaterial, String> outputMaterials,
                                    Map<ExpData, String> outputDatas,
                                    Map<ExpData, String> transformedDatas,
@@ -792,7 +802,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
-    ExpRun derive(Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas,
+    ExpRun derive(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
                   Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
                   ViewBackgroundInfo info, Logger log)
             throws ExperimentException;
@@ -889,9 +899,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     Lock getProtocolImportLock();
 
-    HttpView createRunExportView(Container container, String defaultFilenamePrefix);
+    HttpView<?> createRunExportView(Container container, String defaultFilenamePrefix);
 
-    HttpView createFileExportView(Container container, String defaultFilenamePrefix);
+    HttpView<?> createFileExportView(Container container, String defaultFilenamePrefix);
 
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
     void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message, String userComment);
@@ -930,11 +940,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Get the set of runs that can be deleted based on the materials supplied.
      * INCLUDES: Derivative runs, and if only remaining output/derivative the immediate precursor run
      * @param materials Set of materials to get runs for
-     * @return Set of runs that can be deleted based on the materials
+     * @return runs that can be deleted based on the materials
      */
     List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
-
-    boolean useUXDomainDesigner();
 
     List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
 
@@ -1025,6 +1033,17 @@ public interface ExperimentService extends ExperimentRunTypeSource
     Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     int moveAuditEvents(Container targetContainer, List<String> runLsids);
+
+    /**
+     * From a list of barcodes, find material lsids
+     * @param uniqueIds A list of barcodes
+     * @param user
+     * @param container
+     * @return map of barcode and lsid
+     */
+    @NotNull Map<String, List<String>> getUniqueIdLsids(List<String> uniqueIds, User user, Container container);
+
+    void handleAssayNameChange(String newAssayName, String oldAssayName, AssayProvider provider, ExpProtocol protocol, User user, Container container);
 
     class XarExportOptions
     {

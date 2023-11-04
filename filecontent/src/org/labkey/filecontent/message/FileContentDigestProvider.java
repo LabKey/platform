@@ -43,8 +43,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.util.Path;
@@ -52,9 +50,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.filecontent.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.filecontent.FileSystemBatchAuditProvider;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -88,7 +86,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
     {
         Set<Container> containers = new HashSet<>();
 
-        User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), true);
+        User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
         UserSchema userSchema = AuditLogService.getAuditLogSchema(user, ContainerManager.getSharedContainer());
         FilteredTable table = (FilteredTable)userSchema.getTable(FileSystemAuditProvider.EVENT_TYPE);
 
@@ -111,10 +109,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
     private User getLimitedUser()
     {
-        HashSet<Role> roles = new HashSet<>();
-        roles.add(RoleManager.getRole(ReaderRole.class));
-        roles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-        return new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
+        return new LimitedUser(UserManager.getGuestUser(), ReaderRole.class, CanSeeAuditLogRole.class);
     }
 
     private List<FileSystemAuditEvent> getAuditEvents(Container container, Date start, Date end)

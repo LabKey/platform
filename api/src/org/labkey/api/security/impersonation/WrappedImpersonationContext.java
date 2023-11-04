@@ -17,114 +17,97 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.security.GroupManager;
-import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
- * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
- * as themselves.  This class can be used to grant a user a contextual role for the duration of a request.
- * This should not be first tool to reach for.  It is usually better to find a way to provide the additional contextual
- * roles in a more limited scope.
- *
- * User: adam
- * Date: 11/9/11
+ * Do not use this class directly; use ElevatedUser instead.
  */
 public class WrappedImpersonationContext implements ImpersonationContext
 {
-    final ImpersonationContext delegate;
-    final Set<Role> additionalRoles;
+    private final ImpersonationContext _delegate;
+    private final Set<Role> _additionalRoles;
 
-    public WrappedImpersonationContext(ImpersonationContext delegate)
+    public WrappedImpersonationContext(ImpersonationContext delegate, Set<Role> additionalRoles)
     {
-        this.delegate = delegate;
-        additionalRoles = Set.of();
+        _delegate = delegate;
+        _additionalRoles = additionalRoles;
     }
 
     public WrappedImpersonationContext(ImpersonationContext delegate, Role additionalRole)
     {
-        this.delegate = delegate;
-        additionalRoles = Set.of(additionalRole);
+        this(delegate, Set.of(additionalRole));
     }
 
     @Override
     public boolean isImpersonating()
     {
-        return delegate.isImpersonating();
-    }
-
-    @Override
-    public boolean isAllowedGlobalRoles()
-    {
-        return delegate.isAllowedGlobalRoles();
+        return _delegate.isImpersonating();
     }
 
     @Override
     @Nullable
     public Container getImpersonationProject()
     {
-        return delegate.getImpersonationProject();
+        return _delegate.getImpersonationProject();
     }
 
     @Override
     public User getAdminUser()
     {
-        return delegate.getAdminUser();
+        return _delegate.getAdminUser();
     }
 
     @Override
     public String getCacheKey()
     {
-        return delegate.getCacheKey();
+        return _delegate.getCacheKey();
     }
 
     @Override
     public ActionURL getReturnURL()
     {
-        return delegate.getReturnURL();
+        return _delegate.getReturnURL();
     }
 
     @Override
-    public int[] getGroups(User user)
+    public PrincipalArray getGroups(User user)
     {
-        return delegate.getGroups(user);
+        return _delegate.getGroups(user);
     }
 
     @Override
-    public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
     {
-        Set<Role> ret = new HashSet<>(additionalRoles);
-        ret.addAll(delegate.getContextualRoles(user, policy));
+        Set<Role> ret = new HashSet<>(_additionalRoles);
+        ret.addAll(_delegate.getAssignedRoles(user, policy));
         return ret;
     }
 
     @Override
     public ImpersonationContextFactory getFactory()
     {
-        return delegate.getFactory();
+        return _delegate.getFactory();
     }
 
     @Override
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
     {
-        delegate.addMenu(menu, c, user, currentURL);
+        _delegate.addMenu(menu, c, user, currentURL);
     }
 
     @Override
-    public Set<Class<? extends Permission>> filterPermissions(Set<Class<? extends Permission>> perms)
+    public Stream<Class<? extends Permission>> filterPermissions(Stream<Class<? extends Permission>> perms)
     {
-        return delegate.filterPermissions(perms);
+        return _delegate.filterPermissions(perms);
     }
 }

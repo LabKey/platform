@@ -28,7 +28,8 @@
 <textarea id="json" style="height:400px; width: 100%;">
 
 </textarea>
-<button onclick="getData()">get data</button>
+<% addHandler("btnGetData", "click", "return getData();"); %>
+<button id="btnGetData">get data</button>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 if (Ext4||Ext)
 {

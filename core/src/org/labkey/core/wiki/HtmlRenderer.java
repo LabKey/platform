@@ -23,6 +23,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.JSoupUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
@@ -167,6 +168,19 @@ public class HtmlRenderer implements WikiRenderer
             }
         }
 
+        /* Add nonce attribute to <script> tags in the page.
+         * We don't require the <%=scriptNonce%> syntax (as with module html view), because we're already parsing the page.
+         * ModuleHtmlView does not parse the page and does a raw regexp substitution.
+         */
+        nl = doc.getElementsByTagName("script");
+        for (int i = 0, length = nl.getLength(); i < length; i++)
+        {
+            Element script = (Element)nl.item(i);
+            script.setAttribute("nonce", HttpView.currentPageConfig().getScriptNonce().toString());
+            volatilePage = true;
+            /* NOTE marking the page as volatile is a little heavy-handed.  We could add a "post-render" step, or detect that there is not CSP */
+        }
+
         // back to html
         StringBuilder innerHtml;
 
@@ -189,7 +203,7 @@ public class HtmlRenderer implements WikiRenderer
             String bodyHtml = PageFlowUtil.convertNodeToHtml(bodyNode);
 
             // Issue 12160: if there were any link decoding exceptions, replace the link with the error message
-            if (linkExceptions.size() > 0)
+            if (!linkExceptions.isEmpty())
             {
                 for (Map.Entry<Element, String> link : linkExceptions.entrySet())
                 {
@@ -198,7 +212,8 @@ public class HtmlRenderer implements WikiRenderer
                 }
             }
 
-            innerHtml.append(bodyHtml, "<body>".length(), bodyHtml.length()-"</body>".length());
+            assert bodyHtml.startsWith("<body") && bodyHtml.endsWith("</body>") : "bodyHtml did not start with \"<body\" and end with \"</body>\"";
+            innerHtml.append(bodyHtml, bodyHtml.indexOf('>') + 1, bodyHtml.length()-"</body>".length());
         }
         catch (Exception e)
         {

@@ -20,18 +20,16 @@ import org.junit.Test;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import static java.util.Collections.emptySet;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * Simple case-insensitive version of HashSet -- simply forces all Strings to lowercase before adding, removing,
  * or searching. Could easily extend this to preserve the case... just add a lowercase version to uppercase version map.
  */
 // TODO: Merge CaseInsensitiveHashSet and CaseInsensitiveHashMap implementations
-public class CaseInsensitiveHashSet extends HashSet<String>
+public class CaseInsensitiveHashSet extends HashSet<String> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveHashSet()
     {
@@ -85,36 +83,11 @@ public class CaseInsensitiveHashSet extends HashSet<String>
         return modified;
     }
 
-    public static Set<String> of()
+    /** Returns an immutable case-insensitive hash set */
+    public static Set<String> of(String... values)
     {
-        return emptySet();
+        return Collections.unmodifiableSet(new CaseInsensitiveHashSet(values));
     }
-
-    public static Set<String> of(String s1)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1));
-    }
-
-    public static Set<String> of(String s1, String s2)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3, String s4)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4));
-    }
-
-    public static Set<String> of(String s1, String s2, String s3, String s4, String s5)
-    {
-        return unmodifiableSet(new CaseInsensitiveHashSet(s1, s2, s3, s4, s5));
-    }
-
 
     public static class TestCase extends Assert
     {

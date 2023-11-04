@@ -665,7 +665,7 @@ public class SpecimenController extends SpringActionController
     {
         StringBuilder filename = new StringBuilder();
         filename.append(getShortSiteLabel(srcLocation)).append("_to_").append(getShortSiteLabel(destLocation));
-        filename.append("_").append(DateUtil.formatDateISO8601());
+        filename.append("_").append(DateUtil.formatIsoDate());
         return filename.toString();
     }
 
@@ -770,7 +770,7 @@ public class SpecimenController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class OverviewAction extends SimpleViewAction
+    public class OverviewAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)

@@ -42,16 +42,13 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
-import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
@@ -71,16 +68,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-/**
- * User: adam
- * Date: Jul 24, 2008
- * Time: 4:07:39 PM
- */
 public class AuditController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AuditController.class);
@@ -125,7 +115,7 @@ public class AuditController extends SpringActionController
     }
 
     // An admin console action, but we want Troubleshooters to be able to POST (for export)
-    @RequiresPermission(TroubleShooterPermission.class)
+    @RequiresPermission(TroubleshooterPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
@@ -387,11 +377,11 @@ public class AuditController extends SpringActionController
         }
 
         @Override
-        public Object execute(AuditTransactionForm form, BindException errors) throws Exception
+        public Object execute(AuditTransactionForm form, BindException errors)
         {
             List<Integer> rowIds;
             if (form.isSampleType())
-                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), getCanSeeAuditLogUser(getUser()), getContainer());
+                rowIds = AuditLogImpl.get().getTransactionSampleIds(form.getTransactionAuditId(), ElevatedUser.ensureCanSeeAuditLogRole(getContainer(), getUser()), getContainer());
             else
                 rowIds = AuditLogImpl.get().getTransactionSourceIds(form.getTransactionAuditId(), getUser(), getContainer());
 
@@ -400,19 +390,6 @@ public class AuditController extends SpringActionController
             response.put("rowIds", rowIds);
 
             return response;
-        }
-
-        private User getCanSeeAuditLogUser(User user)
-        {
-            User elevatedUser = user;
-            if (!getContainer().hasPermission(getUser(), CanSeeAuditLogPermission.class))
-            {
-                Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
-                contextualRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
-                elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, false);
-            }
-
-            return elevatedUser;
         }
     }
 

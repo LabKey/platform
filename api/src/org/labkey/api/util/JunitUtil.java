@@ -50,6 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 
 public class JunitUtil
@@ -87,7 +88,7 @@ public class JunitUtil
 
     public static Container getTestContainer()
     {
-        return ContainerManager.ensureContainer(getTestContainerPath());
+        return ContainerManager.ensureContainer(getTestContainerPath(), TestContext.get().getUser());
     }
 
     public static void deleteTestContainer()
@@ -232,13 +233,16 @@ public class JunitUtil
                         java.nio.file.Path path = Paths.get(projectRoot).resolve(modulesDir);
                         if (Files.exists(path))
                         {
-                            Files.walk(path, 2)
-                                .filter(Files::isDirectory)
-                                .map(p -> p.resolve(SAMPLE_DATA_PATH))
-                                .filter(Files::isDirectory)
-                                .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
+                            try (Stream<java.nio.file.Path> pathStream = Files.walk(path, 2))
+                            {
+                                pathStream
+                                    .filter(Files::isDirectory)
+                                    .map(p -> p.resolve(SAMPLE_DATA_PATH))
+                                    .filter(Files::isDirectory)
+                                    .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
 
-                            _sampleDataDirectories = Collections.unmodifiableMap(map);
+                                _sampleDataDirectories = Collections.unmodifiableMap(map);
+                            }
                         }
                         else
                         {

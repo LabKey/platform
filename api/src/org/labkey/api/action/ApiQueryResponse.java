@@ -384,7 +384,7 @@ public class ApiQueryResponse implements ApiResponse
                 sortInfo.put("direction", dir);
                 array.put(array.length(), sortInfo);
             }
-            if (array.length() > 0)
+            if (!array.isEmpty())
             {
                 metaData.put("sortInfo", array.get(0));
                 metaData.put("sortInfoArray", array);
@@ -404,7 +404,7 @@ public class ApiQueryResponse implements ApiResponse
 
         JSONArray templates = new JSONArray();
         List<Pair<String, String>> it = _tinfo.getImportTemplates(_ctx.getViewContext());
-        if(it != null && it.size() > 0)
+        if (it != null && !it.isEmpty())
         {
             for (Pair<String, String> pair : it)
             {

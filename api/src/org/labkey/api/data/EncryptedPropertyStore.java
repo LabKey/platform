@@ -34,9 +34,6 @@ import java.util.Set;
 /**
  * A PropertyStore that encrypts its contents when writing to the database, and automatically decrypts on read. Uses
  * the EncryptionKey, stored as a property in labkey.xml (or its equivalent deployment descriptor).
- *
- * User: adam
- * Date: 10/11/13
  */
 public class EncryptedPropertyStore extends AbstractPropertyStore implements EncryptionMigrationHandler
 {

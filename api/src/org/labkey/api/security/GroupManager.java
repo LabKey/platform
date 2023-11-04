@@ -60,7 +60,6 @@ import org.labkey.security.xml.UserRefsType;
 
 import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,16 +68,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: adam
- * Date: Jul 19, 2006
- * Time: 11:13:21 PM
- */
 public class GroupManager
 {
     private static final Logger _log = LogManager.getLogger(GroupManager.class);
     private static final CoreSchema _core = CoreSchema.getInstance();
-    private static final int[] EMPTY_INT_ARRAY = new int[0];
 
     public static final String GROUP_AUDIT_EVENT = "GroupAuditEvent";
 
@@ -88,10 +81,10 @@ public class GroupManager
     }
 
     // Returns the expanded group list for this principal
-    public static int[] getAllGroupsForPrincipal(@Nullable UserPrincipal user)
+    public static PrincipalArray getAllGroupsForPrincipal(@Nullable UserPrincipal user)
     {
         if (user == null)
-            return EMPTY_INT_ARRAY;
+            return PrincipalArray.getEmptyPrincipalArray();
 
         return GroupMembershipCache.getAllGroupMemberships(user);
     }
@@ -567,21 +560,21 @@ public class GroupManager
 
             MutableSecurityPolicy op = new MutableSecurityPolicy(_project);
             op.addRoleAssignment(_groupA, ReaderRole.class);
-            SecurityPolicyManager.savePolicy(op);
+            SecurityPolicyManager.savePolicy(op, getUser());
 
             String newContainerPath = "GroupManagerJunitTestProject";
             Container newProject = ContainerService.get().getForPath("GroupManagerJunitTestProject");
             if (newProject != null)
                 assertTrue(ContainerManager.delete(newProject, getUser()));
 
-            newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath);
+            newProject = ContainerManager.createContainer(ContainerManager.getRoot(), newContainerPath, TestContext.get().getUser());
 
             Group newGroupA = GroupManager.copyGroupToContainer(_groupA, newProject);
             Group newGroupB = SecurityManager.getGroup(SecurityManager.getGroupId(newProject, "b"));
 
             MutableSecurityPolicy np = new MutableSecurityPolicy(newProject);
             np.addRoleAssignment(newGroupA, ReaderRole.class);
-            SecurityPolicyManager.savePolicy(np);
+            SecurityPolicyManager.savePolicy(np, getUser());
 
             //should be copied from the previous project though groupB membership
             assertTrue(np.hasPermission(getUser(), ReadPermission.class));
@@ -590,13 +583,11 @@ public class GroupManager
             assertFalse(np.hasPermission(_groupA, ReadPermission.class));
             assertFalse(np.hasPermission(_groupB, ReadPermission.class));
 
-            int[] members = GroupManager.getAllGroupsForPrincipal(newGroupB);
-            Arrays.sort(members);
-            assertTrue(Arrays.binarySearch(members, newGroupA.getUserId()) > -1);
+            PrincipalArray groups = GroupManager.getAllGroupsForPrincipal(newGroupB);
+            assertTrue(groups.contains(newGroupA.getUserId()));
 
-            members = GroupManager.getAllGroupsForPrincipal(getUser());
-            Arrays.sort(members);
-            assertTrue(Arrays.binarySearch(members, newGroupB.getUserId()) > -1);
+            groups = GroupManager.getAllGroupsForPrincipal(getUser());
+            assertTrue(groups.contains(newGroupB.getUserId()));
 
             assertTrue(np.hasPermission(newGroupA, ReadPermission.class));
             assertTrue(np.hasPermission(newGroupB, ReadPermission.class));

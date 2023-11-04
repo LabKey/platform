@@ -47,7 +47,7 @@ import java.util.TreeSet;
 
 /**
  * Represents a security policy for a {@link org.labkey.api.security.SecurableResource}. You can get a security policy for a resource
- * using SecurityMananger.getPolicy(). Note that this class is immutable once constructed, so it may
+ * using SecurityManager.getPolicy(). Note that this class is immutable once constructed, so it may
  * be used by multiple threads at the same time. To make changes to an existing policy, construct a new
  * {@link MutableSecurityPolicy} passing the existing SecurityPolicy instance in the constructor.
  * Note: intentionally does not implement HasPermission, use that interface for things that have a SecurityPolicy
@@ -194,7 +194,7 @@ public class SecurityPolicy
      */
     public boolean isEmpty()
     {
-        return _assignments.size() == 0;
+        return _assignments.isEmpty();
     }
 
 
@@ -223,8 +223,9 @@ public class SecurityPolicy
 
     /* Does not inspect any contextual roles, just the roles explicitly given by this SecurityPolicy */
     @NotNull
-    private Set<Class<? extends Permission>> getOwnPermissions(@NotNull int[] principals)
+    private Set<Class<? extends Permission>> getOwnPermissions(PrincipalArray principalArray)
     {
+        int[] principals = principalArray.getPrincipals();
         Set<Class<? extends Permission>> perms = new HashSet<>();
 
         //role assignments are sorted by user id,
@@ -254,8 +255,9 @@ public class SecurityPolicy
 
 
     @NotNull
-    protected Set<Role> getRoles(@NotNull int[] principals)
+    public Set<Role> getRoles(PrincipalArray principalArray)
     {
+        int[] principals = principalArray.getPrincipals();
         Set<Role> roles = new HashSet<>();
 
         //role assignments are sorted by user id,
@@ -395,7 +397,7 @@ public class SecurityPolicy
 
     public boolean hasNonInheritedPermission(@NotNull UserPrincipal principal, Class<? extends Permission> perm)
     {
-        for (Role role : getRoles(new int[]{principal.getUserId()}))
+        for (Role role : getRoles(new PrincipalArray(List.of(principal.getUserId()))))
         {
             if (role.getPermissions().contains(perm))
                 return true;

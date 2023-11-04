@@ -75,6 +75,7 @@ import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -1098,25 +1099,27 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         protected void _renderDataRegion(RenderContext ctx, Writer out) throws IOException
         {
             // may want to just put this in a js file and include it in all the wizard pages
-            out.write("<script type=\"text/javascript\">\n");
-            out.write("    function showPopup(elem, txtTitle, txtMsg)\n" +
-                    "      {\n" +
-                    "        var win = new Ext.Window({\n" +
-                    "           title: txtTitle,\n" +
-                    "           border: false,\n" +
-                    "           constrain: true,\n" +
-                    "           html: txtMsg,\n" +
-                    "           closeAction:'close',\n" +
-                    "           autoScroll: true,\n" +
-                    "           modal: true,\n" +
-                    "           buttons: [{\n" +
-                    "             text: 'Close',\n" +
-                    "             id: 'btn_cancel',\n" +
-                    "             handler: function(){win.close();}\n" +
-                    "           }]\n" +
-                    "        });\n" +
-                    "        win.show(elem);\n" +
-                    "      }");
+            out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+            out.write("""
+                        function uploadWizard_showPopup(elem, txtTitle, txtMsg)
+                          {
+                            var win = new Ext.Window({
+                               title: txtTitle,
+                               border: false,
+                               constrain: true,
+                               html: txtMsg,
+                               closeAction:'close',
+                               autoScroll: true,
+                               modal: true,
+                               buttons: [{
+                                 text: 'Close',
+                                 id: 'btn_cancel',
+                                 handler: function(){win.close();}
+                               }]
+                            });
+                            win.show(elem);
+                          }
+                    """);
             out.write("</script>\n");
 
             super._renderDataRegion(ctx, out);
@@ -1172,9 +1175,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
                 if (uniqueErrorStrs.size() > MAX_ERRORS)
                 {
-                    sb.append(HtmlString.unsafe("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', "));
-                    sb.append(HtmlString.unsafe(PageFlowUtil.jsString(msgBox.toString())));
-                    sb.append(HtmlString.unsafe(");return false;\">Too many errors to display (click to show all).<a><br>"));
+                    sb.append("<br>");
+                    String script = "uploadWizard_showPopup('extraErrors', 'All Errors', " + PageFlowUtil.jsString(msgBox.toString()) + "); return false;";
+                    sb.append(new Link.LinkBuilder("Too many errors to display (click to show all).").id("extraErrors").onClick(script).getHtmlString());
+                    sb.append("<br>");
                 }
                 return sb.getHtmlString();
             }

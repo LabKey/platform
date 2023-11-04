@@ -70,7 +70,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
@@ -130,7 +130,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
-    private Set<Role> _contextualRoles = new HashSet<>();
+    private final Set<Role> _contextualRoles = new HashSet<>();
 
     public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
     {
@@ -236,8 +236,8 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         return _provider;
     }
 
-    @Override
     /** NOTE: Subclasses should override to add any additional provider specific tables. */
+    @Override
     public Set<String> getTableNames()
     {
         Set<String> names = new HashSet<>();
@@ -249,14 +249,14 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         return names;
     }
 
-//    @Override
-//    public TableInfo createTable(String name)
-//    {
-//        throw new IllegalStateException();
-//    }
+    @Override
+    public @Nullable TableInfo createTable(String name, ContainerFilter cf)
+    {
+        return createTable(name, cf, true);
+    }
 
     @Override
-    public TableInfo createTable(String name, ContainerFilter cf)
+    public TableInfo createTable(String name, ContainerFilter cf, boolean includeExtraMetadata)
     {
         TableInfo table = createProviderTable(name, cf);
         if (table == null)
@@ -270,7 +270,8 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
             }
         }
 
-        if (table != null)
+        // Issue 48598: when editing the assay table query metadata, don't overlayMetadata so that we can tell what changes the user is making
+        if (table != null && includeExtraMetadata)
             overlayMetadata(table, name);
 
         return table;
@@ -488,7 +489,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         }
     }
 
-    private void addPropertyColumn(ExpTable table, Domain domain, String columnName, @Nullable ContainerFilter containerFilter)
+    private void addPropertyColumn(ExpTable<?> table, Domain domain, String columnName, @Nullable ContainerFilter containerFilter)
     {
         var propsCol = table.addColumns(domain, columnName, containerFilter);
         if (propsCol != null)
@@ -691,16 +692,13 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                 // if the user does not have the QCAnalyst permission, they may not be seeing unapproved data
                 if (!context.getContainer().hasPermission(user, QCAnalystPermission.class))
                 {
-                    Set<Role> contextualRoles = new HashSet<>(user.getStandardContextualRoles());
                     Role qcRole = RoleManager.getRole("org.labkey.api.security.roles.QCAnalystRole");
                     Role readerRole = RoleManager.getRole("org.labkey.api.security.roles.ReaderRole");
                     if (qcRole != null && readerRole != null)
                     {
                         try
                         {
-                            contextualRoles.add(RoleManager.getRole(qcRole.getClass()));
-                            contextualRoles.add(RoleManager.getRole(readerRole.getClass()));
-                            User elevatedUser = new LimitedUser(user, user.getGroups(), contextualRoles, true);
+                            User elevatedUser = ElevatedUser.getElevatedUser(user, qcRole.getClass(), readerRole.getClass());
 
                             ViewContext viewContext = new ViewContext(context);
                             viewContext.setUser(elevatedUser);
@@ -896,7 +894,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         return result;
     }
 
-    private class ParticipantVisitResolverColumn extends DataColumn
+    private static class ParticipantVisitResolverColumn extends DataColumn
     {
         public ParticipantVisitResolverColumn(ColumnInfo colInfo)
         {

@@ -447,6 +447,11 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return new LinkBuilder(text);
     }
 
+    public LinkBuilder link(HtmlString html)
+    {
+        return new LinkBuilder(html);
+    }
+
     // Link to another action in the current container
     public LinkBuilder link(String text, @NotNull Class<? extends Controller> actionClass)
     {
@@ -457,6 +462,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
     public LinkBuilder link(String text, @NotNull URLHelper url)
     {
         return link(text).href(url);
+    }
+
+    public LinkBuilder link(String text, @NotNull String url)
+    {
+        return link(text).href(url);
+    }
+
+    public LinkBuilder link(HtmlString html, @NotNull String url)
+    {
+        return new LinkBuilder(html).href(url);
     }
 
     public InputBuilder<?> input()

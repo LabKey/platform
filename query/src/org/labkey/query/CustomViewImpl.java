@@ -134,6 +134,12 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         edit().setQueryName(queryName);
     }
 
+    @Override
+    public void setSchema(String schemaName)
+    {
+        edit().setSchema(schemaName);
+    }
+
     static String encodeProperties(List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list)
     {
         StringBuilder ret = new StringBuilder();

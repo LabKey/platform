@@ -20,9 +20,12 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -69,7 +72,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -77,8 +79,22 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractSearchService implements SearchService, ShutdownListener
 {
     private static final Logger _log = LogHelper.getLogger(AbstractSearchService.class, "Full-text search indexing events");
+    // Search categories that are candidates for logging. Each category gets a logger that can be enabled by setting it
+    // to DEBUG on the Loggers page. It will then log indexing data for each document having that category.
+    private static final Set<String> CATEGORIES_TO_LOG = Set.of("navigation", "assay");
 
-    // Runnables go here, and get pulled off in a single threaded manner (assumption is that Runnables can create work very quickly)
+    static
+    {
+        // This adds each desired logger to the Loggers page
+        CATEGORIES_TO_LOG.forEach(AbstractSearchService::getLoggerForCategory);
+    }
+
+    private static Logger getLoggerForCategory(String category)
+    {
+        return LogManager.getLogger(SearchCategory.class.getName() + "." + category);
+    }
+
+    // Runnables go here, and get pulled off in a single-threaded manner (assumption is that Runnables can create work very quickly)
     final PriorityBlockingQueue<Item> _runQueue = new PriorityBlockingQueue<>(1000, itemCompare);
 
     // Resources go here for preprocessing (this can be multi-threaded)
@@ -206,7 +222,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         {
             if (_isReady)
             {
-                assert _subtasks.size() == 0;
+                assert _subtasks.isEmpty();
                 return _tasks.remove(this);
             }
             return false;
@@ -327,7 +343,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public boolean isBusy()
     {
-        if (_runQueue.size() > 0)
+        if (!_runQueue.isEmpty())
             return true;
         int n = _itemQueue.size();
         return n > 100;
@@ -341,7 +357,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     @Override
     public void waitForIdle() throws InterruptedException
     {
-        if (_runQueue.size() == 0 && _itemQueue.size() < 4)
+        if (_runQueue.isEmpty() && _itemQueue.size() < 4)
             return;
         synchronized (_idleEvent)
         {
@@ -353,7 +369,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private void checkIdle()
     {
-        if (_runQueue.size() == 0 && _itemQueue.size() == 0)
+        if (_runQueue.isEmpty() && _itemQueue.isEmpty())
         {
             synchronized (_idleEvent)
             {
@@ -624,15 +640,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-
-    private final Map<String, ResourceResolver> _resolvers = new ConcurrentHashMap<>();
+    private final Map<String, ResourceResolver> _resolvers = new CopyOnWriteHashMap<>();
 
     @Override
     public void addResourceResolver(@NotNull String prefix, @NotNull ResourceResolver resolver)
     {
         _resolvers.put(prefix, resolver);
     }
-
 
     // CONSIDER Iterable<Resource>
     @Override
@@ -648,7 +662,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return null;
         return res.resolve(resourceIdentifier.substring(i+1));
     }
-
 
     @Override
     public HttpView<?> getCustomSearchResult(User user, @NotNull String resourceIdentifier)
@@ -1120,6 +1133,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     _lastIndexedTime = ms;
                     if (_countIndexedSinceCommit > 10000)
                         commit();
+                    Logger categoryLogger = getLoggerForCategory(category);
+                    if (categoryLogger.isDebugEnabled())
+                    {
+                        String containerId = i._res.getContainerId();
+                        Container c = ContainerManager.getForId(containerId);
+                        String containerPath = c != null ? c.getPath() : "UNKNOWN PATH: Container not found!";
+                        categoryLogger.debug(category + " " + i._res.getDocumentId() + " " + containerPath + " " + containerId);
+                    }
                 }
             }
             else
@@ -1197,7 +1218,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             }
         }
 
-        if (usedCats.size() > 0)
+        if (!usedCats.isEmpty())
         {
             return usedCats;
         }
@@ -1260,6 +1281,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    // TODO: Remove? This is never called
     // UNDONE: get last crawl time from Crawler? support incrementals
     @Override
     public IndexTask indexProject(IndexTask in, final Container c)
@@ -1302,13 +1324,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     private final LinkedList<IndexerRateAccumulator> _history = new LinkedList<>();
 
     private IndexerRateAccumulator _current = new IndexerRateAccumulator(System.currentTimeMillis());
-    private long _currentHour = _current.getStart() / (60*60*1000L);
+    private long _currentHour = _current.getStart() / DateUtils.MILLIS_PER_HOUR;
 
     // call when holding _commitLock
-    private void incrementIndexStat(long now, String type)
+    private void incrementIndexStat(long now, String category)
     {
         assert Thread.holdsLock(_commitLock);
-        long hour = now / (60*60*1000L);
+        long hour = now / DateUtils.MILLIS_PER_HOUR;
         if (hour > _currentHour)
         {
             _history.addFirst(_current);
@@ -1317,7 +1339,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             while (_history.size() > 24)
                 _history.removeLast();
         }
-        _current.accumulate(type);
+        _current.accumulate(category);
     }
 
     
@@ -1339,44 +1361,47 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         Map<String, Object> map = new LinkedHashMap<>();
         ArrayList<IndexerRateAccumulator> history;
-        long initialStart;
+        long currentStart;
 
         synchronized (_commitLock)
         {
             history = new ArrayList<>(_history.size() + 1);
-            initialStart = _current.getStart();
-            history.add(new IndexerRateAccumulator(initialStart, HashMultiset.create(_current.getCounter())));
+            currentStart = _current.getStart();
+            history.add(new IndexerRateAccumulator(currentStart, HashMultiset.create(_current.getCounter())));
             history.addAll(_history);
         }
 
-        IndexerRateAccumulator dayAccumulator = new IndexerRateAccumulator(initialStart);
+        IndexerRateAccumulator historyAccumulator = new IndexerRateAccumulator(history.get(history.size() - 1).getStart());
         SimpleDateFormat f = new SimpleDateFormat("h:mm a");
         StringBuilder hourly = new StringBuilder();
         hourly.append("<table>");
-        int hourCount = history.size();
+        int completedHours = 0;
+        long currentHour = System.currentTimeMillis();
+        currentHour -= currentHour % DateUtils.MILLIS_PER_HOUR; // Not the same as _currentHour if indexing hasn't yet taken place this hour
 
         for (IndexerRateAccumulator r : history)
         {
             long start = r.getStart();
-            start -= start % (60*60*1000);
+            start -= start % DateUtils.MILLIS_PER_HOUR;
             String fStart = f.format(start);
             String fCount = Formats.commaf0.format(r.getCount());
             hourly.append("<tr><td align=right>").append(fStart).append("&nbsp;</td>");
             hourly.append("<td align=right>").append(fCount).append(getPopup(fStart + " " + StringUtilsLabKey.pluralize(r.getCount(), "document"), r)).append("</td></tr>");
-            // If more than one hour, accumulate all history into a single counter
-            if (hourCount > 1)
-                r.getCounter().forEach(dayAccumulator::accumulate);
+            // Accumulate all history into a single counter, skipping the current hour's accumulator since it's incomplete
+            if (start < currentHour)
+            {
+                r.getCounter().forEach(historyAccumulator::accumulate);
+                completedHours++;
+            }
         }
 
         hourly.append("</table>");
 
-        long totalDocCount = dayAccumulator.getCount();
-
         // If we've accumulated multiple hours (usually 24) of history, display it as a single roll-up
-        if (totalDocCount > 0)
+        if (completedHours > 1)
         {
-            String fCount = StringUtilsLabKey.pluralize(totalDocCount, "document");
-            map.put("Indexing history added/updated (total for " + history.size() + " hours)", fCount + getPopup(fCount, dayAccumulator));
+            String fCount = StringUtilsLabKey.pluralize(historyAccumulator.getCount(), "document");
+            map.put("Indexing history added/updated (total for " + completedHours + " completed hours)", fCount + getPopup(fCount, historyAccumulator));
         }
         map.put("Indexing history added/updated (each hour)", hourly.toString());
         map.put("Maximum allowed document size", getFileSizeLimit());

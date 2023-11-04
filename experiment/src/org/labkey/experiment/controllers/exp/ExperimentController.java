@@ -58,28 +58,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.MenuButton;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractMoveEntitiesAction;
 import org.labkey.api.exp.AbstractParameter;
@@ -230,7 +209,6 @@ import org.labkey.experiment.api.ExpRunImpl;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.Experiment;
 import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.FindMaterialByUniqueIdHelper;
 import org.labkey.experiment.api.GraphAlgorithms;
 import org.labkey.experiment.api.ProtocolActionStepDetail;
 import org.labkey.experiment.api.SampleTypeServiceImpl;
@@ -441,7 +419,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
+    public static class CreateHiddenRunGroupAction extends MutatingApiAction<SimpleApiJsonForm>
     {
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
@@ -1284,7 +1262,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDataClassPropertiesAction extends ReadOnlyApiAction<DataClassForm>
+    public static class GetDataClassPropertiesAction extends ReadOnlyApiAction<DataClassForm>
     {
         @Override
         public Object execute(DataClassForm form, BindException errors) throws Exception
@@ -1298,7 +1276,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignDataClassPermission.class)
-    public class EditDataClassAction extends SimpleViewAction<DataClassForm>
+    public static class EditDataClassAction extends SimpleViewAction<DataClassForm>
     {
         private ExpDataClassImpl _dataClass;
 
@@ -1331,7 +1309,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignDataClassPermission.class)
-    public class CreateDataClassFromTemplateAction extends FormViewAction<CreateDataClassFromTemplateForm>
+    public static class CreateDataClassFromTemplateAction extends FormViewAction<CreateDataClassFromTemplateForm>
     {
         private ActionURL _successUrl;
         private Map<String, DomainTemplate> _domainTemplates;
@@ -1472,7 +1450,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class RemoveConceptMappingAction extends MutatingApiAction<ConceptURIForm>
+    public static class RemoveConceptMappingAction extends MutatingApiAction<ConceptURIForm>
     {
         @Override
         public void validateForm(ConceptURIForm form, Errors errors)
@@ -1490,7 +1468,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class RunAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
+    public static class RunAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
         @Nullable
         @Override
@@ -1517,7 +1495,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DataClassAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
+    public static class DataClassAttachmentDownloadAction extends BaseDownloadAction<AttachmentForm>
     {
         @Nullable
         @Override
@@ -1584,7 +1562,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
+    public static class DownloadGraphAction extends SimpleViewAction<ExperimentRunForm>
     {
         @Override
         public ModelAndView getView(ExperimentRunForm form, BindException errors) throws Exception
@@ -1775,7 +1753,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class ToggleRunExperimentMembershipAction extends FormHandlerAction<ToggleRunExperimentMembershipForm>
+    public static class ToggleRunExperimentMembershipAction extends FormHandlerAction<ToggleRunExperimentMembershipForm>
     {
         @Override
         public boolean handlePost(ToggleRunExperimentMembershipForm form, BindException errors)
@@ -2126,7 +2104,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class CheckDataFileAction extends MutatingApiAction<DataFileForm>
+    public static class CheckDataFileAction extends MutatingApiAction<DataFileForm>
     {
         private ExpDataImpl _data;
 
@@ -2474,7 +2452,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
+    public static class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
         @Override
         public void validate(ConvertArraysToExcelForm form, BindException errors)
@@ -2511,7 +2489,7 @@ public class ExperimentController extends SpringActionController
                 try (Workbook workbook = ExcelFactory.createFromArray(sheetsArray, docType))
                 {
                     response.setContentType(docType.getMimeType());
-                    response.setHeader("Content-disposition", "attachment; filename=\"" + filename + "\"");
+                    ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, filename);
                     ResponseHelper.setPrivate(response);
                     workbook.write(response.getOutputStream());
 
@@ -2535,7 +2513,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
+    public static class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
     {
         @Override
         public void validate(ConvertArraysToExcelForm form, BindException errors)
@@ -2708,8 +2686,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getSuccessView(ConvertHtmlToExcelForm form)
         {
-            // CONSIDER <base href="form.getBaseURL()" />
-            getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + form.getName() + "\"");
+            ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, form.getName());
             getPageConfig().setTemplate(PageConfig.Template.None);
             HtmlView v = new HtmlView(_responseHtml);
             v.setContentType("application/vnd.ms-excel");
@@ -3235,7 +3212,7 @@ public class ExperimentController extends SpringActionController
      * Separate delete action from the client API
      */
     @RequiresAnyOf({DeletePermission.class, SampleWorkflowDeletePermission.class})
-    public class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
+    public static class DeleteRunAction extends MutatingApiAction<DeleteRunForm>
     {
         @Override
         public ApiResponse execute(DeleteRunForm form, BindException errors)
@@ -3296,7 +3273,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private abstract class AbstractDeleteAPIAction extends MutatingApiAction<CascadeDeleteForm>
+    private abstract static class AbstractDeleteAPIAction extends MutatingApiAction<CascadeDeleteForm>
     {
         @Override
         public void validateForm(CascadeDeleteForm form, Errors errors)
@@ -3342,7 +3319,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private abstract class AbstractDeleteAction extends FormViewAction<DeleteForm>
+    private abstract static class AbstractDeleteAction extends FormViewAction<DeleteForm>
     {
         @Override
         public void validateCommand(DeleteForm target, Errors errors)
@@ -3475,7 +3452,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
+    public static class GetDataOperationConfirmationDataAction extends ReadOnlyApiAction<DataOperationConfirmationForm>
     {
         @Override
         public void validateForm(DataOperationConfirmationForm form, Errors errors)
@@ -3739,7 +3716,7 @@ public class ExperimentController extends SpringActionController
         protected void deleteObjects(DeleteForm deleteForm)
         {
             List<ExpSampleType> sampleTypes = getSampleTypes(deleteForm);
-            if (sampleTypes.size() == 0)
+            if (sampleTypes.isEmpty())
             {
                 throw new NotFoundException("No sample types found for ids provided.");
             }
@@ -3830,9 +3807,9 @@ public class ExperimentController extends SpringActionController
 
         private List<? extends ExpRun> getRuns(List<ExpSampleType> sampleTypes)
         {
-            if (sampleTypes.size() > 0)
+            if (!sampleTypes.isEmpty())
             {
-                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[sampleTypes.size()]));
+                List<? extends ExpRun> runArray = ExperimentService.get().getRunsUsingSampleTypes(sampleTypes.toArray(new ExpSampleType[0]));
                 return ExperimentService.get().runsDeletedWithInput(runArray);
             }
             else
@@ -3871,7 +3848,7 @@ public class ExperimentController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @ActionNames("getSampleType,getSampleTypeApi") // Referenced in labkey-ui-components components/samples/actions.ts TODO: migrate getSampleTypeApi -> getSampleType
-    public class GetSampleTypeAction extends ReadOnlyApiAction<SampleTypeForm>
+    public static class GetSampleTypeAction extends ReadOnlyApiAction<SampleTypeForm>
     {
         @Override
         public void validateForm(SampleTypeForm form, Errors errors)
@@ -3909,7 +3886,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(DesignSampleTypePermission.class)
-    public class EditSampleTypeAction extends SimpleViewAction<SampleTypeForm>
+    public static class EditSampleTypeAction extends SimpleViewAction<SampleTypeForm>
     {
         private ExpSampleTypeImpl _sampleType;
 
@@ -3987,7 +3964,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportSamplesAction extends AbstractExpDataImportAction
+    public static class ImportSamplesAction extends AbstractExpDataImportAction
     {
         DataIteratorContext _context;
 
@@ -4089,7 +4066,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public abstract class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
+    public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
     {
         protected QueryForm _form;
 
@@ -4178,7 +4155,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportDataAction extends AbstractExpDataImportAction
+    public static class ImportDataAction extends AbstractExpDataImportAction
     {
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
@@ -4249,7 +4226,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(UpdatePermission.class)
-    public class UpdateAction extends FormHandlerAction<ExperimentForm>
+    public static class UpdateAction extends FormHandlerAction<ExperimentForm>
     {
         private Experiment _exp;
 
@@ -4508,7 +4485,7 @@ public class ExperimentController extends SpringActionController
     private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable String fileName)
             throws ExperimentException, IOException, PipelineValidationException
     {
-        return exportXAR(selection, (LSIDRelativizer)null, (XarExportType)null, fileName);
+        return exportXAR(selection, null, null, fileName);
     }
 
     private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable LSIDRelativizer lsidRelativizer, @Nullable XarExportType exportType, @Nullable String fileName)
@@ -4520,7 +4497,7 @@ public class ExperimentController extends SpringActionController
         if (exportType == null)
             exportType = XarExportType.BROWSER_DOWNLOAD;
 
-        if (fileName == null || fileName.equals(""))
+        if (fileName == null || fileName.isEmpty())
             fileName = "export.xar";
 
         fileName = fixupExportName(fileName);
@@ -4534,7 +4511,7 @@ public class ExperimentController extends SpringActionController
                 XarExporter exporter = new XarExporter(lsidRelativizer, selection, getUser(), xarXmlFileName, null);
 
                 getViewContext().getResponse().setContentType("application/zip");
-                getViewContext().getResponse().setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+                ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, fileName);
                 ResponseHelper.setPrivate(getViewContext().getResponse());
 
                 exporter.writeAsArchive(getViewContext().getResponse().getOutputStream());
@@ -4581,7 +4558,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public abstract class AbstractExportAction extends FormViewAction<ExportOptionsForm>
+    public abstract static class AbstractExportAction extends FormViewAction<ExportOptionsForm>
     {
         protected ActionURL _resultURL;
 
@@ -4812,7 +4789,7 @@ public class ExperimentController extends SpringActionController
                 runs.add(run);
             }
         }
-        exp.addRuns(getUser(), runs.toArray(new ExpRun[runs.size()]));
+        exp.addRuns(getUser(), runs.toArray(new ExpRun[0]));
     }
 
 
@@ -4839,7 +4816,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DeletePermission.class)
-    public class RemoveSelectedExpRunsAction extends FormHandlerAction<ExperimentRunListForm>
+    public static class RemoveSelectedExpRunsAction extends FormHandlerAction<ExperimentRunListForm>
     {
         @Override
         public void validateCommand(ExperimentRunListForm target, Errors errors)
@@ -4887,7 +4864,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class ResolveLSIDAction extends SimpleViewAction<LsidForm>
+    public static class ResolveLSIDAction extends SimpleViewAction<LsidForm>
     {
         @Override
         public ModelAndView getView(LsidForm form, BindException errors)
@@ -4989,7 +4966,7 @@ public class ExperimentController extends SpringActionController
      * Check for update on the object itself
      */
     @RequiresNoPermission
-    public class SetFlagAction extends FormHandlerAction<SetFlagForm>
+    public static class SetFlagAction extends FormHandlerAction<SetFlagForm>
     {
         @Override
         public void validateCommand(SetFlagForm target, Errors errors)
@@ -5509,7 +5486,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(InsertPermission.class)
-    public class DeriveAction extends MutatingApiAction<DerivationForm>
+    public static class DeriveAction extends MutatingApiAction<DerivationForm>
     {
         @Override
         public void validateForm(DerivationForm form, Errors errors)
@@ -6152,7 +6129,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
+    public static class ShowExternalDocsAction extends SimpleViewAction<ShowExternalDocsForm>
     {
         @Override
         public ModelAndView getView(ShowExternalDocsForm form, BindException errors) throws Exception
@@ -6196,7 +6173,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
+    public static class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
         private ExperimentRunForm _form;
 
@@ -6254,7 +6231,7 @@ public class ExperimentController extends SpringActionController
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
             Path systemDir = pipeRoot.ensureSystemDirectoryPath();
             Path uploadDir = systemDir.resolve("UploadedXARs");
-            Files.createDirectories(uploadDir);
+            FileUtil.createDirectories(uploadDir);
             if (!Files.isDirectory(uploadDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create a 'system/UploadedXARs' directory under the pipeline root");
@@ -6266,7 +6243,7 @@ public class ExperimentController extends SpringActionController
                 userDirName = GUEST_DIRECTORY_NAME;
             }
             Path userDir = uploadDir.resolve(userDirName);
-            Files.createDirectories(userDir);
+            FileUtil.createDirectories(userDir);
             if (!Files.isDirectory(userDir))
             {
                 errors.reject(ERROR_MSG, "Unable to create an 'UploadedXARs/" + userDirName + "' directory under the pipeline root");
@@ -6842,7 +6819,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class ResolveAction extends BaseResolveLsidApiAction<ResolveLsidsForm>
+    public static class ResolveAction extends BaseResolveLsidApiAction<ResolveLsidsForm>
     {
         @Override
         public Object execute(ResolveLsidsForm form, BindException errors)
@@ -6855,7 +6832,7 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
+    public static class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
     {
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
@@ -6868,7 +6845,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
+    public static class RebuildEdgesAction extends MutatingApiAction<ExperimentRunForm>
     {
         @Override
         public Object execute(ExperimentRunForm form, BindException errors)
@@ -6907,7 +6884,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class VerifyEdgesAction extends ReadOnlyApiAction<VerifyEdgesForm>
+    public static class VerifyEdgesAction extends ReadOnlyApiAction<VerifyEdgesForm>
     {
         @Override
         public Object execute(VerifyEdgesForm form, BindException errors)
@@ -6930,7 +6907,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class CheckDataClassesIndexedAction extends ReadOnlyApiAction
+    public static class CheckDataClassesIndexedAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -6966,7 +6943,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class CheckEdgesAction extends ReadOnlyApiAction
+    public static class CheckEdgesAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -7180,6 +7157,7 @@ public class ExperimentController extends SpringActionController
         private static final String UNIQUE_ID_PREFIX = "u:";
 
         private List<String> _ids;
+        private Map<String, List<String>> _uniqueIdLsids;
 
         @Override
         public void validateForm(FindByIdsForm form, Errors errors)
@@ -7194,9 +7172,21 @@ public class ExperimentController extends SpringActionController
             }
         }
 
+        private void ensureUniqueIdLsids()
+        {
+            boolean hasUniqueId = _ids.stream().anyMatch(s -> s.startsWith(UNIQUE_ID_PREFIX));
+            if (hasUniqueId && _uniqueIdLsids == null)
+            {
+                List<String> uniqueIds = _ids.stream().map(s -> s.substring(UNIQUE_ID_PREFIX.length())).toList();
+                _uniqueIdLsids = ExperimentService.get().getUniqueIdLsids(uniqueIds, getUser(), getContainer());
+            }
+        }
+
         @Override
         public Object execute(FindByIdsForm form, BindException errors) throws Exception
         {
+            ensureUniqueIdLsids();
+
             SQLFragment select = getOrderedRowsSql();
             // need to set the key field so selections are possible
             // need the SampleTypeUnits so we will display using that unit
@@ -7291,21 +7281,34 @@ public class ExperimentController extends SpringActionController
                     sampleIdValuesSql.append(sampleIdComma).append("\t(").appendValue(index);
                     sampleIdValuesSql.append(", ");
                     sampleIdValuesSql.append(LabKeySql.quoteString(id.substring(SAMPLE_ID_PREFIX.length())));
+                    sampleIdValuesSql.append(", ");
+                    sampleIdValuesSql.append(LabKeySql.quoteString("null"));
                     sampleIdValuesSql.append(")");
                     sampleIdComma = "\n,";
                 }
                 else if (id.startsWith(UNIQUE_ID_PREFIX))
                 {
-                    uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
-                    uniqueIdValuesSql.append(", ");
-                    uniqueIdValuesSql.append(LabKeySql.quoteString(id.substring(UNIQUE_ID_PREFIX.length())));
-                    uniqueIdValuesSql.append(")");
-                    uniqueIdComma = "\n,";
+                    String idClean = id.substring(UNIQUE_ID_PREFIX.length());
+
+                    List<String> lsids = _uniqueIdLsids.get(idClean);
+                    if (lsids != null)
+                    {
+                        for (String lsid : lsids)
+                        {
+                            uniqueIdValuesSql.append(uniqueIdComma).append("\t(").appendValue(index);
+                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(LabKeySql.quoteString(idClean));
+                            uniqueIdValuesSql.append(", ");
+                            uniqueIdValuesSql.append(LabKeySql.quoteString(lsid));
+                            uniqueIdValuesSql.append(")");
+                            uniqueIdComma = "\n,";
+                        }
+                    }
                 }
                 index++;
             }
 
-            boolean haveData = !sampleIdValuesSql.isEmpty();
+            boolean haveData = !sampleIdValuesSql.isEmpty() || !_uniqueIdLsids.isEmpty();
             SQLFragment sql = new SQLFragment();
             if (!sampleIdValuesSql.isEmpty())
             {
@@ -7331,27 +7334,20 @@ public class ExperimentController extends SpringActionController
             sql.append("\nFROM\n(");
             if (!sampleIdValuesSql.isEmpty())
             {
-                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id");
+                sql.append("SELECT\n\tM.RowId,\n\t_ordered_ids_.column1 as Ordinal,\n\t_ordered_ids_.column2 as Id,\n\t_ordered_ids_.column2 as lsid");
                 sql.append("\nFROM _ordered_ids_\n");
                 sql.append("INNER JOIN exp.materials M ON _ordered_ids_.column2 = M.Name");
                 sql.append("\n");
             }
             if (!uniqueIdValuesSql.isEmpty())
             {
-                FindMaterialByUniqueIdHelper uidHelper = new FindMaterialByUniqueIdHelper(getContainer(), getUser());
-                if (uidHelper.getNumUniqueIdCols() > 0)
-                {
-                    haveData = true;
-                    if (!sampleIdValuesSql.isEmpty())
-                        sql.append("\nUNION ALL\n\n");
+                if (!sampleIdValuesSql.isEmpty())
+                    sql.append("\nUNION ALL\n\n");
 
-                    sql.append("SELECT\n\tU.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t _ordered_unique_ids_.column2 as Id");
-                    sql.append("\nFROM _ordered_unique_ids_\n");
-                    sql.append("INNER JOIN (");
-
-                    sql.append(uidHelper.getSQL()).append(") U");
-                    sql.append(" ON _ordered_unique_ids_.column2 = ").append(FindMaterialByUniqueIdHelper.UNIQUE_ID_COL_NAME);
-                }
+                sql.append("SELECT\n\tM.RowId,\n\t_ordered_unique_ids_.column1 as Ordinal,\n\t_ordered_unique_ids_.column2 as Id,\n\t_ordered_unique_ids_.column3 as lsid");
+                sql.append("\nFROM _ordered_unique_ids_\n");
+                sql.append("INNER JOIN exp.materials M ON _ordered_unique_ids_.column3 = M.lsid");
+                sql.append("\n");
             }
             if (!haveData) // no data to return but return data in the expected shape.
             {
@@ -7413,65 +7409,85 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+    static void validateEntitySequenceForm(EntitySequenceForm form, Errors errors)
+    {
+        String kindName = form.getKindName();
+        if (StringUtils.isEmpty(kindName) || form.getSeqType() == null)
+        {
+            errors.reject(ERROR_REQUIRED, "KindName and SeqType must be provided");
+            return;
+        }
+
+        if (form.getSeqType() == NameGenerator.EntityCounter.genId)
+        {
+            if (form.getRowId() == null)
+                errors.reject(ERROR_REQUIRED, "Data type RowId must be provided for genId");
+        }
+        else if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName))
+        {
+            errors.reject(ERROR_MSG, form.getSeqType() + " is not supported for " + kindName);
+        }
+
+        if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
+            errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
+
+    }
+
     @RequiresPermission(ReadPermission.class)
-    public static class GetGenIdAction extends ReadOnlyApiAction<GenIdForm>
+    public static class GetEntitySequenceAction extends ReadOnlyApiAction<EntitySequenceForm>
     {
         @Override
-        public void validateForm(GenIdForm form, Errors errors)
+        public void validateForm(EntitySequenceForm form, Errors errors)
         {
-            String kindName = form.getKindName();
-
-            if (form.getRowId() == null || StringUtils.isEmpty(kindName))
-                errors.reject(ERROR_REQUIRED, "RowId and KindName must be provided");
-
-            if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
-                errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
+            validateEntitySequenceForm(form, errors);
         }
 
         @Override
-        public Object execute(GenIdForm form, BindException errors) throws Exception
+        public Object execute(EntitySequenceForm form, BindException errors) throws Exception
         {
-            long genId = -1;
+            long value = -1;
             if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
             {
-                ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
-                if (sampleType != null)
-                    genId = sampleType.getCurrentGenId();
+                if (form.getSeqType() == NameGenerator.EntityCounter.genId)
+                {
+                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                    if (sampleType != null)
+                        value = sampleType.getCurrentGenId();
+                }
+                else
+                {
+                    value = SampleTypeService.get().getCurrentCount(form.getSeqType(), getContainer());
+                }
+
             }
             else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
             {
                 ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                 if (dataClass != null)
-                    genId = dataClass.getCurrentGenId();
+                    value = dataClass.getCurrentGenId();
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            resp.put("success", genId > -1);
-            resp.put("genId", genId);
+            resp.put("success", value > -1);
+            resp.put("value", value);
             return resp;
         }
     }
 
     @RequiresPermission(ReadPermission.class) // actual permission checked later
-    public static class SetGenIdAction extends MutatingApiAction<GenIdForm>
+    public static class SetEntitySequenceAction extends MutatingApiAction<EntitySequenceForm>
     {
         @Override
-        public void validateForm(GenIdForm form, Errors errors)
+        public void validateForm(EntitySequenceForm form, Errors errors)
         {
-            String kindName = form.getKindName();
+            validateEntitySequenceForm(form, errors);
 
-            if (form.getRowId() == null || StringUtils.isEmpty(kindName))
-                errors.reject(ERROR_REQUIRED, "RowId or KindName must be provided");
-
-            if (!SampleTypeDomainKind.NAME.equalsIgnoreCase(kindName) && !DataClassDomainKind.NAME.equalsIgnoreCase(kindName))
-                errors.reject(ERROR_MSG, "Invalid KindName. Should be either " + SampleTypeDomainKind.NAME + " or " + DataClassDomainKind.NAME + ".");
-
-            if (form.getGenId() == null || form.getGenId() < 0)
-                errors.reject(ERROR_MSG, "Invalid GenId.");
+            if (form.getNewValue() == null || form.getNewValue() < 0)
+                errors.reject(ERROR_MSG, "Invalid newValue.");
         }
 
         @Override
-        public Object execute(GenIdForm form, BindException errors)
+        public Object execute(EntitySequenceForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -7480,17 +7496,26 @@ public class ExperimentController extends SpringActionController
             {
                 if (SampleTypeDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
                 {
-                    if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
-                        throw new UnauthorizedException("Insufficient permissions.");
+                    if (form.getSeqType() == NameGenerator.EntityCounter.genId)
+                    {
+                        if (!getContainer().hasPermission(getUser(), DesignSampleTypePermission.class))
+                            throw new UnauthorizedException("Insufficient permissions.");
 
-
-                    ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
-                    if (sampleType != null)
-                        sampleType.ensureMinGenId(form.getGenId());
+                        ExpSampleType sampleType = SampleTypeService.get().getSampleType(form.getRowId());
+                        if (sampleType != null)
+                            sampleType.ensureMinGenId(form.getNewValue());
+                        else
+                        {
+                            resp.put("success", false);
+                            resp.put("error", "Sample type does not exist.");
+                        }
+                    }
                     else
                     {
-                        resp.put("success", false);
-                        resp.put("error", "Sample type does not exist.");
+                        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
+                            throw new UnauthorizedException("Insufficient permissions.");
+
+                        SampleTypeService.get().ensureMinSampleCount(form.getNewValue(), form.getSeqType(), getContainer());
                     }
                 }
                 else if (DataClassDomainKind.NAME.equalsIgnoreCase(form.getKindName()))
@@ -7500,7 +7525,7 @@ public class ExperimentController extends SpringActionController
 
                     ExpDataClass dataClass = ExperimentService.get().getDataClass(form.getRowId());
                     if (dataClass != null)
-                        dataClass.ensureMinGenId(form.getGenId(), getContainer());
+                        dataClass.ensureMinGenId(form.getNewValue(), getContainer());
                     else
                     {
                         resp.put("success", false);
@@ -7518,11 +7543,12 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class GenIdForm
+    public static class EntitySequenceForm
     {
-        private Integer _rowId;
         private String _kindName;
-        private Long _genId;
+        private NameGenerator.EntityCounter _seqType;
+        private Integer _rowId;
+        private Long _newValue;
 
         public Integer getRowId()
         {
@@ -7544,21 +7570,31 @@ public class ExperimentController extends SpringActionController
             _kindName = kindName;
         }
 
-        public Long getGenId()
+        public Long getNewValue()
         {
-            return _genId;
+            return _newValue;
         }
 
-        public void setGenId(Long genId)
+        public void setNewValue(Long newValue)
         {
-            _genId = genId;
+            this._newValue = newValue;
+        }
+
+        public NameGenerator.EntityCounter getSeqType()
+        {
+            return _seqType;
+        }
+
+        public void setSeqType(String seqType)
+        {
+            _seqType = NameGenerator.EntityCounter.valueOf(seqType);
         }
 
     }
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
+    public static class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
     {
         @Override
         public void validateForm(CrossFolderSelectionForm form, Errors errors)
@@ -7663,6 +7699,7 @@ public class ExperimentController extends SpringActionController
                 {
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
                     builder.append("<tr><td>")
                             .append(sampleType.getName())
                             .append("</td><td>")
@@ -7843,10 +7880,11 @@ public class ExperimentController extends SpringActionController
                 if (dataClass != null) // dataclass might have been renamed
                     effectiveQueryName = dataClass.getName();
             }
-            else if ("assay.general".equalsIgnoreCase(schemaName))
+            else if (schemaName.toLowerCase().startsWith("assay.general."))
             {
-                // TODO: get effective schemaname, when assay design renaming is supported
-                // effectiveSchemaName = getEffectiveExpProtocol
+                ExpProtocol protocol = experimentService.getEffectiveProtocol(container, user, schemaName.substring("assay.general.".length()), effectiveDate, dataTypeCF);
+                if (protocol != null)
+                    effectiveSchemaName = "assay.general." + protocol.getName();
             }
 
             ApiSimpleResponse resp = new ApiSimpleResponse();

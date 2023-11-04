@@ -69,6 +69,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -475,7 +476,7 @@ public class PublishResultsQueryView extends QueryView
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
-            return includeTimestamp ? DateUtil.formatDateTimeISO8601(result) : DateUtil.formatDateISO8601(result);
+            return includeTimestamp ? DateUtil.formatIsoDateShortTime(result) : DateUtil.formatIsoDate(result);
         }
 
         public Container getUserTargetStudy(RenderContext ctx)
@@ -772,23 +773,20 @@ public class PublishResultsQueryView extends QueryView
                     if (ctx.get(RENDERED_REQUIRES_COMPLETION) == null)
                     {
                         // TODO: Use the same code as AutoCompleteTag.java
-                        out.write("<script type=\"text/javascript\">LABKEY.requiresScript(\"completion\");</script>");
-
-                        // wire up the completions div on input tag focus
-                        StringBuilder sb = new StringBuilder();
-
-                        sb.append("<script type=\"text/javascript\">\n" +
-                                  "   function onCompletionFocus(cmp) {\n" +
-                                  "      cmp.removeAttribute('onfocus');\n" +
-                                  "      Ext4.create('LABKEY.element.AutoCompletionField', {\n" +
-                                  "         renderTo        : cmp.getAttribute('completionid'),\n" +
-                                  "         completionUrl   : cmp.getAttribute('completion'),\n" +
-                                  "         sharedStore     : true,\n" +
-                                  "         fieldId         : cmp.getAttribute('id')\n" +
-                                  "      });\n" +
-                                  "   }\n" +
-                                  "</script>\n");
-                        out.write(sb.toString());
+                        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+                        out.write("""
+                                LABKEY.requiresScript("completion");
+                                function onCompletionFocus(cmp) {
+                                  cmp.removeAttribute('onfocus');
+                                  Ext4.create('LABKEY.element.AutoCompletionField', {
+                                     renderTo        : cmp.getAttribute('completionid'),
+                                     completionUrl   : cmp.getAttribute('completion'),
+                                     sharedStore     : true,
+                                     fieldId         : cmp.getAttribute('id')
+                                  });
+                                }
+                                """);
+                        out.write("</script>");
                         ctx.put(RENDERED_REQUIRES_COMPLETION, true);
                     }
 
@@ -800,12 +798,12 @@ public class PublishResultsQueryView extends QueryView
 
                     // render our own input tag and attach the completions div lazily when the input receives
                     // focus
+                    HttpView.currentPageConfig().addHandler(inputId, "focus", "onCompletionFocus(this);");
                     sb.append("<input type=\"text\"");
                     sb.append(" id=\"").append(PageFlowUtil.filter(inputId)).append("\"");
                     sb.append(" name=\"" + _formElementName + "\"");
                     sb.append(" completionid=\"").append(PageFlowUtil.filter(completionId)).append("\"");
                     sb.append(" value=\"" + value + "\"");
-                    sb.append(" onfocus=\"onCompletionFocus(this);\"");
                     sb.append(" completion=\"").append(PageFlowUtil.filter(completionBase)).append("\">");
 
                     // the div we will lazily wire up completions to (needs to be a sibling to the input)

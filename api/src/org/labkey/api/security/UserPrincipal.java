@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.security.roles.Role;
@@ -28,9 +29,6 @@ import java.util.Set;
 
 /**
  * A user-oriented principal within the system. This encompasses both {@link User}s and {@link Group}s (of groups and users).
- *
- * User: matthewb
- * Date: Sep 20, 2006
  */
 public abstract class UserPrincipal implements Principal, Parameter.JdbcParameterValue, Serializable
 {
@@ -97,25 +95,20 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
             throw new IllegalArgumentException("Unrecognized type specified. Must be one of 'u', 'g', 'm', or 's'.");
     }
 
-    public abstract int[] getGroups();
+    public abstract PrincipalArray getGroups();
 
     /**
-     * @return the roles that the user is assumed to embody, which may go beyond the basic set of roles that the
-     * user might have otherwise. For example, a user in an {@link org.labkey.api.security.roles.AuthorRole} might
-     * be allowed to edit an object that they created, even though they aren't in an {@link org.labkey.api.security.roles.EditorRole}
-     * and therefore don't have {@link org.labkey.api.security.permissions.UpdatePermission} to make edits more generally.
+     * @return the roles assigned to this principal in the provided policy
      */
-    public abstract Set<Role> getContextualRoles(SecurityPolicy policy);
+    public abstract Set<Role> getAssignedRoles(SecurityPolicy policy);
 
     public abstract boolean isInGroup(int group);
-
 
     @Override
     public String toString()
     {
         return getName();
     }
-
 
     @Override
     public boolean equals(Object o)
@@ -125,11 +118,8 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
 
         UserPrincipal principal = (UserPrincipal) o;
 
-        if (getUserId() != principal.getUserId()) return false;
-
-        return true;
+        return getUserId() == principal.getUserId();
     }
-
 
     @Override
     public int hashCode()
@@ -150,5 +140,12 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
     {
         return JdbcType.INTEGER;
     }
+
     public abstract boolean isActive();
+
+    public boolean hasPrivilegedRole()
+    {
+        // Check for any privileged role assigned to this principal at the root
+        return isInGroup(Group.groupAdministrators) || ContainerManager.getRoot().getPolicy().getRoles(getGroups()).stream().anyMatch(Role::isPrivileged);
+    }
 }

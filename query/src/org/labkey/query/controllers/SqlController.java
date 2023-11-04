@@ -35,6 +35,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
 import org.springframework.beans.PropertyValue;
@@ -120,7 +121,7 @@ public class SqlController extends SpringActionController
 
         public void setSql(String sql)
         {
-            this.sql = sql;
+            this.sql = PageFlowUtil.wafDecode(sql);
         }
 
         public Parameters getParameters()
@@ -304,7 +305,7 @@ public class SqlController extends SpringActionController
                                     out.print(date.getTime());
                                 else
                                     //out.write(DateUtil.formatJsonDateTime(date));
-                                    out.write(DateUtil.formatDateTimeISO8601(date));
+                                    out.write(DateUtil.formatIsoDateShortTime(date));
                             }
                             break printValue;
                         }
@@ -407,7 +408,7 @@ public class SqlController extends SpringActionController
                             row[column] = Long.toString(date.getTime());
                         else
                         {
-                            String d = DateUtil.formatDateTimeISO8601(date);
+                            String d = DateUtil.formatIsoDateShortTime(date);
                             if (d.endsWith(" 00:00"))
                                 d = d.substring(0,d.length()-6);
                             row[column] = d;
@@ -445,28 +446,5 @@ public class SqlController extends SpringActionController
             row = t;
         }
         out.flush();
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class TestSqlAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            return new HtmlView("<script src='/labkey/clientapi/core/SQL.js'></script>\n" +
-                    "<textarea cols=120 id=sql></textarea><br><button onClick='exec()'>exec</button>" +
-                    "<pre id=result></pre>" +
-                    "<script>"+
-                    "function exec(){\n"+
-                    "LABKEY.Query.experimental.SQL.execute(\n"+
-                    "  {schema:'core', sql:document.getElementById('sql').value,"+
-                    "  success:function(r){\ndocument.getElementById('result').setText(JSON.stringify(r));\n}});"+
-                    "}</script>");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
     }
 }

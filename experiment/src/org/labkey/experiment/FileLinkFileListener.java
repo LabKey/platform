@@ -268,7 +268,7 @@ public class FileLinkFileListener implements FileListener
         frag.append("  )\n");
 
         hardTableFileLinkColumns((schema, table, pathColumn, containerId) -> {
-            SQLFragment containerFrag = new SQLFragment("'").append(containerId).append("'");
+            SQLFragment containerFrag = new SQLFragment("?", containerId);
             TableUpdaterFileListener updater = new TableUpdaterFileListener(table, pathColumn.getColumnName(), TableUpdaterFileListener.Type.filePath, null, containerFrag);
             frag.append("UNION\n");
             frag.append(updater.listFilesQuery());

@@ -24,13 +24,14 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.FieldKey;
@@ -41,9 +42,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
@@ -66,11 +67,20 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 {
     private static final AuditLogImpl _instance = new AuditLogImpl();
 
-    private static final Logger _log = org.apache.logging.log4j.LogManager.getLogger(AuditLogImpl.class);
+    private static final Logger _log = LogHelper.getLogger(AuditLogImpl.class, "Audit service interactions.");
 
-    private Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
-    private AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
+    private final Queue<Pair<User, AuditTypeEvent>> _eventTypeQueue = new LinkedList<>();
+    private final AtomicBoolean  _logToDatabase = new AtomicBoolean(false);
     private static final Object STARTUP_LOCK = new Object();
+
+    // Cache the audit events associated with transaction ids. We currently use these for interacting with objects
+    // that were created immediately after they were created, so the cache size does not need to be very large.
+    // Use a pair as the cache object to avoid warnings about mutable cache objects (Issue 48779).
+    // Since this is all about capturing data from the same transaction, there shouldn't be other threads in the mix.
+    private static final Cache<Long, Pair<Long, List<AuditTypeEvent>>> TRANSACTION_EVENT_CACHE = CacheManager.getBlockingCache(50, CacheManager.DAY,
+            "Transaction Audit Event Cache",
+            (key, argument) -> Pair.of(key, new ArrayList<>())
+    );
 
     public static AuditLogImpl get()
     {
@@ -116,12 +126,12 @@ public class AuditLogImpl implements AuditLogService, StartupListener
     }
 
     @Override
-    public <K extends AuditTypeEvent> void addEvents(User user, List<K> events)
+    public <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events)
     {
         _addEvents(user, events, false);
     }
 
-    private <K extends AuditTypeEvent> K _addEvents(User user, List<K> events, boolean reselectEvent)
+    private <K extends AuditTypeEvent> K _addEvents(@Nullable User user, List<K> events, boolean reselectEvent)
     {
         assert !reselectEvent || events.size() == 1;
 
@@ -141,6 +151,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 if (HttpView.hasCurrentView() && HttpView.currentContext() != null)
                     _log.warn("user was not specified for event type " + event.getEventType() + " in container " + ContainerManager.getForId(event.getContainer()).getPath() + "; defaulting to guest user.");
                 user = UserManager.getGuestUser();
+            }
+            if (event.getTransactionId() != null)
+            {
+                List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(event.getTransactionId()).second;
+                transactionEvents.add(event);
             }
 
             // ensure some standard fields
@@ -239,6 +254,17 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     public List<Integer> getTransactionSampleIds(long transactionAuditId, User user, Container container)
     {
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
+        if (!transactionEvents.isEmpty())
+        {
+            List<Integer> ids = new ArrayList<>();
+            transactionEvents.forEach(event -> {
+                if (event instanceof SampleTimelineAuditEvent stEvent)
+                    ids.add(stEvent.getSampleId());
+            });
+            return ids;
+        }
+
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("TransactionID"), transactionAuditId);
 
@@ -248,20 +274,41 @@ public class AuditLogImpl implements AuditLogService, StartupListener
 
     public List<Integer> getTransactionSourceIds(long transactionAuditId, User user, Container container)
     {
-        List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId);
         List<String> lsids = new ArrayList<>();
         List<Integer> sourceIds = new ArrayList<>();
-        events.forEach((event) -> {
-            if (event.getNewRecordMap() != null)
-            {
-                Map<String, String> newRecord = AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap());
-                if (newRecord.containsKey("RowId"))
-                    sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
-                else if (newRecord.containsKey("LSID"))
-                    lsids.add(newRecord.get("LSID"));
+        List<AuditTypeEvent> transactionEvents = TRANSACTION_EVENT_CACHE.get(transactionAuditId).second;
+        if (!transactionEvents.isEmpty())
+        {
+            transactionEvents.forEach(event -> {
+                if (event instanceof DetailedAuditTypeEvent detailedEvent)
+                {
+                    if (detailedEvent.getNewRecordMap() != null)
+                    {
+                        Map<String, String> newRecord = AbstractAuditTypeProvider.decodeFromDataMap(detailedEvent.getNewRecordMap());
+                        if (newRecord.containsKey("RowId"))
+                            sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
+                        else if (newRecord.containsKey("LSID"))
+                            lsids.add(newRecord.get("LSID"));
+                    }
+                }
+            });
+        }
+        else
+        {
+            List<DetailedAuditTypeEvent> events = QueryService.get().getQueryUpdateAuditRecords(user, container, transactionAuditId);
 
-            }
-        });
+            events.forEach((event) -> {
+                if (event.getNewRecordMap() != null)
+                {
+                    Map<String, String> newRecord = AbstractAuditTypeProvider.decodeFromDataMap(event.getNewRecordMap());
+                    if (newRecord.containsKey("RowId"))
+                        sourceIds.add(Integer.valueOf(newRecord.get("RowId")));
+                    else if (newRecord.containsKey("LSID"))
+                        lsids.add(newRecord.get("LSID"));
+
+                }
+            });
+        }
         if (!lsids.isEmpty())
         {
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);

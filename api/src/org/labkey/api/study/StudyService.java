@@ -30,7 +30,6 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
@@ -43,11 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: markigra
- * Date: Oct 31, 2007
- * Time: 11:42:47 AM
- */
 public interface StudyService
 {
     /** LSID namespace prefix for study specimens in the experiment material table */
@@ -138,8 +132,6 @@ public interface StudyService
     void updateDatasetCategory(User user, @NotNull Dataset dataset, @NotNull ViewCategory category);
 
     void addStudyAuditEvent(Container container, User user, String comment);
-
-    List<SecurableResource> getSecurableResources(Container container, User user);
 
     String getSubjectNounSingular(Container container);
 

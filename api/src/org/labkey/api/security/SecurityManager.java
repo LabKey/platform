@@ -37,6 +37,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.CommitTaskOption;
+import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -54,7 +56,7 @@ import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
-import org.labkey.api.security.impersonation.DisallowGlobalRolesContext;
+import org.labkey.api.security.impersonation.DisallowPrivilegedRolesContext;
 import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ReadOnlyImpersonatingContext;
@@ -63,6 +65,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractPermission;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -80,6 +83,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LenientStartupPropertyHandler;
 import org.labkey.api.settings.StartupProperty;
 import org.labkey.api.settings.StartupPropertyEntry;
+import org.labkey.api.usageMetrics.UsageMetricsProvider;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -94,7 +98,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
 import org.labkey.api.util.logging.LogHelper;
@@ -103,6 +106,7 @@ import org.labkey.api.view.HasHttpRequest;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
@@ -133,8 +137,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -180,6 +187,42 @@ public class SecurityManager
         EmailTemplateService.get().registerTemplate(RegistrationAdminEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(PasswordResetEmailTemplate.class);
         EmailTemplateService.get().registerTemplate(PasswordResetAdminEmailTemplate.class);
+    }
+
+    public static UsageMetricsProvider getMetricsProvider()
+    {
+        return () -> {
+            Map<String, Object> result = new HashMap<>();
+
+            Map<String, Integer> roleCounts = new HashMap<>();
+            Set<Role> siteRoles = RoleManager.getSiteRoles();
+            for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
+            {
+                Role role = assignment.getRole();
+                int count = roleCounts.getOrDefault(role.getName(), 0);
+                if (siteRoles.contains(role))
+                {
+                    UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
+                    if (principal != null && principal.isActive())
+                    {
+                        switch (principal.getPrincipalType())
+                        {
+                            case USER -> count++;
+                            case GROUP -> count += getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS).size();
+                        }
+                    }
+                }
+                roleCounts.put(role.getName(), count);
+            }
+            result.put("SiteRoleUserCounts", roleCounts);
+
+            Map<String, Integer> groupCounts = new HashMap<>();
+            groupCounts.put("SiteAdmin", getAllGroupMembers(getGroup(Group.groupAdministrators), MemberType.ACTIVE_USERS).size());
+            groupCounts.put("Developer", getAllGroupMembers(getGroup(Group.groupDevelopers), MemberType.ACTIVE_USERS).size());
+            result.put("SiteGroupUserCounts", groupCounts);
+
+            return result;
+        };
     }
 
     public enum PermissionSet
@@ -280,7 +323,6 @@ public class SecurityManager
         UserManager.addUserListener(new SecurityUserListener());
     }
 
-
     //
     // GroupListener
     //
@@ -379,7 +421,6 @@ public class SecurityManager
                 "WHERE UserId NOT IN (SELECT UserId FROM " + core.getTableInfoPrincipals() + ")");
     }
 
-
     /** Move is handled by direct call from ContainerManager into SecurityManager */
     private static class SecurityContainerListener extends ContainerManager.AbstractContainerListener
     {
@@ -389,7 +430,6 @@ public class SecurityManager
             deleteGroups(c, null);
         }
     }
-
 
     private static class SecurityUserListener implements UserManager.UserListener
     {
@@ -492,17 +532,27 @@ public class SecurityManager
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
     {
+        // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
+        // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
-        @Nullable String apiKey = getApiKey(basicCredentials, request);
+
+        if (null == basicCredentials)
+            basicCredentials = getApiKey(request);
 
         // Handle session API key early, if present and valid
-        if (apiKey != null)
+        if (basicCredentials != null)
         {
-            HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
+            String username = basicCredentials.first;
 
-            if (null != session)
+            if (API_KEY.equals(username))
             {
-                request = new SessionReplacingRequest(request, session);
+                String apiKey = basicCredentials.second;
+                HttpSession session = SessionApiKeyManager.get().getContext(apiKey);
+
+                if (null != session)
+                {
+                    request = new SessionReplacingRequest(request, session);
+                }
             }
         }
 
@@ -526,7 +576,7 @@ public class SecurityManager
             }
             else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
             {
-                sessionUser.setImpersonationContext(DisallowGlobalRolesContext.get());
+                sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
             }
 
             List<AuthenticationValidator> validators = getValidators(session);
@@ -548,7 +598,7 @@ public class SecurityManager
                     if (sessionUser.isImpersonated())
                     {
                         SecurityManager.stopImpersonating(request, factory);
-                        sessionUser = sessionUser.getImpersonatingUser(); // Need to logout the admin
+                        sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
                     }
 
                     // Now logout the session user
@@ -558,14 +608,6 @@ public class SecurityManager
             }
 
             u = sessionUser;
-        }
-
-        if (null == u && apiKey != null)
-        {
-            u = ApiKeyManager.get().authenticateFromApiKey(apiKey);
-
-            if (null != u)
-                request.setAttribute(AUTHENTICATION_METHOD, "Basic");
         }
 
         if (null == u && null != basicCredentials)
@@ -589,55 +631,44 @@ public class SecurityManager
     }
 
     /**
-     * Determine if an API key is present, checking basic auth first, then "apikey" header, and then the special "transform"
-     * cookie and parameters. Return the API key if it's present; otherwise return null.
-     * @param basicCredentials Basic auth credentials
+     * Determine if an API key is present, checking "apikey" header first and then the special "transform" cookie and
+     * parameters. Return a pair with the API key if it's present; otherwise return null.
      * @param request Current request
      * @return First API key found or null if an apikey is not present.
      */
-    private static @Nullable String getApiKey(@Nullable Pair<String, String> basicCredentials, HttpServletRequest request) throws UnsupportedEncodingException
+    private static @Nullable Pair<String, String> getApiKey(HttpServletRequest request) throws UnsupportedEncodingException
     {
-        String apiKey;
+        // Passing via the "apikey" HTTP header is our preferred approach and used by most
+        // LabKey client API implementations
+        String apiKey = request.getHeader(API_KEY);
 
-        // Accept API keys via basic auth if the username is "apikey". Supported for backwards compatibility and clients that don't support custom headers.
-
-        if (null != basicCredentials && API_KEY.equals(basicCredentials.getKey()))
+        if (null == apiKey)
         {
-            apiKey = basicCredentials.getValue();
-        }
-        else
-        {
-            // Passing via the "apikey" HTTP header is our preferred approach and used by most
-            // LabKey client API implementations
-            apiKey = request.getHeader(API_KEY);
-            if (null == apiKey)
+            // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
+            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+            apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
+            if (null != apiKey)
             {
-                // Issue 40482: Deprecate using 'LabKeyTransformSessionId' in preference for 'apikey' authentication
-                // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-                apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
-                if (null != apiKey)
+                _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+            }
+            else
+            {
+                // Support as a GET parameter as well, not just as a cookie, to support authentication
+                // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
+                // Do not use request.getParameter() since that will consume the POST body, #32711.
+                try
                 {
-                    _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                    Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
+                    apiKey = params.get(TRANSFORM_SESSION_ID);
                 }
-                else
+                catch (IllegalArgumentException e)
                 {
-                    // Support as a GET parameter as well, not just as a cookie, to support authentication
-                    // through SSRS which can't be made to use BasicAuth, pass cookies, or other HTTP headers.
-                    // Do not use request.getParameter() since that will consume the POST body, #32711.
-                    try
-                    {
-                        Map<String, String> params = PageFlowUtil.mapFromQueryString(request.getQueryString());
-                        apiKey = params.get(TRANSFORM_SESSION_ID);
-                    }
-                    catch (IllegalArgumentException e)
-                    {
-                        throw new UnsupportedEncodingException(e.getMessage());
-                    }
+                    throw new UnsupportedEncodingException(e.getMessage());
                 }
             }
         }
 
-        return apiKey;
+        return null != apiKey ? Pair.of(API_KEY, apiKey) : null;
     }
 
     public static final int SECONDS_PER_DAY = 60*60*24;
@@ -786,7 +817,7 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
 
-        if (user.hasRootAdminPermission())
+        if (user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
             project = null;
 
         impersonate(viewContext, new RoleImpersonationContextFactory(project, user, newImpersonationRoles, currentImpersonationRoles, returnURL));
@@ -863,7 +894,7 @@ public class SecurityManager
         return verificationUrl;
     }
 
-    // Test if non-LDAP email has been verified
+    // Test if user has been verified for database authentication
     public static boolean isVerified(ValidEmail email)
     {
         return (null == getVerification(email));
@@ -1020,7 +1051,7 @@ public class SecurityManager
         User newUser;
         DbScope scope = core.getSchema().getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             if (createLogin && !status.isLdapOrSsoEmail())
             {
@@ -1112,7 +1143,7 @@ public class SecurityManager
         if (null != email.getPersonal())
             displayName = email.getPersonal();
         else if (email.getEmailAddress().indexOf("@") > 0)
-            displayName = email.getEmailAddress().substring(0,email.getEmailAddress().indexOf("@"));
+            displayName = email.getEmailAddress().substring(0, email.getEmailAddress().indexOf("@"));
         else
             displayName = email.getEmailAddress();
 
@@ -1177,7 +1208,7 @@ public class SecurityManager
         }
     }
 
-    // Create record for non-LDAP login, saving email address and hashed password. Return verification token.
+    // Create record for database login, saving email address and hashed password. Return verification token.
     public static String createLogin(ValidEmail email) throws UserManagementException
     {
         // Create a placeholder password hash and a separate email verification key that will get emailed to the new user
@@ -1388,52 +1419,68 @@ public class SecurityManager
                 groupId == Group.groupDevelopers)
             throw new IllegalArgumentException("The global groups cannot be deleted.");
 
-        Group group = getGroup(groupId);
-
-        // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
-        GroupMembershipCache.handleGroupChange(group, group);
-
-        // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
-        // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
-        // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
-
-        SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?",groupId);
-        List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
-
-        Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
-
-        // make sure we didn't empty out any policies completely
-        // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
-        // NOTE: handy, so we'd have to rework the API/caching a bit
-
-        FieldKey resourceId = new FieldKey(null,"resourceid");
-        for (String id : resources)
+        try (Transaction transaction = core.getScope().beginTransaction())
         {
-            SimpleFilter f = new SimpleFilter(resourceId, id);
-            if (!new TableSelector(core.getTableInfoRoleAssignments(),f,null).exists())
+            Group group = getGroup(groupId);
+            if (null == group)
+                return;
+
+            // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
+            GroupMembershipCache.handleGroupChange(group, group);
+
+            // NOTE: Most code can not tell the difference between a non-existent SecurityPolicy and an empty SecurityPolicy
+            // NOTE: Both are treated as meaning "inherit", we don't want to accidentally create an empty security policy
+            // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
+
+            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?", groupId);
+            List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
+
+            Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
+
+            // make sure we didn't empty out any policies completely
+            // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
+            // NOTE: handy, so we'd have to rework the API/caching a bit
+
+            FieldKey resourceId = new FieldKey(null, "resourceid");
+            for (String id : resources)
             {
-                SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid,userid,role) VALUES (?,-3,'org.labkey.api.security.roles.NoPermissionsRole')",id);
-                new SqlExecutor(core.getSchema()).execute(insert);
+                SimpleFilter f = new SimpleFilter(resourceId, id);
+                if (!new TableSelector(core.getTableInfoRoleAssignments(), f, null).exists())
+                {
+                    SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid, userid, role) VALUES (?, -3, 'org.labkey.api.security.roles.NoPermissionsRole')", id);
+                    new SqlExecutor(core.getSchema()).execute(insert);
+                }
             }
+
+            Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
+            Table.delete(core.getTableInfoMembers(), groupFilter);
+
+            Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
+            Table.delete(core.getTableInfoPrincipals(), principalsFilter);
+            Container c = ContainerManager.getForId(group.getContainer());
+
+            // Clear caches immediately (before the last root admin check) and again after commit/rollback
+            transaction.addCommitTask(() -> {
+                GroupCache.uncache(groupId);
+                ProjectAndSiteGroupsCache.uncache(c);
+                // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
+                SecurityPolicyManager.notifyPolicyChanges(resources);
+            }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+            if (!group.isProjectGroup())
+                ensureAtLeastOneRootAdminExists();
+
+            transaction.commit();
         }
-
-        Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
-        Table.delete(core.getTableInfoMembers(), groupFilter);
-
-        Filter principalsFilter = new SimpleFilter(FieldKey.fromParts("UserId"), groupId);
-        Table.delete(core.getTableInfoPrincipals(), principalsFilter);
-
-        GroupCache.uncache(groupId);
-        Container c = ContainerManager.getForId(group.getContainer());
-        ProjectAndSiteGroupsCache.uncache(c);
-        // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
-        SecurityPolicyManager.notifyPolicyChanges(resources);
     }
 
     public static void deleteGroups(Container c, @Nullable PrincipalType type)
     {
         if (!(null == type || type == PrincipalType.GROUP || type == PrincipalType.MODULE))
             throw new IllegalArgumentException("Illegal group type: " + type);
+
+        if (c.isRoot())
+            throw new IllegalArgumentException("Should not call deleteGroups() on the root");
 
         String typeString = (null == type ? "%" : String.valueOf(type.getTypeChar()));
 
@@ -1453,15 +1500,14 @@ public class SecurityManager
     }
 
 
-    public static void deleteMembers(Group group, List<UserPrincipal> membersToDelete)
+    public static void deleteMembers(Group group, Collection<UserPrincipal> membersToDelete)
     {
         int groupId = group.getUserId();
 
         if (membersToDelete != null && !membersToDelete.isEmpty())
         {
             SQLFragment sql = new SQLFragment(
-            "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId = ? AND UserId ");
+            "DELETE FROM " + core.getTableInfoMembers() + "\nWHERE GroupId = ? AND UserId ");
             sql.add(groupId);
             List<Integer> userIds = new ArrayList<>(membersToDelete.size());
             for (UserPrincipal userPrincipal : membersToDelete)
@@ -1470,19 +1516,50 @@ public class SecurityManager
             }
             core.getSqlDialect().appendInClauseSql(sql, userIds);
 
-            new SqlExecutor(core.getSchema()).execute(sql);
+            try (Transaction transaction = core.getScope().beginTransaction())
+            {
+                new SqlExecutor(core.getSchema()).execute(sql);
 
-            for (UserPrincipal member : membersToDelete)
-                fireDeletePrincipalFromGroup(groupId, member);
+                // Clear caches immediately (before the last root admin check) and again after commit/rollback
+                transaction.addCommitTask( () -> {
+                    for (UserPrincipal member : membersToDelete)
+                        GroupMembershipCache.handleGroupChange(group, member);
+                }, CommitTaskOption.IMMEDIATE, CommitTaskOption.POSTCOMMIT, CommitTaskOption.POSTROLLBACK);
+
+                if (!group.isProjectGroup())
+                    ensureAtLeastOneRootAdminExists();
+
+                transaction.commit();
+            }
         }
     }
 
     public static void deleteMember(Group group, UserPrincipal principal)
     {
-        int groupId = group.getUserId();
-        new SqlExecutor(core.getSchema()).execute("DELETE FROM " + core.getTableInfoMembers() + "\n" +
-            "WHERE GroupId = ? AND UserId = ?", groupId, principal.getUserId());
-        fireDeletePrincipalFromGroup(groupId, principal);
+        deleteMembers(group, Set.of(principal));
+    }
+
+    /**
+     * Throws if the site has no Site Admins, no Application Admins, and no Impersonating Troubleshooters
+     */
+    public static void ensureAtLeastOneRootAdminExists()
+    {
+        List<User> siteAdmins = getUsersWithOneOf(ContainerManager.getRoot(), Set.of(ROOT_ADMIN_PERMISSION));
+        if (siteAdmins.isEmpty())
+        {
+            // Skip the check while bootstrapping since some policies are saved before any Site Admins exist
+            boolean bootstrapping = ModuleLoader.getInstance().isNewInstall() && !ModuleLoader.getInstance().isStartupComplete();
+            if (!bootstrapping)
+                throw new UnauthorizedException("You can't remove the last root administrator from the site");
+        }
+    }
+
+    // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION =  CanImpersonateSiteRolesPermission.class;
+
+    public static boolean isRootAdmin(User user)
+    {
+        return user.hasRootPermission(ROOT_ADMIN_PERMISSION);
     }
 
     // Returns a list of errors
@@ -1563,7 +1640,7 @@ public class SecurityManager
         {
             int id = recurse.removeFirst();
             groupSet.add(id);
-            int[] groups = GroupMembershipCache.getGroupMemberships(id);
+            int[] groups = GroupMembershipCache.getGroupMemberships(id).getPrincipals();
 
             for (int g : groups)
             {
@@ -1640,9 +1717,8 @@ public class SecurityManager
                 return PROJECT_TO_SITE_ERROR_MESSAGE;
         }
 
-        for (int id : group.getGroups())
-            if (newMember.getUserId() == id)
-                return CIRCULAR_GROUP_ERROR_MESSAGE;
+        if (group.getGroups().contains(newMember.getUserId()))
+            return CIRCULAR_GROUP_ERROR_MESSAGE;
 
         return null;
     }
@@ -1719,7 +1795,7 @@ public class SecurityManager
         Container proj = c.getProject();
         if (null == proj)
             proj = c;
-        int[] groupIds = u.getGroups();
+        int[] groupIds = u.getGroups().getPrincipals();
         List<Group> groupList = new ArrayList<>();
 
         for (int groupId : groupIds)
@@ -1746,7 +1822,7 @@ public class SecurityManager
         if (null == proj || u == null)
             return HtmlString.EMPTY_STRING;
 
-        int[] groupIds = u.getGroups();
+        int[] groupIds = u.getGroups().getPrincipals();
 
         StringBuilder groupList = new StringBuilder();
         String sep = "";
@@ -1778,8 +1854,8 @@ public class SecurityManager
     public static @NotNull <P extends UserPrincipal> Set<P> getGroupMembers(Group group, MemberType<P> memberType)
     {
         Set<P> principals = new LinkedHashSet<>();
-        int[] ids = GroupMembershipCache.getGroupMembers(group);
-        addMembers(principals, ids, memberType);
+        PrincipalArray members = GroupMembershipCache.getGroupMembers(group);
+        addMembers(principals, members, memberType);
 
         return principals;
     }
@@ -1821,10 +1897,10 @@ public class SecurityManager
                 }
                 else
                 {
-                    int[] ids = GroupMembershipCache.getGroupMembers(next);
+                    PrincipalArray pa = GroupMembershipCache.getGroupMembers(next);
                     // Consider: optimize with a single loop
-                    addMembers(members, ids, memberType);
-                    addMembers(pendingGroups, ids, MemberType.GROUPS);
+                    addMembers(members, pa, memberType);
+                    addMembers(pendingGroups, pa, MemberType.GROUPS);
                 }
             }
         }
@@ -1842,16 +1918,21 @@ public class SecurityManager
         }
     }
 
+    private static <P extends UserPrincipal> void addMembers(Collection<P> principals, PrincipalArray members, MemberType<P> memberType)
+    {
+        addMembers(principals, members.getPrincipals(), memberType);
+    }
+
     // get the list of group members that do not need to be direct members because they are a member of a member group (i.e. groups-in-groups)
     public static Map<UserPrincipal, List<UserPrincipal>> getRedundantGroupMembers(Group group)
     {
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = new HashMap<>();
         Set<UserPrincipal> origMembers = getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         LinkedList<UserPrincipal> visited = new LinkedList<>();
-        for (UserPrincipal memberGroup : getGroupMembers(group, MemberType.GROUPS))
+        for (Group memberGroup : getGroupMembers(group, MemberType.GROUPS))
         {
             visited.addLast(memberGroup);
-            checkForRedundantMembers((Group)memberGroup, origMembers, redundantMembers, visited);
+            checkForRedundantMembers(memberGroup, origMembers, redundantMembers, visited);
             visited.removeLast();
         }
         return redundantMembers;
@@ -1921,13 +2002,13 @@ public class SecurityManager
             }
         }
 
-        for (UserPrincipal member : SecurityManager.getGroupMembers(group, MemberType.GROUPS))
+        for (Group member : SecurityManager.getGroupMembers(group, MemberType.GROUPS))
         {
             if (visited.contains(member) || member.equals(principal))
                 continue;
 
             visited.addLast(member);
-            checkForMembership(principal, (Group)member, visited, memberships);
+            checkForMembership(principal, member, visited, memberships);
             visited.removeLast();
         }
     }
@@ -1950,14 +2031,14 @@ public class SecurityManager
         for (List<UserPrincipal> path : paths)
         {
             // add an extra line if there are > 1 paths displayed
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append("<BR/>");
 
             StringBuilder spacer = new StringBuilder();
             for (int i = path.size()-1; i > 0 ; i--)
             {
                 String beginTxt = (i == path.size()-1 ? PageFlowUtil.filter(userDisplay) : "Which");
-                sb.append(spacer.toString()).append(beginTxt).append(" is a member of ").append("<strong>").append(PageFlowUtil.filter(path.get(i-1).getName())).append("</strong>");
+                sb.append(spacer).append(beginTxt).append(" is a member of ").append("<strong>").append(PageFlowUtil.filter(path.get(i-1).getName())).append("</strong>");
                 sb.append("<BR/>");
                 spacer.append("&nbsp;&nbsp;&nbsp;");
             }
@@ -2037,7 +2118,7 @@ public class SecurityManager
 
         //don't filter if all site users is playing a role
         Group allSiteUsers = SecurityManager.getGroup(Group.groupUsers);
-        if (policy.getAssignedRoles(allSiteUsers).size() != 0)
+        if (!policy.getAssignedRoles(allSiteUsers).isEmpty())
         {
             // Just select all users
             SQLFragment sql = new SQLFragment("SELECT u.UserId FROM ");
@@ -2089,37 +2170,35 @@ public class SecurityManager
         return userIds;
     }
 
-    public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
+    /**
+     * @return an immutable list of Users who have been assigned all the requested permissions in the given container
+     */
+    public static List<User> getUsersWithPermissions(Container c, boolean includeInactive, Set<Class<? extends Permission>> perms)
     {
         // No cache right now, but performance seems fine. After the user list and policy are cached, no other queries occur.
-        Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
-
-        for (User user : allUsers)
-            if (SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
-                users.add(user);
-
-        return users;
+        return UserManager.getUsers(includeInactive).stream()
+            .filter(user -> SecurityManager.hasAllPermissions(null, policy, user, perms, Set.of()))
+            .toList();
     }
 
+    /**
+     * @return an immutable list of active Users who have been assigned all the requested permissions in the given container
+     */
+    public static List<User> getUsersWithPermissions(Container c, Set<Class<? extends Permission>> perms)
+    {
+        return getUsersWithPermissions(c, false, perms);
+    }
+
+    /**
+     * @return an immutable list of Users who have been assigned any of the requested permissions in the given container
+     */
     public static List<User> getUsersWithOneOf(Container c, Set<Class<? extends Permission>> perms)
     {
-        Collection<User> allUsers = UserManager.getActiveUsers();
-        List<User> users = new ArrayList<>(allUsers.size());
         SecurityPolicy policy = c.getPolicy();
-
-        for (User user : allUsers)
-            if (SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
-                users.add(user);
-
-        return users;
-    }
-
-    /** Returns both users and groups, but direct members only (not recursive) */
-    public static List<Pair<Integer, String>> getGroupMemberNamesAndIds(String path)
-    {
-        return getGroupMemberNamesAndIds(path, false);
+        return UserManager.getActiveUsers().stream()
+            .filter(user -> SecurityManager.hasAnyPermissions(null, policy, user, perms, Set.of()))
+            .toList();
     }
 
     /** Returns both users and groups, but direct members only (not recursive) */
@@ -2309,7 +2388,7 @@ public class SecurityManager
 
     public static List<ValidEmail> normalizeEmails(List<String> rawEmails, List<String> invalidEmails)
     {
-        if (rawEmails == null || rawEmails.size() == 0)
+        if (rawEmails == null || rawEmails.isEmpty())
             return Collections.emptyList();
 
         List<ValidEmail> emails = new ArrayList<>(rawEmails.size());
@@ -2335,9 +2414,9 @@ public class SecurityManager
     {
         SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends RegistrationEmailTemplate> templateClass = isAdminCopy ? RegistrationAdminEmailTemplate.class : RegistrationEmailTemplate.class;
-        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
+        SecurityEmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
         sm.setMessagePrefix(mailPrefix);
-        sm.setEmailTemplate((SecurityEmailTemplate)et);
+        sm.setEmailTemplate(et);
         sm.setType("User Registration Email");
 
         return sm;
@@ -2367,8 +2446,8 @@ public class SecurityManager
     {
         SecurityMessage sm = new SecurityMessage(isAdminCopy);
         Class<? extends PasswordResetEmailTemplate> templateClass = isAdminCopy ? PasswordResetAdminEmailTemplate.class : PasswordResetEmailTemplate.class;
-        EmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
-        sm.setEmailTemplate((SecurityEmailTemplate)et);
+        SecurityEmailTemplate et = EmailTemplateService.get().getEmailTemplate(templateClass);
+        sm.setEmailTemplate(et);
         sm.setType("Reset Password Email");
         return sm;
     }
@@ -2471,6 +2550,7 @@ public class SecurityManager
         return message.getHtmlString();
     }
 
+    @SuppressWarnings("unused") // Called from mGAP
     public static void sendRegistrationEmail(ViewContext context, ValidEmail email, String mailPrefix, NewUserStatus newUserStatus, @Nullable List<Pair<String, String>> extraParameters) throws Exception
     {
         sendRegistrationEmail(context, email, mailPrefix, newUserStatus, extraParameters, null, true);
@@ -2541,7 +2621,7 @@ public class SecurityManager
     }
 
 
-    public static void createNewProjectGroups(Container project)
+    public static void createNewProjectGroups(Container project, User user)
     {
         /*
         this check doesn't work well when moving container
@@ -2558,10 +2638,10 @@ public class SecurityManager
         MutableSecurityPolicy policy = new MutableSecurityPolicy(project);
         policy.addRoleAssignment(getGroup(Group.groupGuests), noPermsRole);
         
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, user);
     }
 
-    public static void setAdminOnlyPermissions(Container c)
+    public static void setAdminOnlyPermissions(Container c, User user)
     {
         MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
 
@@ -2587,7 +2667,7 @@ public class SecurityManager
         if (policy.isEmpty())
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
 
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, user);
     }
 
     public static void setInheritPermissions(Container c)
@@ -2625,7 +2705,7 @@ public class SecurityManager
     }
 
 
-    public static void changeProject(Container c, Container oldProject, Container newProject)
+    public static void changeProject(Container c, Container oldProject, Container newProject, User user)
     {
         assert core.getSchema().getScope().isTransactionActive();
 
@@ -2646,7 +2726,7 @@ public class SecurityManager
         /* when promoting a folder to a project, create default project groups */
         if (newProject == c)
         {
-            createNewProjectGroups(c);
+            createNewProjectGroups(c, user);
         }
     }
 
@@ -2985,7 +3065,7 @@ public class SecurityManager
                     }
                 }
                 String[] roles = prop.getValue().split(",");
-                MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer);
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(SecurityPolicyManager.getPolicy(rootContainer));
                 for (String roleName : roles)
                 {
                     roleName = StringUtils.trimToNull(roleName);
@@ -3001,7 +3081,7 @@ public class SecurityManager
                         policy.addRoleAssignment(group, role);
                     }
                 }
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
             });
         }
     }
@@ -3054,7 +3134,7 @@ public class SecurityManager
                         policy.addRoleAssignment(user, role);
                     }
                 }
-                SecurityPolicyManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
             });
         }
     }
@@ -3164,16 +3244,21 @@ public class SecurityManager
         if (null == principal || (null != c && (principal instanceof User && c.isForbiddenProject((User) principal))))
             return Set.of();
 
-        var granted = policy.getOwnPermissions(principal);
-        principal.getContextualRoles(policy).forEach(r -> { if (r != null) granted.addAll(r.getPermissions()); });
-        if (null != contextualRoles)
-            contextualRoles.forEach(r -> granted.addAll(r.getPermissions()));
-        if (principal instanceof User)
-            return ((User)principal).getImpersonationContext().filterPermissions(granted);
-        return granted;
+        Stream<Role> roles = principal.getAssignedRoles(policy).stream()
+            .filter(Objects::nonNull);
+
+        if (null != contextualRoles && !contextualRoles.isEmpty())
+            roles = Stream.concat(roles, contextualRoles.stream());
+
+        Stream<Class<? extends Permission>> permissions = roles.flatMap(role -> role.getPermissions().stream());
+
+        if (principal instanceof User user)
+            permissions = user.getImpersonationContext().filterPermissions(permissions);
+
+        return permissions.collect(Collectors.toSet());
     }
 
-    public static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
+    private static boolean hasPermissions(@Nullable String logMsg, SecurityPolicy policy, UserPrincipal principal, Set<Class<? extends Permission>> permissions, Set<Role> contextualRoles, HasPermissionOption opt)
     {
         try
         {
@@ -3182,7 +3267,7 @@ public class SecurityManager
 
             var granted = getPermissions(policy, principal, contextualRoles);
             boolean ret = opt.accept(granted, permissions);
-            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions.toString(), principal, policy, ret);
+            SecurityLogger.log("SecurityPolicy.hasPermissions " + permissions, principal, policy, ret);
 
             return ret;
         }
@@ -3225,7 +3310,7 @@ public class SecurityManager
         Set<Role> roles = policy.getRoles(principal.getGroups());
         roles.addAll(policy.getAssignedRoles(principal));
         if (includeContextualRoles)
-            roles.addAll(principal.getContextualRoles(policy));;
+            roles.addAll(principal.getAssignedRoles(policy));
         return roles;
     }
 
@@ -3249,9 +3334,7 @@ public class SecurityManager
         };
 
         abstract boolean accept(Set<Class<? extends Permission>> granted, Set<Class<? extends Permission>> required);
-    };
-
-
+    }
 
 
     public static class TestCase extends Assert
@@ -3305,7 +3388,6 @@ public class SecurityManager
 
         private void attemptRenameGroupExpectErrors(String newName, String expectedErrorMessage)
         {
-
             try
             {
                 renameGroup(groupA, newName, null);
@@ -3324,7 +3406,6 @@ public class SecurityManager
                             "' to '" + groupA.getName() + "' because that name is already used by another group!"},
                     {groupB.getName(), "Cannot rename group '" + groupA.getName() +
                             "' to '" + groupB.getName() + "' because that name is already used by another group!"}
-
             };
         }
 
@@ -3448,13 +3529,13 @@ public class SecurityManager
             String password;
 
             // Check and loop until password is valid for this user. These randomly generated passwords will often
-            // (about 1% of the time) contain a three-character sequence from the email address, which the strong
+            // (about 1% of the time) contain a three-character sequence from the email address, which the "Good"
             // rules disallow.
             do
             {
                 password = createTempPassword() + "Az9!";
             }
-            while (!PasswordRule.Strong.isValidForLogin(password, user, null));
+            while (!PasswordRule.Good.isValidForLogin(password, user, null));
 
             return password;
         }
@@ -3469,15 +3550,15 @@ public class SecurityManager
             UserPrincipal user = new UserPrincipal(testuser.getName(), testuser.getUserId(), testuser.getPrincipalType())
             {
                 @Override
-                public int[] getGroups()
+                public PrincipalArray getGroups()
                 {
                     return testuser.getGroups();
                 }
 
                 @Override
-                public Set<Role> getContextualRoles(SecurityPolicy policy)
+                public Set<Role> getAssignedRoles(SecurityPolicy policy)
                 {
-                    return Set.of();
+                    return policy.getRoles(getGroups());
                 }
 
                 @Override
@@ -3599,7 +3680,7 @@ public class SecurityManager
 
             String defaultDomain = ValidEmail.getDefaultDomain();
             // If default domain is defined this should succeed; if it's not defined, this should fail.
-            testEmail("foo", defaultDomain.length() > 0);
+            testEmail("foo", !defaultDomain.isEmpty());
 
             testEmail("~()@bar.com", false);
             testEmail("this@that.com@con", false);
@@ -3630,9 +3711,9 @@ public class SecurityManager
         @Test
         public void testDisplayName() throws Exception
         {
-            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"),1));
-            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"),1));
-            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"),1));
+            assertEquals("user testdisplayname", displayNameFromEmail(new ValidEmail("user_testDisplayName@labkey.org"), 1));
+            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"), 1));
+            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"), 1));
         }
 
         /**
@@ -3758,10 +3839,10 @@ public class SecurityManager
         public void testGetUsersWithPermissions() throws Exception
         {
             Container parent = JunitUtil.getTestContainer();
-            Container test = null;
-            Pair<ValidEmail,User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
-            Pair<ValidEmail,User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
-            Pair<ValidEmail,User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
+            Container test;
+            Pair<ValidEmail, User> userAB  = new Pair<>(new ValidEmail("AB@localhost.test"), null);
+            Pair<ValidEmail, User> userAC  = new Pair<>(new ValidEmail("AC@localhost.test"), null);
+            Pair<ValidEmail, User> userABC = new Pair<>(new ValidEmail("ABC@localhost.test"), null);
 
             try
             {
@@ -3796,25 +3877,25 @@ public class SecurityManager
                 policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAB()));
                 policy.addAssignment(new RoleAssignment(id,userABC.getValue(),new RoleAC()));
 
-                var usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
+                var usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionA.class)));
                 assertEquals(3, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userAC.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                var usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
+                var usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionA.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
+                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class)));
                 assertEquals(2, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userAB.getValue()));
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
+                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class)));
                 assertEquals(usersWithAll, usersWithAny);
 
-                usersWithAll = new HashSet(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAll = new HashSet<>(SecurityManager.getUsersWithPermissions(test, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(1, usersWithAll.size());
                 assertTrue(usersWithAll.contains(userABC.getValue()));
-                usersWithAny = new HashSet(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
+                usersWithAny = new HashSet<>(SecurityManager.getUsersWithOneOf(test, Set.of(PermissionB.class, PermissionC.class)));
                 assertEquals(3, usersWithAny.size());
                 assertTrue(usersWithAny.contains(userAB.getValue()));
                 assertTrue(usersWithAny.contains(userAC.getValue()));

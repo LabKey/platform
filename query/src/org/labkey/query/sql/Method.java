@@ -45,6 +45,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.Queryable;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
@@ -60,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.labkey.query.sql.Method.TimestampDiffInterval.SQL_TSI_FRAC_SECOND;
 import static org.labkey.query.sql.antlr.SqlBaseParser.IS;
@@ -1263,12 +1265,13 @@ public abstract class Method
                 //Current UserID gets put in QueryService.getEnvironment() by AuthFilter
                 // NOTE: ideally this should be calculated at RUN time not compile time. (see UserIdInfo)
                 // However, we are generating an IN () clause here, and it's easier to do this way
-                User user =  (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
                 if (null == user)
                     throw new IllegalStateException("Query environment has not been set");
-                Object[] groupIds = ArrayUtils.toObject(user.getGroups());
                 SQLFragment ret = new SQLFragment();
-                ret.append("(").append(groupArg).append(") IN (").append(StringUtils.join(groupIds, ",")).append(")");
+                ret.append("(").append(groupArg).append(") IN (").append(
+                    user.getGroups().stream().map(i -> Integer.toString(i)).collect(Collectors.joining(","))
+                ).append(")");
                 return ret;
             }
 

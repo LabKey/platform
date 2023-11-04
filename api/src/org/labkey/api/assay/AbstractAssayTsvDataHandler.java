@@ -32,6 +32,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
@@ -159,6 +160,9 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         try
         {
             DataLoaderSettings settings = new DataLoaderSettings();
+            // pass through any plate metadata
+            if (context.getRawPlateMetadata() != null)
+                setRawPlateMetadata(context.getRawPlateMetadata());
             importRows(data, context.getUser(), run, context.getProtocol(), context.getProvider(), dataMap, settings, context.shouldAutoFillDefaultResultColumns());
         }
         catch (ValidationException e)
@@ -172,7 +176,26 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
+        boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
+        File plateMetadataFile = null;
+        Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata = null;
 
+        if (plateMetadataEnabled)
+        {
+            if (context instanceof AssayUploadXarContext assayContext)
+            {
+                // the plate metadata will either be uploaded as a file or in a raw, already parsed form depending on
+                // how the run is imported.
+                rawPlateMetadata = assayContext.getContext().getRawPlateMetadata();
+                plateMetadataFile = (File)assayContext.getContext().getUploadedData().get(AssayDataCollector.PLATE_METADATA_FILE);
+                if (plateMetadataFile != null)
+                {
+                    // don't serialize the plate metadata file to the transform script working dir
+                    if (plateMetadataFile.getPath().equals(dataFile.getPath()))
+                        return Collections.emptyMap();
+                }
+            }
+        }
         Domain dataDomain = provider.getResultsDomain(protocol);
 
         try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings, true))
@@ -185,6 +208,30 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
             if (!dataRows.isEmpty())
                 adjustFirstRowOrder(dataRows, loader);
+
+            // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
+            // transform scripts to perform metadata related calculations
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                if (plateMetadataEnabled)
+                {
+                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = null;
+                    if (plateMetadataFile != null || rawPlateMetadata != null)
+                    {
+                        plateMetadata = plateMetadataFile != null
+                                ? svc.parsePlateMetadata(plateMetadataFile)
+                                : rawPlateMetadata;
+                    }
+                    Domain runDomain = provider.getRunDomain(protocol);
+                    DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+                    if (property != null)
+                    {
+                        Object lsid = ((AssayUploadXarContext)context).getContext().getRunProperties().get(property);
+                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), dataRows, plateMetadata, protocol);
+                    }
+                }
+            }
 
             datas.put(getDataType(), dataRows);
             return datas;
@@ -612,7 +659,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
         }
         else
-            throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
+        {
+            // plate metadata is optional if the experimental plate flag is enabled
+            if (!AssayPlateMetadataService.isExperimentalAppPlateEnabled())
+                throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
+        }
     }
 
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
@@ -623,17 +674,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     /** Insert the data into the database.  Transaction is active. */
     protected List<Map<String, Object>> insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider,Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo, boolean autoFillDefaultColumns)
-            throws SQLException, ValidationException
+            throws SQLException, ValidationException, ExperimentException
     {
+        OntologyManager.UpdateableTableImportHelper importHelper = new SimpleAssayDataImportHelper(data);
+        if (provider.isPlateMetadataEnabled(protocol))
+        {
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                importHelper = svc.getImportHelper(container, user, run, data, protocol, provider);
+            }
+        }
+
         if (tableInfo instanceof UpdateableTableInfo)
         {
-            return OntologyManager.insertTabDelimited(tableInfo, container, user, new SimpleAssayDataImportHelper(data), fileData, autoFillDefaultColumns, LOG);
+            return OntologyManager.insertTabDelimited(tableInfo, container, user, importHelper, fileData, autoFillDefaultColumns, LOG);
         }
         else
         {
             Integer id = OntologyManager.ensureObject(container, data.getLSID());
             List<String> lsids = OntologyManager.insertTabDelimited(container, user, id,
-                    new SimpleAssayDataImportHelper(data), dataDomain, fileData, false);
+                    importHelper, dataDomain, fileData, false);
             // TODO: Add LSID values into return value rows
             return fileData;
         }

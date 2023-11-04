@@ -32,6 +32,7 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
+import org.labkey.api.mbean.LabKeyManagement;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -39,6 +40,7 @@ import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.NoSuchJobException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineMXBean;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
@@ -92,6 +94,7 @@ import org.labkey.pipeline.validators.PipelineSetupValidator;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
 
+import javax.management.StandardMBean;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.util.Collection;
@@ -122,6 +125,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         PipelineServiceImpl ps = new PipelineServiceImpl();
         PipelineService.setInstance(ps);
+
+        LabKeyManagement.register(new StandardMBean(ps, PipelineMXBean.class, true),"Pipeline");
 
         // Set up default PipelineJobServiceImpl, which may be overridden by Spring config.
         PipelineJobServiceImpl pjs = PipelineJobServiceImpl.initDefaults(PipelineJobService.LocationType.WebServer);
@@ -249,6 +254,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                     m.put("Jobs", rs.getLong("Jobs"));
                 });
             result.put("triggerCounts", triggerCounts);
+            result.put("jmsType", PipelineService.get().getJmsType().toString());
 
             return result;
         });

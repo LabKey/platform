@@ -69,9 +69,9 @@
                     if (!c.isRoot())
                     {
                         // Only show the link to an enclosing container if there is one.
+                        addHandler("inherit", "click", "return toggleInherited(this);");
                 %>
-                <input type="checkbox" id="inherit" name="inheritMvIndicators"<%=checked(inherited)%>
-                       onclick="toggleInherited(this);">
+                <input type="checkbox" id="inherit" name="inheritMvIndicators"<%=checked(inherited)%>>
                 Inherit settings (from
                 <%
                         if (hasLinkPermission)
@@ -130,7 +130,8 @@
                                     label = "";
                         %>
                         <tr id="rowId<%=++rowId%>">
-                            <td><img style="margin-right: 8px; cursor: pointer" src="<%=getWebappURL("_images/partdelete.gif")%>" alt="delete" onclick="removeRow(<%=rowId%>);"></td>
+                            <% addHandler("removeRow" + rowId, "click", "return removeRow(" + rowId + ");"); %>
+                            <td><img id="removeRow<%=rowId%>" style="margin-right: 8px; cursor: pointer" src="<%=getWebappURL("_images/partdelete.gif")%>" alt="delete"></td>
                             <td><input name="mvIndicators" type="TEXT" size=3 id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>"></td>
                             <td><input name="mvLabels" type="TEXT" size=60 value="<%=h(label)%>"></td>
                         </tr>
@@ -139,7 +140,7 @@
                         %>
                         <tr>
                             <td>&nbsp;</td>
-                            <td><%= button("Add").href("#").onClick("addRowToTable();") %>
+                            <td><%= button("Add").onClick("addRowToTable();") %>
                             </td>
                             <td>&nbsp;</td>
                         </tr>
@@ -170,7 +171,7 @@
         var cellLeft = row.insertCell(0);
         var imgNode = document.createElement('img');
         imgNode.src = '<%=getWebappURL("_images/partdelete.gif")%>';
-        imgNode.setAttribute("onclick", 'removeRow(' + maxRowId + ');');
+        imgNode["onclick"] = removeRow.bind(null, maxRowId);
         imgNode.setAttribute("alt", "delete");
         imgNode.setAttribute("style", "margin-right: 8px; cursor: pointer");
         cellLeft.appendChild(imgNode);

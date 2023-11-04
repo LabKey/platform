@@ -84,7 +84,7 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
             private void update()
             {
                 Portal.clearWebPartFactories(module);
-                Portal.clearMaps();
+                Portal.clearMap();
             }
         };
     }

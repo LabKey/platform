@@ -36,6 +36,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
@@ -222,7 +223,7 @@ public class WorkbookContainerType implements ContainerType
         {
             doCleanup(projectName);
 
-            _project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName);
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), projectName, TestContext.get().getUser());
 
             //create two workbooks, auto-named by system
             _workbooks.add(ContainerManager.createContainer(_project, null, "Title1", null, WorkbookContainerType.NAME, _context.getUser()));
@@ -425,8 +426,8 @@ public class WorkbookContainerType implements ContainerType
             String subfolderName = "sub1";
             String subfolderName2 = "sub2";
 
-            Container parent = ContainerManager.createContainer(_project, subfolderName);
-            Container sub = ContainerManager.createContainer(parent, subfolderName2);
+            Container parent = ContainerManager.createContainer(_project, subfolderName, TestContext.get().getUser());
+            Container sub = ContainerManager.createContainer(parent, subfolderName2, TestContext.get().getUser());
 
             Container wbOverride = ContainerManager.createContainer(parent, "WorkbookOverride", "WorkbookOverride", null, WorkbookContainerType.NAME, TestContext.get().getUser());
             Container wbDefaultRoot = ContainerManager.createContainer(parent, "WorkbookNoOverride", "WorkbookNoOverride", null, WorkbookContainerType.NAME, TestContext.get().getUser());
@@ -452,7 +453,7 @@ public class WorkbookContainerType implements ContainerType
             File test = new File(FileContentService.get().getFileRoot(wbOverride), "/@files/test.txt");
             if (!test.getParentFile().exists())
             {
-                test.getParentFile().mkdirs();
+                FileUtil.mkdirs(test.getParentFile());
             }
 
             Files.touch(test);

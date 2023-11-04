@@ -145,8 +145,9 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             {
                 SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoData(), "d")
                     .append(" WHERE d.classId = ").append(ExprColumn.STR_TABLE_ALIAS + ".rowid")
-                    .append(" AND d.container = ?)")
-                    .add(_userSchema.getContainer().getEntityId());
+                    .append(" AND ")
+                    .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("d.container")))
+                    .append(")");
                 ExprColumn sampleCountColumnInfo = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
                 sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
                 return sampleCountColumnInfo;

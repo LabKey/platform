@@ -16,7 +16,9 @@
 
 package org.labkey.api.audit;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CopyOnWriteCaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
@@ -27,6 +29,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
@@ -34,18 +37,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * User: Karl Lum
- * Date: Sep 19, 2007
- */
 public interface AuditLogService
 {
+    Logger LOG = LogHelper.getLogger(AuditLogService.class, "Warnings related to audit failures");
     AuditLogService _defaultProvider = new DefaultAuditProvider();
-    Map<String, AuditTypeProvider> _auditTypeProviders = new ConcurrentHashMap<>();
-    List<AuditFailureHandlerProvider> auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
+    Map<String, AuditTypeProvider> _auditTypeProviders = new CopyOnWriteCaseInsensitiveHashMap<>();
+    List<AuditFailureHandlerProvider> _auditFailureHandlerProviders = new CopyOnWriteArrayList<>();
 
     static AuditLogService get()
     {
@@ -68,9 +67,9 @@ public interface AuditLogService
     {
         assert ModuleLoader.getInstance().isStartupInProgress() : "Audit types must be registered in Module.doStartup()";
 
-        if (!_auditTypeProviders.containsKey(provider.getEventName().toLowerCase()))
+        if (!_auditTypeProviders.containsKey(provider.getEventName()))
         {
-            _auditTypeProviders.put(provider.getEventName().toLowerCase(), provider);
+            _auditTypeProviders.put(provider.getEventName(), provider);
         }
         else
             throw new IllegalArgumentException("AuditTypeProvider '" + provider.getEventName() + "' is already registered");
@@ -88,7 +87,7 @@ public interface AuditLogService
     {
         if (eventType == null)
             return null;
-        return _auditTypeProviders.get(eventType.toLowerCase());
+        return _auditTypeProviders.get(eventType);
     }
 
     /**
@@ -96,9 +95,11 @@ public interface AuditLogService
      */
     boolean isViewable();
 
-    <K extends AuditTypeEvent> K addEvent(User user, K event);
+    /** If user is null, default to the Guest user */
+    <K extends AuditTypeEvent> K addEvent(@Nullable User user, K event);
 
-    <K extends AuditTypeEvent> void addEvents(User user, List<K> events);
+    /** If user is null, default to the Guest user */
+    <K extends AuditTypeEvent> void addEvents(@Nullable User user, List<K> events);
 
     @Nullable
     <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
@@ -121,12 +122,12 @@ public interface AuditLogService
 
     static void addAuditFailureHandlerProvider(AuditFailureHandlerProvider provider)
     {
-        auditFailureHandlerProviders.add(provider);
+        _auditFailureHandlerProviders.add(provider);
     }
 
     static List<AuditFailureHandlerProvider> getAuditFailureHandlerProviders()
     {
-        return auditFailureHandlerProviders;
+        return _auditFailureHandlerProviders;
     }
 
     static void handleAuditFailure(User user, Throwable e)
@@ -142,7 +143,16 @@ public interface AuditLogService
                 for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
                     provider.handleAuditFailure(user, e);
 
-                t.commit();
+                // DatabaseCache replay attempts can throw on commit(). For example, AuditInsertionFailureTestCase
+                // intentionally trashes the connection and expects a specific exception.
+                try
+                {
+                    t.commit();
+                }
+                catch (Exception ex)
+                {
+                    LOG.warn("Exception while committing: " + ex.getMessage());
+                }
             }
         }
         else

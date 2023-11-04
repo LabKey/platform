@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -41,8 +42,6 @@ import static org.labkey.api.util.PageFlowUtil.jsString;
 /**
  * Does some lightweight data capture about database queries and other potentially expensive work performed in the
  * context of an HTTP request.
- *
- * User: kevink
  */
 public class MiniProfiler
 {
@@ -99,15 +98,15 @@ public class MiniProfiler
         if (!ModuleLoader.getInstance().isStartupComplete())
             return false;
 
-        // CONSIDER: Add CanSeeProfilingPermission ?
-        if (user == null || !user.isPlatformDeveloper())
-            return false;
+        // CONSIDER: Add CanSeeProfilingPermission?
+        if (user != null && (user.isPlatformDeveloper() || user.hasRootPermission(TroubleshooterPermission.class)))
+        {
+            Settings settings = getSettings(user);
+            if (settings != null)
+                return settings.isEnabled();
+        }
 
-        Settings settings = getSettings(user);
-        if (settings == null)
-            return false;
-
-        return settings.isEnabled();
+        return false;
     }
 
     /** Get per-user settings */
@@ -275,7 +274,7 @@ public class MiniProfiler
             if (fullStack.length > 0)
             {
                 // Automatically omit this method from the stack
-                int callerFramesToOmit = 1;
+                int callerFramesToOmit = 2;
                 StackTraceElement[] result = new StackTraceElement[fullStack.length - callerFramesToOmit];
                 System.arraycopy(fullStack, 1, result, 0, result.length);
                 return result;

@@ -44,11 +44,6 @@ import java.util.regex.Pattern;
 
 import static java.lang.Math.min;
 
-/**
- * User: adam
- * Date: Mar 7, 2010
- * Time: 6:20:24 PM
- */
 public class StringUtilsLabKey
 {
     /** Instead of relying on the platform default character encoding, use this Charset */
@@ -67,7 +62,7 @@ public class StringUtilsLabKey
     {
         if (!StringUtils.isEmpty(value))
         {
-            if (sb.length() > 0)
+            if (!sb.isEmpty())
                 sb.append(" ");
 
             sb.append(value);
@@ -295,10 +290,10 @@ public class StringUtilsLabKey
     {
         if (null == value)
             return 0;
-        else if (String.class.isInstance(value))
-            return Integer.valueOf((String) value);
-        else if (Number.class.isInstance(value))
-            return ((Number) value).intValue();
+        else if (value instanceof String v)
+            return Integer.valueOf(v);
+        else if (value instanceof Number v)
+            return v.intValue();
 
         throw new IllegalArgumentException("Unable to get int value for value parameter");
     }
@@ -424,6 +419,42 @@ public class StringUtilsLabKey
         }
 
         return original;
+    }
+
+    /**
+     * Spell out numbers nine and below; use numerals for numbers 10 and above. Per AP stylebook.
+     */
+    public static String spellOut(int i)
+    {
+        return switch (i)
+        {
+            case 0: yield "zero";
+            case 1: yield "one";
+            case 2: yield "two";
+            case 3: yield "three";
+            case 4: yield "four";
+            case 5: yield "five";
+            case 6: yield "six";
+            case 7: yield "seven";
+            case 8: yield "eight";
+            case 9: yield "nine";
+            default: yield String.valueOf(i);
+        };
+    }
+
+    /**
+     * Join phrases with commas, adding a conjunction (e.g., and, or) before the last element if two or more elements
+     * are present. And we're doing the Oxford comma, thanks very much.
+     */
+    public static String joinWithConjunction(List<String> list, String conjunction)
+    {
+        String combined = StringUtils.join(list, ", ");
+        if (list.size() > 1)
+        {
+            int lastCommaSpace = combined.lastIndexOf(", ");
+            combined = combined.substring(0, lastCommaSpace + (list.size() > 2 ? 1 : 0)) + " " + conjunction + combined.substring(lastCommaSpace + 1);
+        }
+        return combined;
     }
 
     public static class TestCase extends Assert
@@ -707,6 +738,42 @@ public class StringUtilsLabKey
 
             append(sb, new TestIdentifiable());
             assertEquals("first second TestIdentifiable", sb.toString());
+        }
+
+        @Test
+        public void testSpellOut()
+        {
+            assertEquals("zero", spellOut(0));
+            assertEquals("one", spellOut(1));
+            assertEquals("two", spellOut(2));
+            assertEquals("three", spellOut(3));
+            assertEquals("four", spellOut(4));
+            assertEquals("five", spellOut(5));
+            assertEquals("six", spellOut(6));
+            assertEquals("seven", spellOut(7));
+            assertEquals("eight", spellOut(8));
+            assertEquals("nine", spellOut(9));
+            assertEquals("10", spellOut(10));
+            assertEquals("11", spellOut(11));
+            assertEquals("25", spellOut(25));
+            assertEquals("37", spellOut(37));
+            assertEquals("123", spellOut(123));
+        }
+
+        @Test
+        public void testJoinWithConjunction()
+        {
+            testJoinWithConjunction("");
+            testJoinWithConjunction("this", "this");
+            testJoinWithConjunction("this and that", "this", "that");
+            testJoinWithConjunction("this, that, and something", "this", "that", "something");
+            testJoinWithConjunction("this, that, something, and something else", "this", "that", "something", "something else");
+        }
+
+        private void testJoinWithConjunction(String expected, String... elements)
+        {
+            List<String> strings = Arrays.asList(elements);
+            assertEquals(expected, joinWithConjunction(strings, "and"));
         }
     }
 }

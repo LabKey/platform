@@ -70,7 +70,7 @@ public class SharedStudyController extends BaseStudyController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class StudyFilterAction extends SimpleViewAction<Object>
+    public static class StudyFilterAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -143,7 +143,7 @@ public class SharedStudyController extends BaseStudyController
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     @MethodsAllowed({POST, DELETE})
-    public class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
+    public static class SharedStudyContainerFilterAction extends MutatingApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;
 
@@ -211,7 +211,7 @@ public class SharedStudyController extends BaseStudyController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetSharedStudyContainerFilterAction extends ReadOnlyApiAction<SharedStudyContainerFilterForm>
+    public static class GetSharedStudyContainerFilterAction extends ReadOnlyApiAction<SharedStudyContainerFilterForm>
     {
         private Study _study = null;
 

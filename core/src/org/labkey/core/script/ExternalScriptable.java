@@ -52,7 +52,7 @@ final class ExternalScriptable implements Scriptable
     /* Underlying ScriptContext that we use to store
      * named variables of this scope.
      */
-    private ScriptContext context;
+    private final ScriptContext context;
 
     /* JavaScript allows variables to be named as numbers (indexed
      * properties). This way arrays, objects (scopes) are treated uniformly.
@@ -63,7 +63,7 @@ final class ExternalScriptable implements Scriptable
      * to store such variables of this scope. This map is not exposed to
      * JSR 223 API. We can just script objects "as is" and need not convert.
      */
-    private Map indexedProps;
+    private final Map indexedProps;
 
     // my prototype
     private Scriptable prototype;
@@ -71,7 +71,7 @@ final class ExternalScriptable implements Scriptable
     private Scriptable parent;
 
     ExternalScriptable(ScriptContext context) {
-        this(context, new HashMap());
+        this(context, new HashMap<>());
     }
 
     ExternalScriptable(ScriptContext context, Map indexedProps) {
@@ -91,7 +91,7 @@ final class ExternalScriptable implements Scriptable
     }
 
     private boolean isEmpty(String name) {
-        return name.equals("");
+        return name.isEmpty();
     }
 
     /**

@@ -19,15 +19,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.roles.Role;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
  * A group may be scoped to either the entire server or a specific project. It is a collection of users and/or
  * nested groups.
- * User: arauch
- * Date: Jul 5, 2005
  */
 public class Group extends UserPrincipal
 {
@@ -119,7 +115,7 @@ public class Group extends UserPrincipal
     }
 
     @Override
-    public int[] getGroups()
+    public PrincipalArray getGroups()
     {
         return GroupManager.getAllGroupsForPrincipal(this);
     }
@@ -127,14 +123,13 @@ public class Group extends UserPrincipal
     @Override
     public boolean isInGroup(int group)
     {
-        int i = Arrays.binarySearch(getGroups(), group);
-        return i >= 0;
+        return getGroups().contains(group);
     }
 
     @Override
-    public Set<Role> getContextualRoles(SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
-        return new HashSet<>();
+        return policy.getRoles(getGroups());
     }
 
     @Override

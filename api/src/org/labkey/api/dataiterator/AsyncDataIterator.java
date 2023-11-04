@@ -50,7 +50,7 @@ public class AsyncDataIterator implements DataIterator
     }
 
     // DataIterator instances are not usually thread safe, so use a lock for pass through calls
-    Object _itLock;
+    final Object _itLock;
     DataIterator _it;
     int _columnCount;
     DataIteratorContext _context;

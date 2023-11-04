@@ -17,7 +17,6 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -48,7 +47,7 @@ class UserCache
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
 
-    private static final Cache<String, UserCollections> CACHE = new BlockingCache<>(new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections"), new UserCollectionsLoader());
+    private static final Cache<String, UserCollections> CACHE = DatabaseCache.get(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User collections", new UserCollectionsLoader());
 
     private UserCache()
     {

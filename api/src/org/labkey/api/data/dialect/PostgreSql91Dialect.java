@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
@@ -58,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -66,19 +66,15 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * User: arauch
- * Date: Dec 28, 2004
- * Time: 8:58:25 AM
- */
-
-// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep this class versioned as "91" to
+// Base dialect for PostgreSQL. PostgreSQL 9.1 is no longer supported, however, we keep the dialects versioned to
 // track changes we've implemented for each version over time.
 public abstract class PostgreSql91Dialect extends SqlDialect
 {
     public static final int TEMPTABLE_GENERATOR_MINSIZE = 1000;
+    public static final String PRODUCT_NAME = "PostgreSQL";
+    public static final String RECOMMENDED = PRODUCT_NAME + " 16.x is the recommended version.";
 
-    private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
+    private final Map<String, Integer> _domainScaleMap = new CopyOnWriteHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
     private final InClauseGenerator _tempTableInClauseGenerator = new TempTableInClauseGenerator();
 
@@ -481,7 +477,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull SQLFragment delimiterSQL, boolean includeNulls)
     {
         // Sort function might not exist in external datasource; skip that syntax if not
         boolean useSortFunction = sorted && _arraySortFunctionExists.get();
@@ -497,7 +493,16 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             result.append("DISTINCT ");
         }
+        if (includeNulls)
+        {
+            result.append("COALESCE(CAST(");
+        }
         result.append(sql);
+
+        if (includeNulls)
+        {
+            result.append(" AS VARCHAR), '')");
+        }
         result.append(")");
         if (useSortFunction)
         {
@@ -1740,7 +1745,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         Closer ret = super.configureToDisableJdbcCaching(connection, scope, sql);
 
         // Only fiddle with the Connection settings if we're fairly certain that it's a read-only statement (starting
-        // with SELECT) and we're not inside of a transaction, so we won't mess up any state the caller is relying on.
+        // with SELECT) and we're not inside a transaction, so we won't mess up any state the caller is relying on.
         // Also, now that connections are reused within a thread, setAutoCommit(false) may have already been called on
         // this connection; check so we don't call setAutoCommit(false) again (that will throw).
         if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && connection.getAutoCommit())
@@ -1888,9 +1893,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         if (null != _adminWarning)
             warnings.add(_adminWarning);
-        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a sample warning
-            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. PostgreSQL 15.x is the recommended version."));
-
+        else if (showAllWarnings) // PostgreSqlDialectFactory.getStandardWarningMessage() is not accessible from here, so hard-code a generic warning
+            warnings.add(HtmlString.of("LabKey Server has not been tested against this version. " + RECOMMENDED));
     }
 
     @Override

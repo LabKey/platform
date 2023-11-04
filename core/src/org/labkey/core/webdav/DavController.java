@@ -82,7 +82,9 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.webdav.CaseSensitiveDavPath;
 import org.labkey.api.webdav.DavException;
+import org.labkey.api.webdav.DavPath;
 import org.labkey.api.webdav.DirectRequest;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -552,11 +554,6 @@ public class DavController extends SpringActionController
             ResponseHelper.setPrivate(this.getResponse());
         }
 
-        void setContentDisposition(String value)
-        {
-            super.setHeader("Content-Disposition", value);
-        }
-
         @Override
         public void setContentType(String contentType)
         {
@@ -1000,7 +997,7 @@ public class DavController extends SpringActionController
             HttpServletResponse response = getViewContext().getResponse();
             response.reset();
             response.setContentType("application/zip");
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + zipName + ".zip\"");
+            ResponseHelper.setContentDisposition(response, ResponseHelper.ContentDispositionType.attachment, zipName + ".zip");
 
             try (ZipOutputStream out = new ZipOutputStream(response.getOutputStream()))
             {
@@ -1114,7 +1111,7 @@ public class DavController extends SpringActionController
                 sb.append("</dm:mount>\n");
 
                 getResponse().setContentType("application/davmount+xml");
-                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".davmount\"");
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".davmount");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
                 close(w, "response writer");
@@ -1142,7 +1139,7 @@ public class DavController extends SpringActionController
                         "</plist>\n");
 
                 getResponse().setContentType("application/x-cyberduck+xml");
-                getResponse().setContentDisposition("attachment; filename=\"" + resource.getName() + ".duck\"");
+                ResponseHelper.setContentDisposition(getResponse(), ResponseHelper.ContentDispositionType.attachment, resource.getName() + ".duck");
                 Writer w = getResponse().getWriter();
                 w.write(sb.toString());
                 close(w, "response writer");
@@ -5078,7 +5075,7 @@ public class DavController extends SpringActionController
 
         if (!StringUtils.isEmpty(contentDisposition))
         {
-            getResponse().setContentDisposition(contentDisposition);
+            ResponseHelper.setContentDisposition(getResponse(), contentDisposition);
         }
 
         // Find content type
@@ -5220,29 +5217,34 @@ public class DavController extends SpringActionController
         return WebdavStatus.SC_OK;
     }
 
-    private static final int BUFFER_SIZE = 8 * 1024 * 1024;  // 8MB
-    private static final int SMALL_BUFFER_SIZE = 1024 * 1024;  // 1MB
+    // Size at which we attempt to do memory-mapped I/O
+    private static final int MEMORY_MAPPED_SIZE_MINIMUM = 8 * 1024 * 1024;  // 8MB
+
+    // Size of the buffer for memory-mapped I/O. Want something pretty big as it's semi-expensive to initialize
+    private static final int MEMORY_MAPPED_BUFFER_SIZE = 1024 * 1024;  // 1MB
+    // Size of buffer for non-memory-mapped I/O
+    private static final int SMALL_BUFFER_SIZE = 64 * 1024;  // 64KB
 
     protected void copy(InputStream istream, OutputStream ostream) throws IOException
     {
         ReadableByteChannel inChannel = Channels.newChannel(istream);
         try (WritableByteChannel outChannel = Channels.newChannel(ostream))
         {
-            if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > BUFFER_SIZE)
+            if (inChannel instanceof FileChannel fileInChannel && fileInChannel.size() > MEMORY_MAPPED_SIZE_MINIMUM)
             {
                 // Issue 48174 - Use memory-mapped I/O for large files for best perf
                 long position = 0;
                 long totalSize = fileInChannel.size();
                 while (position < totalSize)
                 {
-                    ByteBuffer buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, position, Math.min(totalSize - position, BUFFER_SIZE));
+                    ByteBuffer buffer = fileInChannel.map(FileChannel.MapMode.READ_ONLY, position, Math.min(totalSize - position, MEMORY_MAPPED_BUFFER_SIZE));
                     outChannel.write(buffer);
                     position += buffer.position();
                 }
             }
             else
             {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+                ByteBuffer buffer = ByteBuffer.allocateDirect(SMALL_BUFFER_SIZE);
                 while (inChannel.read(buffer) != -1)
                 {
                     buffer.flip();
@@ -5598,9 +5600,8 @@ public class DavController extends SpringActionController
         return resolvePath(path, reload);
     }
 
-
     // per request cache
-    Map<Path, WebdavResolver.LookupResult> resourceCache = new HashMap<>();
+    Map<DavPath, WebdavResolver.LookupResult> resourceCache = new HashMap<>();
     WebdavResolver.LookupResult nullDavFileInfo = new WebdavResolver.LookupResult(null,null);
 
     @Nullable WebdavResource resolvePath(String path)
@@ -5622,12 +5623,27 @@ public class DavController extends SpringActionController
 
     @Nullable WebdavResolver.LookupResult resolvePathResult(Path path, boolean reload)
     {
-        WebdavResolver.LookupResult result = reload ? null : resourceCache.get(path);
+        WebdavResolver.LookupResult result = null;
+
+        if (!reload)
+        {
+            result = resourceCache.get(new CaseSensitiveDavPath(path)); // first try to find by strict case match
+            if (result == null)
+            {
+                result = resourceCache.get(new DavPath(path)); // then try os-based case match
+                if (result != null && result.resource != null && result.resource.toDavPath() instanceof CaseSensitiveDavPath)
+                    result = null; // reject cache if cache key class doesn't match
+            }
+
+        }
 
         if (result == null)
         {
             result = getResolver().lookupEx(path);
-            resourceCache.put(path, result == null || result.resource == null ? nullDavFileInfo : result);
+            if (result == null || result.resource == null)
+                resourceCache.put(new DavPath(path), nullDavFileInfo);
+            else
+                resourceCache.put(result.resource.toDavPath(), result);
         }
 
         if (null == result || nullDavFileInfo == result || null == result.resource)
@@ -6622,7 +6638,7 @@ public class DavController extends SpringActionController
             isFile = r.getFile().isFile();
             if (isFile)
             {
-                resourceCache.remove(r.getPath());
+                resourceCache.remove(r.toDavPath());
                 r = resolvePath(r.getPath());
                 isFile = r.isFile();
             }
@@ -6737,33 +6753,10 @@ public class DavController extends SpringActionController
 
     void checkAllowedFileName(String s) throws DavException
     {
-        String msg = isAllowedFileName(s);
+        String msg = FileUtil.isAllowedFileName(s);
         if (null == msg)
             return;
         throw new DavException(WebdavStatus.SC_BAD_REQUEST, msg);
-    }
-
-
-    static private final String windowsRestricted = "\\/:*?\"<>|`";
-    // and ` seems like a bad idea for linux?
-    static private final String linuxRestricted = "`";
-    static private final String restrictedPrintable = windowsRestricted + linuxRestricted;
-
-    public static String isAllowedFileName(String s)
-    {
-        if (StringUtils.isBlank(s))
-            return "Filename must not be blank";
-        if (!ViewServlet.validChars(s))
-            return "Filename must contain only valid unicode characters.";
-        if (StringUtils.containsAny(s, restrictedPrintable))
-            return "Filename may not contain any of these characters: " + restrictedPrintable;
-        if (StringUtils.containsAny(s, "\t\n\r"))
-            return "Filename may not contain 'tab', 'new line', or 'return' characters.";
-        if (StringUtils.contains("-$", s.charAt(0)))
-            return "Filename may not begin with any of these characters: -$";
-        if (Pattern.matches(".*\\s-[^ ].*",s))
-            return "Filename may not contain space followed by dash.";
-        return null;
     }
 
 
@@ -6808,35 +6801,5 @@ public class DavController extends SpringActionController
             assertFalse(XMLWriter.isValidXmlElementName("xml_"));
         }
 
-        @Test
-        public void testAllowedFileName()
-        {
-            assertNull(isAllowedFileName("a"));
-            assertNull(isAllowedFileName("a-b"));
-            assertNull(isAllowedFileName("a b"));
-            assertNull(isAllowedFileName("a%b"));
-            assertNull(isAllowedFileName("a$b"));
-            assertNull(isAllowedFileName("%ab"));                               
-
-            assertNotNull(isAllowedFileName(null));
-            assertNotNull(isAllowedFileName(""));
-            assertNotNull(isAllowedFileName(" "));
-            assertNotNull(isAllowedFileName("a\tb"));
-            assertNotNull(isAllowedFileName("-a"));
-            assertNotNull(isAllowedFileName("a -b"));
-            assertNotNull(isAllowedFileName("a/b"));
-            assertNotNull(isAllowedFileName("a\b"));
-            assertNotNull(isAllowedFileName("a:b"));
-            assertNotNull(isAllowedFileName("a*b"));
-            assertNotNull(isAllowedFileName("a?b"));
-            assertNotNull(isAllowedFileName("a<b"));
-            assertNotNull(isAllowedFileName("a>b"));
-            assertNotNull(isAllowedFileName("a\"b"));
-            assertNotNull(isAllowedFileName("a|b"));
-            assertNotNull(isAllowedFileName("a`b"));
-            assertNotNull(isAllowedFileName("$ab"));
-            assertNotNull(isAllowedFileName("-ab"));
-            assertNotNull(isAllowedFileName("a`b"));
-        }
     }
 }

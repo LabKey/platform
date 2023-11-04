@@ -11,11 +11,8 @@ import java.util.Collection;
  * A simple scanner for SQL text that understands block & single-line comments, double-quoted identifiers, single-quoted strings,
  * and quote escaping. It is not a SQL tokenizer or parser... it merely enables simple text operations that are aware of comments
  * and strings. It currently supports finding characters and substrings outside of comments and quoted strings, as well as
- * stripping comments. It could be extended to support search & replace and other useful text operations.
- *
+ * stripping comments and quoted strings. It could be extended to support search & replace and other useful text operations.
  * Consider: Use in SQLFragment.getFilterText() replacements
- *
- * Created by adam on 6/29/2017.
  */
 public class SqlScanner extends BaseScanner
 {
@@ -75,6 +72,7 @@ public class SqlScanner extends BaseScanner
             else if ('\'' == c || '"' == c)
             {
                 String escape = "" + c + c;
+                int startIndex = i;
 
                 while (++i < _text.length())
                 {
@@ -85,9 +83,15 @@ public class SqlScanner extends BaseScanner
                         twoChars = _text.substring(i, i + 2);
 
                     if (escape.equals(twoChars))
+                    {
                         i++;
+                    }
                     else if (c == c2)
+                    {
+                        if (!handler.string(startIndex, i + 1))
+                            return;
                         break next;
+                    }
                 }
 
                 throw new NotFoundException("Expected ending quote (" + c + ") was not found");

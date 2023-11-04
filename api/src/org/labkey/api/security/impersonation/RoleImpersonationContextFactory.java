@@ -17,18 +17,24 @@ package org.labkey.api.security.impersonation;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
+import org.labkey.api.security.roles.AbstractRootContainerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -37,16 +43,12 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-/**
- * User: adam
- * Date: 4/10/12
- * Time: 8:28 AM
- */
 public class RoleImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
@@ -58,7 +60,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
 
     @JsonCreator
     protected RoleImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_roleNames") Set<String> roleNames,
             @JsonProperty("_previousRoleNames") Set<String> previousRoleNames,
@@ -111,13 +113,13 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL, this, this._cacheKey);
+        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL, this, _cacheKey);
     }
 
     @Override
     public void startImpersonating(ViewContext context)
     {
-        // Retrieving the context will get the role and force permissions check
+        // Retrieving the context will get the role(s) and force permissions check
         getImpersonationContext();
 
         // Stash (and remove) just the registered session attributes (e.g., permissions-related attributes)
@@ -188,17 +190,16 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         menu.addChild(newRoleMenu);
     }
 
-    public static Collection<Role> getValidImpersonationRoles(Container c)
+    public static Stream<Role> getValidImpersonationRoles(Container c, User user)
     {
-        Collection<Role> validRoles = new LinkedList<>();
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
+        boolean canImpersonatePrivilegedRoles = user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class);
 
-        // Add the valid roles
-        for (Role role : RoleManager.getAllRoles())
-            if (role.isAssignable() && role.isApplicable(policy, c))
-                validRoles.add(role);
-
-        return validRoles;
+        // Stream the valid roles
+        return RoleManager.getAllRoles().stream()
+            .filter(Role::isAssignable)
+            .filter(role -> role.isApplicable(policy, c))
+            .filter(role -> !role.isPrivileged() || canImpersonatePrivilegedRoles);
     }
 
     private static class RoleImpersonationContext extends AbstractImpersonationContext
@@ -219,31 +220,50 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
                 @JsonProperty("_cacheKey") String cacheKey)
         {
             super(adminUser, project, returnURL, factory);
-            verifyPermissions(project, adminUser);
             _roleNames = roleNames;
             _cacheKey = cacheKey;
+            verifyPermissions(project, adminUser, getRoles());
         }
 
-        // Throws if user is not authorized.
-        private void verifyPermissions(@Nullable Container project, User user)
+        // Throws if user is not authorized to impersonate all roles
+        private void verifyPermissions(@Nullable Container project, User user, Set<Role> roles)
         {
-            // Site/app admin can impersonate anywhere
-            if (user.hasRootAdminPermission())
-                return;
-
-            // Must not be root
             if (null == project)
-                throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in the root", getFactory());
+            {
+                // Ensure we have either site roles or project roles, not both
+                var map = roles.stream()
+                    .collect(Collectors.groupingBy(role -> role instanceof AbstractRootContainerRole));
 
-            // Must have admin permissions in project
-            if (!project.hasPermission(user, AdminPermission.class))
-                throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
-        }
+                // UI prevents this, but crafty admin could attempt it by crafting a post with specific class names
+                if (map.size() > 1)
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles and project roles at the same time", getFactory());
 
-        @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            return false;
+                // Site Administrator and Impersonating Troubleshooter can impersonate any site role
+                if (user.hasRootPermission(CanImpersonatePrivilegedSiteRolesPermission.class))
+                    return;
+
+                if (!user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", getFactory());
+
+                // Application Administrator can impersonate all site roles except the privileged ones
+                List<String> privileged = roles.stream()
+                    .filter(Role::isPrivileged)
+                    .map(Role::getDisplayName)
+                    .toList();
+
+                if (!privileged.isEmpty())
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate " + StringUtilsLabKey.joinWithConjunction(privileged, "or"), getFactory());
+            }
+            else
+            {
+                // Must have admin permissions in this project
+                if (!project.hasPermission(user, AdminPermission.class))
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
+
+                // Must not be impersonating any site roles
+                if (roles.stream().anyMatch(role -> (role instanceof AbstractRootContainerRole)))
+                    throw new UnauthorizedImpersonationException("You are not allowed to impersonate site roles", getFactory());
+            }
         }
 
         @Override
@@ -253,9 +273,9 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public int[] getGroups(User user)
+        public PrincipalArray getGroups(User user)
         {
-            return new int[0];
+            return PrincipalArray.getEmptyPrincipalArray();
         }
 
         // TODO: More expensive than it needs to be... should actually hold onto a Set<Roles> and use custom serialization (using unique names)
@@ -271,9 +291,16 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+        public Set<Role> getSiteRoles(User user)
         {
-            return getFilteredContextualRoles(getRoles());
+            // Return only site roles that are being impersonated
+            return new HashSet<>(CollectionUtils.intersection(super.getSiteRoles(user), getRoles()));
+        }
+
+        @Override
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
+        {
+            return getRoles(); // No filtering - we trust verifyPermissions to validate that the admin is allowed to impersonate the specified roles
         }
 
         @Override

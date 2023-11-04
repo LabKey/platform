@@ -407,7 +407,8 @@
     </table>
     <table style="margin-top:10px;">
         <tr><td><table id="filePickerTable"></table></td></tr>
-        <tr><td><a href="javascript:addFilePicker('filePickerTable','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
+        <% addHandler("filePickerLink", "click", "addFilePicker('filePickerTable','filePickerLink'); return false;"); %>
+        <tr><td><a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a></td></tr>
     </table>
     <div class="labkey-button-bar-separate" style="margin-bottom:10px">
         <%= button("Save").submit(true).name(String.valueOf(bean.getAction())).disableOnClick(true) %>
@@ -455,4 +456,4 @@
     <%
     }%>
 </labkey:form>
-<script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
+<script type="text/javascript" nonce="<%=getScriptNonce()%>" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>

@@ -17,6 +17,7 @@ package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -89,18 +90,17 @@ import static java.util.stream.Collectors.joining;
 
 /**
  * Lots of static methods for dealing with domains and property descriptors. Tends to operate primarily on the bean-style
- * classes like {@link PropertyDescriptor} and {@link DomainDescriptor}.
- *
- * When possible, it's usually preferable to use {@link PropertyService}, {@link Domain}, and {@link DomainProperty}
- * instead as they tend to provide higher-level abstractions.
- * User: migra
- * Date: Jun 14, 2005
+ * classes like {@link PropertyDescriptor} and {@link DomainDescriptor}. When possible, it's usually preferable to use
+ * {@link PropertyService}, {@link Domain}, and {@link DomainProperty} instead as they tend to provide higher-level
+ * abstractions.
  */
 public class OntologyManager
 {
     private static final Logger _log = LogManager.getLogger(OntologyManager.class);
-    private static final Cache<Pair<String, String>, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 100000, "Property maps");
-    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
+    private static final Cache<Pair<Container, String>, Map<String, ObjectProperty>> PROPERTY_MAP_CACHE = DatabaseCache.get(getExpSchema().getScope(), 100000, "Property maps", new PropertyMapCacheLoader());
+    private static final BlockingCache<String, Integer> OBJECT_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "ObjectIds", new ObjectIdCacheLoader());
+    // Note: Converting the below to a BlockingDatabaseCache resulted in a couple failures in the Daily suite. The
+    // explicit put() operations may be the problem. Leave it as an old school wrapped DatabaseCache for now.
     private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {
         @Override
@@ -132,8 +132,9 @@ public class OntologyManager
             return null;
         }
     });
+
     /** DomainURI, ContainerEntityId -> DomainDescriptor */
-    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI"), (key, argument) -> {
+    private static final Cache<Pair<String, GUID>, DomainDescriptor> DOMAIN_DESCRIPTORS_BY_URI_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (key, argument) -> {
         String domainURI = key.first;
         Container c = ContainerManager.getForId(key.second);
 
@@ -145,16 +146,22 @@ public class OntologyManager
         return fetchDomainDescriptorFromDB(domainURI, c);
     });
 
-    /** Goes against the DB, bypassing the cache */
     @Nullable
     private static DomainDescriptor fetchDomainDescriptorFromDB(String domainURI, Container c)
+    {
+        return fetchDomainDescriptorFromDB(domainURI, c, false);
+    }
+
+    /** Goes against the DB, bypassing the cache */
+    @Nullable
+    public static DomainDescriptor fetchDomainDescriptorFromDB(String uriOrName, Container c, boolean isName)
     {
         Container proj = c.getProject();
         if (null == proj)
             proj = c;
 
-        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, domainURI,
+        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE " + (isName ? "Name" : "DomainURI") + " = ? AND Project IN (?,?) ";
+        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, uriOrName,
                 proj,
                 ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
         DomainDescriptor dd = null;
@@ -166,7 +173,7 @@ public class OntologyManager
             // and one of the two is in the shared project, use the project-level descriptor.
             if (ddArray.size() > 1)
             {
-                _log.debug("Multiple DomainDescriptors found for " + domainURI);
+                _log.debug("Multiple DomainDescriptors found for " + uriOrName);
                 if (dd.getProject().equals(ContainerManager.getSharedContainer()))
                     dd = ddArray.get(0);
             }
@@ -174,8 +181,8 @@ public class OntologyManager
         return dd;
     }
 
-    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
+    private static final BlockingCache<Integer, DomainDescriptor> DOMAIN_DESC_BY_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> DOMAIN_PROPERTIES_CACHE = DatabaseCache.get(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<>()
     {
         @Override
         public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -185,16 +192,16 @@ public class OntologyManager
             if (null == c)
                 return Collections.emptyList();
             SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
-                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                    "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                    "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                    "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
+                " FROM " + getTinfoPropertyDescriptor() + " PD " +
+                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
+                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
+                "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
 
             sql.addAll(
-                    typeURI,
-                    // protect against null project, just double-up shared project
-                    c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
-                    _sharedContainer.getProject().getId()
+                typeURI,
+                // protect against null project, just double-up shared project
+                c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
+                _sharedContainer.getProject().getId()
             );
             List<PropertyDescriptor> pds = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
             //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
@@ -217,7 +224,18 @@ public class OntologyManager
             return Collections.unmodifiableList(propertyURIs);
         }
     });
-    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by container");
+    private static final Cache<Container, Map<String, DomainDescriptor>> DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE = DatabaseCache.get(getExpSchema().getScope(), 2000, "Domain descriptors by container", (c, argument) -> {
+        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+
+        Map<String, DomainDescriptor> dds = new LinkedHashMap<>();
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        {
+            dds.putIfAbsent(dd.getDomainURI(), dd);
+        }
+
+        return unmodifiableMap(dds);
+    });
+
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -400,10 +418,10 @@ public class OntologyManager
         }
 
         assert total.stop();
-        _log.debug("\t" + total.toString());
-        _log.debug("\t" + before.toString());
-        _log.debug("\t" + ensure.toString());
-        _log.debug("\t" + insert.toString());
+        _log.debug("\t" + total);
+        _log.debug("\t" + before);
+        _log.debug("\t" + ensure);
+        _log.debug("\t" + insert);
 
         return resultingLsids;
     }
@@ -738,11 +756,10 @@ public class OntologyManager
     }
 
     @NotNull
-    private static Pair<String, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
+    private static Pair<Container, String> getPropertyMapCacheKey(@Nullable Container container, @NotNull String objectLSID)
     {
-        return Pair.of(container != null ? container.getEntityId().toStringNoDashes() : null, objectLSID);
+        return Pair.of(container, objectLSID);
     }
-
 
     /**
      * Get ordered map of property values for an object. The order of the properties in the
@@ -752,77 +769,83 @@ public class OntologyManager
      */
     public static Map<String, ObjectProperty> getPropertyObjects(@Nullable Container container, @NotNull String objectLSID)
     {
-        Pair<String, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
-        Map<String, ObjectProperty> m = mapCache.get(cacheKey);
-        if (null != m)
-            return m;
+        Pair<Container, String> cacheKey = getPropertyMapCacheKey(container, objectLSID);
+        return PROPERTY_MAP_CACHE.get(cacheKey);
+    }
 
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
-        if (container != null)
+    public static class PropertyMapCacheLoader implements CacheLoader<Pair<Container, String>, Map<String, ObjectProperty>>
+    {
+        @Override
+        public Map<String, ObjectProperty> load(@NotNull Pair<Container, String> key, @Nullable Object argument)
         {
-            filter.addCondition(FieldKey.fromParts("Container"), container);
-        }
+            Container container = key.first;
+            String objectLSID = key.second;
 
-        if (_log.isDebugEnabled())
-        {
-            try (ResultSet rs = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getResultSet())
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), objectLSID);
+            if (container != null)
             {
-                ResultSetUtil.logData(rs);
+                filter.addCondition(FieldKey.fromParts("Container"), container);
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeException(x);
-            }
-        }
 
-        List<ObjectProperty> props = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class);
-
-        // check for a "PropertyOrder" value
-        ObjectProperty propertyOrder = props.stream().filter(op -> PropertyOrderURI.equals(op.getPropertyURI())).findFirst().orElse(null);
-        if (propertyOrder != null)
-        {
-            String order = propertyOrder.getStringValue();
-            if (order != null)
+            if (_log.isDebugEnabled())
             {
-                // CONSIDER: Store as a JSONArray of propertyURI instead of propertyId
-                String[] parts = order.split(",");
-                try
+                try (ResultSet rs = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getResultSet())
                 {
-                    List<Integer> propertyIds = Arrays.stream(parts).map(s -> ConvertHelper.convert(s, Integer.class)).collect(Collectors.toList());
-
-                    // Don't include the "PropertyOrder" property
-                    props = new ArrayList<>(props);
-                    props.remove(propertyOrder);
-
-                    // Order by the index found in the PropertyOrder list, otherwise just stick it at the end
-                    Comparator<ObjectProperty> comparator = (op1, op2) -> {
-                        int i1 = propertyIds.indexOf(op1.getPropertyId());
-                        if (i1 == -1)
-                            i1 = propertyIds.size();
-
-                        int i2 = propertyIds.indexOf(op2.getPropertyId());
-                        if (i2 == -1)
-                            i2 = propertyIds.size();
-                        return i1 - i2;
-                    };
-                    props.sort(comparator);
+                    ResultSetUtil.logData(rs);
                 }
-                catch (ConversionException e)
+                catch (SQLException x)
                 {
-                    _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                    throw new RuntimeException(x);
                 }
             }
-        }
 
-        m = new LinkedHashMap<>();
-        for (ObjectProperty value : props)
-        {
-            m.put(value.getPropertyURI(), value);
-        }
+            List<ObjectProperty> props = new TableSelector(getTinfoObjectPropertiesView(), filter, null).getArrayList(ObjectProperty.class);
 
-        m = unmodifiableMap(m);
-        mapCache.put(cacheKey, m);
-        return m;
+            // check for a "PropertyOrder" value
+            ObjectProperty propertyOrder = props.stream().filter(op -> PropertyOrderURI.equals(op.getPropertyURI())).findFirst().orElse(null);
+            if (propertyOrder != null)
+            {
+                String order = propertyOrder.getStringValue();
+                if (order != null)
+                {
+                    // CONSIDER: Store as a JSONArray of propertyURI instead of propertyId
+                    String[] parts = order.split(",");
+                    try
+                    {
+                        List<Integer> propertyIds = Arrays.stream(parts).map(s -> ConvertHelper.convert(s, Integer.class)).toList();
+
+                        // Don't include the "PropertyOrder" property
+                        props = new ArrayList<>(props);
+                        props.remove(propertyOrder);
+
+                        // Order by the index found in the PropertyOrder list, otherwise just stick it at the end
+                        Comparator<ObjectProperty> comparator = (op1, op2) -> {
+                            int i1 = propertyIds.indexOf(op1.getPropertyId());
+                            if (i1 == -1)
+                                i1 = propertyIds.size();
+
+                            int i2 = propertyIds.indexOf(op2.getPropertyId());
+                            if (i2 == -1)
+                                i2 = propertyIds.size();
+                            return i1 - i2;
+                        };
+                        props.sort(comparator);
+                    }
+                    catch (ConversionException e)
+                    {
+                        _log.warn("Failed to parse PropertyOrder integer list: " + order);
+                    }
+                }
+            }
+
+            Map<String, ObjectProperty> m = new LinkedHashMap<>();
+            for (ObjectProperty value : props)
+            {
+                m.put(value.getPropertyURI(), value);
+            }
+
+            return unmodifiableMap(m);
+        }
     }
 
     public static void updateObjectPropertyOrder(User user, Container container, String objectLSID, List<PropertyDescriptor> properties)
@@ -872,27 +895,36 @@ public class OntologyManager
     public static int ensureObject(Container container, String objectURI, Integer ownerId)
     {
         //TODO: (marki) Transact?
-        Integer i = objectIdCache.get(objectURI);
-        if (null != i)
-            return i.intValue();
+        Integer objId = OBJECT_ID_CACHE.get(objectURI, container);
 
-        OntologyObject o = getOntologyObject(container, objectURI);
-        if (null == o)
+        if (null == objId)
         {
-            o = new OntologyObject();
-            o.setContainer(container);
-            o.setObjectURI(objectURI);
+            OntologyObject obj = new OntologyObject();
+            obj.setContainer(container);
+            obj.setObjectURI(objectURI);
             if (ownerId != null && ownerId > 0)
-                o.setOwnerObjectId(ownerId);
-            o = Table.insert(null, getTinfoObject(), o);
+                obj.setOwnerObjectId(ownerId);
+            obj = Table.insert(null, getTinfoObject(), obj);
+            objId = obj.getObjectId();
+            OBJECT_ID_CACHE.remove(objectURI);
         }
 
-        objectIdCache.put(objectURI, o.getObjectId());
-        return o.getObjectId();
+        return objId;
     }
 
+    private static class ObjectIdCacheLoader implements CacheLoader<String, Integer>
+    {
+        @Override
+        public Integer load(@NotNull String objectURI, @Nullable Object argument)
+        {
+            Container container = (Container)argument;
+            OntologyObject obj = getOntologyObject(container, objectURI);
 
-    public static OntologyObject getOntologyObject(Container container, String uri)
+            return obj == null ? null : obj.getObjectId();
+        }
+    }
+
+    public static @Nullable OntologyObject getOntologyObject(Container container, String uri)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectURI"), uri);
         if (container != null)
@@ -901,7 +933,6 @@ public class OntologyManager
         }
         return new TableSelector(getTinfoObject(), filter, null).getObject(OntologyObject.class);
     }
-
 
     // UNDONE: optimize (see deleteOntologyObjects(Integer[])
     public static void deleteOntologyObjects(Container c, String... uris)
@@ -922,11 +953,10 @@ public class OntologyManager
         }
         finally
         {
-            mapCache.clear();
-            objectIdCache.clear();
+            PROPERTY_MAP_CACHE.clear();
+            OBJECT_ID_CACHE.clear();
         }
     }
-
 
     public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, @Nullable Container c, boolean deleteOwnedObjects)
     {
@@ -987,7 +1017,7 @@ public class OntologyManager
 
         try
         {
-            // if uris is long, split it up
+            // if it's a long list, split it up
             if (objectIds.length > 1000)
             {
                 int countBatches = objectIds.length / 1000;
@@ -1003,50 +1033,52 @@ public class OntologyManager
                 return;
             }
 
-            StringBuilder in = new StringBuilder();
-
-            for (int objectId : objectIds)
-            {
-                in.append(objectId);
-                in.append(", ");
-            }
-
-            in.setLength(in.length() - 2);
+            SQLFragment objectIdInClause = new SQLFragment();
+            getExpSchema().getSqlDialect().appendInClauseSql(objectIdInClause, Arrays.stream(objectIds).boxed().toList());
 
             if (deleteOwnedObjects)
             {
                 // NOTE: owned objects should never be in a different container than the owner, that would be a problem
-                StringBuilder sqlDeleteOwnedProperties = new StringBuilder();
-                sqlDeleteOwnedProperties.append("DELETE FROM ").append(getTinfoObjectProperty()).append(" WHERE ObjectId IN (SELECT ObjectId FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
-                sqlDeleteOwnedProperties.append(in);
-                sqlDeleteOwnedProperties.append("))");
+                SQLFragment sqlDeleteOwnedProperties = new SQLFragment("DELETE FROM ")
+                    .append(getTinfoObjectProperty())
+                    .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                    .append(getTinfoObject())
+                    .append(" WHERE Container = ? AND OwnerObjectId ")
+                    .add(c)
+                    .append(objectIdInClause)
+                    .append(")");
+
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedProperties);
 
-                StringBuilder sqlDeleteOwnedObjects = new StringBuilder();
-                sqlDeleteOwnedObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
-                sqlDeleteOwnedObjects.append(in);
-                sqlDeleteOwnedObjects.append(")");
+                SQLFragment sqlDeleteOwnedObjects = new SQLFragment("DELETE FROM ")
+                    .append(getTinfoObject())
+                    .append(" WHERE Container = ? AND OwnerObjectId ")
+                    .add(c)
+                    .append(objectIdInClause);
+
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteOwnedObjects);
             }
 
             if (deleteObjectProperties)
             {
-                deleteProperties(c, objectIds);
+                deleteProperties(c, objectIdInClause);
             }
 
             if (deleteObjects)
             {
-                StringBuilder sqlDeleteObjects = new StringBuilder();
-                sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND ObjectId IN (");
-                sqlDeleteObjects.append(in);
-                sqlDeleteObjects.append(")");
+                SQLFragment sqlDeleteObjects = new SQLFragment("DELETE FROM ")
+                    .append(getTinfoObject())
+                    .append(" WHERE Container = ? AND ObjectId ")
+                    .add(c)
+                    .append(objectIdInClause);
+
                 new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
             }
         }
         finally
         {
-            mapCache.clear();
-            objectIdCache.clear();
+            PROPERTY_MAP_CACHE.clear();
+            OBJECT_ID_CACHE.clear();
         }
     }
 
@@ -1321,7 +1353,7 @@ public class OntologyManager
 
             sqlIn.append(sep).append(propId);
 
-            if (sep.length() == 0)
+            if (sep.isEmpty())
                 sep.append(", ");
 
             Map<String, ObjectProperty> mtemp = getPropertyObjects(ContainerManager.getForId(objContainer), objURI);
@@ -1342,7 +1374,7 @@ public class OntologyManager
         // so we can make copies of those domains and properties
         // Restrict it to properties and domains also in the same container
 
-        if (mObjsUsingMyProps.size() > 0)
+        if (!mObjsUsingMyProps.isEmpty())
         {
             sql = "SELECT PD.PropertyURI, DD.DomainURI " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
@@ -1374,7 +1406,7 @@ public class OntologyManager
                 {
                     _log.debug("Removing property descriptor from cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
                     propDescCache.remove(getCacheKey(pd));
-                    domainPropertiesCache.clear();
+                    DOMAIN_PROPERTIES_CACHE.clear();
                     pd.setContainer(project);
                     pd.setProject(project);
                     pd.setPropertyId(0);
@@ -1411,10 +1443,10 @@ public class OntologyManager
 
     private static void uncache(DomainDescriptor dd)
     {
-        domainDescByURICache.remove(getURICacheKey(dd));
-        domainDescByIDCache.remove(dd.getDomainId());
-        domainPropertiesCache.remove(getURICacheKey(dd));
-        domainDescByContainerCache.remove(dd.getContainer().getId());
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(dd));
+        DOMAIN_DESC_BY_ID_CACHE.remove(dd.getDomainId());
+        DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(dd));
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.remove(dd.getContainer());
     }
 
 
@@ -1511,7 +1543,7 @@ public class OntologyManager
 
                 sqlIn.append(sep).append(propId);
 
-                if (sep.length() == 0)
+                if (sep.isEmpty())
                     sep.append(", ");
 
                 Map<String, ObjectProperty> mtemp = getPropertyObjects(c, objURI);
@@ -1529,7 +1561,7 @@ public class OntologyManager
             // this sql gets all properties i ref and the domains they belong to and the
             // other properties in those domains
             //todo  what about materialsource ?
-            if (mMyObjsThatRefProjProps.size() > 0)
+            if (!mMyObjsThatRefProjProps.isEmpty())
             {
                 sql = "SELECT PD.PropertyURI, DD.DomainURI, PD.PropertyId " +
                         " FROM " + getTinfoPropertyDescriptor() + " PD " +
@@ -1647,7 +1679,7 @@ public class OntologyManager
         {
             List<String> colDiffs = comparePropertyDescriptors(pdIn, pd);
 
-            if (colDiffs.size() == 0)
+            if (colDiffs.isEmpty())
             {
                 // if the descriptor differs by container only and the requested descriptor is in the project fldr
                 if (!pdIn.getContainer().getId().equals(pd.getContainer().getId()) &&
@@ -1789,7 +1821,10 @@ public class OntologyManager
 
     public static DomainDescriptor ensureDomainDescriptor(String domainURI, String name, Container container)
     {
-        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(name).build();
+        String trimmedName = StringUtils.trimToNull(name);
+        if (trimmedName == null)
+            throw new IllegalArgumentException("Non-blank name is required.");
+        DomainDescriptor dd = new DomainDescriptor.Builder(domainURI, container).setName(trimmedName).build();
         return ensureDomainDescriptor(dd);
     }
 
@@ -1868,11 +1903,11 @@ public class OntologyManager
         {
             DomainDescriptor ddToSave = ddIn.edit().setDomainId(dd.getDomainId()).build();
             dd = Table.update(null, getTinfoDomainDescriptor(), ddToSave, ddToSave.getDomainId());
-            domainDescByURICache.remove(getURICacheKey(ddIn));
-            domainDescByURICache.remove(getURICacheKey(dd));
-            domainDescByIDCache.remove(dd.getDomainId());
-            domainPropertiesCache.remove(getURICacheKey(ddIn));
-            domainDescByContainerCache.clear();
+            DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(ddIn));
+            DOMAIN_DESCRIPTORS_BY_URI_CACHE.remove(getURICacheKey(dd));
+            DOMAIN_DESC_BY_ID_CACHE.remove(dd.getDomainId());
+            DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(ddIn));
+            DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.clear();
         }
         return dd;
     }
@@ -1915,7 +1950,7 @@ public class OntologyManager
             sqlUpdate.add(dd.getDomainId());
             new SqlExecutor(getExpSchema()).execute(sqlUpdate);
         }
-        domainPropertiesCache.remove(getURICacheKey(dd));
+        DOMAIN_PROPERTIES_CACHE.remove(getURICacheKey(dd));
         return pd;
     }
 
@@ -1963,25 +1998,25 @@ public class OntologyManager
 
         assert getExpSchema().getScope().isTransactionActive();
 
-        if (dates.size() > 0)
+        if (!dates.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, DateTimeValue, MvIndicator) VALUES (?,?,'d',?, ?)";
             Table.batchExecute(getExpSchema(), sql, dates);
         }
 
-        if (floats.size() > 0)
+        if (!floats.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, FloatValue, MvIndicator) VALUES (?,?,'f',?, ?)";
             Table.batchExecute(getExpSchema(), sql, floats);
         }
 
-        if (strings.size() > 0)
+        if (!strings.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, StringValue, MvIndicator) VALUES (?,?,'s',?, ?)";
             Table.batchExecute(getExpSchema(), sql, strings);
         }
 
-        if (mvIndicators.size() > 0)
+        if (!mvIndicators.isEmpty())
         {
             String sql = "INSERT INTO " + getTinfoObjectProperty().toString() + " (ObjectId, PropertyId, TypeTag, MvIndicator) VALUES (?,?,?,?)";
             Table.batchExecute(getExpSchema(), sql, mvIndicators);
@@ -2021,23 +2056,28 @@ public class OntologyManager
     /**
      * Delete properties owned by the objects.
      */
-    public static void deleteProperties(Container objContainer, int... objectIDs)
+    public static void deleteProperties(Container objContainer, int objectId)
     {
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("ObjectID"), Arrays.asList(ArrayUtils.toObject(objectIDs))));
-        String[] objectURIs = new TableSelector(getTinfoObject(), Collections.singleton("ObjectURI"), filter, null).getArray(String.class);
+        deleteProperties(objContainer, new SQLFragment(" = ?", objectId));
+    }
+    public static void deleteProperties(Container objContainer, SQLFragment objectIdClause)
+    {
+        SQLFragment objectUriSql = new SQLFragment("SELECT ObjectURI FROM ")
+                .append(getTinfoObject(), "o")
+                .append(" WHERE ObjectId ");
+        objectUriSql.append(objectIdClause);
 
-        StringBuilder in = new StringBuilder();
-        for (Integer objectID : objectIDs)
-        {
-            in.append(objectID);
-            in.append(",");
-        }
-        in.setLength(in.length() - 1);
+        List<String> objectURIs = new SqlSelector(getExpSchema(), objectUriSql).getArrayList(String.class);
 
-        StringBuilder sqlDeleteProperties = new StringBuilder();
-        sqlDeleteProperties.append("DELETE FROM " + getTinfoObjectProperty() + " WHERE  ObjectId IN (SELECT ObjectId FROM " + getTinfoObject() + " WHERE Container = '").append(objContainer.getId()).append("' AND ObjectId IN (");
-        sqlDeleteProperties.append(in);
-        sqlDeleteProperties.append("))");
+        SQLFragment sqlDeleteProperties = new SQLFragment("DELETE FROM ")
+                .append(getTinfoObjectProperty())
+                .append(" WHERE ObjectId IN (SELECT ObjectId FROM ")
+                .append(getTinfoObject())
+                .append(" WHERE Container = ? AND ObjectId ")
+                .add(objContainer)
+                .append(objectIdClause)
+                .append(")");
+
         new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
         for (String uri : objectURIs)
@@ -2088,7 +2128,7 @@ public class OntologyManager
             executor.execute(deletePropSql);
             _log.debug("Removing property descriptor from cache. Key: " + key + " descriptor: " + pd);
             propDescCache.remove(key);
-            domainPropertiesCache.clear();
+            DOMAIN_PROPERTIES_CACHE.clear();
             transaction.commit();
         }
     }
@@ -2368,19 +2408,19 @@ public class OntologyManager
 
     public static DomainDescriptor getDomainDescriptor(int id)
     {
-        return domainDescByIDCache.get(id);
+        return DOMAIN_DESC_BY_ID_CACHE.get(id);
     }
 
     @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        DomainDescriptor dd = domainDescByURICache.get(getCacheKey(domainURI, c));
+        DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, c));
         if (null != dd)
             return dd;
 
         // Try in the /Shared container too
-        return domainDescByURICache.get(getCacheKey(domainURI, _sharedContainer));
+        return DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, _sharedContainer));
     }
 
     /**
@@ -2431,22 +2471,7 @@ public class OntologyManager
         if (user != null && !c.hasPermission(user, ReadPermission.class))
             return Collections.emptyMap();
 
-        String key = c.getId();
-        Map<String, DomainDescriptor> dds = domainDescByContainerCache.get(key);
-        if (dds != null)
-            return dds;
-
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-
-        dds = new LinkedHashMap<>();
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
-        {
-            dds.putIfAbsent(dd.getDomainURI(), dd);
-        }
-
-        dds = unmodifiableMap(dds);
-        domainDescByContainerCache.put(key, dds);
-        return dds;
+        return DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.get(c);
     }
 
     public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
@@ -2477,7 +2502,7 @@ public class OntologyManager
     //TODO: DbCache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
     {
-        List<Pair<String, Boolean>> propertyURIs = domainPropertiesCache.get(getCacheKey(typeURI, c));
+        List<Pair<String, Boolean>> propertyURIs = DOMAIN_PROPERTIES_CACHE.get(getCacheKey(typeURI, c));
         if (propertyURIs != null)
         {
             List<PropertyDescriptor> result = new ArrayList<>(propertyURIs.size());
@@ -2681,7 +2706,7 @@ public class OntologyManager
         _log.debug("Updating property descriptor in cache. Key: " + getCacheKey(pd) + " descriptor: " + pd);
         propDescCache.put(getCacheKey(pd), pd);
         // It's possible that the propertyURI has changed, thus breaking our reference
-        domainPropertiesCache.clear();
+        DOMAIN_PROPERTIES_CACHE.clear();
         return pd;
     }
 
@@ -2862,24 +2887,24 @@ public class OntologyManager
     {
         _log.debug("Clearing caches");
         ExperimentService.get().clearCaches();
-        domainDescByURICache.clear();
-        domainDescByIDCache.clear();
-        domainPropertiesCache.clear();
+        DOMAIN_DESCRIPTORS_BY_URI_CACHE.clear();
+        DOMAIN_DESC_BY_ID_CACHE.clear();
+        DOMAIN_PROPERTIES_CACHE.clear();
         propDescCache.clear();
-        mapCache.clear();
-        objectIdCache.clear();
-        domainDescByContainerCache.clear();
+        PROPERTY_MAP_CACHE.clear();
+        OBJECT_ID_CACHE.clear();
+        DOMAIN_DESCRIPTORS_BY_CONTAINER_CACHE.clear();
     }
 
     public static void clearPropertyCache(String parentObjectURI)
     {
-        mapCache.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
+        PROPERTY_MAP_CACHE.removeUsingFilter(key -> Objects.equals(key.second, parentObjectURI));
     }
 
 
     public static void clearPropertyCache()
     {
-        mapCache.clear();
+        PROPERTY_MAP_CACHE.clear();
     }
 
     public static class ImportPropertyDescriptor
@@ -2985,7 +3010,7 @@ public class OntologyManager
         @Test
         public void testBasicPropertiesObject() throws ValidationException
         {
-            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
             User user = TestContext.get().getUser();
             String parentObjectLsid = new Lsid("Junit", "OntologyManager", "parent").toString();
             String childObjectLsid = new Lsid("Junit", "OntologyManager", "child").toString();
@@ -3067,7 +3092,7 @@ public class OntologyManager
         @Test
         public void testContainerDelete() throws ValidationException
         {
-            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
             //Clean up last time's mess
             deleteAllObjects(c, TestContext.get().getUser());
             assertEquals(0L, getObjectCount(c));
@@ -3148,18 +3173,18 @@ public class OntologyManager
         {
             deleteMoveTestContainers();
 
-            Container proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1");
-            Container proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2");
+            Container proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1", TestContext.get().getUser());
+            Container proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2", TestContext.get().getUser());
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
 
-            proj1 = ContainerManager.ensureContainer("/");
-            proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2");
+            proj1 = ContainerManager.ensureContainer("/", TestContext.get().getUser());
+            proj2 = ContainerManager.ensureContainer("/_ontMgrTestP2", TestContext.get().getUser());
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
 
-            proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1");
-            proj2 = ContainerManager.ensureContainer("/");
+            proj1 = ContainerManager.ensureContainer("/_ontMgrTestP1", TestContext.get().getUser());
+            proj2 = ContainerManager.ensureContainer("/", TestContext.get().getUser());
             doMoveTest(proj1, proj2);
             deleteMoveTestContainers();
         }
@@ -3171,11 +3196,11 @@ public class OntologyManager
             if (p1Path.equals("//")) p1Path = "/_ontMgrDemotePromote";
             if (p2Path.equals("//")) p2Path = "/_ontMgrDemotePromote";
 
-            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa");
-            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb");
-            ContainerManager.ensureContainer(p2Path + "Fc");
-            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa");
-            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa");
+            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa", TestContext.get().getUser());
+            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb", TestContext.get().getUser());
+            ContainerManager.ensureContainer(p2Path + "Fc", TestContext.get().getUser());
+            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa", TestContext.get().getUser());
+            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa", TestContext.get().getUser());
 
             defineCrossFolderProperties(fldr1a, fldr1b);
             //defineCrossFolderProperties(fldr1a, fldr2c);
@@ -3251,13 +3276,13 @@ public class OntologyManager
             deleteMoveTestContainers();
 
             String projectName = "_ontMgrTestP1";
-            Container proj1 = ContainerManager.ensureContainer(projectName);
+            Container proj1 = ContainerManager.ensureContainer(projectName, TestContext.get().getUser());
             String p1Path = proj1.getPath() + "/";
 
-            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa");
-            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb");
-            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa");
-            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa");
+            Container fldr1a = ContainerManager.ensureContainer(p1Path + "Fa", TestContext.get().getUser());
+            Container fldr1b = ContainerManager.ensureContainer(p1Path + "Fb", TestContext.get().getUser());
+            Container fldr1aa = ContainerManager.ensureContainer(p1Path + "Fa/Faa", TestContext.get().getUser());
+            Container fldr1aaa = ContainerManager.ensureContainer(p1Path + "Fa/Faa/Faaa", TestContext.get().getUser());
 
             defineCrossFolderProperties(fldr1a, fldr1b);
             defineCrossFolderProperties(fldr1aa, fldr1b);
@@ -3298,7 +3323,7 @@ public class OntologyManager
         {
             try
             {
-                Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+                Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
                 //Clean up last time's mess
                 deleteAllObjects(c, TestContext.get().getUser());
                 assertEquals(0L, getObjectCount(c));
@@ -3377,7 +3402,7 @@ public class OntologyManager
         @Test
         public void testDomains() throws Exception
         {
-            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest");
+            Container c = ContainerManager.ensureContainer("/_ontologyManagerTest", TestContext.get().getUser());
             //Clean up last time's mess
             deleteAllObjects(c, TestContext.get().getUser());
             assertEquals(0L, getObjectCount(c));

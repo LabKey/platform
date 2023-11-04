@@ -334,7 +334,7 @@
                     .disabled(true)
             %>
         </labkey:form>
-        <script type="application/javascript">
+        <script type="text/javascript" nonce="<%=getScriptNonce()%>">
             LABKEY.Query.schemaSelectInput({renderTo: 'schemaNameInput', initValue: 'core'});
             LABKEY.Query.querySelectInput({renderTo: 'queryNameInput', schemaInputId: 'schemaNameInput', initValue: 'Users'});
             LABKEY.Query.columnSelectInput({renderTo: 'columnInput', schemaName: 'core', queryName: 'Users', initValue: 'DisplayName'});
@@ -421,7 +421,7 @@
                 <div id="ext3-button-d" class="extContainer"></div>
                 <div id="ext3-dialog" class="extContainer"></div>
             </div>
-            <script type="application/javascript">
+            <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                 if (typeof Ext !== 'undefined') {
                     Ext.onReady(function() {
                         var panel = new Ext.Panel({
@@ -489,7 +489,7 @@
                 <br/>
                 <div id="ext4-tabpanel"></div>
             </div>
-            <script type="application/javascript">
+            <script type="text/javascript" nonce="<%=getScriptNonce()%>">
                 if (typeof Ext4 !== 'undefined') {
                     +function($) {
                         function display() {

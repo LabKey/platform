@@ -185,7 +185,14 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             }
 
             _logFileDir.delete();
-            _logFileDir.mkdir();
+            try
+            {
+                FileUtil.mkdir(_logFileDir);
+            }
+            catch (IOException e)
+            {
+                throw new ExperimentException("Unable to create log file directory", e);
+            }
             _logFileDir.deleteOnExit();
             _logFile = new File(_logFileDir, "upload.xar.log");
             _logFile.deleteOnExit();

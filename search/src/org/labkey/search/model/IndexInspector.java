@@ -20,10 +20,14 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.MultiBits;
 import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.Bits;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,12 +38,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
-
-/**
- * User: adam
- * Date: 7/1/2014
- * Time: 10:30 AM
- */
 
 // Analyzes LabKey-generated Lucene indexes and displays/exports their contents. Output generally includes a row for each
 // document in the index listing title, type, folder path, url, and an approximation of its size in the index. Much of this
@@ -54,6 +52,16 @@ public class IndexInspector
     public void export(HttpServletResponse response, final String format) throws IOException
     {
         try (TSVIndexWriter writer = !"Excel".equals(format) ? new TSVIndexWriter() : new TSVIndexWriter() {
+            {
+                setDelimiterCharacter(DELIM.COMMA);
+            }
+
+            // We want the "Export to Excel" option to open Excel and load the file. We're providing Excel content type
+            // but CSV file name and format because that seems to work and exporting in an Excel-native format would
+            // require a bit of a rewrite to the below, since ExcelWriter and TSVWriter don't share any useful
+            // interfaces. I haven't found a definitive reference that says this content type + extension discrepancy
+            // always works, but here's an old post that suggests it's reasonable:
+            // https://stackoverflow.com/questions/393647/response-content-type-as-csv#1719233
             @Override
             protected String getContentType()
             {
@@ -63,7 +71,7 @@ public class IndexInspector
             @Override
             protected String getFilenameExtension()
             {
-                return "xls";
+                return "csv";
             }
         })
         {
@@ -72,14 +80,14 @@ public class IndexInspector
         }
     }
 
-    private static String getType(String uid)
-    {
-        return uid.substring(0, uid.indexOf(':'));
-    }
-
     private static Path getIndexDirectory()
     {
         return LuceneSearchServiceImpl.getIndexDirectory().toPath();
+    }
+
+    private static boolean isLive(@Nullable Bits liveDocs, int docId)
+    {
+        return null == liveDocs || liveDocs.get(docId);
     }
 
     private static class TSVIndexWriter extends TSVWriter
@@ -87,7 +95,7 @@ public class IndexInspector
         @Override
         protected void writeColumnHeaders()
         {
-            writeLine(new CsvSet("Title,Type,Folder,URL,NavTrail,UniqueId,Body Terms,Summary"));
+            writeLine(new CsvSet("Title,Category,Folder,URL,NavTrail,UniqueId,Body Terms"));
         }
 
         @Override
@@ -96,9 +104,12 @@ public class IndexInspector
             try (Directory directory = WritableIndexManagerImpl.openDirectory(getIndexDirectory());
                  IndexReader reader = DirectoryReader.open(directory))
             {
+                int docCount = reader.maxDoc();
+                Bits liveDocs = MultiBits.getLiveDocs(reader);
+
                 // Lucene provides no way to query a document for its size in the index, so we enumerate the terms and increment
-                // term counts on each document to calculate a proxy for doc size.
-                int[] termCountPerDoc = new int[reader.maxDoc()];
+                // term counts on each live document to calculate a proxy for doc size.
+                int[] termCountPerDoc = new int[docCount];
 
                 for (LeafReaderContext arc : reader.leaves())
                 {
@@ -117,39 +128,41 @@ public class IndexInspector
 
                             while ((doc = pe.nextDoc()) != PostingsEnum.NO_MORE_DOCS)
                             {
-                                termCountPerDoc[doc]++;
+                                if (isLive(liveDocs, doc))
+                                    termCountPerDoc[doc]++;
                             }
                         }
                     }
                 }
 
-                int docCount = reader.maxDoc();
+                StoredFields stored = reader.storedFields();
 
-                // The stored terms are much easier to get. For each document, output stored fields plus the statistics computed above
+                // The stored terms are much easier to get. For each live document, output stored fields plus the statistics computed above
                 for (int i = 0; i < docCount; i++)
                 {
-                    Document doc = reader.document(i);
-                    String[] titles = doc.getValues("title");
-                    String[] urls = doc.getValues("url");
-                    String[] navtrails = doc.getValues("navtrail");
-                    String[] uniqueIds = doc.getValues("uniqueId");
-                    String[] containerIds = doc.getValues("container");
-                    String[] summarys = doc.getValues("summary");
-
-                    if (titles.length != 1 || urls.length != 1 || uniqueIds.length != 1 || containerIds.length != 1)
+                    if (isLive(liveDocs, i)) // Skip deleted docs
                     {
-                        throw new IOException("Incorrect number of term values found for document " + i);
+                        Document doc = stored.document(i);
+                        String[] titles = doc.getValues("title");
+                        String[] categories = doc.getValues("searchCategories");
+                        String[] urls = doc.getValues("url");
+                        String[] navTrails = doc.getValues("navtrail");
+                        String[] uniqueIds = doc.getValues("uniqueId");
+                        String[] containerIds = doc.getValues("container");
+
+                        if (titles.length != 1 || urls.length != 1 || uniqueIds.length != 1 || containerIds.length != 1)
+                        {
+                            throw new IOException("Incorrect number of term values found for document " + i);
+                        }
+
+                        Container c = ContainerManager.getForId(containerIds[0]);
+                        String path = null != c ? c.getPath() : "UNKNOWN: " + containerIds[0];
+
+                        String navTrail = navTrails != null && navTrails.length > 0 ? navTrails[0] : null;
+                        String category = categories.length == 1 ? categories[0] : Arrays.toString(categories);
+
+                        writeLine(Arrays.asList(titles[0], category, path, urls[0], navTrail, uniqueIds[0], String.valueOf(termCountPerDoc[i])));
                     }
-
-                    String type = getType(uniqueIds[0]);
-
-                    Container c = ContainerManager.getForId(containerIds[0]);
-                    String path = null != c ? c.getPath() : "UNKNOWN: " + containerIds[0];
-
-                    String navtrail = navtrails != null && navtrails.length > 0 ? navtrails[0] : null;
-                    String summary = summarys != null && summarys.length > 0 ? summarys[0] : null;
-
-                    writeLine(Arrays.asList(titles[0], type, path, urls[0], navtrail, uniqueIds[0], String.valueOf(termCountPerDoc[i]), summary));
                 }
 
                 return docCount;

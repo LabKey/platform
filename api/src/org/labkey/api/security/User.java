@@ -16,6 +16,7 @@
 
 package org.labkey.api.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,7 +24,6 @@ import org.json.JSONObject;
 import org.json.JSONString;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.compliance.ComplianceFolderSettings;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,6 +34,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -42,22 +43,17 @@ import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -71,7 +67,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     private Integer _createdBy;
     private Date _created;
     private String _displayName = null;
-    protected int[] _groups = null;
+    protected PrincipalArray _groups = null;
     private Date _lastLogin = null;
     private Date _lastActivity = null;
     private boolean _active = false;
@@ -91,7 +87,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     public static final User guest = new GuestUser("guest", "guest");
 
     // 'nobody' is a guest user who cannot be assigned permissions
-    public static final User nobody = new LimitedUser(guest, new int[0], Collections.emptySet(), false)
+    public static final User nobody = new LimitedUser(guest)
     {
         @Override
         public boolean isGuest()
@@ -99,6 +95,35 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             return true;
         }
     };
+
+    private static User adminServiceUser;
+
+    /** Returns an App Admin user suitable for operational processes (bootstrapping servers, for example). */
+    public static synchronized User getAdminServiceUser()
+    {
+        if (adminServiceUser == null)
+        {
+            adminServiceUser = new AdminServiceUser();
+        }
+        return adminServiceUser;
+    }
+
+    private static class AdminServiceUser extends LimitedUser
+    {
+        AdminServiceUser()
+        {
+            super(new User("@serviceUserAdmin", User.guest.getUserId()), SiteAdminRole.class);
+            setPrincipalType(PrincipalType.SERVICE);
+        }
+
+        @Override
+        @JsonIgnore
+        public Set<Role> getAssignedRoles(SecurityPolicy policy)
+        {
+            return super.getAssignedRoles(policy);
+        }
+    }
+
 
     // Search user is guest plus Reader everywhere
     private static User search;
@@ -209,7 +234,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
 
 
     @Override
-    public int[] getGroups()
+    public PrincipalArray getGroups()
     {
         if (_groups == null)
             _groups = _impersonationContext.getGroups(this);
@@ -250,17 +275,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
      */
     public boolean hasSiteAdminPermission()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(SiteAdminPermission.class);
-    }
-
-    /**
-     * Is the user a Site Administrator? This is NOT a check for AdminPermission.
-     * NOTE: most callers should use hasSiteAdminPermission() instead; only use this if you care specifically about the role itself
-     * @return boolean
-     */
-    public boolean isInSiteAdminGroup()
-    {
-        return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
+        return hasRootPermission(SiteAdminPermission.class);
     }
 
     /**
@@ -269,29 +284,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
      */
     public boolean hasApplicationAdminPermission()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(ApplicationAdminPermission.class);
-    }
-
-    /**
-     * Is the user assigned to the ApplicationAdminRole at the root container? This is NOT a check for AdminPermission.
-     * NOTE: most callers should use hasApplicationAdminPermission() instead; only use this if you care specifically about the role itself
-     * @return boolean
-     */
-    public boolean isApplicationAdmin()
-    {
-        // Issue 32695: app admin that impersonates a group should not retain the ApplicationAdminRole (see getStandardContextualRoles)
-        if (!isAllowedGlobalRoles())
-            return false;
-
-        SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
-        List<Role> rootAssignedRoles = rootContainerPolicy.getAssignedRoles(this);
-        rootAssignedRoles.addAll(rootContainerPolicy.getRoles(getGroups()));
-        return rootAssignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
-    }
-
-    public boolean hasApplicationAdminPermissionForPolicy(SecurityPolicy policy)
-    {
-        return doesAnyRoleHaveAppAdminPermission(SecurityManager.getEffectiveRoles(policy, this, false));
+        return hasRootPermission(ApplicationAdminPermission.class);
     }
 
     // NOTE: most callers should use hasApplicationAdminPermissionForPolicy() instead; only use this if you care specifically about the role itself
@@ -301,59 +294,35 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return assignedRoles.contains(RoleManager.getRole(ApplicationAdminRole.class));
     }
 
-    private boolean doesAnyRoleHaveAppAdminPermission(Collection<Role> roles)
-    {
-        for (Role role : roles)
-        {
-            if (role.getPermissions().contains(ApplicationAdminPermission.class))
-                return true;
-        }
-        return false;
-    }
+    private static final Set<Class<? extends Permission>> TRUSTED_ANALYST = Set.of(AnalystPermission.class, TrustedPermission.class);
+    private static final Set<Class<? extends Permission>> TRUSTED_BROWSER_DEV = Set.of(BrowserDeveloperPermission.class, TrustedPermission.class);
 
-    // Note: site administrators are always developers; see GroupManager.computeAllGroups().
-    @Deprecated
-    public boolean isDeveloper()
-    {
-        return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
-    }
-
-    static final Set<Class<? extends Permission>> trustedanalyst = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>(Arrays.asList(
-            AnalystPermission.class,
-            TrustedPermission.class
-    )));
-    static final Set<Class<? extends Permission>> trustedbrowserdev = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>(Arrays.asList(
-            BrowserDeveloperPermission.class,
-            TrustedPermission.class
-    )));
-
-    // NOTE all PlatformDeveloper are TrustedAnalyst and all TrustedAnalyst are TrustedBrowserDev
+    // NOTE all PlatformDeveloper are TrustedAnalyst and all TrustedAnalysts are TrustedBrowserDev
     // Usually you should only have one of these tests
     public boolean isPlatformDeveloper()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(PlatformDeveloperPermission.class);
+        return hasRootPermission(PlatformDeveloperPermission.class);
     }
 
     public boolean isTrustedAnalyst()
     {
-        return isAllowedGlobalRoles() && hasRootPermissions(trustedanalyst);
+        return hasRootPermissions(TRUSTED_ANALYST);
     }
 
     public boolean isAnalyst()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(AnalystPermission.class);
+        return hasRootPermission(AnalystPermission.class);
     }
 
     public boolean isTrustedBrowserDev()
     {
-        return isAllowedGlobalRoles() && hasRootPermissions(trustedbrowserdev);
+        return hasRootPermissions(TRUSTED_BROWSER_DEV);
     }
 
     public boolean isBrowserDev()
     {
-        return isAllowedGlobalRoles() && hasRootPermission(BrowserDeveloperPermission.class);
+        return hasRootPermission(BrowserDeveloperPermission.class);
     }
-
 
     /**
      * Check if the user has AdminPermission at the root container.
@@ -379,22 +348,16 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return ContainerManager.getRoot().hasPermissions(this, perms);
     }
 
-    public boolean isAllowedGlobalRoles()
-    {
-        return _impersonationContext.isAllowedGlobalRoles();
-    }
-
     @Override
     public boolean isInGroup(int group)
     {
-        int i = Arrays.binarySearch(getGroups(), group);
-        return i >= 0;
+        return getGroups().contains(group);
     }
 
     @Override
-    public Set<Role> getContextualRoles(SecurityPolicy policy)
+    public Set<Role> getAssignedRoles(SecurityPolicy policy)
     {
-        return _impersonationContext.getContextualRoles(this, policy);
+        return _impersonationContext.getAssignedRoles(this, policy);
     }
 
     public JSONObject getUserProps()
@@ -402,20 +365,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return User.getUserProps(this);
     }
 
-    // Return the usual contextual roles
-    public Set<Role> getStandardContextualRoles()
+    public Set<Role> getSiteRoles()
     {
-        Container root = ContainerManager.getRoot();
-        SecurityPolicy policy = root.getPolicy();
-        Set<Role> roles = policy.getRoles(getGroups());
-        roles.remove(RoleManager.getRole(NoPermissionsRole.class));
-        for (Role role : roles)
-            assert role.isApplicable(policy, root);
-        if (isInSiteAdminGroup())
-            roles.add(RoleManager.siteAdminRole);
-        if (isApplicationAdmin())
-            roles.add(RoleManager.getRole(ApplicationAdminRole.class));
-        return roles;
+        return _impersonationContext.getSiteRoles(this);
     }
 
     @Override
@@ -498,7 +450,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
     {
         if (search == null)
         {
-            search = new LimitedUser(new GuestUser("@search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            search = new LimitedUser(new GuestUser("@search"), ReaderRole.class);
             search.setPrincipalType(PrincipalType.SERVICE);
         }
         return search;
@@ -649,6 +601,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
             props.put("isRootAdmin", user.hasRootAdminPermission());
             props.put("isSystemAdmin", user.hasSiteAdminPermission());
+            props.put("canImpersonateSiteRoles", user.hasRootPermission(CanImpersonateSiteRolesPermission.class));
             props.put("isGuest", user.isGuest());
             props.put("isDeveloper", user.isBrowserDev());
             props.put("isAnalyst", user.hasRootPermission(AnalystPermission.class));
@@ -657,7 +610,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
             props.put("isSystem", user.isSystem());
 
             // PHI level
-            /** CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()} */
+            // CONSIDER: Only include maxAllowedPhi if {@link ComplianceFolderSettings#isPhiRolesRequired()}
             if (nonNullContainer)
             {
                 PHI maxAllowedPhi = ComplianceService.get().getMaxAllowedPhi(container, user);

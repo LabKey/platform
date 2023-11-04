@@ -262,7 +262,7 @@ public class PropertyController extends SpringActionController
 
             String kindName = form.getKind() == null ? form.getDomainKind() : form.getKind();
             String domainGroup = form.getDomainGroup();
-            String domainName = form.getDomainName();
+            String domainName = StringUtils.trimToNull(form.getDomainName());
 
             if (domainGroup != null)
             {
@@ -1472,7 +1472,7 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        if (JSONObject.class == kind.getTypeClass()) // Old JSONObject. TODO: Remove this once all DomainKinds use new JSONObject
+        if (JSONObject.class == kind.getTypeClass())
         {
             return kind.updateDomain(original, update, options, container, user, includeWarnings);
         }

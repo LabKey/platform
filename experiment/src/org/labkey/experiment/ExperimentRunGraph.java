@@ -52,6 +52,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
@@ -90,7 +91,7 @@ public class ExperimentRunGraph
             }
             else
             {
-                if (!tempDir.mkdirs())
+                if (!FileUtil.mkdirs(tempDir))
                 {
                     throw new IOException("Unable to create temporary directory for experiment run graphs: " + tempDir.getPath());
                 }
@@ -103,7 +104,7 @@ public class ExperimentRunGraph
     private synchronized static File getFolderDirectory(Container container) throws IOException
     {
         File result = new File(getBaseDirectory(), "Folder" + container.getRowId());
-        result.mkdirs();
+        FileUtil.mkdirs(result);
         for (int i = 0; i < 5; i++)
         {
             if (result.isDirectory())
@@ -117,7 +118,7 @@ public class ExperimentRunGraph
                     Thread.sleep(1);
                 }
                 catch (InterruptedException e) {}
-                result.mkdirs();
+                FileUtil.mkdirs(result);
             }
         }
         if (!result.isDirectory())
@@ -201,10 +202,10 @@ public class ExperimentRunGraph
                         dg.setFocus(focusId, typeCode);
 
                     // add starting inputs to graph if they need grouping
-                    Map<ExpMaterial, String> materialRoles = run.getMaterialInputs();
+                    Map<? extends ExpMaterial, String> materialRoles = run.getMaterialInputs();
                     List<ExpMaterial> inputMaterials = new ArrayList<>(materialRoles.keySet());
                     inputMaterials.sort(new RoleAndNameComparator<>(materialRoles));
-                    Map<ExpData, String> dataRoles = run.getDataInputs();
+                    Map<? extends ExpData, String> dataRoles = run.getDataInputs();
                     List<ExpData> inputDatas = new ArrayList<>(dataRoles.keySet());
                     inputDatas.sort(new RoleAndNameComparator<>(dataRoles));
                     if (!run.getProtocolApplications().isEmpty())
@@ -306,9 +307,45 @@ public class ExperimentRunGraph
         }
     }
 
+    private static class CacheClearer implements Runnable
+    {
+        private final Container _container;
+
+        public CacheClearer(Container container)
+        {
+            _container = container;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CacheClearer that = (CacheClearer) o;
+            return Objects.equals(_container, that._container);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(_container);
+        }
+
+        @Override
+        public void run()
+        {
+            clearCache(_container);
+        }
+    }
+
+    public static Runnable getCacheClearingCommitTask(Container c)
+    {
+        return new CacheClearer(c);
+    }
+
     /**
      * Clears out the cache of files for this container. Must be called after any operation that changes the way a graph
-     * would be generated. Typically this includes deleting or inserting any run in the container, because that
+     * would be generated. Typically, this includes deleting or inserting any run in the container, because that
      * can change the connections between the runs, which is reflected in the graphs.
      */
     public static void clearCache(Container container)
@@ -335,9 +372,9 @@ public class ExperimentRunGraph
      */
     private static class RoleAndNameComparator<Type extends ExpRunItem> implements Comparator<Type>
     {
-        private final Map<Type, String> _roles;
+        private final Map<? extends Type, String> _roles;
 
-        private RoleAndNameComparator(Map<Type, String> roles)
+        private RoleAndNameComparator(Map<? extends Type, String> roles)
         {
             _roles = roles;
         }
@@ -503,14 +540,14 @@ public class ExperimentRunGraph
     private static void generateSummaryGraph(ExpRunImpl expRun, DotGraph dg, GraphCtrlProps ctrlProps)
     {
         int runId = expRun.getRowId();
-        Map<ExpMaterial, String> inputMaterials = expRun.getMaterialInputs();
-        Map<ExpData, String> inputDatas = expRun.getDataInputs();
+        Map<? extends ExpMaterial, String> inputMaterials = expRun.getMaterialInputs();
+        Map<? extends ExpData, String> inputDatas = expRun.getDataInputs();
         List<ExpMaterial> outputMaterials = expRun.getMaterialOutputs();
         List<ExpData> outputDatas = expRun.getDataOutputs();
         Integer groupId;
 
         int i = 0;
-        for (Map.Entry<ExpMaterial, String> entry : inputMaterials.entrySet())
+        for (Map.Entry<? extends ExpMaterial, String> entry : inputMaterials.entrySet())
         {
             ExpMaterial inputMaterial = entry.getKey();
             groupId=null;
@@ -528,7 +565,7 @@ public class ExperimentRunGraph
             i++;
         }
         i = 0;
-        for (Map.Entry<ExpData, String> entry : inputDatas.entrySet())
+        for (Map.Entry<? extends ExpData, String> entry : inputDatas.entrySet())
         {
             ExpData inputData = entry.getKey();
             groupId=null;

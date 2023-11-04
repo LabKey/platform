@@ -89,6 +89,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
+import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -137,6 +138,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
@@ -205,6 +207,7 @@ import org.labkey.core.dialect.PostgreSqlInClauseTest;
 import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
+import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.metrics.SimpleMetricsServiceImpl;
 import org.labkey.core.metrics.WebSocketConnectionManager;
@@ -289,6 +292,7 @@ import static org.labkey.api.settings.StashedStartupProperties.homeProjectWebpar
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailFrom;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
+import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
 
 /**
  * User: migra
@@ -379,6 +383,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         VcsService.setInstance(new VcsServiceImpl());
         LabKeyScriptEngineManager.setInstance(new ScriptEngineManagerImpl());
         DocumentConversionService.setInstance(new DocumentConversionServiceImpl());
+        DbLoginService.setInstance(new DbLoginManager());
 
         try
         {
@@ -682,7 +687,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                     String title = "My Menu";
-                    if (form.getTitle() != null && !form.getTitle().equals(""))
+                    if (form.getTitle() != null && !form.getTitle().isEmpty())
                         title = form.getTitle();
 
                     WebPartView<?> view;
@@ -758,7 +763,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
     }
 
-
     private void bootstrap()
     {
         // Create the initial groups
@@ -780,7 +784,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             MutableSecurityPolicy policy = new MutableSecurityPolicy(rootContainer, rootContainer.getPolicy());
             policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
-            SecurityPolicyManager.savePolicy(policy, false);
+            SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser(), false);
         }
 
         // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
@@ -790,10 +794,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
         home.setFolderType(collaborationType, null);
 
-        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, (User)null);
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, (User)null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, null);
 
         try
         {
@@ -829,7 +833,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void destroy()
     {
         super.destroy();
-        UsageReportingLevel.cancelUpgradeCheck();
+        UsageReportingLevel.shutdown();
     }
 
 
@@ -1045,6 +1049,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Deserialize objects from update forms",
                 "We no longer deserialize objects encoded into update forms. Turn this feature on if the removal of object deserialization is causing specific update operations to fail.",
                 false);
+        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
+                "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true));
+
+        ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
+            // update the timer task when this setting changes
+            MothershipReport.setSelfTestMarketingUpdates(enabled);
+            UsageReportingLevel.reportNow();
+        });
 
         if (null != PropertyService.get())
         {
@@ -1076,10 +1088,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
 
             // Report the total number of login entries in the audit log
-            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo userAuditTable = auditSchema.getTableOrThrow(UserManager.USER_AUDIT_EVENT);
-            results.put("totalLogins", new TableSelector(userAuditTable, new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS), null).getRowCount());
+            SimpleFilter loginFilter = new SimpleFilter(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.LOGGED_IN, CompareType.CONTAINS);
+            results.put("totalLogins", new TableSelector(userAuditTable, loginFilter, null).getRowCount());
+            loginFilter.addClause(new CompareType.ContainsClause(FieldKey.fromParts("comment"), UserManager.UserAuditEvent.API_KEY));
+            results.put("apiKeyLogins", new TableSelector(userAuditTable, loginFilter, null).getRowCount());
             results.put("userLimits", new LimitActiveUsersSettings().getMetricsMap());
             results.put("systemUserCount", UserManager.getSystemUserCount());
             results.put("workbookCount", ContainerManager.getWorkbookCount());
@@ -1092,6 +1107,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         UsageMetricsService.get().registerUsageMetrics(getName(), WebSocketConnectionManager.getInstance());
+        UsageMetricsService.get().registerUsageMetrics(getName(), DbLoginManager.getMetricsProvider());
+        UsageMetricsService.get().registerUsageMetrics(getName(), SecurityManager.getMetricsProvider());
 
         if (AppProps.getInstance().isDevMode())
             AntiVirusProviderRegistry.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
@@ -1141,10 +1158,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             throw UnexpectedException.wrap(e);
         }
 
+        if (MothershipReport.shouldReceiveMarketingUpdates(MothershipReport.getDistributionName()))
+        {
+            if (AppProps.getInstance().getUsageReportingLevel() == UsageReportingLevel.NONE)
+            {
+                // force the usage reporting level to on for community edition distributions
+                WriteableAppProps appProps = AppProps.getWriteableInstance();
+                appProps.setUsageReportingLevel(UsageReportingLevel.ON);
+                appProps.save(User.getAdminServiceUser());
+            }
+        }
         // On bootstrap in production mode, this will send an initial ping with very little information, as the admin will
         // not have set up their account yet. On later startups, depending on the reporting level, this will send an immediate
         // ping, and then once every 24 hours.
-        AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
+        UsageReportingLevel.init();
         TempTableTracker.init();
     }
 
@@ -1418,7 +1445,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             // reset the home project permissions to remove the default assignments given at server install
             MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
-            SecurityPolicyManager.savePolicy(homePolicy);
+            SecurityPolicyManager.savePolicy(homePolicy, User.getAdminServiceUser());
             // remove the guest role assignment from the support subfolder
             Group guests = SecurityManager.getGroup(Group.groupGuests);
             if (null != guests)
@@ -1429,7 +1456,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(supportFolder.getPolicy());
                     for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
                         supportPolicy.removeRoleAssignment(guests, assignedRole);
-                    SecurityPolicyManager.savePolicy(supportPolicy);
+                    SecurityPolicyManager.savePolicy(supportPolicy, User.getAdminServiceUser());
                 }
             }
         }

@@ -321,8 +321,8 @@ public class AuthenticationManager
             Arrays.stream(rowIds)
                 .filter(id->id > 0)
                 .forEach(id->{
-                    count.increment();
-                    Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Table.update() requires mutable map
+                    int countInt = count.incrementAndGet();
+                    Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", countInt)), id); // Table.update() requires mutable map
                 });
             AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(name + " configurations were reordered");
             event.setChanges("reordered");
@@ -862,7 +862,7 @@ public class AuthenticationManager
 
 
     /** avoid spamming the audit log **/
-    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
+    private static final Cache<String, String> AUTH_MESSAGES = CacheManager.getCache(1000, TimeUnit.MINUTES.toMillis(10), "Authentication messages");
 
     public static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {
@@ -969,7 +969,9 @@ public class AuthenticationManager
                     try
                     {
                         email = new ValidEmail(id);
-                        emailAddress = email.getEmailAddress();  // If this user doesn't exist we can still report the normalized email address
+                        // If this user doesn't exist we can still report the normalized email address.
+                        // FailureReason can determine whether to log the email address or not.
+                        emailAddress = firstFailure.getFailureReason().getEmailAddress(email);
                     }
                     catch (InvalidEmailException e)
                     {
@@ -998,7 +1000,7 @@ public class AuthenticationManager
                 else
                 {
                     // Funny audit case -- user doesn't exist, so there's no user to associate with the event. Use guest.
-                    addAuditEvent(User.guest, request, message);
+                    addAuditEvent(User.guest, request, "Unknown user" + message);
                     _log.warn("Unknown user" + message);
                 }
 
@@ -1052,7 +1054,7 @@ public class AuthenticationManager
                 else
                 {
                     // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getConfiguration().getDescription() + ". Login failed because account creation is disabled.");
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getSuccessDetails() + ", but login failed because account creation is disabled.");
                     return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
                 }
             }
@@ -1077,7 +1079,7 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via the \"" + response.getConfiguration().getDescription() + "\" configuration.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getSuccessDetails() + ".");
 
         return new PrimaryAuthenticationResult(user, response);
     }
@@ -1446,28 +1448,31 @@ public class AuthenticationManager
 
         List<AuthenticationValidator> validators = new LinkedList<>();
 
-        for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
+        if (primaryAuthResult.getResponse().requireSecondary())
         {
-            User secondaryAuthUser = getSecondaryAuthenticationUser(session, configuration.getRowId());
-
-            if (null == secondaryAuthUser)
+            for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
             {
-                SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
-                if (provider.bypass())
+                User secondaryAuthUser = getSecondaryAuthenticationUser(session, configuration.getRowId());
+
+                if (null == secondaryAuthUser)
                 {
-                    _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
-                    setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
-                    continue;
+                    SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
+                    if (provider.bypass())
+                    {
+                        _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
+                        setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
+                        continue;
+                    }
+
+                    return new AuthenticationResult(configuration.getRedirectURL(primaryAuthUser, c));
                 }
 
-                return new AuthenticationResult(configuration.getRedirectURL(primaryAuthUser, c));
+                // Validate that secondary auth user matches primary auth user
+                if (!secondaryAuthUser.equals(primaryAuthUser))
+                    throw new IllegalStateException("Wrong user");
+
+                // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
             }
-
-            // Validate that secondary auth user matches primary auth user
-            if (!secondaryAuthUser.equals(primaryAuthUser))
-                throw new IllegalStateException("Wrong user");
-
-            // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
         }
 
         // Get the redirect URL from the current session

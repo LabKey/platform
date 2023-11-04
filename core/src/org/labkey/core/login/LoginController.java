@@ -17,12 +17,12 @@
 package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -60,7 +60,7 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
@@ -74,6 +74,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HtmlView;
@@ -103,13 +104,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AUTO_CREATE_ACCOUNTS_KEY;
@@ -118,14 +116,9 @@ import static org.labkey.api.security.AuthenticationManager.DEFAULT_DOMAIN;
 import static org.labkey.api.security.AuthenticationManager.SELF_REGISTRATION_KEY;
 import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_CHANGES_KEY;
 
-/**
- * User: adam
- * Date: Nov 25, 2007
- * Time: 8:22:37 PM
- */
 public class LoginController extends SpringActionController
 {
-    private static final Logger _log = LogManager.getLogger(LoginController.class);
+    private static final Logger _log = LogHelper.getLogger(LoginController.class, "User registration and authentication failures");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(LoginController.class);
 
     public LoginController()
@@ -382,7 +375,7 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
-    public class SuccessAction extends SimpleViewAction<Object>
+    public static class SuccessAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object form, BindException errors)
@@ -405,7 +398,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class RegisterUserAction extends MutatingApiAction<RegisterForm>
+    public static class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
         @Override
         public void validateForm(RegisterForm form, Errors errors)
@@ -701,7 +694,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetPasswordRulesInfoAction extends ReadOnlyApiAction
+    public static class GetPasswordRulesInfoAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -709,8 +702,8 @@ public class LoginController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             PasswordRule passwordRule = DbLoginManager.getPasswordRule();
 
-            response.put("full", passwordRule.getFullRuleHTML().toString());
-            response.put("summary", passwordRule.getSummaryRuleHTML().toString());
+            response.put("full", passwordRule.getFullRuleHtml().toString());
+            response.put("summary", passwordRule.getSummaryRuleHtml().toString());
             return response;
         }
     }
@@ -969,7 +962,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
+    public static class GetLoginMechanismsApiAction extends MutatingApiAction<LoginForm>
     {
         @Override
         public Object execute(LoginForm form, BindException errors)
@@ -990,7 +983,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class GetRegistrationConfigApiAction extends ReadOnlyApiAction
+    public static class GetRegistrationConfigApiAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -1006,7 +999,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     // @AllowedDuringUpgrade
-    public class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
+    public static class IsAgreeOnlyApiAction extends MutatingApiAction<AgreeToTermsForm>
     {
         @Override
         public Object execute(AgreeToTermsForm form, BindException errors)
@@ -1373,7 +1366,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @IgnoresForbiddenProjectCheck
-    public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
+    public static class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
         private URLHelper _redirectURL = null;
 
@@ -1412,7 +1405,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @IgnoresForbiddenProjectCheck
-    public class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
+    public static class StopImpersonatingAction extends FormHandlerAction<ReturnUrlForm>
     {
         @Override
         public void validateCommand(ReturnUrlForm form, Errors errors)
@@ -1507,7 +1500,7 @@ public class LoginController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    public class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
+    public static class SsoRedirectAction extends SimpleViewAction<SsoRedirectForm>
     {
         @Override
         public ModelAndView getView(SsoRedirectForm form, BindException errors)
@@ -1548,7 +1541,7 @@ public class LoginController extends SpringActionController
     public static final String PASSWORD1_TEXT_FIELD_NAME = "password";
     public static final String PASSWORD2_TEXT_FIELD_NAME = "password2";
 
-    private abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
+    public abstract class AbstractSetPasswordAction extends FormViewAction<SetPasswordForm>
     {
         protected ValidEmail _email = null;
         protected boolean _unrecoverableError = false;
@@ -1675,55 +1668,9 @@ public class LoginController extends SpringActionController
     private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
-        String password = request.getParameter("password");
-        String password2 = request.getParameter("password2");
+        boolean changeOperation = StringUtils.startsWithIgnoreCase(auditMessage, "change");
 
-        Collection<String> messages = new LinkedList<>();
-        User user = UserManager.getUser(email);
-
-        if (!DbLoginManager.getPasswordRule().isValidToStore(password, password2, user, messages))
-        {
-            for (String message : messages)
-                errors.reject("setPassword", message);
-            return null;
-        }
-
-        try
-        {
-            SecurityManager.setPassword(email, password);
-        }
-        catch (UserManagementException e)
-        {
-            errors.reject("setPassword", "Setting password failed: " + e.getMessage() + ". Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-            return null;
-        }
-
-        try
-        {
-            if (clearVerification)
-                SecurityManager.setVerification(email, null);
-            UserManager.addToUserHistory(user, auditMessage);
-        }
-        catch (UserManagementException e)
-        {
-            errors.reject("setPassword", "Resetting verification failed. Contact the " + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getShortName() + " team.");
-            return null;
-        }
-
-        // Should log user in only for initial user, choose password, and forced change password scenarios, but not for scenarios
-        // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
-        if (getUser().isGuest())
-        {
-            PrimaryAuthenticationResult result = AuthenticationManager.authenticate(request, email.getEmailAddress(), password, returnUrlHelper, true);
-
-            if (result.getStatus() == Success)
-            {
-                // This user has passed primary authentication
-                AuthenticationManager.setPrimaryAuthenticationResult(request, result);
-            }
-        }
-
-        return AuthenticationManager.handleAuthentication(getViewContext().getRequest(), getContainer());
+        return DbLoginService.get().attemptSetPassword(getContainer(), getUser(), request.getParameter("password"), request.getParameter("password2"), request, email, returnUrlHelper, auditMessage, clearVerification, changeOperation, errors);
     }
 
     @RequiresNoPermission
@@ -2095,7 +2042,7 @@ public class LoginController extends SpringActionController
         public final String message;
         public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
-        public final Class action;
+        public final Class<? extends AbstractSetPasswordAction> action;
         public final boolean cancellable;
         public final String buttonText;
         public final String title;
@@ -2246,7 +2193,7 @@ public class LoginController extends SpringActionController
 
     @SuppressWarnings("unused")
     @RequiresLogin
-    public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
+    public static class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
@@ -2280,7 +2227,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @CSRF(CSRF.Method.NONE)
-    public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
+    public static class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
         @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
@@ -2334,7 +2281,7 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     // This action has historically accepted GET. Technically, it is a mutating operation, but only in the case
     // where the caller has a secret (the authentication token).
-    public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
+    public static class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
         @Override
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
@@ -2370,7 +2317,7 @@ public class LoginController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
+    public static class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
@@ -2387,7 +2334,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
+    public static class SaveSettingsAction extends MutatingApiAction<SaveSettingsForm>
     {
         @Override
         public Object execute(SaveSettingsForm form, BindException errors) throws Exception
@@ -2457,6 +2404,7 @@ public class LoginController extends SpringActionController
             return _defaultDomain;
         }
 
+        @SuppressWarnings("unused")
         public void setDefaultDomain(String defaultDomain)
         {
             _defaultDomain = defaultDomain;
@@ -2498,7 +2446,7 @@ public class LoginController extends SpringActionController
 
     // TODO: Turn into an API action -- tests use this as a convenience
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
+    public static class SetAuthenticationParameterAction extends FormHandlerAction<AuthParameterForm>
     {
         @Override
         public void validateCommand(AuthParameterForm form, Errors errors)
@@ -2561,7 +2509,7 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
+    public static class DeleteConfigurationAction extends MutatingApiAction<DeleteConfigurationForm>
     {
         @Override
         public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
@@ -2572,8 +2520,30 @@ public class LoginController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
+    public static class SaveDbLoginPropertiesAction extends MutatingApiAction<SaveDbLoginPropertiesForm>
     {
+        @Override
+        public void validateForm(SaveDbLoginPropertiesForm form, Errors errors)
+        {
+            try
+            {
+                PasswordRule.valueOf(form.getStrength());
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new ApiUsageException("Invalid password strength: " + form.getStrength());
+            }
+
+            try
+            {
+                PasswordExpiration.valueOf(form.getExpiration());
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new ApiUsageException("Invalid password expiration: " + form.getExpiration());
+            }
+        }
+
         @Override
         public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
         {
@@ -2610,8 +2580,8 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
-    public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class GetDbLoginPropertiesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception
@@ -2621,7 +2591,7 @@ public class LoginController extends SpringActionController
                     "strength", DbLoginManager.getPasswordRule(),
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
-                "passwordRules", Arrays.stream(PasswordRule.values()).collect(Collectors.toMap(Enum::name, PasswordRule::getFullRuleHTML)),
+                "passwordRules", Arrays.stream(PasswordRule.values()).map(rule->Map.of(rule.name(), rule.getFullRuleHtml())).toArray(),
                 "helpLink", new HelpTopic("configDbLogin").getHelpTopicHref()
             );
             return new ApiSimpleResponse(map);
@@ -2633,7 +2603,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     @IgnoresForbiddenProjectCheck
     @AllowedDuringUpgrade
-    public class WhoAmIAction extends ReadOnlyApiAction
+    public static class WhoAmIAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2650,8 +2620,8 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(TroubleShooterPermission.class)
-    public class InitialMountAction extends ReadOnlyApiAction
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class InitialMountAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2720,18 +2690,19 @@ public class LoginController extends SpringActionController
             if (null != testLink)
                 m.put("testLink", testLink);
             m.put("settingsFields", ap.getSettingsFields());
+            m.put("allowInsert", ap.allowInsert());  // TODO: Update client to gray out disallowed providers
             return m;
         }
     }
 
     /**
      * Simple action for verifying proper CSRF token handling from external scripts and programs. Referenced in the
-     * HTTP Interface docs: https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs
+     * <a href="https://www.labkey.org/Documentation/wiki-page.view?name=remoteAPIs">HTTP Interface docs</a>
      */
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @CSRF(CSRF.Method.ALL)
-    public static class CsrfAction extends ReadOnlyApiAction
+    public static class CsrfAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object o, BindException errors)
@@ -2742,6 +2713,63 @@ public class LoginController extends SpringActionController
         }
     }
 
+    public static class PasswordForm
+    {
+        private String _password;
+        private String _email;
+
+        public String getPassword()
+        {
+            return _password;
+        }
+
+        public void setPassword(String password)
+        {
+            _password = password;
+        }
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
+    }
+
+    @SuppressWarnings("unused") // Called from setPassword.jsp
+    @RequiresNoPermission
+    @AllowedDuringUpgrade
+    @AllowedBeforeInitialUserIsSet
+    public static class GetPasswordScoreAction extends ReadOnlyApiAction<PasswordForm>
+    {
+        @Override
+        public Object execute(PasswordForm form, BindException errors) throws Exception
+        {
+            String email = form.getEmail();
+            User user = null;
+
+            if (email != null)
+            {
+                try
+                {
+                    user = UserManager.getUser(new ValidEmail(email));
+                }
+                catch (InvalidEmailException e)
+                {
+                    // Ignore
+                }
+            }
+
+            // If user doesn't exist (initial user case) or email is invalid pass in a fake user to filter the email address
+            if (null == user)
+                user = new User(form.getEmail(), -9999);
+
+            return Map.of("score", EntropyPasswordValidator.score(StringUtils.trimToEmpty(form.getPassword()), user));
+        }
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {
@@ -2751,21 +2779,19 @@ public class LoginController extends SpringActionController
             User user = TestContext.get().getUser();
             assertTrue(user.hasSiteAdminPermission());
 
-            LoginController controller = new LoginController();
-
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new DeleteConfigurationAction(),
-                controller.new SaveDbLoginPropertiesAction(),
-                controller.new SaveSettingsAction(),
-                controller.new SetAuthenticationParameterAction()
+                new DeleteConfigurationAction(),
+                new SaveDbLoginPropertiesAction(),
+                new SaveSettingsAction(),
+                new SetAuthenticationParameterAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new ConfigureAction(),
-                controller.new InitialMountAction(),
-                controller.new GetDbLoginPropertiesAction()
+                new ConfigureAction(),
+                new InitialMountAction(),
+                new GetDbLoginPropertiesAction()
             );
         }
     }

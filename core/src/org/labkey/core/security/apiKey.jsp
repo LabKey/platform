@@ -170,7 +170,7 @@ compliance requirements where interactions require specifying current role &amp;
 <%
     }
 %>
-<script type="application/javascript">
+<script type="text/javascript" nonce="<%=getScriptNonce()%>">
     (function($) {
         addCopyToClipboard($, '#apikey-token-copy');
         addCopyToClipboard($, '#session-token-copy');

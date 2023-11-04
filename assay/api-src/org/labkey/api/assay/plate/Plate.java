@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
@@ -39,27 +40,35 @@ public interface Plate extends PropertySet, Identifiable
 
     boolean isTemplate();
 
-    Well getWell(int row, int col);
+    /**
+     * Returns an existing well, or creates a new well if one
+     * had not previously existed.
+     */
+    @NotNull Well getWell(int row, int col);
 
-    WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
+    @Nullable Well getWell(int rowId);
+
+    @NotNull List<Well> getWells();
+
+    @Nullable WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
 
     @Nullable WellGroup getWellGroup(int rowId);
 
-    List<WellGroup> getWellGroups();
+    @NotNull List<WellGroup> getWellGroups();
 
-    List<WellGroup> getWellGroups(Position position);
+    @NotNull List<WellGroup> getWellGroups(Position position);
 
-    List<WellGroup> getWellGroups(WellGroup.Type type);
+    @NotNull List<WellGroup> getWellGroups(WellGroup.Type type);
 
-    Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupTemplateMap();
+    @NotNull Map<WellGroup.Type, Map<String, WellGroup>> getWellGroupMap();
 
-    WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);
+    @NotNull WellGroup addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);
 
-    WellGroup addWellGroup(String name, WellGroup.Type type, List<Position> positions);
+    @NotNull WellGroup addWellGroup(String name, WellGroup.Type type, List<Position> positions);
 
-    Integer getRowId();
+    @Nullable Integer getRowId();
 
-    Position getPosition(int row, int col);
+    @NotNull Position getPosition(int row, int col);
 
     int getWellGroupCount();
 
@@ -69,4 +78,18 @@ public interface Plate extends PropertySet, Identifiable
 
     @Override
     @Nullable ActionURL detailsURL();
+
+    /**
+     * The list of metadata fields that are configured for this plate
+     */
+    @NotNull List<PlateCustomField> getCustomFields();
+
+    Plate copy();
+
+    /**
+     * Returns the domain ID for the plate metadata domain.
+     */
+    @Nullable Integer getMetadataDomainId();
+
+    @Nullable Integer getRunCount();
 }

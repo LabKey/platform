@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
@@ -98,6 +99,7 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AddUserPermission;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.DeleteUserPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -163,6 +165,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.security.UserManager.UserDetailsButtonCategory.Account;
+import static org.labkey.api.security.UserManager.UserDetailsButtonCategory.Authentication;
+import static org.labkey.api.security.UserManager.UserDetailsButtonCategory.Permissions;
 
 public class UserController extends SpringActionController
 {
@@ -414,11 +420,8 @@ public class UserController extends SpringActionController
         }
     }
 
-    /**
-     * This method represents the point of entry into the pageflow
-     */
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -446,18 +449,6 @@ public class UserController extends SpringActionController
         {
             _userId = userId;
         }
-
-        // TODO: Switch to standard param
-        public ActionURL getRedirUrl()
-        {
-            return getReturnActionURL();
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setRedirUrl(String redirUrl)
-        {
-            setReturnUrl(redirUrl);
-        }
     }
 
     public abstract class BaseActivateUsersAction extends FormViewAction<UserIdForm>
@@ -480,7 +471,7 @@ public class UserController extends SpringActionController
             if (errors.hasErrors())
                 return new SimpleErrorView(errors, false);
 
-            DeactivateUsersBean bean = new DeactivateUsersBean(_active, form.getRedirUrl());
+            DeactivateUsersBean bean = new DeactivateUsersBean(_active, form.getReturnActionURL(new UserUrlsImpl().getSiteUsersURL()));
             if (null != form.getUserId())
             {
                 for (Integer userId : form.getUserId())
@@ -503,8 +494,8 @@ public class UserController extends SpringActionController
                 }
             }
 
-            if (bean.getUsers().size() == 0)
-                throw new RedirectException(bean.getRedirUrl());
+            if (bean.getUsers().isEmpty())
+                throw new RedirectException(bean.getReturnUrl());
 
             return new JspView<>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
         }
@@ -536,8 +527,7 @@ public class UserController extends SpringActionController
         @Override
         public ActionURL getSuccessURL(UserIdForm form)
         {
-            return null != form.getRedirUrl() ? form.getRedirUrl()
-                    : new UserUrlsImpl().getSiteUsersURL();
+            return form.getReturnActionURL(new UserUrlsImpl().getSiteUsersURL());
         }
 
         @Override
@@ -573,7 +563,7 @@ public class UserController extends SpringActionController
 
         return null != formUser
                 && formUserId != currentUser.getUserId() // don't let a user activate/deactivate/delete themselves
-                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasPrivilegedRole()); // don't let non-site admin deactivate/delete a user with a privileged role (site admin, platform dev)
     }
 
     @RequiresAllOf({UpdateUserPermission.class, DeleteUserPermission.class})
@@ -599,7 +589,7 @@ public class UserController extends SpringActionController
                         invalidUserIds.add(userId);
                 }
 
-                if (invalidUserIds.size() > 0)
+                if (!invalidUserIds.isEmpty())
                     errors.reject(ERROR_MSG, "Invalid user id(s) provided: " + StringUtils.join(invalidUserIds, ", ") + ".");
             }
         }
@@ -686,7 +676,7 @@ public class UserController extends SpringActionController
                 }
             }
 
-            if (bean.getUsers().size() == 0)
+            if (bean.getUsers().isEmpty())
                 throw new RedirectException(siteUsersUrl);
 
             return new JspView<>("/org/labkey/core/user/deleteUsers.jsp", bean, errors);
@@ -945,7 +935,7 @@ public class UserController extends SpringActionController
 
     @AdminConsoleAction
     @RequiresPermission(AdminPermission.class)
-    public class ShowUserPreferencesAction extends SimpleRedirectAction<Object>
+    public static class ShowUserPreferencesAction extends SimpleRedirectAction<Object>
     {
         @Override
         public URLHelper getRedirectURL(Object form)
@@ -1576,8 +1566,8 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserQueryForm form, BindException errors)
         {
-            User user = getUser();
-            int userId = user.getUserId();
+            User currentUser = getUser();
+            int userId = currentUser.getUserId();
             _detailsUserId = form.getUserId();
             User detailsUser = getModifiableUser(_detailsUserId);
 
@@ -1588,11 +1578,12 @@ public class UserController extends SpringActionController
                 authorizeUserAction(_detailsUserId, "view details of", true);
 
             Container c = getContainer();
-            boolean isUserManager = user.hasRootPermission(UserManagementPermission.class);
+            ActionURL currentUrl = getViewContext().getActionURL();
+            boolean isUserManager = currentUser.hasRootPermission(UserManagementPermission.class);
             boolean isProjectAdminOrBetter = isUserManager || isProjectAdmin();
 
             // don't let a non-site admin manage certain parts of a site-admin's account
-            boolean canManageDetailsUser = user.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
+            boolean canManageDetailsUser = currentUser.hasSiteAdminPermission() || !detailsUser.hasSiteAdminPermission();
 
             ValidEmail detailsEmail = null;
             boolean loginExists = false;
@@ -1612,7 +1603,7 @@ public class UserController extends SpringActionController
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
             // for the root container or if the user is site/app admin, use the site users table
-            String userTableName = c.isRoot() || c.hasPermission(user, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
+            String userTableName = c.isRoot() || c.hasPermission(currentUser, UserManagementPermission.class) ? CoreQuerySchema.SITE_USERS_TABLE_NAME : CoreQuerySchema.USERS_TABLE_NAME;
             // use getTable(forWrite=true) because we hack on this TableInfo
             // TODO don't hack on the TableInfo, shouldn't the schema check canSeeUserDetails() and has AdminPermission?
             TableInfo table = schema.getTable(userTableName, null, true, true);
@@ -1628,7 +1619,7 @@ public class UserController extends SpringActionController
                         ((AbstractTableInfo)table).removeColumn(col);
                 }
 
-                if (!c.hasPermission(user, AdminPermission.class))
+                if (!c.hasPermission(currentUser, AdminPermission.class))
                 {
                     ColumnInfo col = table.getColumn(FieldKey.fromParts("Groups"));
                     if (col != null)
@@ -1650,7 +1641,7 @@ public class UserController extends SpringActionController
 
             if (isOwnRecord && loginExists && !isLoginAutoRedirect)
             {
-                ActionButton changePasswordButton = new ActionButton(urlProvider(LoginUrls.class).getChangePasswordURL(c, user, getViewContext().getActionURL(), null), "Change Password");
+                ActionButton changePasswordButton = new ActionButton(urlProvider(LoginUrls.class).getChangePasswordURL(c, currentUser, currentUrl, null), "Change Password");
                 changePasswordButton.setActionType(ActionButton.Action.LINK);
                 changePasswordButton.addContextualRole(OwnerRole.class);
                 bb.add(changePasswordButton);
@@ -1666,7 +1657,7 @@ public class UserController extends SpringActionController
                     // an alternate login, e.g., in case LDAP server goes down or configuration changes.
                     ActionURL resetURL = new ActionURL(AdminResetPasswordAction.class, c);
                     resetURL.addParameter("email", detailsEmail.getEmailAddress());
-                    resetURL.addReturnURL(getViewContext().getActionURL());
+                    resetURL.addReturnURL(currentUrl);
                     ActionButton reset = new ActionButton(resetURL, loginExists ? "Reset Password" : "Create Password");
                     reset.setActionType(ActionButton.Action.LINK);
                     bb.add(reset);
@@ -1675,13 +1666,18 @@ public class UserController extends SpringActionController
                     {
                         ActionURL deleteURL = new ActionURL(AdminDeletePasswordAction.class, c);
                         deleteURL.addParameter("email", detailsEmail.getEmailAddress());
-                        deleteURL.addReturnURL(getViewContext().getActionURL());
+                        deleteURL.addReturnURL(currentUrl);
                         ActionButton delete = new ActionButton(deleteURL, "Delete Password");
                         delete.setActionType(ActionButton.Action.LINK);
                         bb.add(delete);
                     }
                 }
+            }
 
+            UserManager.addCustomButtons(Authentication, bb, c, currentUser, detailsUser, currentUrl);
+
+            if (isUserManager)
+            {
                 if (canManageDetailsUser && !isLoginAutoRedirect) // Issue 33393
                     bb.add(makeChangeEmailButton(c, detailsUser));
 
@@ -1699,7 +1695,7 @@ public class UserController extends SpringActionController
                     {
                         ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                         deactivateUrl.addParameter("userId", _detailsUserId);
-                        deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
+                        deactivateUrl.addReturnURL(currentUrl);
                         bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
                     }
 
@@ -1708,11 +1704,23 @@ public class UserController extends SpringActionController
                     bb.add(new ActionButton("Delete", deleteUrl));
                 }
             }
+            else
+            {
+                if (isOwnRecord
+                    && loginExists  // only show link to users where LabKey manages the password
+                    && AuthenticationManager.isSelfServiceEmailChangesEnabled()
+                    && !isLoginAutoRedirect) // Issue 33393
+                {
+                    bb.add(makeChangeEmailButton(c, detailsUser));
+                }
+            }
+
+            UserManager.addCustomButtons(Account, bb, c, currentUser, detailsUser, currentUrl);
 
             if (isProjectAdminOrBetter)
             {
                 ActionURL viewPermissionsURL = new UserUrlsImpl().getUserAccessURL(c, _detailsUserId);
-                viewPermissionsURL.addReturnURL(getViewContext().getActionURL());
+                viewPermissionsURL.addReturnURL(currentUrl);
                 ActionButton viewPermissions = new ActionButton(viewPermissionsURL, "View Permissions");
                 viewPermissions.setActionType(ActionButton.Action.LINK);
                 bb.add(viewPermissions);
@@ -1720,7 +1728,7 @@ public class UserController extends SpringActionController
 
             if (isUserManager && canManageDetailsUser)
             {
-                ActionURL cloneUrl = urlProvider(SecurityUrls.class).getClonePermissionsURL(detailsUser, getViewContext().getActionURL());
+                ActionURL cloneUrl = urlProvider(SecurityUrls.class).getClonePermissionsURL(detailsUser, currentUrl);
                 ActionButton cloneButton = new ActionButton(cloneUrl, "Clone Permissions");
                 cloneButton.setActionType(ActionButton.Action.LINK);
                 cloneButton.setTooltip("Replace this user's permissions with those of another user");
@@ -1728,16 +1736,7 @@ public class UserController extends SpringActionController
                 bb.add(cloneButton);
             }
 
-            if (isOwnRecord)
-            {
-                if (!isUserManager  // site/app admin already had this link added above
-                        && loginExists  // only show link to users where LabKey manages the password
-                        && AuthenticationManager.isSelfServiceEmailChangesEnabled()
-                        && !isLoginAutoRedirect) // Issue 33393
-                {
-                    bb.add(makeChangeEmailButton(c, detailsUser));
-                }
-            }
+            UserManager.addCustomButtons(Permissions, bb, c, currentUser, detailsUser, currentUrl);
 
             if (isProjectAdminOrBetter)
             {
@@ -1761,10 +1760,10 @@ public class UserController extends SpringActionController
                     Container doneContainer = c.getProject();
 
                     // Root or no permission means redirect to home, #12947
-                    if (null == doneContainer || !doneContainer.hasPermission(user, ReadPermission.class))
+                    if (null == doneContainer || !doneContainer.hasPermission(currentUser, ReadPermission.class))
                         doneContainer = ContainerManager.getHomeContainer();
 
-                    ActionURL doneURL = doneContainer.getStartURL(user);
+                    ActionURL doneURL = doneContainer.getStartURL(currentUser);
                     doneButton = new ActionButton(doneURL, "Go to " + doneContainer.getName());
                     doneButton.setActionType(ActionButton.Action.LINK);
                 }
@@ -1954,7 +1953,7 @@ public class UserController extends SpringActionController
                 {
                     if(!(currentEmailFromDatabase.equals(loggedInUserEmail)))
                     {
-                        errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request.  Please log in with the account you used to make " +
+                        errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request. Please log in with the account you used to make " +
                                 "this email change request.");
                     }
                     else
@@ -1966,7 +1965,7 @@ public class UserController extends SpringActionController
                             {
                                 UserManager.auditEmailTimeout(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), requestedEmailFromDatabase, verificationToken, getUser());
                             }
-                            errors.reject(ERROR_MSG, "This verification link has expired.  Please try to change your email address again.");
+                            errors.reject(ERROR_MSG, "This verification link has expired. Please try to change your email address again.");
                         }
                         else
                         {
@@ -1985,7 +1984,7 @@ public class UserController extends SpringActionController
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
-                        errors.reject(ERROR_MSG, "Verification was incorrect.  Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
+                        errors.reject(ERROR_MSG, "Verification was incorrect. Make sure you've copied the entire link into your browser's address bar.");  // double error, to better explain to user
                     }
                     else if(!(verificationToken.equals(verifyEmail.getVerification())))
                     {
@@ -1993,12 +1992,12 @@ public class UserController extends SpringActionController
                         {
                             UserManager.auditBadVerificationToken(loggedInUser.getUserId(), validUserEmail.getEmailAddress(), verifyEmail.getRequestedEmail(), verificationToken, loggedInUser);
                         }
-                        errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request.  Please log in with the account you used to make " +
+                        errors.reject(ERROR_MSG, "The current user is not the same user that initiated this request. Please log in with the account you used to make " +
                                 "this email change request.");  // double error, to better explain to user
                     }
                     else  // not sure if/how this can happen
                     {
-                        errors.reject(ERROR_MSG, "Unknown verification error.  Make sure you've copied the entire link into your browser's address bar.");
+                        errors.reject(ERROR_MSG, "Unknown verification error. Make sure you've copied the entire link into your browser's address bar.");
                     }
                 }
             }
@@ -2153,7 +2152,7 @@ public class UserController extends SpringActionController
                 String defaultDomain = ValidEmail.getDefaultDomain();
                 StringBuilder sb = new StringBuilder();
                 sb.append("Please sign in using your full email address, for example: ");
-                if (defaultDomain.length() > 0)
+                if (!defaultDomain.isEmpty())
                 {
                     sb.append("employee@");
                     sb.append(defaultDomain);
@@ -2421,11 +2420,11 @@ public class UserController extends SpringActionController
                 "Verification link for ^organizationName^ ^siteShortName^ Web Site email change";
         static final String DEFAULT_BODY =
                 "You recently requested a change to the email address associated with your account on the " +
-                "^organizationName^ ^siteShortName^ Web Site.  If you did not issue this request, you can ignore this email.\n\n" +
+                "^organizationName^ ^siteShortName^ Web Site. If you did not issue this request, you can ignore this email.\n\n" +
                 "To complete the process of changing your account's email address from ^currentEmailAddress^ to ^newEmailAddress^, " +
                 "simply click the link below or copy it to your browser's address bar.\n\n" +
                 "^verificationURL^\n\n" +
-                "This step confirms that you are the owner of the new email account.  After you click the link, you will need " +
+                "This step confirms that you are the owner of the new email account. After you click the link, you will need " +
                 "to use the new email address when logging into the server.";
         String _currentEmailAddress;
         String _requestedEmailAddress;
@@ -2503,6 +2502,7 @@ public class UserController extends SpringActionController
         private boolean _active; // should we get only active members (relevant only if permissions is empty)
         private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
         private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
+        private boolean _includeInactive; // Should we include inactive members, only used in the 23.11 version of GetUsersWithPermissionsAction
 
         public String getGroup()
         {
@@ -2572,6 +2572,16 @@ public class UserController extends SpringActionController
         {
             _active = active;
         }
+
+        public boolean getIncludeInactive()
+        {
+            return _includeInactive;
+        }
+
+        public void setIncludeInactive(boolean includeInactive)
+        {
+            _includeInactive = includeInactive;
+        }
     }
 
 
@@ -2581,12 +2591,12 @@ public class UserController extends SpringActionController
      * checking for permissions, no deactivated users will be included).
      *
      * N.B. Users that have permissions within the current project but are not part of any project group WILL NOT be returned unless
-     * the user is in one of the global groups (such as SiteAdmins) and you set allMembers=true.  In other words, this is probably
-     * not the API you're looking for.  Consider using GetUsersWithPermissions instead.
+     * the user is in one of the global groups (such as SiteAdmins) and you set allMembers=true. In other words, this is probably
+     * not the API you're looking for. Consider using GetUsersWithPermissions instead.
      */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
+    public static class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
     {
         @Override
         public ApiResponse execute(GetUsersForm form, BindException errors)
@@ -2605,7 +2615,7 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = getProjectGroupUsers(form, response);
+                users = getProjectGroupUsers(form, response, !form.getActive());
             }
             else
             {
@@ -2642,7 +2652,7 @@ public class UserController extends SpringActionController
         }
 
         @NotNull
-        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response)
+        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response, boolean includeDeactivated)
         {
             Container project = getContainer().getProject();
 
@@ -2666,10 +2676,10 @@ public class UserController extends SpringActionController
             response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
             MemberType<User> userMemberType;
-            if (form.getActive())
-                userMemberType = MemberType.ACTIVE_USERS;
-            else
+            if (includeDeactivated)
                 userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
+            else
+                userMemberType = MemberType.ACTIVE_USERS;
 
             // if the allMembers flag is set, then recurse and if group is site users group then return all site users
             Collection<User> users;
@@ -2711,14 +2721,15 @@ public class UserController extends SpringActionController
     }
 
     /**
-     * Retrieves the set of users that have all of a specified set of permissions.  A group
-     * may be provided and only users within that group will be returned.  A name (prefix) may be
+     * Retrieves the set of users that have all of a specified set of permissions. A group
+     * may be provided and only users within that group will be returned. A name (prefix) may be
      * provided and only users whose email or display name starts with the prefix will be returned.
      * This will not return any deactivated users (since they do not have permissions of any sort).
      */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
-    public class GetUsersWithPermissionsAction extends GetUsersAction
+    @ApiVersion(23.10)
+    public static class GetUsersWithPermissionsAction extends GetUsersAction
     {
         @Override
         public void validateForm(GetUsersForm form, Errors errors)
@@ -2727,10 +2738,59 @@ public class UserController extends SpringActionController
             {
                 errors.reject(ERROR_REQUIRED, "Permissions are required");
             }
-            else if (form.getPermissionClasses().size() == 0)
+            else if (form.getPermissionClasses().isEmpty())
             {
                 errors.reject(ERROR_GENERIC, "No valid permission classes provided.");
             }
+        }
+
+        /**
+         * The older 23.10 response format does not honor the newer includeDeactivated flag. It only honors the active
+         * flag when requesting users of a group, and ignores the flag (only ever returning active users) when not
+         * requesting a group.
+         */
+        private ApiResponse response2310(ApiSimpleResponse response, GetUsersForm form)
+        {
+            Collection<User> users;
+
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response, !form.getActive()));
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(getContainer(), form.getPermissionClasses());
+            }
+
+            this.setUsersList(form, users, response);
+
+            return response;
+        }
+
+        /**
+         * The 23.11 response format does not honor the active flag, instead it honors the includeDeactivated flag, and
+         * it honors it when requesting users or groups. The flag defaults to false, so by default only active users
+         * will be returned.
+         */
+        private ApiResponse response2311(ApiSimpleResponse response, GetUsersForm form)
+        {
+            boolean includeInactive = form.getIncludeInactive();
+            Collection<User> users;
+
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response, includeInactive));
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(getContainer(), includeInactive, form.getPermissionClasses());
+            }
+
+            this.setUsersList(form, users, response);
+
+            return response;
         }
 
         @Override
@@ -2745,26 +2805,16 @@ public class UserController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("container", container.getPath());
 
-            Collection<User> users;
+            if (getRequestedApiVersion() <= 23.10)
+                return response2310(response, form);
 
-            //if requesting users in a specific group...
-            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
-            {
-                users = filterForPermissions(form, getProjectGroupUsers(form, response));
-            }
-            else
-            {
-                users = SecurityManager.getUsersWithPermissions(container, form.getPermissionClasses());
-            }
-
-            this.setUsersList(form, users, response);
-            return response;
+            return response2311(response, form);
         }
     }
 
 
     @RequiresPermission(AdminPermission.class)
-    public class GetImpersonationUsersAction extends MutatingApiAction
+    public static class GetImpersonationUsersAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
@@ -2970,27 +3020,26 @@ public class UserController extends SpringActionController
 
 
     @RequiresNoPermission
-    public class GetImpersonationRolesAction extends MutatingApiAction
+    public class GetImpersonationRolesAction extends MutatingApiAction<Object>
     {
         @Override
         public ApiResponse execute(Object object, BindException errors)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> impersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> impersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
+            User user = context.isImpersonating() ? context.getAdminUser() : getUser();
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Collection<Role> roles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer());
-            Collection<Map<String, Object>> responseRoles = new LinkedList<>();
-
-            for (Role role : roles)
-            {
-                Map<String, Object> map = new HashMap<>();
-                map.put("displayName", role.getDisplayName());
-                map.put("roleName", role.getUniqueName());
-                map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
-                map.put("selected", impersonationRoles.contains(role));
-                responseRoles.add(map);
-            }
+            Collection<Map<String, Object>> responseRoles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer(), user)
+                .map(role -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("displayName", role.getDisplayName());
+                    map.put("roleName", role.getUniqueName());
+                    map.put("hasRead", role.getPermissions().contains(ReadPermission.class));
+                    map.put("selected", impersonationRoles.contains(role));
+                    return map;
+                })
+                .toList();
 
             response.put("roles", responseRoles);
 
@@ -3006,6 +3055,9 @@ public class UserController extends SpringActionController
 
         if (context.isImpersonating())
             user = context.getAdminUser();
+
+        if (getContainer().isRoot() && user.hasRootPermission(CanImpersonateSiteRolesPermission.class))
+            return context;
 
         if (!getContainer().hasPermission(user, AdminPermission.class))
             throw new UnauthorizedException();
@@ -3039,7 +3091,7 @@ public class UserController extends SpringActionController
         public String impersonate(ImpersonateRolesForm form)
         {
             ImpersonationContext context = authorizeImpersonateRoles();
-            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getContextualRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
+            Set<Role> currentImpersonationRoles = context.isImpersonating() ? context.getAssignedRoles(getUser(), getContainer().getPolicy()) : Collections.emptySet();
 
             String[] roleNames = form.getRoleNames();
 
@@ -3209,9 +3261,9 @@ public class UserController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user, false,
-                controller.new BeginAction(),
-                controller.new GetUsersAction(),
-                controller.new GetUsersWithPermissionsAction()
+                new BeginAction(),
+                new GetUsersAction(),
+                new GetUsersWithPermissionsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
@@ -3219,7 +3271,7 @@ public class UserController extends SpringActionController
                 controller.new ShowUsersAction(),
                 //TODO controller.new ShowUserHistoryAction(),
                 //TODO controller.new UserAccessAction(),
-                controller.new GetImpersonationUsersAction(),
+                new GetImpersonationUsersAction(),
                 controller.new ImpersonateUserAction(),
                 controller.new GetImpersonationGroupsAction(),
                 controller.new ImpersonateGroupAction()
@@ -3236,7 +3288,7 @@ public class UserController extends SpringActionController
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new ShowUserPreferencesAction(),
+                new ShowUserPreferencesAction(),
                 new LimitActiveUsersAction()
             );
         }

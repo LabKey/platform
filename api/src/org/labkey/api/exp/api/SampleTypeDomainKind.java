@@ -99,32 +99,44 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         )));
 
         RESERVED_NAMES = BASE_PROPERTIES.stream().map(PropertyStorageSpec::getName).collect(Collectors.toSet());
+        RESERVED_NAMES.add("Created By");
         RESERVED_NAMES.addAll(Arrays.stream(ExpSampleTypeTable.Column.values()).map(ExpSampleTypeTable.Column::name).toList());
         RESERVED_NAMES.add("Protocol"); // alias for "SourceProtocolApplication"
         RESERVED_NAMES.add("SampleTypeUnits"); // alias for MetricUnit
         RESERVED_NAMES.add("CpasType");
         RESERVED_NAMES.add("IsAliquot");
+        RESERVED_NAMES.add("Is Aliquot");
         RESERVED_NAMES.add(ExpMaterial.ALIQUOTED_FROM_INPUT);
         RESERVED_NAMES.add("AliquotedFromLSID");
+        RESERVED_NAMES.add("Aliquoted From Parent");
+        RESERVED_NAMES.add("Available Aliquot Count");
+        RESERVED_NAMES.add("Available Aliquot Amount");
         RESERVED_NAMES.add("RootMaterialLSID");
+        RESERVED_NAMES.add("Root Material");
         RESERVED_NAMES.add("RecomputeRollup");
         RESERVED_NAMES.add("AliquotTotalVolume");
+        RESERVED_NAMES.add("Aliquot Total Amount");
         RESERVED_NAMES.add("AliquotCount");
+        RESERVED_NAMES.add("Aliquots Created Count");
         RESERVED_NAMES.add("AliquotVolume");
         RESERVED_NAMES.add("AliquotUnit");
+        RESERVED_NAMES.add("Aliquot Unit");
         RESERVED_NAMES.add("MaterialExpDate");
         RESERVED_NAMES.add("ExpirationDate");
+        RESERVED_NAMES.add("Expiration Date");
         RESERVED_NAMES.add("Ancestors");
         RESERVED_NAMES.add("Container");
         RESERVED_NAMES.add("SampleID");
         RESERVED_NAMES.add("Sample ID");
         RESERVED_NAMES.add("Status");
         RESERVED_NAMES.add(ExpMaterialTable.Column.StoredAmount.name());
+        RESERVED_NAMES.add("Amount");
         RESERVED_NAMES.add(ExpMaterialTable.Column.RawAmount.name());
         RESERVED_NAMES.add(ExpMaterialTable.Column.Units.name());
         RESERVED_NAMES.add(ExpMaterialTable.Column.RawUnits.name());
         RESERVED_NAMES.add(ExpMaterialTable.Column.SampleState.name());
         RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_NAMES);
+        RESERVED_NAMES.addAll(InventoryService.INVENTORY_STATUS_COLUMN_LABELS);
 
         FOREIGN_KEYS = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 // NOTE: We join to exp.material using LSID instead of rowid for insert performance -- we will generate
@@ -204,6 +216,12 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
     @Override
     public boolean allowTimepointProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowUniqueConstraintProperties()
     {
         return true;
     }
@@ -493,7 +511,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public Domain createDomain(GWTDomain domain, @Nullable SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
+        String name = StringUtils.trimToNull(domain.getName());
         if (name == null)
             throw new IllegalArgumentException("SampleSet name required");
 
@@ -616,7 +634,7 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
             String table = domain.getStorageTableName();
             SQLFragment nonAliquotRowsSQL = new SQLFragment("SELECT * FROM exp.material WHERE LSID IN (")
                     .append("SELECT LSID FROM " + getStorageSchemaName() + "." + table)
-                    .append(") AND RootMaterialLSID IS NULL");
+                    .append(") AND RootMaterialLSID = LSID");
 
             long totalRows = new SqlSelector(ExperimentService.get().getSchema(), nonAliquotRowsSQL).getRowCount();
             long nonBlankRows = new SqlSelector(ExperimentService.get().getSchema(), nonBlankRowsSQL).getRowCount();

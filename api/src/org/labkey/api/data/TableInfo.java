@@ -59,9 +59,6 @@ import java.util.Set;
 /**
  * Representation of a queryable unit in the database. Might be backed by a "physical" table, a database VIEW,
  * or an arbitrary generated chunk of SELECT SQL.
- *
- * User: Matthew
- * Date: Apr 27, 2006
  */
 public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
@@ -522,6 +519,13 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     void fireBatchTrigger(Container c, User user, TriggerType type, boolean before, BatchValidationException errors, Map<String, Object> extraContext)
             throws BatchValidationException;
 
+    default void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
+                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
+            throws ValidationException
+    {
+        fireRowTrigger(c, user, type, before, rowNumber, newRow, oldRow, extraContext, null);
+    }
+
     /**
      * Fire trigger for a single row.
      * <p>
@@ -556,10 +560,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @param newRow The new row for INSERT and UPDATE.
      * @param oldRow The previous row for UPDATE and DELETE
      * @param extraContext Optional additional bindings to set in the script's context when evaluating.
+     * @param existingRecord Optional existing record for the row, used for merge operation to differentiate new vs existing row
      * @throws ValidationException if the trigger function returns false or the errors map isn't empty.
      */
     void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber,
-                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext)
+                        @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext, @Nullable Map<String, Object> existingRecord)
             throws ValidationException;
 
     /**
@@ -684,7 +689,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
 
     // we exclude these from the detailed record because they are already on the audit record itself and
-    // depending on the data iterator behavior (e.g., for ExpDataIteraotrs.getDataIterator), these values
+    // depending on the data iterator behavior (e.g., for ExpDataIterators.getDataIterator), these values
     // time of creating the audit log may actually already have been updated so the difference shown will be incorrect.
     Set<String> defaultExcludedDetailedUpdateAuditFields = CaseInsensitiveHashSet.of("Modified", "ModifiedBy", "Created", "CreatedBy");
 

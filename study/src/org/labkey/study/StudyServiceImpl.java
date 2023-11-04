@@ -32,6 +32,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ContainerSecurableResourceProvider;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -124,12 +125,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * User: jgarms
  */
-public class StudyServiceImpl implements StudyService
+public class StudyServiceImpl implements StudyService, ContainerSecurableResourceProvider
 {
     public static final StudyServiceImpl INSTANCE = new StudyServiceImpl();
     private static final List<StudyManagementOption> _managementOptions = new ArrayList<>();
 
-    private StudyServiceImpl() {}
+    private StudyServiceImpl()
+    {
+        ContainerManager.addSecurableResourceProvider(this);
+    }
 
     public static StudyServiceImpl get()
     {

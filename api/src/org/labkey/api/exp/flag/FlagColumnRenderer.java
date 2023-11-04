@@ -88,6 +88,8 @@ public class FlagColumnRenderer extends DataColumn
             out.write("});\n});");
             out.write("</script>");
 
+            HttpView.currentPageConfig().addHandlerForQuerySelector("A." + setFlagFn, "click", "return " + setFlagFn + "(this.dataset['objectid']);");
+
             return setFlagFn;
         }
         catch (Exception e)
@@ -125,9 +127,7 @@ public class FlagColumnRenderer extends DataColumn
             canUpdate = ctx.getViewContext().hasPermission(UpdatePermission.class);
         if (Boolean.TRUE == canUpdate && null != objectId)
         {
-            out.write("<a href=\"#\" onclick=\"return " + setFlagFn + "(");
-            out.write(hq(objectId));
-            out.write(")\" style=\"color: #aaaaaa\">");
+            out.write("<a href=\"#\" class=\"" + setFlagFn + "\" data-objectid=\"" + h(objectId) + "\" style=\"color: #aaaaaa\">");
         }
 
         out.write("<i class=\"" + (null==comment ? flagDisabledCls() : flagEnabledCls()) + "\"");

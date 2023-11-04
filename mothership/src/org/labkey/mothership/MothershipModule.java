@@ -19,16 +19,9 @@ package org.labkey.mothership;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.query.AbstractMethodInfo;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -51,16 +44,11 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.mothership.query.MothershipSchema;
 import org.labkey.mothership.view.ExceptionListWebPart;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Apr 19, 2006
- */
 public class MothershipModule extends DefaultModule
 {
     public static final String NAME = "Mothership";
@@ -74,7 +62,7 @@ public class MothershipModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 23.000;
+        return 23.002;
     }
 
     @Override
@@ -115,7 +103,7 @@ public class MothershipModule extends DefaultModule
 
     private void bootstrap(ModuleContext moduleContext)
     {
-        Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
+        Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH, User.getAdminServiceUser());
         final Group mothershipGroup;
         Integer groupId = SecurityManager.getGroupId(c, NAME, false);
         // Group will exist in the case where mothership module is deleted and re-added to a deployment
@@ -130,7 +118,7 @@ public class MothershipModule extends DefaultModule
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
         policy.addRoleAssignment(mothershipGroup, projAdminRole);
-        SecurityPolicyManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
 
         try
         {

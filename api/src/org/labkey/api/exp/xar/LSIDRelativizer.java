@@ -30,7 +30,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME_SUB;
 
 
 /**
@@ -44,7 +47,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     ABSOLUTE("Absolute")
     {
         @Override
-        protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
+        protected String relativize(Lsid lsid, RelativizedLSIDs lsids, boolean useXarJobId)
         {
             return lsid.toString();
         }
@@ -52,7 +55,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     FOLDER_RELATIVE("Folder relative")
     {
         @Override
-        protected String relativize(ExpObject o, RelativizedLSIDs lsids)
+        protected String relativize(ExpObject o, RelativizedLSIDs lsids, boolean useXarJobId)
         {
             if (o instanceof ExpData data)
             {
@@ -61,14 +64,14 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 {
                     // If we don't have a URL for this data object, we can't use AutoFileLSID. Instead,
                     // try the next best option
-                    return PARTIAL_FOLDER_RELATIVE.relativize(o, lsids);
+                    return PARTIAL_FOLDER_RELATIVE.relativize(o, lsids, useXarJobId);
                 }
             }
-            return super.relativize(o, lsids);
+            return super.relativize(o, lsids, useXarJobId);
         }
 
         @Override
-        protected String relativize(Lsid lsid, RelativizedLSIDs lsids)
+        protected String relativize(Lsid lsid, RelativizedLSIDs lsids, boolean useXarJobId)
         {
             String prefix = lsid.getNamespacePrefix();
             String suffix = lsid.getNamespaceSuffix();
@@ -99,7 +102,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Sample".equals(prefix) || "Material".equals(prefix))
             {
-                String xarJobId = ".${XarJobId}"; // XarJobId is more concise than XarFileId
+                String xarJobId = "." + XAR_JOB_ID_NAME_SUB; // XarJobId is more concise than XarFileId
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + xarJobId + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Data".equals(prefix))
@@ -112,12 +115,20 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             else if (suffix != null && (SUFFIX_PATTERN.matcher(suffix).matches() || XAR_IMPORT_SUFFIX_PATTERN.matcher(suffix).matches()))
             {
                 String xarFileId = "";
-                if ("SampleSet".equals(prefix) || "DataClass".equals(prefix))
+                if (useXarJobId || "SampleSet".equals(prefix) || "DataClass".equals(prefix))
                 {
-                    xarFileId = ".${XarJobId}"; // DBSeq lsid might collide in target folder, add XarJobId to guarantee uniqueness
+                    xarFileId = "." + XAR_JOB_ID_NAME_SUB; // DBSeq lsid might collide in target folder, add XarJobId to guarantee uniqueness
                 }
 
                 return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + xarFileId, lsid.getObjectId(), lsid.getVersion());
+            }
+            else if (suffix != null && FOLDER_UUID_PATTERN.matcher(suffix).matches() && useXarJobId)
+            {
+                Matcher guidMatcher = UUID_PATTERN.matcher(suffix);
+                String guid = "";
+                if (guidMatcher.find())
+                    guid = guidMatcher.group(0);
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + containerSubstitution + "." + guid + "." + XAR_JOB_ID_NAME_SUB, lsid.getObjectId(), lsid.getVersion());
             }
 
             return lsid.toString();
@@ -126,7 +137,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
     PARTIAL_FOLDER_RELATIVE("Partial folder relative")
     {
         @Override
-        public String relativize(Lsid lsid, RelativizedLSIDs lsids)
+        public String relativize(Lsid lsid, RelativizedLSIDs lsids, boolean useXarJobId)
         {
             String prefix = lsid.getNamespacePrefix();
             String suffix = lsid.getNamespaceSuffix();
@@ -144,7 +155,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
             }
             else if ("Sample".equals(prefix))
             {
-                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarJobId}-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
+                return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Sample.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "." + XAR_JOB_ID_NAME_SUB + "-" + lsids.getNextSampleId(), lsid.getObjectId(), lsid.getVersion());
             }
             else if ("Material".equals(prefix))
             {
@@ -154,7 +165,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarJobId}-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion());
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Material.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "." + XAR_JOB_ID_NAME_SUB + "-" + lsids.getNextMaterialId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
             else if ("Data".equals(prefix))
@@ -165,7 +176,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ".${XarJobId}-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion());
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":Data.Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "." + XAR_JOB_ID_NAME_SUB + "-" + lsids.getNextDataId(), lsid.getObjectId(), lsid.getVersion());
                 }
             }
             else
@@ -176,17 +187,25 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 }
                 else
                 {
-                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + "", lsid.getObjectId(), lsid.getVersion());
+                    String jobId = useXarJobId ? "." + XAR_JOB_ID_NAME_SUB : "";
+                    return lsids.uniquifyRelativizedLSID("urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + prefix + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + jobId, lsid.getObjectId(), lsid.getVersion());
                 }
             }
         }
     };
     private final String _description;
 
-    protected abstract String relativize(Lsid lsid, RelativizedLSIDs lsids);
+    protected abstract String relativize(Lsid lsid, RelativizedLSIDs lsids, boolean useXarJobId);
+
+    protected String relativize(ExpObject o, RelativizedLSIDs lsids, boolean useXarJobId)
+    {
+        return relativize(new Lsid(o.getLSID()), lsids, useXarJobId);
+    }
 
     private static final Pattern SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+");
     private static final Pattern XAR_IMPORT_SUFFIX_PATTERN = Pattern.compile("Folder-[0-9]+.Xar-[0-9]+");
+    private static final Pattern UUID_PATTERN = Pattern.compile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
+    private static final Pattern FOLDER_UUID_PATTERN = Pattern.compile("Folder-[0-9]+.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
 
     LSIDRelativizer(String description)
     {
@@ -246,12 +265,17 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 return result;
             }
 
-            result = _relativizer.relativize(o, this);
+            result = _relativizer.relativize(o, this, false);
             putLSID(o.getLSID(), result);
             return result;
         }
 
         public String relativize(String s)
+        {
+            return relativize(s, false);
+        }
+
+        public String relativize(String s, boolean useXarJobId)
         {
             if (s == null)
             {
@@ -264,7 +288,7 @@ public enum LSIDRelativizer implements SafeToRenderEnum
                 return result;
             }
 
-            result = _relativizer.relativize(new Lsid(s), this);
+            result = _relativizer.relativize(new Lsid(s), this, useXarJobId);
             putLSID(s, result);
             return result;
         }
@@ -325,11 +349,6 @@ public enum LSIDRelativizer implements SafeToRenderEnum
         {
             return _nextMaterialId++;
         }
-    }
-
-    protected String relativize(ExpObject o, RelativizedLSIDs lsids)
-    {
-        return relativize(new Lsid(o.getLSID()), lsids);
     }
 
     public static class TestCase extends Assert

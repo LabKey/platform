@@ -30,6 +30,8 @@ import org.labkey.api.assay.DefaultAssayRunCreator;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.ProtocolIdForm;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -82,6 +84,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
+import static org.labkey.api.assay.plate.AssayPlateMetadataService.MetadataLayer;
 
 /*
 * User: Karl Lum
@@ -224,9 +227,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         Map<String, File> uploadedData = context.getUploadedData();
         List<Map<String, Object>> rawData = context.getRawData();
+        Map<String, MetadataLayer> rawPlateMetadata = context.getRawPlateMetadata();
 
         // For now, only one of uploadedData or rawData is used, not both at the same time.
-        Collection<ExpData> dataInputs = Collections.emptyList();
+        Collection<? extends ExpData> dataInputs = Collections.emptyList();
         if (uploadedData.isEmpty() && rawData != null && !rawData.isEmpty())
         {
             dataInputs = run.getDataInputs().keySet();
@@ -253,8 +257,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         // include uploaded data files in the runProperties.tsv and read the data rows from the file
-        for (File data : uploadedData.values())
+        for (Map.Entry<String, File> entry : uploadedData.entrySet())
         {
+            File data = entry.getValue();
             result.add(data);
             ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
             expData.setRun(run);
@@ -301,6 +306,20 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             File runData = new File(scriptDir, RUN_DATA_FILE);
             result.add(runData);
 
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                ExpProtocol protocol = run.getProtocol();
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+
+                Domain runDomain = provider.getRunDomain(protocol);
+                DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+                if (property != null)
+                {
+                    Object lsid = context.getRunProperties().get(property);
+                    rawData = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), rawData, rawPlateMetadata, protocol);
+                }
+            }
             addToMergedMap(mergedDataMap, Map.of(dataType, rawData));
             transformDataTypes.add(dataType);
         }

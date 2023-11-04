@@ -515,7 +515,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 PropertyDescriptor pd = pc.getPropertyDescriptor();
                 tableProperties.add(pd);
 
-                if (lsid != null && hasProperty(oldRow, pd))
+                // clear out the old value if it exists and is contained in the new row (it may be incoming as null)
+                if (lsid != null && (hasProperty(row, pd) && hasProperty(oldRow, pd)))
                     OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), getDomainObjContainer(c), getDomainContainer(c));
 
                 Object value = getPropertyValue(row, pd);

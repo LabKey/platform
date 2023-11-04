@@ -93,7 +93,8 @@ public interface QueryChangeListener
         Container(Container.class),
         Description(String.class),
         Inherit(Boolean.class),
-        Hidden(Boolean.class);
+        Hidden(Boolean.class),
+        SchemaName(String.class),;
 
         private final Class<?> _klass;
 
@@ -130,7 +131,7 @@ public interface QueryChangeListener
          * @param oldValue The previous property value or null.
          * @param newValue The current property value or null.
          */
-        public QueryPropertyChange(@NotNull QueryDefinition queryDef, @NotNull QueryProperty property, V oldValue, V newValue)
+        public QueryPropertyChange(@Nullable QueryDefinition queryDef, @NotNull QueryProperty property, V oldValue, V newValue)
         {
             _queryDef = queryDef;
             _property = property;
@@ -154,7 +155,23 @@ public interface QueryChangeListener
                     QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
         }
 
-        public QueryDefinition getSource() { return _queryDef; }
+        public static void handleSchemaNameChange(@NotNull String oldValue, String newValue, @NotNull SchemaKey schemaPath, User user, Container container)
+        {
+            if (oldValue.equals(newValue))
+                return;
+
+            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                    null,
+                    QueryChangeListener.QueryProperty.SchemaName,
+                    oldValue,
+                    newValue
+            );
+
+            QueryService.get().fireQueryChanged(user, container, null, schemaPath,
+                    QueryProperty.SchemaName, Collections.singleton(change));
+        }
+
+        @Nullable public QueryDefinition getSource() { return _queryDef; }
 
         @Override
         @NotNull

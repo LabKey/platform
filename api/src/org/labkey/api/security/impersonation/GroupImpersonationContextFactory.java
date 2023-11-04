@@ -22,6 +22,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -41,12 +42,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Used to indicate that a user is impersonating a specific group (site or project), and are not operating as their
+ * Used to indicate that a user is impersonating a specific group (site or project), and is not operating as their
  * normal logged-in self.
- *
- * User: adam
- * Date: 11/9/11
- * Time: 10:23 PM
  */
 public class GroupImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
@@ -57,7 +54,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 
     @JsonCreator
     protected GroupImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_groupId") int groupId,
             @JsonProperty("_returnURL") ActionURL returnURL
@@ -135,11 +132,11 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         if (group.isGuests())
             return false;
 
-        // Impersonating the "Site: Administrators" group as a non-site admin is confusing as well.
-        if (group.isAdministrators() && !user.hasSiteAdminPermission())
+        // Impersonating "Site: Administrators" or any other group assigned a privileged role by a non-site admin is confusing as well.
+        if (group.hasPrivilegedRole() && !user.hasSiteAdminPermission())
             return false;
 
-        // Site/app admin can impersonate any group
+        // Site/app admin can impersonate any other group
         if (user.hasRootAdminPermission())
             return true;
 
@@ -180,14 +177,14 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     private static class GroupImpersonationContext extends AbstractImpersonationContext
     {
         private final Group _group;
-        private final int[] _groups;
+        private final PrincipalArray _groups;
 
         @JsonCreator
         protected GroupImpersonationContext(
                 @JsonProperty("_project") @Nullable Container project,
                 @JsonProperty("_adminUser") User adminUser,
                 @JsonProperty("_group") Group group,
-                @JsonProperty("_groups") int[] groups,
+                @JsonProperty("_groups") PrincipalArray groups,
                 @JsonProperty("_returnURL") ActionURL returnURL,
                 @JsonProperty("_factory") ImpersonationContextFactory factory)
 
@@ -223,12 +220,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            return false;
-        }
-
-        @Override
         public String getCacheKey()
         {
             // NavTree for user impersonating a group will be different for each group
@@ -236,15 +227,15 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
         }
 
         @Override
-        public int[] getGroups(User user)
+        public PrincipalArray getGroups(User user)
         {
             return _groups;
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
         {
-            return getFilteredContextualRoles(user.getStandardContextualRoles());
+            return getFilteredRoles(super.getAssignedRoles(user, policy));
         }
     }
 }

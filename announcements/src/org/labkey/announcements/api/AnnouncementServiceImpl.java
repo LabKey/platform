@@ -28,6 +28,7 @@ import org.labkey.api.announcements.api.Announcement;
 import org.labkey.api.announcements.api.AnnouncementService;
 import org.labkey.api.announcements.api.DiscussionSrcTypeProvider;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -42,17 +43,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * User: Nick
- * Date: Jun 30, 2010
- * Time: 5:39:12 PM
- */
 public class AnnouncementServiceImpl implements AnnouncementService
 {
-    private final Map<String, DiscussionSrcTypeProvider> _discussionSrcTypeProviders = new ConcurrentHashMap<>();
+    private final Map<String, DiscussionSrcTypeProvider> _discussionSrcTypeProviders = new CopyOnWriteHashMap<>();
 
     @Override
     public Announcement insertAnnouncement(Container c, User u, String title, String body, boolean sendEmailNotification)

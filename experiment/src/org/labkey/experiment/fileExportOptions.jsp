@@ -61,12 +61,15 @@ LABKEY.FileExportOptions = {};
 
 <table cellspacing="4" class="lk-fields-table" style="overflow-y: visible;">
     <tr>
-        <td valign="middle"><input type="radio" name="fileExportType" value="all" checked onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%=guid%>').checked, '<%=guid%>');" /></td>
+        <%
+            addHandler(guid+"All", "click", "LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById(" + q(guid) + ").checked, " + q(guid) + ");"); %>
+        <td valign="middle"><input type="radio" id="<%=h(guid+"All")%>>" name="fileExportType" value="all" checked /></td>
         <td valign="middle">Include all files</td>
     </tr>
     <% if (!bean.getRoles().isEmpty()) { %>
         <tr>
-            <td valign="middle"><input type="radio" id="<%=guid%>"name="fileExportType" value="role" onclick="LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById('<%=guid%>').checked, '<%=guid%>');" /></td>
+            <% addHandler(guid.toString(), "click", "LABKEY.FileExportOptions.setFileDownloadEnabled(document.getElementById(" + q(guid) + ").checked, " + q(guid) + ");"); %>
+            <td valign="middle"><input type="radio" id="<%=guid%>"name="fileExportType" value="role" /></td>
             <td valign="middle">Include only selected files based on usage in run:</td>
         </tr>
         <tr>

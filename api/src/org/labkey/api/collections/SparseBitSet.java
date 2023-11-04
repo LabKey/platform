@@ -2070,7 +2070,7 @@ public class SparseBitSet implements Cloneable, Serializable
      *
      * @see     #statisticsUpdate()
      */
-    protected class Cache
+    protected static class Cache
     {
         /**
          *  <i>hash</i> is updated by the <i>statisticsUpdate</i>() method.
@@ -2139,7 +2139,7 @@ public class SparseBitSet implements Cloneable, Serializable
      *  @see SparseBitSet#setScanner(int i, int j,
      *                          SparseBitSet b, AbstractStrategy op)
      */
-    protected abstract class AbstractStrategy
+    protected abstract static class AbstractStrategy
     {
         /** If the operation requires that when matching level2 areas or level3
          *  blocks are null, that no action is required, then this property is

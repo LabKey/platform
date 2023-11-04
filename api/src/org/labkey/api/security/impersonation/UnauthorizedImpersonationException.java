@@ -21,8 +21,6 @@ import org.labkey.api.view.UnauthorizedException;
 /**
  * Thrown to indicate that someone attempted to impersonate in an invalid way - such as a project admin attempting to
  * impersonate someone who's not a project user in this project.
- * User: adam
- * Date: 5/6/12
  */
 public class UnauthorizedImpersonationException extends UnauthorizedException
 {

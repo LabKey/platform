@@ -73,7 +73,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @RequiresPermission(ReadPermission.class)
@@ -100,10 +99,11 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             throw new NotFoundException("SchemaName not specified");
 
         QuerySchema querySchema = DefaultSchema.get(user, container, form.getSchemaName());
-        if (!(querySchema instanceof UserSchema))
-            // Don't echo the provided schema name. See #44528.
+        if (!(querySchema instanceof UserSchema schema))
+        {
+            // Issue 44528: Don't echo the provided schema name.
             throw new NotFoundException("Could not find the specified schema in the folder '" + container.getPath() + "'");
-        UserSchema schema = (UserSchema)querySchema;
+        }
 
         QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, form.getQueryName());
         QueryDefinition queryDef = settings.getQueryDef(schema);
@@ -179,8 +179,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         resp.put("title", tinfo.getTitle());
         resp.put("titleColumn", tinfo.getTitleColumn());
 
-
-        //8649: let the table provide the view data url
+        // Issue 8649: let the table provide the view data url
         ActionURL viewDataUrl = schema.urlFor(QueryAction.executeQuery, queryDef);
         if (null != viewDataUrl)
             resp.put("viewDataUrl", viewDataUrl);
@@ -248,7 +247,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
             JSONArray templates = new JSONArray();
             List<Pair<String, String>> it = tinfo.getImportTemplates(getViewContext());
-            if (null != it && it.size() > 0)
+            if (null != it && !it.isEmpty())
             {
                 for (Pair<String, String> pair : it)
                 {
@@ -323,7 +322,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
             Map<String, CustomView> allViews = queryDef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
             Set<String> viewNames = new CaseInsensitiveHashSet("");
             if (form.getViewName() != null)
-                viewNames.addAll(Arrays.stream(form.getViewName()).map(StringUtils::trimToEmpty).collect(toList()));
+                viewNames.addAll(Arrays.stream(form.getViewName()).map(StringUtils::trimToEmpty).toList());
 
             if (viewNames.contains("*"))
             {

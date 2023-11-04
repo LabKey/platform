@@ -44,7 +44,8 @@ import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
-import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.data.SimpleFilter.OrClause;
+import org.labkey.api.data.SimpleFilter.SQLClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -1180,11 +1181,11 @@ public class StudyManager
 
                 // Scale the timepoint to be smaller if there are existing timepoints that overlap
                 // on its desired day range
-                if (previousVisit != Visit.MIN_SEQUENCE_NUM)
+                if (!Visit.MIN_SEQUENCE_NUM.equals(previousVisit))
                 {
                     visitIdMin = visitIdMin.max(previousVisit.add(BigDecimal.ONE));
                 }
-                if (nextVisit != Visit.MAX_SEQUENCE_NUM)
+                if (!Visit.MAX_SEQUENCE_NUM.equals(nextVisit))
                 {
                     visitIdMax = visitIdMax.min(nextVisit.subtract(BigDecimal.ONE));
                 }
@@ -4406,21 +4407,23 @@ public class StudyManager
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
 
-        SimpleFilter.OrClause lastIndexedOrClause = new SimpleFilter.OrClause();
-        LastIndexedClause standardLastIndexedClause = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p");
-        if (!standardLastIndexedClause.isEmpty())
-            lastIndexedOrClause.addClause(standardLastIndexedClause);
         @Nullable final TableInfo aliasTable = StudyQuerySchema.createSchema(study, User.getSearchUser()).getParticipantAliasesTable();
-        if (null != aliasTable)
+        LastIndexedClause lastIndexedClause = new LastIndexedClause(StudySchema.getInstance().getTableInfoParticipant(), modifiedSince, "p");
+        if (!lastIndexedClause.isEmpty())
         {
-            // Need to reindex participants whose aliases have changed
-            SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
-                .append(aliasTable.getFromSQL("aliases"))
-                .append("WHERE aliases.Modified > p.LastIndexed)");
-            lastIndexedOrClause.addClause(new SimpleFilter.SQLClause(aliasFragment));
+            if (null != aliasTable)
+            {
+                // Also reindex participants whose aliases have changed
+                SQLFragment aliasFragment = new SQLFragment().append("ParticipantId IN (\nSELECT ParticipantId FROM\n")
+                    .append(aliasTable.getFromSQL("aliases"))
+                    .append("WHERE aliases.Modified > p.LastIndexed)");
+                filter.addClause(new OrClause(lastIndexedClause, new SQLClause(aliasFragment)));
+            }
+            else
+            {
+                filter.addClause(lastIndexedClause);
+            }
         }
-        if (!lastIndexedOrClause.getClauses().isEmpty())
-            filter.addClause(lastIndexedOrClause);
 
         baseFragment
             .append(" ")
@@ -5202,7 +5205,7 @@ public class StudyManager
             Container junit = JunitUtil.getTestContainer();
 
             String name = GUID.makeHash();
-            Container c = ContainerManager.createContainer(junit, name);
+            Container c = ContainerManager.createContainer(junit, name, _context.getUser());
             StudyImpl s = new StudyImpl(c, "Junit Study");
             s.setTimepointType(TimepointType.VISIT);
             s.setStartDate(new Date(DateUtil.parseDateTime(c, "2014-01-01")));

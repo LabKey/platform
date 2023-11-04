@@ -18,6 +18,8 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.PageConfig;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -37,11 +39,14 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
 
     protected int _uid;
 
-    private String _hoverFunctionName = "hover" + _uid;
-    private String _unhoverFunctionName = "unhover" + _uid;
-    private String _clickFunctionName = "click" + _uid;
+    private String _hoverFunctionName;
+    private String _unhoverFunctionName;
+    private String _clickFunctionName;
+    private String _cssEventSelector;
     private String _highlightColor = "yellow";
     private boolean _locking = true;
+
+    private boolean handlersAdded = false;
 
     public HighlightingDisplayColumn(DisplayColumn column, FieldKey... distinguishingFields)
     {
@@ -105,20 +110,27 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         _hoverFunctionName = "hover" + _uid;
         _unhoverFunctionName = "unhover" + _uid;
         _clickFunctionName = "click" + _uid;
+        _cssEventSelector = "highlightColumn" + _uid;
     }
 
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
+        if (!handlersAdded)
+        {
+            // use css selector to wire up event handlers
+            PageConfig config = HttpView.currentPageConfig();
+            if (null !=  _hoverFunctionName)
+                config.addHandlerForQuerySelector("SPAN." + _cssEventSelector, "mouseover", "return " + _hoverFunctionName + "(this);");
+            if (null !=  _unhoverFunctionName)
+                config.addHandlerForQuerySelector("SPAN." + _cssEventSelector, "mouseout", "return " + _unhoverFunctionName + "(this);");
+            if (_locking && null != _clickFunctionName)
+                config.addHandlerForQuerySelector("SPAN." + _cssEventSelector, "click", "return " + _clickFunctionName + "(this);");
+            handlersAdded = true;
+        }
+
         String styleClass = getStyleClass(ctx);
-        out.write("<span class=\"" + styleClass + "\"" +
-                " onmouseover=\"" + _hoverFunctionName + "(this);\"" +
-                " onmouseout=\"" + _unhoverFunctionName + "(this);\"");
-
-        if (_locking)
-            out.write(" onclick=\"" + _clickFunctionName + "(this);\"");
-
-        out.write(">");
+        out.write("<span class=\"" + styleClass + " " + _cssEventSelector + "\">");
         super.renderGridCellContents(ctx, out);
         out.write("</span>");
     }
@@ -131,7 +143,7 @@ public class HighlightingDisplayColumn extends DisplayColumnDecorator
         String styleMapName = "styleMap" + _uid;
         String lockedStylesName = "lockedStyles" + _uid;
 
-        out.write("<script type=\"text/javascript\">\n");
+        out.write("<script type=\"text/javascript\"  nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
 
         out.write(
             "// Code to support dynamic highlighting for \"" + getName() + "\" column\n" +

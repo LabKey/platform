@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -349,6 +350,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (longId > Integer.MAX_VALUE)
                 throw new OutOfRangeException(longId, 0, Integer.MAX_VALUE);
             setRowId((int) longId);
+            if (null == getRootMaterialLSID())
+                setRootMaterialLSID(getLSID());
         }
         super.save(user, table, true, isInsert);
     }
@@ -502,7 +505,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
                     {
                         JobRunner.getDefault().execute(1000, () ->
                         {
-                            List<Pair<Integer, Long>> copy = null;
+                            List<Pair<Integer, Long>> copy;
                             synchronized (updateLastIndexedList)
                             {
                                 copy = List.copyOf(updateLastIndexedList);

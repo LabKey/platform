@@ -73,7 +73,7 @@ public abstract class AbstractMatrixProtocolSchema extends AssayProtocolSchema
             return getDataBySampleTable(cf, rowAxisId, colAxisId, valueMeasureName, name, title); //TODO: change
         }
 
-        return super.createTable(name, cf);
+        return super.createTable(name, cf, true);
     }
 
     public CrosstabTableInfo getDataBySampleTable(ContainerFilter cf, String rowAxisId, String colAxisId, String valueMeasureName, String name, String title)

@@ -87,7 +87,6 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         configurePage
                 .addSecondaryConfiguration(new SecondaryAuthenticationProvider())
                 .setDescription("TestSecondary Configuration")
-                .setEnabled(true)
                 .clickApply();
         configurePage.clickSaveAndFinish();
 
@@ -120,7 +119,7 @@ public class SecondaryAuthenticationTest extends BaseWebDriverTest
         String relativeURLBeforeSignIn = getCurrentRelativeURL();
 
             //Sign In - Primary Authentication before Secondary Authentication
-            attemptSignIn(PasswordUtil.getUsername(), PasswordUtil.getPassword());
+            attemptSignIn();
 
             /* Secondary Authentication */
 

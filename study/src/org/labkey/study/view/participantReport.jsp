@@ -87,7 +87,7 @@
     }
 </style>
 
-<div id="<%=h(filterRenderId)%>" class="report-filter-window-outer" style="position:<%=h(bean.isAllowOverflow() ? "absolute" : "absolute")%>;"></div>
+<div id="<%=h(filterRenderId)%>" class="report-filter-window-outer" style="position:absolute;"></div>
 <div id="<%=h(renderId)%>"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 

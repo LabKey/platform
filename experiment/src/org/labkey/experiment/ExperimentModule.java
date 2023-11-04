@@ -30,7 +30,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -60,6 +59,7 @@ import org.labkey.api.exp.property.DomainPropertyAuditProvider;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleTypeTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -131,6 +131,7 @@ import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.samples.DataClassFolderImporter;
 import org.labkey.experiment.samples.DataClassFolderWriter;
+import org.labkey.experiment.samples.ExperimentQueryChangeListener;
 import org.labkey.experiment.samples.SampleStatusFolderImporter;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.SampleTypeFolderImporter;
@@ -142,7 +143,6 @@ import org.labkey.experiment.xar.FolderXarWriterFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -159,7 +159,7 @@ import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
  * User: phussey (Peter Hussey)
  * Date: Jul 18, 2005
  */
-public class ExperimentModule extends SpringModule implements SearchService.DocumentProvider
+public class ExperimentModule extends SpringModule
 {
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
     private static final String PROTOCOL_WEB_PART_NAME = "Protocols";
@@ -175,7 +175,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 23.009;
+        return 23.011;
     }
 
     @Nullable
@@ -213,6 +213,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         QueryService.get().addCompareType(new LineageCompareType());
         QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), JdbcType.BOOLEAN, 2, 3);
         QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), JdbcType.BOOLEAN, 2, 3);
+        QueryService.get().addQueryListener(new ExperimentQueryChangeListener());
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
@@ -227,6 +228,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
         AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
                 "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", false);
+        AdminConsole.addExperimentalFeatureFlag(ExpMaterialTable.USE_MATERIALIZED_SAMPLETYPE, "Use materialized views for sample type tables",
+                "PROTOTYPE: possible approach for improving query performance.", false);
+
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
@@ -488,7 +492,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
             addSampleTypeResourceResolver(ExpSampleTypeImpl.mediaSearchCategory.getName());
             addSampleResourceResolver(ExpMaterialImpl.searchCategory.getName());
             addSampleResourceResolver(ExpMaterialImpl.mediaSearchCategory.getName());
-            ss.addDocumentProvider(this);
+            ss.addDocumentProvider(ExperimentServiceImpl.get());
         }
 
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
@@ -583,6 +587,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
+                    assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
 
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
@@ -624,6 +629,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
                 results.put("dataClassCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.dataclass").getObject(Long.class));
                 results.put("dataClassRowCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.data WHERE classid IN (SELECT rowid FROM exp.dataclass)").getObject(Long.class));
+                results.put("dataWithDataParentsCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT d.sourceApplicationId) FROM exp.data d\n" +
+                        "JOIN exp.datainput di ON di.targetapplicationid = d.sourceapplicationid").getObject(Long.class));
 
                 results.put("ontologyPrincipalConceptCodeCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE principalconceptcode IS NOT NULL").getObject(Long.class));
                 results.put("ontologyLookupColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", OntologyService.conceptCodeConceptURI).getObject(Long.class));
@@ -772,7 +779,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         Map<String, Object> tsSamplesResults = new TableSelector(sampleTypeTable, sampleTypeTable.getColumns("Name,SampleCount"), null, null).getValueMap();
         for (String k : tsSamplesResults.keySet())
         {
-            int count = ((Long) tsSamplesResults.get(k)).intValue();
+            int count = ((Number) tsSamplesResults.get(k)).intValue();
             if (count != 0)
             {
                 Summary s = k.equals("MixtureBatches")
@@ -842,54 +849,4 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         return PageFlowUtil.set(DataClassDomainKind.PROVISIONED_SCHEMA_NAME, SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME);
     }
-
-    @Override
-    public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
-    {
-        task.addRunnable(() -> {
-            for (ExpSampleTypeImpl sampleType : ExperimentServiceImpl.get().getIndexableSampleTypes(c, modifiedSince))
-            {
-                sampleType.index(task);
-            }
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(() -> {
-            // batch by the 100's
-            List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
-            task.addResourceList(materials, 100, ExpMaterialImpl::createIndexDocument);
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(() -> {
-            for (ExpDataClassImpl dataClass : ExperimentServiceImpl.get().getIndexableDataClasses(c, modifiedSince))
-            {
-                dataClass.index(task);
-            }
-        }, SearchService.PRIORITY.bulk);
-
-        task.addRunnable(() -> {
-            List<ExpDataImpl> dataObjects = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
-            task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
-        }, SearchService.PRIORITY.bulk);
-    }
-
-    @Override
-    public void indexDeleted()
-    {
-        // Clear the last indexed time on all material sources
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoSampleType() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-
-        // Clear the last indexed time on all data classes
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoDataClass() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-
-        // Clear the last indexed time on all materials
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-
-        // Clear the last indexed time on all data
-        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoData() +
-                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
-    }
-
 }

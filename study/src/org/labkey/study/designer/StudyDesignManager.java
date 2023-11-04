@@ -233,16 +233,13 @@ public class StudyDesignManager
         if (!info.isActive())
             return def;
 
-        if (info.isActive())
-        {
-            Study study = StudyManager.getInstance().getStudy(info.getContainer());
-            if (null != study.getDescription())
-                def.setDescription(study.getDescription());
-            if (null != study.getInvestigator())
-                def.setInvestigator(study.getInvestigator());
-            if (null != study.getGrant())
-                def.setGrant(study.getGrant());
-        }
+        Study study = StudyManager.getInstance().getStudy(info.getContainer());
+        if (null != study.getDescription())
+            def.setDescription(study.getDescription());
+        if (null != study.getInvestigator())
+            def.setInvestigator(study.getInvestigator());
+        if (null != study.getGrant())
+            def.setGrant(study.getGrant());
 
         return def;
     }
@@ -402,7 +399,7 @@ public class StudyDesignManager
     {
         Container studyFolder = parent.getChild(folderName);
         if (null == studyFolder)
-            studyFolder = ContainerManager.createContainer(parent, folderName);
+            studyFolder = ContainerManager.createContainer(parent, folderName, user);
         if (null != StudyManager.getInstance().getStudy(studyFolder))
             throw new IllegalStateException("Study already exists in folder");
 

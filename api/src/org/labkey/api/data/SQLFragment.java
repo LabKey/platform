@@ -724,7 +724,7 @@ public class SQLFragment implements Appendable, CharSequence
     /** Insert this SQLFragment's SQL and parameters at the start of the existing SQL and parameters */
     public void prepend(SQLFragment sql)
     {
-        insert(0, sql.getSqlCharSequence().toString());
+        getStringBuilder().insert(0, sql.getSqlCharSequence().toString());
         if (null != sql.params)
             getMutableParams().addAll(0, sql.params);
         mergeCommonTableExpressions(sql);

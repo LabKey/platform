@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.href;
@@ -56,24 +58,30 @@ public class Link extends DisplayElement implements HasHtmlString
     @Override
     public Appendable appendTo(Appendable out)
     {
-        // would be nice to be able to be able to call getRequestScopedUID() here
         String clickEvent = null;
-        var page = HttpView.currentPageConfig();
-        if (isBlank(lb.id))
-            lb.id = page.makeId("a_");
 
         if (lb.usePost || isNotEmpty(lb.onClick))
         {
              if (lb.usePost)
-                 clickEvent = PageFlowUtil.postOnClickJavaScript(lb.href, lb.confirmMessage);
+                 clickEvent = PageFlowUtil.postOnClickJavaScriptEvent();
              else
                  clickEvent = lb.onClick;
         }
-        page.addHandler(lb.id, "click", clickEvent);
+
+        // Allow generation of HTML outside an active request, where JavaScript event handlers are unlikely to be important
+        if (HttpView.hasCurrentView())
+        {
+            var page = HttpView.currentPageConfig();
+            if (isBlank(lb.id))
+                lb.id = page.makeId("a_");
+            page.addHandler(lb.id, "click", clickEvent);
+        }
         return A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
                 .id(lb.id)
-                .at(lb.usePost, href, null, lb.href)
+                .at(!lb.usePost, href,  defaultIfBlank(lb.href, "#"), "#")
+                .data(lb.usePost, "href", lb.href)
+                .data(lb.usePost, "confirmmessage", trimToNull(lb.confirmMessage))
                 .at(target, lb.target)
                 .at(rel, lb.rel)
                 .at(title, lb.title)

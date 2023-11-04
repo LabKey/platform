@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -42,10 +43,7 @@ import java.util.Set;
 /**
  * Context representing that a user is impersonating another user, and should not be treated as their normal self.
  * We stash simple properties (container and user id) in session and turn them into a context with objects on each request
- * User: adam
- * Date: 11/9/11
 */
-
 public class UserImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
@@ -55,7 +53,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
 
     @JsonCreator
     protected UserImpersonationContextFactory(
-            @JsonProperty("_projectId") GUID projectId,
+            @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_impersonatedUserId") int impersonatedUserId,
             @JsonProperty("_returnURL") ActionURL returnURL
@@ -210,14 +208,6 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public boolean isAllowedGlobalRoles()
-        {
-            // Don't allow global roles (site admin, developer, etc.) if user is being impersonated within a project
-            // or if the admin user is not a site admin
-            return null == getImpersonationProject() && getAdminUser().hasSiteAdminPermission();
-        }
-
-        @Override
         public String getCacheKey()
         {
             // NavTree for user being impersonated will be different per impersonating user per project
@@ -230,15 +220,15 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
         }
 
         @Override
-        public int[] getGroups(User user)
+        public PrincipalArray getGroups(User user)
         {
             return GroupManager.getAllGroupsForPrincipal(user);
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
+        public Set<Role> getAssignedRoles(User user, SecurityPolicy policy)
         {
-            return getFilteredContextualRoles(user.getStandardContextualRoles());
+            return getFilteredRoles(super.getAssignedRoles(user, policy));
         }
     }
 }

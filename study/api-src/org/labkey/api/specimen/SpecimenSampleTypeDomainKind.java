@@ -77,4 +77,10 @@ public class SpecimenSampleTypeDomainKind extends SampleTypeDomainKind
     {
         return null;
     }
+
+    @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return false;
+    }
 }

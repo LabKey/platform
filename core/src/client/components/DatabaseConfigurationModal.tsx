@@ -1,9 +1,9 @@
 import React, { PureComponent } from 'react';
-import { Alert, Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
+import { Alert, Button, FormControl, Modal } from 'react-bootstrap';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
 import { resolveErrorMessage } from '@labkey/components';
 
-import { DatabasePasswordRules, DatabasePasswordSettings } from './models';
+import { DatabasePasswordSettings } from './models';
 
 const OPTIONS_MAP = {
     Never: 'Never',
@@ -23,7 +23,7 @@ interface State {
     error: string;
     helpLink: string;
     initError: string;
-    passwordRules: DatabasePasswordRules;
+    passwordRules: Array<{ [key: string]: string }>; // Maintained server-side, so we are permissive in our typing here
 }
 
 export default class DatabaseConfigurationModal extends PureComponent<Props, State> {
@@ -32,7 +32,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         this.state = {
             error: undefined,
             initError: undefined,
-            passwordRules: { Weak: '', Strong: '' },
+            passwordRules: [],
             helpLink: null,
             currentSettings: { strength: '', expiration: '' },
         };
@@ -95,10 +95,11 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
     render() {
         const { canEdit } = this.props;
-        const { currentSettings, error, initError } = this.state;
+        const { currentSettings, error, initError, passwordRules } = this.state;
         const { strength, expiration } = currentSettings;
         const hasError = error !== undefined || initError !== undefined;
         const allowEdit = canEdit && initError === undefined;
+        const strengthText = strength !== '' && passwordRules.find(o => Object.keys(o)[0] === strength)[strength];
 
         return (
             <Modal backdrop="static" show={true} onHide={this.props.closeModal}>
@@ -113,34 +114,26 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         <span>Password Strength:</span>
 
                         <span className="database-modal__field">
-                            <ButtonGroup onClick={this.handleChange}>
-                                <Button value="Weak" name="strength" active={strength == 'Weak'} disabled={!allowEdit}>
-                                    Weak
-                                </Button>
-                                <Button
-                                    value="Strong"
-                                    name="strength"
-                                    active={strength == 'Strong'}
-                                    disabled={!allowEdit}
-                                >
-                                    Strong
-                                </Button>
-                            </ButtonGroup>
+                            <FormControl
+                                componentClass="select"
+                                name="strength"
+                                onChange={this.handleChange}
+                                value={strength}
+                                disabled={!allowEdit}
+                            >
+                                {passwordRules.map(option => (
+                                    <option value={Object.keys(option)[0]} key={Object.keys(option)[0]}>
+                                        {Object.keys(option)[0]}
+                                    </option>
+                                ))}
+                            </FormControl>
                         </span>
                     </div>
 
-                    {/* this.state.passwordRules.Weak is safe server-generated HTML */}
-                    <div className="bold-text"> Weak </div>
+                    {/* this.state.passwordRules values are safe server-generated HTML */}
+                    <div className="bold-text"> {strength} </div>
                     <div>
-                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
-                    </div>
-
-                    <br />
-
-                    {/* this.state.passwordRules.Strong is safe server-generated HTML */}
-                    <div className="bold-text"> Strong </div>
-                    <div>
-                        <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
+                        <div dangerouslySetInnerHTML={{ __html: strengthText }} />
                     </div>
 
                     <br />

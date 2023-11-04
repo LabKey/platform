@@ -141,7 +141,7 @@ public class FileSystemFile extends AbstractVirtualFile
     public static void ensureWriteableDirectory(Path dir) throws IOException
     {
         if (!Files.exists(dir))
-            Files.createDirectories(dir);
+            FileUtil.createDirectories(dir);
 
         if (!Files.isDirectory(dir))
             throw new MinorConfigurationException(dir.toAbsolutePath() + " is not a directory.");

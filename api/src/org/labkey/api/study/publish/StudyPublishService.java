@@ -144,7 +144,7 @@ public interface StudyPublishService
     /**
      * Returns the set of datasets which have ever had data linked from the provided protocol
      */
-    Set<? extends Dataset> getDatasetsForPublishSource(Integer sourceId, Dataset.PublishSource publishSource);
+    Set<? extends Dataset> getDatasetsForPublishSource(int sourceId, Dataset.PublishSource publishSource);
 
     /**
      * Returns the set of datasets which currently contain rows from the provided runs. The user may not have

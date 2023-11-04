@@ -38,7 +38,8 @@
     } %>
     <p>
         Filter by run type:
-        <select id="experimentRunFilter" name="experimentRunFilter" onchange="form.submit()">
+        <% addHandler("experimentRunFilter", "change", "this.form.submit()" ); %>
+        <select id="experimentRunFilter" name="experimentRunFilter">
             <% for (ExperimentRunType type : bean.getFilters()) { %>
                 <option <% if (type == bean.getSelectedFilter()) { %>selected <% } %> value="<%=h(type.getDescription())%>"><%=h(type.getDescription())%></option>
             <% } %>

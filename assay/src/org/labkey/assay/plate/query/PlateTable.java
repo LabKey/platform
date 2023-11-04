@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate.query;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -186,13 +187,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             // generate a value for the lsid
             lsidGenerator.addColumn(plateTable.getColumn("lsid"),
-                    (Supplier) () -> {
-                        Object isTemplate = lsidGenerator.get(nameMap.get("template"));
-                        if (isTemplate instanceof String template)
-                            isTemplate = Boolean.valueOf(template);
-
-                        return PlateManager.get().getLsid(Plate.class, container, (Boolean)isTemplate, true);
-                    });
+                    (Supplier) () -> PlateManager.get().getLsid(Plate.class, container));
 
             // generate the data file id if not provided
             if (!nameMap.containsKey("dataFileId"))
@@ -223,7 +218,6 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
-            PlateManager.get().clearCache(container);
             return results;
         }
 
@@ -235,9 +229,16 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
+
+            // disallow plate size changes
+            if ((row.containsKey("rows") && ObjectUtils.notEqual(oldRow.get("rows"), row.get("rows"))) ||
+                    (row.containsKey("columns") && ObjectUtils.notEqual(oldRow.get("columns"), row.get("columns"))))
+            {
+                throw new QueryUpdateServiceException("Changing the plate size (rows or columns) is not allowed.");
+            }
 
             // if the name is changing, check for duplicates
             String oldName = (String) oldRow.get("Name");
@@ -249,7 +250,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
-            PlateManager.get().clearCache(container);
+            PlateManager.get().clearCache(container, plate);
             return newRow;
         }
 
@@ -261,7 +262,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (plate == null)
                 return Collections.emptyMap();
 
-            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, plate);
+            int runsInUse = PlateManager.get().getRunCountUsingPlate(container, user, plate);
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be deleted", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
@@ -270,7 +271,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 PlateManager.get().beforePlateDelete(container, plateId);
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
-                transaction.addCommitTask(() -> PlateManager.get().clearCache(container), DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.addCommitTask(() -> PlateManager.get().afterPlateDelete(container, plate), DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
 
                 return returnMap;

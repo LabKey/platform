@@ -120,6 +120,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -270,8 +271,9 @@ public class SecurityController extends SpringActionController
         @Nullable
         public ActionURL getExternalToolsViewURL(User user, Container c, @NotNull ActionURL returnURL)
         {
-            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream().
-                    filter(externalToolsViewProvider -> externalToolsViewProvider.getViews(user).size() > 0).count();
+            long viewCount = ExternalToolsViewService.get().getExternalAccessViewProviders().stream()
+                .filter(externalToolsViewProvider -> !externalToolsViewProvider.getViews(user).isEmpty())
+                .count();
             if (viewCount > 0)
             {
                 ActionURL url = new ActionURL(ExternalToolsViewAction.class, c);
@@ -574,7 +576,7 @@ public class SecurityController extends SpringActionController
         GroupAuditEvent event = new GroupAuditEvent(group.getContainer(), message);
 
         event.setGroup(group.getUserId());
-        Container c = ContainerManager.getForId(group.getContainer());
+        Container c = null==group.getContainer() ? ContainerManager.getRoot() : ContainerManager.getForId(group.getContainer());
         if (c != null && c.getProject() != null)
             event.setProjectId(c.getProject().getId());
         else
@@ -726,8 +728,8 @@ public class SecurityController extends SpringActionController
         @Override
         public boolean handlePost(UpdateMembersForm form, BindException errors) throws Exception
         {
-            // 0 - only site-admins can modify members of system groups
-            // 1 - Global admins group cannot be empty
+            // 0 - only site admins can modify members of system groups
+            // 1 - only site admins can modify groups that are assigned a privileged role
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
 
@@ -740,8 +742,7 @@ public class SecurityController extends SpringActionController
             if (null == _group)
                 throw new RedirectException(new ActionURL(PermissionsAction.class, container));
 
-            if (_group.isSystemGroup() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not update members of system group: " + _group.getName());
+            verifyUserCanModifyGroup(_group, getUser());
 
             _messages = new ArrayList<>();
 
@@ -784,7 +785,7 @@ public class SecurityController extends SpringActionController
 
             // delete group members by ID (can be both groups and users)
             List<UserPrincipal> removeIds = new ArrayList<>();
-            if (removeNames != null && removeNames.length > 0)
+            if (removeNames != null)
             {
                 for (String removeName : removeNames)
                 {
@@ -818,18 +819,8 @@ public class SecurityController extends SpringActionController
                 //check for users to delete
                 if (removeNames != null)
                 {
-                    //get list of group members to determine how many there are
-                    Set<User> userMembers = SecurityManager.getGroupMembers(_group, MemberType.ACTIVE_AND_INACTIVE_USERS);
-
-                    //if this is the site admins group and user is attempting to remove all site admins, display error.
-                    if (_group.getUserId() == Group.groupAdministrators && removeNames.length == userMembers.size())
-                    {
-                        errors.addError(new LabKeyError("The Site Administrators group must always contain at least one member. You cannot remove all members of this group."));
-                    }
-                    else
-                    {
-                        SecurityManager.deleteMembers(_group, removeIds);
-                    }
+                    // Note: deleteMembers() will throw if removing this member will result in no root admins
+                    SecurityManager.deleteMembers(_group, removeIds);
                 }
 
                 // issue 43366 : users without the AddUserPermission are still allowed to create new users through the
@@ -846,7 +837,7 @@ public class SecurityController extends SpringActionController
                     }
                 }
 
-                if (!errors.hasErrors() && (addGroups.size() > 0 || addEmails.size() > 0))
+                if (!errors.hasErrors() && (!addGroups.isEmpty() || !addEmails.isEmpty()))
                 {
                     // add new users
                     List<User> addUsers = new ArrayList<>(addEmails.size());
@@ -888,6 +879,23 @@ public class SecurityController extends SpringActionController
         public URLHelper getSuccessURL(UpdateMembersForm updateMembersForm)
         {
             return _messages.isEmpty() ? _successURL : null;
+        }
+    }
+
+    /**
+     * Throws UnauthorizedException if user is not allowed to modify this group
+     * @param group the Group being modified
+     * @param user the current admin user
+     */
+    public static void verifyUserCanModifyGroup(Group group, User user)
+    {
+        if (!user.hasSiteAdminPermission())
+        {
+            if (group.isSystemGroup())
+                throw new UnauthorizedException("Can not update members of system group: " + group.getName());
+
+            if (group.hasPrivilegedRole())
+                throw new UnauthorizedException("Can not update members of a group assigned a privileged role: " + group.getName());
         }
     }
 
@@ -1290,7 +1298,7 @@ public class SecurityController extends SpringActionController
                     }
                 });
 
-                SecurityPolicyManager.savePolicy(newPolicy);
+                SecurityPolicyManager.savePolicy(newPolicy, getUser());
             }
             return true;
         }
@@ -1465,9 +1473,9 @@ public class SecurityController extends SpringActionController
                     }
                     else if (userToClone != null)
                     {
-                        if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
+                        if (userToClone.hasPrivilegedRole() && !getUser().hasSiteAdminPermission())
                         {
-                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users with site administration permissions."));
+                            errors.addError(new LabKeyError(userToClone.getEmail() + " cannot be cloned. Only site administrators can clone users assigned a privileged role."));
                         }
                         else
                         {
@@ -1539,8 +1547,8 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    // Delete all container permissions. Note: savePolicy() throws on some unauthorized actions (e.g., App Admin
-    // attempting to delete Site Admin perms)
+    // Delete all container permissions. Note: savePolicy() and deleteMember() throw on some unauthorized actions
+    // (e.g., App Admin attempting to delete Site Admin perms, deleting the last root admin)
     private void deletePermissions(User user)
     {
         if (user != null)
@@ -1565,15 +1573,10 @@ public class SecurityController extends SpringActionController
 
     private void handleGroups(User user, Consumer<Group> consumer)
     {
-        for (int groupId : GroupMembershipCache.getGroupMemberships(user.getUserId()))
-        {
-            final Group group = SecurityManager.getGroup(groupId);
-
-            if (group != null)
-            {
-                consumer.accept(group);
-            }
-        }
+        GroupMembershipCache.getGroupMemberships(user.getUserId()).stream()
+            .map(SecurityManager::getGroup)
+            .filter(Objects::nonNull)
+            .forEach(consumer);
     }
 
     private void handleDirectRoleAssignments(User user, BiConsumer<MutableSecurityPolicy, Collection<Role>> consumer)
@@ -1670,10 +1673,10 @@ public class SecurityController extends SpringActionController
 
             if (!getUser().hasSiteAdminPermission())
             {
-                if (_source.hasSiteAdminPermission())
-                    errors.reject(ERROR_MSG, "Only site administrators can clone from users with site administration permissions");
+                if (_source.hasPrivilegedRole())
+                    errors.reject(ERROR_MSG, "Only site administrators can clone from users assigned a privileged role");
                 else if (_target.hasSiteAdminPermission())
-                    errors.reject(ERROR_MSG, "Only site administrators can clone to users with site administration permissions");
+                    errors.reject(ERROR_MSG, "Only site administrators can clone to users assigned a privileged role");
             }
         }
 

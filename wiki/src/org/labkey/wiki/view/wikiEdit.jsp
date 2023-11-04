@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.wiki.WikiController.AttachFilesAction" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
+<%@ page import="java.util.Objects" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -158,7 +159,7 @@
                             parentBuilder.addOption(new OptionBuilder()
                                 .value(String.valueOf(pp.getRowId()))
                                 .label(label)
-                                .selected(pp.getRowId() == model.getParent())
+                                .selected(Objects.equals(pp.getRowId(), model.getParent()))
                                 .build()
                             );
                         });
@@ -208,7 +209,8 @@
                             <table id="wiki-existing-attachments"></table>
                             <br>
                             <table id="wiki-new-attachments"></table>
-                            <a href="javascript:addFilePicker('wiki-new-attachments','filePickerLink')" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a>
+                            <% addHandler("filePickerLink", "click", "addFilePicker('wiki-new-attachments','filePickerLink'); return false;"); %>
+                            <a href="#" id="filePickerLink"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;Attach a file</a>
                         </labkey:form>
                     </td>
                 </tr>

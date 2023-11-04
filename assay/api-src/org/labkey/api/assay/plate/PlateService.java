@@ -20,10 +20,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
@@ -115,14 +119,6 @@ public interface PlateService
     /**
      * Gets an existing plate.
      * @param container The plate's container.
-     * @param plateName The plate's name.
-     * @return  The requested plate, or null if no template exists with the specified name in the specified container.
-     */
-    @Nullable Plate getPlate(Container container, String plateName);
-
-    /**
-     * Gets an existing plate.
-     * @param container The plate's container.
      * @param lsid The plate's lsid.
      * @return  The requested plate, or null if no plate exists with the specified name in the specified container.
      */
@@ -135,6 +131,22 @@ public interface PlateService
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
     @Nullable Plate getPlate(Container container, int rowId);
+
+    /**
+     * Gets a plate instance object by row id.
+     * @param cf The container filter to find the plate
+     * @param rowId The row id of the plate.
+     * @return The requested plate, or null if no plate exists with the specified row id.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, int rowId);
+
+    /**
+     * Gets a plate instance object by lsid.
+     * @param cf The container filter to find the plate
+     * @param lsid The lsid of the plate.
+     * @return The requested plate, or null if no plate exists with the specified row id.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid);
 
     /**
      * Gets all plate templates for the specified container. Plate templates are Plate instances
@@ -150,9 +162,9 @@ public interface PlateService
      * for the standard assay with plate support since other assays types do not store the plate ID with the
      * run.
      */
-    int getRunCountUsingPlate(@NotNull Container c, @NotNull Plate plate);
+    int getRunCountUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate);
 
-    List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull Plate plate);
+    List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate);
 
     /**
      * Creates a new plate template.
@@ -230,6 +242,15 @@ public interface PlateService
      */
     DilutionCurve getDilutionCurve(List<WellGroup> wellGroups, boolean assumeDecreasing, DilutionCurve.PercentCalculator percentCalculator, StatsService.CurveFitType type) throws FitFailedException;
 
+    /**
+     * Retrieve the TableInfo for the Plate table.
+     */
+    TableInfo getPlateTableInfo();
+
+    /**
+     * Create the plate metadata domain for this container.
+     */
+    @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException;
 
     /**
      * A PlateDetailsResolver implementation provides a URL where a detailed, plate-type specific

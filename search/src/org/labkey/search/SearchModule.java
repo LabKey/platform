@@ -25,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.mbean.LabKeyManagement;
+import org.labkey.api.mbean.SearchMXBean;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -33,7 +35,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
@@ -56,6 +57,7 @@ import org.labkey.search.model.PlainTextDocumentParser;
 import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
+import javax.management.StandardMBean;
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
@@ -79,7 +81,7 @@ public class SearchModule extends DefaultModule
     @Override
     public Double getSchemaVersion()
     {
-        return 23.003;
+        return 23.004;
     }
 
     @Override
@@ -88,14 +90,12 @@ public class SearchModule extends DefaultModule
         return true;
     }
 
-
     @Override
     @NotNull
     public Set<String> getSchemaNames()
     {
         return PageFlowUtil.set("search");
     }
-
 
     @Override
     @NotNull
@@ -105,7 +105,6 @@ public class SearchModule extends DefaultModule
         return Collections.emptySet();
     }
 
-
     @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -113,13 +112,15 @@ public class SearchModule extends DefaultModule
         return List.of(new SearchWebPartFactory());
     }
 
-    
     @Override
     protected void init()
     {
         addController("search", SearchController.class);
         LuceneSearchServiceImpl ss = new LuceneSearchServiceImpl();
         SearchService.setInstance(ss);
+
+        LabKeyManagement.register(new StandardMBean(ss, SearchMXBean.class, true), "Search");
+
         ss.addResourceResolver("dav", new AbstractSearchService.ResourceResolver()
         {
             @Override
@@ -187,7 +188,7 @@ public class SearchModule extends DefaultModule
         UsageMetricsService.get().registerUsageMetrics(getName(), () ->
         {
             // Report the total number of search entries in the audit log
-            User user = new LimitedUser(User.getSearchUser(), new int[0], Set.of(RoleManager.getRole(CanSeeAuditLogRole.class)), true);
+            User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
             UserSchema auditSchema = AuditLogService.get().createSchema(user, ContainerManager.getRoot());
             TableInfo auditTable = auditSchema.getTableOrThrow(SearchAuditProvider.EVENT_TYPE, ContainerFilter.EVERYTHING);
 
@@ -197,7 +198,6 @@ public class SearchModule extends DefaultModule
 
         ContextListener.addStartupListener(_searchStartupListener);
     }
-
 
     @Override
     public void startBackgroundThreads()

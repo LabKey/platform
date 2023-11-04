@@ -27,7 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -75,12 +75,12 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -123,11 +123,6 @@ import java.util.TreeSet;
 import static org.labkey.api.search.SearchService.PROPERTY.categories;
 import static org.labkey.api.security.UserManager.USER_DISPLAY_NAME_COMPARATOR;
 
-/**
- * User: mbellew
- * Date: Mar 11, 2005
- * Time: 11:07:27 AM
- */
 public class IssueManager
 {
     private static final Logger _log = LogManager.getLogger(IssueManager.class);
@@ -480,7 +475,20 @@ public class IssueManager
     }
 
 
-    private static final Cache<String, Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "Issues assigned-to lists");
+    private static final BlockingCache<String, Set<User>> ASSIGNED_TO_CACHE = DatabaseCache.get(IssuesSchema.getInstance().getSchema().getScope(), 1000, "Issues assigned-to lists", (key, argument) ->
+    {
+        assert argument != null;
+        Pair<Container, String> pair = (Pair<Container, String>)argument;
+        Container c = pair.getKey();
+        String issueDefName = pair.getValue();
+
+        Group group = getAssignedToGroup(c, issueDefName);
+
+        if (null != group)
+            return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
+        else
+            return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
+    });
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
@@ -489,15 +497,7 @@ public class IssueManager
         issueDefName = issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME;
         String cacheKey = getCacheKey(c, issueDefName);
 
-        return ASSIGNED_TO_CACHE.get(cacheKey, issueDefName, (key, issueDefName1) ->
-        {
-            Group group = getAssignedToGroup(c, String.valueOf(issueDefName1));
-
-            if (null != group)
-                return createAssignedToList(c, SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, true));
-            else
-                return createAssignedToList(c, SecurityManager.getProjectUsers(c.getProject()));
-        });
+        return ASSIGNED_TO_CACHE.get(cacheKey, Pair.of(c, issueDefName));
     }
 
 
@@ -933,7 +933,7 @@ public class IssueManager
         @Override
         public void run()
         {
-            User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+            User user = new LimitedUser(UserManager.getGuestUser(), ReaderRole.class);
             indexIssues(null, user, _task, _ids);
         }
     }

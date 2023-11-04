@@ -50,25 +50,15 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       >
          Configuration Status 
       </span>
-      <ReactBootstrapToggle
-        active={true}
+      <div
         className="modal__enable-toggle"
-        disabled={false}
-        handleClassName=""
-        handlestyle="default"
-        height=""
-        off="Disabled"
-        offClassName=""
-        offstyle="default"
-        on="Enabled"
-        onClassName=""
-        onClick={[Function]}
-        onstyle="primary"
-        recalculateOnResize={false}
-        size="normal"
-        style={{}}
-        width=""
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="on"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
@@ -268,25 +258,15 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       >
          Configuration Status 
       </span>
-      <ReactBootstrapToggle
-        active={true}
+      <div
         className="modal__enable-toggle"
-        disabled={true}
-        handleClassName=""
-        handlestyle="default"
-        height=""
-        off="Disabled"
-        offClassName=""
-        offstyle="default"
-        on="Enabled"
-        onClassName=""
-        onClick={[Function]}
-        onstyle="primary"
-        recalculateOnResize={false}
-        size="normal"
-        style={{}}
-        width=""
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="on"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
@@ -475,25 +455,15 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       >
          Configuration Status 
       </span>
-      <ReactBootstrapToggle
-        active={false}
+      <div
         className="modal__enable-toggle"
-        disabled={false}
-        handleClassName=""
-        handlestyle="default"
-        height=""
-        off="Disabled"
-        offClassName=""
-        offstyle="default"
-        on="Enabled"
-        onClassName=""
-        onClick={[Function]}
-        onstyle="primary"
-        recalculateOnResize={false}
-        size="normal"
-        style={{}}
-        width=""
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="off"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"
@@ -724,25 +694,15 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       >
          Configuration Status 
       </span>
-      <ReactBootstrapToggle
-        active={false}
+      <div
         className="modal__enable-toggle"
-        disabled={true}
-        handleClassName=""
-        handlestyle="default"
-        height=""
-        off="Disabled"
-        offClassName=""
-        offstyle="default"
-        on="Enabled"
-        onClassName=""
-        onClick={[Function]}
-        onstyle="primary"
-        recalculateOnResize={false}
-        size="normal"
-        style={{}}
-        width=""
-      />
+      >
+        Enabled: 
+        <Memo()
+          active="off"
+          onClick={[Function]}
+        />
+      </div>
     </div>
     <div
       className="bold-text modal__settings-text"

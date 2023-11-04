@@ -51,8 +51,8 @@
 <table>
     <tr>
         <td>
-            <input type="radio" id="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>Off"<%=checked(!useBulk)%> value="off"
-            onclick="toggleBulkProperties()" name="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>">
+            <input type="radio" id="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>Off"<%=checked(!useBulk)%> value="off" name="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>">
+            <% addHandler(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME+"Off", "click", "toggleBulkProperties();"); %>
         </td>
         <td>
             Enter run properties for each run separately by entering values into a form
@@ -60,8 +60,8 @@
     </tr>
     <tr>
         <td>
-            <input type="radio" id="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>On"<%=checked(useBulk)%> value="on"
-            onclick="toggleBulkProperties()" name="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>">
+            <input type="radio" id="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>On"<%=checked(useBulk)%> value="on" name="<%=h(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME)%>">
+            <% addHandler(BulkPropertiesDisplayColumn.ENABLED_FIELD_NAME+"On", "click", "toggleBulkProperties();"); %>
         </td>
         <td>
             Specify run properties for all runs at once with tab-separated values (TSV)<%=helpPopup("Bulk Properties", form.getHelpPopupHTML(), true)%>

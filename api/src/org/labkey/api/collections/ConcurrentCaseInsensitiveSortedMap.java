@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * User: adam
  * Date: Nov 30, 2010
  */
-public class ConcurrentCaseInsensitiveSortedMap<V> extends ConcurrentSkipListMap<String, V>
+public class ConcurrentCaseInsensitiveSortedMap<V> extends ConcurrentSkipListMap<String, V> implements CaseInsensitiveCollection
 {
     public ConcurrentCaseInsensitiveSortedMap()
     {

@@ -515,7 +515,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (availableStatuses == null || availableStatuses.isEmpty())
             return false;
 
-        if (oldStatus == newStatus)
+        if (Objects.equals(oldStatus, newStatus))
             return false;
 
         if (availableStatuses.contains(oldStatus) && !availableStatuses.contains(newStatus))
@@ -1123,7 +1123,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (!existingRowSelect.includeParent)
             return sampleRows;
 
-        List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLSID(rowNumLsid.values());
+        List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getExpMaterialsByLsid(rowNumLsid.values());
 
         Map<String, Pair<Set<ExpMaterial>, Set<ExpData>>> parents = ExperimentServiceImpl.get().getParentMaterialAndDataMap(container, user, new HashSet<>(materials));
 
@@ -1207,31 +1207,30 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     private void handleRecalc(Set<String> parentLsids, Set<String> parentNames, boolean useBackgroundThread, Container container)
     {
-        if (useBackgroundThread)
-        {
-            JobRunner.getDefault().execute(() -> {
-                try
-                {
-                    SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
-            });
-        }
-        else
-        {
+        // The caller of this handleRecalc() should generally be calling refreshSampleTypeMaterializedView().
+        // However, we also need to call it after this async process runs
+        // Also, it's harmless to call it twice, so we can call it in the synchronous case as well.
+
+        Runnable runRecalc = () -> {
             try
             {
                 SampleTypeService.get().recomputeSampleTypeRollup(_sampleType, parentLsids, parentNames, container);
+                SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(_sampleType, false);
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
             }
-        }
+        };
 
+        if (useBackgroundThread)
+        {
+            JobRunner.getDefault().execute(runRecalc);
+        }
+        else
+        {
+            runRecalc.run();
+        }
     }
 
     private void fireSamplesChanged()
@@ -1480,6 +1479,14 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             boolean skipDuplicateCheck = context.getConfigParameterBoolean(SkipMaxSampleCounterFunction);
             nameGen = sampleType.getNameGenerator(dataContainer, user, skipDuplicateCheck);
             aliquotNameGen = sampleType.getAliquotNameGenerator(dataContainer, user, skipDuplicateCheck);
+
+            // check for project scoped counter in both name and aliquot name to decide if they need to be included
+            NameGenerator.SampleNameExpressionSummary sampleNameExpressionSummary = getSampleNameExpressionSummary(nameGen, aliquotNameGen);
+            if (sampleNameExpressionSummary != null)
+            {
+                NameGenerator.ExpressionSummary expressionSummary = nameGen.getExpressionSummary();
+                nameGen.setExpressionSummary(new NameGenerator.ExpressionSummary(sampleNameExpressionSummary, expressionSummary.hasDateBasedSampleCounter(), expressionSummary.hasLineageInputs(), expressionSummary.hasLineageLookup()));
+            }
             nameState = nameGen != null ? nameGen.createState(true) : null;
             lsidBuilder = sampleType.generateSampleLSID();
             _container = sampleType.getContainer();
@@ -1515,6 +1522,36 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         void onFirst()
         {
             first = false;
+        }
+
+        private NameGenerator.SampleNameExpressionSummary getSampleNameExpressionSummary(@NotNull NameGenerator nameGen, @NotNull NameGenerator aliquotNameGen)
+        {
+            if (sampleType == null)
+                return null;
+
+            boolean hasProjectSampleCounter = false;
+            long minProjectSampleCounter = 0;
+            boolean hasProjectSampleRootCounter = false;
+            long minProjectSampleRootCounter = 0;
+
+            NameGenerator.SampleNameExpressionSummary nameSummary = nameGen.getExpressionSummary().sampleSummary();
+            NameGenerator.SampleNameExpressionSummary aliquotSummary = aliquotNameGen.getExpressionSummary().sampleSummary();
+            if (nameSummary.hasProjectSampleCounter() || aliquotSummary.hasProjectSampleCounter())
+            {
+                hasProjectSampleCounter = true;
+                minProjectSampleCounter = sampleType.getMinSampleCounter();
+            }
+
+            if (nameSummary.hasProjectSampleRootCounter() || aliquotSummary.hasProjectSampleRootCounter())
+            {
+                hasProjectSampleRootCounter = true;
+                minProjectSampleRootCounter = sampleType.getMinRootSampleCounter();
+            }
+
+            if (hasProjectSampleCounter || hasProjectSampleRootCounter)
+                return new NameGenerator.SampleNameExpressionSummary(hasProjectSampleCounter, hasProjectSampleRootCounter, minProjectSampleCounter, minProjectSampleRootCounter);
+
+            return null;
         }
 
         @Override

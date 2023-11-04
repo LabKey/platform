@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.apache.xmlbeans.XmlCursor;
@@ -121,9 +122,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME_SUB;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
 import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
+import static org.labkey.experiment.XarExporter.GPAT_ASSAY_PROTOCOL_LSID_SUB;
 
 public class XarReader extends AbstractXarImporter
 {
@@ -145,6 +148,7 @@ public class XarReader extends AbstractXarImporter
     private final List<ProtocolApplication> _loadedProtocolApplications = new ArrayList<>();
     private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
     private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
+    private final Map<String, ExpProtocol> _loadedProtocols = new HashMap<>();
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -723,15 +727,20 @@ public class XarReader extends AbstractXarImporter
 
     private Domain loadDomain(DomainDescriptorType xDomain) throws ExperimentException
     {
+        // gpat assay support renaming, use name instead of lsid to find existing
+        boolean useName = xDomain.getDomainURI().contains(":AssayDomain-");
         Pair<Domain, Map<DomainProperty, Object>> loaded = PropertyService.get().createDomain(getContainer(), getRootContext(), xDomain);
         Domain domain = loaded.getKey();
         Map<DomainProperty, Object> newDefaultValues = loaded.getValue();
         String lsid = domain.getTypeURI();
 
         DomainDescriptor existingDomainDescriptor = OntologyManager.getDomainDescriptor(lsid, getContainer());
+        if (existingDomainDescriptor == null && useName)
+            existingDomainDescriptor = OntologyManager.fetchDomainDescriptorFromDB(xDomain.getName(), getContainer(), true);
         DomainImpl existingDomain = existingDomainDescriptor == null ? null : new DomainImpl(existingDomainDescriptor);
         if (existingDomain != null)
         {
+            Pair<String, String> lsidIgnoreSubStrs = useName ? getGPATLsidNameDiff(existingDomain.getTypeURI(), lsid) : null;
             Map<String, DomainProperty> newProps = new HashMap<>();
             for (DomainProperty prop : domain.getProperties())
             {
@@ -746,13 +755,39 @@ public class XarReader extends AbstractXarImporter
                 oldProps.put(oldProp.getPropertyURI(), oldProp);
             }
 
+            Set<String> thisKeys = oldProps.keySet();
+            Set<String> otherKeys = newProps.keySet();
+            Map<String, String> thisKeysMap = new HashMap<>(); // full lsid, cleaned lsid
+            Map<String, String> otherKeysMap = new HashMap<>(); // cleaned lsid, full lsid
+            if (lsidIgnoreSubStrs != null) // on folder/assay import, ${XarJobId} is added to lsid, which might result in lsid differences in protocols
+            {
+                String ignoreThis = lsidIgnoreSubStrs.first;
+                String ignoreOther = lsidIgnoreSubStrs.second;
+                for (String thisKey : thisKeys)
+                {
+                    thisKeysMap.put(thisKey, thisKey.replace(ignoreThis, ""));
+                }
+                for (String otherKey : otherKeys)
+                {
+                    otherKeysMap.put(otherKey.replace(ignoreOther, ""), otherKey);
+                }
+                thisKeys = new HashSet<>(thisKeysMap.values());
+                otherKeys = otherKeysMap.keySet();
+            }
+
             Map<DomainProperty, Object> existingDefaultValues = DefaultValueService.get().getDefaultValues(existingDomain.getContainer(), existingDomain);
-            if (!IdentifiableEntity.diff(oldProps.keySet(), newProps.keySet(), "Domain Properties", diffs))
+            if (!IdentifiableEntity.diff(thisKeys, otherKeys, "Domain Properties", diffs))
             {
                 for (String key : oldProps.keySet())
                 {
                     DomainProperty oldProp = oldProps.get(key);
-                    DomainProperty newProp = newProps.get(key);
+                    String otherURI = key;
+                    if (lsidIgnoreSubStrs != null)
+                    {
+                        String uriKey = thisKeysMap.get(key);
+                        otherURI = otherKeysMap.get(uriKey);
+                    }
+                    DomainProperty newProp = newProps.get(otherURI);
 
                     IdentifiableEntity.diff(oldProp.getDescription(), newProp.getDescription(), key + " description", diffs);
                     IdentifiableEntity.diff(oldProp.getFormat(), newProp.getFormat(), key + " format string", diffs);
@@ -762,7 +797,8 @@ public class XarReader extends AbstractXarImporter
                     IdentifiableEntity.diff(oldProp.isShownInDetailsView(), newProp.isShownInDetailsView(), key + " shown in details view", diffs);
                     IdentifiableEntity.diff(oldProp.isShownInInsertView(), newProp.isShownInInsertView(), key + " shown in insert view", diffs);
                     IdentifiableEntity.diff(oldProp.isShownInUpdateView(), newProp.isShownInUpdateView(), key + " shown in update view", diffs);
-                    IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
+                    if (lsidIgnoreSubStrs == null)
+                        IdentifiableEntity.diff(oldProp.getPropertyURI(), newProp.getPropertyURI(), key + " property URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getRangeURI(), newProp.getPropertyDescriptor().getRangeURI(), key + " range URI", diffs);
                     IdentifiableEntity.diff(oldProp.getPropertyDescriptor().getConceptURI(), newProp.getPropertyDescriptor().getConceptURI(), key + " concept URI", diffs);
                     IdentifiableEntity.diff(oldProp.isMvEnabled(), newProp.isMvEnabled(), key + " missing value enabled", diffs);
@@ -872,6 +908,17 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+    private ExpProtocolImpl getProtocolFromLsid(String lsid)
+    {
+        ExpProtocol batchProtocol = _loadedProtocols.get(lsid);
+        if (batchProtocol == null)
+            batchProtocol = ExperimentService.get().getExpProtocol(lsid);
+
+        if (batchProtocol != null)
+            return (ExpProtocolImpl) batchProtocol;
+
+        return null;
+    }
 
     private void loadExperiment(ExperimentType exp) throws SQLException, XarFormatException
     {
@@ -916,7 +963,9 @@ public class XarReader extends AbstractXarImporter
             if (exp.isSetBatchProtocolLSID())
             {
                 String batchProtocolLSID = LsidUtils.resolveLsidFromTemplate(exp.getBatchProtocolLSID(), getRootContext(), "Protocol");
-                ExpProtocol batchProtocol = ExperimentService.get().getExpProtocol(batchProtocolLSID);
+
+                ExpProtocol batchProtocol = getProtocolFromLsid(batchProtocolLSID);
+
                 if (batchProtocol == null)
                 {
                     throw new XarFormatException("Could not resolve protocol with LSID '" + batchProtocolLSID + "'");
@@ -998,7 +1047,8 @@ public class XarReader extends AbstractXarImporter
 
         Lsid pRunLSID = new Lsid(runLSID);
         String runProtocolLSID = LsidUtils.resolveLsidFromTemplate(a.getProtocolLSID(), getRootContext(), "Protocol");
-        ExpProtocol protocol = ExperimentService.get().getExpProtocol(runProtocolLSID);
+        ExpProtocol protocol = getProtocolFromLsid(runProtocolLSID);
+
         if (protocol == null)
         {
             throw new XarFormatException("Unknown protocol " + runProtocolLSID + " referenced by ExperimentRun " + pRunLSID);
@@ -1042,7 +1092,7 @@ public class XarReader extends AbstractXarImporter
             vals.setLSID(pRunLSID.toString());
 
             vals.setName(trimString(a.getName()));
-            vals.setProtocolLSID(runProtocolLSID);
+            vals.setProtocolLSID(protocol.getLSID());
             vals.setComments(trimString(a.getComments()));
 
             vals.setFilePathRoot(FileUtil.getAbsolutePath(_xarSource.getRootPath()));     //  FileUtil.getAbsolutePath(runContext.getContainer(), _job.getPipeRoot().getRootNioPath()));
@@ -1255,7 +1305,9 @@ public class XarReader extends AbstractXarImporter
         String protAppLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getAbout(), context, "ProtocolApplication");
 
         String protocolLSID = LsidUtils.resolveLsidFromTemplate(xmlProtocolApp.getProtocolLSID(), context, "Protocol");
-        if (ExperimentService.get().getExpProtocol(protocolLSID) == null)
+        ExpProtocol protocol = getProtocolFromLsid(protocolLSID);
+
+        if (protocol == null)
         {
             throw new XarFormatException("Unknown protocol " + xmlProtocolApp.getProtocolLSID() + " referenced by protocol application " + protAppLSID);
         }
@@ -1272,7 +1324,7 @@ public class XarReader extends AbstractXarImporter
             String cpasType = trimString(xmlProtocolApp.getCpasType());
             checkProtocolApplicationCpasType(cpasType);
             protocolApp.setCpasType(cpasType);
-            protocolApp.setProtocolLSID(protocolLSID);
+            protocolApp.setProtocolLSID(protocol.getLSID());
             protocolApp.setActivityDate(sqlDateTime);
             protocolApp.setActionSequence(xmlProtocolApp.getActionSequence());
             protocolApp.setRunId(runId);
@@ -1548,8 +1600,10 @@ public class XarReader extends AbstractXarImporter
                 getLog().debug("Updating " + description + " with aliquot root LSID");
 
                 String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
+                String existingRootLsid = lsid.equals(((Material) output).getRootMaterialLSID()) ? null : ((Material) output).getRootMaterialLSID();
+
                 // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
-                if (((Material) output).getRootMaterialLSID() != null && !((Material) output).getRootMaterialLSID().equals(rootMaterialLSID))
+                if (existingRootLsid != null && !existingRootLsid.equals(rootMaterialLSID))
                 {
                     getLog().info(description + " with LSID '" + lsid + "' already has root material LSID of " + ((Material) output).getRootMaterialLSID() + "; not updating to " + newRootLsid + ".");
                 }
@@ -2024,10 +2078,40 @@ public class XarReader extends AbstractXarImporter
         }
     }
 
+    private @Nullable Pair<String, String> getGPATLsidNameDiff(String existingLsid, String importLsid)
+    {
+        Pair<String, String> ignoreNameDiff = null;
+        String folderSubstr = ".Folder-" + getContainer().getRowId() + ".";
+        int existingStartInd = existingLsid.indexOf(folderSubstr);
+        int incomingStartInd = importLsid.indexOf(folderSubstr);
+        if (existingStartInd > -1 && incomingStartInd > -1)
+            ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), importLsid.substring(incomingStartInd));
+        else
+        {
+            folderSubstr = ".Folder-" + getContainer().getRowId() + ":";
+            existingStartInd = existingLsid.indexOf(folderSubstr);
+            incomingStartInd = importLsid.indexOf(folderSubstr);
+            if (existingStartInd > -1 && incomingStartInd > -1)
+                ignoreNameDiff = new Pair(existingLsid.substring(existingStartInd), importLsid.substring(incomingStartInd));
+        }
+
+        return ignoreNameDiff;
+    }
+
     private void loadProtocol(ProtocolBaseType p) throws ExperimentException, SQLException
     {
         String protocolLSID = LsidUtils.resolveLsidFromTemplate(p.getAbout(), getRootContext(), "Protocol");
         ExpProtocolImpl existingProtocol = ExperimentServiceImpl.get().getExpProtocol(protocolLSID);
+
+        // gpat assay support renaming, use name instead of lsid to find existing
+        boolean useName = p.getAbout().contains(GPAT_ASSAY_PROTOCOL_LSID_SUB);
+        Pair<String, String> ignoreNameDiff = null;
+        if (useName)
+        {
+            existingProtocol = ExperimentServiceImpl.get().getExpProtocol(getContainer(), p.getName());
+            if (existingProtocol != null)
+                ignoreNameDiff = getGPATLsidNameDiff(existingProtocol.getLSID(), protocolLSID);
+        }
 
         Protocol xarProtocol = readProtocol(p);
 
@@ -2035,7 +2119,7 @@ public class XarReader extends AbstractXarImporter
 
         if (existingProtocol != null)
         {
-            List<IdentifiableEntity.Difference> diffs = existingProtocol.getDataObject().diff(xarProtocol);
+            List<IdentifiableEntity.Difference> diffs = existingProtocol.getDataObject().diff(xarProtocol, ignoreNameDiff);
             
             if (diffs.size() == 1 && !xarProtocol.getContainer().equals(existingProtocol.getContainer()) &&
                 existingProtocol.getContainer().equals(ContainerManager.getSharedContainer()))
@@ -2053,6 +2137,8 @@ public class XarReader extends AbstractXarImporter
             }
             protocol = existingProtocol.getDataObject();
             getLog().debug("Protocol with LSID '" + protocolLSID + "' matches a protocol with the same LSID that has already been loaded.");
+            if (useName)
+                _loadedProtocols.put(protocolLSID, existingProtocol);
         }
         else
         {
@@ -2093,7 +2179,9 @@ public class XarReader extends AbstractXarImporter
 
         //Check that the parent is defined already
         String parentLSID = LsidUtils.resolveLsidFromTemplate(actionSet.getParentProtocolLSID(), getRootContext(), "Protocol");
-        ExpProtocol parentProtocol = _xarSource.getProtocol(parentLSID, "Parent");
+        ExpProtocol parentProtocol = _loadedProtocols.get(parentLSID);
+        if (parentProtocol == null)
+            parentProtocol = _xarSource.getProtocol(parentLSID, "Parent");
 
         ProtocolActionType[] xActions = actionSet.getProtocolActionArray();
 
@@ -2120,7 +2208,10 @@ public class XarReader extends AbstractXarImporter
             priorSeq = currentSeq;
 
             int parentProtocolRowId = parentProtocol.getRowId();
-            int childProtocolRowId = _xarSource.getProtocol(childLSID, "ActionSet child").getRowId();
+            ExpProtocol childProtocol = _loadedProtocols.get(childLSID);
+            if (childProtocol == null)
+                childProtocol = _xarSource.getProtocol(childLSID, "ActionSet child");
+            int childProtocolRowId = childProtocol.getRowId();
 
             ProtocolAction action = null;
             // Look for an existing action that matches
@@ -2156,7 +2247,7 @@ public class XarReader extends AbstractXarImporter
             {
                 predecessors = new ProtocolActionType.PredecessorAction[0];
             }
-            List<ProtocolActionPredecessor> existingPredecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentLSID, childLSID);
+            List<ProtocolActionPredecessor> existingPredecessors = ExperimentServiceImpl.get().getProtocolActionPredecessors(parentProtocol.getLSID(), childProtocol.getLSID());
 
             if (alreadyLoaded && predecessors.length != existingPredecessors.size())
             {
@@ -2168,7 +2259,7 @@ public class XarReader extends AbstractXarImporter
             for (ProtocolActionType.PredecessorAction xPredecessor : predecessors)
             {
                 int predecessorActionSequence = xPredecessor.getActionSequenceRef();
-                ProtocolActionStepDetail predecessorRow = ExperimentServiceImpl.get().getProtocolActionStepDetail(parentLSID, predecessorActionSequence);
+                ProtocolActionStepDetail predecessorRow = ExperimentServiceImpl.get().getProtocolActionStepDetail(parentProtocol.getLSID(), predecessorActionSequence);
                 if (predecessorRow == null)
                 {
                     throw new XarFormatException("Protocol Not Found for Action Sequence =" + predecessorActionSequence + " in parent protocol " + parentLSID);

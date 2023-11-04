@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -70,7 +71,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
     @Override
     public Domain createDomain(GWTDomain<GWTPropertyDescriptor> gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
-        if (gwtDomain.getName() == null)
+        if (StringUtils.trimToNull(gwtDomain.getName()) == null)
             throw new IllegalArgumentException("table name is required");
 
         String domainURI = generateDomainURI(getSchemaName(), gwtDomain.getName(), container, user);

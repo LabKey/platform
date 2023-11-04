@@ -5,7 +5,7 @@
   "scripts": {
     "setup": "npm ci --legacy-peer-deps",
     "build": "npm run build-dev",
-    "clean": "rimraf resources/web/pipeline/gen && rimraf resources/views/gen && rimraf resources/views/*.* && rimraf resources/web/gen",
+    "clean": "rimraf resources/web/pipeline/gen && rimraf resources/views/gen && rimraf resources/web/gen",
     "lint": "eslint",
     "lint-fix": "eslint --fix",
     "start": "cross-env NODE_ENV=development webpack serve --config node_modules/@labkey/build/webpack/watch.config.js",
@@ -14,13 +14,13 @@
     "build-prod": "npm run clean && cross-env NODE_ENV=production PROD_SOURCE_MAP=source-map webpack --config node_modules/@labkey/build/webpack/prod.config.js --color --progress --profile"
   },
   "dependencies": {
-    "@labkey/components": "2.349.3"
+    "@labkey/components": "2.384.0"
   },
   "devDependencies": {
-    "@labkey/build": "6.12.0",
-    "@labkey/eslint-config-react": "0.0.12",
-    "@types/jest": "29.2.0",
-    "@types/react": "16.14.34",
-    "@types/react-dom": "16.9.17"
+    "@labkey/build": "6.16.1",
+    "@labkey/eslint-config-react": "0.0.13",
+    "@types/jest": "29.5.4",
+    "@types/react": "16.14.46",
+    "@types/react-dom": "16.9.19"
   }
 }

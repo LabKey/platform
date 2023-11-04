@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.BaseColumnInfo;
@@ -36,6 +37,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -263,6 +265,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return true;
     }
 
+    @Override
+    public boolean allowUniqueConstraintProperties()
+    {
+        return true;
+    }
+
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
         return StudyManager.getInstance().getDatasetDefinition(domainURI);
@@ -397,8 +405,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
                                @Nullable TemplateInfo templateInfo)
     {
-        arguments.setName(domain.getName());
+        arguments.setName(StringUtils.trimToNull(domain.getName()));
         String name = arguments.getName();
+        if (name == null)
+            throw new IllegalArgumentException("Dataset name cannot be empty.");
         String description = arguments.getDescription() != null ? arguments.getDescription() : domain.getDescription();
         String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
@@ -487,7 +497,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if (def.getDomain() != null)
             {
                 List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
-                List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
                 Domain newDomain = def.getDomain();
                 if (newDomain != null)
@@ -509,15 +518,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
 
-                    Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-                    for (GWTIndex index : indices)
-                    {
-                        PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-                        propertyIndices.add(propIndex);
-                    }
-                    newDomain.setPropertyIndices(propertyIndices);
-
                     newDomain.save(user);
+
+                    List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
+                    newDomain.setPropertyIndices(indices, lowerReservedNames);
+                    StorageProvisioner.get().addMissingRequiredIndices(newDomain);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");

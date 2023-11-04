@@ -33,25 +33,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.AuditConfigurable;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequence;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.Parameter;
-import org.labkey.api.data.ParameterMapStatement;
-import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.measurement.Measurement;
 import org.labkey.api.defaults.DefaultValueService;
@@ -101,11 +83,14 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
@@ -114,6 +99,7 @@ import org.labkey.experiment.SampleTypeAuditProvider;
 import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -155,6 +141,7 @@ import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 public class SampleTypeServiceImpl extends AbstractAuditHandler implements SampleTypeService
 {
+    public static final String SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:sampleCount";
     public static final String ROOT_SAMPLE_COUNT_SEQ_NAME = "org.labkey.api.exp.api.ExpMaterial:rootSampleCount";
 
     // columns that may appear in a row when only the sample status is updating.
@@ -554,20 +541,27 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         assert getExpSchema().getScope().isTransactionActive();
 
-        SimpleFilter filter = c == null ? new SimpleFilter() : SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("CpasType"), source.getLSID());
-
-        MultiValuedMap<String, Integer> byContainer = new ArrayListValuedHashMap<>();
-        TableSelector ts = new TableSelector(SampleTypeServiceImpl.get().getTinfoMaterial(), Sets.newCaseInsensitiveHashSet("container", "rowid"), filter, null);
-        ts.forEachMap(row -> byContainer.put((String)row.get("container"), (Integer)row.get("rowid")));
+        Set<Container> containers = new HashSet<>();
+        if (c == null)
+        {
+            SQLFragment containerSql = new SQLFragment("SELECT DISTINCT Container FROM ");
+            containerSql.append(getTinfoMaterial(), "m");
+            containerSql.append(" WHERE CpasType = ?");
+            containerSql.add(source.getLSID());
+            new SqlSelector(getExpSchema(), containerSql).forEach(String.class, cId -> containers.add(ContainerManager.getForId(cId)));
+        }
+        else
+        {
+            containers.add(c);
+        }
 
         int count = 0;
-        for (Map.Entry<String, Collection<Integer>> entry : byContainer.asMap().entrySet())
+        for (Container toDelete : containers)
         {
-            Container container = ContainerManager.getForId(entry.getKey());
-            // TODO move deleteMaterialByRowIds()?
-            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, entry.getValue(), true, source, true, true);
-            count += entry.getValue().size();
+            SQLFragment sqlFilter = new SQLFragment("CpasType = ? AND Container = ?");
+            sqlFilter.add(source.getLSID());
+            sqlFilter.add(toDelete);
+            count += ExperimentServiceImpl.get().deleteMaterialBySqlFilter(user, toDelete, sqlFilter, true, false, source, true, true);
         }
         return count;
     }
@@ -828,13 +822,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             }
         }
 
-        Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
-        for (GWTIndex index : indices)
-        {
-            PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
-            propertyIndices.add(propIndex);
-        }
-        domain.setPropertyIndices(propertyIndices);
+        domain.setPropertyIndices(indices, lowerReservedNames);
 
         if (!hasNameProperty && idUri1 == null)
             throw new ExperimentException("Either a 'Name' property or an index for idCol1 is required");
@@ -971,22 +959,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     }
 
     @Override
-    public DbSequence getRootSampleSequence()
-    {
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
-            return DbSequenceManager.getReclaimable(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0);
-
-        return DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ROOT_SAMPLE_COUNT_SEQ_NAME, 0, 100);
-    }
-
-    @Override
-    public long getRootSampleCount()
-    {
-        return new SqlSelector(ExperimentService.get().getSchema(),
-                "SELECT COUNT(*) FROM exp.material WHERE AliquotedFromLsid IS NULL").getObject(Long.class).longValue();
-    }
-
-    @Override
     public ValidationException updateSampleType(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
         ValidationException errors;
@@ -1061,10 +1033,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             st.save(user, true);
+            String auditComment = null;
             if (hasNameChange)
+            {
                 QueryChangeListener.QueryPropertyChange.handleQueryNameChange(oldSampleTypeName, newName, new SchemaKey(null, SamplesSchema.SCHEMA_NAME), user, container);
+                auditComment = "The name of the sample type '" + oldSampleTypeName + "' was changed to '" + newName + "'.";
+            }
 
-            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user, hasNameChange, auditComment);
             if (hasNameChange)
                 ExperimentService.get().addObjectLegacyName(st.getObjectId(), ExperimentServiceImpl.getNamespacePrefix(ExpSampleType.class), oldSampleTypeName, user);
 
@@ -1092,6 +1068,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
                 }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
+                refreshSampleTypeMaterializedView(st, true);
             }
         }
 
@@ -1289,6 +1266,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return message + " " + operation.getDescription() + ".";
     }
 
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
     @Override
     public int recomputeSampleTypeRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException
     {
@@ -1298,6 +1276,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return recomputeSamplesRollup(allParents, withAmountsParents, sampleType.getMetricUnit(), container);
     }
 
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
     @Override
     public int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException
     {
@@ -1308,12 +1287,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
     public record AliquotAvailableAmountUnit(Double amount, String unit, Double availableAmount) {}
 
-    public int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    private int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
     }
 
-    public int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    /** This method updates exp.material, caller should call refreshSampleTypeMaterializedView() as appropirate. */
+    private int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
         Map<Integer, String> sampleUnits = new HashMap<>();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
@@ -1398,7 +1379,6 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             {
                 throw new RuntimeSQLException(x);
             }
-
         }
 
         if (!withAmountsParents.isEmpty())
@@ -1503,7 +1483,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         SQLFragment inner = new SQLFragment("SELECT DISTINCT(rootmateriallsid) FROM exp.material ali");
         inner.append(" WHERE ali.cpastype = ")
                 .appendValue(sampleTypeLsid)
-                .append(" AND ali.rootmateriallsid IS NOT NULL ")
+                .append(" AND ali.rootmateriallsid <> ali.lsid ")
                 .append(" AND ali.container = ")
                 .appendValue(container)
                 .append(" AND ali.SampleState ")
@@ -1540,27 +1520,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         sql.appendInClause(parentKeys, dialect);
         sql.append(" )");
 
-        Set<Integer> rootIds = new HashSet<>();
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
-        {
-            while (rs.next())
-                rootIds.add(rs.getInt(1));
-        }
-
-        sql = new SQLFragment("SELECT root.rowId FROM exp.material AS root");
-        sql.append(" WHERE root.cpastype = ? AND root.rootMaterialLsid IS NULL ");
-        sql.add(sampleTypeLsid);
-        sql.append(" AND root.");
-        sql.append(isLsid ? "LSID" : "Name");
-        sql.appendInClause(parentKeys, dialect);
-
-        try (ResultSet rs = new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).getResultSet())
-        {
-            while (rs.next())
-                rootIds.add(rs.getInt(1));
-        }
-
-        return rootIds;
+        return new SqlSelector(ExperimentService.get().getTinfoMaterial().getSchema(), sql).fillSet(new HashSet<>());
     }
 
     private AliquotAvailableAmountUnit convertToDisplayUnits(List<AliquotAmountUnitResult> volumeUnits, String sampleTypeUnitsStr, String sampleItemUnit)
@@ -1676,7 +1636,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     """
         SELECT distinct parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
-        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+            JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid AND aliquot.rootMaterialLsid <> aliquot.lsid
         WHERE aliquot.storedAmount IS NOT NULL AND\s
         """);
     }
@@ -1687,7 +1647,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     """
         SELECT distinct parent.rowId, parent.cpastype
         FROM exp.material AS aliquot
-        JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid
+            JOIN exp.material AS parent ON aliquot.rootMaterialLsid = parent.lsid AND aliquot.rootMaterialLsid <> aliquot.lsid
         WHERE
         """);
     }
@@ -1719,16 +1679,10 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment(
-                """
-                        SELECT m.RowId as SampleId, m.Units,
-                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+        SQLFragment sql = new SQLFragment("""
+                        SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE a.rootMaterialLsid=m.lsid)-1 AS CreatedAliquotCount
                         FROM exp.material AS m
-                        LEFT JOIN(
-                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
-                        FROM exp.material m2 GROUP BY RootMaterialLSID
-                        ) AS c ON m.lsid = c.rootLsid
-                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+                        WHERE m.rowid\s""");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1757,15 +1711,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                         SELECT m.RowId as SampleId, m.Units,
                         (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
                         FROM exp.material AS m
-                        LEFT JOIN(
-                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
-                        FROM exp.material m2
-                        WHERE m2.SampleState """)
+                            LEFT JOIN (
+                            SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
+                            FROM exp.material
+                            WHERE RootMaterialLSID <> LSID AND SampleState\s""")
                 .appendInClause(availableSampleStates, dialect)
                 .append("""
-                         GROUP BY RootMaterialLSID
+                            GROUP BY RootMaterialLSID
                         ) AS c ON m.lsid = c.rootLsid
-                        WHERE m.rootmateriallsid IS NULL AND m.rowid\s""");
+                        WHERE m.rootmateriallsid = m.LSID AND m.rowid\s""");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1793,9 +1747,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 """
                     SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate
                     FROM exp.material AS aliquot
-                    JOIN exp.material AS parent
-                    ON parent.lsid = aliquot.rootmateriallsid
-                    WHERE aliquot.rootmateriallsid IS NOT NULL AND parent.rowid\s
+                        JOIN exp.material AS parent ON parent.lsid = aliquot.rootmateriallsid
+                    WHERE aliquot.rootmateriallsid <> aliquot.lsid AND parent.rowid\s
                     """);
         dialect.appendInClauseSql(sql, sampleIds);
 
@@ -2098,15 +2051,23 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         if (!renameData.targetFile.getParentFile().exists())
         {
-            if (!renameData.targetFile.getParentFile().mkdirs())
+            String errorMsg = String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
+                    renameData.targetFile.getParent(),
+                    renameData.sourceFile.getAbsolutePath(),
+                    renameData.sampleType.getName(),
+                    renameData.sampleName,
+                    renameData.fieldName);
+            try
             {
-                LOG.warn(String.format("Creation of target directory '%s' to move file '%s' to, for '%s' sample '%s' (field: '%s') failed.",
-                        renameData.targetFile.getParent(),
-                        renameData.sourceFile.getAbsolutePath(),
-                        renameData.sampleType.getName(),
-                        renameData.sampleName,
-                        renameData.fieldName));
-                return false;
+                if (!FileUtil.mkdirs(renameData.targetFile.getParentFile()))
+                {
+                    LOG.warn(errorMsg);
+                    return false;
+                }
+            }
+            catch (IOException e)
+            {
+                LOG.warn(errorMsg + e.getMessage());
             }
         }
         if (!renameData.sourceFile.renameTo(renameData.targetFile))
@@ -2121,5 +2082,123 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         }
 
         return true;
+    }
+
+    @Override
+    @Nullable
+    public DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly)
+    {
+        return getSampleCountSequence(container, isRootSampleOnly, true);
+    }
+
+    public DbSequence getSampleCountSequence(Container container, boolean isRootSampleOnly, boolean create)
+    {
+        Container seqContainer = container.getProject();
+        if (seqContainer == null)
+            return null;
+
+       String seqName = isRootSampleOnly ? ROOT_SAMPLE_COUNT_SEQ_NAME : SAMPLE_COUNT_SEQ_NAME;
+
+       if (!create)
+       {
+           // check if sequence already exist so we don't create one just for querying
+           Integer seqRowId = DbSequenceManager.getRowId(seqContainer, seqName, 0);
+           if (null == seqRowId)
+               return null;
+       }
+
+       if (AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+            return DbSequenceManager.getReclaimable(seqContainer, seqName, 0);
+
+       return DbSequenceManager.getPreallocatingSequence(seqContainer, seqName, 0, 100);
+    }
+
+    @Override
+    public void ensureMinSampleCount(long newSeqValue, NameGenerator.EntityCounter counterType, Container container) throws ExperimentException
+    {
+        boolean isRootOnly = counterType == NameGenerator.EntityCounter.rootSampleCount;
+
+        DbSequence seq = getSampleCountSequence(container, isRootOnly, newSeqValue >= 1);
+        if (seq == null)
+            return;
+
+        long current = seq.current();
+        if (newSeqValue < current)
+        {
+            if ((isRootOnly ? getProjectRootSampleCount(container) : getProjectSampleCount(container)) > 0)
+                throw new ExperimentException("Unable to set " + counterType.name() + " to " + newSeqValue + " due to conflict with existing samples.");
+
+            if (newSeqValue <= 0)
+            {
+                deleteSampleCounterSequence(container, isRootOnly);
+                return;
+            }
+        }
+
+        seq.ensureMinimum(newSeqValue);
+        seq.sync();
+    }
+
+    public void deleteSampleCounterSequences(Container container)
+    {
+        deleteSampleCounterSequence(container, false);
+        deleteSampleCounterSequence(container, true);
+    }
+
+    private void deleteSampleCounterSequence(Container container, boolean isRootOnly)
+    {
+        String seqName = isRootOnly ? ROOT_SAMPLE_COUNT_SEQ_NAME : SAMPLE_COUNT_SEQ_NAME;
+        Container seqContainer = container.getProject();
+        DbSequenceManager.delete(seqContainer, seqName);
+        DbSequenceManager.invalidatePreallocatingSequence(container, seqName, 0);
+        return;
+    }
+
+    @Override
+    public long getProjectSampleCount(Container container)
+    {
+        return getProjectSampleCount(container, false);
+    }
+
+    @Override
+    public long getProjectRootSampleCount(Container container)
+    {
+        return getProjectSampleCount(container, true);
+    }
+
+    private long getProjectSampleCount(Container container, boolean isRootOnly)
+    {
+        User searchUser = User.getSearchUser();
+        ContainerFilter.ContainerFilterWithPermission cf = new ContainerFilter.AllInProject(container, searchUser);
+        Collection<GUID> validContainerIds =  cf.generateIds(container, ReadPermission.class, null);
+        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ");
+        sql.append(tableInfo);
+        sql.append(" WHERE ");
+        if (isRootOnly)
+            sql.append(" AliquotedFromLsid IS NULL AND ");
+        sql.append("Container ");
+        sql.appendInClause(validContainerIds, tableInfo.getSqlDialect());
+        return new SqlSelector(ExperimentService.get().getSchema(), sql).getObject(Long.class).longValue();
+    }
+
+    @Override
+    public long getCurrentCount(NameGenerator.EntityCounter counterType, Container container)
+    {
+        boolean isRootOnly = counterType == NameGenerator.EntityCounter.rootSampleCount;
+        DbSequence seq = getSampleCountSequence(container, isRootOnly, false);
+        if (seq != null)
+        {
+            long current = seq.current();
+            if (current > 0)
+                return current;
+        }
+
+        return getProjectSampleCount(container, counterType == NameGenerator.EntityCounter.rootSampleCount);
+    }
+
+    public void refreshSampleTypeMaterializedView(@NotNull ExpSampleType st, boolean schemaChange)
+    {
+        ExpMaterialTableImpl.refreshMaterializedView(st.getLSID(), schemaChange);
     }
 }

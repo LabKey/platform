@@ -99,7 +99,9 @@
         %><li><%=h(h.getUniqueName())%><ol start=0><%
             for (Level l : h.getLevels())
             {
-        %><li><a href="#<%=h(l.getUniqueName())%>" onclick="Level_onClick(<%=q(l.getUniqueName())%>)"><%=h(l.getUniqueName())%></a></li><%
+                var id = makeId("level");
+                addHandler(id, "click", "return Level_onClick(this.dataset['uniquename']);");
+        %><li><a id="<%=h(id)%>" href="#<%=h(l.getUniqueName())%>" data-uniquename="<%=h(l.getUniqueName())%>"><%=h(l.getUniqueName())%></a></li><%
             }
         %></ol></li><%
             }

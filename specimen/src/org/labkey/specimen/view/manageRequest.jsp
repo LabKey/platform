@@ -463,7 +463,8 @@
                     %>
                         <tr>
                             <td>
-                                <select name="newActor" onChange="updateSiteSelector()">
+                                <% addHandler("newActor", "change", "updateSiteSelector();"); %>
+                                <select id="newActor" name="newActor">
                                     <option value="-1"></option>
                                     <%
                                         for (SpecimenRequestActor actor : actors)

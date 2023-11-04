@@ -70,7 +70,6 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpDataTable;
-import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.qc.DataState;
@@ -138,6 +137,7 @@ import static org.labkey.api.exp.api.ExpRunItem.INPUTS_PREFIX_LC;
 import static org.labkey.api.exp.api.ExperimentService.ALIASCOLUMNALIAS;
 import static org.labkey.api.exp.api.ExperimentService.QueryOptions.SkipBulkRemapCache;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialLSID;
 import static org.labkey.api.query.AbstractQueryImportAction.configureLoader;
 import static org.labkey.experiment.api.SampleTypeUpdateServiceDI.PARENT_RECOMPUTE_LSID_COL;
@@ -608,22 +608,26 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
-                    try
-                    {
-                        if (!_derivativeKeys.isEmpty())
-                            StudyPublishService.get().autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
+                StudyPublishService sps = StudyPublishService.get();
+                if (sps != null)
+                {
+                    _schema.getDbSchema().getScope().getCurrentTransaction().addCommitTask(() -> {
+                        try
+                        {
+                            if (!_derivativeKeys.isEmpty())
+                                sps.autoLinkDerivedSamples(_sampleType, _derivativeKeys, _container, _user);
 
-                        if (!_rows.isEmpty())
-                            StudyPublishService.get().autoLinkSamples(_sampleType, _rows, _container, _user);
-                    }
-                    catch (ExperimentException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }, DbScope.CommitTaskOption.POSTCOMMIT);
+                            if (!_rows.isEmpty())
+                                sps.autoLinkSamples(_sampleType, _rows, _container, _user);
+                        }
+                        catch (ExperimentException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    }, DbScope.CommitTaskOption.POSTCOMMIT);
 
-                return false;
+                    return false;
+                }
             }
             boolean isDerivative = false;
             if (_hasParentInput)
@@ -1009,7 +1013,7 @@ public class ExpDataIterators
             // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
             if (_context.getInsertOption().allowUpdate && pair.first.doClear())
             {
-                Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
+                Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> previousSampleRelatives = clearRunItemSourceRun(_user, runItem);
                 String lockCheckMessage = checkForLockedSampleRelativeChange(previousSampleRelatives.first, Collections.emptySet(), runItem.getName(), "parents");
                 lockCheckMessage += checkForLockedSampleRelativeChange(previousSampleRelatives.second, Collections.emptySet(), runItem.getName(), "children");
                 if (!lockCheckMessage.isEmpty())
@@ -1019,7 +1023,7 @@ public class ExpDataIterators
             {
                 ExpMaterial currentMaterial = null;
                 Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                Pair<Set<ExpMaterial>, Set<ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
+                Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> previousSampleRelatives = Pair.of(Collections.emptySet(), Collections.emptySet());
                 Map<ExpData, String> currentDataMap = Collections.emptyMap();
 
                 if (_context.getInsertOption().allowUpdate)
@@ -1439,7 +1443,7 @@ public class ExpDataIterators
 
     }
 
-    private static String checkForLockedSampleRelativeChange(Set<ExpMaterial> previousSampleRelatives, Set<ExpMaterial> currentSampleRelatives, String sampleName, String relationPlural)
+    private static String checkForLockedSampleRelativeChange(Set<? extends ExpMaterial> previousSampleRelatives, Set<? extends ExpMaterial> currentSampleRelatives, String sampleName, String relationPlural)
     {
         List<String> messages = new ArrayList<>();
         // get the relatives whose lineage cannot change
@@ -1483,11 +1487,11 @@ public class ExpDataIterators
      * otherwise the run will be deleted.
      */
     @NotNull
-    private static Pair<Set<ExpMaterial>, Set<ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
+    private static Pair<Set<? extends ExpMaterial>, Set<? extends ExpMaterial>> clearRunItemSourceRun(User user, ExpRunItem runItem) throws ValidationException, ExperimentException
     {
         ExpProtocolApplication existingSourceApp = runItem.getSourceApplication();
-        Set<ExpMaterial> previousMaterialParents = Collections.emptySet();
-        Set<ExpMaterial> previousMaterialChildren = Collections.emptySet();
+        Set<? extends ExpMaterial> previousMaterialParents = Collections.emptySet();
+        Set<? extends ExpMaterial> previousMaterialChildren = Collections.emptySet();
         if (existingSourceApp == null)
             return Pair.of(previousMaterialParents, previousMaterialChildren);
 
@@ -2200,6 +2204,7 @@ public class ExpDataIterators
 
             CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
             dontUpdate.addAll(NOT_FOR_UPDATE);
+            dontUpdate.add("rowid"); // rowid is added / not dropped for dataclass for QueryUpdateAuditEvent.rowpk audit purpose
             if (context.getInsertOption().updateOnly)
             {
                 dontUpdate.add("objectid");
@@ -2255,15 +2260,28 @@ public class ExpDataIterators
 
             // Since we support detailed audit logging add the ExistingRecordDataIterator here just before TableInsertDataIterator
             // this is a NOOP unless we are merging/updating and detailed logging is enabled
-            Set<String> existingRecordKey = isSample ? keyColumns : Set.of(ExpDataTable.Column.LSID.toString());
-            if (context.getInsertOption().updateOnly && !_isUpdateUsingLsid)
-                existingRecordKey = ((ExpRunItemTableImpl<?>) _expTable).getAltMergeKeys(context);
+            DataIteratorBuilder step2a = ExistingRecordDataIterator.createBuilder(step1, _expTable, keyColumns, true);
 
-            DataIteratorBuilder step2 = ExistingRecordDataIterator.createBuilder(step1, _expTable, existingRecordKey, true);
+            // add "rootmateriallsid" if it does not exist
+            DataIteratorBuilder step2b = new DataIteratorBuilder()
+            {
+                @Override
+                public DataIterator getDataIterator(DataIteratorContext context)
+                {
+                    DataIterator in = step2a.getDataIterator(context);
+                    var map = DataIteratorUtil.createColumnNameMap(in);
+                    if (map.containsKey(RootMaterialLSID.toString()) || !map.containsKey(LSID.toString()))
+                        return in;
+                    var ret = new SimpleTranslator(in, context);
+                    ret.selectAll();
+                    ret.addAliasColumn(RootMaterialLSID.toString(), map.get(LSID.toString()));
+                    return ret;
+                }
+            };
 
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
-            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _expTable, _container)
+            DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2b, _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(_excludedColumns)
@@ -2342,7 +2360,7 @@ public class ExpDataIterators
                 if (map.get(name) != null)
                 {
                     if (_fileNameColIndex != null)
-                        _context.getErrors().addRowError(new ValidationException("Only one of " + SAMPLE_TYPE_FIELD_NAMES + " allowed for import."));
+                        _context.getErrors().addRowError(new ValidationException("Only one of [" + SAMPLE_TYPE_FIELD_NAMES.stream().sorted().collect(Collectors.joining(", ")) + "] allowed for import."));
                     _fileNameColIndex = map.get(name);
                     _fileNameColName = di.getColumnInfo(_fileNameColIndex).getName();
                 }
@@ -2367,26 +2385,29 @@ public class ExpDataIterators
                     _context.setCrossTypeImport(false);
                     // process the individual files
                     importOrderKeys.forEach(key -> {
-                        TypeData typeData = _fileDataMap.get(key);
-                        writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-                        var updateService = typeData.tableInfo.getUpdateService();
-                        if (updateService == null)
+                        if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
                         {
-                            _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
-                        }
-                        else
-                        {
-                            try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                            TypeData typeData = _fileDataMap.get(key);
+                            writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+                            var updateService = typeData.tableInfo.getUpdateService();
+                            if (updateService == null)
                             {
-                                // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                                configureLoader(loader, typeData.tableInfo, null, true);
-                                updateService.loadRows(_user, _container, loader, _context, null);
+                                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
                             }
-                            catch (SQLException | IOException e)
+                            else
                             {
-                                String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
-                                LOG.error(msg, e);
-                                _context.getErrors().addRowError(new ValidationException(msg));
+                                try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                                {
+                                    // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
+                                    configureLoader(loader, typeData.tableInfo, null, true);
+                                    updateService.loadRows(_user, _container, loader, _context, null);
+                                }
+                                catch (SQLException | IOException e)
+                                {
+                                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                                    LOG.error(msg, e);
+                                    _context.getErrors().addRowError(new ValidationException(msg));
+                                }
                             }
                         }
                     });
@@ -2613,6 +2634,7 @@ public class ExpDataIterators
             try (FileWriter writer = new FileWriter(typeData.dataFile, true))
             {
                 writer.write(StringUtils.join(typeData.dataRows, System.lineSeparator()));
+                writer.write(System.lineSeparator()); // Issue 48442: add a new line to the end so the next written rows start on a new line
                 typeData.dataRows.clear();
             }
             catch (IOException e)

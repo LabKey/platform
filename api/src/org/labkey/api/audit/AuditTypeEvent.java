@@ -54,6 +54,7 @@ public class AuditTypeEvent
     private Date _modified;
     private User _modifiedBy;
     private String userComment;
+    private Long _transactionId;
 
     public AuditTypeEvent(String eventType, Container container, String comment)
     {
@@ -177,6 +178,16 @@ public class AuditTypeEvent
     public String getUserComment()
     {
         return this.userComment;
+    }
+
+    public Long getTransactionId()
+    {
+        return _transactionId;
+    }
+
+    public void setTransactionId(Long transactionId)
+    {
+        _transactionId = transactionId;
     }
 
     protected String getContainerMessageElement(@NotNull String containerId)
