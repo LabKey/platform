@@ -974,7 +974,7 @@ public class DataColumn extends DisplayColumn
                     out.write(" *");
                     sb.append("This field is required.\n");
                 }
-                if (sb.length() > 0)
+                if (!sb.isEmpty())
                 {
                     out.write(PageFlowUtil.helpPopup(_boundColumn.getLabel(), sb.toString()));
                 }

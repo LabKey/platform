@@ -37,8 +37,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -766,12 +764,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return null == getTable() ? null : getTable().getColumn(name);
     }
 
-    // Forms can override and return true to opt in to always deserializing old values JSON
-    protected boolean deserializeOldValues()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS);
-    }
-
     @Override
     public void setViewContext(@NotNull ViewContext context)
     {
@@ -795,24 +787,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         String pkString = request.getParameter("pk");
         if (null != StringUtils.trimToNull(pkString) && null != _tinfo)
             setPkVals(pkString);
-
-        if (deserializeOldValues())
-        {
-            try
-            {
-                String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
-                if (null != StringUtils.trimToNull(oldVals))
-                {
-                    String className = getDynaClass().getName();
-                    Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
-                    _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
-                    _isDataLoaded = true;
-                }
-            }
-            catch (Exception ignored)
-            {
-            }
-        }
     }
 
     @Override
