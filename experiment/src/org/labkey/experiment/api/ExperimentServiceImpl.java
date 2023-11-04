@@ -4852,7 +4852,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         if (isTruncate)
                         {
-                            executor.execute(new SQLFragment("TRUNCATE " + dbTinfo));
+                            executor.execute(new SQLFragment("TRUNCATE TABLE " + dbTinfo));
                         }
                         else
                         {
