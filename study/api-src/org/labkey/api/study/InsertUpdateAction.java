@@ -43,6 +43,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateFormHack;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -54,7 +55,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -98,7 +98,9 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
     {
         if (_updateForm == null)
         {
-            QueryUpdateForm ret = new QueryUpdateForm(datasetTable, getViewContext(), errors);
+            // TODO: Ensure that PTID hidden field gets added to the form. Repro: Update dataset, blank out PTID, and submit.
+            // CohortTest fails without this.
+            QueryUpdateForm ret = new QueryUpdateFormHack(datasetTable, getViewContext(), errors);
 
             if (errors.hasErrors())
                 return ret;

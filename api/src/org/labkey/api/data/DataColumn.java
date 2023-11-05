@@ -59,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -98,7 +99,7 @@ public class DataColumn extends DisplayColumn
         // Issue 45559 - use the width set on the bound column when configured. If not set, use the display column's
         // width (in non-lookup cases they will be the same)
         _width = _boundColumn.getWidth();
-        if ("".equals(_width))
+        if (_width.isEmpty())
         {
             _width = _displayColumn.getWidth();
         }
@@ -948,7 +949,7 @@ public class DataColumn extends DisplayColumn
         if (null == _caption)
             return;
 
-        out.write("<td class=\"" + (cls != null ? cls : " lk-form-label") + "\">");
+        out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
 
         renderTitle(ctx, out);
         if (ctx.getMode() == DataRegion.MODE_DETAILS)
@@ -958,29 +959,37 @@ public class DataColumn extends DisplayColumn
         {
             if (_boundColumn != null)
             {
-                StringBuilder sb = new StringBuilder();
+                List<String> helpLines = new LinkedList<>()
+                {
+                    @Override
+                    public boolean add(String s)
+                    {
+                        return super.add(PageFlowUtil.filter(s));
+                    }
+                };
                 if (_boundColumn.getFriendlyTypeName() != null && !_inputType.toLowerCase().startsWith("select"))
                 {
-                    sb.append("Type: ").append(_boundColumn.getFriendlyTypeName()).append("\n");
+                    helpLines.add("Type: " + _boundColumn.getFriendlyTypeName());
                 }
                 if (_boundColumn.getDescription() != null)
                 {
-                    sb.append("Description: ").append(_boundColumn.getDescription()).append("\n");
+                    helpLines.add("Description: " + _boundColumn.getDescription());
                 }
                 for (IPropertyValidator validator : _boundColumn.getValidators())
-                    sb.append("Validator: ").append(validator).append("\n");
+                    helpLines.add("Validator: " + validator);
                 if (renderRequiredIndicators() && _boundColumn.isRequired() && !_boundColumn.isBooleanType())
                 {
                     out.write(" *");
-                    sb.append("This field is required.\n");
+                    helpLines.add("This field is required.");
                 }
-                if (!sb.isEmpty())
+                if (!helpLines.isEmpty())
                 {
-                    out.write(PageFlowUtil.helpPopup(_boundColumn.getLabel(), sb.toString()));
+                    HtmlString helpHtml = HtmlString.unsafe(StringUtils.join(helpLines, "<br>"));
+                    PageFlowUtil.popupHelp(helpHtml, _boundColumn.getLabel()).appendTo(out);
                 }
             }
         }
-        out.write("</td>");
+        out.write("</td>\n");
     }
 
     protected boolean renderRequiredIndicators()
