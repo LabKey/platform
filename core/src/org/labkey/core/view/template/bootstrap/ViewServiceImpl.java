@@ -45,8 +45,6 @@ import static org.labkey.api.util.PageFlowUtil.jsString;
 /**
  * This service/impl pair allows templates and frame types to be implemented in the core module rather than API, where
  * the corresponding enums live.
- *
- * Created by matthew on 12/14/15.
  */
 public class ViewServiceImpl implements ViewService
 {
@@ -355,7 +353,7 @@ public class ViewServiceImpl implements ViewService
 
                 if (config._helpPopup != null)
                 {
-                    out.print(config._helpPopup);
+                    config._helpPopup.appendTo(out);
                 }
 
                 renderPortalMenu(out, title);

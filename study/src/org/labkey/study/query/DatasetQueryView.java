@@ -348,7 +348,7 @@ public class DatasetQueryView extends StudyQueryView
                 {
                     ActionURL dataURL = new ActionURL(StudyController.DatasetItemDetailsAction.class, getContainer());
                     dataURL.addParameter("sourceLsid", lsid.toString());
-                    out.write(PageFlowUtil.textLink("assay", dataURL));
+                    PageFlowUtil.link("assay").href(dataURL).appendTo(out);
                     return;
                 }
             }

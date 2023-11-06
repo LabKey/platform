@@ -36,6 +36,7 @@ import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.InsertView;
 import org.springframework.web.multipart.MultipartFile;
@@ -337,14 +338,15 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                 {
                     String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
                     String nounV2 = includesViruses ? "Sample and virus" : "Sample";
-                    String helpPopup = PageFlowUtil.helpPopup(nounV1 + " Metadata", nounV2 + " metadata should be " +
-                            "provided in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() +
-                            ".  This information is used to determine data processing and to map " + nounV2.toLowerCase() +
-                            " values to plate locations.");
+                    PageFlowUtil.HelpPopupBuilder builder = PageFlowUtil.popupHelp(HtmlString.of(nounV2 + " metadata should be " +
+                        "provided in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() +
+                        ". This information is used to determine data processing and to map " + nounV2.toLowerCase() +
+                        " values to plate locations."), nounV1 + " Metadata");
 
                     out.write("<td class=\"" + (cls != null ? cls : "lk-form-label") + "\">");
-                    out.write(nounV1 + " Metadata" + helpPopup + " *");
-                    out.write("</td>");
+                    out.write(nounV1 + " Metadata");
+                    builder.appendTo(out);
+                    out.write(" *</td>");
                 }
             }
 

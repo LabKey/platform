@@ -242,9 +242,9 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
         {
             if (!isAvailable(ctx))
             {
-                out.write(PageFlowUtil.helpPopup("Specimens Unavailable",
-                        "No vials of this primary specimen are available.  All vials are either part of an active specimen request, " +
-                                "locked by an administrator, or not currently held by a repository."));
+                PageFlowUtil.popupHelp(HtmlString.of("No vials of this primary specimen are available. All " +
+                    "vials are either part of an active specimen request, locked by an administrator, or not " +
+                    "currently held by a repository."), "Specimens Unavailable").appendTo(out);
             }
         }
 

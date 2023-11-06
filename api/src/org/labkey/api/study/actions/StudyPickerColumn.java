@@ -26,6 +26,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Option.OptionBuilder;
 import org.labkey.api.util.element.Select.SelectBuilder;
@@ -78,8 +79,8 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
             if (_colInfo != null)
             {
                 String helpPopupText = ((_colInfo.getFriendlyTypeName() != null) ? "Type: " + _colInfo.getFriendlyTypeName() + "\n" : "") +
-                            ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
-                out.write(PageFlowUtil.helpPopup(_colInfo.getName(), helpPopupText));
+                    ((_colInfo.getDescription() != null) ? "Description: " + _colInfo.getDescription() + "\n" : "");
+                PageFlowUtil.popupHelp(HtmlString.of(helpPopupText), _colInfo.getName());
                 if (!_colInfo.isNullable())
                     out.write(" *");
             }

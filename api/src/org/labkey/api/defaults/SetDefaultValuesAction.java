@@ -36,6 +36,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -73,9 +74,9 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         super(formClass);
     }
 
-    private class DefaultableDataColumn extends DataColumn implements DefaultableDisplayColumn
+    private static class DefaultableDataColumn extends DataColumn implements DefaultableDisplayColumn
     {
-        private DomainProperty _property;
+        private final DomainProperty _property;
 
         public DefaultableDataColumn(DomainProperty property, ColumnInfo col)
         {
@@ -144,7 +145,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                     if (defaultType == null)
                         defaultType = DefaultValueType.FIXED_EDITABLE;
                     out.write(PageFlowUtil.filter(defaultType.getLabel()));
-                    out.write(PageFlowUtil.helpPopup("Default Value Type: " + defaultType.getLabel(), defaultType.getHelpText(), true));
+                    PageFlowUtil.popupHelp(HtmlString.of(defaultType.getHelpText()), "Default Value Type: " + defaultType.getLabel()).appendTo(out);
                 }
                 out.write("</td>");
 

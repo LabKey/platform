@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.WebPartView.FrameType;
 
@@ -42,7 +43,7 @@ public interface WebPartFrame
         public boolean _showTitle  = true;
         public boolean _isWebpart  = true;
         public boolean _isEmpty = false;
-        public String _helpPopup;
+        public PageFlowUtil.HelpPopupBuilder _helpPopup;
         public FrameType _frame = FrameType.PORTAL;
         public Portal.WebPart _webpart = null;
         public NavTree _navMenu = null;

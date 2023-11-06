@@ -36,6 +36,7 @@ import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.PageFlowUtil.HelpPopupBuilder;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -524,17 +525,17 @@ public abstract class JspBase extends JspContext implements HasViewContext
         HttpView.currentView().include(view, writer);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String helpText)
+    public HelpPopupBuilder helpPopup(String helpText)
     {
         return PageFlowUtil.popupHelp(helpText);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText)
+    public HelpPopupBuilder helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText)
+    public HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         if (null == title && !htmlHelpText)
             return PageFlowUtil.popupHelp(helpText);
@@ -543,22 +544,22 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.popupHelp(HtmlString.unsafe(helpText), title);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, HtmlString helpHtml)
+    public HelpPopupBuilder helpPopup(String title, HtmlString helpHtml)
     {
         return PageFlowUtil.popupHelp(helpHtml, title);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, int width)
+    public HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, int width)
     {
         return helpPopup(title, helpText, htmlHelpText).width(width);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, HtmlString helpHtml, int width)
+    public HelpPopupBuilder helpPopup(String title, HtmlString helpHtml, int width)
     {
         return PageFlowUtil.popupHelp(helpHtml, title).width(width);
     }
 
-    public PageFlowUtil.HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, String linkText, int width)
+    public HelpPopupBuilder helpPopup(String title, String helpText, boolean htmlHelpText, String linkText, int width)
     {
         return helpPopup(title, helpText, htmlHelpText).link(HtmlString.of(linkText)).width(width);
     }
