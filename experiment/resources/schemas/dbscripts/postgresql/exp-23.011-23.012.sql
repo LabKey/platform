@@ -1,3 +1,11 @@
+-- Create an unconstrained temporary table to write results
+CREATE TEMPORARY TABLE materialroottemp (RowId INT, RootMaterialRowId INT);
+
+-- Compute "RootMaterialRowId"
+INSERT INTO materialroottemp (RowId, RootMaterialRowId)
+SELECT m.RowId, x.RowId AS RootMaterialRowId
+FROM exp.material AS m LEFT JOIN exp.material AS x ON m.RootMaterialLSID = x.LSID;
+
 -- Drop all indices on exp.material
 DROP INDEX IF EXISTS exp.IDX_CL_Material_RunId;
 DROP INDEX IF EXISTS exp.IX_Material_Container;
@@ -12,14 +20,6 @@ DROP INDEX IF EXISTS exp.uq_material_rootlsid;
 
 -- Add new "RootMaterialRowId" column
 ALTER TABLE exp.material ADD COLUMN RootMaterialRowId INT;
-
--- Create an unconstrained temporary table to write results
-CREATE TEMPORARY TABLE materialroottemp (RowId INT, RootMaterialRowId INT);
-
--- Compute "RootMaterialRowId"
-INSERT INTO materialroottemp (RowId, RootMaterialRowId)
-SELECT m.RowId, x.RowId AS RootMaterialRowId
-FROM exp.material AS m LEFT JOIN exp.material AS x ON m.RootMaterialLSID = x.LSID;
 
 -- Add PK constraint to temporary table to assist JOIN against RowId
 ALTER TABLE materialroottemp ADD CONSTRAINT PK_materialroottemp PRIMARY KEY (RowId);

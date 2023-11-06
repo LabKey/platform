@@ -72,7 +72,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static final Logger LOG = LogManager.getLogger(ExperimentUpgradeCode.class);
 
     /**
-     * Called from exp-22.003-20.004.sql
+     * Called from exp-22.003-22.004.sql
      */
     public static void addProvisionedSampleName(ModuleContext context)
     {
