@@ -4671,6 +4671,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE} unless
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
+     * @param isTruncate delete all rows for this container. Not a real DB truncate because there may be rows in other containers.
      */
     public int deleteMaterialBySqlFilter(
         User user,
@@ -4850,17 +4851,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
-                        if (isTruncate)
-                        {
-                            executor.execute(new SQLFragment("TRUNCATE TABLE " + dbTinfo));
-                        }
-                        else
-                        {
-                            SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
-                            sampleTypeSQL.append(materialFilterSQL);
-                            sampleTypeSQL.append(")");
-                            executor.execute(sampleTypeSQL);
-                        }
+                        SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
+                        sampleTypeSQL.append(materialFilterSQL);
+                        sampleTypeSQL.append(")");
+                        executor.execute(sampleTypeSQL);
                     }
                 }
             }
