@@ -4658,11 +4658,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                       boolean deleteRunsUsingMaterials,
                                       @Nullable ExpSampleTypeImpl stDeleteFrom,
                                       boolean ignoreStatus,
-                                      boolean isTruncate)
+                                      boolean truncateContainer)
     {
         SQLFragment rowIdSQL = new SQLFragment("RowId ");
         rowIdSQL.appendInClause(selectedMaterialIds, getSchema().getSqlDialect());
-        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, isTruncate);
+        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer);
     }
 
     /**
@@ -4671,6 +4671,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE} unless
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
+     * @param truncateContainer delete all rows for this container. Not a real DB truncate because there may be rows in other containers.
      */
     public int deleteMaterialBySqlFilter(
         User user,
@@ -4680,7 +4681,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         boolean deleteFromAllSampleTypes,
         @Nullable ExpSampleTypeImpl stDeleteFrom,
         boolean ignoreStatus,
-        boolean isTruncate
+        boolean truncateContainer
     )
     {
         if (stDeleteFrom != null && deleteFromAllSampleTypes)
@@ -4744,7 +4745,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                     throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                             }
 
-                            if (!isTruncate && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
+                            if (!truncateContainer && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
                             {
                                 ExpSampleType sampleType = material.getSampleType();
                                 sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
@@ -4850,17 +4851,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
-                        if (isTruncate)
-                        {
-                            executor.execute(new SQLFragment("TRUNCATE TABLE " + dbTinfo));
-                        }
-                        else
-                        {
-                            SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
-                            sampleTypeSQL.append(materialFilterSQL);
-                            sampleTypeSQL.append(")");
-                            executor.execute(sampleTypeSQL);
-                        }
+                        SQLFragment sampleTypeSQL = new SQLFragment("DELETE FROM " + dbTinfo + " WHERE lsid IN (SELECT lsid FROM exp.Material WHERE ");
+                        sampleTypeSQL.append(materialFilterSQL);
+                        sampleTypeSQL.append(")");
+                        executor.execute(sampleTypeSQL);
                     }
                 }
             }
@@ -4890,7 +4884,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // recalculate rollup
-            if (!isTruncate)
+            if (!truncateContainer)
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
