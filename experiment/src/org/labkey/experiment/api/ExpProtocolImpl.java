@@ -232,6 +232,12 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     }
 
     @Override
+    public void save(User user, boolean saveProperties, @Nullable Collection<? extends ExpProtocolInput> protocolInputsToDeleteOnUpdate)
+    {
+        _object = ExperimentServiceImpl.get().saveProtocol(user, _object, saveProperties, protocolInputsToDeleteOnUpdate);
+    }
+
+    @Override
     public void delete(User user)
     {
         delete(user, null);
