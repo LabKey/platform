@@ -116,8 +116,11 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of(getShortRecipientDescription());
         if (hasEmailAddresses)
-            builder.append(HtmlString.unsafe(PageFlowUtil.helpPopup("Group Members", getEmailAddressesAsString("<br>") + "<br>" +
-                getConfigureEmailsLinkHTML(currentUrl), true)));
+        {
+            builder.append(PageFlowUtil.popupHelp(
+                HtmlStringBuilder.of(HtmlString.unsafe(getEmailAddressesAsString("<br>") + "<br>"))
+                    .append(getConfigureEmailsLinkHTML(currentUrl)).getHtmlString(), "Group Members"));
+        }
         else
             builder.append(" ").append(getConfigureEmailsLinkHTML(currentUrl));
         return builder;

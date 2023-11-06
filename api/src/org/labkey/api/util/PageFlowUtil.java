@@ -1409,6 +1409,11 @@ public class PageFlowUtil
         return new LinkBuilder(text);
     }
 
+    public static LinkBuilder link(String text, URLHelper url)
+    {
+        return new LinkBuilder(text).href(url);
+    }
+
     public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)
     {
         return new LinkBuilder().iconCls(iconCls).tooltip(tooltip);
@@ -1515,7 +1520,7 @@ public class PageFlowUtil
      */
     public static char getUnusedQuoteSymbol(String text)
     {
-        if (text == null || text.equals(""))
+        if (text == null || text.isEmpty())
             return '"';
 
         int singleQuote = text.indexOf('\'');
