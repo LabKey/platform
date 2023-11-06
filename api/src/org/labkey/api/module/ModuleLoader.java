@@ -147,7 +147,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private static final Map<String, Throwable> _moduleFailures = new CopyOnWriteHashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new CaseInsensitiveHashMap<>();
     private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
-    private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
+    private static final CopyOnWriteHashMap<String, Collection<ResourceFinder>> _resourceFinders = new CopyOnWriteHashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
@@ -2134,7 +2134,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         registerResourcePrefix(prefix, module.getName(), module.getSourcePath(), module.getBuildPath());
     }
 
-    public void registerResourcePrefix(String prefix, String name, String sourcePath, String buildPath)
+    private void registerResourcePrefix(String prefix, String name, String sourcePath, String buildPath)
     {
         if (null == prefix || isEmpty(sourcePath) || isEmpty(buildPath))
             return;
@@ -2143,10 +2143,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
             return;
 
         ResourceFinder finder = new ResourceFinder(name, sourcePath, buildPath);
+        Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, k -> new ArrayList<>());
 
-        synchronized(_resourceFinders)
+        synchronized(col)
         {
-            Collection<ResourceFinder> col = _resourceFinders.computeIfAbsent(prefix, k -> new ArrayList<>());
             col.add(finder);
         }
     }
@@ -2159,12 +2159,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         Collection<ResourceFinder> finders = new LinkedList<>();
 
-        synchronized (_resourceFinders)
-        {
-            for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
-                if (path.startsWith(e.getKey() + "/"))
-                    finders.addAll(e.getValue());
-        }
+        for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
+            if (path.startsWith(e.getKey() + "/"))
+                finders.addAll(e.getValue());
 
         return finders;
     }

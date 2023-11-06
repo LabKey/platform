@@ -96,6 +96,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassImpl;
+import org.labkey.experiment.api.ExpDataClassTableImpl;
 import org.labkey.experiment.api.ExpDataClassType;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpDataTableImpl;
@@ -758,7 +759,15 @@ public class ExperimentModule extends SpringModule
 
         // Individual Data Class row counts
         ExpSchema expSchema = new ExpSchema(user, c);
+
+        // The table-level container filter is set to ensure data class types are included
+        // that may not be defined in the target container but may have rows of data in the target container
         TableInfo dataClassesTable = ExpSchema.TableType.DataClasses.createTable(expSchema, null, ContainerFilter.Type.CurrentPlusProjectAndShared.create(c, user));
+
+        // Issue 47919: The "DataCounts" column is filtered to only count data in the target container
+        if (dataClassesTable instanceof ExpDataClassTableImpl)
+            ((ExpDataClassTableImpl) dataClassesTable).setDataCountContainerFilter(ContainerFilter.Type.Current.create(c, user));
+
         Map<String, Object> dataClassResults = new TableSelector(dataClassesTable, dataClassesTable.getColumns("Name,DataCount"), null, null).getValueMap();
         for (String k : dataClassResults.keySet())
         {

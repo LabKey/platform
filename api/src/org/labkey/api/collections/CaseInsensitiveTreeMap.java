@@ -23,7 +23,7 @@ import java.util.TreeMap;
 * Date: Nov 12, 2010
 * Time: 4:13:31 PM
 */
-public class CaseInsensitiveTreeMap<V> extends TreeMap<String, V>
+public class CaseInsensitiveTreeMap<V> extends TreeMap<String, V> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveTreeMap()
     {
