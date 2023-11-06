@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * A thread-safe version of {@link Map} in which all operations that change the
@@ -132,6 +133,14 @@ abstract class CopyOnWriteMap<K, V, MAP extends Map<K, V>> implements Map<K, V>,
     public void clear() {
         synchronized (this) {
             internalMap = newMap();
+        }
+    }
+
+    @Override
+    public V computeIfAbsent(K key, @NotNull Function<? super K, ? extends V> mappingFunction)
+    {
+        synchronized (this) {
+            return Map.super.computeIfAbsent(key, mappingFunction);
         }
     }
 

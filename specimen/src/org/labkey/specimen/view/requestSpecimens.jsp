@@ -21,8 +21,9 @@
 <%@ page import="org.labkey.api.specimen.location.LocationManager"%>
 <%@ page import="org.labkey.api.specimen.settings.SettingsManager"%>
 <%@ page import="org.labkey.api.study.SpecimenService"%>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
@@ -144,20 +145,16 @@ function setDefaults()
         </tr>
         <tr>
             <td>
-                <select id='destinationLocation' name="destinationLocation" onChange="setDefaults()">
-                    <option value="0"></option>
-                    <%
-                        for (LocationImpl location : locations)
-                        {
-                    %>
-                    <option value="<%= location.getRowId() %>"<%=selected(bean.getSelectedSite() == location.getRowId())%>>
-                        <%= h(location.getDisplayName()) %>
-                    </option>
-                    <%
-                        }
-                    %>
-                </select>
-
+                <%=
+                    select()
+                        .id("destinationLocation")
+                        .name("destinationLocation")
+                        .addOption("", "0")
+                        .addOptions(locations.stream().map(loc -> new OptionBuilder(loc.getDisplayName(), loc.getRowId())))
+                        .selected(bean.getSelectedSite())
+                        .className(null)
+                        .onChange("setDefaults()")
+                %>
             </td>
         </tr>
         <% } %>
@@ -226,9 +223,8 @@ function setDefaults()
             </td>
         </tr>
 
-
         <%
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
         %>
             <tr>

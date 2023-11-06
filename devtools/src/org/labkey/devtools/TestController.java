@@ -1058,7 +1058,7 @@ public class TestController extends SpringActionController
     }
 
 
-    /** fast abd simple to test sql and api w/o dealing with the schema browser */
+    /** fast and simple to test sql and api w/o dealing with the schema browser */
     @RequiresLogin
     public static class SqlDataRegionAction extends SimpleViewAction<Object>
     {
@@ -1067,7 +1067,8 @@ public class TestController extends SpringActionController
         {
             getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
             getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));
-            return new HtmlView("<script src='" + AppProps.getInstance().getContextPath() + "/query/testquery.js'></script><div id=testQueryDiv style='min-height:600px;min-width:800px;' nonce='" + HttpView.currentPageConfig().getScriptNonce()  + "'></div>");
+            getPageConfig().addClientDependency(ClientDependency.fromPath("query/testquery.js"));
+            return new HtmlView("</script><div id=testQueryDiv style='min-height:600px;min-width:800px;' nonce='" + getPageConfig().getScriptNonce()  + "'></div>");
         }
 
         @Override
@@ -1081,7 +1082,7 @@ public class TestController extends SpringActionController
     public static class SqlExecuteAction extends SimpleViewAction
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(Object o, BindException errors)
         {
             HttpView.currentPageConfig().addHandler("sqlexecute", "click", "exec()");
             return new HtmlView(HtmlString.unsafe("""
