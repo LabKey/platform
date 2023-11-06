@@ -35,6 +35,10 @@ DROP TABLE materialroottemp;
 -- Add NOT NULL constraint to "RootMaterialRowId"
 ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
 
+-- Add FK on "RootMaterialRowId"
+ALTER TABLE exp.material ADD CONSTRAINT FK_Material_RootMaterialRowId
+    FOREIGN KEY (RootMaterialRowId) REFERENCES exp.material (RowId);
+
 -- Remove the "RootMaterialLSID" column
 ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
 
@@ -46,6 +50,6 @@ CREATE INDEX IX_Material_CpasType ON exp.material (CpasType);
 CREATE UNIQUE INDEX idx_material_AK ON exp.material (container, cpastype, name) WHERE cpastype IS NOT NULL;
 CREATE UNIQUE INDEX idx_material_objectid ON exp.material (objectid);
 CREATE INDEX IDX_material_name_sourceid ON exp.material (name, materialSourceId);
-CREATE INDEX IX_Material_RootRowId ON exp.material (RootMaterialRowId);
+CREATE INDEX IX_Material_RootMaterialRowId ON exp.material (RootMaterialRowId);
 
 SELECT core.executeJavaUpgradeCode('addRowIdToMaterializedSampleTypes');
