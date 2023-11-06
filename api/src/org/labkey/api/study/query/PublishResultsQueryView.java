@@ -65,6 +65,7 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
@@ -676,7 +677,7 @@ public class PublishResultsQueryView extends QueryView
                     sb.append("<p>The Specimen ID in this row does <strong>not</strong> match a vial in the study.</p>");
                 }
 
-                return new Pair<>(overallStatus, HtmlString.of(sb));
+                return new Pair<>(overallStatus, HtmlString.unsafe(sb.toString()));
             }
             catch (SQLException e)
             {
@@ -706,13 +707,13 @@ public class PublishResultsQueryView extends QueryView
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("<p>The Sample ID in this row does");
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+            builder.append(HtmlString.unsafe("<p>The Sample ID in this row does"));
             if (!isSampleMatched)
-                sb.append(" <strong>not</strong>");
-            sb.append(" match a sample in the study.</p>");
+                builder.append(HtmlString.unsafe(" <strong>not</strong>"));
+            builder.append(HtmlString.unsafe(" match a sample in the study.</p>"));
 
-            return new Pair<>(isSampleMatched, HtmlString.of(sb));
+            return new Pair<>(isSampleMatched, builder.getHtmlString());
         }
 
         public void addQueryColumns(Set<ColumnInfo> set)
