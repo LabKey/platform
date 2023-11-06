@@ -975,8 +975,6 @@ public class OntologyManager
 
     public static int deleteOntologyObjectsByObjectIdSql(DbSchema schema, SQLFragment objectIdSql)
     {
-        // we have different levels of optimization possible here deleteOwned=true/false, scope=/<>exp
-
         if (!schema.getScope().equals(getExpSchema().getScope()))
             throw new UnsupportedOperationException("can only use with same DbScope");
 
