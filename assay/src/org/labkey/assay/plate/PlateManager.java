@@ -896,7 +896,7 @@ public class PlateManager implements PlateService
                 .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                 .append(" WHERE PlateId = ?")
                 .add(plateId);
-        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container, false);
+        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container);
 
         // delete PlateProperty mappings
         SQLFragment sql2 = new SQLFragment("DELETE FROM ")
@@ -956,7 +956,7 @@ public class PlateManager implements PlateService
                 .append(AssayDbSchema.getInstance().getTableInfoWell(), "AW")
                 .append(" WHERE Container = ?")
                 .add(container);
-        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container, false);
+        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container);
 
         // delete PlateProperty mappings
         SQLFragment sql2 = new SQLFragment("DELETE FROM ")

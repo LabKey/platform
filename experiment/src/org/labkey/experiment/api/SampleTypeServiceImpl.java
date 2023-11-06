@@ -537,7 +537,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
      */
-    public int truncateSampleType(ExpSampleType source, User user, @Nullable Container c)
+    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
