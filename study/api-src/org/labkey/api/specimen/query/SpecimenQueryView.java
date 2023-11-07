@@ -60,6 +60,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.model.ParticipantDataset;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -187,19 +188,23 @@ public class SpecimenQueryView extends BaseSpecimenQueryView
                 String reasonAlias = getRequiredColumnAlias("AvailabilityReason");
                 Object reason = ctx.getRow().get(reasonAlias);
 
-                out.write(PageFlowUtil.helpPopup("Specimen Unavailable",
-                        (reason instanceof String ? reason : "Specimen Unavailable.") + "<br><br>" +
-                                "Click " + PageFlowUtil.link("history").href(getHistoryLink(ctx)) + " for more information.", true));
+                HtmlStringBuilder builder = HtmlStringBuilder.of(reason instanceof String r ? r : "Specimen Unavailable.")
+                    .append(HtmlString.BR).append(HtmlString.BR)
+                    .append("Click ")
+                    .append(PageFlowUtil.link("[history]", getHistoryLink(ctx)).clearClasses())
+                    .append(" for more information.");
+
+                PageFlowUtil.popupHelp(builder.getHtmlString(), "Specimen Unavailable").appendTo(out);
             }
         }
 
-        private String getHistoryLink(RenderContext ctx)
+        private ActionURL getHistoryLink(RenderContext ctx)
         {
             String containerId = (String) ctx.getRow().get("Container");
             ActionURL url = getHistoryLinkURL(ctx.getViewContext(), containerId);
             Long specimenId = (Long) ctx.getRow().get("RowId");
 
-            return url.addParameter("id", specimenId).toString();
+            return url.addParameter("id", specimenId);
         }
 
         private boolean isAvailable(RenderContext ctx)

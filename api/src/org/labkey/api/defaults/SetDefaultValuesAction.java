@@ -247,7 +247,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         if (!domain.getContainer().equals(getContainer()) && domain.getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             ActionURL url = buildSetInheritedDefaultsURL(domain, domainIdForm);
-            headerHtml.append(PageFlowUtil.textLink("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
+            headerHtml.append(PageFlowUtil.link("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
         headerHtml.append("<p>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.</p>");
 

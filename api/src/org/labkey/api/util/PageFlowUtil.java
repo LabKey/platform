@@ -1538,20 +1538,7 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 10 usages.
-    public static String textLink(String text, URLHelper url)
-    {
-        return link(text).href(url).toString();
-    }
-
-    @Deprecated // use popupHelp(). 2 usages.
-    public static String helpPopup(String title, String helpText, boolean isHtmlHelpText)
-    {
-        String questionMarkHtml = "<span class=\"labkey-help-pop-up\">?</span>";
-        return helpPopup(title, helpText, isHtmlHelpText, questionMarkHtml, 0, null);
-    }
-
-    @Deprecated // use popupHelp(). 7 usages.
+    @Deprecated // use popupHelp(). 5 usages.
     public static String helpPopup(String title, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
     {
         if (null == title && !isHtmlHelpText)
@@ -1683,13 +1670,13 @@ public class PageFlowUtil
                 }
             }
             return DOM.createHtml(A(id(id).cl("_helpPopup").at(href,'#',tabindex,"-1")
-                    .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
-                    .at(inlineScript, onmouseout, popupHideScript)
-                    .at(inlineScript, onmouseover, popupShowScript)
-                    .data(width != 0, "popupwidth", width)
-                    .data(isNotBlank(titleText),"popuptitle", titleText)
-                    .data("popupcontent", helpHtml.toString()),
-                    linkHtml));
+                .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
+                .at(inlineScript, onmouseout, popupHideScript)
+                .at(inlineScript, onmouseover, popupShowScript)
+                .data(width != 0, "popupwidth", width)
+                .data(isNotBlank(titleText),"popuptitle", titleText)
+                .data("popupcontent", helpHtml.toString()),
+                linkHtml));
         }
     }
 

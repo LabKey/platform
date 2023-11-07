@@ -359,7 +359,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                     String nounV2 = includesViruses ? "Sample and virus" : "Sample";
 
                     out.write(nounV2 + " metadata should be uploaded in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() + ".  ");
-                    out.write(PageFlowUtil.textLink("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)));
+                    PageFlowUtil.link("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)).appendTo(out);
                     out.write("<br>");
                     if (reshowFile != null)
                     {

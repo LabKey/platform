@@ -38,6 +38,8 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -308,9 +310,14 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         {
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
             ActionURL samplesLink = SpecimenController.getSpecimensURL(getContainer(), true);
-            return new HtmlView("Specimens uploaded successfully.<br><br>" +
-                    PageFlowUtil.textLink("study home", homeLink) + " " +
-                    PageFlowUtil.textLink("specimens", samplesLink));
+            return new HtmlView(
+                HtmlStringBuilder.of("Specimens uploaded successfully).")
+                    .append(HtmlString.BR).append(HtmlString.BR)
+                    .append(PageFlowUtil.link("study home", homeLink))
+                    .append(" ")
+                    .append(PageFlowUtil.link("specimens", samplesLink)
+                )
+            );
         }
 
         @Override
