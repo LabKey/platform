@@ -19,7 +19,6 @@ import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.components.html.Input;
-import org.labkey.test.selenium.LazyWebElement;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -47,9 +46,26 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return elementCache().currentRevisionInput;
     }
 
-    public Input message()
+    public String getMessage()
     {
-        return elementCache().messageTextArea;
+        return elementCache().messageTextArea.get();
+    }
+
+    public EditUpgradeMessagePage setMessage(String message)
+    {
+        elementCache().messageTextArea.set(message);
+        return this;
+    }
+
+    public String getMarketingMessage()
+    {
+        return elementCache().marketingMessageTextArea.get();
+    }
+
+    public EditUpgradeMessagePage setMarketingMessage(String marketingMessage)
+    {
+        elementCache().marketingMessageTextArea.setWithPaste(marketingMessage);
+        return this;
     }
 
     public Input createIssueURL()
@@ -76,10 +92,11 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
 
     protected class ElementCache extends BaseMothershipPage.ElementCache
     {
-        Input currentRevisionInput = new Input(new LazyWebElement(Locator.name("currentRevision"), this), getDriver());
-        Input messageTextArea = new Input(new LazyWebElement(Locator.name("message"), this), getDriver());
-        Input createIssueURLInput = new Input(new LazyWebElement(Locator.name("createIssueURL"), this), getDriver());
-        Input issuesContainerInput = new Input(new LazyWebElement(Locator.name("issuesContainer"), this), getDriver());
-        WebElement saveButton = new LazyWebElement(Locator.lkButton("Save"), this);
+        Input currentRevisionInput = new Input(Locator.name("currentRevision").findWhenNeeded(this), getDriver());
+        Input messageTextArea = new Input(Locator.name("message").findWhenNeeded(this), getDriver());
+        Input createIssueURLInput = new Input(Locator.name("createIssueURL").findWhenNeeded(this), getDriver());
+        Input issuesContainerInput = new Input(Locator.name("issuesContainer").findWhenNeeded(this), getDriver());
+        Input marketingMessageTextArea = new Input(Locator.name("marketingMessage").findWhenNeeded(this), getDriver());
+        WebElement saveButton = Locator.lkButton("Save").findWhenNeeded( this);
     }
 }
