@@ -311,7 +311,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
             ActionURL samplesLink = SpecimenController.getSpecimensURL(getContainer(), true);
             return new HtmlView(
-                HtmlStringBuilder.of("Specimens uploaded successfully).")
+                HtmlStringBuilder.of("Specimens uploaded successfully.")
                     .append(HtmlString.BR).append(HtmlString.BR)
                     .append(PageFlowUtil.link("study home", homeLink))
                     .append(" ")
