@@ -928,7 +928,7 @@ public class DataColumn extends DisplayColumn
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         String title = PageFlowUtil.filter(getTitle(ctx));
-        if (title.length() == 0)
+        if (title.isEmpty())
         {
             title = "&nbsp;";
         }

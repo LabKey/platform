@@ -35,6 +35,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -74,25 +75,23 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     {
         switch (column)
         {
-            case Folder:
+            case Folder ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("Container"));
                 columnInfo.setURL(new DetailsURL(new ActionURL(ExperimentController.ListDataClassAction.class, getContainer())));
                 return columnInfo;
             }
-
-            case Description:
-            case RowId:
+            case Description, RowId ->
+            {
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
-
-            case NameExpression:
+            }
+            case NameExpression ->
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn(column.toString()));
                 columnInfo.setLabel("Naming Pattern");
                 return columnInfo;
             }
-
-            case Name:
+            case Name ->
             {
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setShownInUpdateView(false);
@@ -106,9 +105,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
                 return c;
             }
-
-
-            case LSID:
+            case LSID ->
             {
                 var c = wrapColumn(alias, _rootTable.getColumn(column.toString()));
                 c.setHidden(true);
@@ -118,54 +115,62 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 c.setCalculated(true); // So DataIterator won't consider the column as required. See c.isRequiredForInsert()
                 return c;
             }
-
-            case Created:
-                return wrapColumn(alias, _rootTable.getColumn("Created"));
-
-            case CreatedBy:
-                return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
-
-            case Modified:
-                return wrapColumn(alias, _rootTable.getColumn("Modified"));
-
-            case ModifiedBy:
-                return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
-
-            case SampleSet:
+            case Created, Modified ->
+            {
+                return wrapColumn(alias, _rootTable.getColumn(column.name()));
+            }
+            case CreatedBy, ModifiedBy ->
+            {
+                return createUserColumn(alias, _rootTable.getColumn(column.name()));
+            }
+            case SampleSet ->
             {
                 var col = wrapColumn(alias, _rootTable.getColumn("MaterialSourceId"));
                 var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
                         .schema(ExpSchema.SCHEMA_NAME, getContainer())
-                        .to(SampleSets.name(), "RowId", null);
-                col.setFk( fk );
+                        .to(SampleSets.name(), Column.RowId.name(), null);
+                col.setFk(fk);
                 return col;
             }
-
-            case DataCount:
+            case DataCount ->
             {
-                SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoData(), "d")
-                    .append(" WHERE d.classId = ").append(ExprColumn.STR_TABLE_ALIAS + ".rowid")
-                    .append(" AND ")
-                    .append(getContainerFilter().getSQLFragment(getSchema(), new SQLFragment("d.container")))
-                    .append(")");
-                ExprColumn sampleCountColumnInfo = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
-                sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
-                return sampleCountColumnInfo;
+                return createDataCountColumn(getContainerFilter());
             }
-            case Category:
+            case Category ->
             {
                 var col = wrapColumn(alias, _rootTable.getColumn(column.toString()));
                 var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
                         .schema(ExpSchema.SCHEMA_NAME, getContainer())
                         .to(DATA_CLASS_CATEGORY_TABLE, "Value", null);
-                col.setFk( fk );
+                col.setFk(fk);
                 return col;
             }
-            case ImportAliases:
+            case ImportAliases ->
+            {
                 return createImportAliasColumn("ImportAliases", null, "data class");
-            default:
-                throw new IllegalArgumentException("Unknown column " + column);
+            }
+            default -> throw new IllegalArgumentException("Unknown column " + column);
         }
+    }
+
+    // Issue 47919: Support "DataCount" resolving the count of rows across containers.
+    // Defaults to table-level container filter.
+    private ExprColumn createDataCountColumn(@NotNull ContainerFilter dataCountContainerFilter)
+    {
+        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoData(), "d")
+                .append(" WHERE d.classId = ").append(ExprColumn.STR_TABLE_ALIAS + ".rowid")
+                .append(" AND ")
+                .append(dataCountContainerFilter.getSQLFragment(getSchema(), new SQLFragment("d.container")))
+                .append(")");
+        ExprColumn sampleCountColumnInfo = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
+        sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
+        return sampleCountColumnInfo;
+    }
+
+    public void setDataCountContainerFilter(@NotNull ContainerFilter dataCountContainerFilter)
+    {
+        checkLocked();
+        replaceColumn(createDataCountColumn(dataCountContainerFilter), getColumn(FieldKey.fromParts(Column.DataCount)));
     }
 
     @Override
@@ -203,15 +208,12 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         return _userSchema.getContainer().hasPermission(user, perm);
     }
 
-
     @Nullable
     @Override
     public QueryUpdateService getUpdateService()
     {
         return new UpdateService(this);
     }
-
-
 
     private class UpdateService extends DefaultQueryUpdateService
     {
@@ -243,7 +245,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         }
 
         @Override
-        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws SQLException, ValidationException
+        protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row) throws ValidationException
         {
             String name = (String)row.get("name");
             if (StringUtils.isBlank(name))
@@ -303,5 +305,4 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             dc.delete(getUserSchema().getUser());
         }
     }
-
 }

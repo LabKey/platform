@@ -228,7 +228,7 @@ public class PageFlowUtil
     /** HTML encode a string */
     static public String filter(CharSequence s, boolean encodeSpace, boolean encodeLinks)
     {
-        if (null == s || 0 == s.length())
+        if (null == s || s.isEmpty())
             return "";
 
         int len = s.length();
@@ -353,7 +353,7 @@ public class PageFlowUtil
     static public String filterControlChars(Object o)
     {
         String s = o == null ? null : o.toString();
-        if (null == s || 0 == s.length())
+        if (null == s || s.isEmpty())
             return "";
 
         int len = s.length();
@@ -471,7 +471,7 @@ public class PageFlowUtil
 
     public static List<Pair<String, String>> fromQueryString(String query, String encoding)
     {
-        if (null == query || 0 == query.length())
+        if (null == query || query.isEmpty())
             return _emptyPairList;
 
         if (null == encoding)
@@ -486,7 +486,7 @@ public class PageFlowUtil
         {
             for (String term : terms)
             {
-                if (0 == term.length())
+                if (term.isEmpty())
                     continue;
 
                 // NOTE: faster to decode entire term all at once, but key may contain '=' char
@@ -595,13 +595,11 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-
     // Identifies LabKey-specific parameters that shouldn't be persisted or exported, #30532
     public static boolean isInternalParameter(@NotNull String parameterName)
     {
         return parameterName.startsWith("X-LABKEY-");
     }
-
 
     /**
         Return a map of <T, T>. Note: iteration order of this map is unpredictable.
@@ -1372,7 +1370,7 @@ public class PageFlowUtil
         String area = m.group(3);
         String exch = m.group(4);
         String num = m.group(5);
-        if (null != area && 0 < area.length())
+        if (null != area && !area.isEmpty())
             sb.append("(").append(area).append(") ");
         sb.append(exch).append("-").append(num);
         m.appendTail(sb);
@@ -1409,6 +1407,11 @@ public class PageFlowUtil
     public static LinkBuilder link(String text)
     {
         return new LinkBuilder(text);
+    }
+
+    public static LinkBuilder link(String text, URLHelper url)
+    {
+        return new LinkBuilder(text).href(url);
     }
 
     public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)
@@ -1517,7 +1520,7 @@ public class PageFlowUtil
      */
     public static char getUnusedQuoteSymbol(String text)
     {
-        if (text == null || text.equals(""))
+        if (text == null || text.isEmpty())
             return '"';
 
         int singleQuote = text.indexOf('\'');
@@ -1535,82 +1538,29 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 33 usages.
-    public static String textLink(String text, URLHelper url)
+    @Deprecated // use popupHelp(). 5 usages.
+    public static String helpPopup(String title, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
     {
-        return link(text).href(url).toString();
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String title, String helpText)
-    {
-        return helpPopup(title, helpText, false);
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText)
-    {
-        return helpPopup(title, helpText, htmlHelpText, 0);
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, int width)
-    {
-        String questionMarkHtml = "<span class=\"labkey-help-pop-up\">?</span>";
-        return helpPopup(title, helpText, htmlHelpText, questionMarkHtml, width);
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml)
-    {
-        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, null);
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, String onClickScript)
-    {
-        return helpPopup(title, helpText, htmlHelpText, linkHtml, 0, onClickScript);
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String title, String helpText, boolean htmlHelpText, String linkHtml, int width)
-    {
-        return helpPopup(title, helpText, htmlHelpText, linkHtml, width, null);
-    }
-
-
-    @Deprecated // use popupHelp() or JspBase.helpPopup()
-    public static String helpPopup(String titleText, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
-    {
-        if (null == titleText && !isHtmlHelpText)
+        if (null == title && !isHtmlHelpText)
         {
             return popupHelp(helpText).link(HtmlString.unsafe(linkHtml)).script(onClickScript).toString();
         }
         else
         {
             HtmlString helpHtml = isHtmlHelpText ? HtmlString.unsafe(helpText) : HtmlString.unsafe(filter(helpText,true));
-            return popupHelp(helpHtml, titleText).link(HtmlString.unsafe(linkHtml)).width(width).script(onClickScript).toString();
+            return popupHelp(helpHtml, title).link(HtmlString.unsafe(linkHtml)).width(width).script(onClickScript).toString();
         }
     }
-
 
     public static HelpPopupBuilder popupHelp(@NotNull String helpText)
     {
         return new HelpPopupBuilder(helpText);
     }
 
-
     public static HelpPopupBuilder popupHelp(@NotNull HtmlString helpHtml, String titleText)
     {
         return new HelpPopupBuilder(helpHtml, titleText);
     }
-
 
     // NOTE: these are attached via query selector, so they must be the same for every popup
     private static final String popupHideScript = "return hideHelpDivDelay();";
@@ -1720,13 +1670,13 @@ public class PageFlowUtil
                 }
             }
             return DOM.createHtml(A(id(id).cl("_helpPopup").at(href,'#',tabindex,"-1")
-                    .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
-                    .at(inlineScript, onmouseout, popupHideScript)
-                    .at(inlineScript, onmouseover, popupShowScript)
-                    .data(width != 0, "popupwidth", width)
-                    .data(isNotBlank(titleText),"popuptitle", titleText)
-                    .data("popupcontent", helpHtml.toString()),
-                    linkHtml));
+                .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
+                .at(inlineScript, onmouseout, popupHideScript)
+                .at(inlineScript, onmouseover, popupShowScript)
+                .data(width != 0, "popupwidth", width)
+                .data(isNotBlank(titleText),"popuptitle", titleText)
+                .data("popupcontent", helpHtml.toString()),
+                linkHtml));
         }
     }
 

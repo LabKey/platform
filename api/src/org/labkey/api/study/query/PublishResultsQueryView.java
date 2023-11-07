@@ -64,6 +64,8 @@ import org.labkey.api.study.assay.SampleParticipantVisitResolver;
 import org.labkey.api.study.assay.StudyParticipantVisitResolver;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
@@ -90,11 +92,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * User: brittp
- * Date: Jul 30, 2007
- * Time: 10:07:07 AM
- */
 public class PublishResultsQueryView extends QueryView
 {
     private static final Logger LOG = LogManager.getLogger(PublishResultsQueryView.class);
@@ -553,7 +550,7 @@ public class PublishResultsQueryView extends QueryView
         }
 
         /** @return boolean to indicate if the row is considered to match, string with a message to explain why */
-        public Pair<Boolean, String> getMatchStatus(RenderContext ctx) throws IOException
+        public Pair<Boolean, HtmlString> getMatchStatus(RenderContext ctx) throws IOException
         {
             Container targetStudy = getUserTargetStudy(ctx);
             if (targetStudy == null)
@@ -561,7 +558,7 @@ public class PublishResultsQueryView extends QueryView
 
             // Bail early if no match can be made.
             if (targetStudy == null)
-                return new Pair<>(false, "<p>No target study selected for this row.</p>");
+                return new Pair<>(false, HtmlString.unsafe("<p>No target study selected for this row.</p>"));
 
             Study study = StudyService.get().getStudy(targetStudy);
             TimepointType timepointType = study.getTimepointType();
@@ -680,7 +677,7 @@ public class PublishResultsQueryView extends QueryView
                     sb.append("<p>The Specimen ID in this row does <strong>not</strong> match a vial in the study.</p>");
                 }
 
-                return new Pair<>(overallStatus, sb.toString());
+                return new Pair<>(overallStatus, HtmlString.unsafe(sb.toString()));
             }
             catch (SQLException e)
             {
@@ -689,7 +686,7 @@ public class PublishResultsQueryView extends QueryView
             }
         }
 
-        public Pair<Boolean, String> getSampleMatchStatus(RenderContext ctx)
+        public Pair<Boolean, HtmlString> getSampleMatchStatus(RenderContext ctx)
         {
             Container targetStudy = getUserTargetStudy(ctx);
             if (targetStudy == null)
@@ -697,7 +694,7 @@ public class PublishResultsQueryView extends QueryView
 
             // Bail early if no match can be made.
             if (targetStudy == null)
-                return new Pair<>(false, "<p>No target study selected for this row.</p>");
+                return new Pair<>(false, HtmlString.unsafe("<p>No target study selected for this row.</p>"));
 
             ParticipantVisitResolver resolver = getResolver(ctx);
             boolean isSampleMatched = false;
@@ -710,13 +707,13 @@ public class PublishResultsQueryView extends QueryView
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("<p>The Sample ID in this row does");
+            HtmlStringBuilder builder = HtmlStringBuilder.of();
+            builder.append(HtmlString.unsafe("<p>The Sample ID in this row does"));
             if (!isSampleMatched)
-                sb.append(" <strong>not</strong>");
-            sb.append(" match a sample in the study.</p>");
+                builder.append(HtmlString.unsafe(" <strong>not</strong>"));
+            builder.append(HtmlString.unsafe(" match a sample in the study.</p>"));
 
-            return new Pair<>(isSampleMatched, sb.toString());
+            return new Pair<>(isSampleMatched, builder.getHtmlString());
         }
 
         public void addQueryColumns(Set<ColumnInfo> set)

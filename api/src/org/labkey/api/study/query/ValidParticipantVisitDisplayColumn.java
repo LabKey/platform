@@ -19,20 +19,17 @@ package org.labkey.api.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;
 
-/**
- * User: jeckels
- * Date: Nov 6, 2007
- */
 public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
 {
     private final PublishResultsQueryView.ResolverHelper _resolverHelper;
-    private boolean _matchSpecimen;
+    private final boolean _matchSpecimen;
 
     public ValidParticipantVisitDisplayColumn(PublishResultsQueryView.ResolverHelper resolverHelper,
                                               ColumnInfo specimenIdCol,
@@ -50,7 +47,7 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        Pair<Boolean,String> matchStatus;
+        Pair<Boolean, HtmlString> matchStatus;
 
         if (_matchSpecimen)
             matchStatus = _resolverHelper.getMatchStatus(ctx);
@@ -58,16 +55,16 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
             matchStatus = _resolverHelper.getSampleMatchStatus(ctx);
 
         boolean match = matchStatus.first;
-        String message = matchStatus.second;
+        HtmlString message = matchStatus.second;
         if (match)
         {
             out.write("<i class=\"fa fa-check\"></i>");
-            out.write(PageFlowUtil.helpPopup("Match", message, true));
+            PageFlowUtil.popupHelp(message, "Match").appendTo(out);
         }
         else
         {
             out.write("<i class=\"fa fa-times\"></i>");
-            out.write(PageFlowUtil.helpPopup("No match", message, true));
+            PageFlowUtil.popupHelp(message, "No match").appendTo(out);
         }
     }
 }

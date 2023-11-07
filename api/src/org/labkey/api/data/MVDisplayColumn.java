@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -27,9 +28,6 @@ import java.util.Set;
 /**
  * Column type that renders an indicator if there is an associated missing value indicator to accompany the normal
  * value. There is a discrete, configured list of allowable indicators, on a per-container basis. See {@link MvUtil}.
- *
- * User: jgarms
- * Date: Jan 08, 2009
  */
 public class MVDisplayColumn extends DataColumn
 {
@@ -71,15 +69,17 @@ public class MVDisplayColumn extends DataColumn
         String mvIndicator = getMvIndicator(ctx);
         if (mvIndicator != null)
         {
-            String popupText = PageFlowUtil.filter(MvUtil.getMvLabel(mvIndicator, ctx.getContainer()));
+            HtmlStringBuilder popupText = HtmlStringBuilder.of(MvUtil.getMvLabel(mvIndicator, ctx.getContainer()));
 
             // If we have a raw value, include it in the popup
             HtmlString value = super.getFormattedHtml(ctx);
             if (value.length() != 0)
-                popupText += ("<p>The value as originally entered was: '" + value.toString() + "'.</p>");
+                popupText.append(HtmlString.unsafe("<p>The value as originally entered was: '"))
+                    .append(value)
+                    .append(HtmlString.unsafe("'.</p>"));
 
             out.write("<font class=\"labkey-mv\">");
-            out.write(PageFlowUtil.helpPopup("Missing Value Indicator: " + mvIndicator, popupText, true, h(mvIndicator)));
+            PageFlowUtil.popupHelp(popupText.getHtmlString(), "Missing Value Indicator: " + mvIndicator).link(HtmlString.of(mvIndicator)).appendTo(out);
             out.write("</font>");
         }
         else

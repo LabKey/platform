@@ -19,12 +19,6 @@ import com.google.gwt.user.client.rpc.IsSerializable;
 
 import java.io.Serializable;
 
-/*
- * User: brittp
- * Date: Jan 29, 2009
- * Time: 2:55:25 PM
- */
-
 public enum DefaultValueType implements Serializable, IsSerializable
 {
     FIXED_EDITABLE("Editable default", "An editable default value will be entered for the user. The default value will be the same for every user for every insert."),
