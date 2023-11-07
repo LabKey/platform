@@ -104,7 +104,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         private QueryService.AuditAction _auditAction;
         private String _transactionType;
 
-        private boolean _multiActions; // if the audit event comment is updated/appended multiple times, for example, the original insert triggers additional insert/update via trigger scripts
+        private int _commentCount = 0; // the audit event comment might have been updated/appended multiple times, for example, the original insert triggers additional insert/update via trigger scripts
 
         public TransactionAuditEvent()
         {
@@ -140,7 +140,15 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
             _transactionType = transactionType;
         }
 
-        public void setRowCount(int rowCount)
+        @Override
+        public void setComment(String comment)
+        {
+            if (!StringUtils.isEmpty(comment))
+                _commentCount++;
+            super.setComment(comment);
+        }
+
+        public void updateCommentRowCount(int rowCount)
         {
             setComment(String.format(_auditAction.getCommentSummary(), rowCount));
         }
@@ -149,22 +157,18 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         {
             String existingComment = this.getComment();
             QueryService.AuditAction newAction = action == null ? _auditAction : action;
-            boolean isDefaultOrNullComment = StringUtils.isEmpty(existingComment) || newAction.getDefaultCommentSummary().equals(existingComment);
 
             String newComment = String.format(newAction.getCommentSummary(), rowCount);
 
-            if (isDefaultOrNullComment) // if empty or default, replace
-                setRowCount(rowCount);
+            if (_commentCount == 0) // if empty or default, replace
+                updateCommentRowCount(rowCount);
             else // append
-            {
                 setComment(existingComment + " " + newComment);
-                _multiActions = true;
-            }
         }
 
         public boolean hasMultiActions()
         {
-            return _multiActions;
+            return _commentCount > 1;
         }
 
         public QueryService.AuditAction getAuditAction()
