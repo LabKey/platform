@@ -18,7 +18,7 @@ ALTER TABLE exp.Material ADD CONSTRAINT FK_Material_RootMaterialRowId
     FOREIGN KEY (RootMaterialRowId) REFERENCES exp.Material (RowId);
 GO
 
-CREATE INDEX ix_material_rootrowid ON exp.Material (rootmaterialrowid);
+CREATE INDEX ix_material_rootmaterialrowid ON exp.Material (rootmaterialrowid);
 GO
 
 -- Remove the "RootMaterialLSID" column
