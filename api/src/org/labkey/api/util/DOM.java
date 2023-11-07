@@ -448,8 +448,8 @@ public class DOM
         ondrop,
         ondurationchange,
         onemptied,
-        onended,
-        onerror,
+        onended, */
+        onerror, /*
         onfocus,
         onhashchange,
         oninput,

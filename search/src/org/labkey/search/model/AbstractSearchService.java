@@ -42,6 +42,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MultisetRateAccumulator;
 import org.labkey.api.util.PageFlowUtil;
@@ -1409,10 +1410,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         return map;
     }
 
-    private String getPopup(String title, IndexerRateAccumulator r)
+    private HtmlString getPopup(String title, IndexerRateAccumulator r)
     {
         if (r.getCounter().isEmpty())
-            return "";
+            return HtmlString.EMPTY_STRING;
 
         StringBuilder html = new StringBuilder();
         html.append("<table>\n");
@@ -1422,7 +1423,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         html.append("</table>\n");
 
-        return PageFlowUtil.helpPopup(title, html.toString(), true);
+        return PageFlowUtil.popupHelp(HtmlString.unsafe(html.toString()), title).getHtmlString();
     }
 
     public abstract Map<String, Double> getSearchStats();

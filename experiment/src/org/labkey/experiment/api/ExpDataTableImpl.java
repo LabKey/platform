@@ -810,9 +810,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             {
                 if (data.isFileOnDisk())
                 {
-                    out.write(PageFlowUtil.textLink("View File", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)));
+                    PageFlowUtil.link("View File").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true)).appendTo(out);
                     out.write("<br>");
-                    out.write(PageFlowUtil.textLink("Download", ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)));
+                    PageFlowUtil.link("Download").href(ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false)).appendTo(out);
                 }
                 else
                 {
@@ -822,9 +822,9 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
-    private class WebDavUrlColumn extends ExpDataFileColumn
+    private static class WebDavUrlColumn extends ExpDataFileColumn
     {
-        private boolean _relative;
+        private final boolean _relative;
 
         public WebDavUrlColumn (ColumnInfo colInfo, boolean relative)
         {

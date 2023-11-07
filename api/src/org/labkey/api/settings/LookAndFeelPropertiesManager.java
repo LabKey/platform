@@ -55,7 +55,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public HtmlString getHelpPopup()
             {
-                return HtmlString.unsafe(PageFlowUtil.helpPopup("Header Logo", "Appears in the header on every page when the page width is 768px or greater.<br><br>Recommend size: 100px x 30px", true, 300));
+                return PageFlowUtil.popupHelp(HtmlString.unsafe("Appears in the header on every page when the page width is 768px or greater.<br><br>Recommend size: 100px x 30px"), "Header Logo").width(300).getHtmlString();
             }
 
             @Override
@@ -118,7 +118,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public HtmlString getHelpPopup()
             {
-                return HtmlString.unsafe(PageFlowUtil.helpPopup("Responsive Logo", "Appears in the header on every page when the page width is less than 768px.<br><br>Recommend size: 30px x 30px", true, 300));
+                return PageFlowUtil.popupHelp(HtmlString.unsafe("Appears in the header on every page when the page width is less than 768px.<br><br>Recommend size: 30px x 30px"), "Responsive Logo").width(300).getHtmlString();
             }
 
             @Override
@@ -181,7 +181,7 @@ public class LookAndFeelPropertiesManager
             @Override
             public HtmlString getHelpPopup()
             {
-                return HtmlString.unsafe(PageFlowUtil.helpPopup("Favicon", "Displayed in user's favorites or bookmarks, .ico file only", false, 300));
+                return PageFlowUtil.popupHelp(HtmlString.of("Displayed in user's favorites or bookmarks, .ico file only"), "Favicon").width(300).getHtmlString();
             }
 
             @Override

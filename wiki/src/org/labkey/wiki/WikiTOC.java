@@ -92,8 +92,8 @@ public class WikiTOC extends NavTreeMenu
 
         //output only this one if wiki contains no pages
         boolean bHasInsert = _cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
-        boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().size() > 0;
-        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().size() > 0;
+        boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && !getElements().isEmpty();
+        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && !getElements().isEmpty();
 
         NavTree menu = new NavTree();
         if (bHasInsert)
@@ -275,19 +275,19 @@ public class WikiTOC extends NavTreeMenu
 
             if (prevURL != null)
             {
-                out.print(PageFlowUtil.textLink("previous", prevURL));
+                PageFlowUtil.link("previous").href(prevURL).appendTo(out);
             }
 
             if (nextURL != null)
             {
-                out.print(PageFlowUtil.textLink("next", nextURL));
+                PageFlowUtil.link("next").href(nextURL).appendTo(out);
             }
 
             if (showExpandOption)
             {
                 out.println("</td></tr><tr><td>&nbsp;</td></tr><tr><td>");
-                out.println(PageFlowUtil.link("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)"));
-                out.println(PageFlowUtil.link("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)"));
+                PageFlowUtil.link("expand all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, true)").appendTo(out);
+                PageFlowUtil.link("collapse all").onClick("LABKEY.wiki.internal.Wiki.adjustAllTocEntries('NavTree-" + getId() + "', true, false)").appendTo(out);
             }
 
             out.println("</td>\n</tr>\n</table>");

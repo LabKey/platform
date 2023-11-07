@@ -2674,10 +2674,10 @@ public class StudyController extends BaseStudyController
             GridView gv = new GridView(dr, errors);
             DisplayColumn dc = new SimpleDisplayColumn(null) {
                 @Override
-                public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                public void renderGridCellContents(RenderContext ctx, Writer out)
                 {
                     ActionURL url = new ActionURL(DownloadTsvAction.class, ctx.getContainer()).addParameter("id", String.valueOf(ctx.get("RowId")));
-                    out.write(PageFlowUtil.link("Download Data File").href(url).toString());
+                    PageFlowUtil.link("Download Data File").href(url).appendTo(out);
                 }
             };
             dr.addDisplayColumn(dc);
@@ -3666,7 +3666,7 @@ public class StudyController extends BaseStudyController
             if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
+                return new HtmlView("No data rows selected. " + PageFlowUtil.link("back").href("javascript:back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
@@ -5726,13 +5726,13 @@ public class StudyController extends BaseStudyController
             out.print("<table><tr><td align=\"left\">");
             if (_prevURL != null)
             {
-                out.print(PageFlowUtil.textLink("Previous " + subjectNoun, _prevURL));
+                PageFlowUtil.link("Previous " + subjectNoun).href(_prevURL).appendTo(out);
                 out.print("&nbsp;");
             }
 
             if (_nextURL != null)
             {
-                out.print(PageFlowUtil.textLink("Next " + subjectNoun, _nextURL));
+                PageFlowUtil.link("Next " + subjectNoun).href(_nextURL).appendTo(out);
                 out.print("&nbsp;");
             }
 
@@ -5741,7 +5741,7 @@ public class StudyController extends BaseStudyController
             if (null != _currentParticipantId && null != ss)
             {
                 ActionURL search = urlProvider(SearchUrls.class).getSearchURL(c, "+" + ss.escapeTerm(_currentParticipantId));
-                out.print(PageFlowUtil.textLink("Search for '" + id(_currentParticipantId, c, user) + "'", search));
+                PageFlowUtil.link("Search for '" + id(_currentParticipantId, c, user) + "'").href(search).appendTo(out);
                 out.print("&nbsp;");
             }
 
@@ -5755,7 +5755,7 @@ public class StudyController extends BaseStudyController
                 customizeURL.addReturnURL(getViewContext().getActionURL());
                 customizeURL.addParameter("participantId", _currentParticipantId);
                 out.print("</td><td>");
-                out.print(PageFlowUtil.textLink("Customize View", customizeURL));
+                PageFlowUtil.link("Customize View").href(customizeURL).appendTo(out);
             }
 
             if (_display != null)
