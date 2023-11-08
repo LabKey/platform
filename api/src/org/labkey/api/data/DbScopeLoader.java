@@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * schema admin page or sending data source metrics to labkey.org). {@link #clearDbScope()} can be used to attempt a
  * re-connection to a data source that failed its previous connection attempt(s). This is used by the external schema
  * admin page, which provides a link to attempt re-connecting to all data sources that failed previous connection(s).
+ * Note that there's not always a 1:1 correspondence between DbScope/DbScopeLoader and LabKeyDataSource because module
+ * data sources that reference non-existent databases in dev mode will map to the primary data source. That's why
+ * dsName is passed into this constructor instead of delegating to the LabKeyDataSource.
  */
 class DbScopeLoader
 {
