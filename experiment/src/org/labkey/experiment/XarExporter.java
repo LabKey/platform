@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.XmlCursor;
@@ -144,6 +145,8 @@ public class XarExporter
     private final Set<Integer> _expDataClasses = new HashSet<>();
     private final Set<Integer> _expDataIDs = new HashSet<>();
 
+    private final Map<Integer, String> _rootMaterialRowIdsToLSIDs = new LRUMap<>(1_000);
+
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
 
@@ -212,7 +215,7 @@ public class XarExporter
 
     public void addExpData(ExpData data) throws ExperimentException
     {
-        if(_expDataIDs.contains(data.getRowId()))
+        if (_expDataIDs.contains(data.getRowId()))
         {
             return;
         }
@@ -594,12 +597,22 @@ public class XarExporter
         xMaterial.setAbout(_relativizedLSIDs.relativize(material.getLSID()));
         xMaterial.setCpasType(isDefaultCpasType(material.getCpasType(), ExpMaterial.DEFAULT_CPAS_TYPE) ? ExpMaterial.DEFAULT_CPAS_TYPE : _relativizedLSIDs.relativize(material.getCpasType()));
         xMaterial.setName(material.getName());
-        if (material.getRootMaterialRowId() != null && !material.getRootMaterialRowId().equals(material.getRowId()))
+
+        final Integer rootMaterialRowId = material.getRootMaterialRowId();
+        if (rootMaterialRowId != null && !rootMaterialRowId.equals(material.getRowId()))
         {
-            ExpMaterial rootMaterial = ExperimentService.get().getExpMaterial(material.getRootMaterialRowId());
-            if (rootMaterial != null)
-                xMaterial.setRootMaterialLSID(_relativizedLSIDs.relativize(rootMaterial.getLSID()));
+            if (!_rootMaterialRowIdsToLSIDs.containsKey(rootMaterialRowId))
+            {
+                ExpMaterial rootMaterial = ExperimentService.get().getExpMaterial(rootMaterialRowId);
+                String rootMaterialLSID = rootMaterial == null ? null : _relativizedLSIDs.relativize(rootMaterial.getLSID());
+                _rootMaterialRowIdsToLSIDs.put(rootMaterialRowId, rootMaterialLSID);
+            }
+
+            String rootMaterialLSID = _rootMaterialRowIdsToLSIDs.get(rootMaterialRowId);
+            if (rootMaterialLSID != null)
+                xMaterial.setRootMaterialLSID(rootMaterialLSID);
         }
+
         if (material.getAliquotedFromLSID() != null)
             xMaterial.setAliquotedFromLSID(_relativizedLSIDs.relativize(material.getAliquotedFromLSID()));
 

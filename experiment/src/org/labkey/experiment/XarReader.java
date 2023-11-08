@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
@@ -122,7 +123,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME_SUB;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
 import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
@@ -145,10 +145,10 @@ public class XarReader extends AbstractXarImporter
     private boolean _strictValidateExistingSampleType = true;
 
     private final List<ExpRun> _loadedRuns = new ArrayList<>();
-    private final List<ProtocolApplication> _loadedProtocolApplications = new ArrayList<>();
     private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
     private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
     private final Map<String, ExpProtocol> _loadedProtocols = new HashMap<>();
+    private final Map<String, Integer> _rootMaterialLSIDsToRowIds = new LRUMap<>(1_000);
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -1339,7 +1339,6 @@ public class XarReader extends AbstractXarImporter
         if (null == protocolApp)
             throw new XarFormatException("No row found");
 
-        _loadedProtocolApplications.add(protocolApp);
         int protAppId = protocolApp.getRowId();
 
         PropertyCollectionType xbProps = xmlProtocolApp.getProperties();
@@ -1439,10 +1438,12 @@ public class XarReader extends AbstractXarImporter
         return null;
     }
 
-    private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
-                                  @Nullable ExperimentRun run,
-                                  Integer sourceApplicationId,
-                                  XarContext context) throws ExperimentException
+    private ExpMaterial loadMaterial(
+        MaterialBaseType xbMaterial,
+        @Nullable ExperimentRun run,
+        Integer sourceApplicationId,
+        XarContext context
+    ) throws ExperimentException
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 
@@ -1479,13 +1480,17 @@ public class XarReader extends AbstractXarImporter
         if (material == null)
         {
             Material m = new Material();
-            if (StringUtils.isEmpty(rootMaterialLSID))
+            if (!StringUtils.isEmpty(rootMaterialLSID))
             {
-                ExpMaterialImpl rootMaterial = ExperimentServiceImpl.get().getExpMaterial(rootMaterialLSID);
-                if (rootMaterial != null)
+                if (!_rootMaterialLSIDsToRowIds.containsKey(rootMaterialLSID))
                 {
-                    m.setRootMaterialRowId(rootMaterial.getRowId());
+                    ExpMaterialImpl rootMaterial = ExperimentServiceImpl.get().getExpMaterial(rootMaterialLSID);
+                    _rootMaterialLSIDsToRowIds.put(rootMaterialLSID, rootMaterial == null ? null : rootMaterial.getRowId());
                 }
+
+                Integer rootMaterialRowId = _rootMaterialLSIDsToRowIds.get(rootMaterialLSID);
+                if (rootMaterialRowId != null)
+                    m.setRootMaterialRowId(rootMaterialRowId);
             }
             m.setAliquotedFromLSID(aliquotedFromLSID);
             m.setLSID(materialLSID);
