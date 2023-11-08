@@ -2429,4 +2429,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         return new MicrosoftSqlServerStringHandler();
     }
+
+    @Override
+    public @Nullable String getApplicationNameParameter()
+    {
+        return "applicationName";
+    }
 }

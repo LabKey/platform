@@ -2,8 +2,8 @@ package org.labkey.api.data;
 
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.DbScope.LabKeyDataSourceProperties;
-import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
+import org.labkey.api.data.DbScope.LabKeyDataSource;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 
@@ -25,21 +25,17 @@ class DbScopeLoader
     // Marker object for scope that has failed to connect
     private static final DbScope BAD_SCOPE = new DbScope();
 
-    private final DataSourceProperties _dsProps;
     private final String _dsName;
     private final String _displayName;
-    private final DataSource _dataSource;
-    private final LabKeyDataSourceProperties _labkeyProps;
+    private final LabKeyDataSource _dataSource;
     private final AtomicReference<DbScope> _dbScopeRef = new AtomicReference<>();
 
-    // Stash some DataSource properties, but defer the initial connection until get() is called.
-    DbScopeLoader(String dsName, DataSource dataSource, LabKeyDataSourceProperties props)
+    // Stash DataSource properties, but defer the initial connection until get() is called.
+    DbScopeLoader(String dsName, LabKeyDataSource dataSource)
     {
-        _dsProps = new DataSourceProperties(dsName, dataSource);
-        _dsName = dsName;
-        _displayName = null != props.getDisplayName() ? props.getDisplayName() : extractDisplayName(_dsName);
+        _dsName = dsName; // Doesn't always match dataSource.getDsName() (e.g., missing module data source case)
+        _displayName = null != dataSource.getDisplayName() ? dataSource.getDisplayName() : extractDisplayName(_dsName);
         _dataSource = dataSource;
-        _labkeyProps = props;
     }
 
     private static String extractDisplayName(String dsName)
@@ -78,8 +74,8 @@ class DbScopeLoader
                     catch (Throwable t)
                     {
                         // Always log, but callers determine if null DbScope is fatal or not
-                        LOG.error("Cannot connect to DataSource \"" + _dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", t);
-                        DbScope.addDataSourceFailure(_dsName, t);
+                        LOG.error("Cannot connect to DataSource \"" + getDsName() + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". This DataSource will not be available during this server session unless a successful retry is initiated from the schema administration page.", t);
+                        DbScope.addDataSourceFailure(getDsName(), t);
                         scope = BAD_SCOPE;
                     }
 
@@ -104,9 +100,9 @@ class DbScopeLoader
         return BAD_SCOPE == _dbScopeRef.get();
     }
 
-    public DataSourceProperties getDsProps()
+    public DataSourcePropertyReader getDsProps()
     {
-        return _dsProps;
+        return _dataSource.getDataSourcePropertyReader();
     }
 
     public String getDsName()
@@ -121,11 +117,11 @@ class DbScopeLoader
 
     public DataSource getDataSource()
     {
-        return _dataSource;
+        return _dataSource.getDataSource();
     }
 
-    public LabKeyDataSourceProperties getLabKeyProps()
+    public LabKeyDataSource getLabKeyDataSource()
     {
-        return _labkeyProps;
+        return _dataSource;
     }
 }

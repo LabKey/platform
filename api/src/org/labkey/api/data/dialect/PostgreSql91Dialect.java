@@ -1910,4 +1910,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         // Don't test a LabKey data source
         return getServerType().shouldTest();
     }
+
+    @Override
+    public @Nullable String getApplicationNameParameter()
+    {
+        return "ApplicationName";
+    }
 }
