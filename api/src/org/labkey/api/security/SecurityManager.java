@@ -2075,7 +2075,7 @@ public class SecurityManager
        return getProjectUsers(c, includeGlobal, true);
     }
 
-    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeDeactivated)
+    public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal, boolean includeInactive)
     {
         if (c != null && !c.isProject())
             c = c.getProject();
@@ -2093,7 +2093,7 @@ public class SecurityManager
                 continue;
 
             // TODO: currently only getting members that are users (no groups). should this be changed to get users of member groups?
-            members = getGroupMembers(g, includeDeactivated ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
+            members = getGroupMembers(g, includeInactive ? MemberType.ACTIVE_AND_INACTIVE_USERS : MemberType.ACTIVE_USERS);
 
             //add this group's members to hashset
             if (!members.isEmpty())

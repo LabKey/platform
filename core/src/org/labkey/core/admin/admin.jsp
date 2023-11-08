@@ -36,6 +36,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -107,6 +108,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>User Name</td><td><%=h(AdminBean.userName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>User Home Dir</td><td><%=h(AdminBean.userHomeDir)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Webapp Dir</td><td><%=h(AdminBean.webappDir)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Site-Wide File Root Dir</td><td><%=h(FileContentService.get() == null ? "" : FileContentService.get().getSiteDefaultRoot().getPath())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Distribution</td><td><%=h(AdminBean.distribution)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Build Time</td><td><%=h(AdminBean.buildTime)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>OS</td><td><%=h(AdminBean.osName)%></td></tr>

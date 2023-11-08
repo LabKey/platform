@@ -53,7 +53,7 @@ function showHelpDivDelay(elem, titleText, bodyText, width, delay)
     _showTimer = setTimeout(function() { showHelpDiv(elem, titleText, bodyText, width); }, delay ? delay : 400);
 }
 
-function showHelpDiv(elem, titleText, bodyText, width)
+function showHelpDiv(elem, titleText, bodyHtml, width)
 {
     var posLeft = 12;
     var posTop = 8;
@@ -79,8 +79,8 @@ function showHelpDiv(elem, titleText, bodyText, width)
     }
     div.anchorElem = elem;
 
-    document.getElementById("helpDivTitle").innerHTML = titleText;
-    document.getElementById("helpDivBody").innerHTML = bodyText;
+    document.getElementById("helpDivTitle").innerHTML = LABKEY.Utils.encodeHtml(titleText);
+    document.getElementById("helpDivBody").innerHTML = bodyHtml;
 
     var $ = jQuery;
     var bd = $(document);

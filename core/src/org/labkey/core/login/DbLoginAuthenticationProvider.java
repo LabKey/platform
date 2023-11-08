@@ -119,22 +119,24 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             if (!SecurityManager.matchPassword(password, hash))
                 return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
 
-            // Password is correct for this user; now check password rules and expiration.
-
-            PasswordRule rule = configuration.getPasswordRule();
-            Collection<String> messages = new LinkedList<>();
-
-            if (!rule.isValidForLogin(password, user, messages))
+            if (user.isActive())
             {
-                return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
-            }
-            else
-            {
-                PasswordExpiration expiration = configuration.getExpiration();
+                // Password is correct and user is active; now check password rules and expiration
+                PasswordRule rule = configuration.getPasswordRule();
+                Collection<String> messages = new LinkedList<>();
 
-                if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
+                if (!rule.isValidForLogin(password, user, messages))
                 {
-                    return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
+                    return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
+                }
+                else
+                {
+                    PasswordExpiration expiration = configuration.getExpiration();
+
+                    if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
+                    {
+                        return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
+                    }
                 }
             }
 

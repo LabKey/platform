@@ -118,6 +118,7 @@ import static org.labkey.api.security.AuthenticationManager.SELF_SERVICE_EMAIL_C
 
 public class LoginController extends SpringActionController
 {
+    public static final String FEATUREFLAG_DISABLE_LOGIN_XFRAME = "disable-login-xframe-options";
     private static final Logger _log = LogHelper.getLogger(LoginController.class, "User registration and authentication failures");
     private static final ActionResolver _actionResolver = new DefaultActionResolver(LoginController.class);
 
@@ -130,7 +131,8 @@ public class LoginController extends SpringActionController
     public PageConfig defaultPageConfig()
     {
         PageConfig ret = super.defaultPageConfig();
-        ret.setFrameOption(PageConfig.FrameOption.DENY);
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_LOGIN_XFRAME))
+            ret.setFrameOption(PageConfig.FrameOption.DENY);
         return ret;
     }
 
