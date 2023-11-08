@@ -148,14 +148,14 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
-    @Override
-    public @Nullable ExpSampleType getSampleType()
+    @Nullable @Override
+    public ExpSampleTypeImpl getSampleType()
     {
         String type = _object.getCpasType();
         if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
         {
             // try current container first (uses cache)
-            return SampleTypeService.get().getSampleTypeByType(type, getContainer());
+            return SampleTypeServiceImpl.get().getSampleTypeByType(type, getContainer());
         }
 
         return null;

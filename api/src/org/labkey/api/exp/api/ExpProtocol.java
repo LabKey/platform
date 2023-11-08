@@ -156,6 +156,8 @@ public interface ExpProtocol extends ExpObject
     @Override
     void save(User user);
 
+    void save(User user, boolean saveProperties, @Nullable Collection<? extends ExpProtocolInput> protocolInputsToDeleteOnUpdate);
+
     default String getDocumentId()
     {
         return String.join(":",getContainer().getId(), "assay", String.valueOf(getRowId()));

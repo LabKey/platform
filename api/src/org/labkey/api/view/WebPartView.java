@@ -232,7 +232,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
 
     public void setTitlePopupHelp(String title, String body)
     {
-        _frameConfig._helpPopup = PageFlowUtil.helpPopup(title, body);
+        _frameConfig._helpPopup = PageFlowUtil.popupHelp(HtmlString.of(body), title);
     }
 
     public void setTitleHref(ActionURL href)

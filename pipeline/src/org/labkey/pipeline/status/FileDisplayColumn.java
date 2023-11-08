@@ -83,8 +83,8 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                     out.write("</a>\n");
 
                     out.write("&nbsp;&nbsp;");
-                    out.write(PageFlowUtil.textLink("view", StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)));
-                    out.write(PageFlowUtil.textLink("download", StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)));
+                    PageFlowUtil.link("view").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, false)).appendTo(out);
+                    PageFlowUtil.link("download").href(StatusController.urlShowFile(ctx.getContainer(), rowIdI.intValue(), fileName, true)).appendTo(out);
                     out.write("<br>\n");
                 }
                 else

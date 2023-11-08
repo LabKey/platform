@@ -1581,13 +1581,12 @@ public class DataRegion extends DisplayElement
                         {
                             String statLabel = r.getAggregate().getDisplayString();
                             Aggregate.Type type = r.getAggregate().getType();
-                            String statDescr = "";
-
-                            if (type.getDescription() != null)
-                                statDescr = PageFlowUtil.helpPopup(type.getFullLabel(), type.getDescription(), true);
 
                             out.write("<div>");
-                            out.write("<span class=\"summary-stat-label\">" + PageFlowUtil.filter(statLabel) + statDescr + ":</span>&nbsp;");
+                            out.write("<span class=\"summary-stat-label\">" + PageFlowUtil.filter(statLabel));
+                            if (type.getDescription() != null)
+                                PageFlowUtil.popupHelp(HtmlString.of(type.getDescription()), type.getFullLabel()).appendTo(out);
+                            out.write(":</span>&nbsp;");
                             Pair<String, Boolean> value = r.getFormattedValue(renderer, ctx.getContainer());
                             boolean error = value.second;
                             if (error)
@@ -2194,31 +2193,27 @@ public class DataRegion extends DisplayElement
         renderMainErrors(ctx, out);
 
         out.write("<table>");
+        List<DisplayColumn> renderers = getDisplayColumns();
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
             String msg = "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row");
             out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
-
-        List<DisplayColumn> renderers = getDisplayColumns();
-
-        for (DisplayColumn renderer : renderers)
+        else
         {
-            if (shouldRender(renderer, ctx) && null != renderer.getColumnInfo() && !renderer.getColumnInfo().isNullable() && action != MODE_UPDATE_MULTIPLE)
+            if (renderers.stream().anyMatch(dc -> shouldRender(dc, ctx) && null != dc.getColumnInfo() && !dc.getColumnInfo().isNullable()))
             {
                 String msg = "Fields marked with an asterisk * are required.";
-
                 out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
-                break;
             }
         }
 
         int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
-                        1 :
-                        (_horizontalGroups ?
-                                _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
-                                _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+            1 :
+            (_horizontalGroups ?
+                _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
+                _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
 
         Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
 
@@ -2417,7 +2412,7 @@ public class DataRegion extends DisplayElement
             group.writeCopyableOnChangeHandler(ctx, out);
         }
         out.write("\" />");
-        out.write("Same" + PageFlowUtil.helpPopup("Same", "If selected, all entries on this row will have the same value"));
+        out.write("Same" + PageFlowUtil.popupHelp(HtmlString.of("If selected, all entries on this row will have the same value"), "Same"));
 
         out.write("</label></td>");
     }

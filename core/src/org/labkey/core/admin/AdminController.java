@@ -2751,8 +2751,8 @@ public class AdminController extends SpringActionController
 
             StringBuilder html = new StringBuilder();
 
-            html.append(PageFlowUtil.textLink("Clear Caches and Refresh", getCachesURL(true, false)));
-            html.append(PageFlowUtil.textLink("Refresh", getCachesURL(false, false)));
+            html.append(PageFlowUtil.link("Clear Caches and Refresh", getCachesURL(true, false)));
+            html.append(PageFlowUtil.link("Refresh", getCachesURL(false, false)));
 
             html.append("<br/><br/>\n");
             appendStats(html, "Caches", cacheStats, false);
@@ -2823,7 +2823,7 @@ public class AdminController extends SpringActionController
                 appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
-                html.append("<td>").append(PageFlowUtil.textLink("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
+                html.append("<td>").append(PageFlowUtil.link("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 
                 if (null != limit && maxSize >= limit)
                     html.append("<td><font class=\"labkey-error\">This cache has been limited</font></td>");

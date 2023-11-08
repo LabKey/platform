@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -45,7 +44,6 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.stream.Collectors" %>
 <%@ page import="java.util.stream.Stream" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -57,7 +55,7 @@
         dependencies.add("Ext4");
     }
 
-    String getNotifyHelpPopup(int emailPrefs, int issueId, EntryTypeNames names)
+    HtmlString getNotifyHelpPopup(int emailPrefs, int issueId, EntryTypeNames names)
     {
         String indefArticle = names.getIndefiniteSingularArticle();
         String description = h(indefArticle) + " " + h(names.singularName);
@@ -91,7 +89,7 @@
                 sb.append("<li>you create or modify ").append(description).append("</li>");
             sb.append("</ul>");
         }
-        return PageFlowUtil.helpPopup("Email Notifications", sb.toString(), true);
+        return helpPopup("Email Notifications", HtmlString.unsafe(sb.toString())).getHtmlString();
     }
 %>
 <%
@@ -128,17 +126,16 @@
     Map<String, DomainProperty> propertyMap = bean.getCustomColumnConfiguration().getPropertyMap();
     List<DomainProperty> column1Props = new ArrayList<>();
     List<DomainProperty> column2Props = new ArrayList<>();
-    List<DomainProperty> extraColumns = new ArrayList<>();
 
     EntryTypeNames names = IssueManager.getEntryTypeNames(c, issueListDef.getName());
 
-    final String popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), names);
+    final HtmlString popup = getNotifyHelpPopup(emailPrefs, issue.getIssueId(), names);
 
     // todo: don't include if the lookup is empty (was previously IssuePage.hasKeywords)
-    extraColumns.addAll(Stream.of("type", "area", "priority", "milestone")
-            .filter(propertyMap::containsKey)
-            .map(propertyMap::get)
-            .collect(Collectors.toList()));
+    List<DomainProperty> extraColumns = Stream.of("type", "area", "priority", "milestone")
+        .filter(propertyMap::containsKey)
+        .map(propertyMap::get)
+        .toList();
 
     //this is the rowspan used for the 2nd and 3rd columns
     int rowSpan = 2 + extraColumns.size();
@@ -365,7 +362,7 @@
                 <tr>
                     <%
                         HtmlStringBuilder builder = HtmlStringBuilder.of(bean.getLabel("NotifyList", true))
-                            .append(HtmlString.unsafe(popup))
+                            .append(popup)
                             .append(HtmlString.unsafe("<br/><br/>"));
 
                         if (!user.isGuest())
@@ -415,7 +412,7 @@
         <%= button("Cancel").href(cancelURL).onClick("LABKEY.setSubmit(true);")%>
     </div>
     <% final Collection<IssueObject.CommentObject> comments = issue.getCommentObjects();
-        if (comments.size() > 0) { boolean firstComment = true; %>
+        if (!comments.isEmpty()) { boolean firstComment = true; %>
     <labkey:panel>
 <%
     for (IssueObject.CommentObject comment : comments) {

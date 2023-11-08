@@ -21,6 +21,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.study.StudyUtils;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -104,7 +105,7 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
             cellHtml += "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/cart.png\">";
             popupBody += "<br><br>Click the shopping cart icon to request this specimen.";
         }
-        builder.append(PageFlowUtil.helpPopup(popupTitle, popupBody, true, cellHtml, requestScript));
+        builder.append(PageFlowUtil.popupHelp(HtmlString.unsafe(popupBody), popupTitle).link(HtmlString.unsafe(cellHtml)).script(requestScript));
         return builder.toString();
     }
 

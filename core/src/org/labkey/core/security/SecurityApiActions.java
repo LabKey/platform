@@ -502,6 +502,7 @@ public class SecurityApiActions
                 excludedPrincipals.add(principal.getUserId());
             }
             props.put("excludedPrincipals", excludedPrincipals);
+            props.put("privileged", role.isPrivileged());
 
             return props;
         }

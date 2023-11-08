@@ -147,6 +147,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.labkey.announcements.model.AnnouncementManager.DEFAULT_MESSAGE_RENDERER_TYPE;
@@ -979,7 +980,6 @@ public class AnnouncementsController extends SpringActionController
          }
     }
 
-
     private static SelectBuilder getStatusSelect(String currentValue)
     {
         return new SelectBuilder().name("status").id("status").className(null).selected(currentValue)
@@ -1002,6 +1002,16 @@ public class AnnouncementsController extends SpringActionController
                 .selected(assignedTo != null && assignedTo == user.getUserId())));
     }
 
+    private static SelectBuilder getRenderAsSelect(WikiRendererType currentRendererType)
+    {
+        return new SelectBuilder()
+            .name("rendererType")
+            .id("rendererType")
+            .addOptions(Arrays.stream(WikiRendererType.values()).collect(Collectors.toMap(WikiRendererType::name, WikiRendererType::getDisplayName)))
+            .selected(currentRendererType.name())
+            .onChange("LABKEY.setDirty(true);")
+            .className(null);
+    }
 
     @RequiresPermission(InsertPermission.class)
     public class CompleteUserAction extends ReadOnlyApiAction<AjaxCompletionForm>
@@ -1023,7 +1033,6 @@ public class AnnouncementsController extends SpringActionController
             return response;
         }
     }
-
 
     // TODO: Move to /view and use/extend in other controllers
     public static class AjaxCompletionForm
@@ -1125,13 +1134,12 @@ public class AnnouncementsController extends SpringActionController
             }
 
             bean.assignedToSelect = getAssignedToSelect(c, assignedTo, "assignedTo", getViewContext().getUser());
-            bean.settings = settings;
             bean.statusSelect = getStatusSelect(form.get("status"));
+            bean.renderAsSelect = getRenderAsSelect(currentRendererType);
 
+            bean.settings = settings;
             User u = form.getUser() == null ? getViewContext().getUser() : form.getUser();
             bean.memberList = getMemberList(u, c, latestPost, reshow ? form.get("memberList") : null);
-            bean.currentRendererType = currentRendererType;
-            bean.renderers = WikiRendererType.values();
             bean.form = form;
             bean.cancelURL = cancelURL;
             bean.fromDiscussion = fromDiscussion;
@@ -1152,9 +1160,8 @@ public class AnnouncementsController extends SpringActionController
             public Settings settings;
             public SelectBuilder assignedToSelect;
             public SelectBuilder statusSelect;
+            public SelectBuilder renderAsSelect;
             public String memberList;
-            public WikiRendererType[] renderers;
-            public WikiRendererType currentRendererType;
             public AnnouncementForm form;
             public URLHelper cancelURL;
             public AnnouncementModel parentAnnouncementModel;   // Used by RespondView only... move to subclass?
@@ -2577,9 +2584,8 @@ public class AnnouncementsController extends SpringActionController
             public Settings settings;
             public SelectBuilder assignedToSelect;
             public SelectBuilder statusSelect;
+            public SelectBuilder renderAsSelect;
             public String memberList;
-            public WikiRendererType[] renderers;
-            public WikiRendererType currentRendererType;
             public URLHelper returnURL;
 
             private UpdateBean(AnnouncementForm form, AnnouncementModel ann)
@@ -2589,11 +2595,10 @@ public class AnnouncementsController extends SpringActionController
 
                 annModel = ann;
                 settings = getSettings(c);
-                currentRendererType = WikiRendererType.valueOf(ann.getRendererType());
-                renderers = WikiRendererType.values();
                 memberList = getMemberList(form.getUser(), c, ann, reshowMemberList);
                 statusSelect = getStatusSelect(ann.getStatus());
                 assignedToSelect = getAssignedToSelect(c, ann.getAssignedTo(), "assignedTo", getViewContext().getUser());
+                renderAsSelect = getRenderAsSelect(WikiRendererType.valueOf(ann.getRendererType()));
                 returnURL = form.getReturnURLHelper();
             }
         }

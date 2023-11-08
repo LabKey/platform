@@ -905,7 +905,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 DataState state = getStateCache(ctx).get(value);
                 if (state != null && state.getDescription() != null)
-                    formattedValue.append(HtmlString.unsafe(PageFlowUtil.helpPopup("QC State " + state.getLabel(), state.getDescription())));
+                    formattedValue.append(PageFlowUtil.popupHelp(HtmlString.of(state.getDescription()), "QC State " + state.getLabel()));
             }
             return formattedValue.getHtmlString();
         }
