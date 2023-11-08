@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "2.391.3-fb-sample-type-join-rowId.0"
+    "@labkey/components": "2.392.2-fb-sample-type-join-rowId.0"
   },
   "devDependencies": {
     "@labkey/build": "6.16.1",
