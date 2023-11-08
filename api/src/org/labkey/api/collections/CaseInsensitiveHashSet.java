@@ -29,7 +29,7 @@ import java.util.Set;
  * or searching. Could easily extend this to preserve the case... just add a lowercase version to uppercase version map.
  */
 // TODO: Merge CaseInsensitiveHashSet and CaseInsensitiveHashMap implementations
-public class CaseInsensitiveHashSet extends HashSet<String>
+public class CaseInsensitiveHashSet extends HashSet<String> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveHashSet()
     {

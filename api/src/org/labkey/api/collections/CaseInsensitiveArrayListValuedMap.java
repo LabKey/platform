@@ -27,7 +27,7 @@ import java.util.List;
  *
  * Created by Nick on 10/1/2016.
  */
-public class CaseInsensitiveArrayListValuedMap<V> extends AbstractListValuedMap<String, V>
+public class CaseInsensitiveArrayListValuedMap<V> extends AbstractListValuedMap<String, V> implements CaseInsensitiveCollection
 {
     public CaseInsensitiveArrayListValuedMap()
     {

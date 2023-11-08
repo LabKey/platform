@@ -90,7 +90,7 @@ public class TypeDisplayColumn extends DataColumn
                     if (protocol.getContainer().hasPermissions(ctx.getViewContext().getUser(), Set.of(DesignAssayPermission.class, DeletePermission.class)))
                     {
                         out.write(" ");
-                        out.write(PageFlowUtil.textLink("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))));
+                        PageFlowUtil.link("Delete Assay Design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(ctx.getContainer()))).appendTo(out);
                     }
                     return;
                 }

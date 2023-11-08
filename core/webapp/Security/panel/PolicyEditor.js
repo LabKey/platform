@@ -265,6 +265,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         var me = this;
         for (r=0; r < this.roles.length; r++){
             role = this.roles[r];
+            const disabled = this.canUserAlterRole(role);
             const isDeveloper = (-1 !== role.uniqueName.indexOf("Developer")) || ((-1 !== role.uniqueName.indexOf("Analyst")) && (-1 === role.uniqueName.indexOf("QCAnalyst")));
             roleRows.push({
                 layout: 'hbox',
@@ -295,6 +296,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                         bodyStyle : 'background-color: transparent;'
                     },{
                         xtype  : 'labkey-principalcombo',
+                        disabled : disabled,
                         width  : 350,
                         cache  : this.cache,
                         itemId : ('$add$'+role.uniqueName),
@@ -308,7 +310,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                     }],
                     scope : this
                 }],
-                listeners: {
+                listeners: disabled ? {} : {
                     render: this.initializeRoleDropZone,
                     scope: this
                 },
@@ -565,6 +567,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         buttonArea = buttonArea.down('#buttonArea');
         var btnId = (ids.roleId + '$' + ids.groupId).replace(/\./g, "_");
         var button = buttonArea.down('button[itemId="'+btnId+'"]');
+        const disabled = this.canUserAlterRole(role);
 
         //button already exists...
         if (button){
@@ -576,6 +579,7 @@ Ext4.define('Security.panel.PolicyEditor', {
         var tooltip = (group.Type == 'u' ? 'User: ' : group.Container ? 'Group: ' : 'Site group: ') + group.Name;
         button = buttonArea.add({
             xtype : 'button',
+            disabled: disabled,
             cls: 'dragbutton',
             handleMouseEvents: false,
             iconCls   : 'closeicon',
@@ -588,7 +592,7 @@ Ext4.define('Security.panel.PolicyEditor', {
             tooltip : tooltip,
             hidden : hideButton || false,
             hideMode : hideButton ? 'visibility' : 'display',
-            listeners : {
+            listeners : disabled ? {} : {
                 afterrender : function(b) {
                     Ext4.DomQuery.select('span.closeicon', b.getEl().id)[0].onclick = Ext4.bind(this.Button_onClose, this, [b]);
                     this.initializeButtonDragZone(b);
@@ -599,6 +603,11 @@ Ext4.define('Security.panel.PolicyEditor', {
         });
 
         return button;
+    },
+
+    canUserAlterRole : function(role)
+    {
+        return role.privileged && !LABKEY.user.isSystemAdmin;
     },
 
     removeButton : function(groupId, roleId, animate)

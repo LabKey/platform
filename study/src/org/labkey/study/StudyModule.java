@@ -17,10 +17,7 @@
 package org.labkey.study;
 
 import org.apache.commons.collections4.Factory;
-import org.apache.commons.collections4.bag.HashBag;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -33,8 +30,6 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertySchema;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -59,7 +54,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataStateManager;
 import org.labkey.api.qc.export.DataStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
@@ -82,8 +76,6 @@ import org.labkey.api.specimen.model.PrimaryTypeDomainKind;
 import org.labkey.api.specimen.model.SpecimenDomainKind;
 import org.labkey.api.specimen.model.SpecimenEventDomainKind;
 import org.labkey.api.specimen.model.VialDomainKind;
-import org.labkey.api.specimen.settings.RepositorySettings;
-import org.labkey.api.specimen.settings.SettingsManager;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -141,25 +133,7 @@ import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.StudyImporterFactory;
-import org.labkey.study.model.CohortDomainKind;
-import org.labkey.study.model.ContinuousDatasetDomainKind;
-import org.labkey.study.model.DatasetDefinition;
-import org.labkey.study.model.DateDatasetDomainKind;
-import org.labkey.study.model.ImportHelperServiceImpl;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.ParticipantGroupManager;
-import org.labkey.study.model.ParticipantGroupServiceImpl;
-import org.labkey.study.model.ParticipantIdImportHelper;
-import org.labkey.study.model.ProtocolDocumentType;
-import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.StudyDomainKind;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyLsidHandler;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.TestDatasetDomainKind;
-import org.labkey.study.model.TreatmentManager;
-import org.labkey.study.model.VisitDatasetDomainKind;
-import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
 import org.labkey.study.qc.StudyQCStateHandler;
@@ -209,8 +183,6 @@ import java.util.stream.Collectors;
 
 public class StudyModule extends SpringModule implements SearchService.DocumentProvider
 {
-    private static final Logger LOG = LogManager.getLogger(StudyModule.class);
-
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
@@ -341,10 +313,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             list.add("Study: " + study.getLabel());
             long participants = StudyManager.getInstance().getParticipantCount(study);
             if (0 < participants)
-                list.add("" + participants + " " + StudyService.get().getSubjectNounPlural(c));
+                list.add(participants + " " + StudyService.get().getSubjectNounPlural(c));
             int datasets = study.getDatasets().size();
             if (0 < datasets)
-                list.add("" + datasets + " datasets");
+                list.add(datasets + " datasets");
             return list;
         }
         else
@@ -488,57 +460,30 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         notifyOptionCounts.put(option, 1 + notifyOptionCounts.computeIfAbsent(option, (k) -> 0));
                     }
                 });
-                Long cloudBackedStudies = allStudies.stream()
-                        .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
-                        .count();
-                metric.put("cloudBackedStudies", cloudBackedStudies);
-
-                Map<String, Integer> notificationMap = new HashMap<>();
-                notifyOptionCounts.forEach((key, value) -> notificationMap.put(key.name(), value));
+                Map<String, Integer> notificationMap = notifyOptionCounts.entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
                 metric.put("reportAndDatasetNotificationOptions", notificationMap);
 
-                // TODO: Move to specimen module and switch to top-level stats
-                // Collect and add specimen repository statistics: simple vs. advanced study count, event/vial/specimen count, count of studies with requests enabled, request count by status
-                HashBag<String> specimenBag = new HashBag<>();
-                MutableInt requestsEnabled = new MutableInt(0);
-                MutableInt hasLocations = new MutableInt(0);
+                long cloudBackedStudies = allStudies.stream()
+                    .filter(s -> Objects.requireNonNull(PipelineService.get().findPipelineRoot(s.getContainer())).isCloudRoot())
+                    .count();
+                metric.put("cloudBackedStudies", cloudBackedStudies);
+
+                // Count the studies that have configured at least one group for per-dataset access control
+                long studiesWithAnyPerDatasetGroup = allStudies.stream()
+                    .filter(study -> study.getSecurityType().isSupportsPerDatasetPermissions())
+                    .filter(study -> SecurityManager.getGroups(study.getContainer().getProject(), true).stream()
+                        .anyMatch(group -> GroupSecurityType.getTypeForGroup(group, study) == GroupSecurityType.PER_DATASET))
+                    .count();
+                metric.put("perDatasetSecurityStudyCount", studiesWithAnyPerDatasetGroup);
+
+                // Count the studies that use products and treatments
                 MutableInt hasProducts = new MutableInt(0);
                 MutableInt hasTreatments = new MutableInt(0);
 
                 allStudies.stream()
                     .map(study->StudyQuerySchema.createSchema(study, User.getSearchUser(), RoleManager.getRole(ReaderRole.class)))
                     .forEach(schema->{
-                        RepositorySettings settings = SettingsManager.get().getRepositorySettings(schema.getContainer());
-
-                        if (settings.isSimple())
-                        {
-                            specimenBag.add("simple");
-                            TableInfo simpleSpecimens = schema.getTable(StudyQuerySchema.SIMPLE_SPECIMEN_TABLE_NAME);
-                            specimenBag.add("simpleSpecimens", (int)new TableSelector(simpleSpecimens).getRowCount());
-                        }
-                        else
-                        {
-                            specimenBag.add("advanced");
-                            TableInfo events = schema.getTable(StudyQuerySchema.SPECIMEN_EVENT_TABLE_NAME);
-                            TableInfo vials = schema.getTable(StudyQuerySchema.SPECIMEN_DETAIL_TABLE_NAME);
-                            TableInfo specimens = schema.getTable(StudyQuerySchema.SPECIMEN_SUMMARY_TABLE_NAME);
-                            specimenBag.add("events", (int)new TableSelector(events).getRowCount());
-                            specimenBag.add("vials", (int)new TableSelector(vials).getRowCount());
-                            specimenBag.add("specimens", (int)new TableSelector(specimens).getRowCount());
-                        }
-
-                        if (settings.isEnableRequests())
-                            requestsEnabled.increment();
-
-                        TableInfo locations = schema.getTable(StudyQuerySchema.LOCATION_TABLE_NAME);
-                        long locationCount = new TableSelector(locations).getRowCount();
-                        specimenBag.add("locations", (int)locationCount);
-                        specimenBag.add("locationsInUse", (int)new TableSelector(locations, new SimpleFilter(FieldKey.fromParts("In Use"), true), null).getRowCount());
-                        if (locationCount > 0)
-                        {
-                            hasLocations.increment();
-                        }
-
                         TableInfo products = schema.getTable(StudyQuerySchema.PRODUCT_TABLE_NAME);
                         long productCount = new TableSelector(products).getRowCount();
                         if (productCount > 0)
@@ -548,20 +493,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                         long treatmentCount = new TableSelector(treatments).getRowCount();
                         if (treatmentCount > 0)
                             hasTreatments.increment();
-
-                        LOG.debug(specimenBag.toString());
                     });
-
-                Map<String, Object> specimensMap = specimenBag.uniqueSet().stream().collect(Collectors.toMap(s->s, specimenBag::getCount));
-                Map<String, Object> requestsMap = new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT Label, COUNT(*) FROM study.SampleRequest INNER JOIN study.SampleRequestStatus srs ON StatusId = srs.RowId GROUP BY Label")).getValueMap();
-                requestsMap.put("enabled", requestsEnabled);
-                specimensMap.put("requests", requestsMap);
-                specimensMap.put("hasLocations", hasLocations.intValue());
 
                 metric.put("studyProducts", hasProducts.intValue());
                 metric.put("studyTreatments", hasTreatments.intValue());
-
-                metric.put("specimens", specimensMap);
 
                 return metric;
             });

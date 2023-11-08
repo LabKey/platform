@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implements Serializable
+public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implements Serializable, CaseInsensitiveCollection
 {
     private final Map<String, String> _correctCaseMap;
 

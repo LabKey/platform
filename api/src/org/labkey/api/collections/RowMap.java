@@ -23,7 +23,7 @@ import java.util.List;
  * Time: 11:48:46 PM
  */
 
-public class RowMap<V> extends ArrayListMap<String, V>
+public class RowMap<V> extends ArrayListMap<String, V> implements CaseInsensitiveCollection
 {
     protected RowMap()
     {

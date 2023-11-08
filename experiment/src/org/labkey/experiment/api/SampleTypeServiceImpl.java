@@ -534,7 +534,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
      */
-    public int truncateSampleType(ExpSampleType source, User user, @Nullable Container c)
+    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -1878,10 +1878,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             updateCounts.putAll(moveDerivationRuns(samples, targetContainer, user));
 
             transaction.addCommitTask(() -> {
-                // update search index for moved samples via indexSampleType() helper, it filters for samples to index
-                // based on the modified date
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
+                {
+                    // force refresh of materialized view
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                    // update search index for moved samples via indexSampleType() helper, it filters for samples to index
+                    // based on the modified date
                     SampleTypeServiceImpl.get().indexSampleType(sampleType);
+                }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.addCommitTask(() -> {
