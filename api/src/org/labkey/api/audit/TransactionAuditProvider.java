@@ -143,8 +143,7 @@ public class TransactionAuditProvider extends AbstractAuditTypeProvider implemen
         @Override
         public void setComment(String comment)
         {
-            if (!StringUtils.isEmpty(comment))
-                _commentCount++;
+            _commentCount++;
             super.setComment(comment);
         }
 
