@@ -4584,7 +4584,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         .append(" AND RowId ");
         table.getSqlDialect().appendInClauseSql(deleteSql, protocolInputRowIds);
 
-        OntologyManager.deleteOntologyObjects(getSchema(), ontologyLSIDSql, protocol.getContainer(), false);
+        OntologyManager.deleteOntologyObjects(getSchema(), ontologyLSIDSql, protocol.getContainer());
         new SqlExecutor(getSchema()).execute(deleteSql);
     }
 

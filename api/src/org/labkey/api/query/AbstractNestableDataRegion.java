@@ -24,7 +24,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -88,7 +87,7 @@ public abstract class AbstractNestableDataRegion extends DataRegion
         out.write("/_images/");
         out.write(_expanded ? "minus" : "plus");
         out.write(".gif\"/></a>");
-        page.addHandler(id, "click", "return toggleNestedGrid(" + jsString(getName()) + "," + (_ajaxNestedGridURL == null ? "null" : jsString(PageFlowUtil.filter(_ajaxNestedGridURL + value))) + ", " + jsString(value) + ")");
+        page.addHandler(id, "click", "return toggleNestedGrid(" + jsString(getName()) + "," + (_ajaxNestedGridURL == null ? "null" : jsString(_ajaxNestedGridURL + value)) + ", " + jsString(value) + ")");
     }
 
     private String getUniqueColumnValue(RenderContext ctx)

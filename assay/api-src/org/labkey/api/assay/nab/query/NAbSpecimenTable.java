@@ -24,30 +24,39 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.query.QueryService;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static org.labkey.api.assay.plate.PlateBasedRunCreator.SAMPLE_TYPE_NAME_PREFIX;
 
 
 public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
 {
     private static final FieldKey CONTAINER_FIELD_KEY = FieldKey.fromParts("Container");
-
     public static final String PERCENT_NEUT_MAX_PROP = "PercentNeutralizationMax";
     public static final String PERCENT_NEUT_INIT_DILUTION_PROP = "PercentNeutralizationInitialDilution";
 
-    public NAbSpecimenTable(AssayProtocolSchema schema, ContainerFilter cf)
+    private final ExpProtocol _protocol;
+
+    public NAbSpecimenTable(AssayProtocolSchema schema, ContainerFilter cf, final ExpProtocol protocol)
     {
         super(DilutionManager.getTableInfoNAbSpecimen(), schema, cf);
+        _protocol = protocol;
 
         wrapAllColumns(true);
         setTitle(DilutionManager.NAB_SPECIMEN_TABLE_NAME);
@@ -60,9 +69,11 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         addColumn(selectedPositiveAUC);
 
         ExprColumn percNeutMax = new ExprColumn(this, PERCENT_NEUT_MAX_PROP, getPercentNeutralizationMax(), JdbcType.DECIMAL);
+        percNeutMax.setDescription("The max percent neutralization value for the dilution data for this sample.");
         percNeutMax.setHidden(true);
         addColumn(percNeutMax);
         ExprColumn percNeutInitDilution = new ExprColumn(this, PERCENT_NEUT_INIT_DILUTION_PROP, getPercentNeutralizationInitialDilution(), JdbcType.DECIMAL);
+        percNeutInitDilution.setDescription("The percent neutralization value from the dilution data row for this sample where the dilution value equals the sample's InitialDilution property.");
         percNeutInitDilution.setHidden(true);
         addColumn(percNeutInitDilution);
 
@@ -121,10 +132,26 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
     private SQLFragment getPercentNeutralizationInitialDilution()
     {
         // Issue 48437: Use AVG() since we can't guarantee that there will be just a single DilutionData row for the min dilution
-        return new SQLFragment("(SELECT AVG(PercentNeutralization) FROM ")
-            .append(DilutionManager.getTableInfoDilutionData(), "dd")
-            .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
-            .append(" AND dd.Dilution = dd.MinDilution)");
+        SQLFragment sql = new SQLFragment("(SELECT AVG(PercentNeutralization) FROM ")
+            .append(DilutionManager.getTableInfoDilutionData(), "dd");
+
+        // Issue 49036: InitialDilution does not always equal MinDilution (i.e. method Dilution vs Concentration)
+        // so we need to join to the sample type table to get the InitialDilution value
+        SamplesSchema schema = new SamplesSchema(_userSchema);
+        TableInfo samplesTable = schema.getTable(SAMPLE_TYPE_NAME_PREFIX + _protocol.getName(), null);
+        if (samplesTable != null && samplesTable.getColumn("InitialDilution") != null)
+        {
+            List<ColumnInfo> columns = Arrays.asList(samplesTable.getColumn("LSID"), samplesTable.getColumn("InitialDilution"));
+            SQLFragment samplesSql = QueryService.get().getSelectSQL(samplesTable, columns, null, null, Table.ALL_ROWS, 0, false);
+            return sql.append(" LEFT JOIN (").append(samplesSql).append(" ) x ON x.LSID = ").append(ExprColumn.STR_TABLE_ALIAS + ".SpecimenLsid")
+                    .append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+                    .append(" AND dd.Dilution = x.InitialDilution)");
+        }
+        else
+        {
+            return sql.append(" WHERE dd.RunDataId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+                    .append(" AND dd.Dilution = dd.MinDilution)");
+        }
     }
 
     @Override

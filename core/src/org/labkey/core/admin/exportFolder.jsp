@@ -68,17 +68,15 @@ Ext4.onReady(function(){
     // javascript version of PageFlowUtil.helpPopup(), returns html and callback to be invoked after element is inserted into page.
     // Useful for including LabKey-style help in Ext components
     // CONSIDER: move to dom/Utils.js if this can be used elsewhere
-    function helpPopup(title, helpText)
+    function helpPopup(titleText, helpText)
     {
         const h = Ext4.util.Format.htmlEncode;
         const id = Ext4.id();
-        const htmlTitle = h(title);
-        const htmlText = h(helpText);
         const html = '<a id="' + id + '" href="#" tabindex="-1" class="_helpPopup"><span class="labkey-help-pop-up">?</span></a>';
         const callback = function()
         {
-            LABKEY.Utils.attachEventHandler(id, "click", function() {return showHelpDivDelay(this, htmlTitle, htmlText, 'auto');});
-            LABKEY.Utils.attachEventHandler(id, "mouseover", function() {return showHelpDivDelay(this, htmlTitle, htmlText, 'auto');});
+            LABKEY.Utils.attachEventHandler(id, "click", function() {return showHelpDivDelay(this, titleText, h(helpText), 'auto');});
+            LABKEY.Utils.attachEventHandler(id, "mouseover", function() {return showHelpDivDelay(this, titleText, h(helpText), 'auto');});
             LABKEY.Utils.attachEventHandler(id, "mouseout", hideHelpDivDelay);
         };
         return {"html":html, "callback":callback};
