@@ -1088,6 +1088,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .collect(Collectors.toList()));
             results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+            results.put("webappContextPath", AppProps.getInstance().getContextPath());
 
             // Report the total number of login entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);
