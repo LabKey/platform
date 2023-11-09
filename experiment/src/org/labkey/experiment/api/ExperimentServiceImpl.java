@@ -8941,7 +8941,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
-                auditEvent.setRowCount(dataObjects.size());
+                auditEvent.updateCommentRowCount(dataObjects.size());
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
@@ -9182,7 +9182,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
-                auditEvent.setRowCount(assayRuns.size());
+                auditEvent.updateCommentRowCount(assayRuns.size());
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 

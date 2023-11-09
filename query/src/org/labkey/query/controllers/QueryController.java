@@ -4494,14 +4494,19 @@ public class QueryController extends SpringActionController
             {
                 if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
                 {
-                    auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction());
-                    AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
+                    if (transaction.getAuditEvent() != null)
+                        auditEvent = transaction.getAuditEvent();
+                    else
+                    {
+                        auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction());
+                        AbstractQueryUpdateService.addTransactionAuditEvent(transaction,  getUser(), auditEvent);
+                    }
                 }
 
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), container, configParameters, extraContext);
                 if (auditEvent != null)
-                    auditEvent.setRowCount(responseRows.size());
+                    auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows.stream()
@@ -4565,7 +4570,10 @@ public class QueryController extends SpringActionController
                 }
             }
             if (auditEvent != null)
+            {
                 response.put("transactionAuditId", auditEvent.getRowId());
+                response.put("reselectRowCount", auditEvent.hasMultiActions());
+            }
 
             response.put("rowsAffected", rowsAffected);
 
