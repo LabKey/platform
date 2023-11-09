@@ -11,7 +11,7 @@ Ext4.define('Security.window.UserInfoPopup', {
 
     initComponent : function()
     {
-        var config = this.initialConfig;
+        const config = this.initialConfig;
         this.userId = config.userId;
         if (!config.user && config.userId)
             this.user = this.cache.getPrincipal(config.userId);
@@ -45,24 +45,24 @@ Ext4.define('Security.window.UserInfoPopup', {
 
     updateItems : function()
     {
-        var toAdd = [],
-            isGroup = this.user.Type == 'g' || this.user.Type == 'r',
-            hdrHtml = "<span style='font-size: 14px; font-weight: bold;'>" + (isGroup?'Group ':'User ') + this.htmlEncode(this.user.Name) + "</span>",
-            container = (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId);
+        const toAdd = [];
+        const isGroup = this.user.Type === 'g' || this.user.Type === 'r';
+        let hdrHtml = "<span style='font-size: 14px; font-weight: bold;'>" + (isGroup?'Group ':'User ') + this.htmlEncode(this.user.Name) + "</span>";
+        const container = (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId);
 
         // links
         if (isGroup)
         {
 
-            if (this.user.UserId == Security.util.SecurityCache.groupUsers || this.user.UserId == Security.util.SecurityCache.groupGuests)
+            if (this.user.UserId === Security.util.SecurityCache.groupUsers || this.user.UserId === Security.util.SecurityCache.groupGuests)
                 this.canEdit = false;
 
-            if (!LABKEY.user.isSystemAdmin && this.user.UserId == Security.util.SecurityCache.groupAdministrators)
+            if (!LABKEY.user.isSystemAdmin && this.user.UserId === Security.util.SecurityCache.groupAdministrators)
                 this.canEdit = false;
 
             if (this.canEdit)
             {
-                var userContainer = this.user.Container == this.cache.projectId ? container : this.user.Container;
+                const userContainer = this.user.Container === this.cache.projectId ? container : this.user.Container;
 
                 hdrHtml += LABKEY.Utils.textLink({
                     text : 'manage group',
@@ -90,13 +90,10 @@ Ext4.define('Security.window.UserInfoPopup', {
         // Add header
         toAdd.push({html:hdrHtml, border: false, frame: false, padding: '5 0 0 0'});
 
-        var i, user,
+        let i, user,
             id = Ext4.id(),
             html = '',
             groups = this.cache.getGroupsFor(this.userId),
-            principalWrapper,
-            removeWrappers = [],
-            deleteGroup,
             users = this.cache.getMembersOf(this.userId);
 
         // render a principals drop down
@@ -104,7 +101,8 @@ Ext4.define('Security.window.UserInfoPopup', {
         {
             user = users.sort(function(a,b){
                 //sort by type (site groups, project groups, then users) and name
-                var A = a.Type + (a.Container == null ? "1" : "2") + a.Name.toUpperCase(), B = b.Type + (b.Container == null ? "1" : "2") + b.Name.toUpperCase();
+                const A = a.Type + (a.Container == null ? "1" : "2") + a.Name.toUpperCase();
+                const B = b.Type + (b.Container == null ? "1" : "2") + b.Name.toUpperCase();
                 return A > B ? 1 : A < B ? -1 : 0;
             });
 
@@ -143,14 +141,14 @@ Ext4.define('Security.window.UserInfoPopup', {
 
         if (this.policy)
         {
-            var ids      = this.cache.getEffectiveGroups(this.userId),
+            let ids      = this.cache.getEffectiveGroups(this.userId),
                 roles    = this.policy.getEffectiveRolesForIds(ids),
                 allRoles = this.cache.roles,
                 role, r;
 
             if (allRoles.length > 0)
             {
-                html += '<p class="userinfoHdr">Effective Roles</p><ul style="list-style-type: none;">';
+                html = '<p class="userinfoHdr">Effective Roles</p><ul style="list-style-type: none;">';
 
                 for (r=0; r < allRoles.length; r++)
                 {
@@ -160,105 +158,90 @@ Ext4.define('Security.window.UserInfoPopup', {
                 }
 
                 html += '</ul>';
+                toAdd.push({html: html, border: false, frame: false});
+                html = '';
             }
         }
 
         if (isGroup)
         {
-            if (this.userId == Security.util.SecurityCache.groupUsers)
+            if (this.userId === Security.util.SecurityCache.groupUsers)
             {
-                html += '<p>Site Users represents all signed-in users.</p>';
+                toAdd.push({html: '<p>Site Users represents all signed-in users.</p>', border: false, frame: false});
             }
-            else
-            {
-                html += '<p class="userinfoHdr">Members</p><table class="userinfo">';
-                if (this.canEdit)
-                {
-                    principalWrapper = '$p$' + id;
-                    html += '<tr><td colspan="3" id="' + principalWrapper + '"></td></tr>';
-                    if (users.length == 0 && this.userId > 0)
-                    {
-                        deleteGroup = '$delete$' + id;
-                        html += '<tr><td colspan=3><a id="' + deleteGroup +'" class="labkey-button" href="#"><span>Delete Empty Group</span></a></td></tr>';
+            else {
+                toAdd.push({html: '<p class="userinfoHdr">Members</p>', border: false, frame: false});
+                if (this.canEdit) {
+                    if (users.length == 0 && this.userId > 0) {
+                        toAdd.push(Ext4.create('Ext.Button', {
+                            text: "Delete Empty Group",
+                            handler: Ext4.bind(this.DeleteGroup_onClick, this)
+                        }));
                     }
                 }
 
-                var canRemove = this.canEdit && (this.userId != Security.util.SecurityCache.groupAdministrators || users.length > 1);
-                for (i=0; i < users.length; i++)
-                {
+                let items = [];
+                const canRemove = this.canEdit && (this.userId !== Security.util.SecurityCache.groupAdministrators || users.length > 1);
+                for (i = 0; i < users.length; i++) {
                     user = users[i];
-                    var isMemberGroup = user.Type == 'g' || user.Type == 'r';
-                    html += '<tr><td>';
-                    if (isMemberGroup)
-                    {
-                        var url = LABKEY.ActionURL.buildURL('security', 'group',(user.Container ? (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId) : '/'),{id:user.UserId});
-                        html += '<a style="font-size: 95%; font-weight: bold;" href="' + url + '">' + (user.Container ? "" : "Site:&nbsp;") + this.htmlEncode(user.Name) + '</a>';
+
+                    const isMemberGroup = user.Type === 'g' || user.Type === 'r';
+                    html = '';
+                    if (isMemberGroup) {
+                        const urlGroup = LABKEY.ActionURL.buildURL('security', 'group', (user.Container ? (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId) : '/'), {id: user.UserId});
+                        html += '<a style="font-size: 95%; font-weight: bold;" href="' + urlGroup + '">' + (user.Container ? "" : "Site:&nbsp;") + this.htmlEncode(user.Name) + '</a>';
                     }
-                    else
-                    {
+                    else {
                         html += this.htmlEncode(user.Name);
                         // issue 17704, add display name for users
-                        if (user.Name != user.DisplayName && user.DisplayName && user.DisplayName.length > 0)
-                        {
+                        if (user.Name !== user.DisplayName && user.DisplayName && user.DisplayName.length > 0) {
                             html += " (" + this.htmlEncode(user.DisplayName) + ")"
                         }
                     }
-                    html += '</td>';
+                    items.push({html: html, border: false, frame: false});
+                    html = '';
 
-                    if (canRemove)
-                    {
-                        var removeWrapper = '$remove$' + id + user.UserId;
-                        html += '<td style="padding: 2px"><a class="labkey-button" href="#" id="' + removeWrapper + '"><span>remove</span></a></td>';
-                        removeWrappers.push([removeWrapper, user.UserId]);
-                    }
-                    html += '<td>';
-
-                    var url;
-                    if (isMemberGroup)
-                    {
-                        url = LABKEY.ActionURL.buildURL('security','groupPermission',(this.cache.projectPath ? this.cache.projectPath : this.cache.projectId),{id:user.UserId});
+                    if (canRemove) {
+                        const removeWrapper = '$remove$' + id + user.UserId;
+                        items.push(Ext4.create('Ext.Button', {
+                            text: "remove",
+                            handler: Ext4.bind(this.RemoveMember_onClick, this, [user.UserId])
+                        }));
                     }
                     else
-                    {
-                        url = LABKEY.ActionURL.buildURL('user','userAccess',(this.cache.projectPath ? this.cache.projectPath : this.cache.projectId),{userId:user.UserId});
-                    }
+                        items.push({html: '&nbsp;', border: false, frame: false});
 
-                    html += this.getOpenWindowMarkup('permissions', url) + '</td></tr>';
+                    let urlWindow;
+                    if (isMemberGroup) {
+                        urlWindow = LABKEY.ActionURL.buildURL('security', 'groupPermission', (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId), {id: user.UserId});
+                    }
+                    else {
+                        urlWindow = LABKEY.ActionURL.buildURL('user', 'userAccess', (this.cache.projectPath ? this.cache.projectPath : this.cache.projectId), {userId: user.UserId});
+                    }
+                    const markupOpenWindow = this.getOpenWindowMarkup('permissions', urlWindow);
+                    items.push(markupOpenWindow);
                 }
-                html += '</table>';
+
+                items.push({html: '&nbsp;', width: "240", border: false, frame: false});
+                items.push({html: '&nbsp;', width: "60", border: false, frame: false});
+                items.push({html: '&nbsp;', width: "100", border: false, frame: false});
+
+                const usersTable = Ext4.create('Ext.panel.Panel', {
+                    width: 'auto',
+                    height: 'auto',
+                    minWidth: 200,
+                    minHeight: 200,
+                    border: false, frame: false,
+                    layout: {
+                        type: 'table',
+                        columns: 3
+                    },
+                    defaults: {bodyStyle: 'padding:5px;'},
+                    items: items
+                });
+                toAdd.push(usersTable);
             }
         }
-
-        toAdd.push({
-            html: html,
-            border: false, frame: false,
-            listeners : {
-                afterlayout : function(p) {
-                    var el;
-                    for (var r=0; r < removeWrappers.length; r++)
-                    {
-                        el = Ext4.fly(removeWrappers[r][0]);
-                        if (el)
-                        {
-                            // listeners for removing group members
-                            el.dom.onclick = Ext4.bind(this.RemoveMember_onClick, this, [removeWrappers[r][1]]);
-                        }
-                    }
-
-                    // listener for deleting group
-                    if (deleteGroup)
-                    {
-                        el = Ext4.fly(deleteGroup);
-                        if (el)
-                        {
-                            el.dom.onclick = Ext4.bind(this.DeleteGroup_onClick, this);
-                        }
-                    }
-                },
-                scope : this
-            },
-            scope : this
-        });
 
         this.removeAll();
         this.add(toAdd);
@@ -272,32 +255,33 @@ Ext4.define('Security.window.UserInfoPopup', {
     },
 
     getOpenWindowMarkup : function(text, href) {
-
-        return LABKEY.Utils.textLink({
-            text : text,
-            href : '#',
-            onClick : "(function(){ window.open('" + href + "&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500'); })();"
+        const handler = function(){ window.open(href + '&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500'); };
+        return Ext4.create('Ext.Button', {
+            text : "view permissions...",
+            border: false, frame: false,
+            handler: handler,
+            scope: this
         });
     },
 
     DeleteGroup_onClick : function()
     {
-        var groupid = this.user.UserId;
+        const groupid = this.user.UserId;
         this.cache.deleteGroup(groupid, this.close, this);
     },
 
     RemoveMember_onClick : function(userid)
     {
-        var groupid = this.user.UserId;
+        const groupid = this.user.UserId;
         this.cache.removeMembership(groupid, userid, this.updateItems, this);
     },
 
-    Combo_onSelect : function(combo, records, index)
+    Combo_onSelect : function(combo, records)
     {
         if (records && records.length)
         {
-            var groupid = this.user.UserId;
-            var userid = records[0].data.UserId;
+            const groupid = this.user.UserId;
+            const userid = records[0].data.UserId;
             this.focusPrincipalComboBox = true;
             this.cache.addMembership(groupid, userid, this.updateItems, this);
         }
@@ -306,9 +290,9 @@ Ext4.define('Security.window.UserInfoPopup', {
 
     Combo_onKeyPress : function(combo, e)
     {
-        if (e.ENTER != e.getKey())
+        if (e.ENTER !== e.getKey())
             return;
-        var email = combo.getValue();
+        let email = combo.getValue();
 
         if (!email)
             return;
@@ -319,21 +303,21 @@ Ext4.define('Security.window.UserInfoPopup', {
         if (combo.getStore().find('Name', email) > -1)
             return;
 
-        var config = {
+        const config = {
             name : email,
-            success : function(info, response) {
-                if(info && info.users && info.users.length == 0){
+            success : function(info) {
+                if(info && info.users && info.users.length === 0){
                     Ext4.Msg.show({
                         title   : 'Create New User',
                         msg     : 'User was not found. Would you like to create the user for \'' + this.htmlEncode(email) + '\'?',
                         buttons : Ext4.MessageBox.YESNO,
                         width: 450,
-                        fn : function(btn, text){
-                            if(btn == 'yes'){
+                        fn : function(btn){
+                            if (btn === 'yes'){
                                 this.cache.createNewUser(email, true, function(user)
                                 {
-                                    var groupid = this.user.UserId;
-                                    var userid  = user.UserId;
+                                    const groupid = this.user.UserId;
+                                    const userid  = user.UserId;
                                     this.cache.addMembership(groupid, userid, this.updateItems, this);
                                 }, this);
                                 combo.selectText();
@@ -350,6 +334,6 @@ Ext4.define('Security.window.UserInfoPopup', {
             },
             scope : this
         };
-        LABKEY.Security.getUsers(config);
+        LABKEY.Security.getUsers(config)
     }
 });
