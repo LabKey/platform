@@ -334,6 +334,7 @@ public class DbScope
             _driverClassName = _dsPropertyReader.getDriverClassName();
             // Note: Dialect won't be versioned with the corresponding database
             _dialect = SqlDialectManager.getFromDriverClassname(_dsName, _driverClassName);
+            MemTracker.get().remove(_dialect);
             _driverClass = initializeDriver();
             _applicationName = ensureApplicationName();
             _url = _dsPropertyReader.getUrl();
