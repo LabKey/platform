@@ -16,8 +16,6 @@
 package org.labkey.test.tests.devtools;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.remoteapi.CommandException;
@@ -33,6 +31,7 @@ import org.labkey.test.pages.core.login.LoginConfigRow;
 import org.labkey.test.pages.core.login.LoginConfigurePage;
 import org.labkey.test.params.devtools.SecondaryAuthenticationProvider;
 import org.labkey.test.util.PasswordUtil;
+import org.labkey.test.util.login.AuthenticationAPIUtils;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -52,16 +51,10 @@ import static org.junit.Assert.assertTrue;
 @BaseWebDriverTest.ClassTimeout(minutes = 1)
 public class SecondaryAuthenticationTest extends BaseWebDriverTest
 {
-    @Before
-    public void preTest()
+    @Override
+    protected void doCleanup(boolean afterTest)
     {
-        clearSecondaryConfigs();
-    }
-
-    @After
-    public void afterTest()
-    {
-        clearSecondaryConfigs();
+        AuthenticationAPIUtils.deleteConfigurations(new SecondaryAuthenticationProvider().getProviderName(), createDefaultConnection());
     }
 
     private void clearSecondaryConfigs()
