@@ -47,6 +47,7 @@ import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleLoggerWriter;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -1690,11 +1691,19 @@ public class DbScope
             }
 
             // Create non-pooled connection... don't want to pool a failed connection
-            try (Connection ignored = getRawConnection(ds.getUrl(), ds, false))
+            try (Connection conn = getRawConnection(ds.getUrl(), ds, false))
             {
                 LOG.debug("Successful connection to \"" + ds.getDsName() + "\" at " + ds.getUrl());
 
-                // TODO: Check for existing connections on this database with the same application name
+                // Very first connection (and we haven't sent the application name for our connection), so ask the
+                // dialect how to count connections with our database and application name.
+                String dbName = dialect.getDatabaseName(ds.getUrl());
+                int count = dialect.getApplicationConnectionCount(conn, dbName, ds.getApplicationName());
+                if (count > 0)
+                    throw new ConfigurationException("There " + (count > 1 ? "are " : "is ") +
+                        StringUtilsLabKey.pluralize(count, "connection") + " to database \"" + dbName +
+                        "\" with the application name \"" + ds.getApplicationName() + "\"! This likely means another " +
+                        "LabKey Server deployment is already using this database.");
 
                 return;
             }

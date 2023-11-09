@@ -1916,4 +1916,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     {
         return "ApplicationName";
     }
+
+    @Override
+    public int getApplicationConnectionCount(Connection conn, String database, String applicationName)
+    {
+        return new SqlSelector(null, conn, new SQLFragment("SELECT COUNT(*) FROM pg_stat_activity WHERE datname = ? AND application_name = ?", database, applicationName)).getObject(Integer.class);
+    }
 }

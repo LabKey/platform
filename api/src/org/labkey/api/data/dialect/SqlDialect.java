@@ -1775,6 +1775,12 @@ public abstract class SqlDialect
         return null;
     }
 
+    // Return count of connections with the specified application name that are using this database
+    public int getApplicationConnectionCount(Connection conn, String database, String applicationName)
+    {
+        return 0;
+    }
+
     public static class DialectTestCase
     {
         DbScope s;

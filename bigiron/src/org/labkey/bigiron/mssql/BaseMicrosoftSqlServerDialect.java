@@ -2435,4 +2435,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         return "applicationName";
     }
+
+    @Override
+    public int getApplicationConnectionCount(Connection conn, String database, String applicationName)
+    {
+        return new SqlSelector(null, conn, new SQLFragment("SELECT COUNT(*) FROM sys.sysprocesses WHERE DB_NAME(dbid) = ? AND program_name = ?", database, applicationName)).getObject(Integer.class);
+    }
 }
