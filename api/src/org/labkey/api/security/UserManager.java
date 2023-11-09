@@ -603,9 +603,9 @@ public class UserManager
     }
 
     @NotNull
-    public static Collection<User> getUsers(boolean includeDeactivated)
+    public static Collection<User> getUsers(boolean includeInactive)
     {
-        return includeDeactivated ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
+        return includeInactive ? UserCache.getActiveAndInactiveUsers() : UserCache.getActiveUsers() ;
     }
 
     public static List<Integer> getUserIds()

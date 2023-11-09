@@ -134,14 +134,7 @@
     if (settings.hasFormatPicker())
     {
         %><tr><td class="labkey-form-label">Render As</td><td colspan="2">
-        <%=select()
-            .name("rendererType")
-            .id("rendererType")
-            .addOptions(Arrays.stream(bean.renderers).map(WikiRendererType::getDisplayName))
-            .selected(bean.currentRendererType.getDisplayName())
-            .onChange("LABKEY.setDirty(true);")
-            .className(null)
-        %>
+        <%=bean.renderAsSelect%>
         </td></tr><%
     }
 

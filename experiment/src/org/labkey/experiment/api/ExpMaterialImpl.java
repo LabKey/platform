@@ -149,13 +149,13 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Nullable @Override
-    public ExpSampleType getSampleType()
+    public ExpSampleTypeImpl getSampleType()
     {
         String type = _object.getCpasType();
         if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
         {
             // try current container first (uses cache)
-            return SampleTypeService.get().getSampleTypeByType(type, getContainer());
+            return SampleTypeServiceImpl.get().getSampleTypeByType(type, getContainer());
         }
         else
         {

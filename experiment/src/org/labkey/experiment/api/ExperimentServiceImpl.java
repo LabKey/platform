@@ -4515,7 +4515,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             executor.execute("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")");
 
-            deleteProtocolInputs(c, protocolIds);
+            deleteAllProtocolInputs(c, protocolIds);
 
             for (Protocol protocol : protocols)
             {
@@ -4558,10 +4558,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             assayService.deindexAssays(Collections.unmodifiableCollection(expProtocols));
     }
 
-    private void deleteProtocolInputs(Container c, String protocolIdsInClause)
+    private void deleteAllProtocolInputs(Container c, String protocolIdsInClause)
     {
-        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c, false);
+        OntologyManager.deleteOntologyObjects(getSchema(), new SQLFragment("SELECT LSID FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")"), c);
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
+    }
+
+    private void deleteProtocolInputs(@NotNull Protocol protocol, Collection<? extends ExpProtocolInput> protocolInputsToDelete)
+    {
+        if (protocolInputsToDelete == null || protocolInputsToDelete.isEmpty())
+            return;
+
+        var protocolInputRowIds = protocolInputsToDelete.stream().map(ExpObject::getRowId).filter(rowId -> rowId != 0).toList();
+        if (protocolInputRowIds.isEmpty())
+            return;
+
+        var table = getTinfoProtocolInput();
+        SQLFragment ontologyLSIDSql = new SQLFragment("SELECT LSID FROM ").append(getTinfoProtocolInput(), "")
+                .append(" WHERE ProtocolId = ?").add(protocol.getRowId())
+                .append(" AND RowId ");
+        table.getSqlDialect().appendInClauseSql(ontologyLSIDSql, protocolInputRowIds);
+
+        SQLFragment deleteSql = new SQLFragment("DELETE FROM ").append(getTinfoProtocolInput(), "")
+                        .append(" WHERE ProtocolId = ?").add(protocol.getRowId())
+                        .append(" AND RowId ");
+        table.getSqlDialect().appendInClauseSql(deleteSql, protocolInputRowIds);
+
+        OntologyManager.deleteOntologyObjects(getSchema(), ontologyLSIDSql, protocol.getContainer());
+        new SqlExecutor(getSchema()).execute(deleteSql);
     }
 
     public static Map<String, Collection<Map<String, Object>>> partitionRequestedOperationObjects(Collection<Integer> requestIds, Collection<Integer> notPermittedIds, List<? extends ExpRunItem> allData)
@@ -4656,13 +4680,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                       Container container,
                                       Collection<Integer> selectedMaterialIds,
                                       boolean deleteRunsUsingMaterials,
-                                      @Nullable ExpSampleType stDeleteFrom,
+                                      @Nullable ExpSampleTypeImpl stDeleteFrom,
                                       boolean ignoreStatus,
-                                      boolean isTruncate)
+                                      boolean truncateContainer)
     {
         SQLFragment rowIdSQL = new SQLFragment("RowId ");
         rowIdSQL.appendInClause(selectedMaterialIds, getSchema().getSqlDialect());
-        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, isTruncate);
+        return deleteMaterialBySqlFilter(user, container, rowIdSQL, deleteRunsUsingMaterials, false, stDeleteFrom, ignoreStatus, truncateContainer);
     }
 
     /**
@@ -4671,6 +4695,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
      * null, the samples must have cpasType of {@link ExpMaterial#DEFAULT_CPAS_TYPE} unless
      * the <code>deleteFromAllSampleTypes</code> flag is true.
      * Deleting from multiple SampleTypes is only needed when cleaning an entire container.
+     * @param truncateContainer delete all rows for this container. Not a real DB truncate because there may be rows in other containers.
      */
     public int deleteMaterialBySqlFilter(
         User user,
@@ -4678,9 +4703,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment materialFilterSQL,
         boolean deleteRunsUsingMaterials,
         boolean deleteFromAllSampleTypes,
-        @Nullable ExpSampleType stDeleteFrom,
+        @Nullable ExpSampleTypeImpl stDeleteFrom,
         boolean ignoreStatus,
-        boolean isTruncate
+        boolean truncateContainer
     )
     {
         if (stDeleteFrom != null && deleteFromAllSampleTypes)
@@ -4695,7 +4720,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
 
-            Map<String, ExpSampleType> sampleTypes = new HashMap<>();
+            Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
                 sampleTypes.put(stDeleteFrom.getLSID(), stDeleteFrom);
 
@@ -4707,7 +4732,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             int count = new SqlSelector(getExpSchema(), sql).setJdbcCaching(false).forEachBatch(Material.class, 10_000, rawMaterials ->
                     {
                         List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(rawMaterials);
-                        for (ExpMaterial material : materials)
+                        for (ExpMaterialImpl material : materials)
                         {
                             if (!material.getContainer().hasPermission(user, DeletePermission.class))
                                 throw new UnauthorizedException();
@@ -4724,7 +4749,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                     String cpasType = material.getCpasType();
                                     if (!sampleTypes.containsKey(cpasType))
                                     {
-                                        ExpSampleType st = material.getSampleType();
+                                        ExpSampleTypeImpl st = material.getSampleType();
                                         if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
                                             LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
                                         sampleTypes.put(cpasType, st);
@@ -4744,7 +4769,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                     throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                             }
 
-                            if (!isTruncate && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
+                            if (!truncateContainer && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
                             {
                                 ExpSampleType sampleType = material.getSampleType();
                                 sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
@@ -4784,21 +4809,29 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 executor.execute(deleteAliasSql);
             }
 
+            // Stash the ObjectIds that we're going to delete after we delete from exp.material
+            final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
+            final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectId" + suffix;
+            try (Timing ignored = MiniProfiler.step("create object temp table"))
+            {
+                executor.execute(new SQLFragment("CREATE ")
+                        .append(getSchema().getSqlDialect().getTempTableKeyword())
+                        .append(" TABLE ")
+                        .append(objectTempTableName)
+                        .append("(ObjectId INT NOT NULL PRIMARY KEY)"));
+
+                executor.execute(new SQLFragment("INSERT INTO ")
+                        .append(objectTempTableName)
+                        .append("(ObjectId) SELECT ObjectId FROM exp.Material WHERE ")
+                        .append(materialFilterSQL));
+            }
+
             try (Timing ignored = MiniProfiler.step("exp.edges"))
             {
-                SQLFragment objectIdFrag = new SQLFragment();
-                objectIdFrag.append(lsidInFrag).append(")");
-
                 TableInfo edge = getTinfoEdge();
-                SQLFragment deleteEdgeSql = new SQLFragment("WITH X AS (SELECT ObjectId FROM exp.Object WHERE ObjectURI ")
-                        .append(lsidInFrag).append(")\n")
-                        .append("DELETE FROM ")
-                        .append(String.valueOf(edge))
-                        .append(" WHERE ")
-                        .append(" fromObjectId IN (SELECT ObjectId FROM X)\n")
-                        .append(" OR toObjectId IN (SELECT ObjectId FROM X)\n")
-                        .append(" OR sourceId  IN (SELECT ObjectId FROM X)");
-                executor.execute(deleteEdgeSql);
+                executor.execute(new SQLFragment("DELETE FROM ").append(edge).append(" WHERE fromObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).append(")"));
+                executor.execute(new SQLFragment("DELETE FROM ").append(edge).append(" WHERE toObjectId IN (SELECT ObjectId FROM ").append(objectTempTableName).append(")"));
+                executor.execute(new SQLFragment("DELETE FROM ").append(edge).append(" WHERE sourceId IN (SELECT ObjectId FROM ").append(objectTempTableName).append(")"));
             }
 
             SQLFragment materialIdSql = new SQLFragment("(SELECT RowId FROM ");
@@ -4819,7 +4852,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         .append(" FROM ").append(getTinfoMaterialInput(), "mi")
                         .append(" WHERE mi.materialId IN ")
                         .append(materialIdSql);
-                OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+                OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
             }
 
             // delete exp.MaterialInput
@@ -4832,13 +4865,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             try (Timing ignored = MiniProfiler.step("expsampletype materialized tables"))
             {
-                for (ExpSampleType st : sampleTypes.values())
+                for (ExpSampleTypeImpl st : sampleTypes.values())
                 {
                     // Material may have been orphaned from its SampleType
                     if (st == null)
                         continue;
 
-                    TableInfo dbTinfo = ((ExpSampleTypeImpl)st).getTinfo();
+                    TableInfo dbTinfo = st.getTinfo();
                     // NOTE: study specimens don't have a domain for their samples, so no table
                     if (null != dbTinfo)
                     {
@@ -4848,23 +4881,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         executor.execute(sampleTypeSQL);
                     }
                 }
-            }
-
-            // Stash the ObjectURIs that we're going to delete after we delete from exp.material
-            final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
-            final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectURI" + suffix;
-            try (Timing ignored = MiniProfiler.step("create object temp table"))
-            {
-                executor.execute(new SQLFragment("CREATE ")
-                        .append(getSchema().getSqlDialect().getTempTableKeyword())
-                        .append(" TABLE ")
-                        .append(objectTempTableName)
-                        .append("(ObjectURI LSIDType NOT NULL PRIMARY KEY)"));
-
-                executor.execute(new SQLFragment("INSERT INTO ")
-                        .append(objectTempTableName)
-                        .append("(ObjectURI) SELECT LSID FROM exp.Material WHERE ")
-                        .append(materialFilterSQL));
             }
 
             try (Timing ignored = MiniProfiler.step("exp.Material"))
@@ -4880,9 +4896,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // delete exp.objects
             try (Timing ignored = MiniProfiler.step("exp.object"))
             {
-                SQLFragment lsidFragFrag = new SQLFragment("SELECT ObjectUri FROM ")
+                SQLFragment objectIdSql = new SQLFragment("SELECT ObjectId FROM ")
                         .append(objectTempTableName);
-                OntologyManager.deleteOntologyObjects(getSchema(), lsidFragFrag, container, false);
+                OntologyManager.deleteOntologyObjectsByObjectIdSql(getSchema(), objectIdSql);
             }
 
             // Get rid of our temp table
@@ -4892,7 +4908,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }
 
             // recalculate rollup
-            if (!isTruncate)
+            if (!truncateContainer)
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
@@ -5255,7 +5271,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                 new SQLFragment("CAST(di.targetApplicationId AS VARCHAR)")))
                     .append(" FROM ").append(getTinfoDataInput(), "di").append(" WHERE di.DataId ");
             dialect.appendInClauseSql(inputObjects, selectedDataIds);
-            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container, false);
+            OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
 
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
@@ -5287,7 +5303,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // generate in clause for the Material LSIDs
             SQLFragment lsidInFrag = new SQLFragment("SELECT o.ObjectUri FROM ").append(getTinfoObject(), "o").append(" WHERE o.ObjectURI ");
             dialect.appendInClauseSql(lsidInFrag, allLsids);
-            OntologyManager.deleteOntologyObjects(getSchema(), lsidInFrag, container, false);
+            OntologyManager.deleteOntologyObjects(getSchema(), lsidInFrag, container);
 
             afterDeleteData(user, container, expDatas);
 
@@ -6365,7 +6381,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public Protocol saveProtocol(User user, Protocol protocol)
     {
-        return saveProtocol(user, protocol, true);
+        return saveProtocol(user, protocol, true, null);
     }
 
     // saveProperties is exposed due to how the transactions are handled for setting properties on protocols.
@@ -6373,7 +6389,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     // been saved to the database. The result is that it can cause the save to fail if this API attempts to save
     // the properties again. The only current recourse is for the caller to enforce their own transaction boundaries
     // using ensureTransaction().
-    public Protocol saveProtocol(User user, Protocol protocol, boolean saveProperties)
+    public Protocol saveProtocol(
+        User user,
+        Protocol protocol,
+        boolean saveProperties,
+        @Nullable Collection<? extends ExpProtocolInput> protocolInputsToDeleteOnUpdate
+    )
     {
         Protocol result;
         try (DbScope.Transaction transaction = ensureTransaction())
@@ -6408,10 +6429,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (saveProperties)
                 savePropertyCollection(protocol.retrieveObjectProperties(), protocol.getLSID(), protocol.getContainer(), !newProtocol);
 
-
             Collection<? extends ExpProtocolInputImpl> protocolInputs = protocol.retrieveProtocolInputs();
             if (!newProtocol)
-                deleteProtocolInputs(protocol.getContainer(), String.valueOf(protocol.getRowId()));
+            {
+                if (null == protocolInputsToDeleteOnUpdate)
+                    deleteAllProtocolInputs(protocol.getContainer(), String.valueOf(protocol.getRowId()));
+                else
+                    deleteProtocolInputs(protocol, protocolInputsToDeleteOnUpdate);
+            }
+
             for (ExpProtocolInputImpl input : protocolInputs)
             {
                 AbstractProtocolInput obj = (AbstractProtocolInput)input.getDataObject();
@@ -8187,7 +8213,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             baseProtocol.storeProtocolParameters(baseParams.values());
         }
 
-        return saveProtocol(user, baseProtocol, false);
+        return saveProtocol(user, baseProtocol, false, null);
     }
 
     /**
@@ -8915,7 +8941,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
-                auditEvent.setRowCount(dataObjects.size());
+                auditEvent.updateCommentRowCount(dataObjects.size());
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
@@ -9156,7 +9182,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (auditBehavior != null && AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
-                auditEvent.setRowCount(assayRuns.size());
+                auditEvent.updateCommentRowCount(assayRuns.size());
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 

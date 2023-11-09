@@ -670,7 +670,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 lsids.add(container.getId());
             }
 
-            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, container, false);
+            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), lsids, container);
         }
 
         // delete all the rows in this table, scoping to the container if the column

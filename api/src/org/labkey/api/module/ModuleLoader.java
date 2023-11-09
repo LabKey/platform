@@ -59,6 +59,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -84,6 +85,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
@@ -1696,9 +1698,25 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         clearAllSchemaDetails();
         setStartupState(StartupState.StartupComplete);
+        ensureAtLeastOneRootAdminExists();
         setStartingUpMessage("Module startup complete");
     }
 
+    // Now that we're done bootstrapping / starting up, verify that there's at least one root admin
+    private void ensureAtLeastOneRootAdminExists()
+    {
+        try
+        {
+            if (UserManager.getActiveRealUserCount() > 0)
+                SecurityManager.ensureAtLeastOneRootAdminExists();
+        }
+        catch (UnauthorizedException e)
+        {
+            throw new IllegalArgumentException("This deployment lacks a root administrator; it must have a Site Administrator, " +
+                "an Application Administrator, or an Impersonating Troubleshooter. Use startup properties to assign one of " +
+                "these roles to one or more users.");
+        }
+    }
 
     public void saveModuleContext(ModuleContext context)
     {

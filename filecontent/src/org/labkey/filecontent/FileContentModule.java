@@ -100,7 +100,7 @@ public class FileContentModule extends DefaultModule
     public Collection<String> getSummary(Container c)
     {
         List<String> result = new ArrayList<>();
-        FileContentService service = FileContentService.get();
+        FileContentServiceImpl service = FileContentServiceImpl.getInstance();
         Path file = service.getFileRootPath(c, FileContentService.ContentType.files);
         if (file != null && Files.isDirectory(file))
         {
@@ -149,10 +149,7 @@ public class FileContentModule extends DefaultModule
                     result.add(directoryCount + " directories in the file system, which may contain additional files, including: " + StringUtils.join(directoryNames, ", "));
                 }
             }
-            catch (IOException e)
-            {
-
-            }
+            catch (IOException ignored) {}
         }
 
         return result;
@@ -187,7 +184,7 @@ public class FileContentModule extends DefaultModule
 
         UsageMetricsService.get().registerUsageMetrics(getName(), () -> {
             Map<String, Object> results = new HashMap<>();
-            File root = FileContentService.get().getSiteDefaultRoot();
+            File root = FileContentServiceImpl.getInstance().getSiteDefaultRoot();
             if (root.isDirectory())
             {
                 long startTime = HeartBeat.currentTimeMillis();
@@ -217,6 +214,7 @@ public class FileContentModule extends DefaultModule
                 {
                     succeeded = false;
                 }
+                results.put("invalidConfiguredFileRoot", FileContentServiceImpl.getInstance().getProblematicFileRootMessage() != null);
                 results.put("fileRootSize", totalSize.longValue());
                 results.put("fileRootFileCount", fileCount.longValue());
                 results.put("fileRootCrawlTimedOut", timedOut);

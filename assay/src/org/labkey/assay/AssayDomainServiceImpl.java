@@ -474,7 +474,11 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     protocol.setProtocolParameters(newParams.values());
 
                     if (hasNameChange)
+                    {
+                        if (AssayManager.get().getAssayProtocolByName(getContainer(), assay.getName()) != null)
+                            throw new ValidationException("Another assay protocol already exists for this name.");
                         ExperimentService.get().handleAssayNameChange(assay.getName(), oldAssayName, assayProvider,  protocol,getUser(), getContainer());
+                    }
 
                     AssayProvider provider = AssayService.get().getProvider(protocol);
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)

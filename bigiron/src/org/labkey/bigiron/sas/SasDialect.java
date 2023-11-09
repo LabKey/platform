@@ -18,6 +18,7 @@ package org.labkey.bigiron.sas;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
@@ -403,8 +404,14 @@ public abstract class SasDialect extends SimpleSqlDialect
             return null;
         }
 
+        @Override @Nullable
+        public TransactionAuditProvider.TransactionAuditEvent getAuditEvent()
+        {
+            return null;
+        }
+
         @Override
-        public void setAuditId(Long auditId)
+        public void setAuditEvent(TransactionAuditProvider.TransactionAuditEvent event)
         {
         }
     }

@@ -61,6 +61,7 @@ import java.util.Set;
 public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayProvider> extends DefaultAssayRunCreator<ProviderType>
 {
     public static final AssayDataType SAMPLE_METADATA_FILE_TYPE = new AssayDataType("SampleMetadataFile", new FileType(Arrays.asList(".xls", ".xlsx"), ".xls"));
+    public static final String SAMPLE_TYPE_NAME_PREFIX = "Input Samples: ";
 
     public PlateBasedRunCreator(ProviderType provider)
     {
@@ -216,7 +217,7 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
                 {
                     sampleType = SampleTypeService.get().createSampleType();
                     sampleType.setContainer(context.getProtocol().getContainer());
-                    sampleType.setName("Input Samples: " + context.getProtocol().getName());
+                    sampleType.setName(SAMPLE_TYPE_NAME_PREFIX + context.getProtocol().getName());
                     sampleType.setLSID(domainURI);
 
                     Lsid.LsidBuilder sampleTypeLSID = new Lsid.LsidBuilder(domainURI);

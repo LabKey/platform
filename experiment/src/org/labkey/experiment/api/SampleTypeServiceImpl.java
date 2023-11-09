@@ -17,8 +17,6 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections4.ListUtils;
-import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +30,6 @@ import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.measurement.Measurement;
@@ -537,7 +534,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
      * Delete all exp.Material from the SampleType. If container is not provided,
      * all rows from the SampleType will be deleted regardless of container.
      */
-    public int truncateSampleType(ExpSampleType source, User user, @Nullable Container c)
+    public int truncateSampleType(ExpSampleTypeImpl source, User user, @Nullable Container c)
     {
         assert getExpSchema().getScope().isTransactionActive();
 
@@ -1806,7 +1803,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             if (AuditBehaviorType.NONE != auditBehavior)
             {
                 TransactionAuditProvider.TransactionAuditEvent auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(targetContainer, QueryService.AuditAction.UPDATE);
-                auditEvent.setRowCount(samples.size());
+                auditEvent.updateCommentRowCount(samples.size());
                 AbstractQueryUpdateService.addTransactionAuditEvent(transaction, user, auditEvent);
             }
 
@@ -1881,10 +1878,14 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             updateCounts.putAll(moveDerivationRuns(samples, targetContainer, user));
 
             transaction.addCommitTask(() -> {
-                // update search index for moved samples via indexSampleType() helper, it filters for samples to index
-                // based on the modified date
                 for (ExpSampleType sampleType : sampleTypesMap.keySet())
+                {
+                    // force refresh of materialized view
+                    SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
+                    // update search index for moved samples via indexSampleType() helper, it filters for samples to index
+                    // based on the modified date
                     SampleTypeServiceImpl.get().indexSampleType(sampleType);
+                }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
             transaction.addCommitTask(() -> {
