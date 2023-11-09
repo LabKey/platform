@@ -102,9 +102,9 @@ public class MothershipTest extends BaseWebDriverTest implements PostgresOnlyTes
         permissionsHelper.addMemberToRole(NON_ASSIGNEE, "Project Admin", MemberType.user, MOTHERSHIP_PROJECT);
 
         EditUpgradeMessagePage configurePage = EditUpgradeMessagePage.beginAt(this);
-        configurePage.createIssueURL().set(WebTestHelper.getContextPath() +
+        configurePage.setCreateIssueURL(WebTestHelper.getContextPath() +
                 WebTestHelper.buildRelativeUrl("issues", ISSUES_PROJECT, "insert", Maps.of("issueDefName", ISSUES_LIST)));
-        configurePage.issuesContainer().set("/" + ISSUES_PROJECT);
+        configurePage.setIssuesContainer("/" + ISSUES_PROJECT);
         configurePage.save();
 
         _containerHelper.createProject(ISSUES_PROJECT, null);

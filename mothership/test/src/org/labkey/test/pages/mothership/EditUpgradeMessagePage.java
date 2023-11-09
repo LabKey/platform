@@ -41,11 +41,20 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return new EditUpgradeMessagePage(driver.getDriver());
     }
 
-    public Input currentRevision()
+    public String getCurrentBuildDate()
     {
-        return elementCache().currentRevisionInput;
+        return elementCache().currentBuildDateInput.get();
     }
 
+    public EditUpgradeMessagePage setCurrentBuildDate(String buildDate)
+    {
+        elementCache().currentBuildDateInput.set(buildDate);
+        return this;
+    }
+
+    /*
+        gets the current upgrade message textarea's content
+     */
     public String getMessage()
     {
         return elementCache().messageTextArea.get();
@@ -57,6 +66,9 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return this;
     }
 
+    /*
+        gets the current marketing message textarea's content
+     */
     public String getMarketingMessage()
     {
         return elementCache().marketingMessageTextArea.get();
@@ -68,14 +80,26 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return this;
     }
 
-    public Input createIssueURL()
+    public String getCreateIssueURL()
     {
-        return elementCache().createIssueURLInput;
+        return elementCache().createIssueURLInput.get();
     }
 
-    public Input issuesContainer()
+    public EditUpgradeMessagePage setCreateIssueURL(String createIssueURL)
     {
-        return elementCache().issuesContainerInput;
+        elementCache().createIssueURLInput.set(createIssueURL);
+        return this;
+    }
+
+    public String getIssuesContainer()
+    {
+        return elementCache().issuesContainerInput.get();
+    }
+
+    public EditUpgradeMessagePage setIssuesContainer(String issuesContainerPath)
+    {
+        elementCache().issuesContainerInput.set(issuesContainerPath);
+        return this;
     }
 
     public ShowExceptionsPage save()
@@ -92,7 +116,7 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
 
     protected class ElementCache extends BaseMothershipPage.ElementCache
     {
-        Input currentRevisionInput = new Input(Locator.name("currentRevision").findWhenNeeded(this), getDriver());
+        Input currentBuildDateInput = new Input(Locator.name("currentBuildDate").findWhenNeeded(this), getDriver());
         Input messageTextArea = new Input(Locator.name("message").findWhenNeeded(this), getDriver());
         Input createIssueURLInput = new Input(Locator.name("createIssueURL").findWhenNeeded(this), getDriver());
         Input issuesContainerInput = new Input(Locator.name("issuesContainer").findWhenNeeded(this), getDriver());
