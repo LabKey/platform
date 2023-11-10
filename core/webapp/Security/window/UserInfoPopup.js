@@ -258,7 +258,6 @@ Ext4.define('Security.window.UserInfoPopup', {
         const handler = function(){ window.open(href + '&_print=1','_blank','location=1,scrollbars=1,resizable=1,width=500,height=500'); };
         return Ext4.create('Ext.Button', {
             text : "view permissions...",
-            border: false, frame: false,
             handler: handler,
             scope: this
         });
