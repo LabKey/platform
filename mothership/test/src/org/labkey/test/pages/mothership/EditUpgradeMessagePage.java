@@ -76,7 +76,7 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
 
     public EditUpgradeMessagePage setMarketingMessage(String marketingMessage)
     {
-        elementCache().marketingMessageTextArea.setWithPaste(marketingMessage);
+        elementCache().marketingMessageTextArea.setValue(marketingMessage);
         return this;
     }
 
@@ -104,6 +104,7 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
 
     public ShowExceptionsPage save()
     {
+        sleep(1000);    // give time for set or clear actions to process
         clickAndWait(elementCache().saveButton);
         return new ShowExceptionsPage(getDriver());
     }
