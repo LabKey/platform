@@ -526,9 +526,14 @@ public class SpecimenController extends SpringActionController
         @Override
         public void render(RenderContext ctx, Writer out) throws IOException
         {
-            var selectId = HttpView.currentPageConfig().makeId("select");
+            ActionURL url = ctx.getViewContext().cloneActionURL();
+            url.deleteParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             out.write("Hide Previously Requested By ");
-            out.write("<select id=\"" + PageFlowUtil.filter(selectId) + "\">");
+            out.write("<select ");
+            out.write("onchange=\"window.location=");
+            out.write(PageFlowUtil.jsString(url + "&amp;excludeRequestedBySite="));
+            out.write(" + this.options[this.selectedIndex].value;\"");
+            out.write(">");
             out.write("<option value=''>&lt;Show All&gt;</option>");
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
@@ -545,14 +550,6 @@ public class SpecimenController extends SpringActionController
                 out.write("</option>");
             }
             out.write("</select>");
-
-            ActionURL url = ctx.getViewContext().cloneActionURL();
-            url.deleteParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
-            var urlString = url.toString();
-            urlString += url.getParameters().isEmpty() ? "?" : "&";
-            var handler ="window.location = %s + 'excludeRequestedBySite=' + this.options[this.selectedIndex].value"
-                    .formatted(PageFlowUtil.jsString(urlString));
-            HttpView.currentPageConfig().addHandler(selectId, "change", handler);
         }
     }
 
