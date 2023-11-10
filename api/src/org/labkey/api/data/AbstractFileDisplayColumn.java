@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.element.Input;
@@ -33,8 +34,6 @@ import static org.labkey.api.util.PageFlowUtil.jsString;
 
 /**
  * Provides a consistent UI for both attachment (BLOB) and file link (file system) files
- * User: jeckels
- * Date: Nov 7, 2011
  */
 public abstract class AbstractFileDisplayColumn extends DataColumn
 {
@@ -109,18 +108,18 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
                 // controls whether to render a popup image on hover, otherwise just render an image with a click handler
                 // to navigate to the url
                 if (renderHelper.renderPopupImage())
-                    out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                    PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
                 else
-                    out.write(PageFlowUtil.helpPopup(null, displayName, false, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                    PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
             }
             else
             {
                 if (url != null && thumbnail && MimeMap.DEFAULT.isInlineImageFor(new File(filename)) )
                 {
                     if (renderHelper.renderPopupImage())
-                        out.write(PageFlowUtil.helpPopup(displayName, renderHelper.createPopupImage(), true, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                        PageFlowUtil.popupHelp(HtmlString.unsafe(renderHelper.createPopupImage()), displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
                     else
-                        out.write(PageFlowUtil.helpPopup(null, displayName, false, renderHelper.createThumbnailImage(), 310, renderHelper.createClickScript()));
+                        PageFlowUtil.popupHelp(displayName).link(HtmlString.unsafe(renderHelper.createThumbnailImage())).width(310).script(renderHelper.createClickScript()).appendTo(out);
                 }
                 else
                     out.write(renderHelper.createThumbnailImage());
@@ -204,9 +203,9 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             if (_url != null)
             {
                 sb.append("<img style=\"").
-                        append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
-                        append(PageFlowUtil.filter(_url)).
-                        append("\" />");
+                    append(_popupWidth != null ? "width:" + _popupWidth : "max-width:300px").append("; height:auto;\" src=\"").
+                    append(PageFlowUtil.filter(_url)).
+                    append("\" />");
             }
             return sb.toString();
         }
@@ -269,7 +268,7 @@ public abstract class AbstractFileDisplayColumn extends DataColumn
             else
             {
                 // No existing value, so render just the regular <input type=file> element
-                out.write(input.build().toString());
+                input.appendTo(out);
             }
         }
         else

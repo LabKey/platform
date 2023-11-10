@@ -73,6 +73,7 @@ import org.labkey.api.stats.AnalyticsProvider;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
@@ -187,7 +188,7 @@ public class PageFlowUtil
         xml
     }
 
-    private static final Logger _log = LogManager.getLogger(PageFlowUtil.class);
+    private static final Logger _log = LogHelper.getLogger(PageFlowUtil.class, "HTML validation and file operation errors");
     private static final String _newline = System.getProperty("line.separator");
 
     private static final Pattern urlPatternStart = Pattern.compile("((http|https|ftp|mailto)://\\S+).*");
@@ -207,7 +208,7 @@ public class PageFlowUtil
     }
 
     /**
-     * Whether or not the user has entered the "Page Admin Mode". Used for showing/hiding controls like adding/moving/removing webparts and tabs.
+     * Whether the user has entered the "Page Admin Mode". Used for showing/hiding controls like adding/moving/removing webparts and tabs.
      * @return boolean
      */
     public static boolean isPageAdminMode(ViewContext context)
@@ -975,12 +976,6 @@ public class PageFlowUtil
     /**
      * Sets up the response to stream back a file. The content type is detected by the file contents.
      */
-    @Deprecated //Prefer the Path version
-    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment)
-    {
-        prepareResponseForFile(response, responseHeaders, file.toPath(), asAttachment);
-    }
-
     public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, Path file, boolean asAttachment)
     {
         if (file == null)
@@ -1536,20 +1531,6 @@ public class PageFlowUtil
         if (c == '"')
             return '\'';
         return '"';
-    }
-
-    @Deprecated // use popupHelp(). 5 usages.
-    public static String helpPopup(String title, String helpText, boolean isHtmlHelpText, String linkHtml, int width, @Nullable String onClickScript)
-    {
-        if (null == title && !isHtmlHelpText)
-        {
-            return popupHelp(helpText).link(HtmlString.unsafe(linkHtml)).script(onClickScript).toString();
-        }
-        else
-        {
-            HtmlString helpHtml = isHtmlHelpText ? HtmlString.unsafe(helpText) : HtmlString.unsafe(filter(helpText,true));
-            return popupHelp(helpHtml, title).link(HtmlString.unsafe(linkHtml)).width(width).script(onClickScript).toString();
-        }
     }
 
     public static HelpPopupBuilder popupHelp(@NotNull String helpText)
