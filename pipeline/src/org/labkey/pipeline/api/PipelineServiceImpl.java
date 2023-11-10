@@ -1054,6 +1054,12 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     }
 
     @Override
+    public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName)
+    {
+        return getActivePipelineJobs(u, c, providerName, null);
+    }
+
+    @Override
     public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName, @Nullable ContainerFilter cf)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerName);
