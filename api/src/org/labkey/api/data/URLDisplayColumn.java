@@ -199,7 +199,7 @@ public class URLDisplayColumn extends AbstractFileDisplayColumn
         public boolean renderPopupImage()
         {
             if (_popupIconUrl != null)
-                return _popupIconUrl.trim().length() > 0;
+                return !_popupIconUrl.trim().isEmpty();
             else
                 return _renderPopupImage;
         }
