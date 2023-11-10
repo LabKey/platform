@@ -150,6 +150,7 @@ public interface SampleTypeService
     ExpSampleType getSampleType(@NotNull Container definitionContainer, @NotNull String sampleTypeName);
 
     /** Get the sample type with name at a specific time */
+    @Nullable
     ExpSampleType getEffectiveSampleType(@NotNull Container definitionContainer, @NotNull User user, @NotNull String sampleTypeName, @NotNull Date effectDate, @Nullable ContainerFilter cf);
 
     /**
@@ -229,9 +230,7 @@ public interface SampleTypeService
 
     int recomputeSamplesRollup(Collection<Integer> sampleIds, String sampleTypeMetricUnit, Container container) throws IllegalStateException, SQLException;
 
-    int recomputeSampleTypeRollup(ExpSampleType sampleType, Set<String> parentLsids, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
-
-    int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws IllegalStateException, SQLException;
+    int recomputeSampleTypeRollup(@NotNull ExpSampleType sampleType, Set<Integer> rootRowIds, Set<String> parentNames, Container container) throws IllegalStateException, SQLException;
 
     Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 

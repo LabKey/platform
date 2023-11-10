@@ -99,6 +99,8 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.util.element.Select;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -528,28 +530,20 @@ public class SpecimenController extends SpringActionController
         {
             ActionURL url = ctx.getViewContext().cloneActionURL();
             url.deleteParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
+
             out.write("Hide Previously Requested By ");
-            out.write("<select ");
-            out.write("onchange=\"window.location=");
-            out.write(PageFlowUtil.jsString(url + "&amp;excludeRequestedBySite="));
-            out.write(" + this.options[this.selectedIndex].value;\"");
-            out.write(">");
-            out.write("<option value=''>&lt;Show All&gt;</option>");
+
             String excludeStr = ctx.getRequest().getParameter(SpecimenQueryView.PARAMS.excludeRequestedBySite.name());
             int locationId = null == StringUtils.trimToNull(excludeStr) ? 0 : Integer.parseInt(excludeStr);
             List<LocationImpl> locations = LocationManager.get().getValidRequestingLocations(ctx.getContainer());
-            for (LocationImpl location : locations)
-            {
-                out.write("<option value=\"");
-                out.write(String.valueOf(location.getRowId()));
-                out.write("\"");
-                if (location.getRowId() == locationId)
-                    out.write(" SELECTED ");
-                out.write("\">");
-                out.write(PageFlowUtil.filter(location.getDisplayName()));
-                out.write("</option>");
-            }
-            out.write("</select>");
+
+            new Select.SelectBuilder()
+                .addOption("<Show All>", "")
+                .addOptions(locations.stream().map(location -> new OptionBuilder(location.getDisplayName(), location.getRowId())))
+                .selected(locationId)
+                .onChange("window.location=" + PageFlowUtil.jsString(url + "&excludeRequestedBySite=") + " + this.options[this.selectedIndex].value;")
+                .className(null)
+                .appendTo(out);
         }
     }
 

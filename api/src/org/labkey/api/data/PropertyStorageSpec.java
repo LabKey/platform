@@ -80,12 +80,12 @@ public class PropertyStorageSpec
 
     public static class ForeignKey
     {
-        private String _columnName;
-        private String _schemaName;     // Schema that provides table, even if table is provisioned to live elsewhere
-        private String _tableName;
-        private String _foreignColumnName;
-        private String _domainURI;      // URI of the domain the FK references, if it's provisioned
-        private boolean _isProvisioned;
+        private final String _columnName;
+        private final String _schemaName;     // Schema that provides table, even if table is provisioned to live elsewhere
+        private final String _tableName;
+        private final String _foreignColumnName;
+        private final String _domainURI;      // URI of the domain the FK references, if it's provisioned
+        private final boolean _isProvisioned;
         private TableInfo _tableInfoProvisioned = null;
 
         public ForeignKey(String columnName, String schemaName, String tableName, String foreignColumnName,
@@ -325,7 +325,6 @@ public class PropertyStorageSpec
         return this;
     }
 
-
     public boolean isAutoIncrement()
     {
         return autoIncrement;
@@ -340,7 +339,6 @@ public class PropertyStorageSpec
         this.autoIncrement = autoIncrement;
         return this;
     }
-
 
     /**
      *

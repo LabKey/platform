@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -41,18 +42,23 @@ import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.qc.DataState;
+import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.experiment.api.ExpSampleTypeImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.api.exp.api.SampleTypeDomainKind;
+import org.labkey.experiment.api.SampleTypeServiceImpl;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +72,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     private static final Logger LOG = LogManager.getLogger(ExperimentUpgradeCode.class);
 
     /**
-     * Called from exp-22.003-20.004.sql
+     * Called from exp-22.003-22.004.sql
      */
     public static void addProvisionedSampleName(ModuleContext context)
     {
@@ -85,7 +91,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
-    private static void setSampleName(ExpSampleTypeImpl st)
+    private record ProvisionedSampleTypeContext(DbScope scope, Domain domain, SampleTypeDomainKind kind, SchemaTableInfo provisionedTable) {}
+
+    private static @Nullable ProvisionedSampleTypeContext getProvisionedSampleTypeContext(@NotNull ExpSampleTypeImpl st)
     {
         Domain domain = st.getDomain();
         SampleTypeDomainKind kind = null;
@@ -97,8 +105,18 @@ public class ExperimentUpgradeCode implements UpgradeCode
         {
             // pass
         }
-        if (null == kind || null == kind.getStorageSchemaName())
-            return;
+
+        if (kind == null)
+        {
+            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no domain kind.");
+            return null;
+        }
+        else if (kind.getStorageSchemaName() == null)
+        {
+            // e.g. SpecimenSampleTypeDomainKind is not provisioned
+            LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned storage schema.");
+            return null;
+        }
 
         DbSchema schema = kind.getSchema();
         DbScope scope = kind.getSchema().getScope();
@@ -111,20 +129,32 @@ public class ExperimentUpgradeCode implements UpgradeCode
         if (provisionedTable == null)
         {
             LOG.error("Sample type '" + st.getName() + "' (" + st.getRowId() + ") has no provisioned table.");
-            return;
+            return null;
         }
 
-        ColumnInfo nameCol = provisionedTable.getColumn("name");
+        return new ProvisionedSampleTypeContext(scope, domain, kind, provisionedTable);
+    }
+
+    private static void setSampleName(ExpSampleTypeImpl st)
+    {
+        ProvisionedSampleTypeContext provisionedContext = getProvisionedSampleTypeContext(st);
+        if (provisionedContext == null)
+            return;
+
+        Domain domain = provisionedContext.domain;
+        DbScope scope = provisionedContext.scope;
+        ColumnInfo nameCol = provisionedContext.provisionedTable.getColumn("name");
         if (nameCol == null)
         {
-            PropertyStorageSpec nameProp = kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
+            PropertyStorageSpec nameProp = provisionedContext.kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
             StorageProvisioner.get().addStorageProperties(domain, Arrays.asList(nameProp), true);
             LOG.info("Added 'name' column to sample type '" + st.getName() + "' (" + st.getRowId() + ") provisioned table.");
         }
 
         uniquifySampleNames(st, scope);
 
-        fillSampleName(st, domain, scope);
+        int count = fillSampleName(domain, scope);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
 
         //addIndex
         Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name"))));
@@ -224,7 +254,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     // populate name on provisioned sample tables
-    private static void fillSampleName(ExpSampleTypeImpl st, Domain domain, DbScope scope)
+    private static int fillSampleName(@NotNull Domain domain, @NotNull DbScope scope)
     {
         String tableName = domain.getStorageTableName();
         SQLFragment update = new SQLFragment()
@@ -236,9 +266,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 .append("  WHERE m.cpasType = ?\n").add(domain.getTypeURI())
                 .append(") AS i\n")
                 .append("WHERE i.lsid = ").append(tableName).append(".lsid");
-
-        int count = new SqlExecutor(scope).execute(update);
-        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") updated 'name' column, count=" + count);
+        return new SqlExecutor(scope).execute(update);
     }
 
     /**
@@ -273,6 +301,71 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         return Collections.emptyMap();
     }
+
+    private static List<Integer> getRootLsidsWithAvailableAliquots(String sampleTypeLsid, Container container)
+    {
+        List<Integer> availableSampleStates = new ArrayList<>();
+
+        if (SampleStatusService.get().supportsSampleStatus())
+        {
+            for (DataState state : SampleStatusService.get().getAllProjectStates(container))
+            {
+                if (ExpSchema.SampleStateType.Available.name().equals(state.getStateType()))
+                    availableSampleStates.add(state.getRowId());
+            }
+        }
+
+        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+
+        SQLFragment inner = new SQLFragment("SELECT DISTINCT(rootmateriallsid) FROM ").append(tableInfo, "ali")
+                .append(" WHERE ali.cpastype = ").appendValue(sampleTypeLsid)
+                .append(" AND ali.rootmateriallsid <> ali.lsid ")
+                .append(" AND ali.container = ").appendValue(container)
+                .append(" AND ali.SampleState ").appendInClause(availableSampleStates, tableInfo.getSqlDialect());
+
+        SQLFragment sql = new SQLFragment("SELECT rowid FROM exp.material root WHERE root.lsid IN (")
+                .append(inner)
+                .append(")");
+
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private static List<Integer> getRootSampleIdsWithAliquotVolume(String sampleTypeLsid, Container container)
+    {
+        TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+
+        SQLFragment sql = new SQLFragment("SELECT root.rowId FROM ").append(tableInfo, "root")
+                .append(" WHERE root.cpastype = ").appendValue(sampleTypeLsid)
+                .append(" AND aliquotedfromlsid IS NULL ")
+                .append(" AND aliquotVolume > 0 ")
+                .append(" AND root.container = ").appendValue(container);
+
+        return new SqlSelector(tableInfo.getSchema(), sql).getArrayList(Integer.class);
+    }
+
+    private static int recomputeSampleTypeAvailableAliquotRollup(ExpSampleType sampleType, Container container) throws SQLException
+    {
+        List<Integer> rootSamplesWithAvailableAliquot = getRootLsidsWithAvailableAliquots(sampleType.getLSID(), container);
+        if (rootSamplesWithAvailableAliquot.isEmpty())
+            return 0;
+
+        List<Integer> rootSamplesWithAliquotVolume = getRootSampleIdsWithAliquotVolume(sampleType.getLSID(), container);
+
+        Set<Integer> s1 = new HashSet<>(rootSamplesWithAvailableAliquot);
+        Set<Integer> s2 = new HashSet<>(rootSamplesWithAliquotVolume);
+        s1.retainAll(s2);
+        List<Integer> rootSamplesWithAvailableAliquotVolume = new ArrayList<>(s1);
+
+        // Exposed as "public" only for upgrade. When removing this code make this signature "private".
+        return SampleTypeServiceImpl.get().recomputeSamplesRollup(
+            Collections.emptyList(),
+            rootSamplesWithAvailableAliquot,
+            rootSamplesWithAvailableAliquotVolume,
+            sampleType.getMetricUnit(),
+            container
+        );
+    }
+
     /**
      * Called from exp-23.007-23.008.sql
      */
@@ -296,22 +389,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
                 List<String> sampleTypes = containerSampleTypes.get(containerId);
                 LOG.info("** starting recalculating exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
 
-                try
+                for (String sampleTypeLsid : sampleTypes)
                 {
-                    for (String sampleTypeLsid : sampleTypes)
-                    {
-                        ExpSampleType sampleType = sampleTypeService.getSampleType(sampleTypeLsid);
-                        if (sampleType == null)
-                            continue;
+                    ExpSampleType sampleType = sampleTypeService.getSampleType(sampleTypeLsid);
+                    if (sampleType == null)
+                        continue;
 
-                        int syncedCount = sampleTypeService.recomputeSampleTypeAvailableAliquotRollup(sampleType, container);
-                        if (syncedCount > 0)
-                            LOG.info("*** recalculated aliquotAvailableCount/Volume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
-                    }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeException(e);
+                    int syncedCount = recomputeSampleTypeAvailableAliquotRollup(sampleType, container);
+                    if (syncedCount > 0)
+                        LOG.info("*** recalculated aliquotAvailableCount/Volume for " + syncedCount + " " + sampleType.getName() + " sample(s) in folder: " + container.getPath());
                 }
 
                 LOG.info("** finished cleaning up exp.material.aliquotAvailableCount/Volume in folder: " + container.getPath());
@@ -325,4 +411,73 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
     }
 
+    private static void addRowIdColumn(ExpSampleTypeImpl st)
+    {
+        ProvisionedSampleTypeContext provisionedContext = getProvisionedSampleTypeContext(st);
+        if (provisionedContext == null)
+            return;
+
+        int count = addRowIdColumn(provisionedContext.domain, provisionedContext.scope);
+        LOG.info("Sample type '" + st.getName() + "' (" + st.getRowId() + ") added 'rowId' column, count=" + count);
+    }
+
+    private static int addRowIdColumn(@NotNull Domain domain, @NotNull DbScope scope)
+    {
+        String tableName = domain.getStorageTableName();
+        SQLFragment table = new SQLFragment(SampleTypeDomainKind.PROVISIONED_SCHEMA_NAME).append(".").append(tableName);
+
+        SQLFragment addColumn;
+        SQLFragment update;
+        SQLFragment notNull;
+        if (scope.getSqlDialect().isSqlServer())
+        {
+            addColumn = new SQLFragment("ALTER TABLE ").append(table).append(" ADD rowid INTEGER NULL").appendEOS().append("\n");
+
+            update = new SQLFragment("UPDATE Materialized SET Materialized.rowid = Material.rowid\n")
+                    .append("FROM ").append(table).append(" Materialized\n")
+                    .append("INNER JOIN exp.material Material ON Materialized.lsid = Material.lsid").appendEOS().append("\n");
+
+            notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid INT NOT NULL").appendEOS().append("\n");
+        }
+        else
+        {
+            addColumn = new SQLFragment("ALTER TABLE ").append(table).append(" ADD COLUMN rowid INTEGER").appendEOS().append("\n");
+
+            update = new SQLFragment("UPDATE ")
+                    .append(table).append(" AS st\n")
+                    .append("SET rowid = (SELECT rowid FROM exp.material expmat WHERE st.lsid = expmat.lsid)").appendEOS().append("\n");
+
+            notNull = new SQLFragment("ALTER TABLE ").append(table).append(" ALTER COLUMN rowid SET NOT NULL").appendEOS().append("\n");
+        }
+
+        SQLFragment createIndex = new SQLFragment("CREATE INDEX ").append(tableName).append("_rowid ")
+                .append("ON ").append(table).append(" (rowid)").appendEOS().append("\n");
+
+        new SqlExecutor(scope).execute(addColumn);
+        int count = new SqlExecutor(scope).execute(update);
+        new SqlExecutor(scope).execute(notNull);
+        new SqlExecutor(scope).execute(createIndex);
+
+        return count;
+    }
+
+    /**
+     * Called from exp-23.010-23.011.sql
+     */
+    public static void addRowIdToMaterializedSampleTypes(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            // get all SampleTypes across all containers
+            TableInfo sampleTypeTable = ExperimentServiceImpl.get().getTinfoSampleType();
+            new TableSelector(sampleTypeTable, null, null).stream(MaterialSource.class)
+                    .map(ExpSampleTypeImpl::new)
+                    .forEach(ExperimentUpgradeCode::addRowIdColumn);
+
+            tx.commit();
+        }
+    }
 }
