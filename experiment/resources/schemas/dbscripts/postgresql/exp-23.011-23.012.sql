@@ -36,8 +36,9 @@ DROP TABLE materialroottemp;
 ALTER TABLE exp.material ALTER COLUMN RootMaterialRowId SET NOT NULL;
 
 -- Add FK on "RootMaterialRowId"
-ALTER TABLE exp.material ADD CONSTRAINT FK_Material_RootMaterialRowId
-    FOREIGN KEY (RootMaterialRowId) REFERENCES exp.material (RowId);
+-- See exp-23.012-23.013.sql
+-- ALTER TABLE exp.material ADD CONSTRAINT FK_Material_RootMaterialRowId
+--     FOREIGN KEY (RootMaterialRowId) REFERENCES exp.material (RowId);
 
 -- Remove the "RootMaterialLSID" column
 ALTER TABLE exp.material DROP COLUMN RootMaterialLSID;
