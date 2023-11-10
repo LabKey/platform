@@ -640,14 +640,14 @@ LABKEY.Utils = new function()
                 {
                     if (config.hasOwnProperty(i))
                     {
-                        if (i.toString() != "text" && i.toString() != "class")
+                        if (i.toString() !== "text" && i.toString() !== "class")
                         {
-                            attrs += i.toString() + '=\"' + config[i] + '\" ';
+                            attrs += i.toString() + '=\"' + LABKEY.Utils.encodeHtml(config[i]) + '\" ';
                         }
                     }
                 }
 
-                return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
+                return '<a class="labkey-text-link"' + attrs + '>' + (config.text ? LABKEY.Utils.encodeHtml(config.text) : "") + '</a>';
             }
             throw "Config object not found for textLink.";
         },
