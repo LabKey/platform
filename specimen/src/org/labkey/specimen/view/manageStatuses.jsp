@@ -135,7 +135,7 @@ function showSystemRows(value)
         searches is generally more convenient, but requires the coordinator to watch for abandoned unsubmitted requests.
     </p>
     <label>
-    <input type="checkbox" name="useShoppingCart"<%=checked(settings.isUseShoppingCart())%> onclick='showSystemRows(this.checked);'>
+    <labkey:input formGroup="false" type="checkbox" name="useShoppingCart"  checked="<%=(settings.isUseShoppingCart())%>" onClick='showSystemRows(this.checked);' />
         Allow requests to be built over multiple searches before submission</label><br/>
 
     <br/>

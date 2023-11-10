@@ -859,6 +859,9 @@ public class DavController extends SpringActionController
                 Container c = ContainerManager.resolveContainerPathAlias(getResourcePath().toString());
                 if (null == c)
                     throw x;
+                // NOTE: AppProps.getInstance().getSiteWelcomePageUrlString() is handled before we even get here.  See WebdavServlet.
+                if (c.isRoot())
+                    throw new RedirectException(AppProps.getInstance().getHomePageUrl());
                 throw new RedirectException(c.getStartURL(getUser()));
             }
         }
@@ -871,12 +874,9 @@ public class DavController extends SpringActionController
             if (resource.isCollection() && !allowHtmlListing(getResourcePath()))
             {
                 WebdavResource welcome = welcomePage(getResourcePath());
-                if (null == welcome)
+                if (null == welcome || !welcome.isFile())
                     return notFound(resource.getPath());
-                if (welcome.isFile())
-                    resource = welcome;
-                else
-                    return notFound(resource.getPath());
+                resource = welcome;
             }
             if (!(resource.isCollection() ? resource.canList(getUser(), true) : resource.canRead(getUser(), true)))
                 return unauthorized(resource);
