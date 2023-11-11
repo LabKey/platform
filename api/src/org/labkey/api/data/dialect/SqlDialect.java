@@ -1286,7 +1286,7 @@ public abstract class SqlDialect
             }
         }
 
-        public Properties getConnectionProperties()
+        public @Nullable Properties getConnectionProperties()
         {
             try
             {
@@ -1775,10 +1775,11 @@ public abstract class SqlDialect
         return null;
     }
 
-    // Return count of connections with the specified application name that are using this database
-    public int getApplicationConnectionCount(Connection conn, String database, String applicationName)
+    // Returns SQL that counts connections that are using a specific database and are tagged with a specific application
+    // name. SQL must have two parameter placeholders for database name and application name (in that order).
+    public @Nullable String getApplicationConnectionCountSql()
     {
-        return 0;
+        return null;
     }
 
     public static class DialectTestCase

@@ -72,6 +72,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -306,7 +307,7 @@ public class DbScope
         private final String _driverClassName;
         private final SqlDialect _dialect;
         private final Class<Driver> _driverClass;
-        private final String _applicationName;
+        private final @Nullable String _applicationName;
         private final String _url;
 
         private boolean _logQueries = false;
@@ -411,7 +412,7 @@ public class DbScope
             return _primary;
         }
 
-        public String getApplicationName()
+        public @Nullable String getApplicationName()
         {
             return _applicationName;
         }
@@ -419,17 +420,22 @@ public class DbScope
         // Ensure an application name has been specified for this data source
         private @Nullable String ensureApplicationName()
         {
-            Properties connectionProps = _dsPropertyReader.getConnectionProperties();
-            String paramName = _dialect.getApplicationNameParameter();
             String applicationName = null;
+            Properties connectionProps = _dsPropertyReader.getConnectionProperties();
 
-            if (paramName != null)
+            if (connectionProps != null)
             {
-                applicationName = (String) connectionProps.get(paramName);
-                if (null == applicationName)
+                String paramName = _dialect.getApplicationNameParameter();
+
+                if (paramName != null)
                 {
-                    applicationName = DEFAULT_APPLICATION_NAME;
-                    connectionProps.put(paramName, applicationName);
+                    // TODO: This will always be null. To support custom application names we'll have to parse the parameter from the JDBC URL.
+                    applicationName = connectionProps.getProperty(paramName);
+                    if (null == applicationName)
+                    {
+                        applicationName = DEFAULT_APPLICATION_NAME;
+                        connectionProps.put(paramName, applicationName);
+                    }
                 }
             }
 
@@ -1698,13 +1704,43 @@ public class DbScope
 
                 // Very first connection (and we haven't sent the application name for our connection), so ask the
                 // dialect how to count connections with our database and application name.
-                String dbName = dialect.getDatabaseName(ds.getUrl());
-                int count = dialect.getApplicationConnectionCount(conn, dbName, ds.getApplicationName());
-                if (count > 0)
-                    throw new ConfigurationException("There " + (count > 1 ? "are " : "is ") +
-                        StringUtilsLabKey.pluralize(count, "connection") + " to database \"" + dbName +
-                        "\" with the application name \"" + ds.getApplicationName() + "\"! This likely means another " +
-                        "LabKey Server deployment is already using this database.");
+                String databaseName = dialect.getDatabaseName(ds.getUrl());
+                String applicationName = ds.getApplicationName();
+
+                if (applicationName != null)
+                {
+                    String sql = dialect.getApplicationConnectionCountSql();
+                    assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
+
+                    // Too early to use SqlSelector, since it's the first connection and no DbScopes have been set up.
+                    // Use plain old JDBC to query for other connections with our database and application name.
+                    try (PreparedStatement stmt = conn.prepareStatement(sql))
+                    {
+                        stmt.setString(1, databaseName);
+                        stmt.setString(2, applicationName);
+
+                        try (ResultSet rs = stmt.executeQuery())
+                        {
+                            if (rs.next())
+                            {
+                                int count = rs.getInt(1);
+                                if (count > 0)
+                                    throw new ConfigurationException("There " + (count > 1 ? "are " : "is ") +
+                                        StringUtilsLabKey.pluralize(count, "connection") + " to database \"" +
+                                        databaseName + "\" with the application name \"" + applicationName +
+                                        "\"! This likely means another LabKey Server deployment is already using this database.");
+                            }
+                            else
+                            {
+                                throw new IllegalStateException("Application connection count query returned no rows!");
+                            }
+                        }
+                    }
+                    catch (SQLException e)
+                    {
+                        LOG.warn("Attempt to detect other LabKey Server instances using this database failed: " + e.getMessage());
+                    }
+                }
 
                 return;
             }
@@ -1757,10 +1793,14 @@ public class DbScope
             {
                 info.put("password", reader.getPassword());
             }
-            if (includeApplicationName && dataSource.getApplicationName() != null)
+
+            String parameterName = dataSource.getDialect().getApplicationNameParameter();
+            if (parameterName != null)
             {
-                String parameterName = dataSource.getDialect().getApplicationNameParameter();
-                if (parameterName != null)
+                // On first connection, set to "" to override any application name specified on the JDBC URL
+                if (!includeApplicationName)
+                    info.put(parameterName, "");
+                else if (dataSource.getApplicationName() != null)
                     info.put(parameterName, dataSource.getApplicationName());
             }
         }

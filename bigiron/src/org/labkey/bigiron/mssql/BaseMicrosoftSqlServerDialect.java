@@ -68,13 +68,6 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
-/**
- * User: arauch
- * Date: Dec 28, 2004
- * Time: 8:58:25 AM
- */
-
 // Dialect specifics for Microsoft SQL Server
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
@@ -2437,8 +2430,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public int getApplicationConnectionCount(Connection conn, String database, String applicationName)
+    public @Nullable String getApplicationConnectionCountSql()
     {
-        return new SqlSelector(null, conn, new SQLFragment("SELECT COUNT(*) FROM sys.sysprocesses WHERE DB_NAME(dbid) = ? AND program_name = ?", database, applicationName)).getObject(Integer.class);
+        return "SELECT COUNT(*) FROM sys.sysprocesses WHERE DB_NAME(dbid) = ? AND program_name = ?";
     }
 }

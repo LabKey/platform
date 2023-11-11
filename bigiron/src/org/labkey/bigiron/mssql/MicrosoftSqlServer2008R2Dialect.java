@@ -19,9 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 
-/**
- * Created by adam on 12/4/2015.
- */
 public class MicrosoftSqlServer2008R2Dialect extends BaseMicrosoftSqlServerDialect
 {
     // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
