@@ -150,7 +150,8 @@
         descriptionCell.innerHTML = '<input type="text" name="newDescriptions" size="50"></td>';
         publicDataCell.innerHTML = '<input type="checkbox" value="' + numberOfRows + '" id="' + numberOfRows +'_public" name="newPublicData" CHECKED>';
         publicDataCell.style.textAlign = 'center';
-        inUseCell.innerHTML = '<span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span> <span style="color:red;" class="fa fa-times" onclick="deleteRow(this)"></span>';
+        inUseCell.innerHTML = '<span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span> <span style="color:red;" class="fa fa-times"></span>';
+        inUseCell.childNodes[2]['onclick'] = function(){ deleteRow(this) };
     }
 
     function deleteRow(deleteButton) {
