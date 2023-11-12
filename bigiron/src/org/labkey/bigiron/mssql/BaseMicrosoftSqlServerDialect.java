@@ -2430,6 +2430,18 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
+    public @Nullable String getApplicationNameSql()
+    {
+        return "SELECT APP_NAME()";
+    }
+
+    @Override
+    public @Nullable String getDefaultApplicationName()
+    {
+        return "Microsoft JDBC Driver for SQL Server";
+    }
+
+    @Override
     public @Nullable String getApplicationConnectionCountSql()
     {
         return "SELECT COUNT(*) FROM sys.sysprocesses WHERE DB_NAME(dbid) = ? AND program_name = ?";

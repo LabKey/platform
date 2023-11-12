@@ -1775,6 +1775,17 @@ public abstract class SqlDialect
         return null;
     }
 
+    // Returns SQL that queries the current connections application name
+    public @Nullable String getApplicationNameSql()
+    {
+        return null;
+    }
+
+    public @Nullable String getDefaultApplicationName()
+    {
+        return null;
+    }
+
     // Returns SQL that counts connections that are using a specific database and are tagged with a specific application
     // name. SQL must have two parameter placeholders for database name and application name (in that order).
     public @Nullable String getApplicationConnectionCountSql()

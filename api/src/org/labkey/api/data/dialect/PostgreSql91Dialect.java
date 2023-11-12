@@ -1918,6 +1918,18 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public @Nullable String getApplicationNameSql()
+    {
+        return "SELECT current_setting('application_name')";
+    }
+
+    @Override
+    public @Nullable String getDefaultApplicationName()
+    {
+        return "PostgreSQL JDBC Driver";
+    }
+
+    @Override
     public @Nullable String getApplicationConnectionCountSql()
     {
         return "SELECT COUNT(*) FROM pg_stat_activity WHERE datname = ? AND application_name = ?";
