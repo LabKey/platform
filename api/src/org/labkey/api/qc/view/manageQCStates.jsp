@@ -138,24 +138,24 @@
 </labkey:form>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function addRow() {
-        var table = document.getElementById("qcStatesTable");
-        var numberOfRows = table.rows.length;  // we'll use this as an ID later too
-        var newRow = table.insertRow(numberOfRows);
-        var nameCell = newRow.insertCell(newRow.cells.length);
-        var descriptionCell = newRow.insertCell(newRow.cells.length);
-        var publicDataCell = newRow.insertCell(newRow.cells.length);
-        var inUseCell = newRow.insertCell(newRow.cells.length);
+        const table = document.getElementById("qcStatesTable");
+        const numberOfRows = table.rows.length;  // we'll use this as an ID later too
+        const newRow = table.insertRow(numberOfRows);
+        const nameCell = newRow.insertCell(newRow.cells.length);
+        const descriptionCell = newRow.insertCell(newRow.cells.length);
+        const publicDataCell = newRow.insertCell(newRow.cells.length);
+        const inUseCell = newRow.insertCell(newRow.cells.length);
 
         nameCell.innerHTML = '<input type="hidden" name="newIds" value="' + numberOfRows + '"><input type="text" name="newLabels" size="30">';
         descriptionCell.innerHTML = '<input type="text" name="newDescriptions" size="50"></td>';
         publicDataCell.innerHTML = '<input type="checkbox" value="' + numberOfRows + '" id="' + numberOfRows +'_public" name="newPublicData" CHECKED>';
         publicDataCell.style.textAlign = 'center';
         inUseCell.innerHTML = '<span style="color:black;padding-left: 30%;" class="fa fa-circle-o"></span> <span style="color:red;" class="fa fa-times"></span>';
-        inUseCell.childNodes[2]['onclick'] = function(){ deleteRow(this) };
+        inUseCell.childNodes[2]['onclick'] = deleteRow;
     }
 
-    function deleteRow(deleteButton) {
-        var row = deleteButton.parentNode.parentNode;
+    function deleteRow(event) {
+        const row = event.target.parentNode.parentNode;
         row.parentNode.removeChild(row);
     }
 </script>
