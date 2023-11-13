@@ -17,6 +17,7 @@ package org.labkey.bigiron.mysql;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DatabaseTableType;
@@ -46,11 +47,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: adam
- * Date: Aug 17, 2010
- * Time: 3:53:40 PM
- */
 public class MySqlDialect extends SimpleSqlDialect
 {
     @Override
@@ -310,8 +306,14 @@ public class MySqlDialect extends SimpleSqlDialect
     protected String getExplainPrefix(ExecutionPlanType type)
     {
         // Note: This is not very useful because the query returns multiple columns, most of which we ignore. But
-        // MySQL 5.7 and before doesn't support FORMAT = TREE. We could concatenate the columns ourselves, but it's
+        // MySQL 5.7 and before don't support FORMAT = TREE. We could concatenate the columns ourselves, but it's
         // not worth the bother for unsupported versions of MySQL.
         return "EXPLAIN ";
+    }
+
+    @Override
+    public @Nullable String getApplicationNameParameter()
+    {
+        return "ApplicationName";
     }
 }

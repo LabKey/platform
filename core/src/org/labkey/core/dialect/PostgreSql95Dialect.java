@@ -21,8 +21,6 @@ import java.util.Set;
 
 /**
  * PostgreSQL 9.5 is no longer supported, however, we keep this class to track changes we implemented specifically for this version.
- *
- * Created by adam on 7/24/2015.
  */
 abstract class PostgreSql95Dialect extends PostgreSql94Dialect
 {

@@ -22,10 +22,6 @@ import java.util.Set;
 
 /*
  * PostgreSQL 9.3 is no longer supported, however, we keep this class to track changes we implemented specifically for this version.
- *
- * User: adam
- * Date: Jun 14, 2013
- * Time: 8:50:00 AM
  */
 abstract class PostgreSql93Dialect extends PostgreSql92Dialect
 {

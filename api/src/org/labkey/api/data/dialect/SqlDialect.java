@@ -44,6 +44,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -62,6 +63,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -1106,7 +1108,7 @@ public abstract class SqlDialect
     //
     // Currently, JdbcHelper only finds the database name. It could be extended if we require querying other components or if
     // replacement/reassembly becomes necessary.
-    public String getDatabaseName(DataSourceProperties props) throws ServletException
+    public String getDatabaseName(DataSourcePropertyReader props) throws ServletException
     {
         try
         {
@@ -1184,14 +1186,14 @@ public abstract class SqlDialect
 
     // Trying to be DataSource-implementation agnostic here. DataSource interface doesn't provide access to any of
     // these properties, but we don't want to cast to a specific implementation class, so use reflection to get them.
-    public static class DataSourceProperties
+    public static class DataSourcePropertyReader
     {
         private final String _dsName;
         private final DataSource _ds;
 
-        public DataSourceProperties(String dsName, DataSource ds)
+        public DataSourcePropertyReader(String dsName, DataSource ds)
         {
-            _dsName = dsName;
+            _dsName = dsName; // Used only for error logging
             _ds = ds;
         }
 
@@ -1213,28 +1215,20 @@ public abstract class SqlDialect
             }
         }
 
-        public String getDataSourceName()
-        {
-            return _dsName;
-        }
-
         public String getUrl() throws ServletException
         {
             return getProperty("getUrl");
         }
-
 
         public String getDriverClassName() throws ServletException
         {
             return getProperty("getDriverClassName");
         }
 
-
         public String getUsername() throws ServletException
         {
             return getProperty("getUsername");
         }
-
 
         public String getPassword() throws ServletException
         {
@@ -1288,6 +1282,21 @@ public abstract class SqlDialect
             catch (ServletException e)
             {
                 LOG.error("Could not extract connection pool max wait (ms) from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+
+        public @Nullable Properties getConnectionProperties()
+        {
+            try
+            {
+                Method method = _ds.getClass().getDeclaredMethod("getConnectionProperties");
+                method.setAccessible(true);
+                return (Properties) method.invoke(_ds);
+            }
+            catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e)
+            {
+                LOG.error("Could not extract connection properties from data source \"" + _dsName + "\"");
                 return null;
             }
         }
@@ -1761,6 +1770,28 @@ public abstract class SqlDialect
         return true;
     }
 
+    public @Nullable String getApplicationNameParameter()
+    {
+        return null;
+    }
+
+    // Returns SQL that queries the current connections application name
+    public @Nullable String getApplicationNameSql()
+    {
+        return null;
+    }
+
+    public @Nullable String getDefaultApplicationName()
+    {
+        return null;
+    }
+
+    // Returns SQL that counts connections that are using a specific database and are tagged with a specific application
+    // name. SQL must have two parameter placeholders for database name and application name (in that order).
+    public @Nullable String getApplicationConnectionCountSql()
+    {
+        return null;
+    }
 
     public static class DialectTestCase
     {

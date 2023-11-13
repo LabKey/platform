@@ -160,7 +160,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     // SAS has no database name, so override both getDatabaseName() methods and return null.
 
     @Override
-    public String getDatabaseName(DataSourceProperties props)
+    public String getDatabaseName(DataSourcePropertyReader props)
     {
         return null;
     }

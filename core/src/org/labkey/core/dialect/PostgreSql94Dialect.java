@@ -21,10 +21,6 @@ import java.util.Set;
 
 /**
  * PostgreSQL 9.4 is no longer supported, however, we keep this class to track changes we implemented specifically for this version.
- *
- * User: adam
- * Date: 8/5/2014
- * Time: 10:49 PM
  */
 abstract class PostgreSql94Dialect extends PostgreSql93Dialect
 {
