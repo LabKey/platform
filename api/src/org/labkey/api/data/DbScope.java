@@ -1634,10 +1634,16 @@ public class DbScope
                 addScope(dsName, ds);
             }
 
-            _labkeyScope = getDbScope(labkeyDsName, dbScope -> detectOtherLabKeyInstances(dbScope));
+            _labkeyScope = getDbScope(labkeyDsName, DbScope::detectOtherLabKeyInstances);
 
             if (null == _labkeyScope)
-                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
+            {
+                ConfigurationException ce = new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
+                Throwable cause = DbScope.getDataSourceFailure(labkeyDsName);
+                if (cause != null)
+                    ce.initCause(cause);
+                throw ce;
+            }
 
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }
