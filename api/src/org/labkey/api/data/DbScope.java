@@ -1340,7 +1340,7 @@ public class DbScope
     }
 
     @NotNull
-    // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
+    // Load metadata from database and overlay schema.xml, if DbSchemaType requires it
     protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException
     {
         LOG.debug("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
@@ -1542,6 +1542,8 @@ public class DbScope
         }
     }
 
+    private static String _applicationName = null;
+
     // Enumerate each jdbc DataSource in labkey.xml and initialize them
     public static void initializeDataSources()
     {
@@ -1578,7 +1580,7 @@ public class DbScope
             // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
             LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
             labkeyDsName = primaryDS.getDsName();
-            detectOtherLabKeyInstances(primaryDS, ensureDatabase(primaryDS));
+            _applicationName = ensureDatabase(primaryDS);
         }
         catch (Exception e)
         {
@@ -1632,7 +1634,7 @@ public class DbScope
                 addScope(dsName, ds);
             }
 
-            _labkeyScope = getDbScope(labkeyDsName);
+            _labkeyScope = getDbScope(labkeyDsName, dbScope -> detectOtherLabKeyInstances(dbScope));
 
             if (null == _labkeyScope)
                 throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
@@ -1717,15 +1719,16 @@ public class DbScope
     }
 
     // Called on primary data source only
-    private static void detectOtherLabKeyInstances(LabKeyDataSource ds, String applicationName)
+    private static void detectOtherLabKeyInstances(DbScope primaryScope)
     {
-        assert applicationName != null;
+        assert _applicationName != null;
 
-        // Application name should be set on this connection in both the default and custom cases
-        try (Connection conn = getRawConnection(ds.getUrl(), ds))
+        // First pooled connection on the primary scope. Application name should be set on this connection in both the
+        // default and custom cases
+        try (Connection conn = primaryScope.getConnection())
         {
-            SqlDialect dialect = ds.getDialect();
-            String databaseName = dialect.getDatabaseName(ds.getUrl());
+            SqlDialect dialect = primaryScope.getSqlDialect();
+            String databaseName = primaryScope.getDatabaseName();
             String sql = dialect.getApplicationConnectionCountSql();
             assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
 
@@ -1733,7 +1736,7 @@ public class DbScope
             try (PreparedStatement stmt = conn.prepareStatement(sql))
             {
                 stmt.setString(1, databaseName);
-                stmt.setString(2, applicationName);
+                stmt.setString(2, _applicationName);
 
                 try (ResultSet rs = stmt.executeQuery())
                 {
@@ -1743,10 +1746,10 @@ public class DbScope
                         if (count > 0)
                             throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
                                 StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
-                                databaseName + "\" with the application name \"" + applicationName +
+                                databaseName + "\" with the application name \"" + _applicationName +
                                 "\"! This likely means another LabKey Server instance is already using this database.");
                         else if (count < 0)
-                            LOG.warn("Expected one connection with the application name \"" + applicationName + "\", but saw " + count + 1 + ".");
+                            LOG.warn("Expected one connection with the application name \"" + _applicationName + "\", but saw " + count + 1 + ".");
                     }
                     else
                     {
@@ -1755,7 +1758,7 @@ public class DbScope
                 }
             }
         }
-        catch (SQLException | ServletException e)
+        catch (SQLException e)
         {
             LOG.warn("Attempt to detect other LabKey Server instances using this database failed", e);
         }
@@ -1912,6 +1915,12 @@ public class DbScope
     @Nullable
     public static DbScope getDbScope(String dsName)
     {
+        return getDbScope(dsName, DbScopeLoader.NO_OP_CONSUMER);
+    }
+
+    @Nullable
+    public static DbScope getDbScope(String dsName, Consumer<DbScope> firstConnectionConsumer)
+    {
         DbScopeLoader loader;
 
         synchronized (_scopeLoaders)
@@ -1919,7 +1928,7 @@ public class DbScope
             loader = _scopeLoaders.get(dsName);
         }
 
-        return null != loader ? loader.get() : null;
+        return null != loader ? loader.get(firstConnectionConsumer) : null;
     }
 
     private static @NotNull Collection<DbScopeLoader> getLoaders()
