@@ -72,7 +72,7 @@ configurations {
 sourceSets {
   main {
     java {
-      srcDirs = ["src", "gwtsrc", "$project.buildDir/xb"]
+      srcDirs = ["src", "gwtsrc", "${BuildUtils.getBuildDirPath(project)}/xb"]
     }
     // TODO move resources files into resources directory to avoid this overlap
     resources {
