@@ -1757,7 +1757,7 @@ public class DbScope
         }
         catch (SQLException | ServletException e)
         {
-            LOG.warn("Attempt to detect other LabKey Server instances using this database failed: " + e.getMessage());
+            LOG.warn("Attempt to detect other LabKey Server instances using this database failed", e);
         }
     }
 
@@ -1776,6 +1776,7 @@ public class DbScope
                 if (rs.next())
                 {
                     applicationName = rs.getString(1);
+                    assert applicationName != null;
                     String message = "Application name detected on first database connection: \"" + applicationName + "\"";
 
                     // If connection shows the default application name (i.e., application name is not set on the JDBC URL)
