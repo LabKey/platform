@@ -874,7 +874,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
 
     @Override
-    public SQLFragment getVersionUpdateExpression()
+    public @Nullable SQLFragment getVersionUpdateExpression()
     {
         if (JdbcType.TIMESTAMP == getJdbcType())
         {

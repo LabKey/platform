@@ -238,7 +238,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
-    public SQLFragment getVersionUpdateExpression()
+    public @Nullable SQLFragment getVersionUpdateExpression()
     {
         return delegate.getVersionUpdateExpression();
     }

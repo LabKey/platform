@@ -211,7 +211,7 @@ public interface ColumnInfo extends ColumnRenderProperties
      */
     boolean isVersionColumn();
 
-    SQLFragment getVersionUpdateExpression();
+    @Nullable SQLFragment getVersionUpdateExpression();
 
     @Override
     String getInputType();
