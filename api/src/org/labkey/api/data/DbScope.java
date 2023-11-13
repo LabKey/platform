@@ -1729,45 +1729,32 @@ public class DbScope
     {
         assert _applicationName != null;
 
-        // First pooled connection on the primary scope. Application name should be set on this connection in both the
-        // default and custom cases
-        try (Connection conn = primaryScope.getConnection())
+        SqlDialect dialect = primaryScope.getSqlDialect();
+        String databaseName = primaryScope.getDatabaseName();
+        String sql = dialect.getApplicationConnectionCountSql();
+        assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
+        int count;
+
+        try
         {
-            SqlDialect dialect = primaryScope.getSqlDialect();
-            String databaseName = primaryScope.getDatabaseName();
-            String sql = dialect.getApplicationConnectionCountSql();
-            assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
-
-            // Too early to use SqlSelector, since no DbScopes have been set up.
-            try (PreparedStatement stmt = conn.prepareStatement(sql))
-            {
-                stmt.setString(1, databaseName);
-                stmt.setString(2, _applicationName);
-
-                try (ResultSet rs = stmt.executeQuery())
-                {
-                    if (rs.next())
-                    {
-                        int count = rs.getInt(1) - 1; // Exclude this connection
-                        if (count > 0)
-                            throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
-                                StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
-                                databaseName + "\" with the application name \"" + _applicationName +
-                                "\"! This likely means another LabKey Server instance is already using this database.");
-                        else if (count < 0)
-                            LOG.warn("Expected one connection with the application name \"" + _applicationName + "\", but saw " + count + 1 + ".");
-                    }
-                    else
-                    {
-                        throw new IllegalStateException("Application connection count query returned no rows!");
-                    }
-                }
-            }
+            // This creates the first pooled connection on the primary scope. Application name should be set on this
+            // connection in both the default and custom cases.
+            SqlSelector selector = new SqlSelector(primaryScope, new SQLFragment(sql, databaseName, _applicationName));
+            count = selector.getObject(Integer.class) - 1; // Exclude this connection from the count
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             LOG.warn("Attempt to detect other LabKey Server instances using this database failed", e);
+            return;
         }
+
+        if (count > 0)
+            throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
+                StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
+                databaseName + "\" with the application name \"" + _applicationName +
+                "\"! This likely means another LabKey Server instance is already using this database.");
+        else if (count < 0)
+            LOG.warn("Expected one connection with the application name \"" + _applicationName + "\", but saw " + count + 1 + ".");
     }
 
     // It's too early to use SqlSelector since DbScopes haven't been set up yet, so use vanilla JDBC
