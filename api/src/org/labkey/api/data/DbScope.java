@@ -1340,7 +1340,7 @@ public class DbScope
     }
 
     @NotNull
-    // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
+    // Load metadata from database and overlay schema.xml, if DbSchemaType requires it
     protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException
     {
         LOG.debug("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
@@ -1542,6 +1542,8 @@ public class DbScope
         }
     }
 
+    private static String _applicationName = null;
+
     // Enumerate each jdbc DataSource in labkey.xml and initialize them
     public static void initializeDataSources()
     {
@@ -1578,7 +1580,7 @@ public class DbScope
             // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
             LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
             labkeyDsName = primaryDS.getDsName();
-            detectOtherLabKeyInstances(primaryDS, ensureDatabase(primaryDS));
+            _applicationName = ensureDatabase(primaryDS);
         }
         catch (Exception e)
         {
@@ -1632,10 +1634,16 @@ public class DbScope
                 addScope(dsName, ds);
             }
 
-            _labkeyScope = getDbScope(labkeyDsName);
+            _labkeyScope = getDbScope(labkeyDsName, DbScope::detectOtherLabKeyInstances);
 
             if (null == _labkeyScope)
-                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
+            {
+                ConfigurationException ce = new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
+                Throwable cause = DbScope.getDataSourceFailure(labkeyDsName);
+                if (cause != null)
+                    ce.initCause(cause);
+                throw ce;
+            }
 
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }
@@ -1717,48 +1725,36 @@ public class DbScope
     }
 
     // Called on primary data source only
-    private static void detectOtherLabKeyInstances(LabKeyDataSource ds, String applicationName)
+    private static void detectOtherLabKeyInstances(DbScope primaryScope)
     {
-        assert applicationName != null;
+        assert _applicationName != null;
 
-        // Application name should be set on this connection in both the default and custom cases
-        try (Connection conn = getRawConnection(ds.getUrl(), ds))
+        SqlDialect dialect = primaryScope.getSqlDialect();
+        String databaseName = primaryScope.getDatabaseName();
+        String sql = dialect.getApplicationConnectionCountSql();
+        assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
+        int count;
+
+        try
         {
-            SqlDialect dialect = ds.getDialect();
-            String databaseName = dialect.getDatabaseName(ds.getUrl());
-            String sql = dialect.getApplicationConnectionCountSql();
-            assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
-
-            // Too early to use SqlSelector, since no DbScopes have been set up.
-            try (PreparedStatement stmt = conn.prepareStatement(sql))
-            {
-                stmt.setString(1, databaseName);
-                stmt.setString(2, applicationName);
-
-                try (ResultSet rs = stmt.executeQuery())
-                {
-                    if (rs.next())
-                    {
-                        int count = rs.getInt(1) - 1; // Exclude this connection
-                        if (count > 0)
-                            throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
-                                StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
-                                databaseName + "\" with the application name \"" + applicationName +
-                                "\"! This likely means another LabKey Server instance is already using this database.");
-                        else if (count < 0)
-                            LOG.warn("Expected one connection with the application name \"" + applicationName + "\", but saw " + count + 1 + ".");
-                    }
-                    else
-                    {
-                        throw new IllegalStateException("Application connection count query returned no rows!");
-                    }
-                }
-            }
+            // This creates the first pooled connection on the primary scope. Application name should be set on this
+            // connection in both the default and custom cases.
+            SqlSelector selector = new SqlSelector(primaryScope, new SQLFragment(sql, databaseName, _applicationName));
+            count = selector.getObject(Integer.class) - 1; // Exclude this connection from the count
         }
-        catch (SQLException | ServletException e)
+        catch (Exception e)
         {
             LOG.warn("Attempt to detect other LabKey Server instances using this database failed", e);
+            return;
         }
+
+        if (count > 0)
+            throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
+                StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
+                databaseName + "\" with the application name \"" + _applicationName +
+                "\"! This likely means another LabKey Server instance is already using this database.");
+        else if (count < 0)
+            LOG.warn("Expected one connection with the application name \"" + _applicationName + "\", but saw " + count + 1 + ".");
     }
 
     // It's too early to use SqlSelector since DbScopes haven't been set up yet, so use vanilla JDBC
@@ -1912,6 +1908,12 @@ public class DbScope
     @Nullable
     public static DbScope getDbScope(String dsName)
     {
+        return getDbScope(dsName, DbScopeLoader.NO_OP_CONSUMER);
+    }
+
+    @Nullable
+    public static DbScope getDbScope(String dsName, Consumer<DbScope> firstConnectionConsumer)
+    {
         DbScopeLoader loader;
 
         synchronized (_scopeLoaders)
@@ -1919,7 +1921,7 @@ public class DbScope
             loader = _scopeLoaders.get(dsName);
         }
 
-        return null != loader ? loader.get() : null;
+        return null != loader ? loader.get(firstConnectionConsumer) : null;
     }
 
     private static @NotNull Collection<DbScopeLoader> getLoaders()

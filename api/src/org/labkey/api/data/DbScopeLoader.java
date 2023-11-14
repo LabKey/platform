@@ -9,6 +9,7 @@ import org.labkey.api.util.logging.LogHelper;
 
 import javax.sql.DataSource;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Holds a data source's configuration information, attempts to connect to the corresponding database when requested,
@@ -56,7 +57,14 @@ class DbScopeLoader
 
     private final Object LOCK = new Object();
 
+    static final Consumer<DbScope> NO_OP_CONSUMER = dbScope -> {};
+
     @Nullable DbScope get()
+    {
+        return get(NO_OP_CONSUMER);
+    }
+
+    @Nullable DbScope get(Consumer<DbScope> firstConnectionConsumer)
     {
         DbScope scope = _dbScopeRef.get();
 
@@ -72,6 +80,7 @@ class DbScopeLoader
                     try
                     {
                         scope = new DbScope(this);
+                        firstConnectionConsumer.accept(scope);
                         scope.getSqlDialect().prepare(scope);
                     }
                     catch (Throwable t)
