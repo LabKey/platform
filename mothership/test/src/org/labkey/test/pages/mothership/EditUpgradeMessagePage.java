@@ -19,7 +19,6 @@ import org.labkey.test.Locator;
 import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.components.html.Input;
-import org.labkey.test.selenium.LazyWebElement;
 import org.labkey.test.util.mothership.MothershipHelper;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -42,28 +41,70 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
         return new EditUpgradeMessagePage(driver.getDriver());
     }
 
-    public Input currentRevision()
+    public String getCurrentBuildDate()
     {
-        return elementCache().currentRevisionInput;
+        return elementCache().currentBuildDateInput.get();
     }
 
-    public Input message()
+    public EditUpgradeMessagePage setCurrentBuildDate(String buildDate)
     {
-        return elementCache().messageTextArea;
+        elementCache().currentBuildDateInput.set(buildDate);
+        return this;
     }
 
-    public Input createIssueURL()
+    /*
+        gets the current upgrade message textarea's content
+     */
+    public String getMessage()
     {
-        return elementCache().createIssueURLInput;
+        return elementCache().messageTextArea.get();
     }
 
-    public Input issuesContainer()
+    public EditUpgradeMessagePage setMessage(String message)
     {
-        return elementCache().issuesContainerInput;
+        elementCache().messageTextArea.set(message);
+        return this;
+    }
+
+    /*
+        gets the current marketing message textarea's content
+     */
+    public String getMarketingMessage()
+    {
+        return elementCache().marketingMessageTextArea.get();
+    }
+
+    public EditUpgradeMessagePage setMarketingMessage(String marketingMessage)
+    {
+        elementCache().marketingMessageTextArea.setValue(marketingMessage);
+        return this;
+    }
+
+    public String getCreateIssueURL()
+    {
+        return elementCache().createIssueURLInput.get();
+    }
+
+    public EditUpgradeMessagePage setCreateIssueURL(String createIssueURL)
+    {
+        elementCache().createIssueURLInput.set(createIssueURL);
+        return this;
+    }
+
+    public String getIssuesContainer()
+    {
+        return elementCache().issuesContainerInput.get();
+    }
+
+    public EditUpgradeMessagePage setIssuesContainer(String issuesContainerPath)
+    {
+        elementCache().issuesContainerInput.set(issuesContainerPath);
+        return this;
     }
 
     public ShowExceptionsPage save()
     {
+        sleep(1000);    // give time for set or clear actions to process
         clickAndWait(elementCache().saveButton);
         return new ShowExceptionsPage(getDriver());
     }
@@ -76,10 +117,11 @@ public class EditUpgradeMessagePage extends BaseMothershipPage<EditUpgradeMessag
 
     protected class ElementCache extends BaseMothershipPage.ElementCache
     {
-        Input currentRevisionInput = new Input(new LazyWebElement(Locator.name("currentRevision"), this), getDriver());
-        Input messageTextArea = new Input(new LazyWebElement(Locator.name("message"), this), getDriver());
-        Input createIssueURLInput = new Input(new LazyWebElement(Locator.name("createIssueURL"), this), getDriver());
-        Input issuesContainerInput = new Input(new LazyWebElement(Locator.name("issuesContainer"), this), getDriver());
-        WebElement saveButton = new LazyWebElement(Locator.lkButton("Save"), this);
+        Input currentBuildDateInput = new Input(Locator.name("currentBuildDate").findWhenNeeded(this), getDriver());
+        Input messageTextArea = new Input(Locator.name("message").findWhenNeeded(this), getDriver());
+        Input createIssueURLInput = new Input(Locator.name("createIssueURL").findWhenNeeded(this), getDriver());
+        Input issuesContainerInput = new Input(Locator.name("issuesContainer").findWhenNeeded(this), getDriver());
+        Input marketingMessageTextArea = new Input(Locator.name("marketingMessage").findWhenNeeded(this), getDriver());
+        WebElement saveButton = Locator.lkButton("Save").findWhenNeeded( this);
     }
 }
