@@ -1420,6 +1420,7 @@ public class ExpDataIterators
                 catch (ValidationException e)
                 {
                     getErrors().addRowError(e);
+                    throw getErrors();
                 }
             }
             return hasNext;

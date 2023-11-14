@@ -48,6 +48,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.test.TestTimeout;
@@ -414,7 +415,7 @@ public class LineagePerfTest extends Assert
         return Pair.of(st, data);
     }
 
-    private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleType st, ExpData firstData) throws ExperimentException
+    private void lineageQueries(String prefix, CPUTimer lineageQuery, CPUTimer lineageGraph, CPUTimer insertMoreTimer, ExpSampleType st, ExpData firstData) throws ExperimentException, ValidationException
     {
         // parse the query once
         final StringBuilder sql = new StringBuilder()

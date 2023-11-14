@@ -6827,7 +6827,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException
+    public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException
     {
         return derive(inputMaterials, Collections.emptyMap(), outputMaterials, Collections.emptyMap(), info, log);
     }
@@ -6869,7 +6869,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException
+    public void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException
     {
         final int MAX_RUNS_IN_BATCH = 1000;
         int countD = 0;
@@ -6919,7 +6919,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             transaction.commit();
         }
-        catch (SQLException | ValidationException e)
+        catch (SQLException e)
         {
             throw new ExperimentException(e);
         }
@@ -7377,7 +7377,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     public ExpRun derive(@NotNull Map<? extends ExpMaterial, String> inputMaterials, @NotNull Map<? extends ExpData, String> inputDatas,
                                 @NotNull Map<ExpMaterial, String> outputMaterials, @NotNull Map<ExpData, String> outputDatas,
                                 @NotNull ViewBackgroundInfo info, @NotNull Logger log)
-            throws ExperimentException
+            throws ExperimentException, ValidationException
     {
         ExpRun run = createRun(inputMaterials, inputDatas, outputMaterials, outputDatas,info);
         return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas,
@@ -7385,28 +7385,28 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     private ExpRunImpl createRun(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
-                         Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info) throws ExperimentException
+                         Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, ViewBackgroundInfo info) throws ExperimentException, ValidationException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
-            throw new ExperimentException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
+            throw new ValidationException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root.");
 
         if (outputDatas.isEmpty() && outputMaterials.isEmpty())
-            throw new IllegalArgumentException("You must derive at least one child data or material");
+            throw new ValidationException("You must derive at least one child data object or sample.");
 
         if (inputDatas.isEmpty() && inputMaterials.isEmpty())
-            throw new IllegalArgumentException("You must derive from at least one parent data or material");
+            throw new ValidationException("You must derive from at least one parent data object or sample.");
 
         for (ExpData expData : inputDatas.keySet())
         {
             if (outputDatas.containsKey(expData))
-                throw new ExperimentException("The data " + expData.getName() + " cannot be an input to its own derivation.");
+                throw new ValidationException("The data object " + expData.getName() + " cannot be an input to its own derivation.");
         }
 
         for (ExpMaterial expMaterial : inputMaterials.keySet())
         {
             if (outputMaterials.containsKey(expMaterial))
-                throw new ExperimentException("The material " + expMaterial.getName() + " cannot be an input to its own derivation.");
+                throw new ValidationException("The sample " + expMaterial.getName() + " cannot be an input to its own derivation.");
         }
 
         ExpProtocol protocol = ensureSampleDerivationProtocol(info.getUser());
@@ -7454,20 +7454,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return name.toString();
     }
 
-    public ExpRunImpl createAliquotRun(ExpMaterial parent, Collection<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException
+    public ExpRunImpl createAliquotRun(ExpMaterial parent, Collection<ExpMaterial> aliquots, ViewBackgroundInfo info) throws ExperimentException, ValidationException
     {
         PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
         if (pipeRoot == null || !pipeRoot.isValid())
-            throw new ExperimentException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
+            throw new ValidationException("The child folder, " + info.getContainer().getPath() + ", must have a valid pipeline root");
 
         if (aliquots == null || aliquots.isEmpty())
-            throw new IllegalArgumentException("You must create at least one aliquot");
+            throw new ValidationException("You must create at least one aliquot.");
 
         if (parent == null)
-            throw new IllegalArgumentException("You must create aliquot from a parent material or aliquot");
+            throw new ValidationException("You must create aliquot from a parent sample or aliquot");
 
         if (aliquots.contains(parent))
-            throw new ExperimentException("The material " + parent.getName() + " cannot be its own aliquot.");
+            throw new ValidationException("The sample " + parent.getName() + " cannot be its own aliquot.");
 
         ExpProtocol protocol = ensureSampleAliquotProtocol(info.getUser());
         ExpRunImpl run = createExperimentRun(info.getContainer(), getAliquotRunName(parent, aliquots.size()));
@@ -9152,8 +9152,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
-            // create a new derivation run for the data that are moving
-            expService.derive(run.getMaterialInputs(), run.getDataInputs(), Collections.emptyMap(), movingOutputsMap, targetInfo, LOG);
+            try
+            {
+                // create a new derivation run for the data that are moving
+                expService.derive(run.getMaterialInputs(), run.getDataInputs(), Collections.emptyMap(), movingOutputsMap, targetInfo, LOG);
+            }
+            catch (ValidationException e)
+            {
+                BatchValidationException errors = new BatchValidationException();
+                errors.addRowError(e);
+                throw errors;
+            }
             // Update the run for the data that have stayed behind. Change the name and remove the moved data as outputs
             run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), run.getMaterialOutputs().size(), numStaying));
 
