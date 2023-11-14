@@ -14,20 +14,23 @@ import org.labkey.test.util.TestUser;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 
 @Category({Daily.class})
 public class InProductMessagingTest extends BaseWebDriverTest
 {
-
     private static final TestUser TEST_AUTHOR = new TestUser("inproductmessageauthor@test.test");
 
     private static final String MARKETING_MESSAGE = "More features are available! Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions.";
     private static final String DEFAULT_MESSAGE = "Do more with LabKey Server. Click here to learn about our Premium Editions.";
+    private static final int MARKETING_MSG_WAIT = 4000;
 
     @Override
     protected void doCleanup(boolean afterTest)
@@ -64,35 +67,36 @@ public class InProductMessagingTest extends BaseWebDriverTest
     @Test
     public void testSetMarketingMessage()
     {
-        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+        // first, set the custom marketing message
         var editPage = EditUpgradeMessagePage.beginAt(this);
         editPage.setMarketingMessage(MARKETING_MESSAGE);
         editPage.save();
-        refresh();
-        var alertWarning = waitForAlertWarning();
+
+        // then, enable the exp feature and await the banner containing custom content
+        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
+
         checker().withScreenshot("unexpected_banner_content")
-                .wrapAssertion(()-> assertThat(alertWarning.getText())
+                .awaiting(Duration.ofSeconds(10), ()-> assertThat(refreshAndAwaitAlert().getText())
                                 .as("Expect a banner to be present with our specified text")
                                 .contains("More features are available! Click here to learn about our Premium Editions."));
-        dismissAlert(alertWarning);
+        dismissAlert(refreshAndAwaitAlert());
 
-        // sign out, then sign back in as Admin user
+        // sign out, then sign back in as Admin user to verify that a new session re-shows the alert
         signOut();
         signIn();
-        var reappearingAlert = waitForAlertWarning();
+        var reappearingAlert = refreshAndAwaitAlert();
         checker().withScreenshot("unexpected_banner_content_re-login")
                 .wrapAssertion(()-> assertThat(reappearingAlert.getText())
                         .as("Expect a banner to appear after logging out/logging back in")
                         .contains("More features are available! Click here to learn about our Premium Editions."));
 
-        // now toggle the exp feature off/on to reset the 24-hour clock
-        ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
-        ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
-
         // now clear the custom marketing message so other test methods can verify the default
         editPage = EditUpgradeMessagePage.beginAt(this);
         editPage.setMarketingMessage("");
         editPage.save();
+
+        // don't leave an alert with the custom message lying around, other tests expect the default message
+        dismissAlert(refreshAndAwaitAlert());
 
         ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
@@ -101,19 +105,16 @@ public class InProductMessagingTest extends BaseWebDriverTest
     public void testMarketingMessageAppearsForGuest() throws Exception
     {
         ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
-
         goToHome();
 
         // now signout as admin, verify guest is shown the default banner
         signOut();
-        refresh();
 
-        var alertWarning = waitForAlertWarning();
         checker().withScreenshot("unexpected_banner_content")
-                .wrapAssertion(()-> assertThat(alertWarning.getText())
+                .awaiting(Duration.ofSeconds(10), ()-> assertThat(refreshAndAwaitAlert().getText())
                         .as("Expect a banner to be present with the default message")
                         .contains(DEFAULT_MESSAGE));
-        dismissAlert(alertWarning);
+        dismissAlert(refreshAndAwaitAlert());   // don't leave an old alert around for the next test
         signIn();
         ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
@@ -124,29 +125,40 @@ public class InProductMessagingTest extends BaseWebDriverTest
         ExperimentalFeaturesHelper.enableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
 
         goToHome();
-        waitForAlertWarning();
+        /* give it some time for the exp feature task to process, sometimes the custom message will still be there */
+        await().atMost(10, TimeUnit.SECONDS).until(()-> refreshAndAwaitAlert().getText().contains(DEFAULT_MESSAGE));
+
         TEST_AUTHOR.impersonate(true);
-        refresh();
-        var alertWarning = waitForAlertWarning();
+
         checker().withScreenshot("unexpected_banner_content")
-                .wrapAssertion(()-> assertThat(alertWarning.getText())
+                .awaiting(Duration.ofSeconds(10), ()-> assertThat(refreshAndAwaitAlert().getText())
                         .as("Expect a banner to be present with our specified text")
                         .contains(DEFAULT_MESSAGE));
-        dismissAlert(alertWarning);
+        dismissAlert(refreshAndAwaitAlert());
         TEST_AUTHOR.stopImpersonating();
+
         ExperimentalFeaturesHelper.disableExperimentalFeature(createDefaultConnection(), "localMarketingUpdates");
     }
 
-    private WebElement waitForAlertWarning()
+
+    /*
+        Refreshes the page every second until an alert-dismissable alert appears
+
+        For context, the marketing message appears after enabling the exp feature. When the flag is enabled,
+        several things have to happen on the server, so it can take a few seconds before the alert will be shown.
+     */
+    private WebElement refreshAndAwaitAlert()
     {
         Locator alertLoc = Locator.tagWithClass("div", "alert-dismissable");
         WebDriverWrapper.waitFor(()-> {
             refresh();
-            sleep(500);
+            sleep(1000);
             return alertLoc.existsIn(getDriver());
-        }, "no alert appeared in time", 5_000);
+        }, "no alert appeared in time", WAIT_FOR_JAVASCRIPT);
 
-        return alertLoc.findElement(getDriver());
+        var alertEl = alertLoc.findElement(getDriver());
+        log("found alert " + alertEl.getText());
+        return alertEl;
     }
 
     private void dismissAlert(WebElement alert)
