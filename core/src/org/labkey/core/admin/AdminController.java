@@ -1092,7 +1092,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public static class ResetPropertiesAction extends FormHandlerAction
+    public static class ResetPropertiesAction extends FormHandlerAction<Object>
     {
         private URLHelper _returnUrl;
 
@@ -2873,14 +2873,12 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            String message = PageFlowUtil.jsString(sb);
-            if (!message.isEmpty())
+            if (!sb.isEmpty())
             {
-                html.append("<td><a href=\"#\" onClick=\"alert(");
-                html.append(message);
-                html.append(");return false;\">");
-                html.append(PageFlowUtil.filter(description));
-                html.append("</a></td>");
+                String message = PageFlowUtil.jsString(sb);
+                String id = "id" + UniqueID.getServerSessionScopedUID();
+                html.append(DOM.createHtmlFragment(TD(A(at(href, "#").id(id), description))));
+                HttpView.currentPageConfig().addHandler(id, "click", "alert(" + message + ");return false;");
             }
         }
 

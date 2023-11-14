@@ -1107,10 +1107,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("Container"), container);
         }
         List<Protocol> protocols = new TableSelector(getTinfoProtocol(), filter, null).getArrayList(Protocol.class);
-        
+
         if (protocols.isEmpty())
             return null;
-        
+
         // should only find one protocol per container+name
         return toExpProtocol(protocols.get(0));
     }
@@ -4718,7 +4718,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE ");
             sql.append(materialFilterSQL);
 
-            Map<ExpSampleType, Set<String>> sampleTypeAliquotRoots = new HashMap<>();
+            Map<ExpSampleType, Set<Integer>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
             if (null != stDeleteFrom)
@@ -4769,11 +4769,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                                     throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                             }
 
-                            if (!truncateContainer && !StringUtils.equals(material.getLSID(), material.getRootMaterialLSID()))
+                            if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
                             {
                                 ExpSampleType sampleType = material.getSampleType();
                                 sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
-                                        .add(material.getRootMaterialLSID());
+                                        .add(material.getRootMaterialRowId());
                             }
                         }
 
@@ -4912,13 +4912,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 try (Timing ignored = MiniProfiler.step("recalculate aliquot rollup"))
                 {
-                    for (Map.Entry<ExpSampleType, Set<String>> sampleTypeRoots: sampleTypeAliquotRoots.entrySet())
+                    for (Map.Entry<ExpSampleType, Set<Integer>> sampleTypeRoots : sampleTypeAliquotRoots.entrySet())
                     {
                         ExpSampleType parentSampleType = sampleTypeRoots.getKey();
-                        Set<String> rootLsids = sampleTypeRoots.getValue();
-                        List<ExpMaterialImpl> rootSamples = getExpMaterialsByLsid(rootLsids);
-                        Set<Integer> rootSampleIds = new HashSet<>();
-                        rootSamples.forEach(p -> rootSampleIds.add(p.getRowId()));
+                        Set<Integer> rootSampleIds = sampleTypeRoots.getValue();
                         SampleTypeService.get().recomputeSamplesRollup(rootSampleIds, parentSampleType.getMetricUnit(), container);
                     }
                 }
@@ -6942,7 +6939,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         private List<List<?>> _aliquotInputParams;
 
-        private Map<String, String> _aliquotRootCache;
+        private Map<String, Integer> _aliquotRootCache;
 
         public DeriveSamplesBulkHelper(Container container, XarContext context, boolean isAliquot)
         {
@@ -7042,10 +7039,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             TableInfo table = getTinfoMaterial();
             SQLFragment sqlfilter = new SimpleFilter(FieldKey.fromParts("Lsid"), parentLSIDS, IN).getSQLFragment(table, "m");
 
-            new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialLSID FROM " + table + " ")
-                    .append(sqlfilter).append(" AND RootMaterialLSID IS NOT NULL")).forEach(rs ->
+            new SqlSelector(table.getSchema(), new SQLFragment("SELECT Lsid, RootMaterialRowId FROM " + table + " ")
+                    .append(sqlfilter).append(" AND RootMaterialRowId <> RowId")).forEach(rs ->
             {
-                _aliquotRootCache.put(rs.getString("Lsid"), rs.getString("RootMaterialLSID"));
+                _aliquotRootCache.put(rs.getString("Lsid"), rs.getInt("RootMaterialRowId"));
             });
         }
 
@@ -7247,25 +7244,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     ExpMaterial parent = rec._runRecord.getAliquotInput();
 
                     // in the case when a sample, its aliquots, and subaliquots are imported/created together, the subaliquots's parent aliquot might not have AliquotedFromLSID yet.
-                    // Use cache to double check detemine subaliquots's root
+                    // Use cache to double-check determine subaliquots's root
                     boolean isParentRootMaterial = StringUtils.isEmpty(parent.getAliquotedFromLSID()) && !_aliquotRootCache.containsKey(parent.getLSID());
 
                     for (ExpMaterial outputAliquot : rec._runRecord.getAliquotOutputs())
                     {
                         SQLFragment sql = new SQLFragment("UPDATE ").append(tableInfo, "").
-                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialLSID = ?, AliquotedFromLSID = ? WHERE RowId = ?");
+                                append(" SET SourceApplicationId = ?, RunId = ?, RootMaterialRowId = ?, AliquotedFromLSID = ? WHERE RowId = ?");
 
-                        String rootMaterial = isParentRootMaterial ? parent.getLSID() : _aliquotRootCache.get(parent.getLSID());
-                        if (StringUtils.isEmpty(rootMaterial))
+                        Integer rootMaterialRowId = null;
+
+                        if (isParentRootMaterial)
                         {
-                            rootMaterial = parent.getRootMaterialLSID();
-                            if (StringUtils.isEmpty(rootMaterial))
+                            rootMaterialRowId = parent.getRowId();
+                        }
+                        else if (_aliquotRootCache.containsKey(parent.getLSID()))
+                        {
+                            rootMaterialRowId = _aliquotRootCache.get(parent.getLSID());
+                        }
+
+                        if (rootMaterialRowId == null)
+                        {
+                            rootMaterialRowId = parent.getRootMaterialRowId();
+                            if (rootMaterialRowId == null)
                                 throw new ValidationException("Unable to find aliquot parent");
                         }
 
-                        _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterial); // add self's root to cache
+                        _aliquotRootCache.put(outputAliquot.getLSID(), rootMaterialRowId); // add self's root to cache
 
-                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterial, parent.getLSID(), outputAliquot.getRowId());
+                        sql.addAll(rec._protApp.getRowId(), rec._protApp._object.getRunId(), rootMaterialRowId, parent.getLSID(), outputAliquot.getRowId());
                         
                         new SqlExecutor(tableInfo.getSchema()).execute(sql);
                     }

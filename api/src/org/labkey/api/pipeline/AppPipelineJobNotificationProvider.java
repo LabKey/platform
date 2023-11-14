@@ -184,6 +184,13 @@ abstract public class AppPipelineJobNotificationProvider implements PipelineJobN
                     .append(" from ")
                     .append(queryImportPipelineJob.getImportContextBuilder().getPrimaryFile().getName());
 
+            if (job.getContainer().hasProductProjects())
+            {
+                successMsg
+                    .append(" in ")
+                    .append(job.getContainer().getTitle());
+            }
+
             return successMsg.toString();
         }
         else if (job instanceof AssayUploadPipelineJob)

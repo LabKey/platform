@@ -21,6 +21,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -28,10 +29,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import java.io.IOException;
 import java.io.Writer;
 
-/**
- * User: jeckels
-* Date: Nov 7, 2008
-*/
 abstract class DataLinkColumn extends DataColumn
 {
     private static final String DATA_OBJECT_KEY = DataLinkColumn.class + "-DataObject";
@@ -73,14 +70,13 @@ abstract class DataLinkColumn extends DataColumn
         renderThumbnailPopup(out, data, url);
     }
 
-    protected void renderThumbnailPopup(Writer out, ExpData data, ActionURL url)
-            throws IOException
+    protected void renderThumbnailPopup(Writer out, ExpData data, ActionURL url) throws IOException
     {
         if (data.isInlineImage() && data.isFileOnDisk())
         {
             out.write("&nbsp;");
             String icon = "<img src=\"" + AppProps.getInstance().getContextPath() + "/_icons/image.png\" />";
-            out.write(PageFlowUtil.helpPopup(data.getFile().getName(), renderThumbnailImg(data, url), true, icon, 310, url == null ? null : "window.location = '" + url.toString() + "'"));
+            PageFlowUtil.popupHelp(HtmlString.unsafe(renderThumbnailImg(data, url)), data.getFile().getName()).link(HtmlString.unsafe(icon)).width(310).script(url == null ? null : "window.location = '" + url + "'").appendTo(out);
         }
     }
 

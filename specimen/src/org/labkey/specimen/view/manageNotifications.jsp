@@ -95,8 +95,11 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td>
                 <label>
-                    <labkey:input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true' checked="<%=(replyToCurrentUser)%>"
-                            onClick="document.getElementById('replyTo').value = '<%= h(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) %>'; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');" />
+                    <%
+                        String onClick = "document.getElementById('replyTo').value = " + q(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) + "; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');";
+                    %>
+                    <labkey:input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true' checked="<%=(replyToCurrentUser)%>" formGroup="false"
+                            onClick="<%=onClick%>" />
                     The administrator who generated each notification
                 </label>
             </td>
@@ -104,8 +107,11 @@ function setElementDisplayByCheckbox(checkbox, element)
         <tr>
             <td>
                 <label>
-                    <input type='radio' id='replyToFixedUser'  name='replyToCurrentUser'  value='false'<%=checked(!replyToCurrentUser)%>
-                            onclick="setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = '<%= !replyToCurrentUser ? h(bean.getReplyTo()) : HtmlString.EMPTY_STRING %>';">
+                    <%
+                        onClick = "setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = " + q(!replyToCurrentUser ? bean.getReplyTo() : "") + ";";
+                    %>
+                    <labkey:input type='radio' id='replyToFixedUser' name='replyToCurrentUser' value='false' checked="<%=!replyToCurrentUser%>" formGroup="false"
+                            onClick="<%=onClick%>" />
                     A fixed email address:
                 </label>
             </td>

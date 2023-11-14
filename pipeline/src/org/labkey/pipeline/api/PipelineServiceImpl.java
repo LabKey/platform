@@ -31,6 +31,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NormalContainerType;
 import org.labkey.api.data.PropertyManager;
@@ -764,7 +765,13 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public TableInfo getJobsTable(User user, Container container)
     {
-        return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.JOB_TABLE_NAME);
+        return getJobsTable(user, container, null);
+    }
+
+    @Override
+    public TableInfo getJobsTable(User user, Container container, @Nullable ContainerFilter cf)
+    {
+        return new PipelineQuerySchema(user, container).getTable(PipelineQuerySchema.JOB_TABLE_NAME, cf);
     }
 
     @Override
@@ -1049,10 +1056,16 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName)
     {
+        return getActivePipelineJobs(u, c, providerName, null);
+    }
+
+    @Override
+    public Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName, @Nullable ContainerFilter cf)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Provider"), providerName);
         filter.addCondition(FieldKey.fromParts("Status"), INACTIVE_JOB_STATUSES, CompareType.NOT_IN);
 
-        return new TableSelector(PipelineService.get().getJobsTable(u, c), Collections.singleton("Description"), filter, null).getMapCollection();
+        return new TableSelector(PipelineService.get().getJobsTable(u, c, cf), Collections.singleton("Description"), filter, null).getMapCollection();
     }
 
     public static class TestCase extends Assert

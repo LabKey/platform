@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProtocolFactory;
@@ -200,6 +201,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     TableInfo getJobsTable(User user, Container container);
 
+    TableInfo getJobsTable(User user, Container container, @Nullable ContainerFilter cf);
+
     boolean runFolderImportJob(Container c, User user, ActionURL url, Path folderXml, String originalFilename, PipeRoot pipelineRoot, ImportOptions options);
 
     /**
@@ -267,6 +270,8 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     PipelineJobNotificationProvider getPipelineJobNotificationProvider(@Nullable String name, PipelineJob job);
 
     Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName);
+
+    Collection<Map<String, Object>> getActivePipelineJobs(User u, Container c, String providerName, @Nullable ContainerFilter cf);
 
     interface PipelineProviderSupplier
     {

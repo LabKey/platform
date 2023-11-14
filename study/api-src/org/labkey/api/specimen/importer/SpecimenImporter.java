@@ -1305,8 +1305,8 @@ public class SpecimenImporter extends SpecimenTableManager
                 "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 "WHERE M.LSID IS NULL\n";
 
-        String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, rootMaterialLSID, Name, ObjectId, Container, CpasType, Created)  \n" +
-                "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, LSID, Name, ObjectId, Container, CpasType, Created FROM\n" +
+        String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, rootMaterialRowId, Name, ObjectId, Container, CpasType, Created)  \n" +
+                "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), Name, ObjectId, Container, CpasType, Created FROM\n" +
                 "(SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ? AS Container, ? AS CpasType, CAST(? AS " + getSqlDialect().getDefaultDateTimeDataType()+ ") AS Created\n" +
                 " FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 " WHERE M.LSID IS NULL) X\n";
@@ -1384,7 +1384,7 @@ public class SpecimenImporter extends SpecimenTableManager
             long start = DbSequenceManager.reserveSequentialBlock(seq, (int)count);
             start -= 1;
 
-            SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, start, info.getContainer().getId(), cpasType, createdTimestamp);
+            SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, start, start, info.getContainer().getId(), cpasType, createdTimestamp);
             if (DEBUG)
                 logSQLFragment(insertMaterialFragment);
             affected = executeSQL(info.getSchema(), insertMaterialFragment);
