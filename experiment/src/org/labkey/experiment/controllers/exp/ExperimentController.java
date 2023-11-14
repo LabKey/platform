@@ -1505,7 +1505,10 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException("Error: missing required param 'lsid' or 'name'.");
 
             Lsid lsid = new Lsid(form.getLsid());
-            AttachmentParent parent = new ExpDataClassAttachmentParent(getContainer(), lsid);
+            ExpData data = ExperimentServiceImpl.get().getExpData(lsid.toString());
+            if (data == null)
+                throw new NotFoundException("Error: Data object not found for the given LSID: " + lsid);
+            AttachmentParent parent = new ExpDataClassAttachmentParent(data.getContainer(), lsid);
 
             return new Pair<>(parent, form.getName());
         }
