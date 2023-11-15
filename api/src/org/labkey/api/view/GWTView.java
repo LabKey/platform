@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import com.google.gwt.core.client.EntryPoint;
 import org.labkey.api.compliance.ComplianceService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +47,9 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
 
         public void init(ViewContext context)
         {
+            // Use Core as the catch-all to consolidate reporting, even though GWT uses are distributed across modules
+            SimpleMetricsService.get().increment("Core", "GWTView", context.getActionURL().getController() + "-" + context.getActionURL().getAction());
+
             _properties.put("container", context.getContainer().getPath());
             _properties.put("controller", context.getActionURL().getController());
             _properties.put("action", context.getActionURL().getAction());

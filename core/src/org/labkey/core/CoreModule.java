@@ -278,6 +278,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1088,6 +1089,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .collect(Collectors.toList()));
             results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+            String labkeyContextPath = AppProps.getInstance().getContextPath();
+            results.put("webappContextPath", labkeyContextPath);
+            Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
+            deployedApps.remove(labkeyContextPath);
+            if (labkeyContextPath.startsWith("/"))
+            {
+                deployedApps.remove(labkeyContextPath.substring(1));
+            }
+            results.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","));
 
             // Report the total number of login entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);

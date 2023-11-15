@@ -55,6 +55,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,7 @@ public class CoreWarningProvider implements WarningProvider
 {
     /** Schema name -> problem list */
     private final Map<String, List<SiteValidationResult>> _dbSchemaWarnings = new ConcurrentHashMap<>();
+    private static Set<String> _deployedApps;
 
     public CoreWarningProvider()
     {
@@ -249,29 +251,33 @@ public class CoreWarningProvider implements WarningProvider
         }
     }
 
-    private Set<String> collectAllDeployedApps()
+    public static Set<String> collectAllDeployedApps()
     {
-        var result = new HashSet<String>();
-        try
+        if (_deployedApps == null)
         {
-            var servers = MBeanServerFactory.findMBeanServer(null);
-            for (var server : servers)
+            var result = new HashSet<String>();
+            try
             {
-                for (var domain : server.getDomains())
+                var servers = MBeanServerFactory.findMBeanServer(null);
+                for (var server : servers)
                 {
-                    if (!domain.equals("Catalina"))
-                        continue;
-                    final var instances = server.queryNames(new ObjectName("Catalina:j2eeType=WebModule,*"), null);
-                    for (ObjectName each : instances)
-                        result.add(substringAfterLast(each.getKeyProperty("name"), '/'));
+                    for (var domain : server.getDomains())
+                    {
+                        if (!domain.equals("Catalina"))
+                            continue;
+                        final var instances = server.queryNames(new ObjectName("Catalina:j2eeType=WebModule,*"), null);
+                        for (ObjectName each : instances)
+                            result.add(substringAfterLast(each.getKeyProperty("name"), '/'));
+                    }
                 }
+                _deployedApps = Collections.unmodifiableSet(result);
+            }
+            catch (MalformedObjectNameException x)
+            {
+                // pass
             }
         }
-        catch (MalformedObjectNameException x)
-        {
-            // pass
-        }
-        return result;
+        return _deployedApps;
     }
 
     private void getTomcatWarnings(Warnings warnings, boolean showAllWarnings)
@@ -284,7 +290,7 @@ public class CoreWarningProvider implements WarningProvider
 
         try
         {
-            Set<String> deployedWebapps = collectAllDeployedApps();
+            Set<String> deployedWebapps = new HashSet<>(collectAllDeployedApps());
             deployedWebapps.remove(StringUtils.strip(AppProps.getInstance().getContextPath(),"/"));
             boolean defaultTomcatWebappFound = deployedWebapps.stream().anyMatch(webapp ->
                 StringUtils.startsWithIgnoreCase(webapp,"docs") ||

@@ -28,7 +28,7 @@ import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
+import org.labkey.api.data.dialect.SqlDialect.DataSourcePropertyReader;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -48,6 +48,7 @@ import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SimpleLoggerWriter;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
@@ -57,7 +58,6 @@ import org.springframework.dao.DeadlockLoserDataAccessException;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.servlet.ServletContext;
@@ -73,6 +73,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Driver;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,14 +88,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Class that wraps a data source and is shared amongst that data source's DbSchemas.
- *
- * Allows "nested" transactions, implemented via a reference-counting style approach. Each (potentially nested)
- * set of code should call ensureTransaction(). This will either start a new transaction, or join an existing one.
- * Once the outermost caller calls commit(), the WHOLE transaction will be committed at once.
- *
- * The most common usage scenario looks something like:
- *
+ * Class that wraps a data source and is shared amongst that data source's DbSchemas. Allows "nested" transactions,
+ * implemented via a reference-counting style approach. Each (potentially nested) set of code should call
+ * {@code ensureTransaction()}. This will either start a new transaction, or join an existing one. Once the outermost
+ * caller calls commit(), the WHOLE transaction will be committed at once. The most common usage scenario looks
+ * something like:
+ * <pre>{@code
  * DbScope scope = dbSchemaInstance.getScope();
  * try (DbScope.Transaction transaction = scope.ensureTransaction())
  * {
@@ -104,6 +103,8 @@ import java.util.stream.Collectors;
  *
  * The DbScope.Transaction class implements AutoCloseable, so it will be cleaned up automatically by JDK 7's try {}
  * resource handling.
+ * }
+ * </pre>
  */
 public class DbScope
 {
@@ -224,7 +225,6 @@ public class DbScope
         }
     }
 
-
     public static final TransactionKind NORMAL_TRANSACTION_KIND = () -> "NORMAL";
 
     private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
@@ -242,7 +242,6 @@ public class DbScope
         Throwable t = conn != null ? conn.getSuspiciousCloseStackTrace() : null;
         throw new IllegalStateException(sb.toString(), t);
     }
-
 
     public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
     {
@@ -278,31 +277,73 @@ public class DbScope
     }
 
     // Used only for testing
-    public DbScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props) throws ServletException, SQLException
+    public DbScope(String dsName, LabKeyDataSource dataSource) throws ServletException, SQLException
     {
-        this(new DbScopeLoader(dsName, dataSource, props));
+        this(new DbScopeLoader(dsName, dataSource));
     }
 
     /**
-     *  <p>Special LabKey-specific properties that administrators can add to labkey.xml and associate with a data source. To add support for a new property, simply
-     *  add a getter & setter to this bean, and then do something with the typed value in DbScope.</p>
+     *  <p>Wraps a {@link DataSource}, validating the data source, adding LabKey-specific properties, and
+     *  setting an application name that LabKey sends on every connection. With the exception of
+     *  {@code ScopeQueryLoggingProfilerListener.TestCase}, there's a one-to-one correspondence between LabKeyDataSource
+     *  and valid data sources defined in labkey.xml. That's not the case with {@link DbScopeLoader} and {@link DbScope}</p>
+     *
+     *  <p>This class handles the special LabKey-specific properties that administrators can add to labkey.xml and
+     *  associate with a data source. To add support for a new property, simply add a getter & setter to this class and
+     *  then do something with the typed value in DbScope.</p>
      *
      *  <p>Example usage of these properties:</p>
      *
-     *  <p>{@code <Parameter name="hidraDataSource:LogQueries" value="true"/>}</p>
+     *  <p>{@code <Parameter name="mySpecialDataSource:LogQueries" value="true"/>}</p>
      */
-    public static class LabKeyDataSourceProperties
+    public static class LabKeyDataSource
     {
+        public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
+        public static final String CPAS_DATA_SOURCE = "cpasDataSource";
+        private static final String DEFAULT_APPLICATION_NAME = "LabKey Server";
+
+        private final String _dsName; // DataSource name from labkey.xml
+        private final DataSource _ds;
+        private final DataSourcePropertyReader _dsPropertyReader;
+        private final String _driverClassName;
+        private final SqlDialect _dialect;
+        private final Class<Driver> _driverClass;
+        private final String _url;
+
+        private @Nullable String _applicationName; // Null if a custom application name is set (JDBC URL) or initial connection hasn't been made yet
         private boolean _logQueries = false;
         private String _displayName = null;
+        private boolean _primary = false;
 
-        public LabKeyDataSourceProperties()
+        @SuppressWarnings("unused") // Used by BeanObjectFactory
+        public LabKeyDataSource()
         {
+            _ds = null;
+            _dsName = null;
+            _dsPropertyReader = null;
+            _driverClassName = null;
+            _dialect = null;
+            _driverClass = null;
+            _url = null;
         }
 
-        private static LabKeyDataSourceProperties get(Map<String, String> map)
+        public LabKeyDataSource(DataSource ds, String dsName) throws ServletException
         {
-            return map.isEmpty() ? new LabKeyDataSourceProperties() : BeanObjectFactory.Registry.getFactory(LabKeyDataSourceProperties.class).fromMap(map);
+            _ds = ds;
+            _dsName = dsName; // Used internally in error messages
+            _dsPropertyReader = new DataSourcePropertyReader(_dsName, _ds);
+            _driverClassName = _dsPropertyReader.getDriverClassName();
+            // Note: Dialect won't be versioned with the corresponding database
+            _dialect = SqlDialectManager.getFromDriverClassname(_dsName, _driverClassName);
+            MemTracker.get().remove(_dialect);
+            _driverClass = initializeDriver();
+            _url = _dsPropertyReader.getUrl();
+
+            // Validate that data source is using a supported connection pool
+            validateConnectionPool();
+
+            // Populate LabKey-specific data source properties like LogQueries and DisplayName
+            populateLabKeySpecificProperties();
         }
 
         public boolean isLogQueries()
@@ -324,22 +365,161 @@ public class DbScope
         {
             _displayName = displayName;
         }
+
+        DataSource getDataSource()
+        {
+            return _ds;
+        }
+
+        private String getDsName()
+        {
+            return _dsName;
+        }
+
+        DataSourcePropertyReader getDataSourcePropertyReader()
+        {
+            return _dsPropertyReader;
+        }
+
+        private String getDriverClassName()
+        {
+            return _driverClassName;
+        }
+
+        private SqlDialect getDialect()
+        {
+            return _dialect;
+        }
+
+        private Class<Driver> getDriverClass()
+        {
+            return _driverClass;
+        }
+
+        private String getUrl()
+        {
+            return _url;
+        }
+
+        private void setPrimary()
+        {
+            _primary = true;
+        }
+
+        private boolean isPrimary()
+        {
+            return _primary;
+        }
+
+        private @Nullable String getApplicationName()
+        {
+            return _applicationName;
+        }
+
+        // Set the default application name for all connections on this data source
+        private String setDefaultApplicationName()
+        {
+            // Used by getRawConnection()
+            _applicationName = DEFAULT_APPLICATION_NAME;
+
+            // Push application name into the connection properties are used to create pooled connections
+            Properties connectionProps = _dsPropertyReader.getConnectionProperties();
+
+            if (connectionProps != null)
+            {
+                String paramName = _dialect.getApplicationNameParameter();
+
+                if (paramName != null)
+                    connectionProps.put(paramName, _applicationName);
+            }
+
+            return _applicationName;
+        }
+
+        // Reject data sources configured with the Tomcat JDBC connection pool, #42125
+        private void validateConnectionPool() throws ServletException
+        {
+            String dataSourceClassName = _ds.getClass().getName();
+            if (!dataSourceClassName.equals("org.apache.tomcat.dbcp.dbcp2.BasicDataSource"))
+            {
+                String message;
+                if (dataSourceClassName.equals("org.apache.tomcat.jdbc.pool.DataSource"))
+                {
+                    message = "Tomcat JDBC connection pool is not supported;";
+                }
+                else
+                {
+                    message = "Unknown DataSource implementation, \"" + dataSourceClassName + "\";";
+                }
+
+                throw new ServletException(message + " LabKey only supports the Commons DBCP connection pool. Please remove the \"factory\" attribute from the \"" + getDsName() + "\" DataSource definition.");
+            }
+        }
+
+        private void populateLabKeySpecificProperties()
+        {
+            Map<String, String> dsProperties = new HashMap<>();
+            ServletContext ctx = ModuleLoader.getServletContext();
+            IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
+                if (name.startsWith(getDsName() + ":"))
+                    dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
+            });
+            if (!dsProperties.isEmpty())
+                BeanObjectFactory.Registry.getFactory(LabKeyDataSource.class).fromMap(this, dsProperties);
+        }
+
+        private Class<Driver> initializeDriver()
+        {
+            try
+            {
+                @SuppressWarnings("unchecked")
+                Class<Driver> driverClass = (Class<Driver>)Class.forName(_driverClassName);
+                _dialect.prepareDriver(driverClass);
+
+                return driverClass;
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // Now that all the DataSources are collected, determine which one is primary
+        private static LabKeyDataSource setPrimaryDataSource(Map<String, LabKeyDataSource> dataSourceMap)
+        {
+            LabKeyDataSource primaryDS = dataSourceMap.get(LABKEY_DATA_SOURCE);
+            if (null == primaryDS)
+                primaryDS = dataSourceMap.get(CPAS_DATA_SOURCE);
+
+            if (null == primaryDS)
+              throw new ConfigurationException("You must have a DataSource named \"" + LABKEY_DATA_SOURCE + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
+
+            primaryDS.setPrimary();
+
+            if (primaryDS.isLogQueries())
+            {
+                LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + primaryDS.getDsName() + "\"");
+                primaryDS.setLogQueries(false);
+            }
+
+            return primaryDS;
+        }
     }
 
-    // Standard DbScope constructor. Attempt a (non-pooled) connection to the datasource to gather meta data properties.
+    // Standard DbScope constructor. Attempt a (non-pooled) connection to the datasource to gather metadata properties.
     // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
-    public DbScope(DbScopeLoader loader) throws ServletException, SQLException
+    DbScope(DbScopeLoader loader) throws ServletException, SQLException
     {
         _dbScopeLoader = loader;
 
-        try (Connection conn = getRawConnection(loader.getDsProps()))
+        try (Connection conn = getRawConnection(loader.getLabKeyDataSource()))
         {
             DatabaseMetaData dbmd = conn.getMetaData();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
 
             try
             {
-                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, isPrimaryDataSource(getDataSourceName()));
+                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, loader.getLabKeyDataSource().isPrimary());
                 MemTracker.getInstance().remove(_dialect);
             }
             finally
@@ -453,13 +633,13 @@ public class DbScope
         return _driverLocation;
     }
 
-    public LabKeyDataSourceProperties getLabKeyProps()
+    public LabKeyDataSource getLabKeyDataSource()
     {
-        return getDbScopeLoader().getLabKeyProps();
+        return getDbScopeLoader().getLabKeyDataSource();
     }
 
     @JsonIgnore // this contains password, don't show
-    public DataSourceProperties getDataSourceProperties()
+    public DataSourcePropertyReader getDataSourceProperties()
     {
         return getDbScopeLoader().getDsProps();
     }
@@ -955,7 +1135,7 @@ public class DbScope
     {
         try
         {
-            Connection raw = getRawConnection(getDbScopeLoader().getDsProps());
+            Connection raw = getRawConnection(getDbScopeLoader().getLabKeyDataSource());
             return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
@@ -1161,7 +1341,7 @@ public class DbScope
     }
 
     @NotNull
-    // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
+    // Load metadata from database and overlay schema.xml, if DbSchemaType requires it
     protected DbSchema loadSchema(String schemaName, DbSchemaType type) throws SQLException
     {
         LOG.debug("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
@@ -1328,72 +1508,6 @@ public class DbScope
         }
     }
 
-    // Enumerate each jdbc DataSource in labkey.xml and initialize them
-    public static void initializeDataSources()
-    {
-        verifyTomcatLibJars();
-
-        LOG.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
-
-        Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
-
-        String labkeyDsName;
-
-        try
-        {
-            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
-            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
-            labkeyDsName = ensureDatabase(ModuleLoader.LABKEY_DATA_SOURCE, ModuleLoader.CPAS_DATA_SOURCE);
-
-            InitialContext ctx = new InitialContext();
-            Context envCtx = (Context) ctx.lookup("java:comp/env");
-            NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
-
-            while (iter.hasMore())
-            {
-                try
-                {
-                    Binding o = iter.next();
-                    String dsName = o.getName();
-                    DataSource ds = validate((DataSource) o.getObject(), dsName);
-                    dataSources.put(dsName, ds);
-                }
-                catch (NamingException e)
-                {
-                    LOG.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            throw new ConfigurationException("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
-        }
-
-        initializeScopes(labkeyDsName, dataSources);
-    }
-
-    // Reject data sources configured with the Tomcat JDBC connection pool, #42125
-    private static DataSource validate(DataSource dataSource, String dsName) throws ServletException
-    {
-        String dataSourceClassName = dataSource.getClass().getName();
-        if (!dataSourceClassName.equals("org.apache.tomcat.dbcp.dbcp2.BasicDataSource"))
-        {
-            String message;
-            if (dataSourceClassName.equals("org.apache.tomcat.jdbc.pool.DataSource"))
-            {
-                message = "Tomcat JDBC connection pool is not supported;";
-            }
-            else
-            {
-                message = "Unknown DataSource implementation, \"" + dataSourceClassName + "\";";
-            }
-
-            throw new ServletException(message + " LabKey only supports the Commons DBCP connection pool. Please remove the \"factory\" attribute from the \"" + dsName + "\" DataSource definition.");
-        }
-
-        return dataSource;
-    }
-
     private static final List<Predicate<String>> TOMCAT_LIB_PREDICATES = new CopyOnWriteArrayList<>();
 
     /**
@@ -1417,7 +1531,7 @@ public class DbScope
         {
             Predicate<String> aggregatePredicate = TOMCAT_LIB_PREDICATES.stream().reduce(x->false, Predicate::or);
             String[] existing = lib.list((dir, name) ->
-                aggregatePredicate.test(name)
+                    aggregatePredicate.test(name)
             );
 
             // Don't fail if we can't get a listing for the directory
@@ -1429,49 +1543,55 @@ public class DbScope
         }
     }
 
-    // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
-    // create the database if it doesn't already exist, report any errors and return the name.
-    private static String ensureDatabase(@NotNull String primaryName, String... alternativeNames) throws NamingException, ServletException
+    private static String _applicationName = null;
+
+    // Enumerate each jdbc DataSource in labkey.xml and initialize them
+    public static void initializeDataSources()
     {
-        List<String> dsNames = new ArrayList<>();
-        dsNames.add(primaryName);
-        dsNames.addAll(Arrays.asList(alternativeNames));
+        verifyTomcatLibJars();
 
-        InitialContext ctx = new InitialContext();
-        Context envCtx = (Context) ctx.lookup("java:comp/env");
+        LOG.debug("Ensuring that all databases specified by data sources in webapp configuration xml are present");
 
-        DataSource dataSource = null;
-        String dsName = null;
+        Map<String, LabKeyDataSource> dataSources = new TreeMap<>(String::compareTo);
 
-        for (String name : dsNames)
+        String labkeyDsName;
+
+        try
         {
-            dsName = name;
+            InitialContext ctx = new InitialContext();
+            Context envCtx = (Context) ctx.lookup("java:comp/env");
+            NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
 
-            try
+            while (iter.hasMore())
             {
-                dataSource = validate((DataSource)envCtx.lookup("jdbc/" + dsName), dsName);
-                break;
+                try
+                {
+                    Binding o = iter.next();
+                    String dsName = o.getName();
+                    LabKeyDataSource ds = new LabKeyDataSource((DataSource) o.getObject(), dsName);
+                    dataSources.put(dsName, ds);
+                }
+                catch (NamingException e)
+                {
+                    LOG.error("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
+                }
             }
-            catch (NameNotFoundException e)
-            {
-                // Name not found is fine (for now); keep looping through alternative names
-            }
-            catch (NamingException e)
-            {
-                throw new ConfigurationException("Failed to load DataSource \"" + dsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() +
-                    ". This could be caused by an attempt to use the Tomcat JDBC connection pool, which is not supported. Please remove the \"factory\" attribute from this DataSource definition.", e);
-            }
+
+            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
+            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
+            LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
+            labkeyDsName = primaryDS.getDsName();
+            _applicationName = ensureDatabase(primaryDS);
+        }
+        catch (Exception e)
+        {
+            throw new ConfigurationException("DataSources are not properly configured in " + AppProps.getInstance().getWebappConfigurationFilename() + ".", e);
         }
 
-        if (null == dataSource)
-            throw new ConfigurationException("You must have a DataSource named \"" + primaryName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ".");
-
-        ensureDataBase(dsName, dataSource);
-
-        return dsName;
+        initializeScopes(labkeyDsName, dataSources);
     }
 
-    private static void initializeScopes(String labkeyDsName, Map<String, DataSource> dataSources)
+    private static void initializeScopes(String labkeyDsName, Map<String, LabKeyDataSource> dataSources)
     {
         synchronized (_scopeLoaders)
         {
@@ -1494,12 +1614,14 @@ public class DbScope
 
             for (String dsName : dsNames)
             {
+                LabKeyDataSource ds = dataSources.get(dsName);
+
                 // Attempt to create databases in data sources required by modules
                 if (moduleDataSources.contains(dsName))
                 {
                     try
                     {
-                        ensureDatabase(dsName);
+                        ensureDatabase(ds);
                     }
                     catch (Throwable t)
                     {
@@ -1510,46 +1632,32 @@ public class DbScope
                     }
                 }
 
-                Map<String, String> dsProperties = new HashMap<>();
-                ServletContext ctx = ModuleLoader.getServletContext();
-
-                IteratorUtils.asIterator(ctx.getInitParameterNames()).forEachRemaining(name -> {
-                    if (name.startsWith(dsName + ":"))
-                        dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
-                });
-
-                LabKeyDataSourceProperties dsPropertiesBean = LabKeyDataSourceProperties.get(dsProperties);
-                if (dsName.equals(labkeyDsName) && dsPropertiesBean.isLogQueries())
-                {
-                    LOG.warn("Ignoring unsupported parameter in " + AppProps.getInstance().getWebappConfigurationFilename() + " to log queries for LabKey DataSource \"" + labkeyDsName + "\"");
-                    dsPropertiesBean.setLogQueries(false);
-                }
-                addScope(dsName, dataSources.get(dsName), dsPropertiesBean);
+                addScope(dsName, ds);
             }
 
-            _labkeyScope = getDbScope(labkeyDsName);
+            _labkeyScope = getDbScope(labkeyDsName, DbScope::detectOtherLabKeyInstances);
 
             if (null == _labkeyScope)
-                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
+            {
+                ConfigurationException ce = new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in " + AppProps.getInstance().getWebappConfigurationFilename() + ". Server cannot start.");
+                Throwable cause = DbScope.getDataSourceFailure(labkeyDsName);
+                if (cause != null)
+                    ce.initCause(cause);
+                throw ce;
+            }
 
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }
     }
 
-    public static void addScope(String dsName, DataSource dataSource, LabKeyDataSourceProperties props)
+    public static void addScope(String dsName, LabKeyDataSource dataSource)
     {
-        DbScopeLoader loader = new DbScopeLoader(dsName, dataSource, props);
+        DbScopeLoader loader = new DbScopeLoader(dsName, dataSource);
 
         synchronized (_scopeLoaders)
         {
             _scopeLoaders.put(dsName, loader);
         }
-    }
-
-    /** @return true if this is the name of the primary database for LabKey Server (labkeyDataSource or cpasDataSource */
-    public static boolean isPrimaryDataSource(String dsName)
-    {
-        return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
     }
 
     public boolean isRds()
@@ -1562,22 +1670,13 @@ public class DbScope
         return _escape;
     }
 
-    // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
-    // then attempt to create the database. Return true if the database existed, false if it was just created. Throw if some
-    // other exception occurs (e.g., connection fails repeatedly with something other than "database doesn't exist" or database
-    // can't be created.)
-    public static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
+    // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist"
+    // exception then attempt to create the database. Throw if some other exception occurs (e.g., connection fails
+    // repeatedly with something other than "database doesn't exist" or database can't be created). Return the
+    // application name that is expected on all subsequent connections.
+    public static String ensureDatabase(LabKeyDataSource ds) throws ServletException
     {
-        Connection conn = null;
-        DataSourceProperties props = new DataSourceProperties(dsName, ds);
-
-        // Need the dialect to:
-        // 1) determine whether an exception is "no database" or something else and
-        // 2) get the name of the "master" database
-        //
-        // Only way to get the right dialect is to look up based on the driver class name.
-        SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, props.getDriverClassName());
-
+        SqlDialect dialect = ds.getDialect(); // Not versioned with the database server version
         SQLException lastException = null;
 
         // Attempt a connection three times before giving up
@@ -1585,7 +1684,7 @@ public class DbScope
         {
             if (i > 0)
             {
-                LOG.warn("Retrying connection to \"" + dsName + "\" at " + props.getUrl() + " in 10 seconds");
+                LOG.warn("Retrying connection to \"" + ds.getDsName() + "\" at " + ds.getUrl() + " in 10 seconds");
 
                 try
                 {
@@ -1597,78 +1696,142 @@ public class DbScope
                 }
             }
 
-            try
+            // Create non-pooled connection... don't want to pool a failed connection
+            try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
-                // Load and prepare the JDBC driver
-                @SuppressWarnings("unchecked")
-                Class<Driver> driverClass = (Class<Driver>)Class.forName(props.getDriverClassName());
-                dialect.prepareDriver(driverClass);
-
-                // Create non-pooled connection... don't want to pool a failed connection
-                conn = getRawConnection(props);
-                LOG.debug("Successful connection to \"" + dsName + "\" at " + props.getUrl());
-                return true;        // Database already exists
+                LOG.debug("Successful connection to \"" + ds.getDsName() + "\" at " + ds.getUrl());
+                return ensureApplicationName(conn, ds);
             }
             catch (SQLException e)
             {
                 if (dialect.isNoDatabaseException(e))
                 {
-                    createDataBase(dialect, props, isPrimaryDataSource(dsName));
-                    return false;   // Successfully created database
+                    return createDataBase(dialect, ds);
                 }
                 else
                 {
-                    LOG.warn("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed with the following error:");
+                    LOG.warn("Connection to \"" + ds.getDsName() + "\" at " + ds.getUrl() + " failed with the following error:");
                     LOG.warn("Message: " + e.getMessage() + " SQLState: " + e.getSQLState() + " ErrorCode: " + e.getErrorCode(), e);
                     lastException = e;
                 }
             }
             catch (Exception e)
             {
-                throw new ServletException("Connection to \"" + dsName + "\" at " + props.getUrl() + " failed", e);
-            }
-            finally
-            {
-                try
-                {
-                    if (null != conn) conn.close();
-                }
-                catch (Exception x)
-                {
-                    LOG.error("Error closing connection", x);
-                }
+                throw new ServletException("Connection to \"" + ds.getDsName() + "\" at " + ds.getUrl() + " failed", e);
             }
         }
 
         LOG.error("Attempted to connect three times... giving up.", lastException);
-        throw new ConfigurationException("Can't connect to data source \"" + dsName + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
+        throw new ConfigurationException("Can't connect to data source \"" + ds.getDsName() + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
+    }
+
+    // Called on primary data source only
+    private static void detectOtherLabKeyInstances(DbScope primaryScope)
+    {
+        assert _applicationName != null;
+
+        SqlDialect dialect = primaryScope.getSqlDialect();
+        String databaseName = primaryScope.getDatabaseName();
+        String sql = dialect.getApplicationConnectionCountSql();
+        assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
+        int count;
+
+        try
+        {
+            // This creates the first pooled connection on the primary scope. Application name should be set on this
+            // connection in both the default and custom cases.
+            SqlSelector selector = new SqlSelector(primaryScope, new SQLFragment(sql, databaseName, _applicationName));
+            count = selector.getObject(Integer.class) - 1; // Exclude this connection from the count
+        }
+        catch (Exception e)
+        {
+            LOG.warn("Attempt to detect other LabKey Server instances using this database failed", e);
+            return;
+        }
+
+        if (count > 0)
+            throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
+                StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
+                databaseName + "\" with the application name \"" + _applicationName +
+                "\"! This likely means another LabKey Server instance is already using this database.");
+        else if (count < 0)
+            LOG.warn("Expected one connection with the application name \"" + _applicationName + "\", but saw " + count + 1 + ".");
+    }
+
+    // It's too early to use SqlSelector since DbScopes haven't been set up yet, so use vanilla JDBC
+    private static @Nullable String ensureApplicationName(Connection conn, LabKeyDataSource ds)
+    {
+        String applicationName = null;
+
+        // For now, set application name only on primary data sources
+        if (ds.isPrimary())
+        {
+            SqlDialect dialect = ds.getDialect();
+
+            try (PreparedStatement stmt = conn.prepareStatement(dialect.getApplicationNameSql()); ResultSet rs = stmt.executeQuery())
+            {
+                if (rs.next())
+                {
+                    applicationName = rs.getString(1);
+                    assert applicationName != null;
+                    String message = "Application name detected on first database connection: \"" + applicationName + "\"";
+
+                    // If connection shows the default application name (i.e., application name is not set on the JDBC URL)
+                    // then set our default application name on the data source so it's set on every connection.
+                    if (applicationName.equals(dialect.getDefaultApplicationName()))
+                    {
+                        applicationName = ds.setDefaultApplicationName();
+                        LOG.info(message + " (the default name); all subsequent connections will use \"" + applicationName + "\" instead.");
+                    }
+                    else
+                    {
+                        LOG.info(message + "; this will continue to be used on all subsequent connections.");
+                    }
+                }
+                else
+                {
+                    throw new IllegalStateException("Application name query returned no rows!");
+                }
+            }
+            catch (SQLException e)
+            {
+                LOG.warn("Attempt to determine application name failed: " + e.getMessage());
+                applicationName = ds.setDefaultApplicationName();
+            }
+        }
+
+        return applicationName;
     }
 
     // Establish a direct data source connection that bypasses the connection pool
-    private static Connection getRawConnection(DataSourceProperties props) throws ServletException, SQLException
+    private static Connection getRawConnection(LabKeyDataSource dataSource) throws ServletException, SQLException
     {
-        return getRawConnection(props.getUrl(), props);
+        return getRawConnection(dataSource.getUrl(), dataSource);
     }
 
     // Attempt to establish a direct connection to the specified URL using the data source's driver and credentials.
     // This bypasses the connection pool.
-    private static Connection getRawConnection(String url, DataSourceProperties props) throws ServletException, SQLException
+    private static Connection getRawConnection(String url, LabKeyDataSource dataSource) throws ServletException, SQLException
     {
+        DataSourcePropertyReader reader = dataSource.getDataSourcePropertyReader();
         Driver driver;
         Properties info;
         try
         {
-            @SuppressWarnings("unchecked")
-            Class<Driver> driverClass = (Class<Driver>)Class.forName(props.getDriverClassName());
-            driver = driverClass.getConstructor().newInstance();
+            driver = dataSource.getDriverClass().getConstructor().newInstance();
             info = new Properties();
-            if (props.getUsername() != null)
+            if (reader.getUsername() != null)
             {
-                info.put("user", props.getUsername());
+                info.put("user", reader.getUsername());
             }
-            if (props.getPassword() != null)
+            if (reader.getPassword() != null)
             {
-                info.put("password", props.getPassword());
+                info.put("password", reader.getPassword());
+            }
+            if (dataSource.getApplicationName() != null)
+            {
+                String parameterName = dataSource.getDialect().getApplicationNameParameter();
+                info.put(parameterName, dataSource.getApplicationName());
             }
         }
         catch (Exception e)
@@ -1677,14 +1840,14 @@ public class DbScope
         }
 
         if (!driver.acceptsURL(url))
-            throw new ServletException("The specified driver (\"" + props.getDriverClassName() + "\") does not accept the specified URL (\"" + url + "\")");
+            throw new ServletException("The specified driver (\"" + dataSource.getDriverClassName() + "\") does not accept the specified URL (\"" + url + "\")");
 
         return driver.connect(url, info);
     }
 
-    private static void createDataBase(SqlDialect dialect, DataSourceProperties props, boolean primaryDataSource) throws ServletException
+    private static String createDataBase(SqlDialect dialect, LabKeyDataSource ds) throws ServletException
     {
-        String url = props.getUrl();
+        String url = ds.getUrl();
         String dbName = dialect.getDatabaseName(url);
 
         LOG.info("Attempting to create database \"" + dbName + "\"");
@@ -1692,16 +1855,19 @@ public class DbScope
         String defaultUrl = StringUtils.replace(url, dbName, dialect.getDefaultDatabaseName());
         String createSql = "(undefined)";
 
-        try (Connection conn = getRawConnection(defaultUrl, props))
+        try (Connection conn = getRawConnection(defaultUrl, ds))
         {
             // Get version-specific dialect; don't log version warnings.
-            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, primaryDataSource);
+            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false, ds.isPrimary());
             createSql = dialect.getCreateDatabaseSql(dbName);
 
             try (PreparedStatement stmt = conn.prepareStatement(createSql))
             {
                 stmt.execute();
+                LOG.info("Database \"" + dbName + "\" created");
             }
+
+            return ensureApplicationName(conn, ds);
         }
         catch (SQLException e)
         {
@@ -1709,9 +1875,8 @@ public class DbScope
             dialect.handleCreateDatabaseException(e);
         }
 
-        LOG.info("Database \"" + dbName + "\" created");
+        return null;
     }
-
 
     // Store the initial failure message for each data source
     static void addDataSourceFailure(String dsName, Throwable t)
@@ -1744,6 +1909,12 @@ public class DbScope
     @Nullable
     public static DbScope getDbScope(String dsName)
     {
+        return getDbScope(dsName, DbScopeLoader.NO_OP_CONSUMER);
+    }
+
+    @Nullable
+    public static DbScope getDbScope(String dsName, Consumer<DbScope> firstConnectionConsumer)
+    {
         DbScopeLoader loader;
 
         synchronized (_scopeLoaders)
@@ -1751,7 +1922,7 @@ public class DbScope
             loader = _scopeLoaders.get(dsName);
         }
 
-        return null != loader ? loader.get() : null;
+        return null != loader ? loader.get(firstConnectionConsumer) : null;
     }
 
     private static @NotNull Collection<DbScopeLoader> getLoaders()

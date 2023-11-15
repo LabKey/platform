@@ -20,11 +20,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator;
 
-/**
- * User: adam
- * Date: 2/9/12
- * Time: 8:34 AM
- */
 public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
 {
     // Called only if offset is > 0, maxRows is not NO_ROWS, and order is non-blank
