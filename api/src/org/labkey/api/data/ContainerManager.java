@@ -137,7 +137,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_GENERIC;
  * NOTE: we act like java.io.File().  Paths start with forward-slash, but do not end with forward-slash.
  * The root container's name is '/'.  This means that it is not always the case that
  * me.getPath() == me.getParent().getPath() + "/" + me.getName()
- *
+ * <p/>
  * The synchronization goals are to keep invalid containers from creeping into the cache. For example, once
  * a container is deleted, it should never get put back in the cache. We accomplish this by synchronizing on
  * the removal from the cache, and the database lookup/cache insertion. While a container is in the middle
@@ -244,7 +244,7 @@ public class ContainerManager
     @NotNull
     public static Container createContainer(Container parent, String name, @NotNull User user)
     {
-        return createContainer(parent, name, null, null, NormalContainerType.NAME, user);
+        return createContainer(parent, name, null, null, NormalContainerType.NAME, user, null, null);
     }
 
     public static final String WORKBOOK_DBSEQUENCE_NAME = "org.labkey.api.data.Workbooks";
@@ -253,7 +253,7 @@ public class ContainerManager
     @NotNull
     public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user)
     {
-        return createContainer(parent, name, title, description, type, user, null);
+        return createContainer(parent, name, title, description, type, user, null, null);
     }
 
     @NotNull
@@ -261,19 +261,13 @@ public class ContainerManager
     {
         Map<String, Object> properties = new HashMap<>();
         properties.put("type", type);
-        return createContainer(parent, name, title, description, user, properties, auditMsg);
+        return createContainer(parent, name, title, description, type, user, auditMsg, null);
     }
 
     @NotNull
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties)
+    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, String type, @NotNull User user, @Nullable String auditMsg,
+        Consumer<Container> configureContainer)
     {
-        return createContainer(parent, name, title, description, user, properties, null);
-    }
-
-    @NotNull
-    public static Container createContainer(Container parent, String name, @Nullable String title, @Nullable String description, @NotNull User user, Map<String, Object> properties, @Nullable String auditMsg)
-    {
-        String type = (String) properties.get("type");
         ContainerType cType = ContainerTypeRegistry.get().getType(type);
         if (cType == null)
             throw new IllegalArgumentException("Unknown container type: " + type);
@@ -383,6 +377,9 @@ public class ContainerManager
             // since mutating cached objects is frowned upon, just uncache parent
             // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
             _removeFromCache(parent);
+
+            if (null != configureContainer)
+                configureContainer.accept(c);
         }
         finally
         {
@@ -413,8 +410,7 @@ public class ContainerManager
         writer.write(templateContainer, exportCtx, vf);
 
         // create the new target container
-        Container c = createContainer(parent, name, title, null, NormalContainerType.NAME, user);
-        afterCreateHandler.accept(c);
+        Container c = createContainer(parent, name, title, null, NormalContainerType.NAME, user, null, afterCreateHandler);
 
         // import objects into the target folder
         XmlObject folderXml = vf.getXmlBean("folder.xml");
