@@ -106,15 +106,27 @@
             height: height,
 
             // General options
-            mode: "none",
-            theme: "advanced",
-            plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
-                    "contextmenu, fullscreen, noneditable, inlinepopups, style, ",
+            theme: "silver",
+            plugins: [
+                "advlist",
+                "table",
+                "autolink",
+                "preview",
+                "media",
+                "searchreplace",
+                "fullscreen",
+                "lists",
+                "link",
+                "emoticons",
+                "quickbars",
+                "code",
+            ],
 
             // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
             convert_urls: false,
 
             // Smaller button bar than found on regular wiki edit
+            // TODO update toolbars
             theme_advanced_buttons1 : "fontselect, fontsizeselect, " +
                     "|, bold, italic, underline, " +
                     "|, forecolor, backcolor, " +
@@ -126,7 +138,7 @@
 
             theme_advanced_buttons2 : null,
             theme_advanced_buttons3 : null,
-
+            promotion: false,
 
             theme_advanced_toolbar_location : "top",
             theme_advanced_toolbar_align : "left",
@@ -135,8 +147,8 @@
 
             // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
             // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-            gecko_spellcheck : true
-        });
+            browser_spellcheck : true
+        }, tinymce.EditorManager);
 
         this.ed.render();
     };
@@ -339,7 +351,7 @@
             var webpartEl = document.getElementById("webpart_" + config.webPartId);
             config.dom = webpartEl.getElementsByClassName("labkey-wiki")[0];
 
-            LABKEY.requiresScript('tiny_mce/tiny_mce.js', function () { inlineWikiEdit(config); }, this);
+            LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () { inlineWikiEdit(config); }, this);
         },
         toggleTable : function(tocTable, expand, notify) {
             //Structure of a navtree table:

@@ -16,44 +16,48 @@ var _tinyMCEInitialized = false;
 // unneeded buttons and plugins. Added one third-party plugin, pwd, which toggles the lower two
 // toolbars on and off.
 //
-tinyMCE.init({
-    // General options
-    mode: "none",
-    theme: "advanced",
-    plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
-    "contextmenu, fullscreen, noneditable, inlinepopups, style, pdw ",
 
-    // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
-    convert_urls: false,
+LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () {
 
-    // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
-    theme_advanced_buttons1: "pdw_toggle, |, undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
-    "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
+    tinymce.init({
+        // General options
+        mode: "none",
+        theme: "advanced",
+        plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
+        "contextmenu, fullscreen, noneditable, inlinepopups, style, pdw ",
 
-    theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
-    "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
+        // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
+        convert_urls: false,
 
-    theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
-    theme_advanced_toolbar_location: "top",
-    theme_advanced_toolbar_align: "left",
-    theme_advanced_statusbar_location: "bottom",
-    theme_advanced_resizing: true,
+        // TODO update Toolbar buttons
+        // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
+        theme_advanced_buttons1: "pdw_toggle, |, undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
+        "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
 
-    // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
-    // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-    gecko_spellcheck: true,
+        theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
+        "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
 
-    // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
-    pdw_toggle_on: 1,
-    pdw_toggle_toolbars: "2,3",
+        theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
+        theme_advanced_toolbar_location: "top",
+        theme_advanced_toolbar_align: "left",
+        theme_advanced_statusbar_location: "bottom",
+        theme_advanced_resizing: true,
 
-    // labkey specific
-    handle_event_callback: "tinyMceHandleEvent",
+        // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
+        // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
+        gecko_spellcheck: true,
 
-    // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
-    init_instance_callback: function() { _tinyMCEInitialized = true; }
-});
+        // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
+        pdw_toggle_on: 1,
+        pdw_toggle_toolbars: "2,3",
 
+        // labkey specific
+        handle_event_callback: "tinyMceHandleEvent",
+
+        // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
+        init_instance_callback: function() { _tinyMCEInitialized = true; }
+    });
+}, this);
 // called by tinyMCE for *all* events so make sure to filter
 // for keydown. return false to stop tinyMCE from handling or passing on
 function tinyMceHandleEvent(evt) {
@@ -303,7 +307,7 @@ function tinyMceHandleEvent(evt) {
     };
 
     var isDirty = function() {
-        var isBodyDirty = _tinyMCEInitialized && tinyMCE.get(_idPrefix + 'body') && tinyMCE.get(_idPrefix + 'body').isDirty();
+        var isBodyDirty = _tinyMCEInitialized && tinymce.get(_idPrefix + 'body') && tinymce.get(_idPrefix + 'body').isDirty();
         return isBodyDirty || LABKEY.isDirty();
     };
 
@@ -591,8 +595,8 @@ function tinyMceHandleEvent(evt) {
     };
 
     var setBodyClean = function() {
-        if (tinyMCE.get(_idPrefix + 'body')) {
-            tinyMCE.get(_idPrefix + 'body').isNotDirty = 1;
+        if (tinymce.get(_idPrefix + 'body')) {
+            tinymce.get(_idPrefix + 'body').isNotDirty = 1;
         }
     };
 
@@ -715,8 +719,8 @@ function tinyMceHandleEvent(evt) {
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
         getSourceTab().attr('class', 'labkey-tab-active');
-        if (tinyMCE.get(_idPrefix + 'body')) {
-            tinyMCE.execCommand('mceRemoveControl', false, _idPrefix + 'body');
+        if (tinymce.get(_idPrefix + 'body')) {
+            tinymce.execCommand('mceRemoveControl', false, _idPrefix + 'body');
         }
         _editor = "source";
         showEditingHelp(_wikiProps.rendererType);
@@ -744,8 +748,8 @@ function tinyMceHandleEvent(evt) {
             setTabStripVisible(true);
             getVisualTab().attr('class', 'labkey-tab-active');
             getSourceTab().attr('class', 'labkey-tab-inactive');
-            if (!tinyMCE.get(_idPrefix + 'body'))
-                tinyMCE.execCommand('mceAddControl', false, _idPrefix + 'body');
+            if (!tinymce.get(_idPrefix + 'body'))
+                tinymce.execCommand('mceAddControl', false, _idPrefix + 'body');
             _editor = "visual";
             showEditingHelp(_wikiProps.rendererType);
             if (savePreference)
