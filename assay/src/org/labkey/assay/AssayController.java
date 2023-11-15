@@ -129,7 +129,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.assay.actions.*;
 import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
@@ -1699,21 +1698,56 @@ public class AssayController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class GetAssayRunDeletionConfirmationDataAction extends ReadOnlyApiAction<DataViewSnapshotSelectionForm>
+    public static class GetAssayRunOperationConfirmationDataAction extends ReadOnlyApiAction<AssayRunOperationConfirmationForm>
     {
 
         @Override
-        public Object execute(DataViewSnapshotSelectionForm form, BindException errors) throws Exception
+        public Object execute(AssayRunOperationConfirmationForm form, BindException errors) throws Exception
         {
             Collection<Integer> permittedIds = form.getIds(false);
 
             Set<Integer> notPermittedIds = new HashSet<>();
-
-            ExperimentService.get().getObjectReferencers().forEach(referencer ->
-                    notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
-            permittedIds.removeAll(notPermittedIds);
+            if (form.getDataOperation() == AssayRunOperations.Delete)
+            {
+                ExperimentService.get().getObjectReferencers().forEach(referencer ->
+                        notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
+                permittedIds.removeAll(notPermittedIds);
+            }
             return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
 
         }
+    }
+
+    public enum AssayRunOperations {
+        Delete("deleting"),
+        Move("moving");
+
+        private final String _description; // used as a suffix in messaging users about what is not allowed
+
+        AssayRunOperations(String description)
+        {
+            _description = description;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+    }
+
+    public static class AssayRunOperationConfirmationForm extends DataViewSnapshotSelectionForm
+    {
+        private AssayRunOperations _dataOperation;
+
+        public AssayRunOperations getDataOperation()
+        {
+            return _dataOperation;
+        }
+
+        public void setDataOperation(AssayRunOperations dataOperation)
+        {
+            _dataOperation = dataOperation;
+        }
+
     }
 }

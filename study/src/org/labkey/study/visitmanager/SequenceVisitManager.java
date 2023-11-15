@@ -37,6 +37,7 @@ import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyUnionTableInfo;
 import org.labkey.study.model.DatasetDefinition;
@@ -516,6 +517,54 @@ public class SequenceVisitManager extends VisitManager
             _updateVisitRowId(true, logger);
         }
     }
+
+
+    public void purgeParticipantVisit(User user)
+    {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        SqlDialect d = schema.getSqlDialect();
+        Container container = getStudy().getContainer();
+        TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        TableInfo tableSpecimen = getSpecimenTable(getStudy(), user);
+        StudyUnionTableInfo tableStudyData = (StudyUnionTableInfo) StudySchema.getInstance().getTableInfoStudyData(getStudy(), user);
+        String tempTableName = null;
+
+        try
+        {
+            SQLFragment sqlParticipantSequenceNumTemp = new SQLFragment("""
+                        SELECT ParticipantSequenceNum
+                        FROM\s""").append(tableStudyData.getParticipantSequenceNumSQL("SD")).append("\n");
+            sqlParticipantSequenceNumTemp.append("""
+                        WHERE ParticipantId IS NOT NULL and SequenceNum IS NOT NULL AND ParticipantSequenceNum IS NOT NULL
+                        UNION
+                        SELECT\s""").append(StudyUtils.getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(" AS ParticipantSequenceNum\n");
+            sqlParticipantSequenceNumTemp.append(
+                    "FROM (SELECT DISTINCT Ptid AS ParticipantId, VisitValue AS SequenceNum FROM ").append(tableSpecimen).append(" WHERE Ptid IS NOT NULL AND VisitValue IS NOT NULL) specimen_");
+
+// CONSIDER: temp table if warranted (this is not a common code path)
+//            var tt = "svm" + GUID.makeHash();
+//            SQLFragment sqlTempTableSelectInto = new SQLFragment()
+//                    .append("SELECT ParticipantId, SequenceNum, ParticipantSequenceNum INTO temp.").appendIdentifier(tempTableName).append("\n")
+//                    .append("FROM (").append(sqlParticipantSequenceNumTemp).append("pseq_union_")
+//                    .append(")");
+//            new SqlExecutor(schema).execute(sqlTempTableSelectInto);
+//            tempTableName = tt;
+
+            SQLFragment sqlPurgeParticipantVisit = new SQLFragment()
+                    .append("DELETE FROM ").append(tableParticipantVisit.getSQLName()).append("\n")
+                    .append("WHERE Container=").appendValue(container).append(" AND ParticipantSequenceNum NOT IN (")
+                    .append(sqlParticipantSequenceNumTemp).append(")");
+            new SqlExecutor(schema).execute(sqlPurgeParticipantVisit);
+        }
+        finally
+        {
+            if (null != tempTableName)
+            {
+                new SqlExecutor(schema).execute(new SQLFragment("DROP TABLE temp.").appendIdentifier(tempTableName));
+            }
+        }
+    }
+
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
     @Override

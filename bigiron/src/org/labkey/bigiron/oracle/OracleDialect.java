@@ -20,6 +20,7 @@ import oracle.sql.TIMESTAMP;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConnectionPool;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.DbScope;
@@ -56,12 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-
-/**
- * User: trent
- * Date: 6/10/11
- * Time: 3:40 PM
- */
 abstract class OracleDialect extends SimpleSqlDialect
 {
     // To work around #33481, for each Oracle scope, create a special connection pool that invalidates connections before they hit the max usage limit
@@ -402,6 +397,12 @@ abstract class OracleDialect extends SimpleSqlDialect
     public @NotNull String getDefaultTablesToExcludeFromTesting()
     {
         return "SYS_IOT_OVER_*";
+    }
+
+    @Override
+    public @Nullable String getApplicationNameParameter()
+    {
+        return "v$session.program";
     }
 
     private static class OracleColumnMetaDataReader extends ColumnMetaDataReader
