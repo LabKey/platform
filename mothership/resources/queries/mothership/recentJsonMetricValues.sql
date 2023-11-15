@@ -6,7 +6,8 @@ WITH metrics AS (
         CAST(NULL AS VARCHAR) AS DisplayKey,
         NULL as SelectKey,
         ServerSessionId
-    FROM mothership.ServerSessions WHERE ServerSessionId IN (SELECT MAX(ServerSessionId) FROM mothership.ServerSessions WHERE LastKnownTime >= timestampadd('SQL_TSI_DAY', -14, curdate()) GROUP BY ServerInstallationId)
+    -- Include data from all servers active in the last 2 weeks, plus any server that lasted more than a day in the last two years
+    FROM mothership.ServerSessions WHERE ServerSessionId IN (SELECT MostRecentSession FROM mothership.ServerInstallation WHERE (LastPing >= timestampadd('SQL_TSI_DAY', -14, curdate())) OR ((LastPing >= timestampadd('SQL_TSI_YEAR', -2, curdate())) AND DaysActive > 1))
 
     UNION ALL
 
