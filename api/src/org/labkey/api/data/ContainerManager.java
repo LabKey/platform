@@ -96,6 +96,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -165,6 +166,10 @@ public class ContainerManager
 
     private static final List<ContainerSecurableResourceProvider> _resourceProviders = new CopyOnWriteArrayList<>();
 
+    // containers that are being constructed, used to suppress events before fireCreateContainer()
+    private static final Set<GUID> _constructing = new ConcurrentHashSet<>();
+
+    
     /** enum of properties you can see in property change events */
     public enum Property
     {
@@ -302,74 +307,87 @@ public class ContainerManager
         SQLException sqlx = null;
         Map<String, Object> insertMap = null;
 
+        GUID entityId = new GUID();
+        Container c;
+
         try
         {
-            HashMap<String, Object> m = new HashMap<>();
-            m.put("Parent", parent.getId());
-            m.put("Name", name);
-            m.put("Title", title);
-            m.put("SortOrder", sortOrder);
-            if (null != description)
-                m.put("Description", description);
-            m.put("Type", type);
-            insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
-        }
-        catch (RuntimeSQLException x)
-        {
-            if (!x.isConstraintException())
-                throw x;
-            sqlx = x.getSQLException();
-        }
+            _constructing.add(entityId);
 
-        _clearChildrenFromCache(parent);
+            try
+            {
+                Map<String, Object> m = new CaseInsensitiveHashMap<>();
+                m.put("Parent", parent.getId());
+                m.put("Name", name);
+                m.put("Title", title);
+                m.put("SortOrder", sortOrder);
+                m.put("EntityId", entityId);
+                if (null != description)
+                    m.put("Description", description);
+                m.put("Type", type);
+                insertMap = Table.insert(user, CORE.getTableInfoContainers(), m);
+            }
+            catch (RuntimeSQLException x)
+            {
+                if (!x.isConstraintException())
+                    throw x;
+                sqlx = x.getSQLException();
+            }
 
-        Container c = insertMap == null ? null : getForId((String) insertMap.get("EntityId"));
+            _clearChildrenFromCache(parent);
 
-        if (null == c)
-        {
-            if (null != sqlx)
-                throw new RuntimeSQLException(sqlx);
+            c = insertMap == null ? null : getForId(entityId);
+
+            if (null == c)
+            {
+                if (null != sqlx)
+                    throw new RuntimeSQLException(sqlx);
+                else
+                    throw new RuntimeException("Container for path '" + path + "' was not created properly.");
+            }
+
+            User savePolicyUser = user;
+            if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
+            {
+                // Special case for project creators who don't necessarily yet have permission to save the policy of
+                // the project they just created
+                savePolicyUser = User.getAdminServiceUser();
+            }
+
+            // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
+            if (c.isContainerFor(ContainerType.DataType.permissions))
+            {
+                SecurityManager.setAdminOnlyPermissions(c, savePolicyUser);
+            }
+
+            _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
+
+            // Initialize the list of active modules in the Container
+            c.getActiveModules(true, true, user);
+
+            if (c.isProject())
+            {
+                SecurityManager.createNewProjectGroups(c, savePolicyUser);
+            }
             else
-                throw new RuntimeException("Container for path '" + path + "' was not created properly.");
-        }
+            {
+                // If current user does NOT have admin permission on this container or the project has been
+                // explicitly set to have new subfolders inherit permissions, then inherit permissions
+                // (otherwise they would not be able to see the folder)
+                boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
+                if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
+                    SecurityManager.setInheritPermissions(c);
+            }
 
-        User savePolicyUser = user;
-        if (c.isProject() && !c.hasPermission(user, AdminPermission.class) && ContainerManager.getRoot().hasPermission(user, CreateProjectPermission.class))
+            // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
+            // since mutating cached objects is frowned upon, just uncache parent
+            // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
+            _removeFromCache(parent);
+        }
+        finally
         {
-            // Special case for project creators who don't necessarily yet have permission to save the policy of
-            // the project they just created
-            savePolicyUser = User.getAdminServiceUser();
+            _constructing.remove(entityId);
         }
-
-        // Workbooks inherit perms from their parent so don't create a policy if this is a workbook
-        if (c.isContainerFor(ContainerType.DataType.permissions))
-        {
-            SecurityManager.setAdminOnlyPermissions(c, savePolicyUser);
-        }
-
-        _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
-
-        // Initialize the list of active modules in the Container
-        c.getActiveModules(true, true, user);
-
-        if (c.isProject())
-        {
-            SecurityManager.createNewProjectGroups(c, savePolicyUser);
-        }
-        else
-        {
-            // If current user does NOT have admin permission on this container or the project has been
-            // explicitly set to have new subfolders inherit permissions, then inherit permissions
-            // (otherwise they would not be able to see the folder)
-            boolean hasAdminPermission = c.hasPermission(user, AdminPermission.class);
-            if ((!hasAdminPermission && !user.hasRootAdminPermission()) || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
-                SecurityManager.setInheritPermissions(c);
-        }
-
-        // NOTE parent caches some info about children (e.g. hasWorkbookChildren)
-        // since mutating cached objects is frowned upon, just uncache parent
-        // CONSIDER: we could perhaps only uncache if the child is a workbook, but I think this reasonable
-        _removeFromCache(parent);
 
         fireCreateContainer(c, user, auditMsg);
 
@@ -2048,6 +2066,9 @@ public class ContainerManager
 
     public static void notifyContainerChange(String id, Property prop, @Nullable User u)
     {
+        if (_constructing.contains(new GUID(id)))
+            return;
+
         Container c = getForId(id);
         if (null != c)
         {
@@ -2425,6 +2446,9 @@ public class ContainerManager
 
     public static void firePropertyChangeEvent(ContainerPropertyChangeEvent evt)
     {
+        if (_constructing.contains(evt.container.getEntityId()))
+            return;
+
         List<ContainerListener> list = getListeners();
         for (ContainerListener l : list)
         {
