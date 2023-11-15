@@ -50,7 +50,7 @@
                 {
                     store.removeAt(index);
                     store.insert(index - 1, record);
-                    selectionModel.selectRow(index - 1);
+                    selectionModel.select(index - 1);
                     grid.getView().refresh();
                 }
             }
@@ -60,7 +60,7 @@
                 {
                     store.removeAt(index);
                     store.insert(index + 1, record);
-                    selectionModel.selectRow(index + 1);
+                    selectionModel.select(index + 1);
                     grid.getView().refresh();
                 }
             }
@@ -86,17 +86,16 @@
 
     function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo)
     {
-        console.log("populateSchemas", schemasInfo);
         if (schemaCombo.store)
         {
             schemaCombo.store.removeAll();
-            schemaCombo.store.loadData(getArrayArray(schemasInfo.schemas)); // TODO: Fix this!
-            schemaCombo.on("select", function(combo, record)
+            schemaCombo.store.loadData(getArrayArray(schemasInfo.schemas));
+            schemaCombo.on("select", function(combo, records)
             {
                 queryCombo.clearValue();
                 viewCombo.clearValue();
                 LABKEY.Query.getQueries({
-                    schemaName: record.data[record.fields.first().name],
+                    schemaName: records[0].get(dataFieldName),
                     success: function(queriesInfo) { populateQueries(queryCombo, viewCombo, queriesInfo); }
                 })
             });
@@ -116,12 +115,12 @@
 
             queryCombo.store.removeAll();
             queryCombo.store.loadData(records);
-            queryCombo.on("select", function(combo, record)
+            queryCombo.on("select", function(combo, records)
             {
                 viewCombo.clearValue();
                 LABKEY.Query.getQueryViews({
                     schemaName: queriesInfo.schemaName,
-                    queryName: record.data[record.fields.first().name],
+                    queryName: records[0].get(dataFieldName),
                     success: function(queriesInfo) { populateViews(viewCombo, queriesInfo); }
                 })
             });
@@ -180,7 +179,7 @@
                 allowBlank:false,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
@@ -203,7 +202,7 @@
                 allowBlank:false,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
@@ -226,7 +225,7 @@
                 allowBlank:true,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
@@ -248,7 +247,7 @@
                 allowBlank:false,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
@@ -268,16 +267,17 @@
         });
 
         const formPanel = new Ext4.form.FormPanel({
-            padding: 5,
+            padding: 10,
+            border: false,
             items: [queryLabel, schemaCombo, queryCombo, viewCombo, actionLabel, actionCombo]});
 
         const win = new Ext4.Window({
             title: 'Add Custom Query Rule',
-            layout:'fit',
+            layout:'form',
             border: false,
             width: 475,
-            height: 330,
-            closeAction:'close',
+            autoHeight : true,
+            closeAction:'destroy',
             modal: true,
             items: formPanel,
             resizable: false,
