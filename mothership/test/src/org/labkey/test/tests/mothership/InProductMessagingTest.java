@@ -10,6 +10,7 @@ import org.labkey.test.WebDriverWrapper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.pages.mothership.EditUpgradeMessagePage;
 import org.labkey.test.util.ExperimentalFeaturesHelper;
+import org.labkey.test.util.PostgresOnlyTest;
 import org.labkey.test.util.TestUser;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -24,13 +25,12 @@ import static org.awaitility.Awaitility.await;
 
 
 @Category({Daily.class})
-public class InProductMessagingTest extends BaseWebDriverTest
+public class InProductMessagingTest extends BaseWebDriverTest implements PostgresOnlyTest
 {
     private static final TestUser TEST_AUTHOR = new TestUser("inproductmessageauthor@test.test");
 
     private static final String MARKETING_MESSAGE = "More features are available! Click <a href='https://www.labkey.com/products-services/labkey-server/'>here</a> to learn about our Premium Editions.";
     private static final String DEFAULT_MESSAGE = "Do more with LabKey Server. Click here to learn about our Premium Editions.";
-    private static final int MARKETING_MSG_WAIT = 4000;
 
     @Override
     protected void doCleanup(boolean afterTest)
