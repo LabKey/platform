@@ -26,7 +26,7 @@
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext3");
+        dependencies.add("Ext4");
     }
 %>
 <%
@@ -34,24 +34,23 @@
     Container c = getContainer();
 %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    Ext.QuickTips.init();
     window.onbeforeunload = LABKEY.beforeunload();
 
     function reorder(grid, moveUp)
     {
-        var store = grid.store;
-        var selectionModel = grid.getSelectionModel();
-        var record = selectionModel.getSelected();
+        const store = grid.store;
+        const selectionModel = grid.getSelectionModel();
+        const record = selectionModel.getLastSelected();
         if (record)
         {
-            var index = store.indexOf(record);
+            const index = store.indexOf(record);
             if (moveUp)
             {
                 if (index > 0)
                 {
                     store.removeAt(index);
                     store.insert(index - 1, record);
-                    selectionModel.selectRow(index - 1);
+                    selectionModel.select(index - 1);
                     grid.getView().refresh();
                 }
             }
@@ -61,7 +60,7 @@
                 {
                     store.removeAt(index);
                     store.insert(index + 1, record);
-                    selectionModel.selectRow(index + 1);
+                    selectionModel.select(index + 1);
                     grid.getView().refresh();
                 }
             }
@@ -70,9 +69,9 @@
 
     function removeRule(grid)
     {
-        var store = grid.store;
-        var selectionModel = grid.getSelectionModel();
-        var record = selectionModel.getSelected();
+        const store = grid.store;
+        const selectionModel = grid.getSelectionModel();
+        const record = selectionModel.getLastSelected();
         if (record)
         {
             // Move the selection to the next item without preserving the current selection:
@@ -82,8 +81,8 @@
         }
     }
 
-    var dataFieldName = 'name';
-    var dataUrlFieldName = 'viewDataUrl';
+    const dataFieldName = 'name';
+    const dataUrlFieldName = 'viewDataUrl';
 
     function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo)
     {
@@ -91,12 +90,12 @@
         {
             schemaCombo.store.removeAll();
             schemaCombo.store.loadData(getArrayArray(schemasInfo.schemas));
-            schemaCombo.on("select", function(combo, record, index)
+            schemaCombo.on("select", function(combo, records)
             {
                 queryCombo.clearValue();
                 viewCombo.clearValue();
                 LABKEY.Query.getQueries({
-                    schemaName: record.data[record.fields.first().name],
+                    schemaName: records[0].get(dataFieldName),
                     success: function(queriesInfo) { populateQueries(queryCombo, viewCombo, queriesInfo); }
                 })
             });
@@ -107,40 +106,40 @@
     {
         if (queryCombo.store)
         {
-            var records = [];
-            for (var i = 0; i < queriesInfo.queries.length; i++)
+            const records = [];
+            for (let i = 0; i < queriesInfo.queries.length; i++)
             {
-                var queryInfo = queriesInfo.queries[i];
+                let queryInfo = queriesInfo.queries[i];
                 records[i] = [queryInfo.name, queryInfo.viewDataUrl];
             }
 
             queryCombo.store.removeAll();
             queryCombo.store.loadData(records);
-            queryCombo.on("select", function(combo, record, index)
+            queryCombo.on("select", function(combo, records)
             {
                 viewCombo.clearValue();
                 LABKEY.Query.getQueryViews({
                     schemaName: queriesInfo.schemaName,
-                    queryName: record.data[record.fields.first().name],
+                    queryName: records[0].get(dataFieldName),
                     success: function(queriesInfo) { populateViews(viewCombo, queriesInfo); }
                 })
             });
         }
     }
 
-    var defaultViewLabel = "[default view]";
+    const defaultViewLabel = "[default view]";
 
     function populateViews(viewCombo, queryViews)
     {
         if (viewCombo.store)
         {
-            var records = [[defaultViewLabel]];
-            for (var i = 0; i < queryViews.views.length; i++)
+            const records = [[defaultViewLabel]];
+            for (let i = 0; i < queryViews.views.length; i++)
             {
-                var viewInfo = queryViews.views[i];
+                const viewInfo = queryViews.views[i];
                 if (!viewInfo.hidden)
                 {
-                    var name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
+                    const name = viewInfo.name != null ? viewInfo.name : defaultViewLabel;
                     records[records.length] = [name, viewInfo.viewDataUrl];
                 }
             }
@@ -152,8 +151,8 @@
 
     function getArrayArray(simpleArray)
     {
-        var arrayArray = [];
-        for (var i = 0; i < simpleArray.length; i++)
+        const arrayArray = [];
+        for (let i = 0; i < simpleArray.length; i++)
         {
             arrayArray[i] = [];
             arrayArray[i][0] = simpleArray[i];
@@ -163,9 +162,9 @@
 
     function setupUserQuery(grid, type)
     {
-        var schemaCombo = new Ext.form.ComboBox({
+        const schemaCombo = new Ext4.form.ComboBox({
                 typeAhead: false,
-                store: new Ext.data.ArrayStore({
+                store: new Ext4.data.ArrayStore({
                     fields: [{
                         name: dataFieldName,
                         sortType: function(value) { return value.toLowerCase(); }
@@ -180,13 +179,13 @@
                 allowBlank:false,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
-        var queryCombo = new Ext.form.ComboBox({
+        const queryCombo = new Ext4.form.ComboBox({
                 typeAhead: false,
-                store: new Ext.data.ArrayStore({
+                store: new Ext4.data.ArrayStore({
                     fields: [{
                         name: dataFieldName,
                         sortType: function(value) { return value.toLowerCase(); }
@@ -203,13 +202,13 @@
                 allowBlank:false,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
-        var viewCombo = new Ext.form.ComboBox({
+        const viewCombo = new Ext4.form.ComboBox({
                 typeAhead: false,
-                store: new Ext.data.ArrayStore({
+                store: new Ext4.data.ArrayStore({
                     fields: [{
                         name: dataFieldName,
                         sortType: function(value) { return value.toLowerCase(); }
@@ -226,13 +225,13 @@
                 allowBlank:true,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
-        var actionCombo = new Ext.form.ComboBox({
+        const actionCombo = new Ext4.form.ComboBox({
                 typeAhead: false,
-                store: new Ext.data.ArrayStore(
+                store: new Ext4.data.ArrayStore(
                 {
                     fields: ['option'],
                     data: [
@@ -248,7 +247,7 @@
                 allowBlank:false,
                 readOnly:false,
                 editable:false,
-                mode:'local',
+                queryMode :'local',
                 triggerAction: 'all'
             });
 
@@ -256,28 +255,29 @@
             success: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo); }
         });
 
-        var labelStyle = 'padding-bottom: 5px; font-weight: normal;';
+        const labelStyle = 'padding-bottom: 5px; font-weight: normal;';
 
-        var queryHelpText = 'Select the query and view that identify vials affected by this rule.  The returned list must include a "GlobalUniqueId" column.';
-        var queryLabel = new Ext.form.Label({
+        const queryHelpText = 'Select the query and view that identify vials affected by this rule.  The returned list must include a "GlobalUniqueId" column.';
+        const queryLabel = new Ext4.form.Label({
             html: '<div style="' + labelStyle +'">' + queryHelpText + '</div>'
         });
 
-        var actionLabel = new Ext.form.Label({
+        const actionLabel = new Ext4.form.Label({
             html: '<br><div style="' + labelStyle +'">Select whether vials identified by the query should be marked as available or unavailable.</div>'
         });
 
-        var formPanel = new Ext.form.FormPanel({
-            padding: 5,
+        const formPanel = new Ext4.form.FormPanel({
+            padding: 10,
+            border: false,
             items: [queryLabel, schemaCombo, queryCombo, viewCombo, actionLabel, actionCombo]});
-        
-        var win = new Ext.Window({
+
+        const win = new Ext4.Window({
             title: 'Add Custom Query Rule',
-            layout:'fit',
+            layout:'form',
             border: false,
             width: 475,
-            height: 330,
-            closeAction:'close',
+            autoHeight : true,
+            closeAction:'destroy',
             modal: true,
             items: formPanel,
             resizable: false,
@@ -287,22 +287,22 @@
             },{
                 text: 'Submit',
                 handler: function(){
-                    var form = formPanel.getForm();
+                    const form = formPanel.getForm();
                     if (form && !form.isValid())
                     {
-                        Ext.Msg.alert('Add Custon Query Rule', 'Please complete all required fields.');
+                        Ext4.Msg.alert('Add Custom Query Rule', 'Please complete all required fields.');
                         return false;
                     }
 
-                    var viewName = viewCombo.getValue();
-                    if (viewName == defaultViewLabel)
+                    let viewName = viewCombo.getValue();
+                    if (!viewName || viewName === defaultViewLabel)
                         viewName = "";
-                    var ruleName = "<%= h(RequestabilityManager.RuleType.CUSTOM_QUERY.getName()) %>: " + schemaCombo.getValue() + "." + queryCombo.getValue();
+                    let ruleName = "<%= h(RequestabilityManager.RuleType.CUSTOM_QUERY.getName()) %>: " + schemaCombo.getValue() + "." + queryCombo.getValue();
                     if (viewName)
                         ruleName += ", view " + viewName;
-                    var testUrl = getSelectedURL(viewName ? viewCombo : queryCombo);
-                    var markRequestable = actionCombo.getValue() == '<%= h(RequestabilityManager.MarkType.AVAILABLE.getLabel()) %>';
-                    var ruleData = schemaCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
+                    const testUrl = getSelectedURL(viewName ? viewCombo : queryCombo);
+                    const markRequestable = actionCombo.getValue() == '<%= h(RequestabilityManager.MarkType.AVAILABLE.getLabel()) %>';
+                    const ruleData = schemaCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
                                    queryCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
                                    viewName + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
                                    markRequestable;
@@ -317,27 +317,26 @@
 
     function getSelectedURL(comboBox)
     {
-        var value = comboBox.getValue();
-        var record = comboBox.findRecord(comboBox.valueField, value);
+        const value = comboBox.getValue();
+        const record = comboBox.findRecord(comboBox.valueField, value);
         return record.data[dataUrlFieldName];
     }
 
-
     function addRule(grid, type, name, action, testURL, ruleData)
     {
-        var store = grid.store;
+        const store = grid.store;
 
-        if (type == 'CUSTOM_QUERY' && !ruleData)
+        if (type === 'CUSTOM_QUERY' && !ruleData)
         {
             setupUserQuery(grid, type);
             return false;
         }
 
         // Don't add more than 1 of any rules except CUSTOM QUERY
-        if (type != 'CUSTOM_QUERY' && ruleTypeAlreadyPresent(grid, type))
+        if (type !== 'CUSTOM_QUERY' && ruleTypeAlreadyPresent(grid, type))
             return true;
 
-        var ruleProperties = {
+        const ruleProperties = {
             type: type,
             ruleData: ruleData,
             name: name,
@@ -346,14 +345,13 @@
         };
 
         // insert after current selection or last if none
-        var insertIndex = store.getCount();
-        var selectionModel = grid.getSelectionModel();
-        var record = selectionModel.getSelected();
+        let insertIndex = store.getCount();
+        const selectionModel = grid.getSelectionModel();
+        const record = selectionModel.getLastSelected();
         if (record)
             insertIndex = Math.min(insertIndex, store.indexOf(record) + 1);
 
-        var newRule = new store.recordType(ruleProperties); // create new record
-        store.insert(insertIndex, newRule); // insert a new record into the store
+        store.insert(insertIndex, [ruleProperties]); // insert a new record into the store
         grid.getView().refresh();
         
         return true;
@@ -361,11 +359,11 @@
 
     function ruleTypeAlreadyPresent(grid, type)
     {
-        var store = grid.store;
-        for (var i = 0; i < store.getCount(); i++)
+        const store = grid.store;
+        for (let i = 0; i < store.getCount(); i++)
         {
-            var record = store.getAt(i);
-            if (type == record.data.type)
+            let record = store.getAt(i);
+            if (type === record.data.type)
                 return true;
         }
         return false;
@@ -378,7 +376,7 @@
 
     function testColumnRenderer(value, p, record)
     {
-        var txt = '';
+        let txt = '';
 
         if (record.data.testURL){
             txt = LABKEY.Utils.textLink({
@@ -393,14 +391,14 @@
 
     function saveComplete()
     {
-        Ext.Msg.hide();
+        Ext4.Msg.hide();
         LABKEY.setDirty(false);
         document.location = <%=q(urlProvider(StudyUrls.class).getManageStudyURL(c))%>;
     }
 
     function saveFailed(response, options)
     {
-        Ext.Msg.hide();
+        Ext4.Msg.hide();
         LABKEY.Utils.displayAjaxErrorResponse(response, options);
     }
 
@@ -412,18 +410,18 @@
             return;
         }
 
-        var store = rulesGrid.store;
-        var ruleTypes = [];
-        var ruleDatas = [];
-        for (var i = 0; i < store.getCount(); i++)
+        const store = rulesGrid.store;
+        const ruleTypes = [];
+        const ruleDatas = [];
+        for (let i = 0; i < store.getCount(); i++)
         {
-            var record = store.getAt(i);
+            let record = store.getAt(i);
             ruleTypes[i] = record.data.type;
             ruleDatas[i] = record.data.ruleData ? record.data.ruleData : "";
         }
 
-        Ext.Msg.wait("Saving...");
-        Ext.Ajax.request({
+        Ext4.Msg.wait("Saving...");
+        Ext4.Ajax.request({
             url : LABKEY.ActionURL.buildURL("specimen", "updateRequestabilityRules"),
             method : 'POST',
             success: saveComplete,
@@ -440,11 +438,11 @@
 
     function showRules()
     {
-        Ext.QuickTips.init();
+        Ext4.QuickTips.init();
 
-        var rulesGrid;
+        let rulesGrid;
 
-        var addMenuItems = [
+        const addMenuItems = [
             <%
                 boolean first = true;
                 for (RequestabilityManager.RuleType type : RequestabilityManager.RuleType.values())
@@ -452,33 +450,33 @@
                     ActionURL defaultTestURL = type.getDefaultTestURL(c);
                     RequestabilityManager.MarkType defaultMarkType = type.getDefaultMarkType();
                 %>
-                    <%= text(!first ? "," : "") %>new Ext.menu.Item({
-                                id: 'add_<%= h(type.name()) %>',
-                                text:'<%= h(type.getName()) %>',
-                                listeners:{
-                                    click:function(button, event) {
-                                        LABKEY.setDirty(true);
-                                        addRule(rulesGrid,
-                                           '<%= h(type.name()) %>', // type enum
-                                           '<%= h(type.getName()) %>', // friendly name
-                                           '<%= h(defaultMarkType != null ? defaultMarkType.getLabel() : "") %>', // default mark type
-                                           '<%= h(defaultTestURL != null ? defaultTestURL.getLocalURIString() : "") %>'); // default mark type
-                                    }
-                                }
-                            })
+                    <%= text(!first ? "," : "") %>new Ext4.menu.Item({
+                        id: 'add_<%= h(type.name()) %>',
+                        text:'<%= h(type.getName()) %>',
+                        listeners:{
+                            click:function(button, event) {
+                                LABKEY.setDirty(true);
+                                addRule(rulesGrid,
+                                   '<%= h(type.name()) %>', // type enum
+                                   '<%= h(type.getName()) %>', // friendly name
+                                   '<%= h(defaultMarkType != null ? defaultMarkType.getLabel() : "") %>', // default mark type
+                                   '<%= h(defaultTestURL != null ? defaultTestURL.getLocalURIString() : "") %>'); // default mark type
+                            }
+                        }
+                    })
                 <%
                     first = false;
                 }
             %>
         ];
 
-        var addMenu = new Ext.menu.Menu({
+        const addMenu = new Ext4.menu.Menu({
             id: 'mainMenu',
             cls:'extContainer',
             items:addMenuItems
         });
 
-        var removeButton = new Ext.Button({
+        const removeButton = new Ext4.Button({
             text:'Remove Rule',
             id: 'btn_deleteEngine',
             tooltip: {
@@ -490,7 +488,7 @@
             }
         });
 
-        var moveUpButton = new Ext.Button({
+        const moveUpButton = new Ext4.Button({
             text:'Move Up',
             id: 'btn_moveUp',
             tooltip: {
@@ -502,7 +500,7 @@
             }
         });
 
-        var moveDownButton = new Ext.Button({
+        const moveDownButton = new Ext4.Button({
             text:'Move Down',
             id: 'btn_moveDown',
             tooltip: {
@@ -514,17 +512,7 @@
             }
         });
         
-        // shared reader
-        var reader = new Ext.data.ArrayReader({}, [
-            {name: 'type'},
-            {name: 'ruleData'},
-            {name: 'name'},
-            {name: 'action'},
-            {name: 'testURL'}
-        ]);
-
-
-        var initialData = [
+        const initialData = [
         <%
         first = true;
         for (RequestabilityManager.RequestableRule rule : RequestabilityManager.getInstance().getRules(c))
@@ -541,16 +529,16 @@
         %>
         ];
 
-        var rowSelectionModel = new Ext.grid.RowSelectionModel({singleSelect: true});
-        rowSelectionModel.on("rowselect", function(model, rowIndex, record)
+        const rowSelectionModel = new Ext4.selection.RowModel({singleSelect: true});
+        rowSelectionModel.on("select", function(model, record, rowIndex)
         {
-            if (rowIndex == rulesGrid.getStore().getCount() - 1)
+            if (rowIndex === rulesGrid.getStore().getCount() - 1)
             {
                 moveUpButton.enable();
                 moveDownButton.disable();
                 removeButton.enable();
             }
-            else if (rowIndex == 0)
+            else if (rowIndex === 0)
             {
                 moveUpButton.disable();
                 moveDownButton.enable();
@@ -564,7 +552,7 @@
             }
         });
 
-        rowSelectionModel.on("rowdeselect", function()
+        rowSelectionModel.on("deselect", function()
         {
             moveUpButton.disable();
             moveDownButton.disable();
@@ -576,34 +564,36 @@
         moveDownButton.disable();
         removeButton.disable();
 
-        rulesGrid = new Ext.grid.GridPanel({
-            store: new Ext.data.Store({
-                reader: reader,
+        rulesGrid = new Ext4.grid.Panel({
+            store: new Ext4.data.ArrayStore({
+                fields: [
+                    {name: 'type'},
+                    {name: 'ruleData'},
+                    {name: 'name'},
+                    {name: 'action'},
+                    {name: 'testURL'}
+                ],
                 data: initialData
             }),
-            cm: new Ext.grid.ColumnModel({
-                columns: [
-                    new Ext.grid.RowNumberer({ header: 'Order', width: 50}),
-                    {header:'Type', dataIndex:'type', hidden: true},
-                    {header:'RuleData', dataIndex:'ruleData', hidden: true},
-                    {header:'Rule', dataIndex:'name'},
-                    {header:'Action', dataIndex:'action', renderer: actionColumnRenderer, width: 60},
-                    {header:'Test Link', dataIndex:'testURL', renderer: testColumnRenderer, width: 55}
-                ],
-                sortable: false
-            }),
-            viewConfig: {
-                forceFit:true
-            },
+            columns: [
+                new Ext4.grid.RowNumberer({ header: 'Order', width: 50}),
+                {header:'Type', dataIndex:'type', hidden: true},
+                {header:'RuleData', dataIndex:'ruleData', hidden: true},
+                {header:'Rule', dataIndex:'name'},
+                {header:'Action', dataIndex:'action', renderer: actionColumnRenderer, width: 60},
+                {header:'Test Link', dataIndex:'testURL', renderer: testColumnRenderer, width: 55}
+            ],
+            sortableColumns: false,
+            forceFit: true,
             columnLines: true,
-            enableDragDrop: true,
+            draggable: true,
             width:700,
             height:300,
             title:'Active Rules',
             iconCls:'icon-grid',
             renderTo: 'rulesGrid',
             buttonAlign:'center',
-            sm: rowSelectionModel,
+            selModel: rowSelectionModel,
             buttons: [{
                 text: 'Add Rule',
                 menu: addMenu,
@@ -625,7 +615,7 @@
         });
     }
 
-    Ext.onReady(showRules);
+    Ext4.onReady(showRules);
 </script>
 
 <labkey:errors/>
@@ -664,7 +654,7 @@
 %>
     <tr>
         <td><b><%= h(type.getName())%></b></td>
-        <td><%= h(type.getDescription())%></td>
+        <td>&nbsp;&nbsp;<%= h(type.getDescription())%></td>
     </tr>
 <%
     }

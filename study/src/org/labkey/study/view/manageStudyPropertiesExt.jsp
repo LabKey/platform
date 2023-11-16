@@ -58,10 +58,11 @@
 
 Ext4.QuickTips.init();
 
-var canEdit = <%=canEdit%>;
-var editableFormPanel = canEdit;
-var studyPropertiesFormPanel = null;
-var timepointType = "<%=timepointType%>";
+const canEdit = <%=canEdit%>;
+const timepointType = "<%=timepointType%>";
+
+let editableFormPanel = canEdit;
+let studyPropertiesFormPanel = null;
 
 function removeProtocolDocument(name, xid)
 {
@@ -71,12 +72,12 @@ function removeProtocolDocument(name, xid)
         buttons: Ext4.Msg.OKCANCEL,
         icon: Ext4.MessageBox.QUESTION,
         fn  : function(b) {
-            if (b == 'ok') {
+            if (b === 'ok') {
                 Ext4.Ajax.request({
                     url    : LABKEY.ActionURL.buildURL('study', 'removeProtocolDocument'),
                     method : 'POST',
                     success: function() {
-                        var el = document.getElementById(xid);
+                        const el = document.getElementById(xid);
                         if (el) {
                             el.parentNode.removeChild(el);
                         }
@@ -94,13 +95,13 @@ function removeProtocolDocument(name, xid)
 
 function addExtFilePickerHandler()
 {
-    var fibasic = Ext4.create('Ext.form.field.File', {
+    const fibasic = Ext4.create('Ext.form.field.File', {
         width  : 300,
         height : 30,
         style  : 'float: left;'
     });
 
-    var removeBtn = Ext4.create('Ext.Button', {
+    const removeBtn = Ext4.create('Ext.Button', {
         text: "remove",
         name: "remove",
         uploadId: fibasic.id,
@@ -108,14 +109,14 @@ function addExtFilePickerHandler()
         handler: removeNewAttachment
     });
 
-    var uploadField = Ext4.create('Ext.Panel', {
+    const uploadField = Ext4.create('Ext.Panel', {
         border : false, frame : false,
         bodyStyle : 'background-color: transparent;',
         height : 35,
         items:[fibasic, removeBtn]
     });
 
-    var protocolPanel = studyPropertiesFormPanel.getComponent('protocolPanel');
+    const protocolPanel = studyPropertiesFormPanel.getComponent('protocolPanel');
     if (protocolPanel) {
         protocolPanel.add(uploadField);
         protocolPanel.enlarge();
@@ -145,10 +146,10 @@ function unmask()
     Ext4.getBody().unmask();
 }
 
-function showSuccessMessage(message, after)
+function showSuccessMessage(message)
 {
     Ext4.get("formError").update("");
-    var el = Ext4.get("formSuccess");
+    const el = Ext4.get("formSuccess");
     el.update(message);
     el.pause(3).fadeOut({callback:function(){el.update("");}});
 }
@@ -156,12 +157,12 @@ function showSuccessMessage(message, after)
 function onSaveSuccess_updateRows()
 {
     // if you want to stay on page, you need to refresh anyway to update attachments
-    var msgbox = Ext4.Msg.show({
+    const msgbox = Ext4.Msg.show({
         title:'Status',
         msg: '<span class="labkey-message">Changes saved successfully.</span>',
         buttons: false
     });
-    var el = msgbox.getDialog().el;
+    const el = msgbox.getDialog().el;
     el.pause(1).fadeOut({callback:cancelButtonHandler});
 }
 
@@ -169,13 +170,13 @@ function onSaveSuccess_formSubmit()
 {
     // if you want to stay on page, you need to refresh anyway to update attachments
     LABKEY.setSubmit(true);
-    var msgbox = Ext4.Msg.show({
+    const msgbox = Ext4.Msg.show({
         title:'Status',
         msg: '<span class="labkey-message">Changes saved successfully.</span>',
         buttons: false
     });
     window.location = <%=q(cancelLink)%>;
-    var el = msgbox.getEl();
+    const el = msgbox.getEl();
     el.pause(1).fadeOut({callback:cancelButtonHandler});
 }
 
@@ -199,10 +200,10 @@ function onSaveFailure_formSubmit(form, action)
             break;
         case Ext4.form.Action.SERVER_INVALID:
         {
-            var msg = action.result.msg || action.result.exception || "";
+            let msg = action.result.msg || action.result.exception || "";
             if (action.result.errors)
             {
-                for (var prop in action.result.errors)
+                for (let prop in action.result.errors)
 
                     // Don't double print form and general exception if the same
                     if (action.result.errors[prop] !== msg)
@@ -216,16 +217,16 @@ function onSaveFailure_formSubmit(form, action)
 
 function submitButtonHandler()
 {
-    var form = studyPropertiesFormPanel.getForm();
+    const form = studyPropertiesFormPanel.getForm();
     if (form.isValid())
     {
         form.fileUpload = true;
         form.submit(
-                {
-                    url     : LABKEY.ActionURL.buildURL('study', 'manageStudyProperties.view'),
-                    success : onSaveSuccess_formSubmit,
-                    failure : onSaveFailure_formSubmit
-                });
+        {
+            url     : LABKEY.ActionURL.buildURL('study', 'manageStudyProperties.view'),
+            success : onSaveSuccess_formSubmit,
+            failure : onSaveFailure_formSubmit
+        });
         mask();
     }
     else
@@ -262,17 +263,8 @@ function destroyFormPanel()
     }
 }
 
-var renderTypes = {<%
-String comma = "";
-for (WikiRendererType type : getRendererTypes())
-{
-    %><%=text(comma)%><%=q(type.name())%>:<%=q(type.getDisplayName())%><%
-    comma = ",";
-}
-%>}
-
 function renderFormPanel(data, editable){
-    var protocolDocs = [];
+    const protocolDocs = [];
 <%
     int x = 0;
     for (Attachment att : getStudy().getProtocolDocuments())
@@ -288,7 +280,7 @@ function renderFormPanel(data, editable){
         x++;
     }
 %>
-    var initHeight = <%=x%>;
+    const initHeight = <%=x%>;
     Ext4.define('ProtocolDoc', {
         extend : 'Ext.data.Model',
         fields : [
@@ -299,7 +291,7 @@ function renderFormPanel(data, editable){
         ]
     });
 
-    var protoTemplate = new Ext4.XTemplate(
+    const protoTemplate = new Ext4.XTemplate(
         '<tpl for=".">',
             '<div class="protoDoc" id="attach-{atId}">',
                 '<td>&nbsp;<img src="{logo}" talt="logo"/></td>',
@@ -312,7 +304,7 @@ function renderFormPanel(data, editable){
         '</div>'
     );
 
-    var buttons = [];
+    const buttons = [];
 
     if (editable)
     {
@@ -332,14 +324,14 @@ function renderFormPanel(data, editable){
         buttons.push({text:"Done", handler: doneButtonHandler});
     }
 
-    var getConfig = function(searchString)
+    const getConfig = function(searchString)
     {
-        var fields = data.metaData.fields;
-        for (var i = 0; i < fields.length; i++)
+        const fields = data.metaData.fields;
+        for (let i = 0; i < fields.length; i++)
         {
             if (fields[i].caption === searchString)
             {
-                var config = LABKEY.ext4.Util.getFormEditorConfig(data.metaData.fields[i]);
+                const config = LABKEY.ext4.Util.getFormEditorConfig(data.metaData.fields[i]);
 
                 // textarea size doesn't reflect the form defaults
                 if (config.xtype === 'textarea')
@@ -352,7 +344,7 @@ function renderFormPanel(data, editable){
         }
         return undefined;
     };
-    var items = [
+    const items = [
         getConfig('Label'),
         getConfig('Investigator'),
         getConfig('Grant'),
@@ -360,7 +352,7 @@ function renderFormPanel(data, editable){
         getConfig('Description')
     ];
 
-    var handledFields = {
+    const handledFields = {
         Label: true,
         Investigator: true,
         Grant: true,
@@ -400,7 +392,7 @@ function renderFormPanel(data, editable){
                 fields : ['renderType', 'displayText'],
                 data : [
 <%
-                    comma = "";
+                    String comma = "";
                     for (WikiRendererType type : getRendererTypes())
                     {
                         %><%=text(comma)%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
@@ -418,6 +410,7 @@ function renderFormPanel(data, editable){
         style : 'float: left; text-align: right; padding-right: 0;',
         width : 160
     });
+
     items.push({
         xtype: 'panel',
         bodyStyle : 'background-color: transparent;',
@@ -464,7 +457,7 @@ function renderFormPanel(data, editable){
             inputValue: 'VISIT',
             value: 'VISIT',
             name: 'TimepointType',
-            checked: timepointType == 'VISIT'
+            checked: timepointType === 'VISIT'
         },{
             xtype: 'radio',
             id : 'dateRadio',
@@ -473,7 +466,7 @@ function renderFormPanel(data, editable){
             boxLabel: 'DATE',
             inputValue: 'DATE',
             name: 'TimepointType',
-            checked: timepointType == 'DATE'
+            checked: timepointType === 'DATE'
         },{
             xtype: 'radio',
             id : 'continuousRadio',
@@ -482,11 +475,11 @@ function renderFormPanel(data, editable){
             boxLabel: 'CONTINUOUS',
             inputValue: 'CONTINUOUS',
             name: 'TimepointType',
-            checked: timepointType == 'CONTINUOUS'
+            checked: timepointType === 'CONTINUOUS'
         }]
     });
 
-    var info = data.rows[0];
+    const info = data.rows[0];
 
     items[0].value = info.Label.value;
     items[1].value = info.Investigator.value;
@@ -494,30 +487,30 @@ function renderFormPanel(data, editable){
     items[3].value = info.Species.value;
     items[4].value = info.Description.value;
 
-    var cm = data.columnModel,
-        col,
-        hold;
+    const cm = data.columnModel;
+    let col;
+    let hold;
 
-    for(var i = 0; i < cm.length; i++){
+    for (let i = 0; i < cm.length; i++){
         col = cm[i];
-        if(col.hidden) continue;
-        if(handledFields[col.dataIndex]) continue;
+        if (col.hidden) continue;
+        if (handledFields[col.dataIndex]) continue;
         hold = getConfig(col.header);
-        if(hold != undefined){
+        if (hold !== undefined){
             items.push(hold);
         }
     }
 
-    for(i = 9; i < items.length; i++){
+    for (let i = 9; i < items.length; i++){
 
         // initialize the form elements
-        var value = data.rows[0][items[i].name].value;
+        const value = data.rows[0][items[i].name].value;
 
         // stupid date conversion...
-        if (items[i].xtype == 'datefield')
+        if (items[i].xtype === 'datefield')
         {
             items[i].format = LABKEY.extDateInputFormat;
-            items[i].value = (value != null && value != '') ? new Date(value) : '';
+            items[i].value = (value != null && value !== '') ? new Date(value) : '';
             items[i].listeners = {
                 render : {
                     fn : function(cmp){
@@ -529,7 +522,7 @@ function renderFormPanel(data, editable){
                 }
             }
         }
-        else if (items[i].xtype == 'checkbox')    // Checkbox doesn't respect "value"
+        else if (items[i].xtype === 'checkbox')    // Checkbox doesn't respect "value"
             items[i].checked = value;
         else
             items[i].value = value;
@@ -600,5 +593,5 @@ Ext4.onReady(createPage);
 
 </script>
 
-<span id=formSuccess class=labkey-message-strong></span><span id=formError class=labkey-error></span>&nbsp;</br>
+<span id=formSuccess class=labkey-message-strong></span><span id=formError class=labkey-error></span>&nbsp;<br>
 <div id='formDiv'></div>
