@@ -1731,7 +1731,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         private final String _name;
         private final int _index;
         private final String _dirName;
-        private String _savedName;
+        private Map<Object, String> _savedFiles = new HashMap<>();
 
         public FileColumn(Container c, String name, int idx, String dirName)
         {
@@ -1744,18 +1744,22 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Override
         public Object get()
         {
-            if (_savedName != null)
-                return _savedName;
-
             Object value = getInput().get(_index);
-            if (value instanceof MultipartFile || value instanceof AttachmentFile)
+            boolean isMultipartFile = value instanceof MultipartFile;
+            boolean isAttachmentFile = value instanceof AttachmentFile;
+
+            if (isMultipartFile || isAttachmentFile)
             {
+                String origFileName = isMultipartFile ? ((MultipartFile)value).getName() : ((AttachmentFile)value).getFilename();
+                if (_savedFiles.containsKey(origFileName))
+                    return _savedFiles.get(origFileName);
+
                 try
                 {
                     Object file = AbstractQueryUpdateService.saveFile(_container, _name, value, _dirName);
                     assert file instanceof File;
                     value = ((File)file).getPath();
-                    _savedName = (String)value;
+                    _savedFiles.put(origFileName, (String)value);
                 }
                 catch (QueryUpdateServiceException | ValidationException ex)
                 {

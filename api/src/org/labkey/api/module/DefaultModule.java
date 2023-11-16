@@ -173,7 +173,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 DbScope scope = DbScope.getLabKeyScope();
 
                 _log.warn("Module \"" + getName() + "\" requires a data source called \"" + dsName + "\". It's not configured, so it will be created against the primary labkey database (\"" + scope.getDatabaseName() + "\") instead.");
-                DbScope.addScope(dsName, scope.getDataSource(), scope.getLabKeyProps());
+                DbScope.addScope(dsName, scope.getLabKeyDataSource());
                 if (null == DbScope.getDbScope(dsName)) // Force immediate connection to test
                     throw new ConfigurationException("Failed to connect to data source \"" + dsName + "\", created against the labkey database (\"" + scope.getDatabaseName() + "\").");
             }

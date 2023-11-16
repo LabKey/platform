@@ -156,8 +156,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
-    public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
-    public static final String CPAS_DATA_SOURCE = "cpasDataSource";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
 
     private static ModuleLoader _instance = null;
