@@ -6,58 +6,11 @@
 
 //
 // you must init the tinyMCE before the page finishes loading
-// if you don't, you'll get a blank page an an error
+// if you don't, you'll get a blank page and an error
 // seems to be a limitation of the tinyMCE.
 //
 var _tinyMCEInitialized = false;
 
-//
-// I copied these options from Tinymce version 3.4 word.html example page, then trimmed down to remove
-// unneeded buttons and plugins. Added one third-party plugin, pwd, which toggles the lower two
-// toolbars on and off.
-//
-
-LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () {
-
-    tinymce.init({
-        // General options
-        mode: "none",
-        theme: "advanced",
-        plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
-        "contextmenu, fullscreen, noneditable, inlinepopups, style, pdw ",
-
-        // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
-        convert_urls: false,
-
-        // TODO update Toolbar buttons
-        // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
-        theme_advanced_buttons1: "pdw_toggle, |, undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
-        "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
-
-        theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
-        "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
-
-        theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
-        theme_advanced_toolbar_location: "top",
-        theme_advanced_toolbar_align: "left",
-        theme_advanced_statusbar_location: "bottom",
-        theme_advanced_resizing: true,
-
-        // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
-        // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-        gecko_spellcheck: true,
-
-        // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
-        pdw_toggle_on: 1,
-        pdw_toggle_toolbars: "2,3",
-
-        // labkey specific
-        handle_event_callback: "tinyMceHandleEvent",
-
-        // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
-        init_instance_callback: function() { _tinyMCEInitialized = true; }
-    });
-}, this);
 // called by tinyMCE for *all* events so make sure to filter
 // for keydown. return false to stop tinyMCE from handling or passing on
 function tinyMceHandleEvent(evt) {
@@ -89,25 +42,92 @@ function tinyMceHandleEvent(evt) {
     return true;
 }
 
+const TabNames = Object.freeze({
+    Preview: 'preview',
+    Source: 'source',
+    Visual: 'visual',
+});
+
 (function($) {
+    LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () {
+
+        tinymce.init({
+            selector: 'textarea',
+            // General options
+            theme: "silver",
+            plugins: [
+                "advlist",
+                "table",
+                "autolink",
+                "preview",
+                "image",
+                "media",
+                "searchreplace",
+                "fullscreen",
+                "lists",
+                "link",
+                "emoticons",
+                "quickbars",
+                "code",
+                'charmap'
+            ],
+            promotion: false,
+            // removed_menuitems: 'preview',  //TODO keep/Remove helps with embedded images
+            // toolbar: "|code",
+            advcode_inline: true,
+            // tell tinymce not be clever about URL conversion.  Dave added it to fix some bug.
+            convert_urls: false,
+
+            // TODO update Toolbar buttons
+            // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
+            theme_advanced_buttons1: "undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
+                    "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
+
+            theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
+                    "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
+
+            theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
+            theme_advanced_toolbar_location: "top",
+            theme_advanced_toolbar_align: "left",
+            theme_advanced_statusbar_location: "bottom",
+            theme_advanced_resizing: true,
+
+            // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
+            // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
+            browser_spellcheck: true,
+
+            // labkey specific
+            handle_event_callback: "tinyMceHandleEvent",
+
+            // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
+            init_instance_callback: function() {
+                _tinyMCEInitialized = true;
+
+                // The initial Tab is set before the Editor is initialized
+                if (_editor === TabNames.Source)
+                    tinymce.get(_idPrefix + 'body').hide(); // make sure it is hidden...
+            }
+        });
+    }, this);
+
     //
     // CONSTANTS
     //
-    var _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
-    var _idSel = '#' + _idPrefix;
-    var _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
-    var _finished = false;
-    var _newAttachmentIndex = 0;
-    var _tocTree;
+    const _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
+    const _idSel = '#' + _idPrefix;
+    const _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
+    let _finished = false;
+    let _newAttachmentIndex = 0;
+    let _tocTree;
 
     //
     // Variables
     //
-    var _attachments = [],
+    let _attachments = [],
             _cancelUrl = '',
             _convertWin,
             _doingSave = false,
-            _editor = 'source',
+            _editor = TabNames.Source,
             _formats = {},
             _redirUrl = '',
             _wikiProps = {};
@@ -307,7 +327,7 @@ function tinyMceHandleEvent(evt) {
     };
 
     var isDirty = function() {
-        var isBodyDirty = _tinyMCEInitialized && tinymce.get(_idPrefix + 'body') && tinymce.get(_idPrefix + 'body').isDirty();
+        var isBodyDirty = _tinyMCEInitialized && tinymce.get(_idPrefix + 'body')?.isDirty();
         return isBodyDirty || LABKEY.isDirty();
     };
 
@@ -391,7 +411,7 @@ function tinyMceHandleEvent(evt) {
             updateControl("body", respJson.body);
 
             // if the new type is HTML, switch to visual appropriate editor
-            _editor == "source" ? switchToSource() : switchToVisual();
+            _editor == TabNames.Source ? switchToSource() : switchToVisual();
         }
         else {
             switchToSource();
@@ -586,7 +606,7 @@ function tinyMceHandleEvent(evt) {
         LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("wiki", "setEditorPreference"),
             method : 'POST',
-            jsonData : { useVisual: (editor == "visual") },
+            jsonData : { useVisual: (editor === TabNames.Visual) },
             success: function() {},
             failure: LABKEY.Utils.getCallbackWrapper(function(exceptionInfo) {
                 setError("There was a problem while saving your editor preference: " + exceptionInfo.exception);
@@ -703,12 +723,14 @@ function tinyMceHandleEvent(evt) {
         if (el) { isDisplayed ? el.show() : el.hide(); }
     };
 
+// TODO can these be removed?
     var switchToMarkdownEdit = function() {
         setTabStripVisible(true);
         getEditingTab().attr('class', 'labkey-tab-active');
         getPreviewTab().attr('class', 'labkey-tab-inactive');
     };
 
+// TODO can these be removed?
     var switchToMarkdownPreview = function() {
         setTabStripVisible(true);
         getEditingTab().attr('class', 'labkey-tab-inactive');
@@ -719,10 +741,8 @@ function tinyMceHandleEvent(evt) {
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
         getSourceTab().attr('class', 'labkey-tab-active');
-        if (tinymce.get(_idPrefix + 'body')) {
-            tinymce.execCommand('mceRemoveControl', false, _idPrefix + 'body');
-        }
-        _editor = "source";
+        tinymce.get(_idPrefix + 'body').hide();
+        _editor = TabNames.Source;
         showEditingHelp(_wikiProps.rendererType);
     };
 
@@ -748,9 +768,8 @@ function tinyMceHandleEvent(evt) {
             setTabStripVisible(true);
             getVisualTab().attr('class', 'labkey-tab-active');
             getSourceTab().attr('class', 'labkey-tab-inactive');
-            if (!tinymce.get(_idPrefix + 'body'))
-                tinymce.execCommand('mceAddControl', false, _idPrefix + 'body');
-            _editor = "visual";
+            tinymce.get(_idPrefix + 'body').show();
+            _editor = TabNames.Visual;
             showEditingHelp(_wikiProps.rendererType);
             if (savePreference)
                 saveEditorPreference(_editor);

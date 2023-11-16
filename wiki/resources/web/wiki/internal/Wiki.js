@@ -122,6 +122,8 @@
                 "code",
             ],
 
+            menubar: 'file edit insert view format table tools help',
+            // removed_menuitems: 'preview',
             // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
             convert_urls: false,
 
