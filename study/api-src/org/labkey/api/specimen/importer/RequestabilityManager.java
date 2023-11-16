@@ -545,7 +545,7 @@ public class RequestabilityManager
                     throw new InvalidRuleException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
             }
 
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
                 Set<String> globalUniqueIds = new HashSet<>();
                 for (Vial vial : vials)

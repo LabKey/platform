@@ -139,7 +139,7 @@
                 const viewInfo = queryViews.views[i];
                 if (!viewInfo.hidden)
                 {
-                    const name =  viewInfo.name != null ? viewInfo.name : defaultViewLabel;
+                    const name = viewInfo.name != null ? viewInfo.name : defaultViewLabel;
                     records[records.length] = [name, viewInfo.viewDataUrl];
                 }
             }
@@ -295,7 +295,7 @@
                     }
 
                     let viewName = viewCombo.getValue();
-                    if (viewName === defaultViewLabel)
+                    if (!viewName || viewName === defaultViewLabel)
                         viewName = "";
                     let ruleName = "<%= h(RequestabilityManager.RuleType.CUSTOM_QUERY.getName()) %>: " + schemaCombo.getValue() + "." + queryCombo.getValue();
                     if (viewName)
