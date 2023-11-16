@@ -133,6 +133,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
@@ -735,7 +736,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (!svc.allowUserSpecifiedNames(c))
         {
             if (nameExpression == null)
-                throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+                throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         if (svc.getExpressionPrefix(c) != null)
@@ -1000,7 +1001,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                 {
                     errors = new ValidationException();
-                    errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+                    errors.addError(new SimpleValidationError(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
 
                     return errors;
                 }
