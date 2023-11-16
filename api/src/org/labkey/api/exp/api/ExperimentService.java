@@ -800,14 +800,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
 
-    ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+    ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException;
 
     ExpRun derive(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
                   Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
                   ViewBackgroundInfo info, Logger log)
-            throws ExperimentException;
+            throws ExperimentException, ValidationException;
 
-    void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException;
+    void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException;
 
     void registerExperimentDataHandler(ExperimentDataHandler handler);
 

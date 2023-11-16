@@ -1908,19 +1908,28 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }
 
-            if (isAliquot && aliquotParent != null)
+            try
             {
-                ExpRunImpl expRun = expService.createAliquotRun(aliquotParent, movingOutputsMap.keySet(), targetInfo);
-                expService.saveSimpleExperimentRun(expRun, run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), Collections.emptyMap(), targetInfo, LOG, false);
-                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
-                run.setName(ExperimentServiceImpl.getAliquotRunName(aliquotParent, numStaying));
+                if (isAliquot && aliquotParent != null)
+                {
+                    ExpRunImpl expRun = expService.createAliquotRun(aliquotParent, movingOutputsMap.keySet(), targetInfo);
+                    expService.saveSimpleExperimentRun(expRun, run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), Collections.emptyMap(), targetInfo, LOG, false);
+                    // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                    run.setName(ExperimentServiceImpl.getAliquotRunName(aliquotParent, numStaying));
+                }
+                else
+                {
+                    // create a new derivation run for the samples that are moving
+                    expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
+                    // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
+                    run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
+                }
             }
-            else
+            catch (ValidationException e)
             {
-                // create a new derivation run for the samples that are moving
-                expService.derive(run.getMaterialInputs(), run.getDataInputs(), movingOutputsMap, Collections.emptyMap(), targetInfo, LOG);
-                // Update the run for the samples that have stayed behind. Change the name and remove the moved samples as outputs
-                run.setName(ExperimentServiceImpl.getDerivationRunName(run.getMaterialInputs(), run.getDataInputs(), numStaying, run.getDataOutputs().size()));
+                BatchValidationException errors = new BatchValidationException();
+                errors.addRowError(e);
+                throw errors;
             }
             run.save(user);
             List<Integer> movingSampleIds = movingSet.stream().map(ExpMaterial::getRowId).toList();

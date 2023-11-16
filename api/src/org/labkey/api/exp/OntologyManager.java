@@ -2402,6 +2402,9 @@ public class OntologyManager
     @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
+        if (c == null)
+            return null;
+
         // cache lookup by project. if not found at project level, check to see if global
         DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, c));
         if (null != dd)
