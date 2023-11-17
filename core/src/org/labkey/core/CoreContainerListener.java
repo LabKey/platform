@@ -58,6 +58,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         String message = auditMsg == null ? c.getContainerNoun(true) + " " + c.getName() + " was created" : auditMsg;
         addAuditEvent(user, c, message);
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
     }
 
     @Override
