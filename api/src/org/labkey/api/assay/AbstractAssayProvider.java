@@ -1292,12 +1292,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
                 else
                 {
-                    validationErrors.addError(new SimpleValidationError("Script engine for the extension : " + ext + " has not been registered.", null, SEVERITY.ERROR, new HelpTopic("configureScripting")));
+                    validationErrors.addError(new SimpleValidationError("Script engine for the extension '" + ext + "' has not been registered.", null, SEVERITY.ERROR, new HelpTopic("configureScripting")));
                 }
             }
             else
             {
-                validationErrors.addError(new SimpleValidationError("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist", null, SEVERITY.ERROR));
+                validationErrors.addError(new SimpleValidationError("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist.", null, SEVERITY.ERROR));
             }
         }
 
