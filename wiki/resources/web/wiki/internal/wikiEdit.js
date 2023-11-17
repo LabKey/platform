@@ -4,13 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-//
-// you must init the tinyMCE before the page finishes loading
-// if you don't, you'll get a blank page and an error
-// seems to be a limitation of the tinyMCE.
-//
-var _tinyMCEInitialized = false;
-
 // called by tinyMCE for *all* events so make sure to filter
 // for keydown. return false to stop tinyMCE from handling or passing on
 function tinyMceHandleEvent(evt) {
@@ -49,10 +42,32 @@ const TabNames = Object.freeze({
 });
 
 (function($) {
-    LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () {
+    //
+    // CONSTANTS
+    //
+    const _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
+    const _idSel = '#' + _idPrefix;
+    const _editorId = _idSel + 'body';
+    const _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
+    let _finished = false;
+    let _newAttachmentIndex = 0;
+    let _tocTree;
 
+    //
+    // Variables
+    //
+    let _attachments = [],
+            _cancelUrl = '',
+            _convertWin,
+            _doingSave = false,
+            _editor = TabNames.Source,
+            _formats = {},
+            _redirUrl = '',
+            _wikiProps = {};
+
+    const initTinymce = function  (initializedCallback) {
         tinymce.init({
-            selector: 'textarea',
+            selector: 'textarea' + _editorId,
             // General options
             theme: "silver",
             plugins: [
@@ -100,37 +115,9 @@ const TabNames = Object.freeze({
             handle_event_callback: "tinyMceHandleEvent",
 
             // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
-            init_instance_callback: function() {
-                _tinyMCEInitialized = true;
-
-                // The initial Tab is set before the Editor is initialized
-                if (_editor === TabNames.Source)
-                    tinymce.get(_idPrefix + 'body').hide(); // make sure it is hidden...
-            }
-        });
-    }, this);
-
-    //
-    // CONSTANTS
-    //
-    const _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
-    const _idSel = '#' + _idPrefix;
-    const _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
-    let _finished = false;
-    let _newAttachmentIndex = 0;
-    let _tocTree;
-
-    //
-    // Variables
-    //
-    let _attachments = [],
-            _cancelUrl = '',
-            _convertWin,
-            _doingSave = false,
-            _editor = TabNames.Source,
-            _formats = {},
-            _redirUrl = '',
-            _wikiProps = {};
+            // init_instance_callback: initializedCallback
+        }).then(initializedCallback);
+    }
 
     var getVisualTab = function() { return $('#wiki-tab-visual'); };
     var getSourceTab = function() { return $('#wiki-tab-source'); };
@@ -327,7 +314,7 @@ const TabNames = Object.freeze({
     };
 
     var isDirty = function() {
-        var isBodyDirty = _tinyMCEInitialized && tinymce.get(_idPrefix + 'body')?.isDirty();
+        var isBodyDirty = tinymce.activeEditor?.isDirty();
         return isBodyDirty || LABKEY.isDirty();
     };
 
@@ -407,11 +394,11 @@ const TabNames = Object.freeze({
         _wikiProps.rendererType = respJson.toFormat;
 
         //if the new type is not html, switch to source and hide the tab strip
-        if (respJson.toFormat == "HTML") {
+        if (respJson.toFormat === "HTML") {
             updateControl("body", respJson.body);
 
             // if the new type is HTML, switch to visual appropriate editor
-            _editor == TabNames.Source ? switchToSource() : switchToVisual();
+            _editor === TabNames.Source ? switchToSource() : switchToVisual();
         }
         else {
             switchToSource();
@@ -615,9 +602,10 @@ const TabNames = Object.freeze({
     };
 
     var setBodyClean = function() {
-        if (tinymce.get(_idPrefix + 'body')) {
-            tinymce.get(_idPrefix + 'body').isNotDirty = 1;
-        }
+        // if (tinymce.activeEditor) {
+        //     tinymce.activeEditor.isNotDirty = 1;
+        // }
+        tinymce.activeEditor?.setDirty(false);
     };
 
     var setError = function(msg) {
@@ -741,7 +729,7 @@ const TabNames = Object.freeze({
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
         getSourceTab().attr('class', 'labkey-tab-active');
-        tinymce.get(_idPrefix + 'body').hide();
+        tinymce.activeEditor?.hide();
         _editor = TabNames.Source;
         showEditingHelp(_wikiProps.rendererType);
     };
@@ -764,11 +752,16 @@ const TabNames = Object.freeze({
                 });
             });
         }
+        else if (!tinymce.activeEditor) {
+            LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', () => {
+                initTinymce(switchToVisual);
+            }, this);
+        }
         else {
             setTabStripVisible(true);
             getVisualTab().attr('class', 'labkey-tab-active');
             getSourceTab().attr('class', 'labkey-tab-inactive');
-            tinymce.get(_idPrefix + 'body').show();
+            tinymce.activeEditor?.show();
             _editor = TabNames.Visual;
             showEditingHelp(_wikiProps.rendererType);
             if (savePreference)
@@ -829,7 +822,8 @@ const TabNames = Object.freeze({
     };
 
     var updateSourceFromVisual = function() {
-        tinymce.EditorManager.triggerSave();
+        if (_editor === TabNames.Visual)
+            tinymce.triggerSave();
     };
 
     var userSwitchToSource = function() {
