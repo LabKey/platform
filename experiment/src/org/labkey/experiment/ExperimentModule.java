@@ -552,6 +552,8 @@ public class ExperimentModule extends SpringModule
 
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
 
+        WebdavService.get().addProvider(new ScriptsResourceProvider());
+
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
