@@ -25,6 +25,7 @@ import org.labkey.api.data.ResultsImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 
@@ -37,21 +38,17 @@ import java.util.Map;
 
 import static org.labkey.api.util.PageFlowUtil.jsString;
 
-/**
- * User: jeckels
- * Date: Feb 22, 2006
- */
 public abstract class AbstractNestableDataRegion extends DataRegion
 {
     protected boolean _expanded = false;
     private boolean _renderedInnerGrid = false; 
     protected DataRegion _nestedRegion = null;
     protected final String _uniqueColumnName;
-    private final String _ajaxNestedGridURL;
+    private final ActionURL _ajaxNestedGridURL;
     protected GroupedResultSet _groupedRS = null;
     protected Map<FieldKey, ColumnInfo> _nestedFieldMap;
 
-    protected AbstractNestableDataRegion(String uniqueColumnName, String url)
+    protected AbstractNestableDataRegion(String uniqueColumnName, ActionURL url)
     {
         _uniqueColumnName = uniqueColumnName;
         _ajaxNestedGridURL = url;
