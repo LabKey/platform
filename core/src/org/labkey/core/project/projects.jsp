@@ -47,6 +47,8 @@
 <%@ page import="java.util.Objects" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.stream.Collectors" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.core.portal.ProjectController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -159,13 +161,15 @@
         {
             HtmlString projectName = HtmlString.of(c.getProject().getName());
             String displayName = displayName(c);
-            // data-project can be use in style sheet to hide projects e.g.
+            // data-project can be used in a custom stylesheet to hide projects e.g.
             // <style>div[data-project="StudyVerifyProject"]{display:none !important;}</style>
             // NOTE: JTidy does not like <A> tags wrapping <DIV> tags, so avoid that here
+            // NOTE: we use ProjectController.StartAction rather than c.getStartURL() because getStartURL() does a lot of work, we can defer that work to StartAction.
+            HtmlString startUrl = HtmlString.of(new ActionURL(ProjectController.StartAction.class, c));
             if (details) {
-                %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><div class="thumb-img-side"><a href="<%=h(c.getStartURL(getUser()))%>"><span class="fa fa-folder-open fa-lg"></span></a></div><a href="<%=h(c.getStartURL(getUser()))%>"><span class="thumb-label-side"><%=h(displayName)%></span></a></div></div><%
+                %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><div class="thumb-img-side"><a href="<%=startUrl%>"><span class="fa fa-folder-open fa-lg"></span></a></div><a href="<%=startUrl%>"><span class="thumb-label-side"><%=h(displayName)%></span></a></div></div><%
             } else {
-                %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><div class="thumb-img-bottom"><a href="<%=h(c.getStartURL(getUser()))%>"><span class="fa fa-folder-open <%=faX%>"></span></a></div><a href="<%=h(c.getStartURL(getUser()))%>"><span class="thumb-label-bottom"><%=h(displayName)%></span></a></div></div><%
+                %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><div class="thumb-img-bottom"><a href="<%=startUrl%>"><span class="fa fa-folder-open <%=faX%>"></span></a></div><a href="<%=startUrl%>"><span class="thumb-label-bottom"><%=h(displayName)%></span></a></div></div><%
             }
         }
 %>
