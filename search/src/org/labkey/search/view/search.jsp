@@ -21,6 +21,7 @@
 <%@ page import="org.json.JSONObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.search.SearchMisconfiguredException" %>
 <%@ page import="org.labkey.api.search.SearchResultTemplate" %>
@@ -92,8 +93,8 @@
         return nav.isEmpty() ? null : nav;
     }
 
-    Path files = new Path("@files");
-    Path pipeline = new Path("@pipeline");
+    Path files = new Path(FileContentService.FILES_LINK);
+    Path pipeline = new Path(FileContentService.PIPELINE_LINK);
     Path dav = new Path("_webdav");
 
     NavTree getDocumentContext(Container c, SearchService.SearchHit hit)

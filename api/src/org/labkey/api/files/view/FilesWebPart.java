@@ -116,7 +116,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 _isPipelineFiles = true;
             }
             else if (fileRoot.startsWith(FileContentService.FILE_SETS_LINK)
-                    || fileRoot.startsWith(CloudStoreService.CLOUD_NAME) && !svc.isCloudRoot(c)
+                    || fileRoot.startsWith(FileContentService.CLOUD_LINK) && !svc.isCloudRoot(c)
                     || fileRoot.startsWith("@wiki"))
             {
                 _isRootNotFilesPipeline = true;
@@ -137,11 +137,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                 setTitleHref(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c));
                 setTitle("Pipeline Files");
             }
-            else if (legacyFileRoot.startsWith(CloudStoreService.CLOUD_NAME))
+            else if (legacyFileRoot.startsWith(FileContentService.CLOUD_LINK))
             {
                 // UNDONE: Configure filebrowser to not expand by default since even listing store contents costs money.
-                String storeName = legacyFileRoot.substring((CloudStoreService.CLOUD_NAME + "/").length());
-                getModelBean().setRootPath(getRootPath(c, CloudStoreService.CLOUD_NAME, storeName));
+                String storeName = legacyFileRoot.substring((FileContentService.CLOUD_LINK + "/").length());
+                getModelBean().setRootPath(getRootPath(c, FileContentService.CLOUD_LINK, storeName));
                 setTitle(storeName);
                 setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", legacyFileRoot));
             }
