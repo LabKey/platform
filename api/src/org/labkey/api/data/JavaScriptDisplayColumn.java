@@ -40,8 +40,8 @@ import static org.labkey.api.util.DOM.Attribute.tabindex;
 public class JavaScriptDisplayColumn extends DataColumn
 {
     private final LinkedHashSet<ClientDependency> _dependencies = new LinkedHashSet<>();
-    private final StringExpressionFactory.FieldKeyStringExpression _onClickExpression;
-    private final String _linkClassName;
+    private final @Nullable StringExpressionFactory.FieldKeyStringExpression _onClickExpression;
+    private final @Nullable String _linkClassName;
 
     public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies)
     {
@@ -58,7 +58,7 @@ public class JavaScriptDisplayColumn extends DataColumn
                 _dependencies.add(ClientDependency.fromPath(dependency));
         }
 
-        _onClickExpression = StringExpressionFactory.FieldKeyStringExpression.create(onClickJavaScript, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);
+        _onClickExpression = null != onClickJavaScript ? StringExpressionFactory.FieldKeyStringExpression.create(onClickJavaScript, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull) : null;
         _linkClassName = linkClassName;
     }
 
