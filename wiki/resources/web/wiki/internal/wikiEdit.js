@@ -754,7 +754,7 @@ const TabNames = Object.freeze({
         }
         else if (!tinymce.activeEditor) {
             LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', () => {
-                initTinymce(switchToVisual);
+                initTinymce(()=> switchToVisual(confirmOverride, savePreference));
             }, this);
         }
         else {
