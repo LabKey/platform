@@ -1073,7 +1073,7 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Manage Requestability rules"));
         log("Export Requestability Rules");
         _ext4Helper.clickExt4MenuButton(false, Ext4Helper.Locators.ext4Button("Add Rule"), false, "Custom Query");
-        Window window = new Window("Add Custom Query Rule", getDriver()); // org.labkey.test.components.ext4.Window
+        Window window = new Window("Add Custom Query Rule", getDriver());
         _ext4Helper.selectComboBoxItem("Schema:", "auditLog");
         _ext4Helper.selectComboBoxItem("Query:", "FileSystem");
         _ext4Helper.selectComboBoxItem("Mark vials:", "Unavailable");
