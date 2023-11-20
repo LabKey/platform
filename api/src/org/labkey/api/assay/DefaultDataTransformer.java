@@ -109,9 +109,13 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                 {
                     throw new ValidationException(e.getMessage());
                 }
-
-                ScriptEngine engine = LabKeyScriptEngineManager.get()
-                        .getEngineByExtension(context.getContainer(), FileUtil.getExtension(scriptFile), LabKeyScriptEngineManager.EngineContext.pipeline);
+                ScriptEngine engine = null;
+                String ext = FileUtil.getExtension(scriptFile);
+                if (ext != null)
+                {
+                    engine = LabKeyScriptEngineManager.get()
+                        .getEngineByExtension(context.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
+                }
                 if (engine != null)
                 {
                     // issue : 46838 remote scripting engines don't support transform scripts yet
