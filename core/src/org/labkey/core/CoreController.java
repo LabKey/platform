@@ -174,9 +174,6 @@ import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -2143,86 +2140,6 @@ public class CoreController extends SpringActionController
         FileUtil.mkdirs(userDir);
         return userDir;
     }
-
-
-    //@RequiresLogin
-    @RequiresSiteAdmin
-    public static class PreUploadAction extends FormApiAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            // only for testing!
-            if (!AppProps.getInstance().isDevMode() || !getUser().hasRootAdminPermission())
-                throw new UnauthorizedException("under development");
-            return new HtmlView("<form method=\"POST\" enctype=\"multipart/form-data\">"+
-                    "<input name=file type=file><input type=submit>" +
-                    new CsrfInput(getViewContext()) +
-                    "</form>");
-        }
-
-        @Override
-        public void addNavTrail(NavTree root)
-        {
-        }
-
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            if (!AppProps.getInstance().isDevMode() || !getUser().hasRootAdminPermission())
-                throw new UnauthorizedException("under development");
-
-            JSONObject ret = new JSONObject();
-
-            HttpServletRequest request = getViewContext().getRequest();
-            if (!(request instanceof MultipartHttpServletRequest))
-                throw new BadRequestException("Expected multi-part form");
-            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
-            Map<String, MultipartFile> map = multipartRequest.getFileMap();
-            if (map.size() == 0)
-                return ret;
-            if (map.size() > 1)
-                throw new BadRequestException("Expected one file");
-
-            // TODO cleanup on server shutdown/startup
-            // TODO register session cleanup event
-            // TODO check quota
-            File uploadDir = getUploadDir(getUser(), request.getSession().getId());
-            File location;
-            do
-            {
-                String uniq = GUID.makeHash();
-                location = new File(uploadDir, uniq);
-            }
-            while (location.exists());    // pretty unlikely to have a collision...
-            FileUtil.mkdir(location);
-            location.deleteOnExit();
-
-            Map.Entry<String, MultipartFile> entry = map.entrySet().iterator().next();
-            MultipartFile mp = entry.getValue();
-            File target = new File(location, mp.getOriginalFilename());
-            target.deleteOnExit();
-
-            boolean copied = false;
-            if (entry.getValue() instanceof CommonsMultipartFile)
-            {
-                CommonsMultipartFile mpf = (CommonsMultipartFile)entry.getValue();
-                if (mpf.getFileItem() instanceof DiskFileItem)
-                {
-                    DiskFileItem dfi = (DiskFileItem)mpf.getFileItem();
-                    if (!dfi.isInMemory() && dfi.getStoreLocation().isFile())
-                        copied = dfi.getStoreLocation().renameTo(target);
-                }
-            }
-            if (!copied)
-                FileUtil.copyData(mp.getInputStream(), target);
-
-            ret.put("success", true);
-            ret.put("token", TOKEN_PREFIX + location.getName());
-            return ret;
-        }
-    }
-
 
     @RequiresNoPermission
     public static class StyleGuideAction extends SimpleViewAction

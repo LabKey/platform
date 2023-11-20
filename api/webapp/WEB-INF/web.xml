@@ -91,12 +91,6 @@
     </filter-mapping>
 
     <servlet>
-        <servlet-name>ViewServlet</servlet-name>
-        <servlet-class>org.labkey.api.view.ViewServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet>
         <servlet-name>Kaptcha</servlet-name>
         <servlet-class>com.google.code.kaptcha.servlet.KaptchaServlet</servlet-class>
         <init-param>
@@ -127,38 +121,6 @@
         <servlet-class>org.labkey.api.attachments.ImageServlet</servlet-class>
     </servlet>
 
-    <servlet>
-        <servlet-name>static</servlet-name>
-        <servlet-class>org.labkey.core.webdav.WebdavServlet</servlet-class>
-        <init-param>
-          <param-name>resolver</param-name>
-          <param-value>org.labkey.core.webdav.ModuleStaticResolverImpl</param-value>
-        </init-param>
-    </servlet>
-
-    <!--
-        even though there is one webdav tree rooted at "/" we still use two servlet bindings.
-        This is because we want /_webdav/* to be resolve BEFORE all other servlet-mappings
-        and /* to resolve AFTER all other servlet-mappings
-    -->
-    <servlet-mapping>
-        <servlet-name>static</servlet-name>
-        <url-pattern>/_webdav/*</url-pattern>
-    </servlet-mapping>
-
-
-    <servlet-mapping>
-        <servlet-name>ViewServlet</servlet-name>
-        <url-pattern>*.view</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ViewServlet</servlet-name>
-        <url-pattern>*.api</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ViewServlet</servlet-name>
-        <url-pattern>*.post</url-pattern>
-    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ImageServlet</servlet-name>
         <url-pattern>*.image</url-pattern>
@@ -172,11 +134,6 @@
         <url-pattern>/files/*</url-pattern>
     </servlet-mapping>
 
-    <servlet-mapping>
-        <servlet-name>static</servlet-name>
-        <url-pattern>/</url-pattern>
-    </servlet-mapping>
-    
     <welcome-file-list>
         <welcome-file>/</welcome-file>
     </welcome-file-list>
