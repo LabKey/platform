@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.dumbster.EmailRecordTable;
@@ -17,6 +18,8 @@ import org.labkey.test.util.PortalHelper;
 
 import java.util.Arrays;
 import java.util.List;
+
+import static org.labkey.test.WebTestHelper.getContextPath;
 
 @Category({Daily.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 3)
@@ -57,7 +60,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         createDataset("D5", Arrays.asList("F11", "F24"), null);
 
         log("Execute the script to send the email");
-        executeScript("LABKEY.Ajax.request({ url: '/labkey/home/reports-sendDailyDigest.view', method: 'POST' });");
+        executeScript("LABKEY.Ajax.request({ url: '%s/home/reports-sendDailyDigest.view', method: 'POST' });".formatted(getContextPath()));
     }
 
     @Before
@@ -84,7 +87,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         clickButton("Submit");
 
         log("Execute the script to send the email");
-        executeScript("LABKEY.Ajax.request({ url: '/labkey/home/reports-sendDailyDigest.view', method: 'POST' });");
+        executeScript("LABKEY.Ajax.request({ url: '%s/home/reports-sendDailyDigest.view', method: 'POST' });".formatted(getContextPath()));
 
         goToModule("Dumbster");
         EmailRecordTable notifications = new EmailRecordTable(this);
@@ -128,7 +131,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         clickButton("Submit");
 
         log("Execute the script to send the email");
-        executeScript("LABKEY.Ajax.request({ url: '/labkey/home/reports-sendDailyDigest.view', method: 'POST' });");
+        executeScript("LABKEY.Ajax.request({ url: '%s/home/reports-sendDailyDigest.view', method: 'POST' });".formatted(getContextPath()));
 
         goToModule("Dumbster");
         EmailRecordTable notifications = new EmailRecordTable(this);
@@ -172,7 +175,7 @@ public class StudyDatasetChangeEmailNotificationTest extends BaseWebDriverTest
         clickButton("Submit");
 
         log("Execute the script to send the email");
-        executeScript("LABKEY.Ajax.request({ url: '/labkey/home/reports-sendDailyDigest.view', method: 'POST' });");
+        executeScript("LABKEY.Ajax.request({ url: '%s/home/reports-sendDailyDigest.view', method: 'POST' });".formatted(getContextPath()));
 
         goToModule("Dumbster");
         EmailRecordTable notifications = new EmailRecordTable(this);
