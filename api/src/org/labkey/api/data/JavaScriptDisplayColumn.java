@@ -15,9 +15,12 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -25,26 +28,27 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.util.DOM.Attribute.tabindex;
 
 /**
  * {@link DisplayColumn} subclass that supports injecting JavaScript when rendering to HTML, allowing custom click
  * handlers and other magic behavior to be wired in. Can also add external .js files to the page via client dependencies.
- * User: adam
- * Date: 6/13/13
  */
 public class JavaScriptDisplayColumn extends DataColumn
 {
     private final LinkedHashSet<ClientDependency> _dependencies = new LinkedHashSet<>();
-    private final StringExpressionFactory.FieldKeyStringExpression _eventExpression;
-    private String _linkClassName;
+    private final @Nullable StringExpressionFactory.FieldKeyStringExpression _onClickExpression;
+    private final @Nullable String _linkClassName;
 
-    public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies, String javaScriptEvents)
+    public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies)
     {
-        this(col, dependencies, javaScriptEvents, null);
+        this(col, dependencies, null, null);
     }
 
-    public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies, String javaScriptEvents, @Nullable String linkClassName)
+    public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies, @Nullable String onClickJavaScript, @Nullable String linkClassName)
     {
         super(col);
 
@@ -54,7 +58,7 @@ public class JavaScriptDisplayColumn extends DataColumn
                 _dependencies.add(ClientDependency.fromPath(dependency));
         }
 
-        _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);
+        _onClickExpression = null != onClickJavaScript ? StringExpressionFactory.FieldKeyStringExpression.create(onClickJavaScript, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull) : null;
         _linkClassName = linkClassName;
     }
 
@@ -65,20 +69,30 @@ public class JavaScriptDisplayColumn extends DataColumn
 
         if (null != o)
         {
-            out.write("<a href=\"#\" tabindex=\"-1\" ");
-            if (_linkClassName != null)
-            {
-                out.write("class=\"" + _linkClassName + "\" ");
-            }
-            String eventExpressionEvalResult = _eventExpression.eval(ctx);
-            if (eventExpressionEvalResult != null)
-                out.write(eventExpressionEvalResult);
-            out.write(">");
-            getFormattedHtml(ctx).appendTo(out);
-            out.write("</a>");
+            String onClick = null;
+
+            if (_onClickExpression != null)
+                onClick = StringUtils.trim(_onClickExpression.eval(ctx));
+
+            renderLink(out, getFormattedHtml(ctx), onClick, _linkClassName);
         }
         else
             out.write("&nbsp;");
+    }
+
+    protected void renderLink(Writer out, HtmlString html, @Nullable String onClick, @Nullable String linkClassName)
+    {
+        LinkBuilder builder = new LinkBuilder(html)
+            .href("#")
+            .attributes(Map.of(tabindex.name(), "-1"))
+            .onClick(onClick);
+
+        if (linkClassName != null)
+            builder.addClass(linkClassName);
+        else
+            builder.clearClasses();
+
+        builder.appendTo(out);
     }
 
     @Override
@@ -92,9 +106,9 @@ public class JavaScriptDisplayColumn extends DataColumn
     {
         super.addQueryFieldKeys(keys);
 
-        if (_eventExpression != null)
+        if (_onClickExpression != null)
         {
-            keys.addAll(_eventExpression.getFieldKeys());
+            keys.addAll(_onClickExpression.getFieldKeys());
         }
     }
 }
