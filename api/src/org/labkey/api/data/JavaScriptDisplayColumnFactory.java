@@ -16,30 +16,35 @@
 package org.labkey.api.data;
 
 import org.apache.commons.collections4.MultiValuedMap;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Collection;
 
 /**
  * Factory for {@link JavaScriptDisplayColumn} to let them be wired up for a {@link ColumnInfo}.
- * User: adam
- * Date: 6/12/13
  */
 public class JavaScriptDisplayColumnFactory implements DisplayColumnFactory
 {
+    private static final Logger LOG = LogHelper.getLogger(JavaScriptDisplayColumnFactory.class, "Warnings about unsupported property");
     private final @Nullable Collection<String> _dependencies;
-    private final @Nullable String _javaScriptEvents;
+    private final @Nullable String _onClickJavaScript;
 
     public JavaScriptDisplayColumnFactory(MultiValuedMap<String, String> properties)
     {
         _dependencies = properties.get("dependency");
-        _javaScriptEvents = StringUtils.join(properties.get("javaScriptEvents"), " ");
+        Collection<String> onClicks = properties.get("onclick");
+        if (onClicks.size() > 1)
+            LOG.error("More than one \"onclick\" element was specified; only the first one will be used.");
+        _onClickJavaScript = !onClicks.isEmpty() ? onClicks.stream().findFirst().get() : null;
+        if (properties.containsKey("javaScriptEvents"))
+            LOG.error("The \"javaScriptEvents\" property is no longer supported! Use the \"onclick\" property instead.");
     }
 
     @Override
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
-        return new JavaScriptDisplayColumn(colInfo, _dependencies, _javaScriptEvents);
+        return new JavaScriptDisplayColumn(colInfo, _dependencies, _onClickJavaScript, null);
     }
 }
