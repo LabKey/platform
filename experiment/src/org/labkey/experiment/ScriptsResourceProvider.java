@@ -62,20 +62,17 @@ public class ScriptsResourceProvider implements WebdavService.Provider
         if (service.isCloudRoot(c))
             return null;
 
-        if (FileContentService.SCRIPTS_LINK.equalsIgnoreCase(name))
+        try
         {
-            try
+            AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, FileContentService.ContentType.scripts, false);
+            if (dir != null)
             {
-                AttachmentDirectory dir = service.getMappedAttachmentDirectory(c, FileContentService.ContentType.scripts, false);
-                if (dir != null)
-                {
-                    return new ScriptsResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
-                }
+                return new ScriptsResource(parent, name, dir.getFileSystemDirectory(), c.getPolicy());
             }
-            catch (MissingRootDirectoryException e)
-            {
-                // Don't complain here, just hide the @files subfolder
-            }
+        }
+        catch (MissingRootDirectoryException e)
+        {
+            // Don't complain here, just hide the @scripts subfolder
         }
 
         return null;
