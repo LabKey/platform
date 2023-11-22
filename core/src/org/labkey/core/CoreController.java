@@ -177,6 +177,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -2186,20 +2187,9 @@ public class CoreController extends SpringActionController
 
             for (ScriptEngineFactory factory : manager.getEngineFactories())
             {
-                Map<String, Object> record = new HashMap<>();
+                Map<String, Object> record = getScriptEngineBaseProperties(factory);
 
-                record.put("name", factory.getEngineName());
-                record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
-                record.put("languageName", factory.getLanguageName());
-                record.put("languageVersion", factory.getLanguageVersion());
-
-                boolean isExternal = factory instanceof ExternalScriptEngineFactory;
-                record.put("external", String.valueOf(isExternal));
-
-                LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
-                record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
-
-                if (isExternal)
+                if (factory instanceof ExternalScriptEngineFactory)
                 {
                     // extra metadata for external engines
                     ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
@@ -2247,6 +2237,24 @@ public class CoreController extends SpringActionController
             }
             return new ApiSimpleResponse("views", views);
         }
+    }
+
+    private static Map<String, Object> getScriptEngineBaseProperties(ScriptEngineFactory factory)
+    {
+        Map<String, Object> record = new HashMap<>();
+
+        record.put("name", factory.getEngineName());
+        record.put("extensions", StringUtils.join(factory.getExtensions(), ','));
+        record.put("languageName", factory.getLanguageName());
+        record.put("languageVersion", factory.getLanguageVersion());
+
+        boolean isExternal = factory instanceof ExternalScriptEngineFactory;
+        record.put("external", String.valueOf(isExternal));
+
+        LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
+        record.put("enabled", String.valueOf(svc.isFactoryEnabled(factory)));
+
+        return record;
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
@@ -2336,6 +2344,45 @@ public class CoreController extends SpringActionController
                 }
             }
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class) // platform developer perm will be checked below
+    public static class GetScriptEngineForExtensionAction extends ReadOnlyApiAction<HasScriptEngineForExtensionForm>
+    {
+        @Override
+        public Object execute(HasScriptEngineForExtensionForm form, BindException errors) throws Exception
+        {
+            if (!getUser().isPlatformDeveloper())
+                throw new UnauthorizedException();
+
+            if (form.getExetension() != null)
+            {
+                String extension = form.getExetension();
+                if (extension.startsWith("."))
+                    extension = extension.substring(1);
+
+                ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(getContainer(), extension, LabKeyScriptEngineManager.EngineContext.pipeline);
+                if (engine != null)
+                    return getScriptEngineBaseProperties(engine.getFactory());
+                throw new NotFoundException("Script engine for the extension '" + form.getExetension() + "' has not been registered.");
+            }
+            throw new IllegalArgumentException("No file extension provided.");
+        }
+    }
+
+    public static class HasScriptEngineForExtensionForm
+    {
+        private String _extension;
+
+        public void setExtension(String extension)
+        {
+            _extension = extension;
+        }
+
+        public String getExetension()
+        {
+            return _extension;
         }
     }
 
