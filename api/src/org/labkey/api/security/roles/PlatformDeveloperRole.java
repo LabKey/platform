@@ -35,8 +35,7 @@ public class PlatformDeveloperRole extends AbstractRootContainerRole
         BrowserDeveloperPermission.class,
         AppProps.getInstance().isDevMode() ? EditModuleResourcesPermission.class : null,
         PlatformDeveloperPermission.class,
-        TrustedPermission.class,
-        null
+        TrustedPermission.class
     );
 
     public PlatformDeveloperRole()
