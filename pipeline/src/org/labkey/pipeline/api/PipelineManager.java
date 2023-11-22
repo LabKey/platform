@@ -40,6 +40,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -76,7 +77,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.pipeline.PipelineWebdavProvider;
 import org.labkey.pipeline.status.StatusController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -194,7 +194,7 @@ public class PipelineManager
                     Table.update(user, pipeline.getTableInfoPipelineRoots(), newValue, newValue.getPipelineRootId());
                 }
 
-                org.labkey.api.util.Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(PipelineWebdavProvider.PIPELINE_LINK);
+                org.labkey.api.util.Path davPath = WebdavService.getPath().append(container.getParsedPath()).append(FileContentService.PIPELINE_LINK);
                 SearchService ss = SearchService.get();
                 if (null != ss)
                     ss.addPathToCrawl(davPath, null);
