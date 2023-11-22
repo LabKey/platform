@@ -140,10 +140,6 @@ public class GroupMembershipCache
                 .forEach(principals::addLast);
         }
 
-        // Site administrators always get developer role as well
-        if (groupSet.contains(Group.groupAdministrators))
-            groupSet.add(Group.groupDevelopers);
-
         return new PrincipalArray(groupSet);
     }
 

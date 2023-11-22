@@ -420,7 +420,6 @@ public class CoreQuerySchema extends UserSchema
         return members;
     }
 
-
     private SQLFragment getRootPlusProjectCondition()
     {
         SQLFragment sql = new SQLFragment("Container IS NULL");
@@ -455,6 +454,7 @@ public class CoreQuerySchema extends UserSchema
             {
                 _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
 
+                // TODO: Please remove this old, tortured way of finding app admins
                 // add all Site Admin group members
                 Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
                 _projectUserIds.addAll(
@@ -484,8 +484,9 @@ public class CoreQuerySchema extends UserSchema
                     });
                 }
 
+                // TODO: New shiny way
                 Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
-                // Add app admins and site admins (site admins have this permission as well)
+                // Add app admins and site admins (they both have ApplicationAdminPermission)
                 SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), true, Set.of(ApplicationAdminPermission.class)).stream()
                     .map(User::getUserId)
                     .forEach(projectUserIds::add);
@@ -493,7 +494,7 @@ public class CoreQuerySchema extends UserSchema
                 assert _projectUserIds.containsAll(projectUserIds) : "Expected old user id list to contain all ids in the new list";
                 Set<Integer> copy = new HashSet<>(_projectUserIds);
                 copy.removeAll(projectUserIds);
-                assert copy.stream().map(UserManager::getUser).allMatch(Objects::nonNull) : "Expected additional ids in the old list to all be group ids";
+                assert copy.stream().map(UserManager::getUser).allMatch(Objects::isNull) : "Expected additional ids in the old list to all be group ids";
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);

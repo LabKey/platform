@@ -28,10 +28,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: jeckels
-* Date: May 1, 2008
-*/
 public class GroupView extends JspView<GroupView.GroupBean>
 {
     public GroupView(Group group, Collection<UserPrincipal> members, Map<UserPrincipal, List<UserPrincipal>> redundantMembers, List<HtmlString> messages, boolean systemGroup, BindException errors)

@@ -110,6 +110,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
@@ -295,15 +296,12 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
 
-/**
- * User: migra
- * Date: Jul 25, 2005
- * Time: 2:54:30 PM
- */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
     public static final String PROJECTS_WEB_PART_NAME = "Projects";
+
+    static Runnable _afterUpdateRunnable = null;
 
     static
     {
@@ -764,6 +762,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ContainerManager.getHomeContainer();
             ContainerManager.getSharedContainer();
         });
+
+        if (_afterUpdateRunnable != null)
+            _afterUpdateRunnable.run();
     }
 
     private void bootstrap()
@@ -778,8 +779,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
         Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
+        Role adminRole = RoleManager.getRole(SiteAdminRole.class);
 
-        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole);
+        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole, adminRole);
         Container rootContainer = ContainerManager.getRoot();
 
         Group devs = SecurityManager.getGroup(Group.groupDevelopers);
@@ -794,13 +796,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
 
         // Users & guests can read from /home
-        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null, null);
         home.setFolderType(collaborationType, null);
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null, null).setFolderType(collaborationType, null);
 
         try
         {
