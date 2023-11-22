@@ -22,11 +22,6 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.TestSchema;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -101,9 +96,6 @@ public class TableViewFormTestCase extends Assert
     public void testDbOperations() throws SQLException
     {
         Container test = JunitUtil.getTestContainer();
-        MutableSecurityPolicy policy = new MutableSecurityPolicy(test);
-        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), FolderAdminRole.class);
-        SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
 
         ViewContext ctx = new ViewContext(HttpView.currentContext());
         ctx.setContainer(test);

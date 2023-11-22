@@ -92,6 +92,7 @@ import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.NestedGroupsTest;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.ExperimentalFeatureStartupListener;
@@ -310,6 +311,7 @@ public class ApiModule extends CodeOnlyModule
             TempTableInClauseGenerator.TestCase.class,
             TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
+            UserManager.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WebdavResolverImpl.TestCase.class,
             WorkbookContainerType.TestCase.class,
@@ -342,5 +344,4 @@ public class ApiModule extends CodeOnlyModule
     {
         Encryption.initEncryptionKeyTest();
     }
-
 }

@@ -25,15 +25,13 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.RootContainerException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
@@ -46,20 +44,16 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static org.labkey.api.settings.SiteSettingsProperties.*;
 import static org.labkey.api.settings.RandomStartupProperties.*;
+import static org.labkey.api.settings.SiteSettingsProperties.*;
 
 /**
  * Mutable backing implementation for server-side application settings.
- * User: jeckels
- * Date: Jun 21, 2012
  */
 class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 {
@@ -486,38 +480,27 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public String getAdministratorContactEmail(boolean includeAppAdmins)
+    public @Nullable String getAdministratorContactEmail(boolean includeAppAdmins)
     {
-        String defaultValue = null;
-        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(Group.groupAdministrators, false);
+        // Issue 33403: add option to include application admins.
+        // Note: All site admins have app admin permission as well, so getAppAdmins() gets them both
+        List<User> admins = new ArrayList<>(includeAppAdmins ? UserManager.getAppAdmins() : UserManager.getSiteAdmins());
 
-        // Issue 33403: add option to include application admins
-        if (includeAppAdmins)
+        // Sort to find the minimum user id (i.e. oldest administrator)
+        admins.sort(Comparator.comparingInt(UserPrincipal::getUserId));
+
+        String ret = null;
+
+        if (!admins.isEmpty())
         {
-            for (User appAdmin : UserManager.getAppAdmins())
-                members.add(new Pair<>(appAdmin.getUserId(), appAdmin.getEmail()));
+            String defaultValue = admins.get(0).getEmail();
+            String result = lookupStringValue(administratorContactEmail, defaultValue);
+
+            // Check if the configured email is still an admin, otherwise return default value
+            ret = admins.stream().anyMatch(user -> user.getEmail().equals(result)) ? result : defaultValue;
         }
 
-        // Sort to find the minimum user id (i.e. oldest administrator's email address)
-        members.sort(Entry.comparingByKey());
-        
-        Set<String> validOptions = new HashSet<>();
-        for (Pair<Integer, String> entry : members)
-        {
-            validOptions.add(entry.getValue());
-            if (defaultValue == null && entry.getValue() != null)
-            {
-                defaultValue = entry.getValue();
-            }
-        }
-        String result = lookupStringValue(administratorContactEmail, defaultValue);
-
-        // If that user is no longer a site admin, go back to the default value
-        if (!validOptions.contains(result))
-        {
-            return defaultValue;
-        }
-        return result;
+        return ret;
     }
 
     @NotNull

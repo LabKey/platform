@@ -40,8 +40,10 @@ import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
@@ -62,6 +64,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -480,6 +483,17 @@ public class CoreQuerySchema extends UserSchema
                         _projectUserIds.add(assignment.getUserId());
                     });
                 }
+
+                Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
+                // Add app admins and site admins (site admins have this permission as well)
+                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), true, Set.of(ApplicationAdminPermission.class)).stream()
+                    .map(User::getUserId)
+                    .forEach(projectUserIds::add);
+
+                assert _projectUserIds.containsAll(projectUserIds) : "Expected old user id list to contain all ids in the new list";
+                Set<Integer> copy = new HashSet<>(_projectUserIds);
+                copy.removeAll(projectUserIds);
+                assert copy.stream().map(UserManager::getUser).allMatch(Objects::nonNull) : "Expected additional ids in the old list to all be group ids";
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);

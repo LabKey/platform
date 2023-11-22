@@ -1555,7 +1555,7 @@ public class SecurityManager
     }
 
     // A permission class that uniquely identifies the root admins, of which we insist there must be at least one
-    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION =  CanImpersonateSiteRolesPermission.class;
+    public static final Class<? extends Permission> ROOT_ADMIN_PERMISSION = CanImpersonateSiteRolesPermission.class;
 
     public static boolean isRootAdmin(User user)
     {

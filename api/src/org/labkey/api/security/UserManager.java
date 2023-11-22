@@ -20,6 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Aggregate;
@@ -48,6 +50,9 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -342,16 +347,14 @@ public class UserManager
         return UserCache.getUser(displayName);
     }
 
+    public static List<User> getSiteAdmins()
+    {
+        return SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(SiteAdminPermission.class));
+    }
+
     public static List<User> getAppAdmins()
     {
-        List<User> users = new ArrayList<>();
-        for (User user : getActiveUsers())
-        {
-            if (user.hasApplicationAdminPermission())
-                users.add(user);
-        }
-
-        return users;
+        return SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(ApplicationAdminPermission.class));
     }
 
     public static void updateRecentUser(User user)
@@ -1285,5 +1288,50 @@ public class UserManager
         }
 
         return null;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testPermissionsRetrieval()
+        {
+            List<User> appAdmins = getAppAdmins();
+            assertTrue("Expected all AppAdmins to have application admin permissions",
+                appAdmins.stream().allMatch(User::hasApplicationAdminPermission));
+            assertTrue("Expected all AppAdmins to have root admin permissions",
+                appAdmins.stream().allMatch(User::hasRootAdminPermission));
+            assertTrue("Expected all AppAdmins to be active",
+                appAdmins.stream().allMatch(User::isActive));
+
+            List<User> siteAdmins = getSiteAdmins();
+            assertTrue("Expected all SiteAdmins to have site admin permissions",
+                siteAdmins.stream().allMatch(User::hasSiteAdminPermission));
+            assertTrue("Expected all SiteAdmins to have application admin permissions",
+                siteAdmins.stream().allMatch(User::hasApplicationAdminPermission));
+            assertTrue("Expected all SiteAdmins to have root admin permissions",
+                siteAdmins.stream().allMatch(User::hasRootAdminPermission));
+            assertTrue("Expected all SiteAdmins to have a privileged role",
+                siteAdmins.stream().allMatch(UserPrincipal::hasPrivilegedRole));
+            assertTrue("Expected all SiteAdmins to have application admin permissions",
+                siteAdmins.stream().allMatch(User::isPlatformDeveloper));
+            assertTrue("Expected all SiteAdmins to have trusted analyst permissions",
+                siteAdmins.stream().allMatch(User::isTrustedAnalyst));
+            assertTrue("Expected all SiteAdmins to have trusted browser dev permissions",
+                siteAdmins.stream().allMatch(User::isTrustedBrowserDev));
+            assertTrue("Expected all SiteAdmins to have analyst permissions",
+                siteAdmins.stream().allMatch(User::isAnalyst));
+            assertTrue("Expected all SiteAdmins to be active",
+                siteAdmins.stream().allMatch(User::isActive));
+
+            assertTrue("Expected all SiteAdmins to be in the AppAdmins list",
+                appAdmins.containsAll(siteAdmins));
+
+            List<User> privilegedUsers = SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(CanImpersonatePrivilegedSiteRolesPermission.class));
+            assertTrue("Expected all users with privileged role impersonation permissions to have a privileged role",
+                privilegedUsers.stream().allMatch(User::hasPrivilegedRole));
+
+            assertTrue("Expected all SiteAdmins to be in the privileged users list",
+                appAdmins.containsAll(siteAdmins));
+        }
     }
 }

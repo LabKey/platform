@@ -125,7 +125,6 @@ public class LimitedUser extends ClonedUser
             assertEquals(0, user.getGroups().stream().count());
             assertFalse(user.hasPrivilegedRole());
             assertFalse(user.isPlatformDeveloper());
-            assertFalse(user.isInGroup(Group.groupAdministrators));
             assertFalse(user.isImpersonated());
             assertNull(user.getImpersonatingUser());
             assertNull(user.getImpersonationProject());
