@@ -421,7 +421,7 @@ public class RequestabilityManager
         protected SQLFragment getGlobalUniqueIdInSQL(List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment();
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
                 sql.append("GlobalUniqueId ");
                 sql.append(getSpecimenGlobalUniqueIdSet(vials));
@@ -545,7 +545,7 @@ public class RequestabilityManager
                     throw new InvalidRuleException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
             }
 
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
             {
                 Set<String> globalUniqueIds = new HashSet<>();
                 for (Vial vial : vials)
@@ -699,7 +699,7 @@ public class RequestabilityManager
                 throw new IllegalStateException("Expected Vial table to exist.");
 
             SQLFragment sql = new SQLFragment();
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
                 sql.append(getGlobalUniqueIdInSQL(vials)).append(" AND ");
 
             sql.append(" RowId IN (SELECT SV.RowId FROM ").append(tableInfoVial).append(" SV")
@@ -715,7 +715,7 @@ public class RequestabilityManager
                 .append(" WHERE SRS.Container = ? AND SRST.FinalState = ?");
             sql.add(container.getId());
             sql.add(false);
-            if (vials != null && vials.size() > 0)
+            if (vials != null && !vials.isEmpty())
                 sql.append(" AND SpecimenGlobalUniqueId ").append(getSpecimenGlobalUniqueIdSet(vials));
 
             sql.append(")");

@@ -611,7 +611,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 .append(dataInputSQL)
                 .append(")");
 
-        OntologyManager.deleteOntologyObjects(svc.getSchema(), unionSQL, getContainer(), false);
+        OntologyManager.deleteOntologyObjects(svc.getSchema(), unionSQL, getContainer());
     }
 
     private void deleteProtocolApplicationProvenance()

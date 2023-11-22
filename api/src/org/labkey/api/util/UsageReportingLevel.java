@@ -129,7 +129,8 @@ public enum UsageReportingLevel implements SafeToRenderEnum
         return true;
     }
 
-    private static final Logger LOG = LogHelper.getLogger(UsageReportingLevel.class, "Submits usage metrics to labkey.org");
+    protected static final Logger LOG = LogHelper.getLogger(UsageReportingLevel.class, "Timer for sending metric updates");
+
     private static final Timer _timer = new Timer("UpgradeCheck", true);
     private static UsageTimerTask _task;
     private static HtmlString _upgradeMessage;
@@ -205,9 +206,17 @@ public enum UsageReportingLevel implements SafeToRenderEnum
 
     private static class UsageTimerTask extends TimerTask
     {
+        private static boolean _running = false;
+
         @Override
         public void run()
         {
+            if (_running)
+            {
+                LOG.info("Usage reporting is already running, skipping");
+                return;
+            }
+            _running = true;
             try
             {
                 UsageReportingLevel level;
@@ -253,6 +262,10 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             catch (RuntimeException e)
             {
                 LOG.error("Failed to report metrics", e);
+            }
+            finally
+            {
+                _running = false;
             }
          }
     }

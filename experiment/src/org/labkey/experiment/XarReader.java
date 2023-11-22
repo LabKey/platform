@@ -17,6 +17,7 @@
 package org.labkey.experiment;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
@@ -122,7 +123,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.api.exp.XarContext.XAR_JOB_ID_NAME_SUB;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_DERIVATION_PROTOCOL_LSID;
 import static org.labkey.api.study.publish.StudyPublishService.STUDY_PUBLISH_PROTOCOL_LSID;
@@ -145,10 +145,10 @@ public class XarReader extends AbstractXarImporter
     private boolean _strictValidateExistingSampleType = true;
 
     private final List<ExpRun> _loadedRuns = new ArrayList<>();
-    private final List<ProtocolApplication> _loadedProtocolApplications = new ArrayList<>();
     private final List<ExpSampleType> _loadedSampleTypes = new ArrayList<>();
     private final List<ExpDataClass> _loadedDataClasses = new ArrayList<>();
     private final Map<String, ExpProtocol> _loadedProtocols = new HashMap<>();
+    private final Map<String, Integer> _rootMaterialLSIDsToRowIds = new LRUMap<>(1_000);
 
     public static final String CONTACT_PROPERTY = "terms.fhcrc.org#Contact";
     public static final String CONTACT_ID_PROPERTY = "terms.fhcrc.org#ContactId";
@@ -1210,7 +1210,7 @@ public class XarReader extends AbstractXarImporter
                 {
                     throw new ExperimentException("Multiple ProtocolApplications found with object id: " + objectId);
                 }
-                else if (protocolApplications.size() == 0)
+                else if (protocolApplications.isEmpty())
                 {
                     getLog().warn("Could not find ProtocolApplication with LSID containing object id: " + objectId);
                 }
@@ -1339,7 +1339,6 @@ public class XarReader extends AbstractXarImporter
         if (null == protocolApp)
             throw new XarFormatException("No row found");
 
-        _loadedProtocolApplications.add(protocolApp);
         int protAppId = protocolApp.getRowId();
 
         PropertyCollectionType xbProps = xmlProtocolApp.getProperties();
@@ -1349,8 +1348,6 @@ public class XarReader extends AbstractXarImporter
         SimpleValueCollectionType xbParams = xmlProtocolApp.getProtocolApplicationParameters();
         if (xbParams != null)
             loadProtocolApplicationParameters(xbParams, protAppId);
-
-        //todo  extended protocolApp types??
 
         for (InputOutputRefsType.MaterialLSID inputMaterialLSID : inputMaterialLSIDs)
         {
@@ -1429,7 +1426,7 @@ public class XarReader extends AbstractXarImporter
         getLog().debug("Finished loading ProtocolApplication with LSID '" + protocolLSID + "'");
     }
 
-    private String getOperationNotPermittedMessage(String protocolLSID, ExpMaterial material)
+    private @Nullable String getOperationNotPermittedMessage(String protocolLSID, ExpMaterial material)
     {
         // For existing samples, we check their current status to see if it allows runs to be added.
         if ((protocolLSID.equals(SAMPLE_ALIQUOT_PROTOCOL_LSID) || protocolLSID.equals(SAMPLE_DERIVATION_PROTOCOL_LSID)) &&
@@ -1441,10 +1438,12 @@ public class XarReader extends AbstractXarImporter
         return null;
     }
 
-    private ExpMaterial loadMaterial(MaterialBaseType xbMaterial,
-                                  @Nullable ExperimentRun run,
-                                  Integer sourceApplicationId,
-                                  XarContext context) throws ExperimentException
+    private ExpMaterial loadMaterial(
+        MaterialBaseType xbMaterial,
+        @Nullable ExperimentRun run,
+        Integer sourceApplicationId,
+        XarContext context
+    ) throws ExperimentException
     {
         TableInfo tiMaterial = ExperimentServiceImpl.get().getTinfoMaterial();
 
@@ -1481,7 +1480,18 @@ public class XarReader extends AbstractXarImporter
         if (material == null)
         {
             Material m = new Material();
-            m.setRootMaterialLSID(rootMaterialLSID);
+            if (!StringUtils.isEmpty(rootMaterialLSID))
+            {
+                if (!_rootMaterialLSIDsToRowIds.containsKey(rootMaterialLSID))
+                {
+                    ExpMaterialImpl rootMaterial = ExperimentServiceImpl.get().getExpMaterial(rootMaterialLSID);
+                    _rootMaterialLSIDsToRowIds.put(rootMaterialLSID, rootMaterial == null ? null : rootMaterial.getRowId());
+                }
+
+                Integer rootMaterialRowId = _rootMaterialLSIDsToRowIds.get(rootMaterialLSID);
+                if (rootMaterialRowId != null)
+                    m.setRootMaterialRowId(rootMaterialRowId);
+            }
             m.setAliquotedFromLSID(aliquotedFromLSID);
             m.setLSID(materialLSID);
             m.setName(trimString(xbMaterial.getName()));
@@ -1597,22 +1607,22 @@ public class XarReader extends AbstractXarImporter
                 ExpMaterial rootMaterial = null;
                 if (run != null)
                     rootMaterial = _xarSource.getMaterial(run.getExpObject(), null, rootMaterialLSID);
-                getLog().debug("Updating " + description + " with aliquot root LSID");
+                getLog().debug("Updating " + description + " with aliquot root");
 
-                String newRootLsid = rootMaterial != null ? rootMaterial.getLSID() : rootMaterialLSID;
-                String existingRootLsid = lsid.equals(((Material) output).getRootMaterialLSID()) ? null : ((Material) output).getRootMaterialLSID();
+                int newRootRowId = rootMaterial != null ? rootMaterial.getRowId() : output.getRowId();
+                int rowId = output.getRowId();
+                Integer existingRootRowId = ((Material) output).getRootMaterialRowId();
 
-                // When importing over existing samples, the LSIDs will never match, so we only log an info message here and don't update.
-                if (existingRootLsid != null && !existingRootLsid.equals(rootMaterialLSID))
+                // When importing over existing samples, if the root rowId does not match the rowId, we only log an info message here and don't update.
+                if (!Objects.equals(existingRootRowId, rowId))
                 {
-                    getLog().info(description + " with LSID '" + lsid + "' already has root material LSID of " + ((Material) output).getRootMaterialLSID() + "; not updating to " + newRootLsid + ".");
+                    getLog().info(description + " with LSID '" + lsid + "' already has root material rowId of " + existingRootRowId + "; not updating to " + newRootRowId + ".");
                 }
-                else
+                else if (!Objects.equals(existingRootRowId, newRootRowId))
                 {
-                    ((Material) output).setRootMaterialLSID(newRootLsid);
+                    ((Material) output).setRootMaterialRowId(newRootRowId);
                     changed = true;
                 }
-
             }
             if (aliquotedFromLSID != null)
             {
@@ -1633,16 +1643,15 @@ public class XarReader extends AbstractXarImporter
                     changed = true;
                 }
             }
-
         }
+
         if (changed)
         {
             Table.update(getUser(), tableInfo, output, output.getRowId());
         }
     }
 
-
-    String findOriginalUrlProperty(PropertyCollectionType xbProps)
+    private @Nullable String findOriginalUrlProperty(PropertyCollectionType xbProps)
     {
         if (xbProps != null)
         {
@@ -1660,7 +1669,6 @@ public class XarReader extends AbstractXarImporter
         }
         return null;
     }
-
 
     private Data loadData(DataBaseType xbData,
                           ExperimentRun experimentRun,

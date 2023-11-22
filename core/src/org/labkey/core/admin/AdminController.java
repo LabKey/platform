@@ -1092,7 +1092,7 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public static class ResetPropertiesAction extends FormHandlerAction
+    public static class ResetPropertiesAction extends FormHandlerAction<Object>
     {
         private URLHelper _returnUrl;
 
@@ -2873,14 +2873,12 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            String message = PageFlowUtil.jsString(sb);
-            if (!message.isEmpty())
+            if (!sb.isEmpty())
             {
-                html.append("<td><a href=\"#\" onClick=\"alert(");
-                html.append(message);
-                html.append(");return false;\">");
-                html.append(PageFlowUtil.filter(description));
-                html.append("</a></td>");
+                String message = PageFlowUtil.jsString(sb);
+                String id = "id" + UniqueID.getServerSessionScopedUID();
+                html.append(DOM.createHtmlFragment(TD(A(at(href, "#").id(id), description))));
+                HttpView.currentPageConfig().addHandler(id, "click", "alert(" + message + ");return false;");
             }
         }
 
@@ -6963,7 +6961,7 @@ public class AdminController extends SpringActionController
             StringBuilder error = new StringBuilder();
             Consumer<Container> afterCreateHandler = getAfterCreateHandler(form);
 
-            final Container newContainer;
+            Container container;
 
             if (Container.isLegalName(folderName, parent.isRoot(), error))
             {
@@ -7011,7 +7009,7 @@ public class AdminController extends SpringActionController
                                 form.getTemplateIncludeSubfolders(), PHI.NotPHI, false, false, false,
                                 new StaticLoggerGetter(LogManager.getLogger(FolderWriterImpl.class)));
 
-                        newContainer = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx, afterCreateHandler);
+                        container = ContainerManager.createContainerFromTemplate(parent, folderName, folderTitle, sourceContainer, getUser(), exportCtx, afterCreateHandler);
                     }
                     else
                     {
@@ -7034,27 +7032,31 @@ public class AdminController extends SpringActionController
                             }
                         }
 
-                        newContainer = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser());
-                        afterCreateHandler.accept(newContainer);
-                        newContainer.setFolderType(type, getUser(), errors);
-
-                        if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
+                        // Work done in this lambda will not fire container events.  Only fireCreateContainer() will be called.
+                        Consumer<Container> configureContainer = (newContainer) ->
                         {
-                            Set<Module> activeModules = new HashSet<>();
-                            for (String moduleName : modules)
-                            {
-                                Module module = ModuleLoader.getInstance().getModule(moduleName);
-                                if (module != null)
-                                    activeModules.add(module);
-                            }
+                            afterCreateHandler.accept(newContainer);
+                            newContainer.setFolderType(type, getUser(), errors);
 
-                            newContainer.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
-                            Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                            newContainer.setDefaultModule(defaultModule);
-                        }
+                            if (null == StringUtils.trimToNull(folderType) || FolderType.NONE.getName().equals(folderType))
+                            {
+                                Set<Module> activeModules = new HashSet<>();
+                                for (String moduleName : modules)
+                                {
+                                    Module module = ModuleLoader.getInstance().getModule(moduleName);
+                                    if (module != null)
+                                        activeModules.add(module);
+                                }
+
+                                newContainer.setFolderType(FolderType.NONE, getUser(), errors, activeModules);
+                                Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
+                                newContainer.setDefaultModule(defaultModule);
+                            }
+                        };
+                        container = ContainerManager.createContainer(parent, folderName, folderTitle, null, NormalContainerType.NAME, getUser(), null, configureContainer);
                     }
 
-                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(newContainer);
+                    _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(container);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
                     return true;

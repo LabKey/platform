@@ -99,10 +99,27 @@ public class RoleManager
     //register all core roles
     static
     {
+        // Privileged site roles first, so they appear at the top of the site permissions page
         registerAdminRole(siteAdminRole);
-        registerAdminRole(new ApplicationAdminRole());
+        registerRole(new PlatformDeveloperRole(), false);
+        registerRole(new ImpersonatingTroubleshooterRole(), false);
+
+        // Now project and folder admin roles, so they pick up appropriate site roles
         registerAdminRole(new ProjectAdminRole());
         registerAdminRole(new FolderAdminRole());
+
+        // Other site roles
+        registerAdminRole(new ApplicationAdminRole());
+        registerRole(new TroubleshooterRole(), false);
+        registerRole(new SeeUserAndGroupDetailsRole());
+        registerRole(new CanSeeAuditLogRole());
+        registerRole(new SharedViewEditorRole());
+        registerRole(new EmailNonUsersRole(), false);
+        registerRole(new SeeFilePathsRole(), false);
+        registerRole(new CanUseSendMessageApi(), false);
+        registerRole(new ProjectCreatorRole());
+
+        // Project and folder roles
         registerRole(new EditorRole());
         registerRole(new EditorWithoutDeleteRole());
         registerRole(new AuthorRole());
@@ -111,16 +128,6 @@ public class RoleManager
         registerRole(new SubmitterRole());
         registerRole(new NoPermissionsRole());
         registerRole(new OwnerRole());
-        registerRole(new ImpersonatingTroubleshooterRole(), false);
-        registerRole(new TroubleshooterRole(), false);
-        registerRole(new PlatformDeveloperRole(), false);
-        registerRole(new SeeUserAndGroupDetailsRole());
-        registerRole(new CanSeeAuditLogRole());
-        registerRole(new SharedViewEditorRole());
-        registerRole(new EmailNonUsersRole(), false);
-        registerRole(new SeeFilePathsRole(), false);
-        registerRole(new CanUseSendMessageApi(), false);
-        registerRole(new ProjectCreatorRole());
     }
 
     public static void addAdminRoleListener(AdminRoleListener listener)

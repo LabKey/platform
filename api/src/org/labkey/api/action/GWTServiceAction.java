@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -39,6 +40,9 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     @Override
     public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
     {
+        // Use Core as the catch-all to consolidate reporting, even though GWT uses are distributed across modules
+        SimpleMetricsService.get().increment("Core", "GWTService", getClass().getSimpleName());
+
         BaseRemoteService service = createService();
         if (!isPost())
         {

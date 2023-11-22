@@ -16,7 +16,6 @@
 package org.labkey.api.exp;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -958,50 +957,39 @@ public class OntologyManager
         }
     }
 
-    public static int deleteOntologyObjects(DbSchema schema, SQLFragment sub, @Nullable Container c, boolean deleteOwnedObjects)
+    public static int deleteOntologyObjects(DbSchema schema, SQLFragment objectUriSql, @Nullable Container c)
     {
-        // we have different levels of optimization possible here deleteOwned=true/false, scope=/<>exp
+        SQLFragment objectIdSQL = new SQLFragment("SELECT ObjectId FROM ")
+            .append(getTinfoObject()).append("\n")
+            .append(" WHERE ");
+        if (c != null)
+        {
+            objectIdSQL.append(" Container = ?").add(c.getId());
+            objectIdSQL.append(" AND ");
+        }
+        objectIdSQL.append("ObjectUri IN (");
+        objectIdSQL.append(objectUriSql);
+        objectIdSQL.append(")");
+        return deleteOntologyObjectsByObjectIdSql(schema, objectIdSQL);
+    }
 
-        // let's handle one case
+    public static int deleteOntologyObjectsByObjectIdSql(DbSchema schema, SQLFragment objectIdSql)
+    {
         if (!schema.getScope().equals(getExpSchema().getScope()))
             throw new UnsupportedOperationException("can only use with same DbScope");
 
-        // CONSIDER: use temp table for objectids?
+        SQLFragment sqlDeleteProperties = new SQLFragment();
+        sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
+                .append(" WHERE ObjectId IN (\n");
+        sqlDeleteProperties.append(objectIdSql);
+        sqlDeleteProperties.append(")");
+        new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
 
-        if (deleteOwnedObjects)
-        {
-            throw new UnsupportedOperationException("Don't do this yet either");
-        }
-        else
-        {
-            SQLFragment sqlDeleteProperties = new SQLFragment();
-            sqlDeleteProperties.append("DELETE FROM ").append(getTinfoObjectProperty())
-                    .append(" WHERE ObjectId IN\n")
-                    .append("(SELECT ObjectId FROM ")
-                    .append(getTinfoObject()).append("\n")
-                    .append(" WHERE ");
-            if (c != null)
-            {
-                sqlDeleteProperties.append(" Container = ?").add(c.getId());
-                sqlDeleteProperties.append(" AND ");
-            }
-            sqlDeleteProperties.append("ObjectUri IN (");
-            sqlDeleteProperties.append(sub);
-            sqlDeleteProperties.append("))");
-            new SqlExecutor(getExpSchema()).execute(sqlDeleteProperties);
-
-            SQLFragment sqlDeleteObjects = new SQLFragment();
-            sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ");
-            if (c != null)
-            {
-                sqlDeleteObjects.append(" Container = ?").add(c.getId());
-                sqlDeleteObjects.append(" AND ");
-            }
-            sqlDeleteObjects.append("ObjectURI IN (");
-            sqlDeleteObjects.append(sub);
-            sqlDeleteObjects.append(")");
-            return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
-        }
+        SQLFragment sqlDeleteObjects = new SQLFragment();
+        sqlDeleteObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE ObjectId IN (");
+        sqlDeleteObjects.append(objectIdSql);
+        sqlDeleteObjects.append(")");
+        return new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
     }
 
 
@@ -2414,6 +2402,9 @@ public class OntologyManager
     @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
+        if (c == null)
+            return null;
+
         // cache lookup by project. if not found at project level, check to see if global
         DomainDescriptor dd = DOMAIN_DESCRIPTORS_BY_URI_CACHE.get(getCacheKey(domainURI, c));
         if (null != dd)

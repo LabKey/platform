@@ -48,20 +48,20 @@ public class TargetStudyTest extends AbstractAssayTest
 
     protected static final String TEST_RUN1 = "FirstRun";
     protected static final String TEST_RUN1_DATA1 =
-            "specimenID\tparticipantID\tvisitID\tTargetStudy\n" +
-            // study 1: full container path
-            "AAA07XK5-05\t\t\t" + ("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1) + "\n" +
-            // study 1: container id
-            "AAA07XMC-02\t\t\t${Study1ContainerID}\n" +
-            // study 1: study label
-            "AAA07XMC-04\t\t\t${Study1Label}" + "\n" +
-            // fake study / no study
-            "AAA07XSF-02\t\t\tStudyNotExist\n" +
-            // study 2
-            "AAA07YGN-01\t\t\t" +("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2) + "\n" +
-            // study 3
-            "AAA07YGN-02\t\t\t" +("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3) + "\n"
-            ;
+        "specimenID\tparticipantID\tvisitID\tTargetStudy\n" +
+        // study 1: full container path
+        "AAA07XK5-05\t\t\t" + ("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1) + "\n" +
+        // study 1: container id
+        "AAA07XMC-02\t\t\t${Study1ContainerID}\n" +
+        // study 1: study label
+        "AAA07XMC-04\t\t\t${Study1Label}" + "\n" +
+        // fake study / no study
+        "AAA07XSF-02\t\t\tStudyNotExist\n" +
+        // study 2
+        "AAA07YGN-01\t\t\t" +("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2) + "\n" +
+        // study 3
+        "AAA07YGN-02\t\t\t" +("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3) + "\n"
+        ;
 
     private String _study1ContainerId = null;
     private String _study1Label = null;
@@ -73,7 +73,6 @@ public class TargetStudyTest extends AbstractAssayTest
     {
         return TEST_ASSAY_PRJ_SECURITY;
     }
-
 
     @Test
     public void runUITests() throws Exception
@@ -96,7 +95,6 @@ public class TargetStudyTest extends AbstractAssayTest
         linkToStudy();
     }
 
-
     @LogMethod
     protected void setupSpecimens() throws Exception
     {
@@ -110,32 +108,31 @@ public class TargetStudyTest extends AbstractAssayTest
 
         importer1.waitForComplete();
         importer2.waitForComplete();
-
     }
 
     @LogMethod
     protected void setupLabels()
     {
-        // Using a random label helps uniqueify the study when there is another "AwesomeStudy3" from a previous test run.
+        // Using a random label helps uniquify the study when there is another "AwesomeStudy3" from a previous test run.
         int r = new Random().nextInt();
         _study1Label = STUDY1_LABEL + " " + r;
         _study2Label = STUDY2_LABEL + " " + r;
         _study3Label = STUDY3_LABEL + " " + r;
 
         log("** Set some awesome study labels");
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/manageStudyProperties.view");
+        beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1 + "/study-manageStudyProperties.view");
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), _study1Label);
         clickButton("Submit");
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + "/manageStudyProperties.view");
+        beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2 + "/study-manageStudyProperties.view");
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), _study2Label);
         clickButton("Submit", 0);
         // Save is via AJAX, but redirects to the general study settings page when it's done
         waitForText("General Study Settings");
 
-        beginAt("/study/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + "/manageStudyProperties.view");
+        beginAt("/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3 + "/study-manageStudyProperties.view");
         waitForElement(Locator.name("Label"), WAIT_FOR_JAVASCRIPT);
         setFormElement(Locator.name("Label"), _study3Label);
         clickButton("Submit", 0);
@@ -174,8 +171,8 @@ public class TargetStudyTest extends AbstractAssayTest
         setFormElement(Locator.name("name"), TEST_RUN1);
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
         String data1 = TEST_RUN1_DATA1
-                .replace("${Study1ContainerID}", _study1ContainerId)
-                .replace("${Study1Label}", _study1Label);
+            .replace("${Study1ContainerID}", _study1ContainerId)
+            .replace("${Study1Label}", _study1Label);
         setFormElement(Locator.name("TextAreaDataCollector.textArea"), data1);
         clickButton("Save and Finish");
         assertTextPresent("Couldn't resolve TargetStudy 'StudyNotExist' to a study folder.");
@@ -190,9 +187,10 @@ public class TargetStudyTest extends AbstractAssayTest
         clickAndWait(Locator.linkWithText(TEST_RUN1));
         // all target study values should render as either [None] or the name of the study
         assertTextNotPresent(
-                "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1,
-                "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2,
-                "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3);
+            "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY1,
+            "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY2,
+            "/" + TEST_ASSAY_PRJ_SECURITY + "/" + TEST_ASSAY_FLDR_STUDIES + "/" + TEST_ASSAY_FLDR_STUDY3
+        );
 
         DataRegionTable table = new DataRegionTable("Data", this);
         assertEquals(_study1Label, table.getDataAsText(0, "Target Study"));

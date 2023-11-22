@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
@@ -24,6 +25,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.NestableDataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.view.ActionURL;
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -34,23 +36,29 @@ import java.util.Map;
 /**
  * Configuration for a NestedQueryView that understands which columns should be associated with the outer and inner
  * grids. Also tracks the URL at which a specific nested grid can be requested independently via AJAX.
- *
- * User: jeckels
- * Date: Apr 9, 2007
  */
 public class QueryNestingOption
 {
-    private FieldKey _rowIdFieldKey;
-    private FieldKey _aggregateRowIdFieldKey;
-    private final String _ajaxNestedGridURL;
+    private final FieldKey _rowIdFieldKey;
+    private final FieldKey _aggregateRowIdFieldKey;
+    private final ActionURL _ajaxNestedGridURL;
     private DataColumn _groupIdColumn;
+
+    /**
+     * @param aggregateRowIdColumn the column that's an FK to the table that should be shown in the parent grids
+     * @param rowIdColumn the column that's the PK (the target of the FK from aggregateRowIdColumn)
+     */
+    public QueryNestingOption(FieldKey aggregateRowIdColumn, FieldKey rowIdColumn)
+    {
+        this(aggregateRowIdColumn, rowIdColumn, null);
+    }
 
     /**
      * @param aggregateRowIdColumn the column that's an FK to the table that should be shown in the parent grids
      * @param rowIdColumn the column that's the PK (the target of the FK from aggregateRowIdColumn)
      * @param ajaxNestedGridURL the URL to use to request the child grid via AJAX
      */
-    public QueryNestingOption(FieldKey aggregateRowIdColumn, FieldKey rowIdColumn, String ajaxNestedGridURL)
+    public QueryNestingOption(FieldKey aggregateRowIdColumn, FieldKey rowIdColumn, @Nullable ActionURL ajaxNestedGridURL)
     {
         _aggregateRowIdFieldKey = aggregateRowIdColumn;
         _rowIdFieldKey = rowIdColumn;

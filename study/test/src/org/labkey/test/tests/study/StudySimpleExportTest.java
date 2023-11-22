@@ -28,6 +28,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Daily;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.components.ext4.Window;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
@@ -39,6 +40,7 @@ import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.StudyHelper;
+import org.labkey.test.util.ext4cmp.Ext4GridRef;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -134,9 +136,9 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("Do Setup: create simple dataset with one ptid and one visit");
         clickFolder(getFolderName());
         DatasetDesignerPage editDatasetPage = _studyHelper
-                .goToManageDatasets()
-                .clickCreateNewDataset()
-                .setName(TEST_DATASET_NAME);
+            .goToManageDatasets()
+            .clickCreateNewDataset()
+            .setName(TEST_DATASET_NAME);
 
         DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
         fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt", FieldDefinition.ColumnType.Integer).setLabel("TestInt")
@@ -179,18 +181,18 @@ public class StudySimpleExportTest extends StudyBaseTest
         log("QC States: create 3 new QC states (one for each default state type)");
 
         qcStatesPage.addStateRow("First QC State", "The first qc state description", false)
-                .addStateRow("Second QC State", "The second qc state description", false)
-                .addStateRow("Third QC State", "The third qc state description", false)
-                .clickSave();
+            .addStateRow("Second QC State", "The second qc state description", false)
+            .addStateRow("Third QC State", "The third qc state description", false)
+            .clickSave();
 
         log("QC States: set the default states for dataset data and visibility state");
         new ManageStudyPage(getDriver())
-                .manageDatasetQCStates()
-                .setDefaultPipelineQCState("First QC State")
-                .setDefaultPublishDataQCState("Second QC State")
-                .setDefaultDirectEntryQCState("Third QC State")
-                .setDefaultVisibility("Public data")
-                .clickSave();
+            .manageDatasetQCStates()
+            .setDefaultPipelineQCState("First QC State")
+            .setDefaultPublishDataQCState("Second QC State")
+            .setDefaultDirectEntryQCState("Third QC State")
+            .setDefaultVisibility("Public data")
+            .clickSave();
 
         log("QC States: export study folder to the pipeline as individual files");
         exportFolderAsIndividualFiles(getFolderName(), false, false, false);
@@ -233,8 +235,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         goToManageStudy();
         waitAndClickAndWait(Locator.linkWithText("Manage Dataset QC States"));
         new ManageDatasetQCStatesPage(getDriver())
-                .setDefaultVisibility("All data")
-                .clickSave();
+            .setDefaultVisibility("All data")
+            .clickSave();
     }
 
     @Test
@@ -1070,14 +1072,13 @@ public class StudySimpleExportTest extends StudyBaseTest
 
         waitAndClickAndWait(Locator.linkWithText("Manage Requestability rules"));
         log("Export Requestability Rules");
-        _extHelper.clickMenuButton(false, "Add Rule", "Custom Query");
-        _extHelper.waitForExtDialog("Add Custom Query Rule");
-        _extHelper.selectComboBoxItem("Schema:", "auditLog");
-        _extHelper.selectComboBoxItem("Query:", "FileSystem");
-        _extHelper.selectComboBoxItem("Mark vials:", "Unavailable");
-        clickButton("Submit", 0);
-        _extHelper.waitForExtDialogToDisappear("Add Custom Query Rule");
-        _extHelper.selectExtGridItem("Rule", "At Repository Check", 0, "x-grid-panel", false);
+        _ext4Helper.clickExt4MenuButton(false, Ext4Helper.Locators.ext4Button("Add Rule"), false, "Custom Query");
+        Window window = new Window("Add Custom Query Rule", getDriver());
+        _ext4Helper.selectComboBoxItem("Schema:", "auditLog");
+        _ext4Helper.selectComboBoxItem("Query:", "FileSystem");
+        _ext4Helper.selectComboBoxItem("Mark vials:", "Unavailable");
+        window.clickButton("Submit", true);
+        _ext4Helper.selectGridItem("Rule", "At Repository Check", 0, "x4-panel", false);
         clickButton("Move Down", 0);
         clickButton("Save");
 
@@ -1122,17 +1123,16 @@ public class StudySimpleExportTest extends StudyBaseTest
         waitAndClickAndWait(Locator.linkWithText("Manage Requestability rules"));
         log("Verify Requestability Rules");
 
-        //Locator row = _extHelper.locateExt3GridRow(0, "//div[@id='rulesGrid'");
-        assertElementPresent(_extHelper.locateExt3GridRow(1, "//div[@id='rulesGrid']").append(Locator.xpath("//div[contains(text(), 'Administrator Override')]")));
-        assertElementPresent(_extHelper.locateExt3GridRow(2, "//div[@id='rulesGrid']").append(Locator.xpath("//div[contains(text(), 'At Repository Check')]")));
-        assertElementPresent(_extHelper.locateExt3GridRow(3, "//div[@id='rulesGrid']").append(Locator.xpath("//div[contains(text(), 'Locked In Request Check')]")));
-        assertElementPresent(_extHelper.locateExt3GridRow(4, "//div[@id='rulesGrid']").append(Locator.xpath("//div[contains(text(), 'Custom Query: auditLog.FileSystem')]")));
+        assertElementPresent(Ext4GridRef.locateExt4GridCell(1, 2, "rulesGrid").append(Locator.xpath("//div[contains(text(), 'Administrator Override')]")));
+        assertElementPresent(Ext4GridRef.locateExt4GridCell(2, 2, "rulesGrid").append(Locator.xpath("//div[contains(text(), 'At Repository Check')]")));
+        assertElementPresent(Ext4GridRef.locateExt4GridCell(3, 2, "rulesGrid").append(Locator.xpath("//div[contains(text(), 'Locked In Request Check')]")));
+        assertElementPresent(Ext4GridRef.locateExt4GridCell(4, 2, "rulesGrid").append(Locator.xpath("//div[contains(text(), 'Custom Query: auditLog.FileSystem')]")));
 
         clickButton("Cancel");
     }
 
     /**
-     * Verify study pproperties can round trip custom properties (and data)
+     * Verify study properties can round trip custom properties (and data)
      */
     @Test
     public void verifyExtensibleStudyProperties()

@@ -69,6 +69,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -162,6 +163,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
@@ -211,6 +213,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.view.SubjectsWebPart;
+import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.springframework.validation.BindException;
@@ -2145,21 +2148,10 @@ public class StudyController extends BaseStudyController
 
         private @NotNull Collection<VisitImpl> getUnusedVisits(final StudyImpl study)
         {
-            final List<VisitImpl> visits = new LinkedList<>();
-
-            new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment
-                (
-                    "SELECT v.RowId FROM study.Visit v WHERE Container = ? AND NOT EXISTS (SELECT * FROM study.ParticipantVisit pv WHERE pv.Container = ? and pv.VisitRowId = v.RowId)",
-                    getContainer(), getContainer()
-                )
-            ).forEach(Integer.class, rowId -> {
-                VisitImpl visit = StudyManager.getInstance().getVisitForRowId(study, rowId);
-
-                if (null != visit)
-                    visits.add(visit);
-            });
-
-            return visits;
+            return new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment(
+                "SELECT * FROM study.Visit v WHERE Container = ? AND rowid NOT IN (SELECT DISTINCT VisitRowId FROM study.ParticipantVisit pv WHERE pv.Container = ?)",
+                getContainer(), getContainer()
+            )).getArrayList(VisitImpl.class);
         }
 
         @Override
@@ -4083,16 +4075,35 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
         {
-            return new HtmlView(
-                    "<div>" + _count + " rows were updated.<p/>" +
-                            PageFlowUtil.button("Done").href(new ActionURL(ManageVisitsAction.class,getContainer())) +
-                            "</div>");
+            if (reshow)
+            {
+                return new HtmlView(
+                        "<div>" + _count + " rows were updated.<p/>" +
+                                PageFlowUtil.button("Done").href(new ActionURL(ManageVisitsAction.class, getContainer())) +
+                                "</div>");
+            }
+            else
+            {
+                return new HtmlView(
+                        "<form method=POST>Click the button below to recalculate visit dates for all participants in this study.<p/>" +
+                        PageFlowUtil.button("Recalculate Visit Dates").href(new ActionURL(UpdateParticipantVisitsAction.class, getContainer())).submit(true) +
+                        new CsrfInput(getViewContext()) +
+                        "</form>");
+            }
         }
 
         @Override
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser(), getStudyRedirectIfNull().getDatasets());
+            var vm = StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull());
+            if (vm instanceof SequenceVisitManager svm)
+            {
+                // This could be optimized by combining with updateParticipantVisits().
+                // However, updateParticipantVisits() handles incremental updates and would need to be refactored a bit
+                // and this isn't a common code path.
+                svm.purgeParticipantVisit(getUser());
+            }
+            vm.updateParticipantVisits(getUser(), getStudyRedirectIfNull().getDatasets());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             _count = new SqlSelector(StudySchema.getInstance().getSchema(),

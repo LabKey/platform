@@ -84,17 +84,19 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 '<tpl for=".">',
                 '<tr style="cursor:pointer">',
                     '<td  class="{style}" id="{["completionTR" + (xindex-1)]}">',
-                        '<span onclick="{[this.getClickHandler(values, (xindex-1))]}">{name:htmlEncode}</span>',
+                        '<span class="lk-completion-name" data-cmpid="{cmpId:htmlEncode}" data-index="{[xindex-1]}">{name:htmlEncode}</span>',
                         '<span style="display:none" id="{["insertSpan" + (xindex-1)]}">{value:htmlEncode}</span>',
                     '</td></tr>',
             '</tpl></table>',
             {
-                getClickHandler : function(data, idx) {
-                    return "(function(cmp, id){" +
-                        "var cmp = Ext4.getCmp(cmp);" +
-                        "if (cmp)" +
-                            "cmp.selectOption(id);" +
-                    "})('" + data.cmpId + "'," + idx + ")";
+                // call this function after generated markup is inserted into the DOM
+                afterUpdate : function(){
+                    LABKEY.Utils.attachEventHandlerForQuerySelector("SPAN.lk-completion-name", "click", function()
+                    {
+                        const cmp = Ext4.getCmp(this.dataset['cmpid']);
+                        if (cmp)
+                            cmp.selectOption(parseInt(this.dataset['index']));
+                    });
                 }
             }
         );
@@ -283,7 +285,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
             }
 
             this.optionCount = count;
-            this.completionBody.update(this.tpl.apply(data));
+            this.completionBody.update(this.tpl.apply(data), false, this.tpl.afterUpdate);
             this.showCompletionDiv(this.element);
         }
     },

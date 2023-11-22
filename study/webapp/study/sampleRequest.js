@@ -61,7 +61,7 @@ function showRequestWindow(specOrVialIdArray, vialIdType)
 
     if (specOrVialIdArray && specOrVialIdArray.length > 0)
     {
-        if (vialIdType == "GlobalUniqueId")
+        if (vialIdType === "GlobalUniqueId")
             _addToRequestButton.setText("Add " + specOrVialIdArray[0] + " to Request");
         else
             _addToRequestButton.setText("Add " + specOrVialIdArray.length +
@@ -102,7 +102,7 @@ function submitRequest()
     Ext.Msg.confirm("Submit request?", "Once a request is submitted, its specimen list may no longer be modified.  Continue?",
         function(button)
         {
-            if (button == 'yes')
+            if (button === 'yes')
             {
                 document.location = LABKEY.ActionURL.buildURL("specimen", "submitRequest",
                         LABKEY.ActionURL.getContainer(), { id: getSelectedRequestId()});
@@ -121,7 +121,7 @@ function cancelRequest()
     Ext.Msg.confirm("Cancel request?", "Canceling will permanently delete this pending request.  Continue?",
         function(button)
         {
-            if (button == 'yes')
+            if (button === 'yes')
             {
                 Ext.Msg.wait("Canceling request...");
                 LABKEY.Specimen.cancelRequest(cancelSuccessful, getSelectedRequestId());
@@ -292,15 +292,15 @@ function failedAddCallback(exceptionObj, responseObj)
 
 function markVialRequested(span)
 {
-    span.innerHTML = "<a href=\"#\" onclick=\"showRequestWindow(undefined, _requestWin.vialIdType); return false;\">" +
-                     "<img src=\"" + LABKEY.ActionURL.getContextPath() + "/_images/cart_added.png\"></a>";
+    span.innerHTML = "<a href=\"#\"><img src=\"" + LABKEY.ActionURL.getContextPath() + "/_images/cart_added.png\"></a>";
+    span['onclick'] = function(){ showRequestWindow(undefined, _requestWin.vialIdType); return false; };
 }
 
-function succesfulAddCallback(request)
+function successfulAddCallback(request)
 {
     // update spans to show that the vial has been requested.
     var idx, span, check;
-    var dataRegionName = _requestWin.vialIdType == "SpecimenHash" ? "SpecimenSummary" : "SpecimenDetail";
+    const dataRegionName = _requestWin.vialIdType === "SpecimenHash" ? "SpecimenSummary" : "SpecimenDetail";
     LABKEY.DataRegions[dataRegionName].selectNone();
 
     var idMap = {};
@@ -312,17 +312,17 @@ function succesfulAddCallback(request)
     {
         var vial = request.vials[idx];
         var id;
-        if (_requestWin.vialIdType == "RowId")
+        if (_requestWin.vialIdType === "RowId")
             id = vial.rowId;
-        else if (_requestWin.vialIdType == "GlobalUniqueId")
+        else if (_requestWin.vialIdType === "GlobalUniqueId")
             id = vial.globalUniqueId;
-        else if (_requestWin.vialIdType == "SpecimenHash")
+        else if (_requestWin.vialIdType === "SpecimenHash")
             id = vial.specimenHash;
 
         // if this vial was added in this request, update status and checkbox:
         if (idMap[id])
         {
-            var inputId = (_requestWin.vialIdType == "SpecimenHash" ? vial.specimenHash : vial.globalUniqueId);
+            var inputId = (_requestWin.vialIdType === "SpecimenHash" ? vial.specimenHash : vial.globalUniqueId);
             span = document.getElementById(inputId);
             if (span)
                 markVialRequested(span);
@@ -346,8 +346,8 @@ function addToCurrentRequest()
         return;
     }
     Ext.Msg.wait("Adding vial(s)...");
-    if (vialIdType != "SpecimenHash")
-        LABKEY.Specimen.addVialsToRequest(succesfulAddCallback, requestId, specOrVialIdArray, vialIdType, failedAddCallback);
+    if (vialIdType !== "SpecimenHash")
+        LABKEY.Specimen.addVialsToRequest(successfulAddCallback, requestId, specOrVialIdArray, vialIdType, failedAddCallback);
     else
         LABKEY.Specimen.getProvidingLocations(verifyProvidingLocations, specOrVialIdArray, failedAddCallback);
 }
@@ -357,7 +357,7 @@ function verifyProvidingLocations(locations)
     var requestId = getSelectedRequestId();
     var specOrVialIdArray = _requestWin.specOrVialIdArray;
     if (locations == null || locations.length <= 1)
-        LABKEY.Specimen.addSamplesToRequest(succesfulAddCallback, requestId, specOrVialIdArray, undefined, failedAddCallback);
+        LABKEY.Specimen.addSamplesToRequest(successfulAddCallback, requestId, specOrVialIdArray, undefined, failedAddCallback);
     else
     {
         var locationArray = [];
@@ -405,7 +405,7 @@ function verifyProvidingLocations(locations)
                            return;
                        }
                        Ext.Msg.wait("Adding vial(s)...");
-                       LABKEY.Specimen.addSamplesToRequest(succesfulAddCallback, requestId,
+                       LABKEY.Specimen.addSamplesToRequest(successfulAddCallback, requestId,
                                specOrVialIdArray, locationSelect.getValue(), failedAddCallback);
                        selectLocationWin.close();
                    }

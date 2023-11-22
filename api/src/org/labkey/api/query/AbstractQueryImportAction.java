@@ -608,7 +608,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
             JSONObject response = createSuccessResponse(rowCount);
             if (auditEvent != null)
+            {
                 response.put("transactionAuditId", auditEvent.getRowId());
+                response.put("reselectRowCount", auditEvent.hasMultiActions());
+            }
+
             return new ApiSimpleResponse(response);
 
         }
@@ -811,13 +815,20 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             try (DbScope.Transaction transaction = target.getSchema().getScope().ensureTransaction())
             {
+                QueryService.AuditAction auditAction = null;
                 if (auditEvent != null)
-                    addTransactionAuditEvent(transaction,  user, auditEvent);
+                {
+                    auditAction = auditEvent.getAuditAction();
+                    if (transaction.getAuditEvent() != null)
+                        auditEvent = transaction.getAuditEvent();
+                    else
+                        addTransactionAuditEvent(transaction, user, auditEvent);
+                }
                 int count = updateService.loadRows(user, container, dl, context, new HashMap<>());
                 if (context.getErrors().hasErrors())
                     return 0;
                 if (auditEvent != null)
-                    auditEvent.setRowCount(count);
+                    auditEvent.addComment(auditAction, count);
 
                 transaction.commit();
                 return count;

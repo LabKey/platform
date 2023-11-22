@@ -149,18 +149,16 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Nullable @Override
-    public ExpSampleType getSampleType()
+    public ExpSampleTypeImpl getSampleType()
     {
         String type = _object.getCpasType();
         if (!ExpMaterialImpl.DEFAULT_CPAS_TYPE.equals(type) && !"Sample".equals(type))
         {
             // try current container first (uses cache)
-            return SampleTypeService.get().getSampleTypeByType(type, getContainer());
+            return SampleTypeServiceImpl.get().getSampleTypeByType(type, getContainer());
         }
-        else
-        {
-            return null;
-        }
+
+        return null;
     }
 
     @Override
@@ -177,15 +175,15 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public String getRootMaterialLSID()
+    public Integer getRootMaterialRowId()
     {
-        return _object.getRootMaterialLSID();
+        return _object.getRootMaterialRowId();
     }
 
     @Override
-    public void setRootMaterialLSID(String lsid)
+    public void setRootMaterialRowId(int rowId)
     {
-        _object.setRootMaterialLSID(lsid);
+        _object.setRootMaterialRowId(rowId);
     }
 
     @Override
@@ -332,7 +330,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             TableInfo ti = st.getTinfo();
             if (null != ti)
             {
-                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (lsid, name) SELECT ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getLSID(), getName(), getLSID());
+                new SqlExecutor(ti.getSchema()).execute("INSERT INTO " + ti + " (rowId, lsid, name) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT lsid FROM " + ti + " WHERE lsid = ?)", getRowId(), getLSID(), getName(), getLSID());
             }
         }
         index(null);
@@ -350,8 +348,8 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
             if (longId > Integer.MAX_VALUE)
                 throw new OutOfRangeException(longId, 0, Integer.MAX_VALUE);
             setRowId((int) longId);
-            if (null == getRootMaterialLSID())
-                setRootMaterialLSID(getLSID());
+            if (null == getRootMaterialRowId())
+                setRootMaterialRowId(getRowId());
         }
         super.save(user, table, true, isInsert);
     }
@@ -405,7 +403,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         }
     };
 
-    public void index(SearchService.IndexTask task)
+    public void index(@Nullable SearchService.IndexTask task)
     {
         // Big hack to prevent study specimens and bogus samples created from some plate assays (Issue 46037)
         // from being indexed as samples

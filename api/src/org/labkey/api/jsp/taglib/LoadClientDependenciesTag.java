@@ -10,10 +10,10 @@ import javax.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
 /**
- * This "tag" allows for client dependencies to be loaded inline to a JavaScript <script> tag
+ * This "tag" allows for client dependencies to be loaded inline to a JavaScript {@code <script>} tag
  * contained in a JSP. This ensures the JSP's dependencies are loaded in both sync and async
  * use cases.
- *
+ * <pre>{@code
  * Example in a JSP:
  * <%!
  *     public void addClientDependencies(ClientDependencies dependencies)
@@ -22,11 +22,12 @@ import java.io.IOException;
  *         dependencies.add("myFile.js");
  *     }
  * %>
- * <script type="application/javascript">
+ * <script type="text/javascript" nonce="<%=getScriptNonce()%>">
  *     <labkey:loadClientDependencies>
  *         // Script here can assume async/sync safe loading of dependencies declared above
  *     </labkey:loadClientDependencies>
  * </script>
+ * }</pre>
  */
 public class LoadClientDependenciesTag extends BodyTagSupport
 {

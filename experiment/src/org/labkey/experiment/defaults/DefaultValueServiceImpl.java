@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /*
  * User: brittp
@@ -297,7 +296,7 @@ public class DefaultValueServiceImpl implements DefaultValueService
         // Do a single call with both LIKE filters since it's faster than two separate calls
         SQLFragment sql = new SQLFragment("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ? OR ObjectURI LIKE ?",
                 userParentLsid, userScopesLsid);
-        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), sql, container, false);
+        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), sql, container);
     }
 
     @Override

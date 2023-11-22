@@ -27,10 +27,6 @@
     JspView<ManageRequestInputsBean> me = (JspView<ManageRequestInputsBean>) HttpView.currentView();
     ManageRequestInputsBean bean = me.getModelBean();
 
-    String tdButtons = "<a href=\"#\" onClick=\"return moveRow(this, true);\"><i class=\"fa fa-arrow-up\"></i></a>\n" +
-            "<a href=\"#\" onClick=\"return moveRow(this, false);\"><i class=\"fa fa-arrow-down\"></i></a>\n" +
-            "<a href=\"#\" onClick=\"return deleteRow(this);\"><i class=\"fa fa-times\"></i></a>\n";
-
     String tdTitle = "<input type=\"text\" name=\"title\" size=\"20\">";
     String tdHelpText = "<input type=\"text\" name=\"helpText\" size=\"50\">";
     String tdMultiline = "<input type=\"checkbox\" name=\"multiline\">";
@@ -40,18 +36,18 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     function moveRow(elem, up)
     {
-        var table = document.getElementById("inputTable");
-        var row = elem;
-        while (row.tagName != 'TR')
+        const table = document.getElementById("inputTable");
+        let row = elem;
+        while (row.tagName !== 'TR')
             row = row.parentNode;
         // find our row, starting with 1 (0 is the header row):
-        var rowIndex = 1;
-        while (rowIndex < table.rows.length && table.rows[rowIndex] != row)
+        let rowIndex = 1;
+        while (rowIndex < table.rows.length && table.rows[rowIndex] !== row)
             rowIndex++;
-        var otherIndex = (up == true ? rowIndex - 1 : rowIndex + 1);
+        const otherIndex = (up === true ? rowIndex - 1 : rowIndex + 1);
         if (otherIndex < 1 || otherIndex >= table.rows.length)
             return false;
-        var otherRow = table.rows[otherIndex];
+        const otherRow = table.rows[otherIndex];
 
         swapRowProperties(row, otherRow, "title", "value");
         swapRowProperties(row, otherRow, "helpText", "value");
@@ -63,17 +59,17 @@
 
     function swapRowProperties(row1, row2, elemName, property)
     {
-        var row1Elem = getNamedElemFromRow(row1, elemName);
-        var row2Elem = getNamedElemFromRow(row2, elemName);
-        var temp = row1Elem[property];
+        const row1Elem = getNamedElemFromRow(row1, elemName);
+        const row2Elem = getNamedElemFromRow(row2, elemName);
+        const temp = row1Elem[property];
         row1Elem[property] = row2Elem[property];
         row2Elem[property] = temp;
     }
 
     function getNamedElemFromRow(elem, name)
     {
-        var value;
-        if (elem.name == name)
+        let value;
+        if (elem.name === name)
             value = elem;
         if (!value && elem.firstChild)
             value = getNamedElemFromRow(elem.firstChild, name);
@@ -84,29 +80,29 @@
 
     function deleteRow(elem)
     {
-        var table = document.getElementById("inputTable");
-        if (table.rows.length == 2)
+        const table = document.getElementById("inputTable");
+        if (table.rows.length === 2)
         {
             alert("At least one input must be present.");
             return false;
         }
-        var row = elem;
-        while (row.tagName != 'TR')
+        let row = elem;
+        while (row.tagName !== 'TR')
             row = row.parentNode;
-        var titleElem = getNamedElemFromRow(row, "title");
+        const titleElem = getNamedElemFromRow(row, "title");
         if (titleElem.value && !confirm("Delete \"" + titleElem.value + "\"?"))
             return false;
 
-        var rowIndex = 0;
+        let rowIndex = 0;
         // find our row:
-        while (rowIndex < table.rows.length && table.rows[rowIndex] != row)
+        while (rowIndex < table.rows.length && table.rows[rowIndex] !== row)
             rowIndex++;
         table.deleteRow(rowIndex);
 
         // We may need to reindex our values, since they're indexes into the array of inputs.
-        for (var fixIndex = rowIndex; fixIndex < table.rows.length; fixIndex++)
+        for (let fixIndex = rowIndex; fixIndex < table.rows.length; fixIndex++)
         {
-            var fixRow = table.rows[fixIndex];
+            const fixRow = table.rows[fixIndex];
             // set our checkbox values to be the zero-indexed row number, excluding the header row (hence the "-1")
             getNamedElemFromRow(fixRow, "multiline").value = (fixIndex - 1);
             getNamedElemFromRow(fixRow, "required").value = (fixIndex - 1);
@@ -118,20 +114,21 @@
 
     function addRow()
     {
-        var table = document.getElementById("inputTable");
+        const table = document.getElementById("inputTable");
         table.insertRow(table.rows.length);
-        var newRow = table.rows[table.rows.length - 1];
+        const newRow = table.rows[table.rows.length - 1];
 
         // create the new cells:
-        var buttonCell = newRow.insertCell(newRow.cells.length);
-        var titleCell = newRow.insertCell(newRow.cells.length);
-        var helpTextCell = newRow.insertCell(newRow.cells.length);
-        var multilineCell = newRow.insertCell(newRow.cells.length);
-        var requiredCell = newRow.insertCell(newRow.cells.length);
-        var rememberSiteValueCell = newRow.insertCell(newRow.cells.length);
+        const buttonCell = newRow.insertCell(newRow.cells.length);
+        const titleCell = newRow.insertCell(newRow.cells.length);
+        const helpTextCell = newRow.insertCell(newRow.cells.length);
+        const multilineCell = newRow.insertCell(newRow.cells.length);
+        const requiredCell = newRow.insertCell(newRow.cells.length);
+        const rememberSiteValueCell = newRow.insertCell(newRow.cells.length);
 
         // set the HTML for the new cell:
-        buttonCell.innerHTML = <%= q(tdButtons)%>;
+        setButtonsHtml(buttonCell);
+        attachAllButtonEvents();
         titleCell.innerHTML = <%= q(tdTitle)%>;
         helpTextCell.innerHTML = <%= q(tdHelpText)%>;
         multilineCell.innerHTML = <%= q(tdMultiline)%>;
@@ -152,11 +149,11 @@
 
     function verifyForm()
     {
-        var table = document.getElementById("inputTable");
-        for (var i = 0; i < table.rows.length; i++)
+        const table = document.getElementById("inputTable");
+        for (let i = 0; i < table.rows.length; i++)
         {
-            var row = table.rows[i];
-            var elem = getNamedElemFromRow(row, "title");
+            const row = table.rows[i];
+            const elem = getNamedElemFromRow(row, "title");
             if (!elem.value)
             {
                 alert("A title is required for all inputs.");
@@ -165,6 +162,29 @@
         }
         return true;
     }
+
+    function setButtonsHtml(td)
+    {
+        td.innerHTML =
+            '<a id="buttonUp" href="#"><i class="fa fa-arrow-up"></i></a>\n' +
+            '<a id="buttonDown" href="#"><i class="fa fa-arrow-down"></i></a>\n' +
+            '<a id="buttonDelete" href="#""><i class="fa fa-times"></i></a>\n';
+    }
+
+    // Attach events "by hand" because rows are dynamically added and removed after initial render
+    function attachAllButtonEvents()
+    {
+        LABKEY.Utils.attachEventHandler('buttonUp', 'click', function (){ return moveRow(this, true); }, 1);
+        LABKEY.Utils.attachEventHandler('buttonDown', 'click', function (){ return moveRow(this, false); }, 1);
+        LABKEY.Utils.attachEventHandler('buttonDelete', 'click', function (){ return deleteRow(this); }, 1);
+    }
+
+    LABKEY.Utils.onReady(function() {
+        const list = document.querySelectorAll('#buttonsTd');
+        for (let i in list)
+            setButtonsHtml(list[i]);
+        attachAllButtonEvents();
+    });
 </script>
 <labkey:form action="<%=urlFor(HandleUpdateRequestInputsAction.class)%>" method="POST" onsubmit="return verifyForm()">
     <table id="inputTable" class="lk-fields-table">
@@ -184,7 +204,7 @@
             SpecimenRequestInput input = inputs[inputIndex];
     %>
         <tr>
-            <td style="padding-right: 5px;"><%= text(tdButtons) %></td>
+            <td id="buttonsTd" style="padding-right: 5px;"></td>
             <td><input type="text" name="title" size="20" value="<%= h(input.getTitle()) %>"></td>
             <td><input type="text" name="helpText" size="50" value="<%= h(input.getHelpText()) %>"></td>
             <td align="center"><input type="checkbox" value="<%= inputIndex %>" name="multiline"<%=checked(input.isMultiLine())%>></td>

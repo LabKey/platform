@@ -51,6 +51,7 @@ public interface FileContentService
     String FILES_LINK = "@files";
     String FILE_SETS_LINK = "@filesets";
     String PIPELINE_LINK = "@pipeline";
+    String SCRIPTS_LINK = "@scripts";
     String CLOUD_LINK = "@cloud";
 
     String CLOUD_ROOT_PREFIX = "/@cloud";
@@ -122,6 +123,9 @@ public interface FileContentService
     @NotNull
     Path getSiteDefaultRootPath();
 
+    @Nullable
+    String getProblematicFileRootMessage();
+
     void setSiteDefaultRoot(File root, User user);
 
     public void setFileRootSetViaStartupProperty(boolean fileRootSetViaStartupProperty);
@@ -163,6 +167,9 @@ public interface FileContentService
     @Nullable
     AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
 
+    @Nullable
+    AttachmentDirectory getMappedAttachmentDirectory(Container c, ContentType contentType, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException;
+
     /**
      * Return a named AttachmentParent for files in the directory mapped to this container
      *
@@ -199,6 +206,7 @@ public interface FileContentService
         files,
         pipeline,
         assay,
+        scripts
     }
 
     String getFolderName(ContentType type);

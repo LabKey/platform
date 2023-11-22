@@ -278,6 +278,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -427,6 +428,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "search to find the other select values.", false);
         AdminConsole.addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
+        AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
+                "By default LabKey disables all framing of login related actions.  Disabling this feature will revert to using the standard site settings.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -1086,6 +1089,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .collect(Collectors.toList()));
             results.put("productFeaturesEnabled", AdminConsole.getProductFeatureSet());
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
+            String labkeyContextPath = AppProps.getInstance().getContextPath();
+            results.put("webappContextPath", labkeyContextPath);
+            Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
+            deployedApps.remove(labkeyContextPath);
+            if (labkeyContextPath.startsWith("/"))
+            {
+                deployedApps.remove(labkeyContextPath.substring(1));
+            }
+            results.put("otherDeployedWebapps", StringUtils.join(deployedApps, ","));
 
             // Report the total number of login entries in the audit log
             User user = new LimitedUser(User.getSearchUser(), CanSeeAuditLogRole.class);

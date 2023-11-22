@@ -18,15 +18,13 @@ package org.labkey.study.query;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerDisplayColumn;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JavaScriptDisplayColumn;
+import org.labkey.api.data.PHI;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.AliasedColumn;
@@ -46,9 +44,6 @@ import java.io.Writer;
 import java.util.Collection;
 import java.util.HashSet;
 
-/**
- * Created by klum on 8/8/2014.
- */
 public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 {
     @Override
@@ -77,25 +72,18 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 
         var destination = new AliasedColumn(this, "Destination", _rootTable.getColumn("destination"));
         final User user = schema.getUser();
-        destination.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
+        destination.setDisplayColumnFactory(colInfo -> new ContainerDisplayColumn(colInfo, false){
             @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            public String renderURL(RenderContext ctx)
             {
-                return new ContainerDisplayColumn(colInfo, false){
-                    @Override
-                    public String renderURL(RenderContext ctx)
-                    {
-                        Object o = getValue(ctx);
-                        Container c = ContainerManager.getForId(String.valueOf(o));
-                        if (c != null)
-                        {
-                            if (c.hasPermission(user, ReadPermission.class))
-                                return c.getStartURL(user).getLocalURIString();
-                        }
-                        return null;
-                    }
-                };
+                Object o = getValue(ctx);
+                Container c = ContainerManager.getForId(String.valueOf(o));
+                if (c != null)
+                {
+                    if (c.hasPermission(user, ReadPermission.class))
+                        return c.getStartURL(user).getLocalURIString();
+                }
+                return null;
             }
         });
         addColumn(destination);
@@ -111,71 +99,60 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Refresh")));
 
         var settingsColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Settings")));
-        settingsColumn.setDisplayColumnFactory(new DisplayColumnFactory(){
+        settingsColumn.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo){
+
             @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {
-                return new DataColumn(colInfo){
+                Object value = getValue(ctx);
+                ObjectMapper jsonMapper = new ObjectMapper();
+                Object jsonValue = jsonMapper.readValue(String.valueOf(value), Object.class);
 
-                    @Override
-                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-                    {
-                        Object value = getValue(ctx);
-                        ObjectMapper jsonMapper = new ObjectMapper();
-                        Object jsonValue = jsonMapper.readValue(String.valueOf(value), Object.class);
-
-                        out.write(PageFlowUtil.filter(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
-                  }
-                };
-            }
+                out.write(PageFlowUtil.filter(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
+          }
         });
 
         ComplianceService complianceService = ComplianceService.get();
-        String maxAllowedPhi = complianceService.getMaxAllowedPhi(getContainer(), schema.getUser()).name();
+        PHI maxAllowedPhi = complianceService.getMaxAllowedPhi(getContainer(), schema.getUser());
 
         AliasedColumn republishCol = new AliasedColumn("Republish", wrapColumn(_rootTable.getColumn("RowId")));
-        republishCol.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+        republishCol.setDisplayColumnFactory(colInfo -> {
+            Collection<String> dependencies = new HashSet<>();
+            dependencies.add("clientapi/ext3");
+            dependencies.add("reports/rowExpander.js");
+            dependencies.add("FileUploadField.js");
+            dependencies.add("study/StudyWizard.js");
+
+            String availableStudyName = ContainerManager.getAvailableChildContainerName(getContainer(), "New Study");
+            String onClickJavaScript = "LABKEY.study.openRepublishStudyWizard(${RowId:jsString}, " + PageFlowUtil.jsString(availableStudyName) + ", " + PageFlowUtil.jsString(maxAllowedPhi.name()) + ");";
+
+            return new JavaScriptDisplayColumn(colInfo, dependencies, onClickJavaScript, "labkey-text-link")
             {
-                Collection<String> dependencies = new HashSet<>();
-                dependencies.add("clientapi/ext3");
-                dependencies.add("reports/rowExpander.js");
-                dependencies.add("FileUploadField.js");
-                dependencies.add("study/StudyWizard.js");
-
-                String availableStudyName = ContainerManager.getAvailableChildContainerName(getContainer(), "New Study");
-                String javaScriptEvent = "onclick=\"LABKEY.study.openRepublishStudyWizard(${RowId:jsString}, '" + availableStudyName + "', '" + maxAllowedPhi + "');\"";
-
-                return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
+                @NotNull
+                @Override
+                public HtmlString getFormattedHtml(RenderContext ctx)
                 {
-                    @NotNull
-                    @Override
-                    public HtmlString getFormattedHtml(RenderContext ctx)
-                    {
-                        return HtmlString.of("Republish");
-                    }
+                    return HtmlString.of("Republish");
+                }
 
-                    @Override
-                    public void renderTitle(RenderContext ctx, Writer out)
-                    {
-                        // no title
-                    }
+                @Override
+                public void renderTitle(RenderContext ctx, Writer out)
+                {
+                    // no title
+                }
 
-                    @Override
-                    public boolean isSortable()
-                    {
-                        return false;
-                    }
+                @Override
+                public boolean isSortable()
+                {
+                    return false;
+                }
 
-                    @Override
-                    public boolean isFilterable()
-                    {
-                        return false;
-                    }
-                };
-            }
+                @Override
+                public boolean isFilterable()
+                {
+                    return false;
+                }
+            };
         });
         addColumn(republishCol);
     }
