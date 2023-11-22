@@ -1623,8 +1623,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         // have run yet.
         SQLFragment sql = new SQLFragment("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
                 .append(useRootMaterialLSID ? "a.rootMaterialLsid = m.lsid" : "a.rootMaterialRowId = m.rowId")
-                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid")
-                .appendEOS().append("\n");
+                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1717,8 +1716,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 .append(useRootMaterialLSID ? "parent.lsid = aliquot.rootmateriallsid" : "parent.rowid = aliquot.rootmaterialrowid")
                 .append(" WHERE ")
                 .append(useRootMaterialLSID ? "aliquot.rootmateriallsid <> aliquot.lsid" : "aliquot.rootmaterialrowid <> aliquot.rowid")
-                .append(" AND parent.rowid")
-                .appendEOS().append("\n");
+                .append(" AND parent.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new HashMap<>();
