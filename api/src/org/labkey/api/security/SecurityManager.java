@@ -1413,18 +1413,15 @@ public class SecurityManager
 
     static void deleteGroup(int groupId)
     {
-        if (groupId == Group.groupAdministrators ||
-                groupId == Group.groupGuests ||
-                groupId == Group.groupUsers ||
-                groupId == Group.groupDevelopers)
-            throw new IllegalArgumentException("The global groups cannot be deleted.");
+        Group group = getGroup(groupId);
+        if (null == group)
+            return;
+
+        if (group.isSystemGroup())
+            throw new IllegalArgumentException("The system groups cannot be deleted.");
 
         try (Transaction transaction = core.getScope().beginTransaction())
         {
-            Group group = getGroup(groupId);
-            if (null == group)
-                return;
-
             // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
             GroupMembershipCache.handleGroupChange(group, group);
 

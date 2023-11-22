@@ -29,6 +29,9 @@
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.SafeToRender" %>
+<%@ page import="org.labkey.api.util.element.Option.OptionBuilder" %>
+<%@ page import="org.labkey.api.util.element.Select.SelectBuilder" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.pipeline.PipelineController.PermissionView" %>
@@ -55,14 +58,13 @@ These permissions control whether pipeline files can be downloaded and updated v
 <input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%>> Share files via website<br>
     <%
     List<Group> groups = SecurityManager.getGroups(c.getProject(), true);
-    Pair[] optionsFull = new Pair[]
-    {
+    List<Pair<String, Role>> optionsFull = List.of(
         new Pair<>("no access", RoleManager.getRole(NoPermissionsRole.class)),
         new Pair<>("read files", RoleManager.getRole(ReaderRole.class)),
         new Pair<>("create files", RoleManager.getRole(AuthorRole.class)),
         new Pair<>("create and delete", RoleManager.getRole(EditorRole.class))
-    };
-    Pair[] optionsGuest = new Pair[] {optionsFull[0], optionsFull[1]};
+    );
+    List<Pair<String, Role>> optionsGuest = List.of(optionsFull.get(0), optionsFull.get(1));
 
     int i=0;
     %>
@@ -74,7 +76,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         if (g.isProjectGroup())
             continue;
         List<Role> assignedRoles = policy.getAssignedRoles(g);
-        Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : null;
+        Role assignedRole = !assignedRoles.isEmpty() ? assignedRoles.get(0) : null;
         final HtmlString name;
         if (g.isAdministrators())
             name = HtmlString.unsafe("Site&nbsp;Administrators");
@@ -82,9 +84,10 @@ These permissions control whether pipeline files can be downloaded and updated v
             name = HtmlString.of("All Users");
         else
             name = h(g.getName());
-        %><tr><td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
-        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot))%>
-        </select></td></tr><%
+        %><tr>
+            <td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td>
+            <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot)%></td>
+        </tr><%
         i++;
     }
     %>
@@ -97,10 +100,11 @@ These permissions control whether pipeline files can be downloaded and updated v
         if (!g.isProjectGroup())
             continue;
         List<Role> assignedRoles = policy.getAssignedRoles(g);
-        Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : RoleManager.getRole(NoPermissionsRole.class);
-        %><tr><td><%=h(g.getName())%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
-        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot))%>
-        </select></td></tr><%
+        Role assignedRole = !assignedRoles.isEmpty() ? assignedRoles.get(0) : RoleManager.getRole(NoPermissionsRole.class);
+        %><tr>
+            <td><%=h(g.getName())%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td>
+            <td><%=getSelect(i, g.isGuests() ? optionsGuest : optionsFull, assignedRole, policy, pipeRoot)%></td>
+        </tr><%
         i++;
     }
     %></table><br><%
@@ -112,47 +116,39 @@ toggleEnableFTP(document.getElementById("enabledCheckbox"));
         
 function toggleEnableFTP(checkbox)
 {
-    var i;
-    var checked = checkbox.checked;
-    var form = document.getElementById("permissionsForm");
-    var elements = form.getElementsByTagName("select"); 
-    for (i in elements)
+    const checked = checkbox.checked;
+    const form = document.getElementById("permissionsForm");
+    const elements = form.getElementsByTagName("select");
+    for (let i in elements)
     {
-        var e = elements[i];
+        const e = elements[i];
         e.disabled = !checked;
     }
 }
 </script>
 
-
 <%!
-    String writeOptions(Pair[] options, Role role, SecurityPolicy policy, PipeRoot pipeRoot)
+    SafeToRender getSelect(int i, List<Pair<String, Role>> options, Role role, SecurityPolicy policy, PipeRoot pipeRoot)
     {
-        StringBuilder out = new StringBuilder();
-        boolean selected = false;
-        for (Pair option : options)
+        SelectBuilder select = select()
+            .name("perms[" + i + "]")
+            .addOptions(
+                options.stream()
+                    .map(option -> new OptionBuilder(option.getKey(), option.getValue()))
+            )
+            .className(null);
+
+        if (options.stream().anyMatch(pair -> pair.getValue().equals(role)))
         {
-            out.append("<option value=\"");
-            out.append(h(option.getValue()));
-            if (option.getValue().equals(role))
-            {
-                selected = true;
-                out.append("\" selected>");
-            }
-            else
-                out.append("\">");
-            out.append(h(option.getKey()));
-            out.append("</option>");
+            select.selected(role.getUniqueName());
         }
-        if (!selected && null != role && role.isApplicable(policy, pipeRoot))
+        else if (role != null && role.isApplicable(policy, pipeRoot))
         {
-            out.append("<option value=\"");
-            out.append(h(role.getUniqueName()));
-            out.append("\" selected>");
-            out.append(h(role.getName()));
-            out.append("</option>");
+            select.addOption(role.getName(), role.getUniqueName());
+            select.selected(role.getUniqueName());
         }
-        return out.toString();
+
+        return select;
     }
 %>
 </div>

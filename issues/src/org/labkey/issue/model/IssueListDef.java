@@ -44,14 +44,9 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.issue.query.IssueDefDomainKind;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-/**
- * Created by klum on 4/5/2016.
- */
 public class IssueListDef extends Entity
 {
     public final static String DEFAULT_ISSUE_LIST_NAME = "issues";
@@ -197,16 +192,9 @@ public class IssueListDef extends Entity
                     }
                 }
                 Container container = ContainerManager.getForId(def.getContainerId());
-                // issue 29493 : set the default assigned to group to site administrators
-                List<Group> siteAdminGroups = SecurityManager.getGroups(container.getProject(), true)
-                        .stream()
-                        .filter(group -> !group.isProjectGroup() && group.isAdministrators() && group.getName().equalsIgnoreCase("Administrators"))
-                        .collect(Collectors.toList());
 
-                if (siteAdminGroups.size() == 1)
-                {
-                    IssueManager.saveAssignedToGroup(container, def.getName(), siteAdminGroups.get(0));
-                }
+                // issue 29493 : set the default assigned-to group to site administrators
+                IssueManager.saveAssignedToGroup(container, def.getName(), SecurityManager.getGroup(Group.groupAdministrators));
 
                 IssueListDefCache.uncache(container);
                 transaction.commit();
