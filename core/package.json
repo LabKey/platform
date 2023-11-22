@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "2.393.2-fb-transformScriptUX.6",
+    "@labkey/components": "2.393.2-fb-transformScriptUX.7",
     "@labkey/themes": "1.3.2"
   },
   "devDependencies": {
