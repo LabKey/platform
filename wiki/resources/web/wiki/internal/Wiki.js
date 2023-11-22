@@ -103,52 +103,76 @@
         // create the editor
         this.ed = new tinymce.Editor(this.editFieldId, {
 
-            height: height,
-
-            // General options
-            theme: "silver",
-            plugins: [
-                "advlist",
-                "table",
-                "autolink",
-                "preview",
-                "media",
-                "searchreplace",
-                "fullscreen",
-                "lists",
-                "link",
-                "emoticons",
-                "quickbars",
-                "code",
-            ],
-
-            menubar: 'file edit insert view format table tools help',
-            // removed_menuitems: 'preview',
-            // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
-            convert_urls: false,
-
-            // Smaller button bar than found on regular wiki edit
-            // TODO update toolbars
-            theme_advanced_buttons1 : "fontselect, fontsizeselect, " +
-                    "|, bold, italic, underline, " +
-                    "|, forecolor, backcolor, " +
-                    "|, justifyleft, justifycenter, justifyright, " +
-                    "|, bullist, numlist, " +
-                    "|, outdent, indent, " +
-                    "|, link, unlink, " +
-                    "|, image, removeformat, ",
-
-            theme_advanced_buttons2 : null,
-            theme_advanced_buttons3 : null,
-            promotion: false,
-
-            theme_advanced_toolbar_location : "top",
-            theme_advanced_toolbar_align : "left",
-            theme_advanced_statusbar_location : "bottom",
-            theme_advanced_resizing : false,
+            // height: height,
+            // element_format: 'xhtml',
+            // // General options
+            // theme: "silver",
+            // plugins: [
+            //     "advlist",
+            //     "table",
+            //     "autolink",
+            //     "preview",
+            //     "media",
+            //     "searchreplace",
+            //     "fullscreen",
+            //     "lists",
+            //     "link",
+            //     "emoticons",
+            //     "quickbars",
+            //     "code",
+            // ],
+            //
+            // menubar: 'file edit insert view format table tools help',
+            // // removed_menuitems: 'preview',
+            // // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
+            // convert_urls: false,
+            //
+            // // Smaller button bar than found on regular wiki edit
+            // // TODO update toolbars
+            // theme_advanced_buttons1 : "fontselect, fontsizeselect, " +
+            //         "|, bold, italic, underline, " +
+            //         "|, forecolor, backcolor, " +
+            //         "|, justifyleft, justifycenter, justifyright, " +
+            //         "|, bullist, numlist, " +
+            //         "|, outdent, indent, " +
+            //         "|, link, unlink, " +
+            //         "|, image, removeformat, ",
+            //
+            // theme_advanced_buttons2 : null,
+            // theme_advanced_buttons3 : null,
+            // promotion: false,
+            //
+            // theme_advanced_toolbar_location : "top",
+            // theme_advanced_toolbar_align : "left",
+            // theme_advanced_statusbar_location : "bottom",
+            // theme_advanced_resizing : false,
 
             // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
             // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
+            extended_valid_elements: 'i[class],+script[*]',
+            plugins: [
+                "advlist",
+                "anchor",
+                "autolink",
+                "charmap",
+                "code",
+                "emoticons",
+                "fullscreen",
+                "help",
+                "image",
+                "insertdatetime",
+                "link",
+                "lists",
+                "media",
+                "preview",
+                "quickbars",
+                "searchreplace",
+                "table",
+                "visualblocks",
+            ],
+            promotion: false,
+            theme: "silver",
+            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
             browser_spellcheck : true
         }, tinymce.EditorManager);
 

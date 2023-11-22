@@ -68,54 +68,65 @@ const TabNames = Object.freeze({
     const initTinymce = function  (initializedCallback) {
         tinymce.init({
             selector: 'textarea' + _editorId,
-            // General options
-            theme: "silver",
-            plugins: [
-                "advlist",
-                "table",
-                "autolink",
-                "preview",
-                "image",
-                "media",
-                "searchreplace",
-                "fullscreen",
-                "lists",
-                "link",
-                "emoticons",
-                "quickbars",
-                "code",
-                'charmap'
-            ],
-            promotion: false,
-            // removed_menuitems: 'preview',  //TODO keep/Remove helps with embedded images
-            // toolbar: "|code",
-            advcode_inline: true,
-            // tell tinymce not be clever about URL conversion.  Dave added it to fix some bug.
-            convert_urls: false,
+            // extended_valid_elements:'+i[class]',
+            // invalid_elements:'',
+            // element_format: 'xhtml',
+            // // General options
 
-            // TODO update Toolbar buttons
-            // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
-            theme_advanced_buttons1: "undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
-                    "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
-
-            theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
-                    "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
-
-            theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
-            theme_advanced_toolbar_location: "top",
-            theme_advanced_toolbar_align: "left",
-            theme_advanced_statusbar_location: "bottom",
-            theme_advanced_resizing: true,
-
-            // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
-            // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-            browser_spellcheck: true,
-
-            // labkey specific
-            handle_event_callback: "tinyMceHandleEvent",
+            // // removed_menuitems: 'preview',  //TODO keep/Remove helps with embedded images
+            // // toolbar: "|code",
+            // advcode_inline: true,
+            // // tell tinymce not be clever about URL conversion.  Dave added it to fix some bug.
+            // convert_urls: false,
+            //
+            // // TODO update Toolbar buttons
+            // // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
+            // theme_advanced_buttons1: "undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
+            //         "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
+            //
+            // theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
+            //         "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
+            //
+            // theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
+            // theme_advanced_toolbar_location: "top",
+            // theme_advanced_toolbar_align: "left",
+            // theme_advanced_statusbar_location: "bottom",
+            // theme_advanced_resizing: true,
+            //
+            // // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
+            // // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
+            // browser_spellcheck: true,
+            //
+            // // labkey specific
+            // handle_event_callback: "tinyMceHandleEvent",
 
             // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
             // init_instance_callback: initializedCallback
+            browser_spellcheck : true,
+            extended_valid_elements: 'i[class],+script[*]',
+            plugins: [
+                "advlist",
+                "anchor",
+                "autolink",
+                "charmap",
+                "code",
+                "emoticons",
+                "fullscreen",
+                "help",
+                "image",
+                "insertdatetime",
+                "link",
+                "lists",
+                "media",
+                "preview",
+                "quickbars",
+                "searchreplace",
+                "table",
+                "visualblocks",
+            ],
+            promotion: false,
+            theme: "silver",
+            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
         }).then(initializedCallback);
     }
 
