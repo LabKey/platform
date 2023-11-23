@@ -4,6 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 
+import java.util.Collections;
+import java.util.Map;
+
 public interface AntiVirusProvider
 {
     @NotNull String getId();             // something unique e.g. className
@@ -18,4 +21,6 @@ public interface AntiVirusProvider
     {
         return getId().equals(id);
     }
+
+    default Map<String, Object> getUsageMetrics() { return Collections.emptyMap(); }
 }

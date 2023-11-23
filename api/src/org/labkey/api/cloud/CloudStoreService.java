@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 /**
  * User: kevink
@@ -37,9 +36,6 @@ import java.util.function.BiConsumer;
  */
 public interface CloudStoreService
 {
-    /** Root node for containers that are exposing cloud-backed storage in WebDAV */
-    String CLOUD_NAME = "@cloud";
-
     static @Nullable CloudStoreService get()
     {
         return ServiceRegistry.get().getService(CloudStoreService.class);

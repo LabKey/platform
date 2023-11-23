@@ -24,7 +24,12 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ViewBackgroundInfo;
 
+import javax.servlet.http.Part;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
 public interface AntiVirusService
 {
@@ -91,7 +96,7 @@ public interface AntiVirusService
      */
     default <T> void queueScan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info, T extra, Callback<T> callbackFn)
     {
-        JobRunner.getDefault().submit(()-> callbackFn.call(f, extra, scan(f, originalName, info)));
+        JobRunner.getDefault().submit(()-> callbackFn.call(f, extra, scan(new FileScannable(f, originalName), info)));
     }
 
     default void warnAndAuditLog(Logger log, String logmessage, ViewBackgroundInfo info, @Nullable String originalName)
@@ -106,6 +111,85 @@ public interface AntiVirusService
         AuditLogService.get().addEvent(info.getUser(), event);
     }
 
+    interface Scannable
+    {
+        InputStream getInputStream() throws IOException;
+        long getSize();
+        @Nullable
+        String getFileName();
+    }
+
+    class FileScannable implements Scannable
+    {
+        private final File _file;
+        private final String _originalName;
+
+        public FileScannable(File file)
+        {
+            this(file, file.getName());
+        }
+
+        public FileScannable(File file, String originalName)
+        {
+            _file = file;
+            _originalName = originalName;
+        }
+
+        @Override
+        public InputStream getInputStream() throws FileNotFoundException
+        {
+            return new FileInputStream(_file);
+        }
+
+        @Override
+        public long getSize()
+        {
+            return _file.length();
+        }
+
+        @Override
+        public String getFileName()
+        {
+            return _originalName;
+        }
+
+        @Override
+        public String toString()
+        {
+            return _file.toString();
+        }
+    }
+
+    class PartScannable implements Scannable
+    {
+        private final Part _part;
+
+        public PartScannable(Part part)
+        {
+            _part = part;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException
+        {
+            return _part.getInputStream();
+        }
+
+        @Override
+        public long getSize()
+        {
+            return _part.getSize();
+        }
+
+        @Override
+        public String getFileName()
+        {
+            return _part.getSubmittedFileName();
+        }
+    }
+
+
+
     /** originalName and user are used for error reporting and logging */
-    ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info);
+    ScanResult scan(@NotNull AntiVirusService.Scannable scannable, ViewBackgroundInfo info);
 }

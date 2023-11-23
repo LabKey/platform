@@ -764,8 +764,14 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
     }
 
     @Override
+    public @Nullable AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException, MissingRootDirectoryException
+    {
+        return getMappedAttachmentDirectory(c, ContentType.files, createDir);
+    }
+
+    @Override
     @Nullable
-    public AttachmentDirectory getMappedAttachmentDirectory(Container c, boolean createDir) throws UnsetRootDirectoryException
+    public AttachmentDirectory getMappedAttachmentDirectory(Container c, ContentType contentType, boolean createDir) throws UnsetRootDirectoryException
     {
         try
         {
@@ -774,7 +780,7 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             else if (null == getMappedDirectory(c, false))
                 return null;
 
-            return new FileSystemAttachmentParent(c, ContentType.files);
+            return new FileSystemAttachmentParent(c, contentType);
         }
         catch (IOException e)
         {

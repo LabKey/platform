@@ -19,7 +19,6 @@ package org.labkey.core.webdav;
 /**
  * User: matthewb
  * Date: Apr 17, 2008
- * Time: 2:03:32 PM
  */
 
 import org.apache.commons.lang3.StringUtils;
@@ -51,6 +50,20 @@ import java.net.URISyntaxException;
 public class WebdavServlet extends HttpServlet
 {
     Logger _log = LogManager.getLogger(WebdavServlet.class);
+
+    final WebdavResolver _resolver;
+    String _serverHeader;
+
+    public WebdavServlet()
+    {
+        this(false);
+    }
+    
+    public WebdavServlet(boolean asStatic)
+    {
+        _resolver = asStatic ? ModuleStaticResolverImpl.get() : WebdavResolverImpl.get();
+    }
+
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
@@ -144,22 +157,4 @@ public class WebdavServlet extends HttpServlet
             dav.handleRequest(request, response);
         }
     }
-
-
-    @Override
-    public void init(ServletConfig config) throws ServletException
-    {
-        super.init(config);
-        String resolver = config.getInitParameter("resolver");
-        if (ModuleStaticResolverImpl.class.getName().equals(resolver))
-            _resolver = ModuleStaticResolverImpl.get();
-        else if (WebdavResolverImpl.class.getName().equals(resolver))
-            _resolver = WebdavResolverImpl.get();
-        else
-            throw new IllegalArgumentException("resolver");
-//        _serverHeader =  "Labkey/" + AppProps.getInstance().getLabkeyVersionString();
-    }
-
-    WebdavResolver _resolver;
-    String _serverHeader;
 }

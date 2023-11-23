@@ -357,12 +357,15 @@ public class ExperimentUpgradeCode implements UpgradeCode
         List<Integer> rootSamplesWithAvailableAliquotVolume = new ArrayList<>(s1);
 
         // Exposed as "public" only for upgrade. When removing this code make this signature "private".
+        // Issue 49150: Additionally, remove the "useRootMaterialLSID" flag and all of it's related logic as it
+        // is only necessary for this upgrade path.
         return SampleTypeServiceImpl.get().recomputeSamplesRollup(
             Collections.emptyList(),
             rootSamplesWithAvailableAliquot,
             rootSamplesWithAvailableAliquotVolume,
             sampleType.getMetricUnit(),
-            container
+            container,
+            true
         );
     }
 
