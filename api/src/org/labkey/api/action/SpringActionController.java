@@ -61,9 +61,8 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.View;
@@ -479,8 +478,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 try
                 {
                     ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL().clone());
-                    CommonsMultipartResolver resolver = AntiVirusProviderRegistry.get().getMultipartResolver(info);
-                    resolver.setUploadTempDir(new FileSystemResource(getTempUploadDir()));
+                    StandardServletMultipartResolver resolver = AntiVirusProviderRegistry.get().getMultipartResolver(info);
                     request = resolver.resolveMultipart(request);
                     context.setRequest(request);
                     // ViewServlet doesn't check validChars for parameters in a multipart request, so check again
@@ -546,7 +544,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     {
         if (TEMP_UPLOAD_DIR == null)
         {
-            TEMP_UPLOAD_DIR = new File(new File(System.getProperty("java.io.tmpdir")), "httpUploads");
+            TEMP_UPLOAD_DIR = new File(new File(System.getProperty("java.io.tmpdir")), "httpUploads").getAbsoluteFile();
             TEMP_UPLOAD_DIR.mkdirs();
         }
         return TEMP_UPLOAD_DIR;

@@ -520,6 +520,15 @@ public class ModuleLoader implements Filter, MemTrackerListener
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
 
+        for (Module module : modules)
+        {
+            module.registerServlets(servletCtx);
+        }
+        for (Module module : modules)
+        {
+            module.registerFinalServlets(servletCtx);
+        }
+
         // Do this after we've checked to see if we can find the core module. See issue 22797.
         verifyProductionModeMatchesBuild();
 
