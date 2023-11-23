@@ -149,13 +149,15 @@
 
             // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
             // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-            extended_valid_elements: 'i[class],+script[*]',
+            browser_spellcheck : true,
+            extended_valid_elements: 'i/em[*],+script[*],+form[*],+style[*]',
             plugins: [
                 "advlist",
                 "anchor",
                 "autolink",
                 "charmap",
                 "code",
+                "codesample",
                 "emoticons",
                 "fullscreen",
                 "help",
@@ -169,11 +171,14 @@
                 "searchreplace",
                 "table",
                 "visualblocks",
+                "visualchars",
             ],
+            menubar: 'edit insert view format table tools help',
             promotion: false,
+            quickbars_insert_toolbar: 'anchor quickimage quicktable codesample hr accordion accordionremove',
             theme: "silver",
-            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-            browser_spellcheck : true
+            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image codesample",
+            toolbar_sticky: true,
         }, tinymce.EditorManager);
 
         this.ed.render();

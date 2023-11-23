@@ -103,13 +103,16 @@ const TabNames = Object.freeze({
             // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
             // init_instance_callback: initializedCallback
             browser_spellcheck : true,
-            extended_valid_elements: 'i[class],+script[*]',
+            // TODO this should allow the elements below to survive in the Visual editor, but it isn't perfect. https://github.com/tinymce/tinymce/issues/9183
+            extended_valid_elements: 'i/em[*],+script[*],+form[*],+style[*]',
+            invalid_elements: null,
             plugins: [
                 "advlist",
                 "anchor",
                 "autolink",
                 "charmap",
                 "code",
+                "codesample",
                 "emoticons",
                 "fullscreen",
                 "help",
@@ -123,10 +126,18 @@ const TabNames = Object.freeze({
                 "searchreplace",
                 "table",
                 "visualblocks",
+                "visualchars",
             ],
+            menubar: 'edit insert view format table tools help',
             promotion: false,
+            quickbars_insert_toolbar: 'anchor quickimage quicktable codesample hr accordion accordionremove',
             theme: "silver",
-            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
+            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image codesample",
+            toolbar_sticky: true,
+
+            //TODO add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
+            //content_css:['mycss1.css', 'mycss2.css'],
+
         }).then(initializedCallback);
     }
 
@@ -751,7 +762,7 @@ const TabNames = Object.freeze({
             getExt4(function() {
                 Ext4.Msg.show({
                     title: 'Warning',
-                    msg: "Your page contains elements that are not supported by the visual editor and will thus be removed. Are you sure you want to switch to the visual editor?",
+                    msg: "Your page contains elements that are not supported by the visual editor and may be removed. Are you sure you want to switch to the visual editor?",
                     buttons: Ext4.Msg.YESNO,
                     animEl: 'wiki-tab-visual',
                     icon: Ext4.Msg.QUESTION,
@@ -788,6 +799,7 @@ const TabNames = Object.freeze({
         // used to also block pre tag, but tinymc3.4 handles <pre> properly, so removed from blacklist
         return  null != bodyText.match(/<script[\s>]/) ||
                 null != bodyText.match(/<form[\s>]/) ||
+                null != bodyText.match(/<i[\s>]/) ||
                 null != bodyText.match(/<style[\s>]/)
     };
 
