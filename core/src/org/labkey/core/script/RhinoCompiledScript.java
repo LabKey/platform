@@ -52,9 +52,8 @@ final class RhinoCompiledScript extends CompiledScript
 {
     private final Logger _log = LogManager.getLogger(RhinoCompiledScript.class);
 
-    private RhinoScriptEngine engine;
-    private Script script;
-    private final static boolean DEBUG = RhinoScriptEngine.DEBUG;
+    private final RhinoScriptEngine engine;
+    private final Script script;
 
     RhinoCompiledScript(RhinoScriptEngine engine, Script script) {
         this.engine = engine;
@@ -79,14 +78,14 @@ final class RhinoCompiledScript extends CompiledScript
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
                           value.toString() :
                           jse.toString());
-            // kevink: supress mothership logging.
+            // kevink: suppress mothership logging.
             ScriptException ex = new ExtendedScriptException(jse, str, jse.sourceName(), line);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
             _log.debug(re);
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
-            // kevink: supress mothership logging.
+            // kevink: suppress mothership logging.
             ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
@@ -101,5 +100,4 @@ final class RhinoCompiledScript extends CompiledScript
     public ScriptEngine getEngine() {
         return engine;
     }
-
 }
