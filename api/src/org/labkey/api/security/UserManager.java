@@ -20,7 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
@@ -50,9 +52,12 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
+import org.labkey.api.security.roles.ApplicationAdminRole;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.HtmlString;
@@ -60,6 +65,7 @@ import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Result;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AjaxCompletion;
@@ -93,6 +99,9 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.labkey.api.security.permissions.AbstractActionPermissionTest.APPLICATION_ADMIN_EMAIL;
+import static org.labkey.api.security.permissions.AbstractActionPermissionTest.SITE_ADMIN_EMAIL;
 
 public class UserManager
 {
@@ -1292,10 +1301,28 @@ public class UserManager
 
     public static class TestCase extends Assert
     {
+        private final static String[] TEST_USERS = new String[]{APPLICATION_ADMIN_EMAIL, SITE_ADMIN_EMAIL};
+
+        private static Map<String, User> _users = Map.of();
+
+        @BeforeClass
+        public static void initialize()
+        {
+            AbstractActionPermissionTest.cleanupUsers(TEST_USERS);
+            _users = AbstractActionPermissionTest.createUsers(TEST_USERS);
+
+            Container root = ContainerManager.getRoot();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(root, root.getPolicy());
+            policy.addRoleAssignment(_users.get(APPLICATION_ADMIN_EMAIL), ApplicationAdminRole.class);
+            policy.addRoleAssignment(_users.get(SITE_ADMIN_EMAIL), SiteAdminRole.class);
+            SecurityPolicyManager.savePolicy(policy, TestContext.get().getUser());
+        }
+
         @Test
         public void testPermissionsRetrieval()
         {
             List<User> appAdmins = getAppAdmins();
+            assertTrue("Expected " + APPLICATION_ADMIN_EMAIL, appAdmins.contains(_users.get(APPLICATION_ADMIN_EMAIL)));
             assertTrue("Expected all AppAdmins to have application admin permissions",
                 appAdmins.stream().allMatch(User::hasApplicationAdminPermission));
             assertTrue("Expected all AppAdmins to have root admin permissions",
@@ -1304,6 +1331,7 @@ public class UserManager
                 appAdmins.stream().allMatch(User::isActive));
 
             List<User> siteAdmins = getSiteAdmins();
+            assertTrue("Expected " + SITE_ADMIN_EMAIL, siteAdmins.contains(_users.get(SITE_ADMIN_EMAIL)));
             assertTrue("Expected all SiteAdmins to have site admin permissions",
                 siteAdmins.stream().allMatch(User::hasSiteAdminPermission));
             assertTrue("Expected all SiteAdmins to have application admin permissions",
@@ -1332,6 +1360,12 @@ public class UserManager
 
             assertTrue("Expected all SiteAdmins to be in the privileged users list",
                 appAdmins.containsAll(siteAdmins));
+        }
+
+        @AfterClass
+        public static void tearDown()
+        {
+            AbstractActionPermissionTest.cleanupUsers(TEST_USERS);
         }
     }
 }
