@@ -303,7 +303,7 @@ public class FileUtil
         String msg = isAllowedFileName(s);
         if (null == msg)
             return;
-        throw new IOException(msg);
+        throw new IOException(s + ": " + msg);
     }
 
     public static boolean mkdir(File file) throws IOException
@@ -1198,7 +1198,7 @@ quickScan:
             return "__null__";
         }
 
-        if (name.length() == 0)
+        if (name.isEmpty())
         {
             return "__empty__";
         }
