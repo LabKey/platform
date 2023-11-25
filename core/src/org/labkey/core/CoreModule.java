@@ -257,6 +257,7 @@ import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.webdav.UserResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
+import org.labkey.core.webdav.WebdavServlet;
 import org.labkey.core.wiki.MarkdownServiceImpl;
 import org.labkey.core.wiki.RadeoxRenderer;
 import org.labkey.core.wiki.WikiRenderingServiceImpl;
@@ -267,7 +268,9 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -317,6 +320,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private CoreWarningProvider _warningProvider;
+    private ServletRegistration.Dynamic _webdavServletDynamic;
+
     @Override
     public boolean hasScripts()
     {
@@ -1152,6 +1157,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             WebdavService.get().registerRootResolver(UserResolverImpl.get());
         }
+    }
+
+    @Override
+    public void registerServlets(ServletContext servletCtx)
+    {
+//        even though there is one webdav tree rooted at "/" we still use two servlet bindings.
+//        This is because we want /_webdav/* to be resolve BEFORE all other servlet-mappings
+//        and /* to resolve AFTER all other servlet-mappings
+        _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
+        _webdavServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        _webdavServletDynamic.addMapping("/_webdav/*");
+    }
+
+    @Override
+    public void registerFinalServlets(ServletContext servletCtx)
+    {
+        _webdavServletDynamic.addMapping("/");
     }
 
     @Override

@@ -133,6 +133,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.api.ExperimentService.SAMPLE_ALIQUOT_PROTOCOL_LSID;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
@@ -735,7 +736,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         if (!svc.allowUserSpecifiedNames(c))
         {
             if (nameExpression == null)
-                throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+                throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
         }
 
         if (svc.getExpressionPrefix(c) != null)
@@ -1000,7 +1001,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 if (!NameExpressionOptionService.get().allowUserSpecifiedNames(container) && sampleIdPattern == null)
                 {
                     errors = new ValidationException();
-                    errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+                    errors.addError(new SimpleValidationError(container.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
 
                     return errors;
                 }
@@ -1289,11 +1290,18 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
     private int recomputeSamplesRollup(Collection<Integer> parents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
     {
-        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container);
+        return recomputeSamplesRollup(parents, null, withAmountsParents, sampleTypeUnit, container, false);
     }
 
     /** This method updates exp.material, caller should call {@link SampleTypeServiceImpl#refreshSampleTypeMaterializedView} as appropriate. */
-    public int recomputeSamplesRollup(Collection<Integer> parents, @Nullable Collection<Integer> availableParents, Collection<Integer> withAmountsParents, String sampleTypeUnit, Container container) throws IllegalStateException, SQLException
+    public int recomputeSamplesRollup(
+        Collection<Integer> parents,
+        @Nullable Collection<Integer> availableParents,
+        Collection<Integer> withAmountsParents,
+        String sampleTypeUnit,
+        Container container,
+        boolean useRootMaterialLSID
+    ) throws IllegalStateException, SQLException
     {
         Map<Integer, String> sampleUnits = new HashMap<>();
         TableInfo materialTable = ExperimentService.get().getTinfoMaterial();
@@ -1312,7 +1320,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!parents.isEmpty())
         {
-            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAliquotCounts(parents);
+            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAliquotCounts(parents, useRootMaterialLSID);
             try (Connection c = scope.getConnection())
             {
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
@@ -1347,7 +1355,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!parents.isEmpty() || (availableParents != null && !availableParents.isEmpty()))
         {
-            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAvailableAliquotCounts(availableParents == null ? parents : availableParents, availableSampleStates);
+            Map<Integer, Pair<Integer, String>> sampleAliquotCounts = getSampleAvailableAliquotCounts(availableParents == null ? parents : availableParents, availableSampleStates, useRootMaterialLSID);
             try (Connection c = scope.getConnection())
             {
                 Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
@@ -1382,7 +1390,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         if (!withAmountsParents.isEmpty())
         {
-            Map<Integer, List<AliquotAmountUnitResult>> samplesAliquotAmounts = getSampleAliquotAmounts(withAmountsParents, availableSampleStates);
+            Map<Integer, List<AliquotAmountUnitResult>> samplesAliquotAmounts = getSampleAliquotAmounts(withAmountsParents, availableSampleStates, useRootMaterialLSID);
 
             try (Connection c = scope.getConnection())
             {
@@ -1606,15 +1614,17 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return parentIds;
     }
 
-    private Map<Integer, Pair<Integer, String>> getSampleAliquotCounts(Collection<Integer> sampleIds) throws SQLException
+    private Map<Integer, Pair<Integer, String>> getSampleAliquotCounts(Collection<Integer> sampleIds, boolean useRootMaterialLSID) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment("""
-                        SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE a.rootMaterialRowId = m.rowId)-1 AS CreatedAliquotCount
-                        FROM exp.material AS m
-                        WHERE m.rowid\s""");
+        // Issue 49150: In 23.12 we migrated from RootMaterialLSID to RootMaterialRowID, however, there is still an
+        // upgrade path that requires these queries be done with RootMaterialLSID since the 23.12 upgrade will not
+        // have run yet.
+        SQLFragment sql = new SQLFragment("SELECT m.RowId as SampleId, m.Units, (SELECT COUNT(*) FROM exp.material a WHERE ")
+                .append(useRootMaterialLSID ? "a.rootMaterialLsid = m.lsid" : "a.rootMaterialRowId = m.rowId")
+                .append(")-1 AS CreatedAliquotCount FROM exp.material AS m WHERE m.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1633,25 +1643,49 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotCounts;
     }
 
-    private Map<Integer, Pair<Integer, String>> getSampleAvailableAliquotCounts(Collection<Integer> sampleIds, Collection<Integer> availableSampleStates) throws SQLException
+    private Map<Integer, Pair<Integer, String>> getSampleAvailableAliquotCounts(Collection<Integer> sampleIds, Collection<Integer> availableSampleStates, boolean useRootMaterialLSID) throws SQLException
     {
         DbSchema dbSchema = getExpSchema();
         SqlDialect dialect = dbSchema.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment(
-                """
-                        SELECT m.RowId as SampleId, m.Units,
-                        (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
-                        FROM exp.material AS m
-                            LEFT JOIN (
-                            SELECT RootMaterialRowId as rootRowId, COUNT(*) as aliquotCount
-                            FROM exp.material
-                            WHERE RootMaterialRowId <> RowId AND SampleState\s""")
+        // Issue 49150: In 23.12 we migrated from RootMaterialLSID to RootMaterialRowID, however, there is still an
+        // upgrade path that requires these queries be done with RootMaterialLSID since the 23.12 upgrade will not
+        // have run yet.
+        SQLFragment sql;
+        if (useRootMaterialLSID)
+        {
+            sql = new SQLFragment(
+            """
+                    SELECT m.RowId as SampleId, m.Units,
+                    (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+                    FROM exp.material AS m
+                        LEFT JOIN (
+                        SELECT RootMaterialLSID as rootLsid, COUNT(*) as aliquotCount
+                        FROM exp.material
+                        WHERE RootMaterialLSID <> LSID AND SampleState\s""")
                 .appendInClause(availableSampleStates, dialect)
                 .append("""
-                            GROUP BY RootMaterialRowId
-                        ) AS c ON m.rowId = c.rootRowId
-                        WHERE m.rootmaterialrowid = m.rowid AND m.rowid\s""");
+                        GROUP BY RootMaterialLSID
+                    ) AS c ON m.lsid = c.rootLsid
+                    WHERE m.rootmateriallsid = m.LSID AND m.rowid\s""");
+        }
+        else
+        {
+            sql = new SQLFragment(
+            """
+                    SELECT m.RowId as SampleId, m.Units,
+                    (CASE WHEN c.aliquotCount IS NULL THEN 0 ELSE c.aliquotCount END) as CreatedAliquotCount
+                    FROM exp.material AS m
+                        LEFT JOIN (
+                        SELECT RootMaterialRowId as rootRowId, COUNT(*) as aliquotCount
+                        FROM exp.material
+                        WHERE RootMaterialRowId <> RowId AND SampleState\s""")
+                .appendInClause(availableSampleStates, dialect)
+                .append("""
+                        GROUP BY RootMaterialRowId
+                    ) AS c ON m.rowId = c.rootRowId
+                    WHERE m.rootmaterialrowid = m.rowid AND m.rowid\s""");
+        }
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, Pair<Integer, String>> sampleAliquotCounts = new HashMap<>();
@@ -1670,18 +1704,20 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
         return sampleAliquotCounts;
     }
 
-    private Map<Integer, List<AliquotAmountUnitResult>> getSampleAliquotAmounts(Collection<Integer> sampleIds, List<Integer> availableSampleStates) throws SQLException
+    private Map<Integer, List<AliquotAmountUnitResult>> getSampleAliquotAmounts(Collection<Integer> sampleIds, List<Integer> availableSampleStates, boolean useRootMaterialLSID) throws SQLException
     {
         DbSchema exp = getExpSchema();
         SqlDialect dialect = exp.getSqlDialect();
 
-        SQLFragment sql = new SQLFragment(
-                """
-                    SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate
-                    FROM exp.material AS aliquot
-                        JOIN exp.material AS parent ON parent.rowid = aliquot.rootmaterialrowid
-                    WHERE aliquot.rootmaterialrowid <> aliquot.rowid AND parent.rowid\s
-                    """);
+        // Issue 49150: In 23.12 we migrated from RootMaterialLSID to RootMaterialRowID, however, there is still an
+        // upgrade path that requires these queries be done with RootMaterialLSID since the 23.12 upgrade will not
+        // have run yet.
+        SQLFragment sql = new SQLFragment("SELECT parent.rowid AS parentSampleId, aliquot.StoredAmount, aliquot.Units, aliquot.samplestate\n")
+                .append("FROM exp.material AS aliquot JOIN exp.material AS parent ON ")
+                .append(useRootMaterialLSID ? "parent.lsid = aliquot.rootmateriallsid" : "parent.rowid = aliquot.rootmaterialrowid")
+                .append(" WHERE ")
+                .append(useRootMaterialLSID ? "aliquot.rootmateriallsid <> aliquot.lsid" : "aliquot.rootmaterialrowid <> aliquot.rowid")
+                .append(" AND parent.rowid\s");
         dialect.appendInClauseSql(sql, sampleIds);
 
         Map<Integer, List<AliquotAmountUnitResult>> sampleAliquotAmounts = new HashMap<>();

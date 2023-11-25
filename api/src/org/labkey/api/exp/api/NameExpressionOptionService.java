@@ -13,7 +13,9 @@ import javax.annotation.Nullable;
  */
 public interface NameExpressionOptionService
 {
-    String NAME_EXPRESSION_REQUIRED_MSG = "A Naming Pattern is required because manually specifying a name has been disabled for this folder.";
+    String NAME_EXPRESSION_REQUIRED_MSG_PREFIX = "A Naming Pattern is required because manually specifying a name has been disabled ";
+    String NAME_EXPRESSION_REQUIRED_MSG = NAME_EXPRESSION_REQUIRED_MSG_PREFIX + "for this folder.";
+    String NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS = NAME_EXPRESSION_REQUIRED_MSG_PREFIX + "for this folder or a subfolder.";
 
     // Must match PREFIX_SUBSTITUTION_EXPRESSION in labkey-ui-components/.../domainproperties/constants.ts
     String FOLDER_PREFIX_TOKEN = "folderPrefix";            // name expression substitution token for a configured prefix

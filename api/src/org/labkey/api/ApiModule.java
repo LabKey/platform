@@ -19,6 +19,7 @@ import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
@@ -103,11 +104,15 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 
 import javax.management.StandardMBean;
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -154,6 +159,17 @@ public class ApiModule extends CodeOnlyModule
         // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
         ContextListener.addStartupListener(new ExperimentalFeatureStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
+    }
+
+    @Override
+    public void registerServlets(ServletContext servletCtx)
+    {
+        ServletRegistration.Dynamic d = servletCtx.addServlet("ViewServlet", new ViewServlet());
+        d.setLoadOnStartup(1);
+        d.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        d.addMapping("*.view");
+        d.addMapping("*.api");
+        d.addMapping("*.post");
     }
 
     @Override
