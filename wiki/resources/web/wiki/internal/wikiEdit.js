@@ -134,7 +134,7 @@ const TabNames = Object.freeze({
                 setStatus("Switching to source editing mode because your page has elements that are not supported by the visual editor.", true);
             }
             else if(_wikiProps.useVisualEditor)
-                switchToVisual();
+                switchToVisual(true);
             else
                 switchToSource();
         }
