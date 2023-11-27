@@ -18,6 +18,7 @@ package org.labkey.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.search.SearchService;
@@ -45,8 +46,6 @@ import java.util.Set;
  */
 public class PipelineWebdavProvider implements WebdavService.Provider
 {
-    public static final String PIPELINE_LINK = "@pipeline";
-
     // currently addChildren is called only for web folders
     @Override
     @Nullable
@@ -62,8 +61,8 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             return null;
 
         String webdavURL = root.getWebdavURL();
-        if (null != webdavURL && webdavURL.contains(PIPELINE_LINK) && root.getContainer().equals(c))
-            return PageFlowUtil.set(PIPELINE_LINK);
+        if (null != webdavURL && webdavURL.contains(FileContentService.PIPELINE_LINK) && root.getContainer().equals(c))
+            return PageFlowUtil.set(FileContentService.PIPELINE_LINK);
 
         return null;
     }
@@ -72,7 +71,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
-        if (!PIPELINE_LINK.equalsIgnoreCase(name))
+        if (!FileContentService.PIPELINE_LINK.equalsIgnoreCase(name))
             return null;
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
             return null;
@@ -93,7 +92,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         PipelineFolderResource(WebdavResource parent, Container c, PipeRootImpl root)
         {
-            super(parent.getPath(), PIPELINE_LINK);
+            super(parent.getPath(), FileContentService.PIPELINE_LINK);
 
             this.c = c;
             _containerId = c.getId();
@@ -130,7 +129,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         @Override
         public String getName()
         {
-            return PIPELINE_LINK;
+            return FileContentService.PIPELINE_LINK;
         }
 
         @Override

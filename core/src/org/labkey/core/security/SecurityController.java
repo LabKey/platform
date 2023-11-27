@@ -70,6 +70,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.ApplicationAdminRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -666,6 +667,13 @@ public class SecurityController extends SpringActionController
         ensureGroupUserAccess(group, getUser());
         Set<UserPrincipal> members = SecurityManager.getGroupMembers(group, MemberType.ALL_GROUPS_AND_USERS);
         Map<UserPrincipal, List<UserPrincipal>> redundantMembers = SecurityManager.getRedundantGroupMembers(group);
+
+        // Warn if Site Admin group isn't assigned SiteAdminRole or Developer group isn't assigned PlatformDeveloperRole
+        if (group.isAdministrators())
+            verifySystemGroupIsAssignedRole(group, RoleManager.getRole(SiteAdminRole.class), errors);
+        else if (group.isDevelopers())
+            verifySystemGroupIsAssignedRole(group, RoleManager.getRole(PlatformDeveloperRole.class), errors);
+
         VBox view = new VBox(new GroupView(group, members, redundantMembers, messages, group.isSystemGroup(), errors));
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
@@ -695,6 +703,14 @@ public class SecurityController extends SpringActionController
         }
 
         return view;
+    }
+
+    private void verifySystemGroupIsAssignedRole(Group group, Role role, BindException errors)
+    {
+        Set<Role> roles = ContainerManager.getRoot().getPolicy().getRoles(new PrincipalArray(List.of(group.getUserId())));
+        if (!roles.contains(role))
+            errors.reject(ERROR_MSG, "Warning: This group is not assigned its standard role, "
+                + role.getDisplayName() + "! Consider assigning it on the Site Permissions page.");
     }
 
     @RequiresPermission(AdminPermission.class)

@@ -59,8 +59,8 @@ import java.util.Map;
 
 public abstract class AbstractActionPermissionTest extends Assert
 {
-    private static final String SITE_ADMIN_EMAIL = "sadmin@actionpermission.test";
-    private static final String APPLICATION_ADMIN_EMAIL = "aadmin@actionpermission.test";
+    public static final String SITE_ADMIN_EMAIL = "sadmin@actionpermission.test";
+    public static final String APPLICATION_ADMIN_EMAIL = "aadmin@actionpermission.test";
     private static final String PROJECT_ADMIN_EMAIL = "padmin@actionpermission.test";
     private static final String FOLDER_ADMIN_EMAIL = "fadmin@actionpermission.test";
     private static final String EDITOR_EMAIL = "editor@actionpermission.test";
@@ -149,7 +149,7 @@ public abstract class AbstractActionPermissionTest extends Assert
     @Test
     public abstract void testActionPermissions();
 
-    protected static void cleanupUsers(String[] userEmails)
+    public static void cleanupUsers(String[] userEmails)
     {
         //clean up users in case this failed part way through
         try
@@ -165,7 +165,7 @@ public abstract class AbstractActionPermissionTest extends Assert
         {}
     }
 
-    protected static Map<String, User> createUsers(String[] userEmails)
+    public static Map<String, User> createUsers(String[] userEmails)
     {
         Map<String, User> users = new HashMap<>();
 

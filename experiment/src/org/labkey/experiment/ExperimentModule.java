@@ -552,6 +552,8 @@ public class ExperimentModule extends SpringModule
 
         AttachmentService.get().registerAttachmentType(ExpDataClassType.get());
 
+        WebdavService.get().addProvider(new ScriptsResourceProvider());
+
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
         {
@@ -589,6 +591,7 @@ public class ExperimentModule extends SpringModule
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
                     assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
+                    assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active'").getObject(Long.class));
 
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");

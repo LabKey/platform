@@ -1104,7 +1104,7 @@ public class FileContentController extends SpringActionController
             {
                 for (String storeName : cloud.getEnabledCloudStores(getContainer()))
                 {
-                    ret.put(CloudStoreService.CLOUD_NAME + "/" + storeName, WebdavService.getPath().append(getContainer().getParsedPath()).append(CloudStoreService.CLOUD_NAME).append(storeName).toString());
+                    ret.put(FileContentService.CLOUD_LINK + "/" + storeName, WebdavService.getPath().append(getContainer().getParsedPath()).append(FileContentService.CLOUD_LINK).append(storeName).toString());
                 }
             }
 

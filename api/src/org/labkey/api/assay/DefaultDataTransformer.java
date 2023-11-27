@@ -203,8 +203,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
             }
             else
             {
-                throw new ValidationException("The validation script: " + scriptFile.getAbsolutePath() + " configured for this Assay does not exist. Please check " +
-                        "the configuration for this Assay design.");
+                throw new ValidationException("The transform script, " + scriptFile.getAbsolutePath() + ", configured for this assay does not exist. Please check " +
+                        "the configuration for this assay design.");
             }
         }
         return result;

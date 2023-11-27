@@ -16,17 +16,13 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AnalystPermission;
-import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.CanImpersonatePrivilegedSiteRolesPermission;
 import org.labkey.api.security.permissions.CanImpersonateSiteRolesPermission;
 import org.labkey.api.security.permissions.CanUseSendMessageApiPermission;
 import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.security.permissions.ExemptFromAccountDisablingPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.SiteAdminPermission;
-import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.settings.AppProps;
 
@@ -41,16 +37,12 @@ public class SiteAdminRole extends AbstractRootContainerRole implements AdminRol
 {
     private static final Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AdminOperationsPermission.class,
-        AnalystPermission.class,
-        BrowserDeveloperPermission.class,
         CanImpersonatePrivilegedSiteRolesPermission.class,
         CanImpersonateSiteRolesPermission.class,
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
         ExemptFromAccountDisablingPermission.class,
-        PlatformDeveloperPermission.class,
         SiteAdminPermission.class,
-        TrustedPermission.class,
         UploadFileBasedModulePermission.class
     );
 
@@ -59,6 +51,7 @@ public class SiteAdminRole extends AbstractRootContainerRole implements AdminRol
         super("Site Administrator", "Site Administrators have full control over the entire system.",
             FolderAdminRole.PERMISSIONS,
             ApplicationAdminRole.PERMISSIONS,
+            PlatformDeveloperRole.PERMISSIONS,
             PERMISSIONS,
             AppProps.getInstance().isDevMode() ? Collections.singleton(EditModuleResourcesPermission.class) : Collections.emptyList()
         );

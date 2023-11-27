@@ -779,7 +779,13 @@ public class AuthenticationManager
     {
         public ContactAnAdministratorError(String message, String adviceTextSuffix)
         {
-            super(message, "Please contact a system administrator " + adviceTextSuffix, "mailto:" + AppProps.getInstance().getAdministratorContactEmail(true));
+            super(message, "Please contact a system administrator " + adviceTextSuffix, getHref());
+        }
+
+        private static String getHref()
+        {
+            String adminEmail = AppProps.getInstance().getAdministratorContactEmail(true);
+            return adminEmail != null ? "mailto:" + adminEmail : null;
         }
     }
 

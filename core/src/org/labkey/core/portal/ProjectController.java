@@ -44,6 +44,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.FolderType;
@@ -436,8 +437,8 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    static final Path pipeline = new Path("@pipeline");
-    static final Path files = new Path("@files");
+    static final Path pipeline = new Path(FileContentService.PIPELINE_LINK);
+    static final Path files = new Path(FileContentService.FILES_LINK);
 
     @RequiresNoPermission
     public class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction

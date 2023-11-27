@@ -418,8 +418,8 @@ public class WebFilesResolverImpl extends AbstractWebdavResolver implements File
                 {
                     if (!FileUtil.hasCloudScheme(fileRootFile))
                     {
-                        FileSystemResource fileRootResource = new FileSystemResource(this, "@files", fileRootFile.toFile(), parentContainer.getPolicy());
-                        if (child.equals("@files"))
+                        FileSystemResource fileRootResource = new FileSystemResource(this, FileContentService.FILES_LINK, fileRootFile.toFile(), parentContainer.getPolicy());
+                        if (child.equals(FileContentService.FILES_LINK))
                             return fileRootResource;
                         return new FileSystemResource(fileRootResource, child);
                     }

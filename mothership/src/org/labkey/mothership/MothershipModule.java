@@ -22,18 +22,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.InvalidGroupMembershipException;
-import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.NoPermissionsRole;
-import org.labkey.api.security.roles.ProjectAdminRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -104,32 +94,6 @@ public class MothershipModule extends DefaultModule
     private void bootstrap(ModuleContext moduleContext)
     {
         Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH, User.getAdminServiceUser());
-        final Group mothershipGroup;
-        Integer groupId = SecurityManager.getGroupId(c, NAME, false);
-        // Group will exist in the case where mothership module is deleted and re-added to a deployment
-        if (null != groupId)
-            mothershipGroup = SecurityManager.getGroup(groupId);
-        else
-            mothershipGroup = SecurityManager.createGroup(c, NAME);
-        MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityPolicyManager.getPolicy(c));
-        Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
-        Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
-        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
-        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
-        policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
-        policy.addRoleAssignment(mothershipGroup, projAdminRole);
-        SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
-
-        try
-        {
-            SecurityManager.addMember(mothershipGroup, moduleContext.getUpgradeUser());
-        }
-        catch (InvalidGroupMembershipException e)
-        {
-            // Not really possible, but just in case
-            ExceptionUtil.logExceptionToMothership(null, e);
-        }
-
         Set<Module> modules = new HashSet<>(c.getActiveModules(moduleContext.getUpgradeUser()));
         modules.add(this);
         c.setActiveModules(modules, moduleContext.getUpgradeUser());

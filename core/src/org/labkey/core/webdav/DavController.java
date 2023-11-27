@@ -100,8 +100,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.multipart.commons.CommonsMultipartFile;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
@@ -113,10 +112,12 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -286,7 +287,7 @@ public class DavController extends SpringActionController
             {
                 try
                 {
-                    multipartRequest = (new CommonsMultipartResolver()).resolveMultipart(request);
+                    multipartRequest = new StandardServletMultipartResolver().resolveMultipart(request);
                     request = multipartRequest;
                 }
                 catch (MultipartException x)
@@ -360,16 +361,14 @@ public class DavController extends SpringActionController
                 // Be sure that temp files are deleted. This typically is handled via garbage collection
                 // but there is no guarantee that it will actually run in a timely fashion, or ever depending
                 // on how the server is shut down
-                for (List<MultipartFile> multipartFiles : multipartRequest.getMultiFileMap().values())
+                try
                 {
-                    for (MultipartFile multipartFile : multipartFiles)
+                    for (Part part : request.getParts())
                     {
-                        if (multipartFile instanceof CommonsMultipartFile)
-                        {
-                            ((CommonsMultipartFile)multipartFile).getFileItem().delete();
-                        }
+                        part.delete();
                     }
                 }
+                catch (IOException | ServletException ignored) {}
             }
         }
         for (Map.Entry<Closeable, Throwable> e : closables.entrySet())
@@ -413,7 +412,7 @@ public class DavController extends SpringActionController
         }
 
         @Override
-        public void sendError(int sc, String msg) throws IOException
+        public void sendError(int sc, String msg)
         {
             sendError(WebdavStatus.fromCode(sc), msg);
         }
@@ -468,7 +467,7 @@ public class DavController extends SpringActionController
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
                             super.setHeader("Content-Type", "text/html");
-                            super.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
+                            super.getWriter().write("<html><body><textarea>" + o + "</textarea></body></html>");
                         }
                         else
                         {
@@ -1582,7 +1581,7 @@ public class DavController extends SpringActionController
                             for (String listPath : listPaths)
                             {
                                 // Don't show @cloud if no configs are enabled
-                                if (CloudStoreService.CLOUD_NAME.equals(listPath))
+                                if (FileContentService.CLOUD_LINK.equals(listPath))
                                 {
                                     CloudStoreService cloudStoreService = CloudStoreService.get();
                                     Container resourceContainer = ContainerManager.getForId(resource.getContainerId());
@@ -3110,7 +3109,7 @@ public class DavController extends SpringActionController
             fis.transferTo(tmp);
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getUser(), null);
-            AntiVirusService.ScanResult result = avs.scan(tmp, name, info);
+            AntiVirusService.ScanResult result = avs.scan(new AntiVirusService.FileScannable(tmp, name), info);
             if (result.result == AntiVirusService.Result.OK)
             {
                 _fis = new FileStream.FileFileStream(tmp, true);

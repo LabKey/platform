@@ -29,8 +29,15 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.PasswordRule;
+import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.core.login.DbLoginManager;
@@ -142,5 +149,33 @@ public class CoreUpgradeCode implements UpgradeCode
         {
             LOG.info("Password strength is currently set to " + strength + "; taking no action.");
         }
+    }
+
+    /**
+     * Called from core-23.009-23.010.sql to assign the SiteAdminRole to the Site Admin group in the root security
+     * policy, allowing us to remove most special handling for this group.
+     */
+    @SuppressWarnings("unused")
+    public static void assignSiteAdminRole(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        // Can't execute this synchronously since savePolicy() references core.Users view but annotating with
+        // @DeferredUpgrade runs it too late, since site admins won't be able to monitor the upgrade process.
+        CoreModule._afterUpdateRunnable = () -> {
+            Container root = ContainerManager.getRoot();
+            Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
+            if (null != siteAdminGroup)
+            {
+                MutableSecurityPolicy policy = new MutableSecurityPolicy(root.getPolicy());
+                policy.addRoleAssignment(siteAdminGroup, RoleManager.getRole(SiteAdminRole.class));
+                SecurityPolicyManager.savePolicy(policy, User.getAdminServiceUser());
+            }
+            else
+            {
+                LOG.warn("Site Admin group does not exist!");
+            }
+        };
     }
 }

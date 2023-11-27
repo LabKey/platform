@@ -198,11 +198,13 @@ public interface AppProps
     String getWebappConfigurationFilename();
 
     /**
-     * Email address of the primary site or application administrator, set on the site settings page. Useful in error messages when only an administrator can help.
+     * Email address of the primary site or application administrator, set on the site settings page. Useful in error
+     * messages when only an administrator can help. Returns null if there are no site or application admins (i.e.,
+     * only impersonating troubleshooters).
      *
      * @return Email address of the primary site or application administrator
      */
-    String getAdministratorContactEmail(boolean includeAppAdmins);
+    @Nullable String getAdministratorContactEmail(boolean includeAppAdmins);
 
     /**
      * Whether to use the newer, and preferred, container-relative style of URLs of the form

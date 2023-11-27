@@ -20,20 +20,28 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
 import org.labkey.api.security.permissions.EditModuleResourcesPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
 import org.labkey.api.settings.AppProps;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 public class PlatformDeveloperRole extends AbstractRootContainerRole
 {
+    static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
+        AnalystPermission.class,
+        BrowserDeveloperPermission.class,
+        AppProps.getInstance().isDevMode() ? EditModuleResourcesPermission.class : null,
+        PlatformDeveloperPermission.class,
+        TrustedPermission.class
+    );
+
     public PlatformDeveloperRole()
     {
         super("Platform Developer", "Allows developers to write and deploy code outside the LabKey security framework.",
-            AnalystPermission.class,
-            BrowserDeveloperPermission.class,
-            AppProps.getInstance().isDevMode() ? EditModuleResourcesPermission.class : null,
-            PlatformDeveloperPermission.class,
-            TrustedPermission.class
+            PERMISSIONS
         );
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
