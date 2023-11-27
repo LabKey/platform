@@ -283,7 +283,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                         }
                     }
                 }
-                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
                     ensureExplodedZip(job, dataFile);
                     File dir = getExplodedZipDir(job, dataFile);
@@ -317,7 +317,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 {
                     return loadProperties(dataFile, BATCH_PROPS_NAME, job.getLogger());
                 }
-                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
                     ensureExplodedZip(job, dataFile);
                     File dir = getExplodedZipDir(job, dataFile);
@@ -350,7 +350,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 {
                     return loadProperties(dataFile, RUN_PROPS_NAME, job.getLogger());
                 }
-                else if (FileUtil.getExtension(dataFile).equals("zip"))
+                else if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                 {
                     ensureExplodedZip(job, dataFile);
                     File dir = getExplodedZipDir(job, dataFile);
@@ -384,7 +384,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 try
                 {
                     // plate metadata is only supported for zip archives because on JSON formats are currently supported
-                    if (FileUtil.getExtension(dataFile).equals("zip"))
+                    if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
                     {
                         ensureExplodedZip(job, dataFile);
                         File dir = getExplodedZipDir(job, dataFile);
@@ -409,7 +409,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         void cleanUp(PipelineJob job) throws PipelineJobException
         {
             File dataFile = getDataFile(job);
-            if (FileUtil.getExtension(dataFile).equals("zip"))
+            if ("zip".equalsIgnoreCase(FileUtil.getExtension(dataFile)))
             {
                 File dir = getExplodedZipDir(job, dataFile);
                 FileUtil.deleteDir(dir, job.getLogger());
