@@ -68,44 +68,9 @@ const TabNames = Object.freeze({
     const initTinymce = function  (initializedCallback) {
         tinymce.init({
             selector: 'textarea' + _editorId,
-            // extended_valid_elements:'+i[class]',
-            // invalid_elements:'',
-            // element_format: 'xhtml',
-            // // General options
 
-            // // removed_menuitems: 'preview',  //TODO keep/Remove helps with embedded images
-            // // toolbar: "|code",
-            // advcode_inline: true,
-            // // tell tinymce not be clever about URL conversion.  Dave added it to fix some bug.
-            // convert_urls: false,
-            //
-            // // TODO update Toolbar buttons
-            // // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
-            // theme_advanced_buttons1: "undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
-            //         "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
-            //
-            // theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
-            //         "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
-            //
-            // theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
-            // theme_advanced_toolbar_location: "top",
-            // theme_advanced_toolbar_align: "left",
-            // theme_advanced_statusbar_location: "bottom",
-            // theme_advanced_resizing: true,
-            //
-            // // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
-            // // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-            // browser_spellcheck: true,
-            //
-            // // labkey specific
-            // handle_event_callback: "tinyMceHandleEvent",
-
-            // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
-            // init_instance_callback: initializedCallback
             browser_spellcheck : true,
-            // TODO this should allow the elements below to survive in the Visual editor, but it isn't perfect. https://github.com/tinymce/tinymce/issues/9183
-            extended_valid_elements: 'i/em[*],+script[*],+form[*],+style[*]',
-            invalid_elements: null,
+            forced_root_block: 'div',
             plugins: [
                 "advlist",
                 "anchor",
@@ -114,7 +79,6 @@ const TabNames = Object.freeze({
                 "code",
                 "codesample",
                 "emoticons",
-                "fullscreen",
                 "help",
                 "image",
                 "insertdatetime",
@@ -128,11 +92,22 @@ const TabNames = Object.freeze({
                 "visualblocks",
                 "visualchars",
             ],
+
+            // Prevents elements from being stripped by the Source editor https://www.tiny.cloud/docs/tinymce/6/content-filtering/#protect
+            extended_valid_elements: 'i/em[*],+script[*],+form[*],+style[*]',
+            valid_children: '+body[style]',
+            protect: [
+                /\<\/?(i .*)\>/g,
+                /\<\/?(script.*)\>/g,
+                /\<\/?(form.*)\>/g,
+            ],
+
             menubar: 'edit insert view format table tools help',
             promotion: false,
             quickbars_insert_toolbar: 'anchor quickimage quicktable codesample hr accordion accordionremove',
+            removed_menuitems: 'code, preview',
             theme: "silver",
-            toolbar: "undo redo | styles | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image codesample",
+            toolbar: "undo redo | styles fontsize  | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image codesample",
             toolbar_sticky: true,
 
             //TODO add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
@@ -758,17 +733,20 @@ const TabNames = Object.freeze({
 
     var switchToVisual = function(confirmOverride, savePreference) {
         //check for elements that get mangled by the visual editor
-        if (!confirmOverride && textContainsNonVisualElements($(_idSel + 'body').val())) {
+        if (!confirmOverride) {
+            const msgStart = textContainsNonVisualElements($(_idSel + 'body').val()) ?
+                    "Your page contains elements that" :
+                    "Some non-visual elements";
             getExt4(function() {
                 Ext4.Msg.show({
                     title: 'Warning',
-                    msg: "Your page contains elements that are not supported by the visual editor and may be removed. Are you sure you want to switch to the visual editor?",
+                    msg: msgStart + " are not supported by the visual editor and may be removed. Are you sure you want to switch to the visual editor?",
                     buttons: Ext4.Msg.YESNO,
                     animEl: 'wiki-tab-visual',
                     icon: Ext4.Msg.QUESTION,
                     fn: function(btn) {
                         if (btn == "yes") {
-                            switchToVisual(true);
+                            switchToVisual(true, savePreference);
                         }
                     }
                 });
