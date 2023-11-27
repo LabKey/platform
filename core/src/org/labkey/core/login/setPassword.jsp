@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.collections.NamedObject" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.DbLoginService" %>
 <%@ page import="org.labkey.api.security.PasswordRule" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
@@ -26,7 +27,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.SetPasswordBean" %>
 <%@ page import="org.labkey.core.portal.ProjectController.HomeAction" %>
@@ -46,7 +46,7 @@
     int gaugeWidth = 350;
     int gaugeHeight = 30;
     String firstPasswordId = null;
-    PasswordRule rule = DbLoginManager.getPasswordRule();
+    PasswordRule rule = DbLoginService.get().getPasswordRule();
 %>
 <style>
     .labkey-button {
