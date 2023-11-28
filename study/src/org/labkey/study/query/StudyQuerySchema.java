@@ -74,25 +74,7 @@ import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.query.studydesign.DoseAndRouteTable;
-import org.labkey.study.query.studydesign.StudyDesignAssaysTable;
-import org.labkey.study.query.studydesign.StudyDesignChallengeTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignGenesTable;
-import org.labkey.study.query.studydesign.StudyDesignImmunogenTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignLabsTable;
-import org.labkey.study.query.studydesign.StudyDesignRoutesTable;
-import org.labkey.study.query.studydesign.StudyDesignSampleTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignSubTypesTable;
-import org.labkey.study.query.studydesign.StudyDesignUnitsTable;
-import org.labkey.study.query.studydesign.StudyProductAntigenDomainKind;
-import org.labkey.study.query.studydesign.StudyProductAntigenTable;
-import org.labkey.study.query.studydesign.StudyProductDomainKind;
-import org.labkey.study.query.studydesign.StudyProductTable;
-import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
-import org.labkey.study.query.studydesign.StudyTreatmentProductTable;
-import org.labkey.study.query.studydesign.StudyTreatmentTable;
-import org.labkey.study.query.studydesign.StudyTreatmentVisitMapTable;
+import org.labkey.study.query.studydesign.*;
 import org.labkey.study.visualization.StudyVisualizationProvider;
 import org.springframework.validation.BindException;
 
@@ -507,9 +489,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
     @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
-        StudyService studyService = StudyService.get();
-        if (null == studyService)
-            throw new IllegalStateException("No study service!");
+        StudyService studyService = StudyServiceImpl.get();
 
         if (PROPERTIES_TABLE_NAME.equalsIgnoreCase(name) || STUDY_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -790,28 +770,28 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
-            Domain domain = domainKind.getDomain(getContainer(), PRODUCT_TABLE_NAME);
+            Domain domain = ensureDomain(domainKind, PRODUCT_TABLE_NAME);
 
             return StudyProductTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
-            Domain domain = domainKind.getDomain(getContainer(), PRODUCT_ANTIGEN_TABLE_NAME);
+            Domain domain = ensureDomain(domainKind, PRODUCT_ANTIGEN_TABLE_NAME);
 
             return StudyProductAntigenTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
-            Domain domain = domainKind.getDomain(getContainer(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
+            Domain domain = ensureDomain(domainKind, TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
             return StudyTreatmentProductTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
-            Domain domain = domainKind.getDomain(getContainer(), TREATMENT_TABLE_NAME);
+            Domain domain = ensureDomain(domainKind, TREATMENT_TABLE_NAME);
 
             return StudyTreatmentTable.create(domain, this, isDataspace() ? ContainerFilter.Type.Project.create(this) : cf);
         }
@@ -838,7 +818,7 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         if (PERSONNEL_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
-            Domain domain = domainKind.getDomain(getContainer(), PERSONNEL_TABLE_NAME);
+            Domain domain = ensureDomain(domainKind, PERSONNEL_TABLE_NAME);
 
             // TODO ContainerFilter
             return StudyPersonnelTable.create(domain, this, isDataspaceProject() ? ContainerFilter.Type.Project.create(this) : null);
@@ -905,6 +885,17 @@ public class StudyQuerySchema extends UserSchema implements UserSchema.HasContex
         }
         
         return null;
+    }
+
+    @NotNull
+    private Domain ensureDomain(AbstractStudyDesignDomainKind kind, String tableName)
+    {
+        Domain result = kind.getDomain(getContainer(), tableName);
+        if (result == null)
+        {
+            throw new IllegalStateException("Could not find a domain for " + tableName + " in " + getContainer().getPath());
+        }
+        return result;
     }
 
     @Override
