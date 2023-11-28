@@ -15,6 +15,7 @@
  */
 package org.labkey.api;
 
+import com.google.code.kaptcha.servlet.KaptchaServlet;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -23,6 +24,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.ImageServlet;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
 import org.labkey.api.cache.BlockingCache;
@@ -102,6 +104,7 @@ import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FileServlet;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewServlet;
@@ -164,12 +167,31 @@ public class ApiModule extends CodeOnlyModule
     @Override
     public void registerServlets(ServletContext servletCtx)
     {
-        ServletRegistration.Dynamic d = servletCtx.addServlet("ViewServlet", new ViewServlet());
-        d.setLoadOnStartup(1);
-        d.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
-        d.addMapping("*.view");
-        d.addMapping("*.api");
-        d.addMapping("*.post");
+        servletCtx.addListener(UserManager.SessionListener.class);
+
+        ServletRegistration.Dynamic viewServletDynamic = servletCtx.addServlet("ViewServlet", new ViewServlet());
+        viewServletDynamic.setLoadOnStartup(1);
+        viewServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        viewServletDynamic.addMapping("*.view");
+        viewServletDynamic.addMapping("*.api");
+        viewServletDynamic.addMapping("*.post");
+
+        servletCtx.addServlet("ImageServlet", new ImageServlet()).
+                addMapping("*.image");
+
+        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new KaptchaServlet());
+        kaptchaDynamic.setInitParameter("kaptcha.textproducer.char.length", "6");
+        kaptchaDynamic.addMapping("/kaptcha.jpg");
+
+        // File Servlet. Maps standard requests for files onto the filecontent module.
+        // Requests like http://host/labkey/files/home/test.pdf become
+        // http://host/labkey/filecontent/home/sendFile.view?fileName=test.pdf
+        // see http://host/labkey/filecontent/home/begin.view for description of how to
+        // set up a static web parallel to the labkey folder hierarchy
+        // maps http://host/labkey/files/proj/dir/test.html to
+        // http://host/labkey/filecontent/proj/dir/sendFile.view?file=test.html
+        servletCtx.addServlet("FileServlet", new FileServlet()).
+            addMapping("/files/*");
     }
 
     @Override
