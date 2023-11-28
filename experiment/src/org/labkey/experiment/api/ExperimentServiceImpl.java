@@ -743,6 +743,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .toList();
     }
 
+
+    public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoMaterial(), filter, null)
+                .getArrayList(Material.class)
+                .stream()
+                .map(ExpMaterialImpl::new)
+                .toList();
+    }
+
+
     @Override
     public ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
     {
@@ -1602,6 +1619,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
+
+
+    public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoData(), filter, null)
+                .getArrayList(Data.class)
+                .stream()
+                .map(ExpDataImpl::new)
+                .toList();
+    }
+
 
     @Override
     @Nullable
@@ -5612,6 +5646,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
+
+
+    public List<ExpRunImpl> getRunsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoExperimentRun(), filter, null)
+                .getArrayList(ExperimentRun.class)
+                .stream()
+                .map(ExpRunImpl::new)
+                .toList();
+    }
+
 
     private List<Pair<String, String>> getRunsAndRolesUsingInput(ExpRunItem item, TableInfo inputTable, String inputColumn, Supplier<List<ExpRunImpl>> runSupplier)
     {
