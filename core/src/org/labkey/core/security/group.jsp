@@ -245,7 +245,7 @@ else
             {
                 %>
                 <%= h(memberName) %>&nbsp;
-                <%= h(!memberName.equalsIgnoreCase(displayName) && StringUtils.isNotBlank(displayName) ? "(" + displayName + ")" : "") %>&nbsp;&nbsp;
+                <%= h(!memberName.equalsIgnoreCase(displayName) && StringUtils.isNotBlank(displayName) ? "(" + displayName + ")" : "") %>
                 <%
             }
         }
@@ -255,7 +255,7 @@ else
             %><a data-qtitle="Redundant Member" data-qtip="<%=text(bean.displayRedundancyReasonHTML(member))%>">*</a><%
         }
         %>
-            </td>
+            &nbsp;&nbsp;</td>
             <td>
                 <% if (!isGroup)
                    {
