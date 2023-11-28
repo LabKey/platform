@@ -429,6 +429,7 @@ public class FileUtil
      * Returns the file name extension without the dot, null if there
      * isn't one.
      */
+    @Nullable
     public static String getExtension(File file)
     {
         return getExtension(file.getName());
@@ -1387,9 +1388,9 @@ quickScan:
      * @param prefix the start of the file name to generate, to be appended with a timestamp suffix
      * @param extension the extension (not including the dot) for the desired file name
      */
-    public static String makeFileNameWithTimestamp(String prefix, String extension)
+    public static String makeFileNameWithTimestamp(String prefix, @Nullable String extension)
     {
-        return makeLegalName(prefix + "_" + getTimestamp() + "." + extension);
+        return makeLegalName(prefix + "_" + getTimestamp() + (extension == null ? "" : ("." + extension)));
     }
 
     public static String makeFileNameWithTimestamp(String prefix)

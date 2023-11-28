@@ -1264,9 +1264,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
         String separator = "";
         for (File scriptFile : scripts)
         {
-            if (scriptFile.isFile())
+            String ext = FileUtil.getExtension(scriptFile);
+            if (scriptFile.isFile() && ext != null)
             {
-                String ext = FileUtil.getExtension(scriptFile);
                 ScriptEngine engine = LabKeyScriptEngineManager.get().getEngineByExtension(protocol.getContainer(), ext, LabKeyScriptEngineManager.EngineContext.pipeline);
                 if (engine != null)
                 {

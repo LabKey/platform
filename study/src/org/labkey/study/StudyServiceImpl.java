@@ -135,6 +135,7 @@ public class StudyServiceImpl implements StudyService, ContainerSecurableResourc
         ContainerManager.addSecurableResourceProvider(this);
     }
 
+    @NotNull
     public static StudyServiceImpl get()
     {
         return INSTANCE;

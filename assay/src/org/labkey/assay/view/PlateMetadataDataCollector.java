@@ -48,7 +48,7 @@ public class PlateMetadataDataCollector<ContextType extends AssayRunUploadContex
         Map<String, File> createdData = super.createData(context);
         for (File file : createdData.values())
         {
-            if (!FileUtil.getExtension(file).equalsIgnoreCase("json"))
+            if (!"json".equalsIgnoreCase(FileUtil.getExtension(file)))
             {
                 ExperimentException x = new ExperimentException("Plate metadata must be of type : JSON.");
                 ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
