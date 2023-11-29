@@ -151,6 +151,7 @@ import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.*;
+import org.labkey.api.util.Button;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.MemTracker.HeldReference;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
@@ -234,6 +235,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -248,8 +250,11 @@ import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuratio
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.LI;
@@ -3662,7 +3667,179 @@ public class AdminController extends SpringActionController
         }
     }
 
+    public static class MemoryStressForm
+    {
+        private int _threads = 3;
+        private int _arraySize = 20_000;
+        private int _arrayCount = 10_000;
+        private float _percentChurn = 0.50f;
+        private int _delay = 20;
+        private int _iterations = 500;
 
+        public int getThreads()
+        {
+            return _threads;
+        }
+
+        public void setThreads(int threads)
+        {
+            _threads = threads;
+        }
+
+        public int getArraySize()
+        {
+            return _arraySize;
+        }
+
+        public void setArraySize(int arraySize)
+        {
+            _arraySize = arraySize;
+        }
+
+        public int getArrayCount()
+        {
+            return _arrayCount;
+        }
+
+        public void setArrayCount(int arrayCount)
+        {
+            _arrayCount = arrayCount;
+        }
+
+        public float getPercentChurn()
+        {
+            return _percentChurn;
+        }
+
+        public void setPercentChurn(float percentChurn)
+        {
+            _percentChurn = percentChurn;
+        }
+
+        public int getDelay()
+        {
+            return _delay;
+        }
+
+        public void setDelay(int delay)
+        {
+            _delay = delay;
+        }
+
+        public int getIterations()
+        {
+            return _iterations;
+        }
+
+        public void setIterations(int iterations)
+        {
+            _iterations = iterations;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class MemoryStressTestAction extends FormViewAction<MemoryStressForm>
+    {
+        @Override
+        public void validateCommand(MemoryStressForm target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public ModelAndView getView(MemoryStressForm memoryStressForm, boolean reshow, BindException errors) throws Exception
+        {
+            return new HtmlView(
+                    DOM.LK.FORM(at(method, "POST"),
+                            DOM.LK.ERRORS(errors.getBindingResult()),
+                            DOM.BR(), DOM.BR(),
+                            "This utility action will do a lot of memory allocation to test the memory configuration of the host.",
+                            DOM.BR(), DOM.BR(),
+                            "It spins up threads, all of which allocate a specified number byte arrays of specified length.",
+                            DOM.BR(),
+                            "The threads sleep for the delay period, and then replace the specified percent of arrays with new ones.",
+                            DOM.BR(),
+                            "They continue for the specified number of allocations.",
+                            DOM.BR(),
+                            "The memory actively held is approximately (threads * array count * array length).",
+                            DOM.BR(),
+                            "The memory turnover is based on the churn percentage, array length, delay, and iterations.",
+                            DOM.BR(), DOM.BR(),
+                            DOM.TABLE(
+                                    DOM.TR(DOM.TD("Thread count"), DOM.TD(DOM.INPUT(at(name, "threads", value, memoryStressForm._threads)))),
+                                    DOM.TR(DOM.TD("Byte array count"), DOM.TD(DOM.INPUT(at(name, "arrayCount", value, memoryStressForm._arrayCount)))),
+                                    DOM.TR(DOM.TD("Byte array size"), DOM.TD(DOM.INPUT(at(name, "arraySize", value, memoryStressForm._arraySize)))),
+                                    DOM.TR(DOM.TD("Iterations"), DOM.TD(DOM.INPUT(at(name, "iterations", value, memoryStressForm._iterations)))),
+                                    DOM.TR(DOM.TD("Delay between iterations (ms)"), DOM.TD(DOM.INPUT(at(name, "delay", value, memoryStressForm._delay)))),
+                                    DOM.TR(DOM.TD("Percent churn per iteration (0.0 - 1.0)"), DOM.TD(DOM.INPUT(at(name, "percentChurn", value, memoryStressForm._percentChurn))))
+                            ),
+                            new Button.ButtonBuilder("Perform stress test").submit(true).build())
+            );
+        }
+
+        @Override
+        public boolean handlePost(MemoryStressForm memoryStressForm, BindException errors) throws Exception
+        {
+            List<Thread> threads = new ArrayList<>();
+            for (int i = 0; i < memoryStressForm._threads; i++)
+            {
+                Thread t = new Thread(() ->
+                {
+                    Random r = new Random();
+                    byte[][] arrays = new byte[memoryStressForm._arrayCount][];
+                    // Initialize the arrays
+                    for (int a = 0; a < arrays.length; a++)
+                    {
+                        arrays[a] = new byte[memoryStressForm._arraySize];
+                    }
+
+                    for (int iter = 0; iter < memoryStressForm._iterations; iter++)
+                    {
+                        try
+                        {
+                            Thread.sleep(memoryStressForm._delay);
+                        }
+                        catch (InterruptedException ignored) {}
+
+                        // Swap the contents based on our desired percent churn
+                        for (int a = 0; a < arrays.length; a++)
+                        {
+                            if (r.nextFloat() <= memoryStressForm._percentChurn)
+                            {
+                                arrays[a] = new byte[memoryStressForm._arraySize];
+                            }
+                        }
+                    }
+                });
+                t.setUncaughtExceptionHandler((t2, e) -> {
+                    LOG.error("Stress test exception", e);
+                    errors.reject(null, "Stress test exception: " + e);
+                });
+                t.start();
+                threads.add(t);
+            }
+
+            for (Thread thread : threads)
+            {
+                thread.join();
+            }
+
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(MemoryStressForm memoryStressForm)
+        {
+            return new ActionURL(MemTrackerAction.class, getContainer());
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            addAdminNavTrail(root, "Memory Usage", MemTrackerAction.class);
+            root.addChild("Memory Stress Test");
+        }
+    }
 
     public static ActionURL getModuleStatusURL(URLHelper returnURL)
     {
