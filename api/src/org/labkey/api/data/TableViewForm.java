@@ -397,12 +397,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         // Don't do anything special if dynaclass is null
         assert _dynaClass != null;
 
-        /**
-         * Note that nulls in the hashmap are NOT the same as missing values
-         * A null in the hashmap indicates an empty string was posted.
-         * A missing value may indicate that the field was not even included in the form
-         * ISSUE: Maybe keep empty strings around? But what about dates?
-         *
+        /*
+          Note that nulls in the hashmap are NOT the same as missing values
+          A null in the hashmap indicates an empty string was posted.
+          A missing value may indicate that the field was not even included in the form
+          ISSUE: Maybe keep empty strings around? But what about dates?
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
@@ -413,7 +412,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String str = _stringValues.get(propName);
             String caption = _dynaClass.getPropertyCaption(propName);
 
-            if (null != str && "".equals(str.trim()))
+            if (StringUtils.isEmpty(str))
                 str = null;
 
             Class propType = null;

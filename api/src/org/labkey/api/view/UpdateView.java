@@ -15,12 +15,12 @@
  */
 package org.labkey.api.view;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableViewForm;
+import org.labkey.api.util.logging.LogHelper;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.io.Writer;
  */
 public class UpdateView extends DataView
 {
-    private static Logger _log = LogManager.getLogger(UpdateView.class);
+    private static final Logger _log = LogHelper.getLogger(UpdateView.class, "Warnings about rows not found");
 
     public UpdateView(DataRegion dataRegion, TableViewForm form, BindException errors)
     {

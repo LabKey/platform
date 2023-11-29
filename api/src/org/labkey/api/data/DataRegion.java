@@ -2360,35 +2360,33 @@ public class DataRegion extends DisplayElement
             else
                 renderOldValues(out, valueMap, ctx.getFieldMap());
 
+            // Always render PK(s) to hidden field(s); needed for "changing the PK" scenarios
             TableViewForm viewForm = ctx.getForm();
             List<ColumnInfo> pkCols = getTable().getPkColumns();
             for (ColumnInfo pkCol : pkCols)
             {
                 String pkColName = pkCol.getName();
-                if (!renderedColumns.contains(pkColName))
+                Object pkVal = null;
+                //UNDONE: Should we require a viewForm whenever someone
+                //posts? I tend to think so.
+                if (null != viewForm)
+                    pkVal = viewForm.get(pkColName);
+
+                if (pkVal == null)
+                    pkVal = valueMap.get(pkColName);
+
+                if (null != pkVal)
                 {
-                    Object pkVal = null;
-                    //UNDONE: Should we require a viewForm whenever someone
-                    //posts? I tend to think so.
-                    if (null != viewForm)
-                        pkVal = viewForm.get(pkColName);
-
-                    if (pkVal == null)
-                        pkVal = valueMap.get(pkColName);
-
-                    if (null != pkVal)
-                    {
-                        out.write("<input type='hidden' name='");
-                        if (viewForm != null)
-                            out.write(viewForm.getFormFieldName(pkCol));
-                        else
-                            out.write(pkColName);
-                        out.write("' value=\"");
-                        out.write(PageFlowUtil.filter(pkVal.toString()));
-                        out.write("\">");
-                    }
-                    renderedColumns.add(pkColName);
+                    out.write("<input type='hidden' name='pk_");
+                    if (viewForm != null)
+                        out.write(viewForm.getFormFieldName(pkCol));
+                    else
+                        out.write(pkColName);
+                    out.write("' value=\"");
+                    out.write(PageFlowUtil.filter(pkVal.toString()));
+                    out.write("\">");
                 }
+                renderedColumns.add(pkColName);
             }
         }
 
