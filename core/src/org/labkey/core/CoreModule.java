@@ -1163,7 +1163,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public void registerServlets(ServletContext servletCtx)
     {
 //        even though there is one webdav tree rooted at "/" we still use two servlet bindings.
-//        This is because we want /_webdav/* to be resolve BEFORE all other servlet-mappings
+//        This is because we want /_webdav/* to be resolved BEFORE all other servlet-mappings
 //        and /* to resolve AFTER all other servlet-mappings
         _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
         _webdavServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
