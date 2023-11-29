@@ -215,7 +215,7 @@ public class SecurityManager
             Map<String, Integer> roleCounts = mvm.keySet().stream()
                 .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
 
-            return Map.of("SiteRoleUserCounts2", roleCounts);
+            return Map.of("SiteRoleUserCounts", roleCounts);
         };
     }
 
