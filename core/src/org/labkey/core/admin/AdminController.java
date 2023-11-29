@@ -1213,12 +1213,13 @@ public class AdminController extends SpringActionController
             }
             catch (IllegalArgumentException ignored) {}
 
-            UsageReportingLevel level = null;
-
             try
             {
-                level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
-                props.setUsageReportingLevel(level);
+                if (form.getUsageReportingLevel() != null)
+                {
+                    UsageReportingLevel level = UsageReportingLevel.valueOf(form.getUsageReportingLevel());
+                    props.setUsageReportingLevel(level);
+                }
             }
             catch (IllegalArgumentException ignored) {}
 
