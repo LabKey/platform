@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -214,6 +216,17 @@ public class ConnectionWrapper implements java.sql.Connection
             }
         }
         return leaks;
+    }
+
+    public static HashSetValuedHashMap<Thread,Integer> getSPIDsForThreads()
+    {
+        synchronized(_openConnections)
+        {
+            HashSetValuedHashMap<Thread,Integer> result = new HashSetValuedHashMap<>();
+            for (Map.Entry<ConnectionWrapper, Pair<Thread, Throwable>> entry : _openConnections.entrySet())
+                    result.put(entry.getValue().getKey(), entry.getKey()._spid);
+            return result;
+        }
     }
 
     public static Set<Integer> getSPIDsForThread(Thread t)

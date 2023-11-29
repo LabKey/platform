@@ -15,6 +15,7 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,6 +45,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -285,6 +287,28 @@ public class DebugInfoDumper
         return destination;
     }
 
+
+
+    static boolean justWaiting(StackTraceElement[] stack)
+    {
+        if (stack.length > 20)
+            return false;
+        if (stack.length < 1)
+            return true;
+
+        var top = stack[0];
+        var topMethod = top.getMethodName();
+        var bottom = stack[stack.length-1];
+        var isLabKeyThread = bottom.getClassName().startsWith("org.labkey");
+
+        if (isLabKeyThread && stack.length > 12)
+            return false;
+
+        return "park".equals(topMethod) || "wait".equals(topMethod) || "poll".equals(topMethod) || "accept".equals(topMethod) || "sleep".equals(topMethod) || "waitForReferencePendingList".equals(topMethod);
+        // OK probably just waiting for work.  We could check for common tomcat/labkey patterns here to be more conservative.
+    }
+
+
     /**
      * Writes the thread dump into threads.txt
      * */
@@ -314,61 +338,45 @@ public class DebugInfoDumper
         }
 
         logWriter.debug("*********************************************");
+
         Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        List<Thread> threads = new ArrayList<>(stackTraces.keySet());
-        threads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+        var spidsByThread = ConnectionWrapper.getSPIDsForThreads();
 
-        Set<String> skipMethods = Set.of("pushThreadDumpContext", "beginTransaction", "ensureTransaction", "execute", "getTroubleshootingStackTrace");
+        ArrayList<Thread> threadsToDump = new ArrayList<>();
+        ArrayList<Thread> boringThreads = new ArrayList<>();
 
-        for (Thread thread : threads)
+        for (Thread thread : stackTraces.keySet())
+        {
+            Set<Integer> spids = Objects.requireNonNullElse(spidsByThread.get(thread), Set.of());
+            var stack = stackTraces.get(thread);
+
+            if (spids.isEmpty() && justWaiting(stack))
+                boringThreads.add(thread);
+            else
+                threadsToDump.add(thread);
+        }
+
+        if (!threadsToDump.isEmpty())
         {
             logWriter.debug("");
-            StringBuilder threadInfo = new StringBuilder(thread.getName());
-            threadInfo.append(" (");
-            threadInfo.append(thread.getState());
-            threadInfo.append("), daemon: ");
-            threadInfo.append(thread.isDaemon());
-            Set<Integer> spids = ConnectionWrapper.getSPIDsForThread(thread);
-            if (!spids.isEmpty())
-            {
-                threadInfo.append(", Database Connection SPIDs = ");
-                threadInfo.append(spids);
-            }
-            logWriter.debug(threadInfo.toString());
-            ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
-            if (null != uri)
-                logWriter.debug(uri.toString());
-            var stack = stackTraces.get(thread);
-            for (var i=0 ; i<stack.length ; i++)
-            {
-                // subtract 1 because dumpThreads includes Thread.run() in the stack trace
-                logWriter.debug(String.format("%3d\t\t%s", stack.length-i-1, stack[i].toString()));
-            }
-            var extraInfo = _threadDumpExtraContext.get(thread);
-            if (null != extraInfo && !extraInfo.isEmpty())
-            {
-                logWriter.debug("extra stack context (may not match stacktrace if thread is not blocked)");
-                var messages = extraInfo.toArray(new ThreadExtraContext[0]);
-                for (var i = messages.length-1 ; i>= 0 ; i--)
-                {
-                    logWriter.debug("\t" + messages[i].context.replace('\n',' '));
-                    var messageStack = messages[i].stack();
-                    if (null != messageStack)
-                    {
-                        for (int j=0, count=0 ; j<messageStack.length && count < 4; j++)
-                        {
-                            if (skipMethods.contains(messageStack[j].getMethodName()))
-                                continue;
-                            logWriter.debug(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
-                            count++;
-                        }
-                    }
-                }
-            }
+            logWriter.debug("  ----- active threads -----");
 
-            if (ConnectionWrapper.getProbableLeakCount() > 0)
+            threadsToDump.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+            for (Thread thread : threadsToDump)
             {
-                ConnectionWrapper.dumpLeaksForThread(thread, logWriter);
+                dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
+            }
+        }
+
+        if (!boringThreads.isEmpty())
+        {
+            logWriter.debug("");
+            logWriter.debug("  ----- waiting threads -----");
+
+            boringThreads.sort(Comparator.comparing(Thread::getName, String.CASE_INSENSITIVE_ORDER));
+            for (Thread thread : boringThreads)
+            {
+                dumpOneThread(thread, logWriter, stackTraces, spidsByThread);
             }
         }
 
@@ -390,6 +398,63 @@ public class DebugInfoDumper
             logWriter.debug("*********************************************");
             logWriter.debug("Completed dump of all open connections");
             logWriter.debug("*********************************************");
+        }
+    }
+
+    static private final Set<String> skipMethods = Set.of("pushThreadDumpContext", "beginTransaction", "ensureTransaction", "execute", "getTroubleshootingStackTrace");
+
+    private static void dumpOneThread(Thread thread, LoggerWriter logWriter, Map<Thread, StackTraceElement[]> stackTraces, HashSetValuedHashMap<Thread, Integer> spidsByThread)
+    {
+        Set<Integer> spids = Objects.requireNonNullElse(spidsByThread.get(thread), Set.of());
+        var stack = stackTraces.get(thread);
+
+        StringBuilder threadInfo = new StringBuilder(thread.getName());
+        logWriter.debug("");
+        threadInfo.append(" (");
+        threadInfo.append(thread.getState());
+        threadInfo.append("), daemon: ");
+        threadInfo.append(thread.isDaemon());
+        if (!spids.isEmpty())
+        {
+            threadInfo.append(", Database Connection SPIDs = ");
+            threadInfo.append(spids);
+        }
+        logWriter.debug(threadInfo.toString());
+
+        ViewServlet.RequestSummary uri = ViewServlet.getRequestSummary(thread);
+        if (null != uri)
+            logWriter.debug(uri.toString());
+
+        for (var i=0 ; i<stack.length ; i++)
+        {
+            // subtract 1 because dumpThreads includes Thread.run() in the stack trace
+            logWriter.debug(String.format("%3d\t\t%s", stack.length-i-1, stack[i].toString()));
+        }
+        var extraInfo = _threadDumpExtraContext.get(thread);
+        if (null != extraInfo && !extraInfo.isEmpty())
+        {
+            logWriter.debug("extra stack context (may not match stacktrace if thread is not blocked)");
+            var messages = extraInfo.toArray(new ThreadExtraContext[0]);
+            for (var i = messages.length-1 ; i>= 0 ; i--)
+            {
+                logWriter.debug("\t" + messages[i].context.replace('\n',' '));
+                var messageStack = messages[i].stack();
+                if (null != messageStack)
+                {
+                    for (int j=0, count=0 ; j<messageStack.length && count < 4; j++)
+                    {
+                        if (skipMethods.contains(messageStack[j].getMethodName()))
+                            continue;
+                        logWriter.debug(String.format("%3d\t\t%s", messageStack.length - j, messageStack[j].toString()));
+                        count++;
+                    }
+                }
+            }
+        }
+
+        if (ConnectionWrapper.getProbableLeakCount() > 0)
+        {
+            ConnectionWrapper.dumpLeaksForThread(thread, logWriter);
         }
     }
 
