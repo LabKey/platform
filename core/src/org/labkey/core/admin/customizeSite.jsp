@@ -16,12 +16,12 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
-<%@ page import="org.labkey.api.security.permissions.SiteAdminPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.MothershipReport" %>
 <%@ page import="org.labkey.api.util.UsageReportingLevel" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -29,11 +29,9 @@
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Objects" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
-<%@ page import="org.labkey.api.util.MothershipReport" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -139,7 +137,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>
         <select name="<%=administratorContactEmail%>" id="<%=administratorContactEmail%>">
             <%
-                List<User> siteAdmins = org.labkey.api.security.SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), Set.of(SiteAdminPermission.class));
+                List<User> siteAdmins = UserManager.getSiteAdmins();
                 String selectedAdminEmail = appProps.getAdministratorContactEmail(false);
                 for (User siteAdmin : siteAdmins) { %>
                     <option value="<%=h(siteAdmin.getEmail())%>"<%=selected(Objects.equals(siteAdmin.getEmail(), selectedAdminEmail))%>><%=h(siteAdmin.getEmail())%></option>

@@ -63,24 +63,24 @@
     }
 </style>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var form;
+    let form;
     
     function selectAllCheckboxes(form, value)
     {
-        var elems = form.elements;
-        var l = elems.length;
-        for (var i = 0; i < l; i++)
+        const elems = form.elements;
+        const l = elems.length;
+        for (let i = 0; i < l; i++)
         {
-            var e = elems[i];
-            if (e.type == 'checkbox' && !e.disabled && e.name == 'delete') e.checked = value;
+            const e = elems[i];
+            if (e.type === 'checkbox' && !e.disabled && e.name === 'delete') e.checked = value;
         }
         return false;
     }
 
     function selectForRemoval(id, name, value)
     {
-        var el = document.getElementById(id);
-        if (el && el.type == 'checkbox' && !el.disabled && el.name == 'delete' && el.value == name)
+        const el = document.getElementById(id);
+        if (el && el.type === 'checkbox' && !el.disabled && el.name === 'delete' && el.value === name)
         {
             el.checked = value;
         }
@@ -97,11 +97,11 @@
 
     function confirmRemoveUsers()
     {
-        var elems = document.getElementsByName("delete");
-        var l = elems.length;
-        var selected = 0;
-        var deletingSelf = false;
-        for (var i = 0; i < l; i++)
+        const elems = document.getElementsByName("delete");
+        const l = elems.length;
+        let selected = 0;
+        let deletingSelf = false;
+        for (let i = 0; i < l; i++)
         {
             if (elems[i].checked)
             {
@@ -110,10 +110,10 @@
                     deletingSelf = true;
             }
         }
-        var ok = true;
+        let ok = true;
         if (selected > 0)
         {
-            var msg = "Are";
+            let msg = "Are";
             if (deletingSelf)
             {
                 msg = "Are you sure you want to delete yourself from this group? You will likely lose all permissions granted to this group.";
@@ -126,7 +126,7 @@
             // Deleting other users case
             if (selected > 0)
             {
-                var who = deletingSelf ? "other user" : "selected user";
+                let who = deletingSelf ? "other user" : "selected user";
 
                 if (selected > 1)
                     who = who + "s";
@@ -255,7 +255,7 @@ else
             %><a data-qtitle="Redundant Member" data-qtip="<%=text(bean.displayRedundancyReasonHTML(member))%>">*</a><%
         }
         %>
-            </td>
+            &nbsp;&nbsp;</td>
             <td>
                 <% if (!isGroup)
                    {

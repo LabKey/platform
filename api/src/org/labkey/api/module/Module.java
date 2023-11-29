@@ -38,6 +38,7 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -60,6 +61,11 @@ import java.util.stream.Collectors;
  */
 public interface Module
 {
+    /** Register primary servlets and their mappings. */
+    default void registerServlets(ServletContext servletCtx) {}
+    /** Register any final servlet mappings after the main mappings are in place */
+    default void registerFinalServlets(ServletContext servletCtx) {}
+
     enum TabDisplayMode
     {
         DISPLAY_NEVER,

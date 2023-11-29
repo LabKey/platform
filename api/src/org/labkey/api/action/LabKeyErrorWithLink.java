@@ -1,5 +1,6 @@
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
@@ -8,9 +9,9 @@ import org.labkey.api.view.ViewContext;
 public class LabKeyErrorWithLink extends LabKeyError
 {
     private final String _adviceText;
-    private final String _adviceHref;
+    private final @Nullable String _adviceHref;
 
-    public LabKeyErrorWithLink(String message, String adviceText, String adviceHref)
+    public LabKeyErrorWithLink(String message, String adviceText, @Nullable String adviceHref)
     {
         super(message);
         _adviceText = adviceText;
@@ -21,8 +22,14 @@ public class LabKeyErrorWithLink extends LabKeyError
     public HtmlString renderToHTML(ViewContext context)
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of(super.renderToHTML(context));
-        builder.append(" ");
-        builder.append(new LinkBuilder(getAdviceText()).href(getAdviceHref()).clearClasses());
+
+        String adviceHref = getAdviceHref();
+
+        if (adviceHref != null)
+        {
+            builder.append(" ");
+            builder.append(new LinkBuilder(getAdviceText()).href(getAdviceHref()).clearClasses());
+        }
 
         return builder.getHtmlString();
     }
@@ -32,7 +39,7 @@ public class LabKeyErrorWithLink extends LabKeyError
         return _adviceText;
     }
 
-    public String getAdviceHref()
+    public @Nullable String getAdviceHref()
     {
         return _adviceHref;
     }

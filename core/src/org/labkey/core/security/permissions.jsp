@@ -95,12 +95,12 @@
 <% } %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
-var viewTabs = [];
+const viewTabs = [];
 
 Ext4.onReady(function(){
     Ext4.QuickTips.init();
 
-    var editor = Ext4.create('Security.panel.PermissionEditor', {
+    const editor = Ext4.create('Security.panel.PermissionEditor', {
         renderTo: 'tabBoxDiv',
         minHeight: 450,
         isSiteRoot: <%= JavaScriptFragment.bool(c.isRoot()) %>,

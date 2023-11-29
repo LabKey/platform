@@ -199,6 +199,7 @@ import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
 import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG;
+import static org.labkey.api.exp.api.NameExpressionOptionService.NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS;
 import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService, ObjectReferencer, SearchService.DocumentProvider
@@ -7769,7 +7770,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!svc.allowUserSpecifiedNames(c))
             {
                 if (nameExpression == null)
-                    throw new ExperimentException(NAME_EXPRESSION_REQUIRED_MSG);
+                    throw new ExperimentException(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG);
             }
 
             if (svc.getExpressionPrefix(c) != null)
@@ -7843,7 +7844,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             if (!NameExpressionOptionService.get().allowUserSpecifiedNames(c) && options.getNameExpression() == null)
             {
                 errors = new ValidationException();
-                errors.addError(new SimpleValidationError(NAME_EXPRESSION_REQUIRED_MSG));
+                errors.addError(new SimpleValidationError(c.hasProductProjects() ? NAME_EXPRESSION_REQUIRED_MSG_WITH_SUBFOLDERS : NAME_EXPRESSION_REQUIRED_MSG));
 
                 return errors;
             }
@@ -7851,7 +7852,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            LOG.debug("Saving data class", dataClass.getName());
+            LOG.debug("Saving data class " +  dataClass.getName());
             dataClass.save(u);
 
             String auditComment = null;

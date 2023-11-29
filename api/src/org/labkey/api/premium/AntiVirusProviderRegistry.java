@@ -2,7 +2,7 @@ package org.labkey.api.premium;
 
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
 public interface AntiVirusProviderRegistry
 {
@@ -24,11 +24,8 @@ public interface AntiVirusProviderRegistry
 
     void registerAntiVirusProvider(AntiVirusProvider avp);
 
-    default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
+    default StandardServletMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
     {
-        CommonsMultipartResolver result = new CommonsMultipartResolver();
-        // Issue 47362 - configure a limit for the number of files per request
-        result.getFileUpload().setFileCountMax(1_000);
-        return result;
+        return new StandardServletMultipartResolver();
     }
 }

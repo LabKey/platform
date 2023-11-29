@@ -228,14 +228,14 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
                           value.toString() :
                           jse.toString());
-            // kevink: supress mothership logging.
+            // kevink: suppress mothership logging.
             ScriptException ex = new ExtendedScriptException(jse, str, jse.sourceName(), line);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
             _log.debug(re);
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
-            // kevink: supress mothership logging.
+            // kevink: suppress mothership logging.
             ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
@@ -313,14 +313,14 @@ public class RhinoScriptEngine extends AbstractScriptEngine implements LabKeyScr
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
                           value.toString() :
                           jse.toString());
-            // kevink: supress mothership logging.
+            // kevink: suppress mothership logging.
             ScriptException ex = new ExtendedScriptException(jse, str, jse.sourceName(), line);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;
         } catch (RhinoException re) {
             _log.debug(re);
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
-            // kevink: Throw our exception class to supress mothership logging.
+            // kevink: Throw our exception class to suppress mothership logging.
             ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
             ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             throw ex;

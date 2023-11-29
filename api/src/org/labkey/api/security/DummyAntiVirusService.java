@@ -15,7 +15,6 @@
  */
 package org.labkey.api.security;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,14 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.premium.AntiVirusProvider;
 import org.labkey.api.premium.AntiVirusService;
-import org.labkey.api.reader.Readers;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 
-import java.io.File;
 import java.io.IOException;
 
-import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.labkey.api.premium.AntiVirusService.Result.FAILED;
 import static org.labkey.api.premium.AntiVirusService.Result.OK;
 
@@ -39,17 +36,17 @@ public class DummyAntiVirusService implements AntiVirusService
     private static final Logger LOG = LogManager.getLogger(DummyAntiVirusService.class);
 
     @Override
-    public ScanResult scan(@NotNull File f, @Nullable String originalName, ViewBackgroundInfo info)
+    public ScanResult scan(@NotNull Scannable scannable, ViewBackgroundInfo info)
     {
-        originalName = defaultString(originalName, f.getName());
+        String originalName = scannable.getFileName();
 
         try
         {
-            long len = f.length();
+            long len = scannable.getSize();
             // editors really like to tack on new lines, so why fight it
             if (len >= TEST_VIRUS_CONTENT.length() && len <= TEST_VIRUS_CONTENT.length()+2)
             {
-                String s = IOUtils.toString(Readers.getReader(f));
+                String s = PageFlowUtil.getStreamContentsAsString(scannable.getInputStream());
                 if (StringUtils.equals(TEST_VIRUS_CONTENT, s.trim()))
                 {
                     String logmessage = "File failed virus scan: LABKEY test virus detected";

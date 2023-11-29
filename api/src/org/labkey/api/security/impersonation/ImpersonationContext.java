@@ -18,7 +18,6 @@ package org.labkey.api.security.impersonation;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.Group;
 import org.labkey.api.security.PrincipalArray;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -73,11 +72,7 @@ public interface ImpersonationContext extends Serializable
         roles.remove(RoleManager.getRole(NoPermissionsRole.class));
         for (Role role : roles)
             assert role.isApplicable(policy, root);
-        // This is the magic that gives those in the Site Admin group the Site Admin role. Consider removing this and
-        // simply assigning the role to the group (like Platform Developers). This is special to the Site Admin group;
-        // no other role or group should follow this pattern.
-        if (user.isInGroup(Group.groupAdministrators))
-            roles.add(RoleManager.siteAdminRole);
+
         return roles;
     }
 

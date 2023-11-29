@@ -33,24 +33,16 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.AuthenticationManager;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.MemberType;
-import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
-import org.labkey.api.security.roles.ApplicationAdminRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
-import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.workbook.WorkbookQueryView;
@@ -65,11 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * User: matthewb
- * Date: Jul 16, 2008
- * Time: 4:11:34 PM
- */
 public class CoreQuerySchema extends UserSchema
 {
     private Set<Integer> _projectUserIds;
@@ -417,7 +404,6 @@ public class CoreQuerySchema extends UserSchema
         return members;
     }
 
-
     private SQLFragment getRootPlusProjectCondition()
     {
         SQLFragment sql = new SQLFragment("Container IS NULL");
@@ -432,7 +418,6 @@ public class CoreQuerySchema extends UserSchema
 
         return sql;
     }
-
 
     public TableInfo getUsers()
     {
@@ -450,36 +435,12 @@ public class CoreQuerySchema extends UserSchema
         {
             if (_projectUserIds == null)
             {
-                _projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
-
-                // add all Site Admin group members
-                Group siteAdminGroup = SecurityManager.getGroup(Group.groupAdministrators);
-                _projectUserIds.addAll(
-                    SecurityManager.getGroupMembers(siteAdminGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
-                        .stream()
-                        .map(UserPrincipal::getUserId)
-                        .toList()
-                );
-
-                // add all user with root container ApplicationAdminRole or SiteAdminRole assignments
-                for (Role adminRole : Set.of(RoleManager.getRole(SiteAdminRole.class), RoleManager.getRole(ApplicationAdminRole.class)))
-                {
-                    SecurityPolicy rootContainerPolicy = ContainerManager.getRoot().getPolicy();
-                    List<RoleAssignment> assignments = rootContainerPolicy.getAssignments().stream()
-                            .filter(assignment -> adminRole.equals(assignment.getRole())).toList();
-                    assignments.forEach(assignment -> {
-                        Group assignedGroup = SecurityManager.getGroup(assignment.getUserId());
-                        if (assignedGroup != null)
-                            _projectUserIds.addAll(
-                                SecurityManager.getAllGroupMembers(assignedGroup, MemberType.ACTIVE_AND_INACTIVE_USERS)
-                                    .stream()
-                                    .map(UserPrincipal::getUserId)
-                                    .toList()
-                            );
-
-                        _projectUserIds.add(assignment.getUserId());
-                    });
-                }
+                Set<Integer> projectUserIds = new HashSet<>(SecurityManager.getFolderUserids(getContainer()));
+                // Add app admins and site admins (they both have ApplicationAdminPermission)
+                SecurityManager.getUsersWithPermissions(ContainerManager.getRoot(), true, Set.of(ApplicationAdminPermission.class)).stream()
+                    .map(User::getUserId)
+                    .forEach(projectUserIds::add);
+                _projectUserIds = projectUserIds;
             }
             ColumnInfo userid = users.getRealTable().getColumn("userid");
             users.addInClause(userid, _projectUserIds);

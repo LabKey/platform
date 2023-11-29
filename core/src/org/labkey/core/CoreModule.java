@@ -110,6 +110,7 @@ import org.labkey.api.security.roles.PlatformDeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelService;
@@ -256,6 +257,7 @@ import org.labkey.core.webdav.DavController;
 import org.labkey.core.webdav.ModuleStaticResolverImpl;
 import org.labkey.core.webdav.UserResolverImpl;
 import org.labkey.core.webdav.WebFilesResolverImpl;
+import org.labkey.core.webdav.WebdavServlet;
 import org.labkey.core.wiki.MarkdownServiceImpl;
 import org.labkey.core.wiki.RadeoxRenderer;
 import org.labkey.core.wiki.WikiRenderingServiceImpl;
@@ -266,7 +268,9 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletRegistration;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -295,15 +299,12 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
 
-/**
- * User: migra
- * Date: Jul 25, 2005
- * Time: 2:54:30 PM
- */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
     private static final Logger LOG = LogHelper.getLogger(CoreModule.class, "Errors during server startup and shut down");
     public static final String PROJECTS_WEB_PART_NAME = "Projects";
+
+    static Runnable _afterUpdateRunnable = null;
 
     static
     {
@@ -319,6 +320,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
     private CoreWarningProvider _warningProvider;
+    private ServletRegistration.Dynamic _webdavServletDynamic;
+
     @Override
     public boolean hasScripts()
     {
@@ -764,6 +767,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ContainerManager.getHomeContainer();
             ContainerManager.getSharedContainer();
         });
+
+        if (_afterUpdateRunnable != null)
+            _afterUpdateRunnable.run();
     }
 
     private void bootstrap()
@@ -778,8 +784,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role readerRole = RoleManager.getRole(ReaderRole.class);
         Role devRole = RoleManager.getRole(PlatformDeveloperRole.class);
+        Role adminRole = RoleManager.getRole(SiteAdminRole.class);
 
-        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole);
+        ContainerManager.bootstrapContainer("/", noPermsRole, noPermsRole, devRole, adminRole);
         Container rootContainer = ContainerManager.getRoot();
 
         Group devs = SecurityManager.getGroup(Group.groupDevelopers);
@@ -794,13 +801,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
 
         // Users & guests can read from /home
-        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null, null);
         home.setFolderType(collaborationType, null);
 
         ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, null);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null, null).setFolderType(collaborationType, null);
 
         try
         {
@@ -1150,6 +1157,23 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             WebdavService.get().registerRootResolver(UserResolverImpl.get());
         }
+    }
+
+    @Override
+    public void registerServlets(ServletContext servletCtx)
+    {
+//        even though there is one webdav tree rooted at "/" we still use two servlet bindings.
+//        This is because we want /_webdav/* to be resolve BEFORE all other servlet-mappings
+//        and /* to resolve AFTER all other servlet-mappings
+        _webdavServletDynamic = servletCtx.addServlet("static", new WebdavServlet(true));
+        _webdavServletDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        _webdavServletDynamic.addMapping("/_webdav/*");
+    }
+
+    @Override
+    public void registerFinalServlets(ServletContext servletCtx)
+    {
+        _webdavServletDynamic.addMapping("/");
     }
 
     @Override

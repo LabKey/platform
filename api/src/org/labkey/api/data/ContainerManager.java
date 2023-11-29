@@ -2487,7 +2487,7 @@ public class ContainerManager
         return bootstrapContainer(DEFAULT_SUPPORT_PROJECT_PATH,
                 RoleManager.getRole(AuthorRole.class),
                 RoleManager.getRole(ReaderRole.class),
-                null);
+                null, null);
     }
 
     public static void removeDefaultSupportContainer(User user)
@@ -2644,14 +2644,12 @@ public class ContainerManager
     }
 
     /**
-     * If a container at the given path does not exist create one
-     * and set permissions. If the container does exist, permissions
-     * are only set if there is no explicit ACL for the container.
-     * This prevents us from resetting permissions if all users
-     * are dropped. Implicitly done as an admin-level service user.
+     * If a container at the given path does not exist create one and set permissions. If the container does exist,
+     * permissions are only set if there is no explicit ACL for the container. This prevents us from resetting
+     * permissions if all users are dropped. Implicitly done as an admin-level service user.
      */
     @NotNull
-    public static Container bootstrapContainer(String path, Role userRole, @Nullable Role guestRole, @Nullable Role devRole)
+    public static Container bootstrapContainer(String path, @NotNull Role userRole, @Nullable Role guestRole, @Nullable Role devRole, @Nullable Role adminRole)
     {
         Container c = null;
         User user = User.getAdminServiceUser();
@@ -2697,6 +2695,8 @@ public class ContainerManager
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
             if (devRole != null)
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupDevelopers), devRole);
+            if (adminRole != null)
+                policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
             SecurityPolicyManager.savePolicy(policy, user);
         }
 
