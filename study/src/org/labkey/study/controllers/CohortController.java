@@ -61,11 +61,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * User: jgarms
- * Date: Jul 23, 2008
- * Time: 5:40:59 PM
- */
 public class CohortController extends BaseStudyController
 {
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(CohortController.class);
@@ -522,7 +517,5 @@ public class CohortController extends BaseStudyController
             root.addChild("Update Cohort: " + cohortLabel);
             return root;
         }
-
-
     }
 }
