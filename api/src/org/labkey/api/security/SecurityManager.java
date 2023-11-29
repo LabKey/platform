@@ -17,6 +17,8 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
@@ -192,14 +194,11 @@ public class SecurityManager
     public static UsageMetricsProvider getMetricsProvider()
     {
         return () -> {
-            Map<String, Object> result = new HashMap<>();
-
-            Map<String, Integer> roleCounts = new HashMap<>();
+            MultiValuedMap<Role, UserPrincipal> mvm = new HashSetValuedHashMap<>();
             Set<Role> siteRoles = RoleManager.getSiteRoles();
             for (RoleAssignment assignment : ContainerManager.getRoot().getPolicy().getAssignments())
             {
                 Role role = assignment.getRole();
-                int count = roleCounts.getOrDefault(role.getName(), 0);
                 if (siteRoles.contains(role))
                 {
                     UserPrincipal principal = SecurityManager.getPrincipal(assignment.getUserId());
@@ -207,21 +206,16 @@ public class SecurityManager
                     {
                         switch (principal.getPrincipalType())
                         {
-                            case USER -> count++;
-                            case GROUP -> count += getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS).size();
+                            case USER -> mvm.put(role, principal);
+                            case GROUP -> mvm.putAll(role, getAllGroupMembers((Group)principal, MemberType.ACTIVE_USERS));
                         }
                     }
                 }
-                roleCounts.put(role.getName(), count);
             }
-            result.put("SiteRoleUserCounts", roleCounts);
+            Map<String, Integer> roleCounts = mvm.keySet().stream()
+                .collect(Collectors.toMap(Role::getName, key -> mvm.get(key).size()));
 
-            Map<String, Integer> groupCounts = new HashMap<>();
-            groupCounts.put("SiteAdmin", getAllGroupMembers(getGroup(Group.groupAdministrators), MemberType.ACTIVE_USERS).size());
-            groupCounts.put("Developer", getAllGroupMembers(getGroup(Group.groupDevelopers), MemberType.ACTIVE_USERS).size());
-            result.put("SiteGroupUserCounts", groupCounts);
-
-            return result;
+            return Map.of("SiteRoleUserCounts2", roleCounts);
         };
     }
 
