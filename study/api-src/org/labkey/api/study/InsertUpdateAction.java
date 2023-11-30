@@ -306,7 +306,7 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, c, Collections.singletonList(data), batchErrors, null, null);
                 if (batchErrors.hasErrors())
                     throw batchErrors;
-                if (insertedRows.size() == 0)
+                if (insertedRows.isEmpty())
                     return false;
 
                 // save last inputs for use in default value population:
@@ -334,11 +334,12 @@ public abstract class InsertUpdateAction<Form extends EditDatasetRowForm> extend
             }
             else
             {
+                String lsid = form.getLsid() != null ? form.getLsid() : (String)data.get("lsid");
                 List<Map<String, Object>> updatedRows = qus.updateRows(user, c, Collections.singletonList(data),
-                        Collections.singletonList(Collections.singletonMap("lsid", form.getLsid())), batchErrors,null, null);
+                        Collections.singletonList(Collections.singletonMap("lsid", lsid)), batchErrors,null, null);
                 if (batchErrors.hasErrors())
                     throw batchErrors;
-                if (updatedRows.size() == 0)
+                if (updatedRows.isEmpty())
                     return false;
             }
 
