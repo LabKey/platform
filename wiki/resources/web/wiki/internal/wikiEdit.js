@@ -4,37 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// called by tinyMCE for *all* events so make sure to filter
-// for keydown. return false to stop tinyMCE from handling or passing on
-function tinyMceHandleEvent(evt) {
-    var handled = false;
-
-    // Issue 47893: Embedding pictures in a wiki using copy + paste from file browser in Safari
-    const isBrowserSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (isBrowserSafari && evt && "paste" === evt.type) {
-        const items = (evt.clipboardData || evt.originalEvent.clipboardData).items;
-        const item = items[0];
-        if (item.kind === 'file') {
-            LABKEY.Utils.alert("Error", "Pasting files on Safari is not supported.");
-            handled = true;
-        }
-    }
-
-    if (evt && "keydown" == evt.type && evt.ctrlKey
-            && !evt.altKey && 83 == evt.keyCode) { // ctrl + s
-        evt.shiftKey ? LABKEY._wiki.onFinish() : LABKEY._wiki.onSave();
-        handled = true;
-    }
-
-    if (handled) {
-        evt.preventDefault();
-        evt.stopPropagation();
-        return false;
-    }
-
-    return true;
-}
-
 const TabNames = Object.freeze({
     Preview: 'preview',
     Source: 'source',
@@ -52,6 +21,26 @@ const TabNames = Object.freeze({
     let _finished = false;
     let _newAttachmentIndex = 0;
     let _tocTree;
+
+    /**
+     *  Handles save keyboard shortcut event properties
+     *
+     * @param event Keydown event
+     * @returns {boolean} false to stop tinyMCE from handling or passing on ctrl [+ shift] + s
+     */
+    const handleSaveShortcut = (event) => {
+        if (event.ctrlKey || event.metaKey) {
+            if (String.fromCharCode(event.which).toLowerCase() === 's') {
+                event.shiftKey ? onFinish() : onSave();
+
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     //
     // Variables
@@ -110,18 +99,23 @@ const TabNames = Object.freeze({
             toolbar: "undo redo | styles fontsize  | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image codesample",
             toolbar_sticky: true,
 
-            //TODO add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
+            //TODO in the near future: add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
             //content_css:['mycss1.css', 'mycss2.css'],
 
+            setup: (editor) => {
+                editor.on('keydown', (evt) => {
+                    return handleSaveShortcut(evt);
+                });
+            }
         }).then(initializedCallback);
     }
 
-    var getVisualTab = function() { return $('#wiki-tab-visual'); };
-    var getSourceTab = function() { return $('#wiki-tab-source'); };
-    var getEditingTab = function() { return $('#wiki-tab-markdown-edit')};
-    var getPreviewTab = function() { return $('#wiki-tab-markdown-preview')};
+    const getVisualTab = function() { return $('#wiki-tab-visual'); };
+    const getSourceTab = function() { return $('#wiki-tab-source'); };
+    const getEditingTab = function() { return $('#wiki-tab-markdown-edit')};
+    const getPreviewTab = function() { return $('#wiki-tab-markdown-preview')};
 
-    var _init = function() {
+    const _init = function() {
         bindControls(_wikiProps);
         updateControls(_wikiProps);
         updateExistingAttachments(_attachments);
@@ -204,7 +198,7 @@ const TabNames = Object.freeze({
         getSourceTab().find('a').click(userSwitchToSource);
 
         // register for the document keydown event to trap ctrl+s for save
-        $(document).keydown(onDocKeyDown);
+        $(document).keydown(handleSaveShortcut);
     };
 
     var clearNewAttachments = function() {
@@ -447,35 +441,18 @@ const TabNames = Object.freeze({
         window.location.href = LABKEY.ActionURL.buildURL('wiki', 'delete', null, {name: _wikiProps.name, rowId: _wikiProps.rowId});
     };
 
-    var onDocKeyDown = function(event) {
-
-        var handled = false;
-
-        if (event.ctrlKey || event.metaKey) {
-            if (String.fromCharCode(event.which).toLowerCase() === 's') {
-                event.shiftKey ? onFinish() : onSave();
-                handled = true;
-            }
-        }
-
-        if (handled) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    };
-
-    var onError = function(exceptionInfo) {
+    const onError = function (exceptionInfo) {
         _doingSave = false;
         _finished = false;
         setError("There was a problem while saving: " + exceptionInfo.exception);
     };
 
-    var onFinish = function() {
+    const onFinish = function() {
         _finished = true;
         onSave();
     };
 
-    var onSave = function() {
+    const onSave = function() {
         if (_doingSave)
             return;
         _doingSave = true;
@@ -496,7 +473,7 @@ const TabNames = Object.freeze({
         });
     };
 
-    var onSaveComplete = function(statusMessage) {
+    const onSaveComplete = function(statusMessage) {
         LABKEY.setDirty(false);
         setBodyClean();
         _doingSave = false;
@@ -515,7 +492,7 @@ const TabNames = Object.freeze({
         }
     };
 
-    var onSuccess = function(response) {
+    const onSuccess = function(response) {
         // parse the response JSON
         var respJson = LABKEY.Utils.decode(response.responseText);
         if (respJson.success) {
@@ -599,9 +576,6 @@ const TabNames = Object.freeze({
     };
 
     var setBodyClean = function() {
-        // if (tinymce.activeEditor) {
-        //     tinymce.activeEditor.isNotDirty = 1;
-        // }
         tinymce.activeEditor?.setDirty(false);
     };
 
@@ -708,20 +682,6 @@ const TabNames = Object.freeze({
         if (el) { isDisplayed ? el.show() : el.hide(); }
     };
 
-// TODO can these be removed?
-    var switchToMarkdownEdit = function() {
-        setTabStripVisible(true);
-        getEditingTab().attr('class', 'labkey-tab-active');
-        getPreviewTab().attr('class', 'labkey-tab-inactive');
-    };
-
-// TODO can these be removed?
-    var switchToMarkdownPreview = function() {
-        setTabStripVisible(true);
-        getEditingTab().attr('class', 'labkey-tab-inactive');
-        getPreviewTab().attr('class', 'labkey-tab-active');
-    };
-
     var switchToSource = function() {
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
@@ -734,13 +694,10 @@ const TabNames = Object.freeze({
     var switchToVisual = function(confirmOverride, savePreference) {
         //check for elements that get mangled by the visual editor
         if (!confirmOverride) {
-            const msgStart = textContainsNonVisualElements($(_idSel + 'body').val()) ?
-                    "Your page contains elements that" :
-                    "Some non-visual elements";
             getExt4(function() {
                 Ext4.Msg.show({
                     title: 'Warning',
-                    msg: msgStart + " are not supported by the visual editor and may be removed. Are you sure you want to switch to the visual editor?",
+                    msg: "Some elements are not supported by the visual editor and may be removed. Are you sure you want to switch to the visual editor?",
                     buttons: Ext4.Msg.YESNO,
                     animEl: 'wiki-tab-visual',
                     icon: Ext4.Msg.QUESTION,
