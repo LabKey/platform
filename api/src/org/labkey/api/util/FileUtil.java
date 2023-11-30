@@ -1301,7 +1301,7 @@ quickScan:
 
     public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
-        return Files.createTempDirectory(prefix);
+        return Files.createTempDirectory(prefix).toAbsolutePath();
     }
 
 
@@ -1340,7 +1340,7 @@ quickScan:
 
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, boolean threadLocal) throws IOException
     {
-        var path = Files.createTempFile(prefix, suffix);
+        var path = Files.createTempFile(prefix, suffix).toAbsolutePath();
         if (threadLocal)
             tempPaths.get().add(path);
         return path.toFile();
