@@ -230,6 +230,10 @@ public interface AppProps
 
     boolean isFileUploadDisabled();
 
+    boolean isInvalidFilenameUploadDisabled();
+
+    boolean isInvalidFilenameDisabled();
+
     /**
      *
      * @return List of configured external redirect hosts

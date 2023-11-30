@@ -628,6 +628,18 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public boolean isInvalidFilenameUploadDisabled()
+    {
+        return lookupBooleanValue(invalidFilenameUploadDisabled, true);
+    }
+
+    @Override
+    public boolean isInvalidFilenameDisabled()
+    {
+        return lookupBooleanValue(invalidFilenameDisabled, false);
+    }
+
+    @Override
     @NotNull
     public List<String> getExternalRedirectHosts()
     {
