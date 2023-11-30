@@ -25,6 +25,8 @@
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Tuple3" %>
 <%@ page import="java.text.DecimalFormat" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<MemBean> me = (JspView<MemBean>)HttpView.currentView();
@@ -46,6 +48,7 @@
     <%=link("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
     <%=link("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
     <%=link("Refresh", AdminController.getMemTrackerURL(false, false))%>
+    <% if (getUser().hasSiteAdminPermission()) { %> <%=link("Memory Stress Test", new ActionURL(AdminController.MemoryStressTestAction.class, ContainerManager.getRoot()))%> <% } %>
 </p>
 <% } %>
 <table class="labkey-wp">
