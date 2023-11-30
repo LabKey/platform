@@ -16,19 +16,14 @@
 package org.labkey.api.view;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.PageConfig;
 
-/**
- * Popup menu for upper-right corner of main frame
- * User: jeckels
- * Date: Oct 20, 2011
- */
 public class PopupUserView extends PopupMenuView
 {
     public PopupUserView(ViewContext context)

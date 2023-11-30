@@ -2939,7 +2939,7 @@ public class StudyManager
             }
         }
 
-        if (missed.length() != 0)
+        if (!missed.isEmpty())
             throw new IllegalStateException("Expected to delete from these tables:" + missed);
 
         return true;
