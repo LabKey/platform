@@ -39,7 +39,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.ExperimentalFeatureService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -799,7 +798,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 {
                     String className = getDynaClass().getName();
                     Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
-                    _oldValues = PageFlowUtil.decodeObject(beanClass, oldValues);
+                    _oldValues = DataRegion.decodeObject(beanClass, oldValues);
                     _isDataLoaded = true;
                 }
                 catch (Exception ignored)

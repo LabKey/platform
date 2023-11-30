@@ -16,10 +16,8 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -33,9 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
 import org.jfree.chart.encoders.ImageFormat;
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
@@ -50,7 +46,6 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Project;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -75,7 +70,6 @@ import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -113,21 +107,17 @@ import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.lang.reflect.Proxy;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -140,7 +130,6 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -154,8 +143,6 @@ import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
@@ -796,105 +783,10 @@ public class PageFlowUtil
         return (defaultValue);
     }
 
-
-    /**
-     * boolean controlling whether we compress JSON-serialized objects when we render them in HTML forms.
-     */
-    private static final boolean COMPRESS_OBJECT_STREAMS = true;
-
-    public static <T> HtmlString encodeObject(T o) throws IOException
-    {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        final OutputStream osCompressed;
-
-        if (COMPRESS_OBJECT_STREAMS)
-        {
-            osCompressed = new DeflaterOutputStream(byteArrayOutputStream);
-        }
-        else
-        {
-            osCompressed = byteArrayOutputStream;
-        }
-
-        try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
-        {
-            final Map<?, ?> map;
-
-            if (o instanceof Map<?, ?> m)
-            {
-                map = m;
-            }
-            else
-            {
-                @SuppressWarnings("unchecked")
-                ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)o.getClass());
-                map = f.toMap(o, new HashMap<>());
-            }
-
-            try
-            {
-                w.write(new JSONObject(map).toString());
-            }
-            catch (Throwable t)
-            {
-                _log.error("Failed to serialize " + o + ". Map: " + map.toString());
-                throw t;
-            }
-        }
-
-        return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
-    }
-
-    public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
-    {
-        assert Object.class != cls;
-
-        encoded = StringUtils.trimToNull(encoded);
-        if (null == encoded)
-            return null;
-
-        byte[] buf = Base64.decodeBase64(encoded.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-        final InputStream isUncompressed;
-
-        if (COMPRESS_OBJECT_STREAMS)
-        {
-            isUncompressed = new InflaterInputStream(byteArrayInputStream);
-        }
-        else
-        {
-            isUncompressed = byteArrayInputStream;
-        }
-        try (InputStream is=isUncompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
-        {
-            JSONObject json = new JSONObject(new JSONTokener(r));
-            Map<String, Object> map = json.toMap();
-
-            if (cls == Map.class || cls == HashMap.class)
-                return (T)map;
-
-            ObjectFactory<T> f = ObjectFactory.Registry.getFactory(cls);
-            T o = f.fromMap(map);
-            if (cls.isAssignableFrom(o.getClass()))
-                return o;
-
-            throw new ClassCastException("Could not create class: " + cls.getName());
-        }
-        catch (IllegalArgumentException x)
-        {
-            throw new IOException(x);
-        }
-        catch (JSONException x)
-        {
-            throw new BadRequestException("Invalid .oldValues parameter value", BadRequestException.HowBad.Malicious);
-        }
-    }
-
     public static int[] toInts(Collection<String> strings)
     {
         return toInts(strings.toArray(new String[strings.size()]));
     }
-
 
     public static int[] toInts(String[] strings)
     {
@@ -905,7 +797,6 @@ public class PageFlowUtil
         }
         return result;
     }
-
 
     private static MimeMap _mimeMap;
 
@@ -2532,7 +2423,6 @@ public class PageFlowUtil
                     }
                 }
             }
-
         }
 
         @Override
@@ -2552,7 +2442,6 @@ public class PageFlowUtil
             _errors.add(e.getMessage());
         }
     }
-
 
     public static boolean isRobotUserAgent(String userAgent)
     {
@@ -2593,56 +2482,6 @@ public class PageFlowUtil
             return true;
 
         return false;
-    }
-
-
-    //
-    // TestCase
-    //
-    public static class TestBean
-    {
-        private int i;
-        private String s;
-        private Date d;
-
-        public TestBean(){}
-
-        public TestBean(int i, String s, Date d)
-        {
-            this.i = i;
-            this.s = s;
-            this.d = d;
-        }
-
-        public int getI()
-        {
-            return i;
-        }
-
-        public void setI(int i)
-        {
-            this.i = i;
-        }
-
-        public String getS()
-        {
-            return s;
-        }
-
-        public void setS(String s)
-        {
-            this.s = s;
-        }
-
-        public Date getD()
-        {
-            return d;
-        }
-
-        public void setD(Date d)
-        {
-            this.d = d;
-        }
     }
 
     public static class TestCase extends Assert
@@ -2696,7 +2535,6 @@ public class PageFlowUtil
             assertEquals(formatPhoneNo("206.555.1212 x0001"), "(206) 555-1212 x0001");
         }
 
-
         @Test
         public void testFilter()
         {
@@ -2739,7 +2577,6 @@ public class PageFlowUtil
             assertEquals("%2Fhello%2Fworld%3F", encodeURIComponent("/hello/world?"));
             assertEquals("%2Fhello%2Fworld", encodeURIComponent("/hello/world"));
         }
-
 
         @Test
         public void testRobot()
@@ -2794,25 +2631,6 @@ public class PageFlowUtil
             testMakeHtmlId("ABC");
             testMakeHtmlId("!BC234");
             testMakeHtmlId("1A-34-FB-44");
-        }
-
-        @Test
-        public void testEncodeObject() throws Exception
-        {
-            TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
-            String s = encodeObject(bean).toString();
-
-            TestBean copy = decodeObject(TestBean.class, s);
-            assertNotNull(copy);
-            assertEquals(bean.i, copy.i);
-            assertEquals(bean.s, copy.s);
-            assertEquals(bean.d, copy.d);
-
-            Map<String, Object> map = ((Map<String,Object>)decodeObject(Map.class, s));
-            assertNotNull(map);
-            assertEquals(bean.i, map.get("i"));
-            assertEquals(bean.s, map.get("s"));
-            assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
         }
 
         private void testMakeHtmlId(@Nullable String id)
