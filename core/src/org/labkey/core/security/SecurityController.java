@@ -1534,7 +1534,7 @@ public class SecurityController extends SpringActionController
             handleGroups(source, group -> {
                 if (!target.isInGroup(group.getUserId()))
                 {
-                    if (currentUserIsSiteAdmin || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
+                    if (currentUserIsSiteAdmin || !group.hasPrivilegedRole())
                     {
                         try
                         {
@@ -1554,7 +1554,7 @@ public class SecurityController extends SpringActionController
             handleDirectRoleAssignments(source, (policy, roles) -> {
                 for (Role role : roles)
                 {
-                    if (currentUserIsSiteAdmin || !role.getPermissions().contains(SiteAdminPermission.class))
+                    if (currentUserIsSiteAdmin || !role.isPrivileged())
                         policy.addRoleAssignment(target, role, false);
                 }
 
