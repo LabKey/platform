@@ -46,6 +46,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.HtmlString;
@@ -87,8 +88,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.api.data.TableViewForm.EXPERIMENTAL_DESERIALIZE_BEANS;
 
 /** Shared across a variety of different views of a TableInfo, such as grid, details, insert, and update. Knows
  * about buttons that might appear in the view, the columns to be shown, etc. */
@@ -568,9 +572,9 @@ public class DataRegion extends DisplayElement
     private List<String> getButtonBarOnRenders()
     {
         return _buttonBarConfigs.stream()
-                .filter(bb -> bb.getOnRenderScript() != null)
-                .map(ButtonBarConfig::getOnRenderScript)
-                .collect(Collectors.toList());
+            .map(ButtonBarConfig::getOnRenderScript)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
     }
 
     public void setButtonBar(ButtonBar buttonBar)
@@ -2356,37 +2360,39 @@ public class DataRegion extends DisplayElement
             // Note: valueMap != null, since we checked this above
 
             if (valueMap instanceof BoundMap)
-                renderOldValues(out, ((BoundMap) valueMap).getBean());
+                renderOldValues(out, valueMap);
             else
                 renderOldValues(out, valueMap, ctx.getFieldMap());
 
-            // Always render PK(s) to hidden field(s); needed for "changing the PK" scenarios
             TableViewForm viewForm = ctx.getForm();
             List<ColumnInfo> pkCols = getTable().getPkColumns();
             for (ColumnInfo pkCol : pkCols)
             {
                 String pkColName = pkCol.getName();
-                Object pkVal = null;
-                //UNDONE: Should we require a viewForm whenever someone
-                //posts? I tend to think so.
-                if (null != viewForm)
-                    pkVal = viewForm.get(pkColName);
-
-                if (pkVal == null)
-                    pkVal = valueMap.get(pkColName);
-
-                if (null != pkVal)
+                if (!renderedColumns.contains(pkColName))
                 {
-                    out.write("<input type='hidden' name='pk_");
-                    if (viewForm != null)
-                        out.write(viewForm.getFormFieldName(pkCol));
-                    else
-                        out.write(pkColName);
-                    out.write("' value=\"");
-                    out.write(PageFlowUtil.filter(pkVal.toString()));
-                    out.write("\">");
+                    Object pkVal = null;
+                    //UNDONE: Should we require a viewForm whenever someone
+                    //posts? I tend to think so.
+                    if (null != viewForm)
+                        pkVal = viewForm.get(pkColName);
+
+                    if (pkVal == null)
+                        pkVal = valueMap.get(pkColName);
+
+                    if (null != pkVal)
+                    {
+                        out.write("<input type='hidden' name='");
+                        if (viewForm != null)
+                            out.write(viewForm.getFormFieldName(pkCol));
+                        else
+                            out.write(pkColName);
+                        out.write("' value=\"");
+                        out.write(PageFlowUtil.filter(pkVal.toString()));
+                        out.write("\">");
+                    }
+                    renderedColumns.add(pkColName);
                 }
-                renderedColumns.add(pkColName);
             }
         }
 
@@ -2443,14 +2449,24 @@ public class DataRegion extends DisplayElement
         return hasFileFields;
     }
 
-
-    private void renderOldValues(Writer out, Object values) throws IOException
+    private void renderOldValues(Writer out, Map<String, Object> values) throws IOException
     {
         out.write("<input name=\"" + OLD_VALUES_NAME + "\" type=\"hidden\" value=\"");
-        out.write(PageFlowUtil.encodeObject(values).toString());
+        if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS))
+        {
+            out.write(PageFlowUtil.encodeObject(values).toString());
+        }
+        else
+        {
+            Map<String, Object> oldKeys = new HashMap<>();
+            String versionColumnName = getTable().getVersionColumnName();
+            if (versionColumnName != null)
+                oldKeys.put(versionColumnName, values.get(versionColumnName));
+            getTable().getPkColumnNames().forEach(name -> oldKeys.put(name, values.get(name)));
+            out.write(PageFlowUtil.filter(new JSONObject(oldKeys).toString()));
+        }
         out.write("\">");
     }
-
 
     // RowMap keys are the ResultSet alias names, which might be completely mangled.  So, create a new map
     // that's column name -> value and pass it to renderOldValues

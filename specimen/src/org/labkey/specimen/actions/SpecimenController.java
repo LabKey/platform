@@ -5698,12 +5698,6 @@ public class SpecimenController extends SpringActionController
         }
 
         @Override
-        protected boolean deserializeOldValues()
-        {
-            return true;
-        }
-
-        @Override
         public boolean handlePost(QueryUpdateForm tableForm, BindException errors)
         {
             doInsertUpdate(tableForm, errors, false);

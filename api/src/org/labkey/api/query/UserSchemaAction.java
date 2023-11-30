@@ -31,7 +31,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.ActionURL;
@@ -50,8 +49,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import static org.labkey.api.data.TableViewForm.EXPERIMENTAL_DESERIALIZE_BEANS;
 
 /**
  * User: klum
@@ -77,18 +74,12 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         {
             throw new NotFoundException("Query not found");
         }
-        QueryUpdateForm command = deserializeOldValues() ? new QueryUpdateFormHack(_table, getViewContext(), null) : new QueryUpdateForm(_table, getViewContext(), null);
+        QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
         if (command.isBulkUpdate())
             command.setValidateRequired(false);
         BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
         command.validateBind(errors);
         return errors;
-    }
-
-    // TODO: Fix actions that require this and remove
-    protected boolean deserializeOldValues()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS);
     }
 
     // This ContainerFilter is applied to the underlying table that backs this UserSchemaAction.

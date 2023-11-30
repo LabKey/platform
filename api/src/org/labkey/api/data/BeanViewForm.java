@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class BeanViewForm<K> extends TableViewForm implements DynaBean
 {
-    private Class<K> _wrappedClass = null;
+    private final Class<K> _wrappedClass;
 
     protected BeanViewForm(Class<K> clss)
     {
@@ -88,7 +88,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         //If we don't have strings and do have typed values then
         //make the strings match the typed values
         Map<String, String> strings = super.getStrings();
-        if (null == strings || strings.size() == 0 && (null != _values && _values.size() > 0))
+        if (null == strings || strings.isEmpty() && (null != _values && !_values.isEmpty()))
         {
             strings = new HashMap<>();
             for (Map.Entry<String, Object> entry : _values.entrySet())
@@ -110,7 +110,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
             _oldValues = o;
         else if (o instanceof Map)
         {
-            ObjectFactory factory = ObjectFactory.Registry.getFactory(_wrappedClass);
+            ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(_wrappedClass);
             _oldValues = factory.fromMap((Map<String, Object>) o);
         }
         else

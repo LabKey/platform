@@ -3227,13 +3227,6 @@ public class QueryController extends SpringActionController
             super.addNavTrail(root);
             root.addChild("Edit " + _table.getName());
         }
-
-        @Override
-        protected boolean deserializeOldValues()
-        {
-            // This is required to support changing the PK scenarios. TODO: Add pks in hidden field and remove serialized JSON
-            return true;
-        }
     }
 
     @RequiresPermission(UpdatePermission.class)
