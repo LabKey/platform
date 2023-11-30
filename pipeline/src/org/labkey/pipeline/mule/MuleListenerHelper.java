@@ -25,8 +25,8 @@ import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 import org.mule.config.ThreadingProfile;
-import org.mule.config.builders.MuleXmlBuilderContextListener;
 import org.mule.providers.service.TransportFactory;
+import org.mule.umo.UMOException;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterRegistration;
@@ -61,7 +61,7 @@ public class MuleListenerHelper implements ServletContext
 {
     private static final Logger _log = LogHelper.getLogger(MuleListenerHelper.class, "Initializes and configures Mule for pipelines");
 
-    private final MuleXmlBuilderContextListener _muleContextListener;
+    private final LabKeyMuleXmlBuilderContextListener _muleContextListener;
     private final ServletContext _parentContext;
     private final HashMap<String, Object> _attributes = new HashMap<>();
     private final HashMap<String, String> _initParameters = new HashMap<>();
@@ -85,10 +85,10 @@ public class MuleListenerHelper implements ServletContext
             }
         }
 
-        _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_MULE_CONFIG, muleConfigPath);
-        _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_WEBAPP_CLASSPATH,
+        _initParameters.put(LabKeyMuleXmlBuilderContextListener.INIT_PARAMETER_MULE_CONFIG, muleConfigPath);
+        _initParameters.put(LabKeyMuleXmlBuilderContextListener.INIT_PARAMETER_WEBAPP_CLASSPATH,
                 configDir.isDirectory() ? configDir.toString() : null);
-        _muleContextListener = new MuleXmlBuilderContextListener();
+        _muleContextListener = new LabKeyMuleXmlBuilderContextListener();
 
         // HACK: Fix for MULE-2289
         final Converter conv = ConvertUtils.lookup(Integer.TYPE);
@@ -141,6 +141,10 @@ public class MuleListenerHelper implements ServletContext
         {
             _muleContextListener.initialize(this);
             PipelineServiceImpl.get().refreshLocalJobs();
+        }
+        catch (UMOException e)
+        {
+            _log.error("Failed to initialize Mule", e);
         }
         finally
         {
@@ -207,7 +211,7 @@ public class MuleListenerHelper implements ServletContext
         {
             // If the path starts with the mule config root, try creating
             // a raw FileInputStream for it.
-            String muleConfigPath = getInitParameter(MuleXmlBuilderContextListener.INIT_PARAMETER_WEBAPP_CLASSPATH);
+            String muleConfigPath = getInitParameter(LabKeyMuleXmlBuilderContextListener.INIT_PARAMETER_WEBAPP_CLASSPATH);
             if (muleConfigPath == null)
                 return null;
 
