@@ -200,13 +200,13 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
         {
             hasChange = true;
             props.setInvalidFilenameUploadDisabled(form.isInvalidUploadDisabled());
-            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameUploadDisabled.getDescription(), AppProps.getInstance().isInvalidFilenameUploadDisabled(), form.isInvalidUploadDisabled()));
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameUploadDisabled.getDescription(), AppProps.getInstance().isInvalidFilenameUploadDisabled(), form.isInvalidUploadDisabled()), true);
         }
         if (form.isInvalidFilenameDisabled() != AppProps.getInstance().isInvalidFilenameDisabled())
         {
             hasChange = true;
             props.setInvalidFilenameDisabled(form.isInvalidFilenameDisabled());
-            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameDisabled.getDescription(), AppProps.getInstance().isInvalidFilenameDisabled(), form.isInvalidFilenameDisabled()));
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameDisabled.getDescription(), AppProps.getInstance().isInvalidFilenameDisabled(), form.isInvalidFilenameDisabled()), true);
         }
         if (hasChange)
         {
