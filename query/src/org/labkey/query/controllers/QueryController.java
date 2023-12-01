@@ -1652,7 +1652,7 @@ public class QueryController extends SpringActionController
                 QuerySchema qs = DefaultSchema.get(getUser(), getContainer()).getSchema(userSchemaName);
                 if (qs != null)
                 {
-                    new ActionURL(RawSchemaMetaDataAction.class, getContainer());
+                    url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
                     url.addParameter("schemaName", userSchemaName);
                 }
 
