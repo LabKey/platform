@@ -77,6 +77,11 @@
 
     UNION ALL
 
+<%--
+    NOTE this query (for lookup) stops short of including the node that would complete a cycle.  This node is already in the set
+    and won't add any information once the lookup SQL enforces uniqueness (GROUP BY self, objectid)
+    This is different than ExperimentRunGraph2.jsp.
+--%>
     SELECT
       _Graph.depth - 1              AS depth,
       _Graph.self,
