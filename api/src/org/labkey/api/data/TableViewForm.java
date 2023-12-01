@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
@@ -37,8 +38,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -84,7 +84,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public static final String DATA_SUBMIT_NAME = ".dataSubmit";
     public static final String BULK_UPDATE_NAME = ".bulkUpdate";
-    // TODO: Remove in 23.8
+    // TODO: Remove in 24.4
     public static final String EXPERIMENTAL_DESERIALIZE_BEANS = "experimental-deserialize-beans-in-forms";
 
     /**
@@ -399,12 +399,11 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         // Don't do anything special if dynaclass is null
         assert _dynaClass != null;
 
-        /**
-         * Note that nulls in the hashmap are NOT the same as missing values
-         * A null in the hashmap indicates an empty string was posted.
-         * A missing value may indicate that the field was not even included in the form
-         * ISSUE: Maybe keep empty strings around? But what about dates?
-         *
+        /*
+          Note that nulls in the hashmap are NOT the same as missing values
+          A null in the hashmap indicates an empty string was posted.
+          A missing value may indicate that the field was not even included in the form
+          ISSUE: Maybe keep empty strings around? But what about dates?
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
@@ -415,7 +414,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String str = _stringValues.get(propName);
             String caption = _dynaClass.getPropertyCaption(propName);
 
-            if (null != str && "".equals(str.trim()))
+            if (StringUtils.isEmpty(str))
                 str = null;
 
             Class propType = null;
@@ -766,12 +765,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return null == getTable() ? null : getTable().getColumn(name);
     }
 
-    // Forms can override and return true to opt in to always deserializing old values JSON
-    protected boolean deserializeOldValues()
-    {
-        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS);
-    }
-
     @Override
     public void setViewContext(@NotNull ViewContext context)
     {
@@ -796,21 +789,26 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         if (null != StringUtils.trimToNull(pkString) && null != _tinfo)
             setPkVals(pkString);
 
-        if (deserializeOldValues())
+        String oldValues = request.getParameter(DataRegion.OLD_VALUES_NAME);
+        if (null != StringUtils.trimToNull(oldValues))
         {
-            try
+            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS))
             {
-                String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
-                if (null != StringUtils.trimToNull(oldVals))
+                try
                 {
                     String className = getDynaClass().getName();
                     Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
-                    _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
+                    _oldValues = DataRegion.decodeObject(beanClass, oldValues);
                     _isDataLoaded = true;
                 }
+                catch (Exception ignored)
+                {
+                }
             }
-            catch (Exception ignored)
+            else
             {
+                // Just the PK and version values
+                _oldValues = new JSONObject(oldValues).toMap();
             }
         }
     }

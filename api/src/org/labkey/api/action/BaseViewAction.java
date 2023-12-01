@@ -27,8 +27,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -340,20 +338,6 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             return ((HasBindParameters)form).bindParameters(params);
         }
         
-        /* 'regular' commandName handling */
-        if (null != params && null != params.getPropertyValue(DataRegion.OLD_VALUES_NAME))
-        {
-            try
-            {
-                Map<String, ?> oldObject = PageFlowUtil.decodeObject(Map.class, (String)params.getPropertyValue(DataRegion.OLD_VALUES_NAME).getValue());
-                ((ObjectFactory<Object>)ObjectFactory.Registry.getFactory(form.getClass())).fromMap(form, oldObject);
-            }
-            catch (Exception x)
-            {
-                throw new RuntimeException(x);
-            }
-        }
-
         if (form instanceof DynaBean)
         {
             return simpleBindParameters(form, commandName, params);

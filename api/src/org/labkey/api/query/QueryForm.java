@@ -36,12 +36,9 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 
 /**
- * QueryForm is basically a wrapper for QuerySettings and related helper for the query subsystem.
- *
- * Since this is being bound from request variables all parameters may be overridden.  For more control,
- * use QuerySettings directly.
- *
- * Note, that the QuerySettings require a schemaName and dataRegionName before being constructed.
+ * QueryForm is basically a wrapper for QuerySettings and related helper for the query subsystem. Since this is being
+ * bound from request variables all parameters may be overridden. For more control, use QuerySettings directly. Note
+ * that the QuerySettings require a schemaName and dataRegionName before being constructed.
  */
 public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindParameters
 {
