@@ -88,7 +88,7 @@
       _Edges.fromObjectId,
       _Edges.toObjectId,
       CAST('/' <%=CONCAT%> CAST(_Edges.fromObjectId AS VARCHAR(20)) <%=CONCAT%> _Graph.path AS VARCHAR(8000)) AS path
-    FROM <%=bean.getExpEdge()%> _Edges
+    FROM <%=unsafe(bean.getExpEdge())%> _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.toObjectId = _Graph.fromObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.fromObjectId as VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
       AND _Graph.depth >= <%= (-1 * Math.abs(depth)) + 1 %>
