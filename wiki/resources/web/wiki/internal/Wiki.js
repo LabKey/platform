@@ -136,7 +136,8 @@
             ],
 
             menubar: 'edit insert view format table tools help',
-            promotion: false,
+            promotion: false,  // Remove sales logo in upper corner
+            branding: false,   // Remove sales logo in bottom corner, Logo's link breaks crawler tests due to bad rel attribute.
             quickbars_insert_toolbar: 'anchor quickimage quicktable codesample hr accordion accordionremove',
             removed_menuitems: 'code, preview',
             theme: "silver",
@@ -145,7 +146,6 @@
 
             //TODO add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
             //content_css:['mycss1.css', 'mycss2.css'],
-
         }, tinymce.EditorManager);
 
         this.ed.render();
