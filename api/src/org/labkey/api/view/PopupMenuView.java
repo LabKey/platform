@@ -22,11 +22,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 
-/**
- * User: Mark Igra
- * Date: Jun 20, 2007
- * Time: 9:25:42 PM
- */
 public class PopupMenuView extends HttpView<PopupMenu>
 {
     public PopupMenuView()

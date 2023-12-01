@@ -24,6 +24,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.PageConfig;
 
+/**
+ * Popup menu for upper-right corner of main frame
+ */
 public class PopupUserView extends PopupMenuView
 {
     public PopupUserView(ViewContext context)
