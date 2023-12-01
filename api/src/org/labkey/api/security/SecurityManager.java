@@ -113,6 +113,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.permissions.SeeFilePathsPermission;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.labkey.security.xml.GroupEnumType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
@@ -217,6 +218,12 @@ public class SecurityManager
 
             return Map.of("SiteRoleUserCounts", roleCounts);
         };
+    }
+
+    public static void registerAllowedConnectionSource(String serviceURL)
+    {
+        ContentSecurityPolicyFilter.registerAllowedConnectionSource(serviceURL);
+        _log.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
     }
 
     public enum PermissionSet
