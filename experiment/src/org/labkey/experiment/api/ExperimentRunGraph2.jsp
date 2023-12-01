@@ -59,7 +59,7 @@
       _Graph.depth - 1                                           AS depth,
       _Edges.fromObjectId,
       _Edges.toObjectId,
-      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) <%=CONCAT%> CAST(_Edges.toObjectId AS VARCHAR(20)) <%=CONCAT%> '/' AS VARCHAR(8000)) AS path
+      CAST('/' <%=CONCAT%> CAST(_Edges.toObjectId AS VARCHAR(20)) <%=CONCAT%> _Graph.path AS VARCHAR(8000)) AS path
     FROM exp.Edge _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.toObjectId = _Graph.fromObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.fromObjectId as VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
@@ -158,7 +158,7 @@
       _Graph.depth + 1                               AS depth,
       _Edges.fromObjectId,
       _Edges.toObjectId,
-      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) <%=CONCAT%> CAST(_Edges.fromObjectId AS VARCHAR(20)) <%=CONCAT%> '/' AS VARCHAR(8000)) AS path
+      CAST('/' <%=CONCAT%> CAST(_Edges.fromObjectId AS VARCHAR(20)) <%=CONCAT%> _Graph.path AS VARCHAR(8000)) AS path
     FROM exp.Edge _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.fromObjectId = _Graph.toObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.toObjectId AS VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
