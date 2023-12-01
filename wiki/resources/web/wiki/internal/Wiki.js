@@ -102,41 +102,51 @@
 
         // create the editor
         this.ed = new tinymce.Editor(this.editFieldId, {
+            browser_spellcheck : true,
+            forced_root_block: 'div',
+            plugins: [
+                "advlist",
+                "anchor",
+                "autolink",
+                "charmap",
+                "code",
+                "codesample",
+                "emoticons",
+                "help",
+                "image",
+                "insertdatetime",
+                "link",
+                "lists",
+                "media",
+                "preview",
+                "quickbars",
+                "searchreplace",
+                "table",
+                "visualblocks",
+                "visualchars",
+            ],
 
-            height: height,
+            // Prevents elements from being stripped by the Source editor https://www.tiny.cloud/docs/tinymce/6/content-filtering/#protect
+            extended_valid_elements: 'i/em[*],+script[*],+form[*],+style[*]',
+            valid_children: '+body[style]',
+            protect: [
+                /\<\/?(i .*)\>/g,
+                /\<\/?(script.*)\>/g,
+                /\<\/?(form.*)\>/g,
+            ],
 
-            // General options
-            mode: "none",
-            theme: "advanced",
-            plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
-                    "contextmenu, fullscreen, noneditable, inlinepopups, style, ",
+            menubar: 'edit insert view format table tools help',
+            promotion: false,
+            quickbars_insert_toolbar: 'anchor quickimage quicktable codesample hr accordion accordionremove',
+            removed_menuitems: 'code, preview',
+            theme: "silver",
+            toolbar: "undo redo | styles fontsize  | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image codesample",
+            toolbar_sticky: true,
 
-            // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
-            convert_urls: false,
+            //TODO add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
+            //content_css:['mycss1.css', 'mycss2.css'],
 
-            // Smaller button bar than found on regular wiki edit
-            theme_advanced_buttons1 : "fontselect, fontsizeselect, " +
-                    "|, bold, italic, underline, " +
-                    "|, forecolor, backcolor, " +
-                    "|, justifyleft, justifycenter, justifyright, " +
-                    "|, bullist, numlist, " +
-                    "|, outdent, indent, " +
-                    "|, link, unlink, " +
-                    "|, image, removeformat, ",
-
-            theme_advanced_buttons2 : null,
-            theme_advanced_buttons3 : null,
-
-
-            theme_advanced_toolbar_location : "top",
-            theme_advanced_toolbar_align : "left",
-            theme_advanced_statusbar_location : "bottom",
-            theme_advanced_resizing : false,
-
-            // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
-            // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
-            gecko_spellcheck : true
-        });
+        }, tinymce.EditorManager);
 
         this.ed.render();
     };
@@ -339,7 +349,7 @@
             var webpartEl = document.getElementById("webpart_" + config.webPartId);
             config.dom = webpartEl.getElementsByClassName("labkey-wiki")[0];
 
-            LABKEY.requiresScript('tiny_mce/tiny_mce.js', function () { inlineWikiEdit(config); }, this);
+            LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () { inlineWikiEdit(config); }, this);
         },
         toggleTable : function(tocTable, expand, notify) {
             //Structure of a navtree table:
