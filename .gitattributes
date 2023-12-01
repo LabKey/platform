@@ -71,9 +71,6 @@ api/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 api/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text
 api/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
 api/gwtsrc/org/labkey/api/gwt/client/FacetingBehaviorType.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonGroup.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonMember.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTComparisonResult.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTConditionalFormat.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTContainer.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTDomain.java -text
