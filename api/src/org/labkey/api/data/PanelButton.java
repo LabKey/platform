@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
@@ -29,8 +28,6 @@ import java.util.Map;
 /**
  * Shows a button with a drop-down arrow. When clicked, the button renders a subpanel
  * with a tabbed UI, similar to a ribbon bar in Office.
- * User: jeckels
- * Date: Dec 11, 2009
  */
 public class PanelButton extends ActionButton
 {

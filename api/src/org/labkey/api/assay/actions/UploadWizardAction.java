@@ -121,11 +121,6 @@ import static org.labkey.api.util.DOM.FONT;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtml;
 
-/**
- * User: brittp
- * Date: Jul 26, 2007
- * Time: 7:01:17 PM
- */
 @RequiresPermission(InsertPermission.class)
 public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends FormViewAction<FormType>
 {
@@ -1206,7 +1201,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     }
                     uniqueErrorStrs.add(errStr);
                 }
-                if (sb.toString().length() > 0)
+                if (!sb.isEmpty())
                     sb.append(HtmlString.unsafe("</font>"));
 
                 if (uniqueErrorStrs.size() > MAX_ERRORS)
@@ -1280,7 +1275,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 }
                 catch (Exception e)
                 {
-                    throw (IOException) new IOException(e);
+                    throw new IOException(e);
                 }
             }
         }

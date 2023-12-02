@@ -229,7 +229,7 @@ public class Designer implements EntryPoint
                     if (null != PropertyUtil.getServerProperty("finishURL"))
                         WindowUtil.setLocation(PropertyUtil.getServerProperty("finishURL"));
                     else if (definition.getCavdStudyId() == 0)
-                        WindowUtil.setLocation(PropertyUtil.getContextPath() + "/Project" + PropertyUtil.getContainerPath() + "/start.view?");
+                        WindowUtil.setLocation(PropertyUtil.getContextPath() + PropertyUtil.getContainerPath() + "/project-start.view");
                     else
                         WindowUtil.setLocation(PropertyUtil.getRelativeURL("designer.view") + "?studyId=" + definition.getCavdStudyId());
                 }

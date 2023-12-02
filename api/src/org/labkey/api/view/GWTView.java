@@ -27,8 +27,6 @@ import java.util.Set;
 
 /**
  * Wrapper around a GWT (Google Web Toolkit) module that knows how to render into the overall HTML of the page.
- * User: Mark Igra
- * Date: Jan 30, 2007
  */
 public class GWTView extends JspView<GWTView.GWTViewBean>
 {
