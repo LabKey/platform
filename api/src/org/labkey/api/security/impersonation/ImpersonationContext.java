@@ -38,7 +38,7 @@ import java.util.stream.Stream;
  */
 public interface ImpersonationContext extends Serializable
 {
-    /** @return whether the user is impersonating someone or some group, or working as their normal self */
+    /** @return whether the user is impersonating some user, group, or role, or working as their normal self */
     boolean isImpersonating();
     /** @return if non-null, the container to which the impersonation should be restricted */
     @Nullable Container getImpersonationProject();
