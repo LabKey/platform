@@ -40,8 +40,10 @@
     <div class="otherLoginMechanismsContent"></div>
 </div>
 
-<script type="text/javascript" nonce="<%= scriptNonce %>">
-    if (LABKEY.ActionURL.getParameter('returnUrl')) {
-        document.getElementById('registerButton').href += 'returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
-    }
+<script type="text/javascript" nonce="<%=scriptNonce%>">
+    LABKEY.Utils.onReady(function() {
+        if (LABKEY.ActionURL.getParameter('returnUrl')) {
+            document.getElementById('registerButton').href += '?returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
+        }
+    });
 </script>

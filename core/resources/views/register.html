@@ -12,7 +12,7 @@
         <label for="kaptchaText">Verification</label>
         <p>
             <div>Please enter the six characters shown below (case-insensitive).</div>
-            <div><a href="javascript: window.location.reload()">Reload the page to get a new image.</a></div>
+            <div><a id="reload" href="#">Reload the page to get a new image.</a></div>
             <div><img src="<%= contextPath %>/kaptcha.jpg" alt="Verification text" title="Verification text" height="50" width="200"/></div>
         </p>
         <input id="kaptchaText" name="kaptchaText" type="text" class="input-block" tabindex="3" autofocus>
@@ -24,7 +24,10 @@
 </form>
 
 <script type="text/javascript" nonce="<%=scriptNonce%>">
-    if (LABKEY.ActionURL.getParameter('returnUrl')) {
-        document.getElementById('signInLink').href += 'returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
-    }
+    LABKEY.Utils.onReady(function() {
+        if (LABKEY.ActionURL.getParameter('returnUrl')) {
+            document.getElementById('signInLink').href += '?returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
+        }
+        document.getElementById("reload")['onclick'] = function() { window.location.reload(); };
+    });
 </script>
