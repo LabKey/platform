@@ -173,7 +173,7 @@ LABKEY.WebSocket = new function ()
 
         if (showReloadMessage) {
             message += ' Please reload the page or '
-                + '<a href="login-login.view?" target="_blank" rel="noopener noreferrer">'
+                + '<a href="login-login.view" target="_blank" rel="noopener noreferrer">'
                 + 'log in via another browser tab</a> to continue.'
         }
 

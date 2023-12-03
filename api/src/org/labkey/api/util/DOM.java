@@ -269,7 +269,7 @@ public class DOM
             _selfClosing = b;
         }
 
-        protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body) throws IOException
+        private Appendable _render(Appendable builder, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
         {
             return appendElement(builder, name(), _selfClosing, attrs, body);
         }
@@ -448,8 +448,7 @@ public class DOM
         ondrop,
         ondurationchange,
         onemptied,
-        onended, */
-        onerror, /*
+        onended,
         onfocus,
         onhashchange,
         oninput,
