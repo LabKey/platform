@@ -36,7 +36,7 @@ public enum RandomStartupProperties implements StartupProperty, SafeToRenderEnum
             writeable.setFileUploadDisabled(Boolean.parseBoolean(value));
         }
     },
-    invalidFilenameUploadDisabled("Disable file upload with invalid filenames")
+    invalidFilenameUploadDisabled("Disable file upload with potentially malicious filenames")
     {
         @Override
         public void setValue(WriteableAppProps writeable, String value)
