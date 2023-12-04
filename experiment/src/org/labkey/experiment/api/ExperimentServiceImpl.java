@@ -206,7 +206,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
-    private static final Cache<String, ExpProtocolImpl> PROTOCOL_CACHE = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol");
+    private final Cache<Integer, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
+        (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(Protocol.class)));
+
+    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
+        (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), key), null).getObject(Protocol.class)));
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -1075,45 +1079,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        ExpProtocolImpl result;
-
-        result = PROTOCOL_CACHE.get("ROWID/" + rowid);
-        if (null != result)
-            return result;
-
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
-
-        return toExpProtocol(p);
+        return PROTOCOL_ROW_ID_CACHE.get(rowid);
     }
 
     @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        ExpProtocolImpl result = PROTOCOL_CACHE.get(getCacheKey(lsid));
-        if (null != result)
-            return result;
-
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
-
-        return toExpProtocol(p);
+        return PROTOCOL_LSID_CACHE.get(lsid);
     }
 
     private ExpProtocolImpl toExpProtocol(@Nullable Protocol p)
     {
-        ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
-        if (result != null)
-        {
-            PROTOCOL_CACHE.put(getCacheKey(result.getLSID()), result);
-            PROTOCOL_CACHE.put("ROWID/" + result.getRowId(), result);
-        }
-        return result;
+        return p == null ? null : new ExpProtocolImpl(p);
     }
 
     private void uncacheProtocol(Protocol p)
     {
-        Cache<String, ExpProtocolImpl> c = PROTOCOL_CACHE;
-        c.remove(getCacheKey(p.getLSID()));
-        c.remove("ROWID/" + p.getRowId());
+        PROTOCOL_ROW_ID_CACHE.remove(p.getRowId());
+        PROTOCOL_LSID_CACHE.remove(p.getLSID());
     }
 
     @Override
@@ -4031,7 +4014,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
-        PROTOCOL_CACHE.clear();
+        PROTOCOL_ROW_ID_CACHE.clear();
+        PROTOCOL_LSID_CACHE.clear();
         DomainPropertyManager.clearCaches();
     }
 
@@ -6461,8 +6445,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             else
             {
                 result = Table.update(user, getTinfoProtocol(), protocol, protocol.getRowId());
-                uncacheProtocol(protocol);
             }
+
+            uncacheProtocol(protocol);
 
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
             if (!newProtocol)
