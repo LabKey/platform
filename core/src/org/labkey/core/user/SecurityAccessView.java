@@ -30,6 +30,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
+import org.labkey.core.security.SecurityController;
 import org.labkey.core.security.SecurityController.FolderAccessForm;
 import org.labkey.core.user.UserController.AccessDetail;
 import org.labkey.core.user.UserController.AccessDetailRow;
@@ -44,10 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-/**
- * Created by adam on 5/31/2017.
- */
 
 // TODO: Reconcile with FolderAccessAction as well
 // TODO: Move AccessDetail, FolderAccessForm, AccessDetail into this class
@@ -135,25 +132,14 @@ public class SecurityAccessView extends VBox
                 childAccessGroups.put(role.getName(), new ArrayList<>());
             }
 
-            if (roles.size() > 0)
+            if (!roles.isEmpty())
             {
                 Container project = child.getProject();
                 List<Group> groups = _projectGroupCache.computeIfAbsent(project, k -> SecurityManager.getGroups(project, true));
-                for (Group group : groups)
-                {
-                    if (_principal.isInGroup(group.getUserId()))
-                    {
-                        Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                        for (Role role : roles)
-                        {
-                            if (groupRoles.contains(role))
-                                childAccessGroups.get(role.getName()).add(group);
-                        }
-                    }
-                }
+                SecurityController.fillUserAccessGroups(_principal, groups, policy, roles, childAccessGroups);
             }
 
-            if (_showAll || roles.size() > 0)
+            if (_showAll || !roles.isEmpty())
             {
                 int index = _rows.size();
                 _rows.add(new AccessDetailRow(_currentUser, child, _principal, childAccessGroups, depth));

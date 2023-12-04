@@ -181,12 +181,12 @@ function restoreDefaultPage()
                 }
                 return new OptionBuilder(c.getPath(), c.getId()).selected(selected);
             }))%>
-    <span class="help-block">You can also <a href="javascript:restoreDefaultPage();">restore to this folder's default page.</a></span><br>
+    <span class="help-block">You can also <%=link("restore to this folder's default page.").onClick("restoreDefaultPage();").clearClasses()%></span><br>
     <%
         final Stream<OptionBuilder> builders;
 
         //if current container has no pages
-        if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().size() == 0)
+        if (null == me.getContainerNameTitleMap() || me.getContainerNameTitleMap().isEmpty())
         {
             builders = Stream.of(new OptionBuilder().value("").label("no pages"));
         }

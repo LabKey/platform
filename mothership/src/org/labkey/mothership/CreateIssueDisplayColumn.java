@@ -25,10 +25,6 @@ import org.labkey.api.util.PageFlowUtil;
 import java.io.IOException;
 import java.io.Writer;
 
-/**
- * User: jeckels
- * Date: Jun 29, 2006
- */
 public class CreateIssueDisplayColumn extends DataColumn
 {
     private final ActionButton _saveButton;
@@ -45,6 +41,11 @@ public class CreateIssueDisplayColumn extends DataColumn
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         _saveButton.render(ctx, out);
-        out.write("\t" + PageFlowUtil.button("Create Issue").href("javascript:document.forms.CreateIssue.elements['assignedTo'].value = document.forms[" + PageFlowUtil.jsString(ctx.getCurrentRegion().getFormId()) + "].elements['assignedTo'].value; document.forms.CreateIssue.submit();"));
+        out.write("\t");
+        PageFlowUtil.button("Create Issue")
+            .onClick("document.forms.CreateIssue.elements['assignedTo'].value = document.forms[" +
+                PageFlowUtil.jsString(ctx.getCurrentRegion().getFormId()) +
+                "].elements['assignedTo'].value; document.forms.CreateIssue.submit();")
+            .appendTo(out);
     }
 }

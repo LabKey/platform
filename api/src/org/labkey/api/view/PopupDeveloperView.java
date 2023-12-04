@@ -27,8 +27,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The Developer menu that appears in the header when the user is in the Developers group, but is not an admin.
- * User: dave
- * Date: Sep 10, 2009
  */
 public class PopupDeveloperView extends PopupMenuView
 {

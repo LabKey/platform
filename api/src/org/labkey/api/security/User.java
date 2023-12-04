@@ -251,18 +251,15 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         return (null == getLastLogin());
     }
 
-
     public String getEmail()
     {
         return getName();
     }
 
-
     public String getFullName()
     {
         return ((null == _firstName) ? "" : _firstName) + ((null == _lastName) ? "" : " " + _lastName);
     }
-
 
     public String getFriendlyName()
     {
@@ -408,13 +405,12 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         _lastActivity = lastActivity;
     }
 
-    public void setImpersonationContext(ImpersonationContext impersonationContext)
+    void setImpersonationContext(ImpersonationContext impersonationContext)
     {
         _impersonationContext = impersonationContext;
     }
 
-    public @NotNull
-    ImpersonationContext getImpersonationContext()
+    public @NotNull ImpersonationContext getImpersonationContext()
     {
         return _impersonationContext;
     }
