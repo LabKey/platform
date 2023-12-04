@@ -115,7 +115,8 @@
         }
         %>
 
-        <tr><td class="labkey-form-label">Disallow file upload with invalid names<%=helpPopup("Disallow file upload with invalid names", "If checked, file upload for files with invalid names will be disabled.")%></td>
+        <tr><td class="labkey-form-label">Disallow file upload with potentially malicious names<%=helpPopup("Disallow file upload with potentially malicious names", "If checked, file upload for files with potentially malicious names will be blocked.")%></td>
+
             <td><input type=checkbox id="invalidUploadDisabled" name="invalidUploadDisabled" <%=checked(bean.isInvalidUploadDisabled())%> style="margin-left: 10px;"></td>
         </tr>
         <tr><td class="labkey-form-label">Disallow server-side file creation with potentially malicious names<%=helpPopup("Disallow server-side file creation with potentially malicious names", "If checked, server-side file creation with potentially malicious names will be blocked.")%></td>
