@@ -1378,7 +1378,7 @@ public class SecurityManager
     // Case-insensitive existence check -- disallows groups that differ only by case
     private static boolean groupExists(Container c, String groupName, String ownerId)
     {
-        return null != getGroupId(c, groupName, ownerId, false, true);
+        return null != getGroupId(c, groupName, ownerId, false);
     }
 
     public static Group renameGroup(Group group, String newName, User currentUser)
@@ -2287,17 +2287,8 @@ public class SecurityManager
 
     public static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure)
     {
-        return getGroupId(c, groupName, ownerId, throwOnFailure, false);
-    }
-
-    // This is temporary... in CPAS 1.5 on PostgreSQL it was possible to create two groups in the same container that differed only
-    // by case (this was not possible on SQL Server). In CPAS 1.6 we disallow this on PostgreSQL... but we still need to be able to
-    // retrieve group IDs in a case-sensitive manner.
-    // TODO: For CPAS 1.7: this should always be case-insensitive (we will clean up the database by renaming duplicate groups)
-    private static Integer getGroupId(@Nullable Container c, String groupName, @Nullable String ownerId, boolean throwOnFailure, boolean caseInsensitive)
-    {
-        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type!='u' AND " + (caseInsensitive ? "LOWER(Name)" : "Name") + " = ? AND Container ");
-        sql.add(caseInsensitive ? groupName.toLowerCase() : groupName);
+        SQLFragment sql = new SQLFragment("SELECT UserId FROM " + core.getTableInfoPrincipals() + " WHERE Type != 'u' AND LOWER(Name) = ? AND Container ");
+        sql.add(groupName.toLowerCase());
 
         if (c == null || c.isRoot())
         {
