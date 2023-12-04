@@ -26,8 +26,8 @@ public class FileSettingsForm
     private String _userRootPath;
     private boolean _webfilesEnabled;
     private boolean _fileUploadDisabled;
-    private boolean _invalidUploadDisabled;
-    private boolean _invalidFilenameDisabled;
+    private boolean _invalidUploadBlocked;
+    private boolean _invalidFilenameBlocked;
 
     public String getRootPath()
     {
@@ -79,24 +79,24 @@ public class FileSettingsForm
         _fileUploadDisabled = fileUploadDisabled;
     }
 
-    public boolean isInvalidUploadDisabled()
+    public boolean isInvalidUploadBlocked()
     {
-        return _invalidUploadDisabled;
+        return _invalidUploadBlocked;
     }
 
-    public void setInvalidUploadDisabled(boolean invalidUploadDisabled)
+    public void setInvalidUploadBlocked(boolean invalidUploadBlocked)
     {
-        _invalidUploadDisabled = invalidUploadDisabled;
+        _invalidUploadBlocked = invalidUploadBlocked;
     }
 
-    public boolean isInvalidFilenameDisabled()
+    public boolean isInvalidFilenameBlocked()
     {
-        return _invalidFilenameDisabled;
+        return _invalidFilenameBlocked;
     }
 
-    public void setInvalidFilenameDisabled(boolean invalidFilenameDisabled)
+    public void setInvalidFilenameBlocked(boolean invalidFilenameBlocked)
     {
-        _invalidFilenameDisabled = invalidFilenameDisabled;
+        _invalidFilenameBlocked = invalidFilenameBlocked;
     }
 
 }

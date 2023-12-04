@@ -230,9 +230,9 @@ public interface AppProps
 
     boolean isFileUploadDisabled();
 
-    boolean isInvalidFilenameUploadDisabled();
+    boolean isInvalidFilenameUploadBlocked();
 
-    boolean isInvalidFilenameDisabled();
+    boolean isInvalidFilenameBlocked();
 
     /**
      *

@@ -628,15 +628,15 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean isInvalidFilenameUploadDisabled()
+    public boolean isInvalidFilenameUploadBlocked()
     {
-        return lookupBooleanValue(invalidFilenameUploadDisabled, true);
+        return lookupBooleanValue(invalidFilenameUploadBlocked, true);
     }
 
     @Override
-    public boolean isInvalidFilenameDisabled()
+    public boolean isInvalidFilenameBlocked()
     {
-        return lookupBooleanValue(invalidFilenameDisabled, false);
+        return lookupBooleanValue(invalidFilenameBlocked, false);
     }
 
     @Override

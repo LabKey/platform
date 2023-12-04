@@ -115,13 +115,11 @@
         }
         %>
 
-        <tr><td class="labkey-form-label">Disallow file upload with potentially malicious names<%=helpPopup("Disallow file upload with potentially malicious names", "If checked, file upload for files with potentially malicious names will be blocked.")%></td>
-
-            <td><input type=checkbox id="invalidUploadDisabled" name="invalidUploadDisabled" <%=checked(bean.isInvalidUploadDisabled())%> style="margin-left: 10px;"></td>
+        <tr><td class="labkey-form-label">Block file upload with potentially malicious names<%=helpPopup("Block file upload with potentially malicious names", "If checked, file upload for files with potentially malicious names will be blocked.")%></td>
+            <td><input type=checkbox id="invalidUploadBlocked" name="invalidUploadBlocked" <%=checked(bean.isInvalidUploadBlocked())%> style="margin-left: 10px;"></td>
         </tr>
-        <tr><td class="labkey-form-label">Disallow server-side file creation with potentially malicious names<%=helpPopup("Disallow server-side file creation with potentially malicious names", "If checked, server-side file creation with potentially malicious names will be blocked.")%></td>
-
-            <td><input type=checkbox id="invalidFilenameDisabled" name="invalidFilenameDisabled" <%=checked(bean.isInvalidFilenameDisabled())%> style="margin-left: 10px;"></td>
+        <tr><td class="labkey-form-label">Block server-side file creation with potentially malicious names<%=helpPopup("Block server-side file creation with potentially malicious names", "If checked, server-side file creation with potentially malicious names will be blocked.")%></td>
+            <td><input type=checkbox id="invalidFilenameBlocked" name="invalidFilenameBlocked" <%=checked(bean.isInvalidFilenameBlocked())%> style="margin-left: 10px;"></td>
         </tr>
 
         <tr><td>&nbsp;</td></tr>

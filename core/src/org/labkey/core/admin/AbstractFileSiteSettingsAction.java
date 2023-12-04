@@ -41,6 +41,7 @@ import org.labkey.api.settings.RandomStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -178,9 +179,9 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
     private String getDisableFileUploadDiff(String title, boolean before, boolean after)
     {
-        return "<table><tr><td class='labkey-form-label'>" + title + "</td><td>" + String.valueOf(before) +
+        return "<table><tr><td class='labkey-form-label'>" + PageFlowUtil.filter(title) + "</td><td>" + PageFlowUtil.filter(before) +
                 "&nbsp;&raquo;&nbsp;" +
-                String.valueOf(after) +
+                PageFlowUtil.filter(after) +
                 "</td></tr></table>";
     }
 
@@ -196,17 +197,17 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
             props.setFileUploadDisabled(form.isFileUploadDisabled());
             event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.fileUploadDisabled.getDescription(), PremiumService.get().isFileUploadDisabled(), form.isFileUploadDisabled()));
         }
-        if (form.isInvalidUploadDisabled() != AppProps.getInstance().isInvalidFilenameUploadDisabled())
+        if (form.isInvalidUploadBlocked() != AppProps.getInstance().isInvalidFilenameUploadBlocked())
         {
             hasChange = true;
-            props.setInvalidFilenameUploadDisabled(form.isInvalidUploadDisabled());
-            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameUploadDisabled.getDescription(), AppProps.getInstance().isInvalidFilenameUploadDisabled(), form.isInvalidUploadDisabled()), true);
+            props.setInvalidFilenameUploadBlocked(form.isInvalidUploadBlocked());
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameUploadBlocked.getDescription(), AppProps.getInstance().isInvalidFilenameUploadBlocked(), form.isInvalidUploadBlocked()), true);
         }
-        if (form.isInvalidFilenameDisabled() != AppProps.getInstance().isInvalidFilenameDisabled())
+        if (form.isInvalidFilenameBlocked() != AppProps.getInstance().isInvalidFilenameBlocked())
         {
             hasChange = true;
-            props.setInvalidFilenameDisabled(form.isInvalidFilenameDisabled());
-            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameDisabled.getDescription(), AppProps.getInstance().isInvalidFilenameDisabled(), form.isInvalidFilenameDisabled()), true);
+            props.setInvalidFilenameBlocked(form.isInvalidFilenameBlocked());
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameBlocked.getDescription(), AppProps.getInstance().isInvalidFilenameBlocked(), form.isInvalidFilenameBlocked()), true);
         }
         if (hasChange)
         {

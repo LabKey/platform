@@ -309,7 +309,7 @@ public class FileUtil
 
     public static boolean mkdir(File file) throws IOException
     {
-        return mkdir(file, AppProps.getInstance().isInvalidFilenameDisabled());
+        return mkdir(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
     public static boolean mkdir(File file, boolean checkFileName) throws IOException
@@ -321,7 +321,7 @@ public class FileUtil
 
     public static boolean mkdirs(File file) throws IOException
     {
-        return mkdirs(file, AppProps.getInstance().isInvalidFilenameDisabled());
+        return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
     public static boolean mkdirs(File file, boolean checkFileName) throws IOException
@@ -338,7 +338,7 @@ public class FileUtil
 
     public static Path createDirectory(Path path) throws IOException
     {
-        return createDirectory(path, AppProps.getInstance().isInvalidFilenameDisabled());
+        return createDirectory(path, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
     public static Path createDirectory(Path path, boolean checkFileName) throws IOException
@@ -352,7 +352,7 @@ public class FileUtil
 
     public static Path createDirectories(Path path) throws IOException
     {
-        return createDirectories(path, AppProps.getInstance().isInvalidFilenameDisabled());
+        return createDirectories(path, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
     public static Path createDirectories(Path path, boolean checkFileName) throws IOException
@@ -369,7 +369,7 @@ public class FileUtil
 
     public static boolean createNewFile(File file) throws IOException
     {
-        return createNewFile(file, AppProps.getInstance().isInvalidFilenameDisabled());
+        return createNewFile(file, AppProps.getInstance().isInvalidFilenameBlocked());
     }
 
     public static boolean createNewFile(File file, boolean checkFileName) throws IOException
@@ -381,7 +381,7 @@ public class FileUtil
 
     public static Path createFile(Path path, FileAttribute<?>... attrs) throws IOException
     {
-        return createFile(path, AppProps.getInstance().isInvalidFilenameDisabled(), attrs);
+        return createFile(path, AppProps.getInstance().isInvalidFilenameBlocked(), attrs);
     }
 
     public static Path createFile(Path path, boolean checkFileName, FileAttribute<?>... attrs) throws IOException

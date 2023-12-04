@@ -276,10 +276,10 @@ public class FileSystemResource extends AbstractWebdavResource
         boolean created = false;
         if (!file.exists())
         {
-            FileUtil.mkdirs(file.getParentFile(), AppProps.getInstance().isInvalidFilenameUploadDisabled());
+            FileUtil.mkdirs(file.getParentFile(), AppProps.getInstance().isInvalidFilenameUploadBlocked());
             try
             {
-                FileUtil.createNewFile(file, AppProps.getInstance().isInvalidFilenameUploadDisabled());
+                FileUtil.createNewFile(file, AppProps.getInstance().isInvalidFilenameUploadBlocked());
                 created = true;
             }
             catch (IOException x)

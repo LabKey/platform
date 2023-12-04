@@ -73,8 +73,8 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
 
             form.setWebfilesEnabled(AppProps.getInstance().isWebfilesRootEnabled());
             form.setFileUploadDisabled(AppProps.getInstance().isFileUploadDisabled());
-            form.setInvalidUploadDisabled(AppProps.getInstance().isInvalidFilenameUploadDisabled());
-            form.setInvalidFilenameDisabled(AppProps.getInstance().isInvalidFilenameDisabled());
+            form.setInvalidUploadBlocked(AppProps.getInstance().isInvalidFilenameUploadBlocked());
+            form.setInvalidFilenameBlocked(AppProps.getInstance().isInvalidFilenameBlocked());
         }
         setHelpTopic("setRoots");
         return new JspView<>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);

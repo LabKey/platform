@@ -6753,7 +6753,7 @@ public class DavController extends SpringActionController
 
     void checkAllowedFileName(String s) throws DavException
     {
-        if (!AppProps.getInstance().isInvalidFilenameUploadDisabled())
+        if (!AppProps.getInstance().isInvalidFilenameUploadBlocked())
             return;
 
         String msg = FileUtil.isAllowedFileName(s);
