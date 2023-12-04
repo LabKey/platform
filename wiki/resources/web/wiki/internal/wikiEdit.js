@@ -4,52 +4,106 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-const TabNames = Object.freeze({
-    Preview: 'preview',
-    Source: 'source',
-    Visual: 'visual',
+//
+// you must init the tinyMCE before the page finishes loading
+// if you don't, you'll get a blank page an an error
+// seems to be a limitation of the tinyMCE.
+//
+var _tinyMCEInitialized = false;
+
+//
+// I copied these options from Tinymce version 3.4 word.html example page, then trimmed down to remove
+// unneeded buttons and plugins. Added one third-party plugin, pwd, which toggles the lower two
+// toolbars on and off.
+//
+tinyMCE.init({
+    // General options
+    mode: "none",
+    theme: "advanced",
+    plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
+    "contextmenu, fullscreen, noneditable, inlinepopups, style, pdw ",
+
+    // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
+    convert_urls: false,
+
+    // Button bar -- rearraged based on my on aestheic judgement, not customer requests -georgesn
+    theme_advanced_buttons1: "pdw_toggle, |, undo, redo, |, search, |, formatselect, bold, italic, underline, |, " +
+    "bullist, numlist, |, link, unlink, |, image, removeformat, fullscreen ",
+
+    theme_advanced_buttons2: "cut, copy, paste, pastetext, pasteword, iespell, |, justifyleft, justifycenter, justifyright, |, " +
+    "outdent, indent, |, fontselect, fontsizeselect, forecolor, backcolor, ",
+
+    theme_advanced_buttons3: "preview, print, |, tablecontrols, |, hr, media, anchor, charmap, styleprops, |, help",
+    theme_advanced_toolbar_location: "top",
+    theme_advanced_toolbar_align: "left",
+    theme_advanced_statusbar_location: "bottom",
+    theme_advanced_resizing: true,
+
+    // this allows firefox and webkit users to see red highlighting of miss-spelled words, even
+    // though they can't correct them -- the tiny_mce contextmenu plugin takes over the context menu
+    gecko_spellcheck: true,
+
+    // PDW (third-party) Toggle Toolbars settings.  see http://www.neele.name/pdw_toggle_toolbars
+    pdw_toggle_on: 1,
+    pdw_toggle_toolbars: "2,3",
+
+    // labkey specific
+    handle_event_callback: "tinyMceHandleEvent",
+
+    // TinyMCE returns true from isDirty() if it's not done initializing, so keep track of whether it's safe to ask or not
+    init_instance_callback: function() { _tinyMCEInitialized = true; }
 });
+
+// called by tinyMCE for *all* events so make sure to filter
+// for keydown. return false to stop tinyMCE from handling or passing on
+function tinyMceHandleEvent(evt) {
+    var handled = false;
+
+    // Issue 47893: Embedding pictures in a wiki using copy + paste from file browser in Safari
+    const isBrowserSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isBrowserSafari && evt && "paste" === evt.type) {
+        const items = (evt.clipboardData || evt.originalEvent.clipboardData).items;
+        const item = items[0];
+        if (item.kind === 'file') {
+            LABKEY.Utils.alert("Error", "Pasting files on Safari is not supported.");
+            handled = true;
+        }
+    }
+
+    if (evt && "keydown" == evt.type && evt.ctrlKey
+            && !evt.altKey && 83 == evt.keyCode) { // ctrl + s
+        evt.shiftKey ? LABKEY._wiki.onFinish() : LABKEY._wiki.onSave();
+        handled = true;
+    }
+
+    if (handled) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        return false;
+    }
+
+    return true;
+}
 
 (function($) {
     //
     // CONSTANTS
     //
-    const _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
-    const _idSel = '#' + _idPrefix;
-    const _editorId = _idSel + 'body';
-    const _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
-    let _finished = false;
-    let _newAttachmentIndex = 0;
-    let _tocTree;
-
-    /**
-     *  Handles save keyboard shortcut event properties
-     *
-     * @param event Keydown event
-     * @returns {boolean} false to stop tinyMCE from handling or passing on ctrl [+ shift] + s
-     */
-    const handleSaveShortcut = (event) => {
-        if (event.ctrlKey || event.metaKey) {
-            if (String.fromCharCode(event.which).toLowerCase() === 's') {
-                event.shiftKey ? onFinish() : onSave();
-
-                event.preventDefault();
-                event.stopPropagation();
-                return false;
-            }
-        }
-
-        return true;
-    }
+    var _idPrefix = 'wiki-input-'; // This should be the same as the ID_PREFIX specified in wikiEdit.jsp
+    var _idSel = '#' + _idPrefix;
+    var _editableProps = ['name', 'title', 'parent', 'body', 'shouldIndex', 'showAttachments'];
+    var _finished = false;
+    var _newAttachmentIndex = 0;
+    var _tocTree;
 
     //
     // Variables
     //
-    let _attachments = [],
+    var _attachments = [],
             _cancelUrl = '',
             _convertWin,
             _doingSave = false,
-            _editor = TabNames.Source,
+            _editor = 'source',
             _formats = {},
             _redirUrl = '',
             _wikiProps = {};
@@ -102,20 +156,7 @@ const TabNames = Object.freeze({
             //TODO in the near future: add style sheets for tables and things: https://www.tiny.cloud/docs/tinymce/6/add-css-options/#add-css-and-styles-to-the-editor
             //content_css:['mycss1.css', 'mycss2.css'],
 
-            setup: (editor) => {
-                editor.on('keydown', (evt) => {
-                    return handleSaveShortcut(evt);
-                });
-            }
-        }).then(initializedCallback);
-    }
-
-    const getVisualTab = function() { return $('#wiki-tab-visual'); };
-    const getSourceTab = function() { return $('#wiki-tab-source'); };
-    const getEditingTab = function() { return $('#wiki-tab-markdown-edit')};
-    const getPreviewTab = function() { return $('#wiki-tab-markdown-preview')};
-
-    const _init = function() {
+    var _init = function() {
         bindControls(_wikiProps);
         updateControls(_wikiProps);
         updateExistingAttachments(_attachments);
@@ -128,7 +169,7 @@ const TabNames = Object.freeze({
                 setStatus("Switching to source editing mode because your page has elements that are not supported by the visual editor.", true);
             }
             else if(_wikiProps.useVisualEditor)
-                switchToVisual(true);
+                switchToVisual();
             else
                 switchToSource();
         }
@@ -198,7 +239,7 @@ const TabNames = Object.freeze({
         getSourceTab().find('a').click(userSwitchToSource);
 
         // register for the document keydown event to trap ctrl+s for save
-        $(document).keydown(handleSaveShortcut);
+        $(document).keydown(onDocKeyDown);
     };
 
     var clearNewAttachments = function() {
@@ -305,7 +346,7 @@ const TabNames = Object.freeze({
     };
 
     var isDirty = function() {
-        var isBodyDirty = tinymce.activeEditor?.isDirty();
+        var isBodyDirty = _tinyMCEInitialized && tinyMCE.get(_idPrefix + 'body') && tinyMCE.get(_idPrefix + 'body').isDirty();
         return isBodyDirty || LABKEY.isDirty();
     };
 
@@ -385,11 +426,11 @@ const TabNames = Object.freeze({
         _wikiProps.rendererType = respJson.toFormat;
 
         //if the new type is not html, switch to source and hide the tab strip
-        if (respJson.toFormat === "HTML") {
+        if (respJson.toFormat == "HTML") {
             updateControl("body", respJson.body);
 
             // if the new type is HTML, switch to visual appropriate editor
-            _editor === TabNames.Source ? switchToSource() : switchToVisual();
+            _editor == "source" ? switchToSource() : switchToVisual();
         }
         else {
             switchToSource();
@@ -441,18 +482,35 @@ const TabNames = Object.freeze({
         window.location.href = LABKEY.ActionURL.buildURL('wiki', 'delete', null, {name: _wikiProps.name, rowId: _wikiProps.rowId});
     };
 
-    const onError = function (exceptionInfo) {
+    var onDocKeyDown = function(event) {
+
+        var handled = false;
+
+        if (event.ctrlKey || event.metaKey) {
+            if (String.fromCharCode(event.which).toLowerCase() === 's') {
+                event.shiftKey ? onFinish() : onSave();
+                handled = true;
+            }
+        }
+
+        if (handled) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
+    var onError = function(exceptionInfo) {
         _doingSave = false;
         _finished = false;
         setError("There was a problem while saving: " + exceptionInfo.exception);
     };
 
-    const onFinish = function() {
+    var onFinish = function() {
         _finished = true;
         onSave();
     };
 
-    const onSave = function() {
+    var onSave = function() {
         if (_doingSave)
             return;
         _doingSave = true;
@@ -473,7 +531,7 @@ const TabNames = Object.freeze({
         });
     };
 
-    const onSaveComplete = function(statusMessage) {
+    var onSaveComplete = function(statusMessage) {
         LABKEY.setDirty(false);
         setBodyClean();
         _doingSave = false;
@@ -492,7 +550,7 @@ const TabNames = Object.freeze({
         }
     };
 
-    const onSuccess = function(response) {
+    var onSuccess = function(response) {
         // parse the response JSON
         var respJson = LABKEY.Utils.decode(response.responseText);
         if (respJson.success) {
@@ -567,7 +625,7 @@ const TabNames = Object.freeze({
         LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("wiki", "setEditorPreference"),
             method : 'POST',
-            jsonData : { useVisual: (editor === TabNames.Visual) },
+            jsonData : { useVisual: (editor == "visual") },
             success: function() {},
             failure: LABKEY.Utils.getCallbackWrapper(function(exceptionInfo) {
                 setError("There was a problem while saving your editor preference: " + exceptionInfo.exception);
@@ -576,7 +634,9 @@ const TabNames = Object.freeze({
     };
 
     var setBodyClean = function() {
-        tinymce.activeEditor?.setDirty(false);
+        if (tinyMCE.get(_idPrefix + 'body')) {
+            tinyMCE.get(_idPrefix + 'body').isNotDirty = 1;
+        }
     };
 
     var setError = function(msg) {
@@ -682,44 +742,54 @@ const TabNames = Object.freeze({
         if (el) { isDisplayed ? el.show() : el.hide(); }
     };
 
+    var switchToMarkdownEdit = function() {
+        setTabStripVisible(true);
+        getEditingTab().attr('class', 'labkey-tab-active');
+        getPreviewTab().attr('class', 'labkey-tab-inactive');
+    };
+
+    var switchToMarkdownPreview = function() {
+        setTabStripVisible(true);
+        getEditingTab().attr('class', 'labkey-tab-inactive');
+        getPreviewTab().attr('class', 'labkey-tab-active');
+    };
+
     var switchToSource = function() {
         setTabStripVisible(true);
         getVisualTab().attr('class', 'labkey-tab-inactive');
         getSourceTab().attr('class', 'labkey-tab-active');
-        tinymce.activeEditor?.hide();
-        _editor = TabNames.Source;
+        if (tinyMCE.get(_idPrefix + 'body')) {
+            tinyMCE.execCommand('mceRemoveControl', false, _idPrefix + 'body');
+        }
+        _editor = "source";
         showEditingHelp(_wikiProps.rendererType);
     };
 
     var switchToVisual = function(confirmOverride, savePreference) {
         //check for elements that get mangled by the visual editor
-        if (!confirmOverride) {
+        if (!confirmOverride && textContainsNonVisualElements($(_idSel + 'body').val())) {
             getExt4(function() {
                 Ext4.Msg.show({
                     title: 'Warning',
-                    msg: "Some elements are not supported by the visual editor and may be removed. Are you sure you want to switch to the visual editor?",
+                    msg: "Your page contains elements that are not supported by the visual editor and will thus be removed. Are you sure you want to switch to the visual editor?",
                     buttons: Ext4.Msg.YESNO,
                     animEl: 'wiki-tab-visual',
                     icon: Ext4.Msg.QUESTION,
                     fn: function(btn) {
                         if (btn == "yes") {
-                            switchToVisual(true, savePreference);
+                            switchToVisual(true);
                         }
                     }
                 });
             });
         }
-        else if (!tinymce.activeEditor) {
-            LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', () => {
-                initTinymce(()=> switchToVisual(confirmOverride, savePreference));
-            }, this);
-        }
         else {
             setTabStripVisible(true);
             getVisualTab().attr('class', 'labkey-tab-active');
             getSourceTab().attr('class', 'labkey-tab-inactive');
-            tinymce.activeEditor?.show();
-            _editor = TabNames.Visual;
+            if (!tinyMCE.get(_idPrefix + 'body'))
+                tinyMCE.execCommand('mceAddControl', false, _idPrefix + 'body');
+            _editor = "visual";
             showEditingHelp(_wikiProps.rendererType);
             if (savePreference)
                 saveEditorPreference(_editor);
@@ -734,7 +804,6 @@ const TabNames = Object.freeze({
         // used to also block pre tag, but tinymc3.4 handles <pre> properly, so removed from blacklist
         return  null != bodyText.match(/<script[\s>]/) ||
                 null != bodyText.match(/<form[\s>]/) ||
-                null != bodyText.match(/<i[\s>]/) ||
                 null != bodyText.match(/<style[\s>]/)
     };
 
@@ -780,8 +849,7 @@ const TabNames = Object.freeze({
     };
 
     var updateSourceFromVisual = function() {
-        if (_editor === TabNames.Visual)
-            tinymce.triggerSave();
+        tinymce.EditorManager.triggerSave();
     };
 
     var userSwitchToSource = function() {

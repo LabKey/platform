@@ -102,38 +102,27 @@
 
         // create the editor
         this.ed = new tinymce.Editor(this.editFieldId, {
-            browser_spellcheck : true,
-            forced_root_block: 'div',
-            plugins: [
-                "advlist",
-                "anchor",
-                "autolink",
-                "charmap",
-                "code",
-                "codesample",
-                "emoticons",
-                "help",
-                "image",
-                "insertdatetime",
-                "link",
-                "lists",
-                "media",
-                "preview",
-                "quickbars",
-                "searchreplace",
-                "table",
-                "visualblocks",
-                "visualchars",
-            ],
 
-            // Prevents elements from being stripped by the Source editor https://www.tiny.cloud/docs/tinymce/6/content-filtering/#protect
-            extended_valid_elements: 'i/em[*],+script[*],+form[*],+style[*]',
-            valid_children: '+body[style]',
-            protect: [
-                /\<\/?(i .*)\>/g,
-                /\<\/?(script.*)\>/g,
-                /\<\/?(form.*)\>/g,
-            ],
+            height: height,
+
+            // General options
+            mode: "none",
+            theme: "advanced",
+            plugins: "table, advlink, iespell, preview, media, searchreplace, print, paste, " +
+                    "contextmenu, fullscreen, noneditable, inlinepopups, style, ",
+
+            // tell tinymce not be be clever about URL conversion.  Dave added it to fix some bug.
+            convert_urls: false,
+
+            // Smaller button bar than found on regular wiki edit
+            theme_advanced_buttons1 : "fontselect, fontsizeselect, " +
+                    "|, bold, italic, underline, " +
+                    "|, forecolor, backcolor, " +
+                    "|, justifyleft, justifycenter, justifyright, " +
+                    "|, bullist, numlist, " +
+                    "|, outdent, indent, " +
+                    "|, link, unlink, " +
+                    "|, image, removeformat, ",
 
             menubar: 'edit insert view format table tools help',
             promotion: false,
@@ -349,7 +338,7 @@
             var webpartEl = document.getElementById("webpart_" + config.webPartId);
             config.dom = webpartEl.getElementsByClassName("labkey-wiki")[0];
 
-            LABKEY.requiresScript('tinymce/js/tinymce/tinymce.min.js', function () { inlineWikiEdit(config); }, this);
+            LABKEY.requiresScript('tiny_mce/tiny_mce.js', function () { inlineWikiEdit(config); }, this);
         },
         toggleTable : function(tocTable, expand, notify) {
             //Structure of a navtree table:

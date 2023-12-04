@@ -36,7 +36,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-        dependencies.add("tinymce/js/tinymce/tinymce.min.js");
+        dependencies.add("tiny_mce/tiny_mce.js");
         dependencies.add("wiki/internal/wikiEdit.js");
     }
 %>
