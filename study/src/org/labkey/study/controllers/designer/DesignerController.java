@@ -92,9 +92,6 @@ import java.util.Set;
 
 import static org.labkey.api.study.publish.StudyPublishService.SOURCE_LSID_PROPERTY_NAME;
 
-/**
- * User: jgarms
- */
 public class DesignerController extends SpringActionController
 {
     public enum WizardStep
@@ -109,27 +106,27 @@ public class DesignerController extends SpringActionController
 
         WizardStep(int number, String title)
         {
-            this.number = number;
-            this.title = title;
+            _number = number;
+            _title = title;
         }
 
         public String getTitle()
         {
-            return title;
+            return _title;
         }
 
         public int getNumber()
         {
-            return number;
+            return _number;
         }
 
-        private final String title;
-        private final int number;
+        private final String _title;
+        private final int _number;
 
         public static WizardStep fromNumber(int number)
         {
             for (WizardStep step : values())
-                if (step.number == number)
+                if (step._number == number)
                     return step;
 
             return null;
@@ -396,16 +393,16 @@ public class DesignerController extends SpringActionController
 
     public static class GetStudyDesignsForm
     {
-        private boolean includeSubfolders;
+        private boolean _includeSubfolders;
 
         public boolean isIncludeSubfolders()
         {
-            return includeSubfolders;
+            return _includeSubfolders;
         }
 
         public void setIncludeSubfolders(boolean includeSubfolders)
         {
-            this.includeSubfolders = includeSubfolders;
+            _includeSubfolders = includeSubfolders;
         }
     }
     @RequiresPermission(ReadPermission.class)
@@ -427,7 +424,7 @@ public class DesignerController extends SpringActionController
 
     @SuppressWarnings("unchecked")
     @RequiresPermission(AdminPermission.class)
-    public class CreateRepository extends FormViewAction<CreateRepositoryForm>
+    public class CreateRepositoryAction extends FormViewAction<CreateRepositoryForm>
     {
         private String _titleForNav;
         private int _studyId;
@@ -531,7 +528,7 @@ public class DesignerController extends SpringActionController
                     handleUploadSamples(form);
                     break;
             }
-            return new JspView<>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
+            return new JspView<>("/org/labkey/study/designer/view/createRepositoryWizard.jsp", form);
         }
 
         @Override

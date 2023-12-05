@@ -187,14 +187,7 @@ public class Designer implements EntryPoint
 
                 if ("true".equals(PropertyUtil.getServerProperty("canCreateRepository")))
                 {
-                    Widget createRepositoryButton = new ImageButton("Create Study Folder", new ClickHandler()
-                    {
-                        @Override
-                        public void onClick(ClickEvent event)
-                        {
-                            createRepository();
-                        }
-                    });
+                    Widget createRepositoryButton = new ImageButton("Create Study Folder", (ClickHandler) event -> createRepository());
                     buttonPanel.add(createRepositoryButton);
                 }
                 buttonPanel.setSpacing(3);
@@ -418,7 +411,7 @@ public class Designer implements EntryPoint
     public void createRepository()
     {
         //Make sure we have at least one assay scheduled
-        if (definition.getGroups().size() == 0)
+        if (definition.getGroups().isEmpty())
         {
             Window.alert("At least one group should be defined before creating a study folder.");
             return;
@@ -442,7 +435,7 @@ public class Designer implements EntryPoint
             return;
         }
 
-        String createRepositoryURL = PropertyUtil.getContextPath() + "/Study-Designer" + PropertyUtil.getContainerPath() + "/createRepository.view?wizardStepNumber=0&studyId=" + definition.getCavdStudyId();
+        String createRepositoryURL = PropertyUtil.getContextPath() + PropertyUtil.getContainerPath() + "/study-designer-createRepository.view?wizardStepNumber=0&studyId=" + definition.getCavdStudyId();
         WindowUtil.setLocation(createRepositoryURL);
     }
 

@@ -25,7 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController.CancelWizardAction" %>
-<%@ page import="org.labkey.study.controllers.designer.DesignerController.CreateRepository" %>
+<%@ page import="org.labkey.study.controllers.designer.DesignerController.CreateRepositoryAction" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController.CreateRepositoryForm" %>
 <%@ page import="org.labkey.study.controllers.designer.DesignerController.WizardStep" %>
 <%@ page import="java.util.Comparator" %>
@@ -45,10 +45,10 @@
     {%>
         <span class="labkey-error"><%=h(form.getMessage(), true)%></span><br><%
     }%>
-Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
+Use this wizard to create a folder that will contain the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
 
-<labkey:form name="createRepositoryForm" action="<%=urlFor(CreateRepository.class)%>" method="post">
+<labkey:form name="createRepositoryForm" action="<%=urlFor(CreateRepositoryAction.class)%>" method="post">
     <input type="hidden" name="studyId" value="<%=form.getStudyId()%>">
     <input type="hidden" name="studyName" value="<%=h(form.getStudyName())%>">
     <input type="hidden" name="wizardStepNumber" value="<%=form.getWizardStepNumber()%>">
@@ -128,7 +128,7 @@ Each study needs specimen ids for the specimens included in the study. To upload
     specimens, follow the instructions below.<br>
 <ol>
     <li>Download the specimen spreadsheet
-        <%=link("Download Excel Workbook").href("#downloadSpecimens").onClick("sendFormTo('getSpecimenExcel.view')")%><br>
+        <%=link("Download Excel Workbook").href("#downloadSpecimens").onClick("sendFormTo('study-designer-getSpecimenExcel.view')")%><br>
 </li>
     <li>Save the spreadsheet to your computer</li>
     <li>Fill in the specimen spreadsheet. The following columns must be filled in
@@ -187,7 +187,7 @@ if (form.getWizardStep() == WizardStep.SHOW_PARTICIPANTS)
     <br>
     To initiate this study, you will need to fill out an excel workbook with the subject id and cohort for each <%=h(species)%>.
     <ul>
-        <li><a href="#downloadSubjects" onclick="sendFormTo('getParticipantExcel.view')">Download the Excel Workbook with subjects</a></li>
+        <li><%=link("Download the Excel Workbook with subjects").href("#downloadSubjects").onClick("sendFormTo('study-designer-getParticipantExcel.view')").clearClasses()%></li>
         <li>Save the workbook on your computer</li>
         <li>Fill in identifiers for each subject in the study</li>
         <li>You can also add new columns to this list containing other information about each subject.</li>
