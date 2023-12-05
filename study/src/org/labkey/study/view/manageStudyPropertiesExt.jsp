@@ -272,8 +272,8 @@ function renderFormPanel(data, editable){
     {
 %>
     protocolDocs.push({
-        logo : '<%=getWebappURL(att.getFileIcon())%>',
-        text : '<%= h(shortenFileName(att.getName()))%>',
+        logo : <%=q(getWebappURL(att.getFileIcon()))%>,
+        text : <%=q((shortenFileName(att.getName())))%>,
         removeURL : <%=q(att.getName())%>,
         atId : <%=x%>
     });
