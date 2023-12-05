@@ -123,6 +123,7 @@ function addExtFilePickerHandler()
         protocolPanel.doLayout();
     }
     studyPropertiesFormPanel.doLayout();
+    return false;
 }
 
 function removeNewAttachment(btn)
@@ -293,16 +294,21 @@ function renderFormPanel(data, editable){
 
     const protoTemplate = new Ext4.XTemplate(
         '<tpl for=".">',
-            '<div class="protoDoc" id="attach-{atId}">',
-                '<td>&nbsp;<img src="{logo}" talt="logo"/></td>',
-                '<td>&nbsp; {text} </td>',
-                '<td>&nbsp; [<a class="removelink" onclick="removeProtocolDocument(\'{removeURL}\', \'attach-{atId}\');">remove </a>]</td>',
+            '<div class="protoDoc" id="attach-{atId:htmlEncode}">',
+                '<td>&nbsp;<img src="{logo:htmlEncode}" talt="logo"/></td>',
+                '<td>&nbsp; {text:htmlEncode} </td>',
+                '<td>&nbsp; [<a class="removelink" data-removeurl="{removeURL:htmlEncode}" attachid="attach-{atId:htmlEncode}">remove </a>]</td>',
             '</div>',
         '</tpl>',
         '<div>',
-            '&nbsp;<a onclick="addExtFilePickerHandler(); return false;" href="#addFile"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;&nbsp;Attach a file</a>',
+            '&nbsp;<a class="addExtFilePickerHandler" href="#addFile"><img src="<%=getWebappURL("_images/paperclip.gif")%>">&nbsp;&nbsp;Attach a file</a>',
         '</div>'
     );
+    function protoTemplateAfterLayout()
+    {
+        LABKEY.Utils.attachEventHandlerForQuerySelector("DIV.protoDoc A.removeLink", "click", function() {removeProtocolDocument(this.dataset['removeurl'], this.dataset['attachid']); return false;}, true);
+        LABKEY.Utils.attachEventHandlerForQuerySelector("A.addExtFilePickerHandler", "click", addExtFilePickerHandler, true);
+    }
 
     const buttons = [];
 
@@ -433,7 +439,10 @@ function renderFormPanel(data, editable){
             },
             tpl : protoTemplate,
             itemSelector :  'div.protoDoc',
-            emptyText : 'No current docs'
+            emptyText : 'No current docs',
+            listeners : {
+                viewready : protoTemplateAfterLayout
+            }
         }]
     });
 
