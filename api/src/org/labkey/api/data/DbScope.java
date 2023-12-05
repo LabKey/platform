@@ -422,17 +422,28 @@ public class DbScope
             _applicationName = DEFAULT_APPLICATION_NAME;
 
             // Push application name into the connection properties are used to create pooled connections
+            setConnectionProperty(_dialect.getApplicationNameParameter(), _applicationName);
+
+            return _applicationName;
+        }
+
+        // Disable prepared statement caching for all connections on this data source
+        private void disablePreparedStatementCaching()
+        {
+            Pair<String, Object> propEntry = _dialect.getDisablePreparedStatementCachingEntry();
+            if (propEntry != null)
+                setConnectionProperty(propEntry.getKey(), propEntry.getValue());
+        }
+
+        private void setConnectionProperty(String key, Object value)
+        {
+            if (key == null || value == null)
+                return;
+
             Properties connectionProps = _dsPropertyReader.getConnectionProperties();
 
             if (connectionProps != null)
-            {
-                String paramName = _dialect.getApplicationNameParameter();
-
-                if (paramName != null)
-                    connectionProps.put(paramName, _applicationName);
-            }
-
-            return _applicationName;
+                connectionProps.put(key, value);
         }
 
         // Reject data sources configured with the Tomcat JDBC connection pool, #42125
@@ -1699,6 +1710,7 @@ public class DbScope
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
                 LOG.debug("Successful connection to \"" + ds.getDsName() + "\" at " + ds.getUrl());
+                disablePreparedStatementCaching(ds);
                 return ensureApplicationName(conn, ds);
             }
             catch (SQLException e)
@@ -1802,6 +1814,14 @@ public class DbScope
         return applicationName;
     }
 
+    public static void disablePreparedStatementCaching(LabKeyDataSource ds)
+    {
+        if (!ds.isPrimary())
+            return;
+
+        ds.disablePreparedStatementCaching();
+    }
+
     // Establish a direct data source connection that bypasses the connection pool
     private static Connection getRawConnection(LabKeyDataSource dataSource) throws ServletException, SQLException
     {
@@ -1866,6 +1886,7 @@ public class DbScope
                 LOG.info("Database \"" + dbName + "\" created");
             }
 
+            disablePreparedStatementCaching(ds);
             return ensureApplicationName(conn, ds);
         }
         catch (SQLException e)

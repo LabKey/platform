@@ -33,6 +33,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.logging.LogHelper;
@@ -1782,6 +1783,11 @@ public abstract class SqlDialect
     }
 
     public @Nullable String getDefaultApplicationName()
+    {
+        return null;
+    }
+
+    public @Nullable Pair<String, Object> getDisablePreparedStatementCachingEntry()
     {
         return null;
     }

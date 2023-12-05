@@ -32,6 +32,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
@@ -774,23 +775,10 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     // PostgreSQL JDBC driver introduced caching of PreparedStatements starting with 9.4.1202, with no provision for uncaching.
-    // This has caused many problems, most recently #26116 (postgres error when changing varchar scale in domain editor). Use
-    // reflection to programmatically set a property that disables this caching on every PostgreSQL DataSource.
+    // This has caused many problems. See Issue 26116 and Issue 49216.
     private void disablePreparedStatementCaching(DbScope scope)
     {
-        DataSource ds = scope.getDataSource();
-
-        try
-        {
-            Field f = ds.getClass().getDeclaredField("connectionProperties");
-            f.setAccessible(true);
-            Properties props = (Properties) f.get(ds);
-            props.put("preparedStatementCacheQueries", "0");
-        }
-        catch (NoSuchFieldException | IllegalAccessException e)
-        {
-            LOG.error("Error attempting to set preparedStatementCacheQueries property", e);
-        }
+        DbScope.disablePreparedStatementCaching(scope.getLabKeyDataSource());
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema
@@ -1933,5 +1921,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public @Nullable String getApplicationConnectionCountSql()
     {
         return "SELECT COUNT(*) FROM pg_stat_activity WHERE datname = ? AND application_name = ?";
+    }
+
+    @Override
+    public @Nullable Pair<String, Object> getDisablePreparedStatementCachingEntry()
+    {
+        return Pair.of("preparedThreshold", "0");
     }
 }
