@@ -19,14 +19,18 @@ import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Group;
@@ -177,5 +181,23 @@ public class CoreUpgradeCode implements UpgradeCode
                 LOG.warn("Site Admin group does not exist!");
             }
         };
+    }
+
+    /**
+     * Called from core-23.010-23.011.sql to uniquify core.Principals.Name in a case-insensitive manner to allow
+     * adding a case-insensitive unique index on PostgreSQL.
+     */
+    @SuppressWarnings("unused")
+    public static void uniquifyPrincipalsName(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        ColumnInfo name = CoreSchema.getInstance().getTableInfoPrincipals().getColumn("Name");
+        ColumnInfo ownerId = CoreSchema.getInstance().getTableInfoPrincipals().getColumn("OwnerId");
+        ColumnInfo type = CoreSchema.getInstance().getTableInfoPrincipals().getColumn("Type");
+        UpgradeUtils.uniquifyValues(name, ownerId, new SimpleFilter(type.getFieldKey(), "g"), new Sort("UserId"), false, false);
+        UpgradeUtils.uniquifyValues(name, ownerId, new SimpleFilter(type.getFieldKey(), "u"), new Sort("UserId"), false, false);
+        UpgradeUtils.uniquifyValues(name, ownerId, new SimpleFilter(type.getFieldKey(), "m"), new Sort("UserId"), false, false);
     }
 }
