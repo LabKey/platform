@@ -48,6 +48,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
@@ -854,7 +855,7 @@ public class SearchController extends SpringActionController
     // The tests can invoke this action to ensure that the indexer has executed all previous indexing tasks. It
     // does not guarantee that all indexed content has been committed... but that may not be required in practice.
 
-    @RequiresSiteAdmin
+    @RequiresPermission(ApplicationAdminPermission.class)
     public class WaitForIndexerAction extends ExportAction<PriorityForm>
     {
         @Override
