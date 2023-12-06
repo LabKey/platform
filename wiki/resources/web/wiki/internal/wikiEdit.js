@@ -92,7 +92,8 @@ const TabNames = Object.freeze({
             ],
 
             menubar: 'edit insert view format table tools help',
-            promotion: false,
+            promotion: false,  // Remove sales logo in upper corner
+            branding: false,   // Remove sales logo in bottom corner, Logo's link breaks crawler tests due to bad rel attribute.
             quickbars_insert_toolbar: 'anchor quickimage quicktable codesample hr accordion accordionremove',
             removed_menuitems: 'code, preview',
             theme: "silver",
