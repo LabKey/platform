@@ -510,15 +510,16 @@ public class DbScope
     DbScope(DbScopeLoader loader) throws ServletException, SQLException
     {
         _dbScopeLoader = loader;
+        LabKeyDataSource dataSource = loader.getLabKeyDataSource();
 
-        try (Connection conn = getRawConnection(loader.getLabKeyDataSource()))
+        try (Connection conn = getRawConnection(dataSource))
         {
             DatabaseMetaData dbmd = conn.getMetaData();
             _databaseProductVersion = dbmd.getDatabaseProductVersion();
 
             try
             {
-                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, loader.getLabKeyDataSource().isPrimary());
+                _dialect = SqlDialectManager.getFromMetaData(dbmd, true, dataSource.isPrimary());
                 MemTracker.getInstance().remove(_dialect);
             }
             finally
@@ -542,7 +543,7 @@ public class DbScope
             _databaseProductName = dbmd.getDatabaseProductName();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
-            _driverLocation = determineDriverLocation();
+            _driverLocation = determineDriverLocation(dataSource.getDriverClass());
             _schemaCache = new DbSchemaCache(this);
             _nonProvisionedTableCache = new SchemaTableInfoCache(this, false);
             _provisionedTableCache = new SchemaTableInfoCache(this, true);
@@ -551,11 +552,11 @@ public class DbScope
         }
     }
 
-    private String determineDriverLocation()
+    private String determineDriverLocation(Class<Driver> driverClass)
     {
         try
         {
-            return getDelegateClass().getProtectionDomain().getCodeSource().getLocation().toString();
+            return driverClass.getProtectionDomain().getCodeSource().getLocation().toString();
         }
         catch (Exception ignored)
         {
@@ -1212,20 +1213,6 @@ public class DbScope
         if (null == delegate)
             delegate = conn;
         return delegate;
-    }
-
-    @JsonIgnore
-    public Class getDelegateClass()
-    {
-        try (Connection conn = getDataSource().getConnection())
-        {
-            Connection delegate = getDelegate(conn);
-            return delegate.getClass();
-        }
-        catch (Exception x)
-        {
-            return null;
-        }
     }
 
     /**
