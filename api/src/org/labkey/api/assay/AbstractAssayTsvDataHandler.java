@@ -146,7 +146,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         // Issue 48243: For the assay import of lookup columns, we want to allow for the original value to be used when
         // attempting to resolve the lookup (for example, the SampleId column might be type int but the original value
         // could be a string or double and we want that original value to have a chance to resolve instead of giving a
-        // type conversion error.
+        // type conversion error).
         settings.setBestEffortConversion(true);
 
         Map<DataType, List<Map<String, Object>>> rawData = getValidationDataMap(data, dataFile, info, log, context, settings);
