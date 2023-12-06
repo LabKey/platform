@@ -1,4 +1,4 @@
-<%--
+<%
 /*
  * Copyright (c) 2017-2019 LabKey Corporation
  *
@@ -14,11 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
---%>
+%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.module.FolderType" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -28,7 +29,6 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate.NavigationModel" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
@@ -143,7 +143,7 @@
                 <% } if (context.isShowFolders()) { %>
                 <li class="dropdown dropdown-folder-nav" data-webpart="FolderNav" data-name="FolderNav">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown">
-                        <%=h(model.getProjectTitle().equals("") ? "Site Navigation" : model.getProjectTitle())%><i style="margin-left: 5px" class="fa fa-chevron-down"></i>
+                        <%=h(model.getProjectTitle().isEmpty() ? "Site Navigation" : model.getProjectTitle())%><i style="margin-left: 5px" class="fa fa-chevron-down"></i>
                     </a>
                     <ul class="dropdown-menu"></ul>
                 </li>
@@ -164,7 +164,7 @@
                         {
                             boolean show = isPageAdminMode || !tab.isDisabled();
 
-                            if (show && null != tab.getText() && tab.getText().length() > 0)
+                            if (show && null != tab.getText() && !tab.getText().isEmpty())
                             {
                 %>
                 <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
@@ -192,11 +192,10 @@
 
                     if (isPageAdminMode && c.getFolderType() != FolderType.NONE)
                     {
+                        HtmlString plus = HtmlString.unsafe("<i class=\"fa fa-plus\" style=\"font-size: 12px;\"></i>");
                 %>
                 <li role="presentation">
-                    <a href="javascript:LABKEY.Portal.addTab();" id="addTab" title="Add New Tab">
-                        <i class="fa fa-plus" style="font-size: 12px;"></i>
-                    </a>
+                    <%=link(plus).id("addTab").title("Add New Tab").onClick("LABKEY.Portal.addTab();").clearClasses()%>
                 </li>
                 <%
                     }
@@ -209,7 +208,7 @@
                     {
                         for (NavTree tab : tabs)
                         {
-                            if (null != tab.getText() && tab.getText().length() > 0)
+                            if (null != tab.getText() && !tab.getText().isEmpty())
                             {
                                 if (tab.isSelected())
                                 {
@@ -231,7 +230,7 @@
                             {
                                 boolean show = isPageAdminMode || !tab.isDisabled();
 
-                                if (show && null != tab.getText() && tab.getText().length() > 0)
+                                if (show && null != tab.getText() && !tab.getText().isEmpty())
                                 {
                         %>
                         <li>
@@ -260,9 +259,9 @@
         </div>
     </div>
 </nav>
-<% if (model.getCustomMenus().size() > 0) { %>
+<% if (!model.getCustomMenus().isEmpty()) { %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    var __menus = {};
+    const __menus = {};
     LABKEY.Utils.onReady(function() {
         <%
             for (Portal.WebPart menu : model.getCustomMenus())

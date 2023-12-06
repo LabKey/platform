@@ -67,7 +67,7 @@
       objectid                      AS self,
       objectid                      AS fromObjectId,
       CAST(NULL AS INT)             AS toObjectId,
-      CAST('/' AS VARCHAR(8000)) AS path
+      CAST('/' <%=CONCAT%> CAST(objectid AS VARCHAR(20)) <%=CONCAT%> '/' AS VARCHAR(8000)) AS path
 <% if (bean.isUseObjectIds()) { %>
     FROM ($LSIDS$) as _seed_(objectid)
 <% } else { %>
@@ -77,13 +77,18 @@
 
     UNION ALL
 
+<%--
+    NOTE this query (for lookup) stops short of including the node that would complete a cycle.  This node is already in the set
+    and won't add any information once the lookup SQL enforces uniqueness (GROUP BY self, objectid)
+    This is different than ExperimentRunGraph2.jsp.
+--%>
     SELECT
       _Graph.depth - 1              AS depth,
       _Graph.self,
       _Edges.fromObjectId,
       _Edges.toObjectId,
-      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) <%=CONCAT%> CAST(_Edges.toObjectId AS VARCHAR(20)) <%=CONCAT%> '/' AS VARCHAR(8000)) AS path
-    FROM exp.Edge _Edges
+      CAST('/' <%=CONCAT%> CAST(_Edges.fromObjectId AS VARCHAR(20)) <%=CONCAT%> _Graph.path AS VARCHAR(8000)) AS path
+    FROM <%=unsafe(bean.getExpEdge())%> _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.toObjectId = _Graph.fromObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.fromObjectId as VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
       AND _Graph.depth >= <%= (-1 * Math.abs(depth)) + 1 %>
@@ -162,7 +167,7 @@ if (bean.isOnlySelectObjectId()) {
       objectid                      AS self,
       CAST(NULL AS INT)             AS fromObjectId,
       objectid                      AS toObjectId,
-      CAST('/' AS VARCHAR(8000)) AS path
+      CAST('/' <%=CONCAT%> CAST(objectid AS VARCHAR(20)) <%=CONCAT%> '/' AS VARCHAR(8000)) AS path
 <% if (bean.isUseObjectIds()) { %>
     FROM ($LSIDS$) as _seed_(objectid)
 <% } else { %>
@@ -177,8 +182,8 @@ if (bean.isOnlySelectObjectId()) {
       _Graph.self,
       _Edges.fromObjectId           AS fromObjectId,
       _Edges.toObjectId             AS toObjectId,
-      CAST(SUBSTRING(_Graph.path,1+{fn LENGTH(_Graph.path)}+21-8000,8000) <%=CONCAT%> CAST(_Edges.fromObjectId AS VARCHAR(20)) <%=CONCAT%> '/' AS VARCHAR(8000)) AS path
-    FROM exp.Edge _Edges
+      CAST('/' <%=CONCAT%> CAST(_Edges.toObjectId AS VARCHAR(20)) <%=CONCAT%> _Graph.path AS VARCHAR(8000)) AS path
+    FROM <%=unsafe(bean.getExpEdge())%> _Edges
       INNER JOIN $SELF$ _Graph ON _Edges.fromObjectId = _Graph.toObjectId
     WHERE 0 = {fn LOCATE('/' <%=CONCAT%> CAST(_Edges.toObjectId as VARCHAR(20)) <%=CONCAT%> '/', _Graph.path)}
       AND _Graph.depth <= <%= depth - 1 %>

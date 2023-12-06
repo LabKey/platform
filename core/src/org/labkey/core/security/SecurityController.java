@@ -1534,7 +1534,7 @@ public class SecurityController extends SpringActionController
             handleGroups(source, group -> {
                 if (!target.isInGroup(group.getUserId()))
                 {
-                    if (currentUserIsSiteAdmin || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
+                    if (currentUserIsSiteAdmin || !group.hasPrivilegedRole())
                     {
                         try
                         {
@@ -1554,7 +1554,7 @@ public class SecurityController extends SpringActionController
             handleDirectRoleAssignments(source, (policy, roles) -> {
                 for (Role role : roles)
                 {
-                    if (currentUserIsSiteAdmin || !role.getPermissions().contains(SiteAdminPermission.class))
+                    if (currentUserIsSiteAdmin || !role.isPrivileged())
                         policy.addRoleAssignment(target, role, false);
                 }
 
@@ -2237,30 +2237,19 @@ public class SecurityController extends SpringActionController
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getUsers might not have the updated groups list
                 Map<String, List<Group>> userAccessGroups = new TreeMap<>();
                 SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
-                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy,user);
+                Set<Role> effectiveRoles = SecurityManager.getEffectiveRoles(policy, user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
                 {
                     userAccessGroups.put(role.getName(), new ArrayList<>());
                 }
 
-                if (effectiveRoles.size() > 0)
+                if (!effectiveRoles.isEmpty())
                 {
-                    for (Group group : groups)
-                    {
-                        if (user.isInGroup(group.getUserId()))
-                        {
-                            Collection<Role> groupRoles = policy.getAssignedRoles(group);
-                            for (Role role : effectiveRoles)
-                            {
-                                if (groupRoles.contains(role))
-                                    userAccessGroups.get(role.getName()).add(group);
-                            }
-                        }
-                    }
+                    fillUserAccessGroups(user, groups, policy, effectiveRoles, userAccessGroups);
                 }
 
-                if (showAll || userAccessGroups.size() > 0)
+                if (showAll || !userAccessGroups.isEmpty())
                     rows.add(new AccessDetailRow(getUser(), getContainer(), user, userAccessGroups, 0));
             }
         }
@@ -2271,6 +2260,22 @@ public class SecurityController extends SpringActionController
             root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Folder Permissions");
             root.addChild("Folder Access Details");
+        }
+    }
+
+    public static void fillUserAccessGroups(UserPrincipal user, List<Group> groups, SecurityPolicy policy, Collection<Role> effectiveRoles, Map<String, List<Group>> userAccessGroups)
+    {
+        for (Group group : groups)
+        {
+            if (user.isInGroup(group.getUserId()))
+            {
+                Collection<Role> groupRoles = policy.getAssignedRoles(group);
+                for (Role role : effectiveRoles)
+                {
+                    if (groupRoles.contains(role))
+                        userAccessGroups.get(role.getName()).add(group);
+                }
+            }
         }
     }
 
@@ -2312,7 +2317,7 @@ public class SecurityController extends SpringActionController
     }
 
     @RequiresLogin
-    public class ExternalToolsViewAction extends SimpleViewAction<ReturnUrlForm>
+    public static class ExternalToolsViewAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)

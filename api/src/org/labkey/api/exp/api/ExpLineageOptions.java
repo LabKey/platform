@@ -34,15 +34,13 @@ public class ExpLineageOptions extends ResolveLsidsForm
 
         public static @Nullable LineageExpType fromValue(String value)
         {
-            for (LineageExpType type : LineageExpType.values()) {
-                if (type.name().equals(value)) {
+            for (LineageExpType type : LineageExpType.values())
+            {
+                if (type.name().equals(value))
                     return type;
-                }
             }
-
             return null;
         }
-
     }
 
     private int _depth;
@@ -65,6 +63,11 @@ public class ExpLineageOptions extends ResolveLsidsForm
         _parents = parents;
         _children = children;
         _depth = depth;
+    }
+
+    public String getExpEdge()
+    {
+        return "exp.Edge";
     }
 
     public int getDepth()

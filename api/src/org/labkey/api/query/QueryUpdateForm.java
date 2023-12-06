@@ -83,10 +83,4 @@ public class QueryUpdateForm extends TableViewForm
     {
         return (_ignorePrefix ? "" : PREFIX) + column.getName();
     }
-
-    @Override
-    protected boolean deserializeOldValues()
-    {
-        return true;
-    }
 }

@@ -37,9 +37,11 @@ import org.labkey.api.premium.PremiumService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.RandomStartupProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -158,7 +160,6 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
 
         if(AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_USER_FOLDERS))
         {
-            File prevUserRoot = _svc.getUserFilesRoot();
             _svc.setUserFilesRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getUserRootPath())), getUser());
         }
 
@@ -171,33 +172,48 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
             _svc.moveFileRoot(prev, _svc.getSiteDefaultRoot(), getUser(), getContainer());
         }
 
-        if (PremiumService.get().isDisableFileUploadSupported())
-        {
-            if (form.isFileUploadDisabled() != PremiumService.get().isFileUploadDisabled())
-            {
-                SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(ContainerManager.getRoot().getId(), "The setting for disable file upload was changed (see details).");
-                event.setChanges(getDisableFileUploadDiff(PremiumService.get().isFileUploadDisabled(), form.isFileUploadDisabled()));
-                AuditLogService.get().addEvent(getUser(), event);
-                saveFileUploadDisabledSetting(form.isFileUploadDisabled(), getUser());
-            }
-        }
+        saveFileUploadDisabledSetting(form, getUser());
 
         return true;
     }
 
-    private String getDisableFileUploadDiff(boolean before, boolean after)
+    private String getDisableFileUploadDiff(String title, boolean before, boolean after)
     {
-        return "<table><tr><td class='labkey-form-label'>Disable file upload</td><td>" + String.valueOf(before) +
+        return "<table><tr><td class='labkey-form-label'>" + PageFlowUtil.filter(title) + "</td><td>" + PageFlowUtil.filter(before) +
                 "&nbsp;&raquo;&nbsp;" +
-                String.valueOf(after) +
+                PageFlowUtil.filter(after) +
                 "</td></tr></table>";
     }
 
-    public void saveFileUploadDisabledSetting(boolean disabled, User user)
+    private void saveFileUploadDisabledSetting(FormType form, User user)
     {
+        SiteSettingsAuditProvider.SiteSettingsAuditEvent event = new SiteSettingsAuditProvider.SiteSettingsAuditEvent(ContainerManager.getRoot().getId(), "The setting for disable file upload was changed (see details).");
+
         WriteableAppProps props = AppProps.getWriteableInstance();
-        props.setFileUploadDisabled(disabled);
-        props.save(user);
+        boolean hasChange = false;
+        if (PremiumService.get().isDisableFileUploadSupported() && form.isFileUploadDisabled() != PremiumService.get().isFileUploadDisabled())
+        {
+            hasChange = true;
+            props.setFileUploadDisabled(form.isFileUploadDisabled());
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.fileUploadDisabled.getDescription(), PremiumService.get().isFileUploadDisabled(), form.isFileUploadDisabled()));
+        }
+        if (form.isInvalidUploadBlocked() != AppProps.getInstance().isInvalidFilenameUploadBlocked())
+        {
+            hasChange = true;
+            props.setInvalidFilenameUploadBlocked(form.isInvalidUploadBlocked());
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameUploadBlocked.getDescription(), AppProps.getInstance().isInvalidFilenameUploadBlocked(), form.isInvalidUploadBlocked()), true);
+        }
+        if (form.isInvalidFilenameBlocked() != AppProps.getInstance().isInvalidFilenameBlocked())
+        {
+            hasChange = true;
+            props.setInvalidFilenameBlocked(form.isInvalidFilenameBlocked());
+            event.setChanges(getDisableFileUploadDiff(RandomStartupProperties.invalidFilenameBlocked.getDescription(), AppProps.getInstance().isInvalidFilenameBlocked(), form.isInvalidFilenameBlocked()), true);
+        }
+        if (hasChange)
+        {
+            AuditLogService.get().addEvent(getUser(), event);
+            props.save(user);
+        }
     }
 
     private void upgradeExistingFileSets()

@@ -170,16 +170,11 @@ if (!bean.messages.isEmpty())
     }
     %></div><br><%
 }
-%><labkey:errors /><%
-
-if (!bean.group.isDevelopers())
-{
-%>
+%><labkey:errors />
     <br/>
     <%if (!bean.group.isSystemGroup()){%><%= button("Rename Group").href(urlFor(SecurityApiActions.RenameGroupAction.class).addParameter("id", bean.group.getUserId())) %><%}%>
     <%= button("View Permissions").href(urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId())) %>
 <%
-}
 
 FrameFactoryClassic.startTitleFrame(out, "Group members", null, "100%", null);
 if (bean.members.size() <= 0)
@@ -245,7 +240,7 @@ else
             {
                 %>
                 <%= h(memberName) %>&nbsp;
-                <%= h(!memberName.equalsIgnoreCase(displayName) && StringUtils.isNotBlank(displayName) ? "(" + displayName + ")" : "") %>&nbsp;&nbsp;
+                <%= h(!memberName.equalsIgnoreCase(displayName) && StringUtils.isNotBlank(displayName) ? "(" + displayName + ")" : "") %>
                 <%
             }
         }
@@ -255,7 +250,7 @@ else
             %><a data-qtitle="Redundant Member" data-qtip="<%=text(bean.displayRedundancyReasonHTML(member))%>">*</a><%
         }
         %>
-            </td>
+            &nbsp;&nbsp;</td>
             <td>
                 <% if (!isGroup)
                    {

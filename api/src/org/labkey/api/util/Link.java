@@ -29,8 +29,8 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.labkey.api.util.DOM.A;
-import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.rel;
 import static org.labkey.api.util.DOM.Attribute.style;
 import static org.labkey.api.util.DOM.Attribute.target;
@@ -68,17 +68,20 @@ public class Link extends DisplayElement implements HasHtmlString
                  clickEvent = lb.onClick;
         }
 
+        String id = lb.id;
+
         // Allow generation of HTML outside an active request, where JavaScript event handlers are unlikely to be important
         if (HttpView.hasCurrentView())
         {
             var page = HttpView.currentPageConfig();
-            if (isBlank(lb.id))
-                lb.id = page.makeId("a_");
-            page.addHandler(lb.id, "click", clickEvent);
+            if (isBlank(id))
+                id = page.makeId("a_");
+            page.addHandler(id, "click", clickEvent);
         }
+
         return A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
                 .cl(lb.iconCls != null, lb.iconCls, lb.cssClass)
-                .id(lb.id)
+                .id(id)
                 .at(!lb.usePost, href,  defaultIfBlank(lb.href, "#"), "#")
                 .data(lb.usePost, "href", lb.href)
                 .data(lb.usePost, "confirmmessage", trimToNull(lb.confirmMessage))
@@ -90,7 +93,7 @@ public class Link extends DisplayElement implements HasHtmlString
                 .data(null != lb.tooltip, "tt", "tooltip")
                 .data(null != lb.tooltip, "placement","top")
                 .data(null != lb.tooltip, "original-title", lb.tooltip),
-                (lb.iconCls!=null ? null : lb.html)
+                (lb.iconCls != null ? null : lb.html)
         ).appendTo(out);
     }
 

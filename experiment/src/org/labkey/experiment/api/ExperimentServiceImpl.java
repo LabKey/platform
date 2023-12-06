@@ -206,7 +206,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
-    private static final Cache<String, ExpProtocolImpl> PROTOCOL_CACHE = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol");
+    private final Cache<Integer, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
+        (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(Protocol.class)));
+
+    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
+        (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), key), null).getObject(Protocol.class)));
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -743,6 +747,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .toList();
     }
 
+
+    public List<ExpMaterialImpl> getExpMaterialsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoMaterial(), filter, null)
+                .getArrayList(Material.class)
+                .stream()
+                .map(ExpMaterialImpl::new)
+                .toList();
+    }
+
+
     @Override
     public ExpMaterialImpl createExpMaterial(Container container, Lsid lsid)
     {
@@ -1058,45 +1079,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        ExpProtocolImpl result;
-
-        result = PROTOCOL_CACHE.get("ROWID/" + rowid);
-        if (null != result)
-            return result;
-
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
-
-        return toExpProtocol(p);
+        return PROTOCOL_ROW_ID_CACHE.get(rowid);
     }
 
     @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        ExpProtocolImpl result = PROTOCOL_CACHE.get(getCacheKey(lsid));
-        if (null != result)
-            return result;
-
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
-
-        return toExpProtocol(p);
+        return PROTOCOL_LSID_CACHE.get(lsid);
     }
 
     private ExpProtocolImpl toExpProtocol(@Nullable Protocol p)
     {
-        ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
-        if (result != null)
-        {
-            PROTOCOL_CACHE.put(getCacheKey(result.getLSID()), result);
-            PROTOCOL_CACHE.put("ROWID/" + result.getRowId(), result);
-        }
-        return result;
+        return p == null ? null : new ExpProtocolImpl(p);
     }
 
     private void uncacheProtocol(Protocol p)
     {
-        Cache<String, ExpProtocolImpl> c = PROTOCOL_CACHE;
-        c.remove(getCacheKey(p.getLSID()));
-        c.remove("ROWID/" + p.getRowId());
+        PROTOCOL_ROW_ID_CACHE.remove(p.getRowId());
+        PROTOCOL_LSID_CACHE.remove(p.getLSID());
     }
 
     @Override
@@ -1602,6 +1602,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         return datas.stream().map(ExpDataImpl::new).collect(toList());
     }
+
+
+    public List<ExpDataImpl> getExpDatasByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoData(), filter, null)
+                .getArrayList(Data.class)
+                .stream()
+                .map(ExpDataImpl::new)
+                .toList();
+    }
+
 
     @Override
     @Nullable
@@ -3997,7 +4014,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
-        PROTOCOL_CACHE.clear();
+        PROTOCOL_ROW_ID_CACHE.clear();
+        PROTOCOL_LSID_CACHE.clear();
         DomainPropertyManager.clearCaches();
     }
 
@@ -4716,9 +4734,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         try (DbScope.Transaction transaction = ensureTransaction();
             Timing timing = MiniProfiler.step("delete materials"))
         {
-            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE ");
-            sql.append(materialFilterSQL);
-
             Map<ExpSampleType, Set<Integer>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
@@ -4729,70 +4744,80 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // will be successful
             final List<String> docids = new ArrayList<>();
 
-            // Do this work in batches to avoid holding all materials in memory at once
-            int count = new SqlSelector(getExpSchema(), sql).setJdbcCaching(false).forEachBatch(Material.class, 10_000, rawMaterials ->
+            int count = 0;
+            // Fetch in batches so that Postgres doesn't cache all rows in memory. Disabling caching doesn't work
+            // because we're inside a transaction
+            final int maxBatch = 10_000;
+            boolean moreBatches = true;
+            while (moreBatches)
+            {
+                SQLFragment sql = dialect.limitRows(new SQLFragment("SELECT *"), new SQLFragment("FROM exp.Material"), new SQLFragment("WHERE ").append(materialFilterSQL), "ORDER BY RowId", null, maxBatch, count);
+                List<Material> rawMaterials = new SqlSelector(getExpSchema(), sql).getArrayList(Material.class);
+
+                moreBatches = rawMaterials.size() == maxBatch;
+                count += rawMaterials.size();
+
+                List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(rawMaterials);
+                for (ExpMaterialImpl material : materials)
+                {
+                    if (!material.getContainer().hasPermission(user, DeletePermission.class))
+                        throw new UnauthorizedException();
+
+                    if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
+                        throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
+
+                    docids.add(material.getDocumentId());
+
+                    if (null == stDeleteFrom)
                     {
-                        List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(rawMaterials);
-                        for (ExpMaterialImpl material : materials)
+                        if (deleteFromAllSampleTypes)
                         {
-                            if (!material.getContainer().hasPermission(user, DeletePermission.class))
-                                throw new UnauthorizedException();
-
-                            if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
-                                throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
-
-                            docids.add(material.getDocumentId());
-
-                            if (null == stDeleteFrom)
+                            String cpasType = material.getCpasType();
+                            if (!sampleTypes.containsKey(cpasType))
                             {
-                                if (deleteFromAllSampleTypes)
-                                {
-                                    String cpasType = material.getCpasType();
-                                    if (!sampleTypes.containsKey(cpasType))
-                                    {
-                                        ExpSampleTypeImpl st = material.getSampleType();
-                                        if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                            LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
-                                        sampleTypes.put(cpasType, st);
-                                    }
-                                }
-                                else
-                                {
-                                    // verify the material doesn't belong to a SampleType
-                                    if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                        throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                                }
-                            }
-                            else
-                            {
-                                // verify the material doesn't belong to a SampleType
-                                if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
-                                    throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                            }
-
-                            if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
-                            {
-                                ExpSampleType sampleType = material.getSampleType();
-                                sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
-                                        .add(material.getRootMaterialRowId());
+                                ExpSampleTypeImpl st = material.getSampleType();
+                                if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                                    LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
+                                sampleTypes.put(cpasType, st);
                             }
                         }
-
-                        try (Timing ignored = MiniProfiler.step("beforeDelete"))
+                        else
                         {
-                            beforeDeleteMaterials(user, container, materials);
+                            // verify the material doesn't belong to a SampleType
+                            if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                                throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                         }
+                    }
+                    else
+                    {
+                        // verify the material doesn't belong to a SampleType
+                        if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
+                            throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                    }
 
-                        try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
-                        {
-                            // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-                            if (deleteRunsUsingMaterials)
-                            {
-                                deleteRunsUsingInputs(user, null, rawMaterials);
-                            }
-                        }
-                        LOG.debug("Completed batch of sample deletion");
-                    });
+                    if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
+                    {
+                        ExpSampleType sampleType = material.getSampleType();
+                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                                .add(material.getRootMaterialRowId());
+                    }
+                }
+
+                try (Timing ignored = MiniProfiler.step("beforeDelete"))
+                {
+                    beforeDeleteMaterials(user, container, materials);
+                }
+
+                try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
+                {
+                    // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
+                    if (deleteRunsUsingMaterials)
+                    {
+                        deleteRunsUsingInputs(user, null, rawMaterials);
+                    }
+                }
+                LOG.debug("Completed batch of sample deletion. " + count + " rows processed so far");
+            }
 
             // generate in clause for the Material LSIDs
             SQLFragment lsidInFrag = new SQLFragment(" IN (SELECT Lsid FROM ");
@@ -5613,6 +5638,23 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
+
+    public List<ExpRunImpl> getRunsByObjectId(ContainerFilter containerFilter, Collection<Integer> objectIds)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addInClause(FieldKey.fromParts("ObjectId"), objectIds);
+
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
+        filter.addClause(clause);
+
+        return new TableSelector(getTinfoExperimentRun(), filter, null)
+                .getArrayList(ExperimentRun.class)
+                .stream()
+                .map(ExpRunImpl::new)
+                .toList();
+    }
+
+
     private List<Pair<String, String>> getRunsAndRolesUsingInput(ExpRunItem item, TableInfo inputTable, String inputColumn, Supplier<List<ExpRunImpl>> runSupplier)
     {
         SQLFragment coreSql = new SQLFragment("""
@@ -6410,8 +6452,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             else
             {
                 result = Table.update(user, getTinfoProtocol(), protocol, protocol.getRowId());
-                uncacheProtocol(protocol);
             }
+
+            uncacheProtocol(protocol);
 
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
             if (!newProtocol)
@@ -9506,6 +9549,279 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             filter.addCondition(FieldKey.fromParts("objecturi"), ":MaterialInput:", CompareType.CONTAINS);
             TableSelector ts = new TableSelector(getTinfoObject(), TableSelector.ALL_COLUMNS, filter, null);
             return (int) ts.getRowCount();
+        }
+    }
+
+    public record edge(int to, int from) {};
+    public static class InnerResult
+    {
+        public int depth, self, fromObjectId, toObjectId;
+        String path;
+
+        public int getDepth()
+        {
+            return depth;
+        }
+
+        public void setDepth(int depth)
+        {
+            this.depth = depth;
+        }
+
+        public int getSelf()
+        {
+            return self;
+        }
+
+        public void setSelf(int self)
+        {
+            this.self = self;
+        }
+
+        public Integer getFromObjectId()
+        {
+            return fromObjectId;
+        }
+
+        public void setFromObjectId(Integer fromObjectId)
+        {
+            this.fromObjectId = null==fromObjectId ? 0 : fromObjectId;
+        }
+
+        public Integer getToObjectId()
+        {
+            return toObjectId;
+        }
+
+        public void setToObjectId(Integer toObjectId)
+        {
+            this.toObjectId = null==toObjectId ? 0 : toObjectId;
+        }
+
+        public String getPath()
+        {
+            return path;
+        }
+
+        public void setPath(String path)
+        {
+            this.path = path;
+        }
+    }
+
+    public static class LineageQueryTestCase extends Assert
+    {
+        TempTableTracker tt;
+        String tableName;
+
+        // create graph that looks like this
+        //        QQ
+        //        |
+        //    A   Q   Z
+        //   / \ / \ /  \
+        // A1  A2  Z1   Z2
+        //  |   \  /    |
+        // A11   AZ     Z21
+        static public final int RUN = Integer.MAX_VALUE;
+        static final int startId = 1_000_000_000;
+        static public final int QQ = startId;
+        static public final int A = startId+1;
+        static public final int Q = startId+2;
+        static public final int Z = startId+3;
+        static public final int A1 = startId+4;
+        static public final int A2 = startId+5;
+        static public final int Z1 = startId+6;
+        static public final int Z2 = startId+7;
+        static public final int A11 = startId+8;
+        static public final int AZ = startId+9;
+        static public final int Z21 = startId+10;
+        
+        static edge e(int a,int b) {return new edge(a,b);};
+        static public final List<edge> edges = List.of(
+                e(Q,QQ), 
+                e(A1,A), e(A2,A), e(A2, Q), e(Z1, Q), e(Z1, Z), e(Z2, Z),
+                e(A11, A1), e(AZ,A2), e(AZ, Z1), e(Z21, Z2)
+        );
+
+        Map<String,String> getParts(ExpLineageOptions options, String csv)
+        {
+            String jspPath = options.isForLookup() ? "/org/labkey/experiment/api/ExperimentRunGraphForLookup2.jsp" : "/org/labkey/experiment/api/ExperimentRunGraph2.jsp";
+
+            String sourceSQL;
+            try
+            {
+                sourceSQL = new JspTemplate<>(jspPath, options).render();
+            }
+            catch (Exception e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+
+            Map<String,String> map = new HashMap<>();
+            SqlDialect dialect = getExpSchema().getSqlDialect();
+
+            String[] strs = StringUtils.splitByWholeSeparator(sourceSQL,"/* CTE */");
+            for (int i=1 ; i<strs.length ; i++)
+            {
+                String s = strs[i].trim();
+                int as = s.indexOf(" AS");
+                String name = s.substring(0,as).trim();
+                String select = s.substring(as+3).trim();
+                if (select.endsWith(","))
+                    select = select.substring(0,select.length()-1).trim();
+                if (select.endsWith(")"))
+                    select = select.substring(0,select.length()-1).trim();
+                if (select.startsWith("("))
+                    select = select.substring(1).trim();
+                if (name.equals("$PARENTS_INNER$") || name.equals("$CHILDREN_INNER$"))
+                {
+                    select = select.replace("$LSIDS$", "VALUES (" + csv + ")");
+                    if (options.getSourceKey() != null)
+                        select = select.replace("$SOURCEKEY$", dialect.getStringHandler().quoteStringLiteral(options.getSourceKey()));
+                }
+                map.put(name, select);
+            }
+            return map;
+        }
+
+
+        List<InnerResult> getParents(int seed)
+        {
+            SqlDialect d = getExpSchema().getSqlDialect();
+            var maps = getParts(new _ExpLineageOptions(tableName), String.valueOf(seed));
+            String parentsInner = maps.get("$PARENTS_INNER$").replace("$SELF$", "parents");
+            SQLFragment sql = new SQLFragment()
+                    .append(d.isPostgreSQL() ? "WITH RECURSIVE" : "WITH").append(" parents AS (").append(parentsInner).append(")\n")
+                    .append("SELECT * FROM parents WHERE self != fromObjectId");
+            List<InnerResult> results = new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
+            return results;
+        }
+
+        List<InnerResult> getChildren(int seed)
+        {
+            SqlDialect d = getExpSchema().getSqlDialect();
+            var maps = getParts(new _ExpLineageOptions(tableName), String.valueOf(seed));
+            String childrenInner = maps.get("$CHILDREN_INNER$").replace("$SELF$", "children");
+            SQLFragment sql = new SQLFragment()
+                    .append(d.isPostgreSQL() ? "WITH RECURSIVE" : "WITH").append(" children AS (").append(childrenInner).append(")\n")
+                    .append("SELECT * FROM children WHERE self != toObjectId");
+            List<InnerResult> results = new SqlSelector(getExpSchema(),sql).getArrayList(InnerResult.class);
+            return results;
+        }
+
+        String path(int... id)
+        {
+            return "/" + StringUtils.join(id,'/') + "/";
+        }
+
+        @Before
+        public void setUp()
+        {
+            // It's actually a pain to use the real edges table so create a test clone
+            DbSchema tempSchema = DbSchema.getTemp();
+            String name = "edges" + GUID.makeHash();
+            tableName = tempSchema.getName() + "." + name;
+            tt = TempTableTracker.track(name,this);
+            new SqlExecutor(getExpSchema()).execute("SELECT * INTO " + tableName + " FROM exp.edge WHERE 0=1");
+            for (var e : edges)
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment(
+                        "INSERT INTO " + tableName + " (fromObjectId, toObjectId, runid) VALUES (?,?,?)", e.from, e.to, RUN));
+        }
+
+        @After
+        public void tearDown()
+        {
+            tt.delete();
+        }
+
+        @Test
+        public void testParentsInner()
+        {
+            {
+                var results = getParents(A);
+                assertEquals(0, results.size());
+            }
+            {
+                var results = getParents(AZ);
+                assertEquals(8, results.size());
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(A2, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(A, A2, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Q, A2, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(QQ, Q, A2, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Z1, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Z, Z1, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Q, Z1, AZ))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(QQ, Q, Z1, AZ))));
+            }
+        }
+
+        @Test
+        public void testChildrenInner()
+        {
+            {
+                var results = getChildren(A11);
+                assertEquals(0, results.size());
+            }
+            {
+                var results = getChildren(Q);
+                assertEquals(4, results.size());
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(AZ, A2, Q))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(AZ, Z1, Q))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(A2, Q))));
+                assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Z1, Q))));
+            }
+        }
+
+        @Test
+        public void testCycle()
+        {
+            try
+            {
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment(
+                        "INSERT INTO " + tableName + " (fromObjectId, toObjectId, runid) VALUES (?,?,?)", AZ, QQ, RUN));
+
+                {
+                    var results = getParents(A2);
+                    assert(null != results);
+                    assertEquals(6, results.size());
+                    // loop should break short of self (A2->Q->QQ->AZ->A2)
+                    assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(AZ,QQ,Q,A2))));
+                    assertTrue(results.stream().map(r -> r.path).noneMatch(p -> p.equals(path(A2,AZ,QQ,Q,A2))));
+                    // loop should break short of loop that does not contain self (A2->Q->QQ->AZ->Z1->Q)
+                    assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Z1,AZ,QQ,Q,A2))));
+                    assertTrue(results.stream().map(r -> r.path).noneMatch(p -> p.equals(path(Q,Z1,AZ,QQ,Q,A2))));
+                }
+                {
+                    var results = getChildren(A2);
+                    assertEquals(4, results.size());
+                    assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(AZ,A2))));
+                    assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(QQ,AZ,A2))));
+                    assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Q, QQ,AZ,A2))));
+                    assertTrue(results.stream().map(r -> r.path).anyMatch(p -> p.equals(path(Z1,Q,QQ,AZ,A2))));
+                }
+            }
+            finally
+            {
+                new SqlExecutor(getExpSchema()).execute(new SQLFragment(
+                        "DELETE FROM " + tableName + " WHERE fromObjectId=? AND toObjectId=?", AZ, QQ));
+            }
+        }
+    }
+
+    private static class _ExpLineageOptions extends ExpLineageOptions
+    {
+        final String _tableName;
+
+        _ExpLineageOptions(String tableName)
+        {
+            _tableName = tableName;
+            setUseObjectIds(true);
+            setForLookup(true);
+        }
+        @Override
+        public String getExpEdge()
+        {
+            return _tableName;
         }
     }
 }

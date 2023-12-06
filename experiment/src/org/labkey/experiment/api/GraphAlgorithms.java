@@ -141,21 +141,7 @@ public class GraphAlgorithms <NodeName extends Comparable>
         if (0 == graph.getNodeCount())
             return Collections.emptyList();
 
-        // we've detected that there is cycle, but not what the cycle is
-        // TODO do the more expensive work of pruning the nodes with no out-going edges, or implement a
-        // cycle-finding algorithm instead of just a cycle-detectlang.AssertionError: expected:<1> but was:<0>
-        //    at org.junit.Assert.fail(Assert.java:88)
-        //    at org.junit.Assert.failNotEquals(Assert.java:834)
-        //    at org.junit.Assert.assertEquals(Assert.java:645)
-        //    at org.junit.Assert.assertEquals(Assert.java:631)
-        //    at org.labkey.experiment.api.ExpDataClassDataTestCase.testDeriveDuringImport(ExpDataClassDataTestCase.java:506)
-        //    at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
-        //    at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
-        //    at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
-        //    at java.base/java.lang.reflect.Method.invoke(Method.java:567)
-        //    at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)ing algorithm
-
-        // just return everything...
+        // return all edges that participate in some cycle (there may be more than one disjoint cycle/circuit)
         Set<Pair<NodeName,NodeName>> set = graph.getEdges(edge->true);
         graph.dump();
         return set;

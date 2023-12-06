@@ -1648,8 +1648,13 @@ public class QueryController extends SpringActionController
             {
                 VBox result = new VBox();
 
-                ActionURL url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
-                url.addParameter("schemaName", userSchemaName);
+                ActionURL url = null;
+                QuerySchema qs = DefaultSchema.get(getUser(), getContainer()).getSchema(userSchemaName);
+                if (qs != null)
+                {
+                    url = new ActionURL(RawSchemaMetaDataAction.class, getContainer());
+                    url.addParameter("schemaName", userSchemaName);
+                }
 
                 SqlDialect dialect = scope.getSqlDialect();
                 ScopeView scopeInfo = new ScopeView("Scope and Schema Information", scope, _dbSchemaName, url, _dbTableName);
@@ -1783,7 +1788,18 @@ public class QueryController extends SpringActionController
             StringBuilder sb = new StringBuilder("<table>\n");
 
             if (null != _schemaName)
-                sb.append("<tr><td class=\"labkey-form-label\">Schema</td><td><a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a></td></tr>\n");
+            {
+                sb.append("<tr><td class=\"labkey-form-label\">Schema</td><td>");
+                if (_url == null)
+                {
+                    sb.append(PageFlowUtil.filter(_schemaName));
+                }
+                else
+                {
+                    sb.append("<a href=\"").append(PageFlowUtil.filter(_url)).append("\">").append(PageFlowUtil.filter(_schemaName)).append("</a>");
+                }
+                sb.append("</td></tr>\n");
+            }
             if (null != _tableName)
                 sb.append("<tr><td class=\"labkey-form-label\">Table</td><td>").append(PageFlowUtil.filter(_tableName)).append("</td></tr>\n");
 

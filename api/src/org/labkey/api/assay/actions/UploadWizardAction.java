@@ -63,9 +63,11 @@ import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
@@ -119,11 +121,6 @@ import static org.labkey.api.util.DOM.FONT;
 import static org.labkey.api.util.DOM.cl;
 import static org.labkey.api.util.DOM.createHtml;
 
-/**
- * User: brittp
- * Date: Jul 26, 2007
- * Time: 7:01:17 PM
- */
 @RequiresPermission(InsertPermission.class)
 public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType>, ProviderType extends AssayProvider> extends FormViewAction<FormType>
 {
@@ -706,6 +703,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             {
                 vbox.addView(qcWarning);
             }
+
+            ModelAndView linkedStudyWarning = getAssayLinkedDataWarningView(newRunForm.getReRun());
+            if (linkedStudyWarning != null)
+                vbox.addView(linkedStudyWarning);
         }
 
         if (newRunForm.isSuccessfulUploadComplete())
@@ -713,6 +714,36 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         vbox.addView(insertView);
         return vbox;
+    }
+
+    protected @Nullable ModelAndView getAssayLinkedDataWarningView(ExpRun run)
+    {
+        final User user = getUser();
+        Set<? extends Dataset> datasets = StudyPublishService.get().getDatasetsForAssayRuns(Collections.singleton(run), user);
+
+        if (!datasets.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder(String.format("<p>The run you are replacing has data that is linked to %d %s. ", datasets.size(), datasets.size() > 1 ? "studies" : "study"))
+                    .append("After re-import assay data will no longer be linked properly and will need to be recalled and relinked.");
+            String prefix = "<ul>";
+            String postfix = "";
+            for (Dataset assayDataset : datasets)
+            {
+                if (assayDataset.getContainer().hasPermission(user, ReadPermission.class) && assayDataset.canRead(user))
+                {
+                    sb.append(prefix);
+                    prefix = "";
+                    postfix = "</ul>";
+                    sb.append("<li>").append(PageFlowUtil.filter(assayDataset.getStudy().getLabel())).append("</li>");
+                }
+            }
+            sb.append(postfix);
+            HtmlView view = new HtmlView(sb.toString());
+            view.setTitle("Linked Study Data Warning");
+
+            return view;
+        }
+        return null;
     }
 
     /** Check the assay configuration to determine if we should prompt the user to upload or otherwise specify a data file */
@@ -1170,7 +1201,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     }
                     uniqueErrorStrs.add(errStr);
                 }
-                if (sb.toString().length() > 0)
+                if (!sb.isEmpty())
                     sb.append(HtmlString.unsafe("</font>"));
 
                 if (uniqueErrorStrs.size() > MAX_ERRORS)
@@ -1244,7 +1275,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 }
                 catch (Exception e)
                 {
-                    throw (IOException) new IOException(e);
+                    throw new IOException(e);
                 }
             }
         }

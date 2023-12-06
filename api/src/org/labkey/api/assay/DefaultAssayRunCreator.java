@@ -606,8 +606,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
-        Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
-        addMaterials(context, inputMaterials, context.getInputMaterials(), searchContainers, cache, materialCache);
+        addMaterials(context, inputMaterials, context.getInputMaterials(), cache, materialCache);
 
         // Find lookups to a SampleType and add the resolved material as an input sample
         for (Map.Entry<DomainProperty, String> entry : context.getRunProperties().entrySet())
@@ -631,14 +630,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (pt.getJdbcType().isText())
             {
-                addMaterialByName(context, inputMaterials, value, role, searchContainers, st, cache, materialCache);
+                addMaterialByName(context, inputMaterials, value, role, st, cache, materialCache);
             }
             else if (pt.getJdbcType().isInteger())
             {
                 try
                 {
                     int sampleRowId = Integer.parseInt(value);
-                    addMaterialById(context, inputMaterials, sampleRowId, role, searchContainers, st, materialCache);
+                    addMaterialById(context, inputMaterials, sampleRowId, role, st, materialCache);
                 }
                 catch (NumberFormatException ex)
                 {
@@ -883,8 +882,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
     {
-        Set<Container> searchContainers = ExpSchema.getSearchContainers(context.getContainer(), null, null, context.getUser());
-        addMaterials(context, outputMaterials, context.getOutputMaterials(), searchContainers, cache, materialCache);
+        addMaterials(context, outputMaterials, context.getOutputMaterials(), cache, materialCache);
     }
 
     // CONSIDER: Move this to ExperimentService
@@ -893,7 +891,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         AssayRunUploadContext<ProviderType> context,
         @NotNull Map<ExpMaterial, String> resolved,
         @NotNull Map<?, String> unresolved,
-        @NotNull Set<Container> searchContainers,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException, ValidationException
@@ -905,16 +902,15 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             if (o instanceof ExpMaterial m)
             {
-                if (!resolved.containsKey(m) && searchContainers.contains(m.getContainer()))
-                    resolved.put(m, role);
+                addMaterialById(context, resolved, m.getRowId(), role, null, materialCache);
             }
             else if (o instanceof Integer sampleRowId)
             {
-                addMaterialById(context, resolved, sampleRowId, role, searchContainers, null, materialCache);
+                addMaterialById(context, resolved, sampleRowId, role, null, materialCache);
             }
             else if (o instanceof String sampleName)
             {
-                addMaterialByName(context, resolved, sampleName, role, searchContainers, null, cache, materialCache);
+                addMaterialByName(context, resolved, sampleName, role, null, cache, materialCache);
             }
             else
                 throw new ExperimentException("Unable to resolve sample: " + o);
@@ -926,7 +922,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpMaterial, String> resolved,
         String sampleName,
         String role,
-        @NotNull Set<Container> searchContainers,
         @Nullable ExpSampleType st,
         @NotNull RemapCache cache,
         @NotNull Map<Integer, ExpMaterial> materialCache
@@ -939,7 +934,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             logger.warn("No sample found for sample name '" + sampleName + "'");
         }
 
-        if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
+        if (material != null && !resolved.containsKey(material))
         {
             if (st == null || st.getLSID().equals(material.getCpasType()))
                 resolved.put(material, role);
@@ -951,7 +946,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpMaterial, String> resolved,
         Integer sampleRowId,
         String role,
-        @NotNull Set<Container> searchContainers,
         @Nullable ExpSampleType st,
         @NotNull Map<Integer, ExpMaterial> materialCache
     ) throws ExperimentException
@@ -960,7 +954,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         final User user = context.getUser();
         ExpMaterial material = materialCache.computeIfAbsent(sampleRowId, (x) -> ExperimentService.get().getExpMaterial(c, user, sampleRowId, null));
 
-        if (material != null && !resolved.containsKey(material) && searchContainers.contains(material.getContainer()))
+        if (material != null && !resolved.containsKey(material))
         {
             if (!material.isOperationPermitted(SampleTypeService.SampleOperations.AddAssayData))
                 throw new ExperimentException(SampleTypeService.get().getOperationNotPermittedMessage(Collections.singleton(material), SampleTypeService.SampleOperations.AddAssayData));

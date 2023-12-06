@@ -181,7 +181,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testStudyOverview()
     {
         log("Verify sub-folder study PV_One dataset has 2 participants at 'Visit 1'");
-        beginAt("/study/" + getProjectName() + "/" + STUDY1 + "/overview.view?");
+        beginAt("/" + getProjectName() + "/" + STUDY1 + "/study-overview.view");
         assertEquals("PV_One?", getTableCellText(Locator.id("studyOverview"), 6, 0));
         String visitLabel = getTableCellText(Locator.id("studyOverview"), 0, 4);
         Assert.assertTrue("Expected 'Visit 1', got: " + visitLabel, visitLabel.contains("Visit 1"));
@@ -281,7 +281,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         waitForPipelineJobsToComplete(1, "Publish Study", false);
 
         // verify that published study description has correct number visits, and number participants
-        beginAt("/" + nonDataspaceProject + "/" + studyPublishedFromDataspace + "/project-begin.view?");
+        beginAt("/" + nonDataspaceProject + "/" + studyPublishedFromDataspace + "/project-begin.view");
         assertTextPresent("over 6 visits. Data is present for 6 Pandas.");
 
         // verify that published study description has correct dataset

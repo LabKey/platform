@@ -20,6 +20,7 @@ package org.labkey.core.filters;
 
 import javax.servlet.*;
 import java.io.IOException;
+import java.util.Objects;
 
 
 /**
@@ -61,7 +62,7 @@ public class SetCharacterEncodingFilter implements Filter
      * The default character encoding to set for requests that pass through
      * this filter.
      */
-    protected String encoding = null;
+    protected String encoding = "UTF-8";
 
 
     /**
@@ -132,7 +133,7 @@ public class SetCharacterEncodingFilter implements Filter
     {
 
         this.filterConfig = filterConfig;
-        this.encoding = filterConfig.getInitParameter("encoding");
+        this.encoding = Objects.toString(filterConfig.getInitParameter("encoding"), this.encoding);
         String value = filterConfig.getInitParameter("ignore");
         if (value == null)
             this.ignore = true;

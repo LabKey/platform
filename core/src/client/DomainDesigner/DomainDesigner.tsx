@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import { Button, Panel } from 'react-bootstrap';
+import { Panel } from 'react-bootstrap';
 import { ActionURL, getServerContext } from '@labkey/api';
 import {
     LoadingSpinner,
@@ -27,6 +27,8 @@ import {
     FormButtons,
     saveDomain,
     BeforeUnload,
+    resolveErrorMessage,
+    DomainException,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -99,7 +101,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
                 this.navigate();
             })
-            .catch(badDomain => {
+            .catch(response => {
+                const exception = resolveErrorMessage(response);
+                const badDomain = exception
+                    ? domain.set('domainException', DomainException.create({ exception }, 'Error'))
+                    : response;
+
                 // if there are only warnings then show ConfirmModel
                 if (badDomain.domainException.severity === 'Warning') {
                     this.setState(() => ({

@@ -32,6 +32,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Arrays;
@@ -205,11 +206,10 @@ public class AnalyticsServiceImpl implements AnalyticsService
             """
                     <!-- Global site tag (gtag.js) - Google Analytics -->
                     <script async src="${GA4_JS:htmlEncode}"></script>
-                    <script>
+                    <script nonce="${SCRIPT_NONCE:htmlEncode}">
                       window.dataLayer = window.dataLayer || [];
                       function gtag(){dataLayer.push(arguments);}
                       gtag('js', new Date());
-                    
                       gtag('config', ${MEASUREMENT_ID:jsString}, { 'send_page_view': ${SEND_PAGE_VIEW} });
                     </script>
                     """;
@@ -249,7 +249,8 @@ public class AnalyticsServiceImpl implements AnalyticsService
                     "PAGE_URL", getSanitizedUrl(context),
                     "GA4_JS", ga4JS,
                     "MEASUREMENT_ID", getMeasurementId(),
-                    "SEND_PAGE_VIEW", sendPageView)));
+                    "SEND_PAGE_VIEW", sendPageView,
+                    "SCRIPT_NONCE", HttpView.currentPageConfig().getScriptNonce())));
         }
         return sb.toString();
     }

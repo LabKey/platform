@@ -812,6 +812,7 @@ public class ExperimentModule extends SpringModule
             DomainPropertyImpl.TestCase.class,
             ExpDataTableImpl.TestCase.class,
             ExperimentServiceImpl.TestCase.class,
+            ExperimentServiceImpl.LineageQueryTestCase.class,
             ExperimentStressTest.class,
             LineagePerfTest.class,
             LineageTest.class,

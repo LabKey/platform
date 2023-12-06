@@ -30,6 +30,7 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.Crypt;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
 
@@ -308,16 +309,28 @@ public class FileUtil
 
     public static boolean mkdir(File file) throws IOException
     {
-        checkAllowedFileName(file.getName());
+        return mkdir(file, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static boolean mkdir(File file, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(file.getName());
         return file.mkdir();
     }
 
     public static boolean mkdirs(File file) throws IOException
     {
+        return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static boolean mkdirs(File file, boolean checkFileName) throws IOException
+    {
         File parent = file;
         while (!Files.exists(parent.toPath()))
         {
-            checkAllowedFileName(parent.getName());
+            if (checkFileName)
+                checkAllowedFileName(parent.getName());
             parent = parent.getParentFile();
         }
         return file.mkdirs();
@@ -325,7 +338,13 @@ public class FileUtil
 
     public static Path createDirectory(Path path) throws IOException
     {
-        checkAllowedFileName(getFileName(path));
+        return createDirectory(path, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static Path createDirectory(Path path, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(getFileName(path));
         if (!Files.exists(path))
             return Files.createDirectory(path);
         return path;
@@ -333,10 +352,16 @@ public class FileUtil
 
     public static Path createDirectories(Path path) throws IOException
     {
+        return createDirectories(path, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static Path createDirectories(Path path, boolean checkFileName) throws IOException
+    {
         Path parent = path;
         while (!Files.exists(parent))
         {
-            checkAllowedFileName(getFileName(parent));
+            if (checkFileName)
+                checkAllowedFileName(getFileName(parent));
             parent = parent.getParent();
         }
         return Files.createDirectories(path);
@@ -344,13 +369,25 @@ public class FileUtil
 
     public static boolean createNewFile(File file) throws IOException
     {
-        checkAllowedFileName(file.getName());
+        return createNewFile(file, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static boolean createNewFile(File file, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(file.getName());
         return file.createNewFile();
     }
 
     public static Path createFile(Path path, FileAttribute<?>... attrs) throws IOException
     {
-        checkAllowedFileName(getFileName(path));
+        return createFile(path, AppProps.getInstance().isInvalidFilenameBlocked(), attrs);
+    }
+
+    public static Path createFile(Path path, boolean checkFileName, FileAttribute<?>... attrs) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(getFileName(path));
         return Files.createFile(path, attrs);
     }
 
@@ -429,6 +466,7 @@ public class FileUtil
      * Returns the file name extension without the dot, null if there
      * isn't one.
      */
+    @Nullable
     public static String getExtension(File file)
     {
         return getExtension(file.getName());
@@ -1300,7 +1338,7 @@ quickScan:
 
     public static Path createTempDirectory(@Nullable String prefix) throws IOException
     {
-        return Files.createTempDirectory(prefix);
+        return Files.createTempDirectory(prefix).toAbsolutePath();
     }
 
 
@@ -1339,7 +1377,7 @@ quickScan:
 
     public static File createTempFile(@Nullable String prefix, @Nullable String suffix, boolean threadLocal) throws IOException
     {
-        var path = Files.createTempFile(prefix, suffix);
+        var path = Files.createTempFile(prefix, suffix).toAbsolutePath();
         if (threadLocal)
             tempPaths.get().add(path);
         return path.toFile();
@@ -1387,9 +1425,9 @@ quickScan:
      * @param prefix the start of the file name to generate, to be appended with a timestamp suffix
      * @param extension the extension (not including the dot) for the desired file name
      */
-    public static String makeFileNameWithTimestamp(String prefix, String extension)
+    public static String makeFileNameWithTimestamp(String prefix, @Nullable String extension)
     {
-        return makeLegalName(prefix + "_" + getTimestamp() + "." + extension);
+        return makeLegalName(prefix + "_" + getTimestamp() + (extension == null ? "" : ("." + extension)));
     }
 
     public static String makeFileNameWithTimestamp(String prefix)

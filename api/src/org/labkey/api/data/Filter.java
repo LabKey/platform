@@ -25,8 +25,6 @@ import java.util.Set;
 /**
  * Knows how to generate a WHERE clause to filter a query based on some set of criteria. Used extensively, often
  * via {@link SimpleFilter} when selecting from database tables.
- * User: arauch
- * Date: Jan 11, 2005
  */
 public interface Filter
 {

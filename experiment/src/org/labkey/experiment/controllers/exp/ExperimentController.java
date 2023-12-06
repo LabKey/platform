@@ -58,6 +58,7 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.AbstractMoveEntitiesAction;
@@ -142,6 +143,7 @@ import org.labkey.api.security.permissions.DesignSampleTypePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.SampleWorkflowDeletePermission;
+import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ConceptURIProperties;
@@ -157,7 +159,9 @@ import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ImageUtil;
+import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -166,35 +170,31 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DataViewSnapshotSelectionForm;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HBox;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleTypeDisplayColumn;
-import org.labkey.experiment.SampleTypeWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
@@ -231,7 +231,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.awt.Color;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -275,14 +275,18 @@ import static org.labkey.api.util.DOM.Attribute.id;
 import static org.labkey.api.util.DOM.Attribute.method;
 import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.target;
 import static org.labkey.api.util.DOM.Attribute.type;
 import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.Attribute.width;
+import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.IMG;
 import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
@@ -5039,7 +5043,7 @@ public class ExperimentController extends SpringActionController
             if (root == null || !root.isValid())
             {
                 ActionURL pipelineURL = urlProvider(PipelineUrls.class).urlSetup(c);
-                return new HtmlView(DOM.DIV("You must ",
+                return new HtmlView(DIV("You must ",
                     DOM.A(DOM.at(href, pipelineURL), "configure a valid pipeline root for this folder"),
                     " before deriving samples."));
             }
@@ -7837,4 +7841,91 @@ public class ExperimentController extends SpringActionController
             updateSelections(form, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
         }
     }
+
+
+    /* Also see API CheckEdgesAction */
+    @RequiresPermission(TroubleshooterPermission.class)
+    public static class CycleCheckAction extends FormViewAction<Object>
+    {
+        List<Integer> cycleObjectIds = null;
+
+        @Override
+        public void validateCommand(Object target, Errors errors)
+        {
+
+        }
+
+        @Override
+        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        {
+            if (!reshow)
+            {
+                return new HtmlView(
+                        DIV("This operation can use a lot of memory.",
+                        LK.FORM(at(method,"POST"),
+                            PageFlowUtil.button("Continue").submit(true)))
+                );
+            }
+
+            if (null == cycleObjectIds)
+                return new HtmlView(HtmlString.of("No cycles found"));
+
+            Map<Integer, ExpObject> map = new HashMap<>();
+            var cf = new ContainerFilter.AllFolders(getUser());
+            var materials = ExperimentServiceImpl.get().getExpMaterialsByObjectId(cf, cycleObjectIds);
+            materials.forEach( (m) -> map.put(m.getObjectId(), m));
+            var datas = ExperimentServiceImpl.get().getExpDatasByObjectId(cf, cycleObjectIds);
+            datas.forEach( (d) -> map.put(d.getObjectId(), d));
+            var runs = ExperimentServiceImpl.get().getRunsByObjectId(cf, cycleObjectIds);
+            runs.forEach( (r) -> map.put(r.getObjectId(), r));
+
+            ExperimentUrls urls = ExperimentUrls.get();
+            return new HtmlView(
+                    DIV("Cycle found involving these objects.",
+                            UL(cycleObjectIds.stream().map((objectid) ->
+                            {
+                                ExpObject exp = map.get(objectid);
+                                if (exp instanceof ExpMaterial mat)
+                                    return LI(A(at(target, "_blank", href, urls.getMaterialDetailsURL(mat)), objectid + " : material - " + mat.getName()));
+                                else if (exp instanceof ExpRun run)
+                                    return LI(A(at(target, "_blank", href, urls.getRunTextURL(run)), objectid + " : run - " + run.getName()));
+                                else if (exp instanceof ExpData data)
+                                    return LI(A(at(target, "_blank", href, urls.getDataDetailsURL(data)), objectid + " : run - " + data.getName()));
+                                else
+                                    return LI(String.valueOf(objectid));
+                            }))
+                    )
+            );
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromObjectId, toObjectId FROM exp.Edge")
+                    .resultSetStream()
+                    .map(r -> { try { return new Pair<>(r.getInt(1), r.getInt(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
+                    .collect(toList());
+            var cyclesEdges = (new GraphAlgorithms<Integer>()).detectCycleInDirectedGraph(edges);
+
+            var set = new LinkedHashSet<Integer>();
+            cyclesEdges.forEach( (edge) -> {
+                set.add(edge.first);
+                set.add(edge.second);
+            });
+            cycleObjectIds = set.stream().toList();
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object o)
+        {
+            return null;
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+
+        }
+   }
 }
