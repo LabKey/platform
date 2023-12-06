@@ -186,7 +186,7 @@ public class ExpLineageOptions extends ResolveLsidsForm
     public int getConfiguredDepth()
     {
         if (_depth != 0)
-            return _depth;
+            return Math.abs(_depth);
 
         var module = ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME);
         var property = module.getModuleProperties().get(ExperimentService.LINEAGE_DEFAULT_MAXIMUM_DEPTH_PROPERTY_NAME);
