@@ -27,13 +27,13 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.logging.LogHelper;
@@ -425,7 +425,14 @@ public abstract class SqlDialect
     {
     }
 
-    // Do scope-specific initialization work for this dialect. Note: this might be called multiple times, for example,
+    // Called once on each LabKeyDataSource before any connections are attempted. Do not create connections in this
+    // method otherwise the "other connections to this database" check will fail.
+    public void prepare(LabKeyDataSource dataSource)
+    {
+    }
+
+    // Do dialect-specific initialization work for this scope. This is called after prepare(LabKeyDataSource) and
+    // after the "other connections to this database" check. Note: this might be called multiple times, for example,
     // during bootstrap or upgrade.
     public void prepare(DbScope scope)
     {
@@ -1783,11 +1790,6 @@ public abstract class SqlDialect
     }
 
     public @Nullable String getDefaultApplicationName()
-    {
-        return null;
-    }
-
-    public @Nullable Pair<String, Object> getDisablePreparedStatementCachingEntry()
     {
         return null;
     }

@@ -304,12 +304,12 @@ public class DbScope
         private final String _dsName; // DataSource name from labkey.xml
         private final DataSource _ds;
         private final DataSourcePropertyReader _dsPropertyReader;
+        private final @Nullable Properties _connectionProperties;
         private final String _driverClassName;
         private final SqlDialect _dialect;
         private final Class<Driver> _driverClass;
         private final String _url;
 
-        private @Nullable String _applicationName; // Null if a custom application name is set (JDBC URL) or initial connection hasn't been made yet
         private boolean _logQueries = false;
         private String _displayName = null;
         private boolean _primary = false;
@@ -320,6 +320,7 @@ public class DbScope
             _ds = null;
             _dsName = null;
             _dsPropertyReader = null;
+            _connectionProperties = null;
             _driverClassName = null;
             _dialect = null;
             _driverClass = null;
@@ -331,6 +332,7 @@ public class DbScope
             _ds = ds;
             _dsName = dsName; // Used internally in error messages
             _dsPropertyReader = new DataSourcePropertyReader(_dsName, _ds);
+            _connectionProperties = _dsPropertyReader.getConnectionProperties();
             _driverClassName = _dsPropertyReader.getDriverClassName();
             // Note: Dialect won't be versioned with the corresponding database
             _dialect = SqlDialectManager.getFromDriverClassname(_dsName, _driverClassName);
@@ -380,6 +382,11 @@ public class DbScope
             return _dsPropertyReader;
         }
 
+        private @Nullable Properties getConnectionProperties()
+        {
+            return _connectionProperties;
+        }
+
         private String getDriverClassName()
         {
             return _driverClassName;
@@ -405,45 +412,27 @@ public class DbScope
             _primary = true;
         }
 
-        private boolean isPrimary()
+        public boolean isPrimary()
         {
             return _primary;
-        }
-
-        private @Nullable String getApplicationName()
-        {
-            return _applicationName;
         }
 
         // Set the default application name for all connections on this data source
         private String setDefaultApplicationName()
         {
-            // Used by getRawConnection()
-            _applicationName = DEFAULT_APPLICATION_NAME;
+            // Push application name into the connection properties
+            setConnectionProperty(_dialect.getApplicationNameParameter(), DEFAULT_APPLICATION_NAME);
 
-            // Push application name into the connection properties are used to create pooled connections
-            setConnectionProperty(_dialect.getApplicationNameParameter(), _applicationName);
-
-            return _applicationName;
+            return DEFAULT_APPLICATION_NAME;
         }
 
-        // Disable prepared statement caching for all connections on this data source
-        private void disablePreparedStatementCaching()
-        {
-            Pair<String, Object> propEntry = _dialect.getDisablePreparedStatementCachingEntry();
-            if (propEntry != null)
-                setConnectionProperty(propEntry.getKey(), propEntry.getValue());
-        }
-
-        private void setConnectionProperty(String key, Object value)
+        public void setConnectionProperty(String key, Object value)
         {
             if (key == null || value == null)
                 return;
 
-            Properties connectionProps = _dsPropertyReader.getConnectionProperties();
-
-            if (connectionProps != null)
-                connectionProps.put(key, value);
+            if (_connectionProperties != null)
+                _connectionProperties.put(key, value);
         }
 
         // Reject data sources configured with the Tomcat JDBC connection pool, #42125
@@ -1591,6 +1580,8 @@ public class DbScope
             // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
             LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
             labkeyDsName = primaryDS.getDsName();
+            // Now that we've tagged the primary datasource we can prepare them all
+            dataSources.values().forEach(ds -> ds.getDialect().prepare(ds));
             _applicationName = ensureDatabase(primaryDS);
         }
         catch (Exception e)
@@ -1710,7 +1701,6 @@ public class DbScope
             try (Connection conn = getRawConnection(ds.getUrl(), ds))
             {
                 LOG.debug("Successful connection to \"" + ds.getDsName() + "\" at " + ds.getUrl());
-                disablePreparedStatementCaching(ds);
                 return ensureApplicationName(conn, ds);
             }
             catch (SQLException e)
@@ -1791,6 +1781,7 @@ public class DbScope
                     // then set our default application name on the data source so it's set on every connection.
                     if (applicationName.equals(dialect.getDefaultApplicationName()))
                     {
+                        // Set LabKey's default application name ("LabKey Server") into the connectinon properties
                         applicationName = ds.setDefaultApplicationName();
                         LOG.info(message + " (the default name); all subsequent connections will use \"" + applicationName + "\" instead.");
                     }
@@ -1814,14 +1805,6 @@ public class DbScope
         return applicationName;
     }
 
-    public static void disablePreparedStatementCaching(LabKeyDataSource ds)
-    {
-        if (!ds.isPrimary())
-            return;
-
-        ds.disablePreparedStatementCaching();
-    }
-
     // Establish a direct data source connection that bypasses the connection pool
     private static Connection getRawConnection(LabKeyDataSource dataSource) throws ServletException, SQLException
     {
@@ -1834,23 +1817,19 @@ public class DbScope
     {
         DataSourcePropertyReader reader = dataSource.getDataSourcePropertyReader();
         Driver driver;
-        Properties info;
+        Properties props;
         try
         {
             driver = dataSource.getDriverClass().getConstructor().newInstance();
-            info = new Properties();
+            Properties dsProps = dataSource.getConnectionProperties();
+            props = dsProps != null ? new Properties(dsProps) : new Properties();
             if (reader.getUsername() != null)
             {
-                info.put("user", reader.getUsername());
+                props.put("user", reader.getUsername());
             }
             if (reader.getPassword() != null)
             {
-                info.put("password", reader.getPassword());
-            }
-            if (dataSource.getApplicationName() != null)
-            {
-                String parameterName = dataSource.getDialect().getApplicationNameParameter();
-                info.put(parameterName, dataSource.getApplicationName());
+                props.put("password", reader.getPassword());
             }
         }
         catch (Exception e)
@@ -1861,7 +1840,7 @@ public class DbScope
         if (!driver.acceptsURL(url))
             throw new ServletException("The specified driver (\"" + dataSource.getDriverClassName() + "\") does not accept the specified URL (\"" + url + "\")");
 
-        return driver.connect(url, info);
+        return driver.connect(url, props);
     }
 
     private static String createDataBase(SqlDialect dialect, LabKeyDataSource ds) throws ServletException
@@ -1886,7 +1865,6 @@ public class DbScope
                 LOG.info("Database \"" + dbName + "\" created");
             }
 
-            disablePreparedStatementCaching(ds);
             return ensureApplicationName(conn, ds);
         }
         catch (SQLException e)
