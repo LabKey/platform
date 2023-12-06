@@ -101,10 +101,10 @@
                 <td><input type=checkbox id="webfilesEnabled" name="webfilesEnabled" <%=checked(bean.isWebfilesEnabled())%> style="margin-left: 10px;"></td>
             </tr>
 
+        <tr><td colspan="2"><h4>Disable file upload</h4></td></tr>
         <%
             if (PremiumService.get().isDisableFileUploadSupported()) {
         %>
-            <tr><td colspan="2"><h4>Disable file upload</h4></td></tr>
             <tr><td colspan="2" class="labkey-title-area-line"></td></tr>
             <tr><td colspan="2">Site level setting to enable/disable file upload.</td></tr>
 
@@ -114,6 +114,13 @@
         <%
         }
         %>
+
+        <tr><td class="labkey-form-label">Block file upload with potentially malicious names<%=helpPopup("Block file upload with potentially malicious names", "If checked, file upload for files with potentially malicious names will be blocked.")%></td>
+            <td><input type=checkbox id="invalidUploadBlocked" name="invalidUploadBlocked" <%=checked(bean.isInvalidUploadBlocked())%> style="margin-left: 10px;"></td>
+        </tr>
+        <tr><td class="labkey-form-label">Block server-side file creation with potentially malicious names<%=helpPopup("Block server-side file creation with potentially malicious names", "If checked, server-side file creation with potentially malicious names will be blocked.")%></td>
+            <td><input type=checkbox id="invalidFilenameBlocked" name="invalidFilenameBlocked" <%=checked(bean.isInvalidFilenameBlocked())%> style="margin-left: 10px;"></td>
+        </tr>
 
         <tr><td>&nbsp;</td></tr>
         <td><%= button("Save").submit(true) %>&nbsp;

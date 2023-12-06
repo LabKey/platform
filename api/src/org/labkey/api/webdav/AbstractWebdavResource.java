@@ -117,7 +117,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         try
         {
-            return this.getFile() != null && FileUtil.mkdirs(this.getFile());
+            return this.getFile() != null && FileUtil.mkdirs(this.getFile(), AppProps.getInstance().isInvalidFilenameUploadBlocked());
         }
         catch (IOException e)
         {
