@@ -47,6 +47,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -275,10 +276,10 @@ public class FileSystemResource extends AbstractWebdavResource
         boolean created = false;
         if (!file.exists())
         {
-            FileUtil.mkdirs(file.getParentFile());
+            FileUtil.mkdirs(file.getParentFile(), AppProps.getInstance().isInvalidFilenameUploadBlocked());
             try
             {
-                FileUtil.createNewFile(file);
+                FileUtil.createNewFile(file, AppProps.getInstance().isInvalidFilenameUploadBlocked());
                 created = true;
             }
             catch (IOException x)

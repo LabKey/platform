@@ -611,6 +611,18 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public boolean isInvalidFilenameUploadBlocked()
+    {
+        return lookupBooleanValue(invalidFilenameUploadBlocked, true);
+    }
+
+    @Override
+    public boolean isInvalidFilenameBlocked()
+    {
+        return lookupBooleanValue(invalidFilenameBlocked, false);
+    }
+
+    @Override
     @NotNull
     public List<String> getExternalRedirectHosts()
     {

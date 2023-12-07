@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit.provider;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
@@ -126,9 +127,17 @@ public class SiteSettingsAuditProvider extends AbstractAuditTypeProvider impleme
             return _changes;
         }
 
+        public void setChanges(String changes, boolean append)
+        {
+            if (!append || StringUtils.isEmpty(_changes))
+                _changes = changes;
+            else
+                _changes = _changes + changes;
+        }
+
         public void setChanges(String changes)
         {
-            _changes = changes;
+            setChanges(changes, false);
         }
 
         @Override

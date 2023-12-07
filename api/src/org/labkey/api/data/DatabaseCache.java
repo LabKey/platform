@@ -61,12 +61,12 @@ public class DatabaseCache<K, V> implements Cache<K, V>
         this(scope, maxSize, CacheManager.UNLIMITED, debugName);
     }
 
-    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, CacheLoader<K, V> cacheLoader)
+    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, defaultTimeToLive, debugName), cacheLoader);
     }
 
-    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, CacheLoader<K, V> cacheLoader)
+    public static <K, V> BlockingCache<K, V> get(DbScope scope, int maxSize, String debugName, @Nullable CacheLoader<K, V> cacheLoader)
     {
         return new BlockingDatabaseCache<>(new DatabaseCache<>(scope, maxSize, debugName), cacheLoader);
     }

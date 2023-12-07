@@ -17,14 +17,13 @@
 package org.labkey.api.data;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.logging.LogHelper;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,39 +32,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/*
-* User: adam
-* Date: May 21, 2011
-* Time: 11:16:36 AM
-*/
 public class UpgradeUtils
 {
-    private static final Logger LOG = LogManager.getLogger(UpgradeUtils.class);
+    private static final Logger LOG = LogHelper.getLogger(UpgradeUtils.class, "Values that were uniquified at upgrade time");
 
     /**
      * Uniquifies values in a column, making it possible to add a UNIQUE CONSTRAINT/INDEX OR change a case-sensitive
      * UNIQUE CONSTRAINT/INDEX to case-insensitive. This is designed to be called from UpgradeCode that's invoked by an
      * upgrade script. Column is uniquified by adding _2, _3, etc. to any values that duplicate previous values in that
-     * group.
-     *
-     * Note: PostgreSQL UNIQUE CONSTRAINTs are ALWAYS case-sensitive; you must create a UNIQUE INDEX to constrain in
-     * a case-insensitive manner.
+     * group. Note: PostgreSQL UNIQUE CONSTRAINTs are ALWAYS case-sensitive; you must create a UNIQUE INDEX to constrain
+     * in a case-insensitive manner.
      *
      * @param column Column to uniquify. Must have a character type. Parent table must have a Container column.
      *      (It wouldn't be hard to add support for global tables, but there's no need right now.)
+     * @param additionalGroupingColumn Optional column to group by in addition to container.
+     * @param filter Optional Filter on the table; specify to uniquify within a subset of rows.
      * @param sort Determines the order that rows are uniquified; those earlier in the sort take precedence.
      * @param caseSensitive Determines whether uniquifying is done on a case-sensitive or case-insensitive basis
      * @param ignoreNulls If true, multiple null values are ignored (not updated). If false, subsequent null values are
      *      updated with a value of _ followed by a unique integer. (Some databases allow multiple null values in a
      *      UNIQUE constraint, some don't.)
-     * @throws SQLException
      */
-    public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, Sort sort, boolean caseSensitive, boolean ignoreNulls)
+    public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, @Nullable SimpleFilter filter, Sort sort, boolean caseSensitive, boolean ignoreNulls)
     {
         LOG.info("Removing duplicate values from " + column.getParentTable().toString() + "." + column.getName());
 
         // Do an aggregate query to determine all groups (containers or container + additional grouping column combinations) with uniqueness problems in this column
-        List<SimpleFilter> groupFilters = getFiltersForGroupsWithDuplicateValues(column, additionalGroupingColumn, caseSensitive, ignoreNulls);
+        List<SimpleFilter> groupFilters = getFiltersForGroupsWithDuplicateValues(column, additionalGroupingColumn, filter, caseSensitive, ignoreNulls);
 
         if (!groupFilters.isEmpty())
         {
@@ -74,14 +67,13 @@ public class UpgradeUtils
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 // Fix up the values in each group
-                for (SimpleFilter filter : groupFilters)
-                    uniquifyValuesInGroup(column, filter, sort, caseSensitive);
+                for (SimpleFilter groupFilter : groupFilters)
+                    uniquifyValuesInGroup(column, groupFilter, sort, caseSensitive);
 
                 transaction.commit();
             }
         }
     }
-
 
     private static void uniquifyValuesInGroup(ColumnInfo col, SimpleFilter filter, Sort sort, boolean caseSensitive)
     {
@@ -95,7 +87,7 @@ public class UpgradeUtils
         Set<String> existingValues = getSet(caseSensitive);
         existingValues.addAll(new TableSelector(table, selectColumns, filter, null).getCollection(String.class));
 
-        // Now enumerate the rows in the specified order and fix up the duplicates.  Use selectForDisplay to ensure PKs are selected.
+        // Now enumerate the rows in the specified order and fix up the duplicates. Use selectForDisplay to ensure PKs are selected.
         TableSelector selector = new TableSelector(table, selectColumns, filter, sort).setForDisplay(true);
 
         Map<String, Object>[] maps = selector.getMapArray();
@@ -145,7 +137,7 @@ public class UpgradeUtils
     }
 
 
-    private static List<SimpleFilter> getFiltersForGroupsWithDuplicateValues(final ColumnInfo column, @Nullable final ColumnInfo additionalGroupingColumn, boolean caseSensitive, final boolean ignoreNulls)
+    private static List<SimpleFilter> getFiltersForGroupsWithDuplicateValues(final ColumnInfo column, @Nullable final ColumnInfo additionalGroupingColumn, @Nullable SimpleFilter filter, boolean caseSensitive, final boolean ignoreNulls)
     {
         TableInfo table = column.getParentTable();
         String selectColumns = "Container";
@@ -168,9 +160,18 @@ public class UpgradeUtils
         sql.append(" FROM ");
         sql.append(table, "t");
 
+        String where = " WHERE ";
+
+        if (filter != null)
+        {
+            sql.append(" ");
+            sql.append(filter.getSQLFragment(table, "t"));
+            where = " AND ";
+        }
+
         if (ignoreNulls)
         {
-            sql.append(" WHERE ");
+            sql.append(where);
             sql.append(column.getSelectName());
             sql.append(" IS NOT NULL");
         }
@@ -182,7 +183,10 @@ public class UpgradeUtils
         final List<SimpleFilter> filters = new LinkedList<>();
 
         new SqlSelector(table.getSchema(), sql).forEachMap(map -> {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), map.get("Container"));
+            SimpleFilter simpleFilter = new SimpleFilter();
+            add(simpleFilter, FieldKey.fromParts("Container"), map.get("Container"));
+            if (filter != null)
+                simpleFilter.addAllClauses(filter);
 
             if (null != additionalGroupingColumn)
             {
@@ -190,18 +194,23 @@ public class UpgradeUtils
                 assert map.containsKey(alias);
                 Object value = map.get(alias);
 
-                if (null != value)
-                    filter.addCondition(additionalGroupingColumn, value);
-                else
-                    filter.addCondition(additionalGroupingColumn, null, CompareType.ISBLANK);
+                add(simpleFilter, additionalGroupingColumn.getFieldKey(), value);
             }
 
             if (ignoreNulls)
-                filter.addCondition(column, null, CompareType.NONBLANK);
+                simpleFilter.addCondition(column, null, CompareType.NONBLANK);
 
-            filters.add(filter);
+            filters.add(simpleFilter);
         });
 
         return filters;
+    }
+
+    private static void add(SimpleFilter filter, FieldKey key, @Nullable Object value)
+    {
+        if (null != value)
+            filter.addCondition(key, value);
+        else
+            filter.addCondition(key, null, CompareType.ISBLANK);
     }
 }

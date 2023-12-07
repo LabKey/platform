@@ -206,7 +206,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 {
     private static final Logger LOG = LogHelper.getLogger(ExperimentServiceImpl.class, "Experiment infrastructure including maintaining runs and lineage");
 
-    private static final Cache<String, ExpProtocolImpl> PROTOCOL_CACHE = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol");
+    private final Cache<Integer, ExpProtocolImpl> PROTOCOL_ROW_ID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by RowId",
+        (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(Protocol.class)));
+
+    private final Cache<String, ExpProtocolImpl> PROTOCOL_LSID_CACHE = DatabaseCache.get(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "Protocol by LSID",
+        (key, argument) -> toExpProtocol(new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), key), null).getObject(Protocol.class)));
 
     private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Data classes", (containerId, argument) ->
     {
@@ -1075,45 +1079,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocolImpl getExpProtocol(int rowid)
     {
-        ExpProtocolImpl result;
-
-        result = PROTOCOL_CACHE.get("ROWID/" + rowid);
-        if (null != result)
-            return result;
-
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("RowId"), rowid), null).getObject(Protocol.class);
-
-        return toExpProtocol(p);
+        return PROTOCOL_ROW_ID_CACHE.get(rowid);
     }
 
     @Override
     public ExpProtocolImpl getExpProtocol(String lsid)
     {
-        ExpProtocolImpl result = PROTOCOL_CACHE.get(getCacheKey(lsid));
-        if (null != result)
-            return result;
-
-        Protocol p = new TableSelector(getTinfoProtocol(), new SimpleFilter(FieldKey.fromParts("LSID"), lsid), null).getObject(Protocol.class);
-
-        return toExpProtocol(p);
+        return PROTOCOL_LSID_CACHE.get(lsid);
     }
 
     private ExpProtocolImpl toExpProtocol(@Nullable Protocol p)
     {
-        ExpProtocolImpl result = p == null ? null : new ExpProtocolImpl(p);
-        if (result != null)
-        {
-            PROTOCOL_CACHE.put(getCacheKey(result.getLSID()), result);
-            PROTOCOL_CACHE.put("ROWID/" + result.getRowId(), result);
-        }
-        return result;
+        return p == null ? null : new ExpProtocolImpl(p);
     }
 
     private void uncacheProtocol(Protocol p)
     {
-        Cache<String, ExpProtocolImpl> c = PROTOCOL_CACHE;
-        c.remove(getCacheKey(p.getLSID()));
-        c.remove("ROWID/" + p.getRowId());
+        PROTOCOL_ROW_ID_CACHE.remove(p.getRowId());
+        PROTOCOL_LSID_CACHE.remove(p.getLSID());
     }
 
     @Override
@@ -4031,7 +4014,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         ((SampleTypeServiceImpl) SampleTypeService.get()).clearMaterialSourceCache(null);
         getDataClassCache().clear();
-        PROTOCOL_CACHE.clear();
+        PROTOCOL_ROW_ID_CACHE.clear();
+        PROTOCOL_LSID_CACHE.clear();
         DomainPropertyManager.clearCaches();
     }
 
@@ -4750,9 +4734,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         try (DbScope.Transaction transaction = ensureTransaction();
             Timing timing = MiniProfiler.step("delete materials"))
         {
-            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE ");
-            sql.append(materialFilterSQL);
-
             Map<ExpSampleType, Set<Integer>> sampleTypeAliquotRoots = new HashMap<>();
 
             Map<String, ExpSampleTypeImpl> sampleTypes = new HashMap<>();
@@ -4763,70 +4744,80 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             // will be successful
             final List<String> docids = new ArrayList<>();
 
-            // Do this work in batches to avoid holding all materials in memory at once
-            int count = new SqlSelector(getExpSchema(), sql).setJdbcCaching(false).forEachBatch(Material.class, 10_000, rawMaterials ->
+            int count = 0;
+            // Fetch in batches so that Postgres doesn't cache all rows in memory. Disabling caching doesn't work
+            // because we're inside a transaction
+            final int maxBatch = 10_000;
+            boolean moreBatches = true;
+            while (moreBatches)
+            {
+                SQLFragment sql = dialect.limitRows(new SQLFragment("SELECT *"), new SQLFragment("FROM exp.Material"), new SQLFragment("WHERE ").append(materialFilterSQL), "ORDER BY RowId", null, maxBatch, count);
+                List<Material> rawMaterials = new SqlSelector(getExpSchema(), sql).getArrayList(Material.class);
+
+                moreBatches = rawMaterials.size() == maxBatch;
+                count += rawMaterials.size();
+
+                List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(rawMaterials);
+                for (ExpMaterialImpl material : materials)
+                {
+                    if (!material.getContainer().hasPermission(user, DeletePermission.class))
+                        throw new UnauthorizedException();
+
+                    if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
+                        throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
+
+                    docids.add(material.getDocumentId());
+
+                    if (null == stDeleteFrom)
                     {
-                        List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(rawMaterials);
-                        for (ExpMaterialImpl material : materials)
+                        if (deleteFromAllSampleTypes)
                         {
-                            if (!material.getContainer().hasPermission(user, DeletePermission.class))
-                                throw new UnauthorizedException();
-
-                            if (!ignoreStatus && !material.isOperationPermitted(SampleTypeService.SampleOperations.Delete))
-                                throw new IllegalArgumentException(String.format("Sample %s with status %s cannot be deleted", material.getName(), material.getStateLabel()));
-
-                            docids.add(material.getDocumentId());
-
-                            if (null == stDeleteFrom)
+                            String cpasType = material.getCpasType();
+                            if (!sampleTypes.containsKey(cpasType))
                             {
-                                if (deleteFromAllSampleTypes)
-                                {
-                                    String cpasType = material.getCpasType();
-                                    if (!sampleTypes.containsKey(cpasType))
-                                    {
-                                        ExpSampleTypeImpl st = material.getSampleType();
-                                        if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                            LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
-                                        sampleTypes.put(cpasType, st);
-                                    }
-                                }
-                                else
-                                {
-                                    // verify the material doesn't belong to a SampleType
-                                    if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
-                                        throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                                }
-                            }
-                            else
-                            {
-                                // verify the material doesn't belong to a SampleType
-                                if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
-                                    throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
-                            }
-
-                            if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
-                            {
-                                ExpSampleType sampleType = material.getSampleType();
-                                sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
-                                        .add(material.getRootMaterialRowId());
+                                ExpSampleTypeImpl st = material.getSampleType();
+                                if (st == null && !ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                                    LOG.warn("SampleType '" + material.getCpasType() + "' not found while deleting sample '" + material.getName() + "'");
+                                sampleTypes.put(cpasType, st);
                             }
                         }
-
-                        try (Timing ignored = MiniProfiler.step("beforeDelete"))
+                        else
                         {
-                            beforeDeleteMaterials(user, container, materials);
+                            // verify the material doesn't belong to a SampleType
+                            if (!ExpMaterial.DEFAULT_CPAS_TYPE.equals(material.getCpasType()))
+                                throw new IllegalArgumentException("Error deleting sample of default '" + ExpMaterialImpl.DEFAULT_CPAS_TYPE + "' type: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
                         }
+                    }
+                    else
+                    {
+                        // verify the material doesn't belong to a SampleType
+                        if (!stDeleteFrom.getLSID().equals(material.getCpasType()))
+                            throw new IllegalArgumentException("Error deleting '" + stDeleteFrom.getName() + "' sample: '" + material.getName() + "' is in the sample type '" + material.getCpasType() + "'");
+                    }
 
-                        try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
-                        {
-                            // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-                            if (deleteRunsUsingMaterials)
-                            {
-                                deleteRunsUsingInputs(user, null, rawMaterials);
-                            }
-                        }
-                        LOG.debug("Completed batch of sample deletion");
-                    });
+                    if (!truncateContainer && !Objects.equals(material.getRowId(), material.getRootMaterialRowId()))
+                    {
+                        ExpSampleType sampleType = material.getSampleType();
+                        sampleTypeAliquotRoots.computeIfAbsent(sampleType, (k) -> new HashSet<>())
+                                .add(material.getRootMaterialRowId());
+                    }
+                }
+
+                try (Timing ignored = MiniProfiler.step("beforeDelete"))
+                {
+                    beforeDeleteMaterials(user, container, materials);
+                }
+
+                try (Timing ignored = MiniProfiler.step("deleteRunsUsingInput"))
+                {
+                    // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
+                    if (deleteRunsUsingMaterials)
+                    {
+                        deleteRunsUsingInputs(user, null, rawMaterials);
+                    }
+                }
+                LOG.debug("Completed batch of sample deletion. " + count + " rows processed so far");
+            }
 
             // generate in clause for the Material LSIDs
             SQLFragment lsidInFrag = new SQLFragment(" IN (SELECT Lsid FROM ");
@@ -6461,8 +6452,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             else
             {
                 result = Table.update(user, getTinfoProtocol(), protocol, protocol.getRowId());
-                uncacheProtocol(protocol);
             }
+
+            uncacheProtocol(protocol);
 
             Collection<ProtocolParameter> protocolParams = protocol.retrieveProtocolParameters().values();
             if (!newProtocol)

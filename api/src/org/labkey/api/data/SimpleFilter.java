@@ -58,8 +58,6 @@ import static org.labkey.api.data.CompareType.NOT_IN;
 
 /**
  * Representation of zero or more filters to be used with a database query after being translated to a WHERE clause.
- * User: arauch
- * Date: Jan 11, 2005
  */
 public class SimpleFilter implements Filter
 {
@@ -1305,7 +1303,7 @@ public class SimpleFilter implements Filter
      */
     public SQLFragment getSQLFragment(TableInfo t, @Nullable String tableAlias)
     {
-        if (null == _clauses || 0 == _clauses.size())
+        if (null == _clauses || _clauses.isEmpty())
             return new SQLFragment();
 
         return getSQLFragment(t.getSqlDialect(), tableAlias, Table.createColumnMap(t, t.getColumns()));
