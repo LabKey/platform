@@ -114,6 +114,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     String LSID_COUNTER_DB_SEQUENCE_PREFIX = "LsidCounter-";
 
+    String LINEAGE_DEFAULT_MAXIMUM_DEPTH_PROPERTY_NAME = "lineageDefaultMaximumDepth";
+
     int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
     int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
     int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;

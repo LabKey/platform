@@ -30,6 +30,7 @@ import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.security.Crypt;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
 
@@ -308,16 +309,28 @@ public class FileUtil
 
     public static boolean mkdir(File file) throws IOException
     {
-        checkAllowedFileName(file.getName());
+        return mkdir(file, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static boolean mkdir(File file, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(file.getName());
         return file.mkdir();
     }
 
     public static boolean mkdirs(File file) throws IOException
     {
+        return mkdirs(file, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static boolean mkdirs(File file, boolean checkFileName) throws IOException
+    {
         File parent = file;
         while (!Files.exists(parent.toPath()))
         {
-            checkAllowedFileName(parent.getName());
+            if (checkFileName)
+                checkAllowedFileName(parent.getName());
             parent = parent.getParentFile();
         }
         return file.mkdirs();
@@ -325,7 +338,13 @@ public class FileUtil
 
     public static Path createDirectory(Path path) throws IOException
     {
-        checkAllowedFileName(getFileName(path));
+        return createDirectory(path, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static Path createDirectory(Path path, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(getFileName(path));
         if (!Files.exists(path))
             return Files.createDirectory(path);
         return path;
@@ -333,10 +352,16 @@ public class FileUtil
 
     public static Path createDirectories(Path path) throws IOException
     {
+        return createDirectories(path, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static Path createDirectories(Path path, boolean checkFileName) throws IOException
+    {
         Path parent = path;
         while (!Files.exists(parent))
         {
-            checkAllowedFileName(getFileName(parent));
+            if (checkFileName)
+                checkAllowedFileName(getFileName(parent));
             parent = parent.getParent();
         }
         return Files.createDirectories(path);
@@ -344,13 +369,25 @@ public class FileUtil
 
     public static boolean createNewFile(File file) throws IOException
     {
-        checkAllowedFileName(file.getName());
+        return createNewFile(file, AppProps.getInstance().isInvalidFilenameBlocked());
+    }
+
+    public static boolean createNewFile(File file, boolean checkFileName) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(file.getName());
         return file.createNewFile();
     }
 
     public static Path createFile(Path path, FileAttribute<?>... attrs) throws IOException
     {
-        checkAllowedFileName(getFileName(path));
+        return createFile(path, AppProps.getInstance().isInvalidFilenameBlocked(), attrs);
+    }
+
+    public static Path createFile(Path path, boolean checkFileName, FileAttribute<?>... attrs) throws IOException
+    {
+        if (checkFileName)
+            checkAllowedFileName(getFileName(path));
         return Files.createFile(path, attrs);
     }
 
