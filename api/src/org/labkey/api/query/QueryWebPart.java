@@ -261,7 +261,8 @@ public class QueryWebPart extends VBox
         {
             if (_schemaName == null)
             {
-                view = HtmlView.unsafe("Schema name is not set.");
+                view = HtmlView.of("Schema name is not set.");
+
             }
             else
             {
