@@ -269,7 +269,7 @@ public class DesignerController extends SpringActionController
                         VBox vbox = new VBox();
                         vbox.addClientDependency(ClientDependency.fromPath("study/StudyVaccineDesign.css"));
                         if (null != getViewContext().getRequest().getParameter("discussion.start") || null != getViewContext().getRequest().getParameter("discussion.id"))
-                            vbox.addView(new HtmlView("Study information is on this page below the discussion."));
+                            vbox.addView(HtmlView.of("Study information is on this page below the discussion."));
                         vbox.addView(discussion);
                         vbox.addView(studyView);
                         studyView = vbox;
@@ -283,7 +283,7 @@ public class DesignerController extends SpringActionController
                 Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
                 StudyDesignInfo info = StudyDesignManager.get().ensureDesignForStudy(getUser(), study, getContainer().hasPermission(getUser(), AdminPermission.class));
                 if (null == info)
-                    return new HtmlView("Study design information not available for this study.  Contact an administrator to configure the study design.");
+                    return HtmlView.of("Study design information not available for this study.  Contact an administrator to configure the study design.");
 
                 model.setStudyId(info.getStudyId());
                 model.setEditMode(form.isEdit());

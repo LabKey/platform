@@ -62,7 +62,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
             return new HBox(timeChartWizard);
         }
 
-        return new HBox(new HtmlView("Failed to find report."));
+        return new HBox(HtmlView.of("Failed to find report."));
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -322,7 +323,7 @@ public class DiscussionServiceImpl implements DiscussionService
     {
         AnchorView()
         {
-            super("<a name=\"discussionArea\"></a>");
+            super(HtmlString.unsafe("<a name=\"discussionArea\"></a>"));
         }
     }
 

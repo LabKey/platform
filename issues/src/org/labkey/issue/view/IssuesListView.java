@@ -58,7 +58,7 @@ public class IssuesListView extends VBox
                         deleteParameter(legacySettings.param(QueryParam.viewName)).
                         addParameter(settings.param(QueryParam.viewName), legacySettings.getViewName());
 
-                HtmlView warning = new HtmlView("<span class='labkey-error'>The specified URL contains an obsolete viewName parameter and is being ignored. " +
+                HtmlView warning = HtmlView.unsafe("<span class='labkey-error'>The specified URL contains an obsolete viewName parameter and is being ignored. " +
                         "Please update your bookmark to this new URL : <a target='blank' href='" + PageFlowUtil.filter(url.getLocalURIString()) + "'>" + PageFlowUtil.filter(url.getURIString()) + "</a></span>");
                 addView(warning);
             }

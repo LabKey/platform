@@ -18,6 +18,7 @@ package org.labkey.assay.view;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.actions.ProtocolIdForm;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -88,7 +89,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
         }
         catch (NotFoundException e)
         {
-            view = new HtmlView("This webpart does not reference a valid assay or provider.  Please customize this webpart.  <span class='labkey-error'>" + e.getMessage() + "</span>");
+            view = HtmlView.unsafe("This webpart does not reference a valid assay or provider.  Please customize this webpart.  <span class='labkey-error'>" + PageFlowUtil.filter(e.getMessage()) + "</span>");
             view.setTitle(getName());
         }
 

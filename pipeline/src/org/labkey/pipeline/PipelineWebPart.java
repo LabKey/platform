@@ -46,7 +46,7 @@ public class PipelineWebPart extends WebPartView
         if (!PipelineService.get().hasValidPipelineRoot(getViewContext().getContainer()) &&
                 !PipelineService.get().canModifyPipelineRoot(getViewContext().getUser(), getViewContext().getContainer()))
         {
-            HtmlView view = new HtmlView("<table class=\"DataRegion\"><tr><td>Setup required.  Please contact your project administrator.</td></tr></table>");
+            HtmlView view = HtmlView.unsafe("<table class=\"DataRegion\"><tr><td>Setup required.  Please contact your project administrator.</td></tr></table>");
             view.setTitle(getPartName());
             include(view);
         }

@@ -55,7 +55,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
                 VBox vbox = new VBox();
                 vbox.addView(StudyManager.getInstance().getParticipantDemographicsView(c, config, null));
                 // put a little space between the two views:
-                vbox.addView(new HtmlView("<p/>"));
+                vbox.addView(HtmlView.unsafe("<p/>"));
                 vbox.addView(StudyManager.getInstance().getParticipantView(c, config));
                 return vbox;
             }
@@ -167,13 +167,13 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(container);
         if (participantId == null)
-            return new HtmlView("This webpart does not reference a valid " + subjectNoun + " ID.  Please customize the webpart.");
+            return HtmlView.of("This webpart does not reference a valid " + subjectNoun + " ID.  Please customize the webpart.");
         Study study = StudyManager.getInstance().getStudy(container);
         if (study == null)
-            return new HtmlView("This folder does not contain a study.");
+            return HtmlView.of("This folder does not contain a study.");
         Participant participant = StudyManager.getInstance().getParticipant(study, participantId);
         if (participant == null)
-            return new HtmlView(filter(subjectNoun) + " \"" + filter(participantId) + "\" does not exist in study \"" + study.getLabel() + "\".");
+            return HtmlView.of(subjectNoun + " \"" + participantId + "\" does not exist in study \"" + study.getLabel() + "\".");
 
         ParticipantViewConfig config = new ParticipantViewConfig()
         {

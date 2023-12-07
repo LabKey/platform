@@ -114,7 +114,7 @@ public class QueryReport extends AbstractReport
 
             if (sb.length() > 0)
             {
-                return new HtmlView("<span class=\"labkey-error\">" + PageFlowUtil.filter(sb.toString(), true, false) + "</span>");
+                return HtmlView.unsafe("<span class=\"labkey-error\">" + PageFlowUtil.filter(sb.toString(), true, false) + "</span>");
             }
             return null;
         }

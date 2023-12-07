@@ -261,11 +261,11 @@ public class QueryWebPart extends VBox
         {
             if (_schemaName == null)
             {
-                view = new HtmlView("Schema name is not set.");
+                view = HtmlView.unsafe("Schema name is not set.");
             }
             else
             {
-                view = new HtmlView("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
+                view = HtmlView.of("Schema '" + _schemaName + "' does not exist.");
             }
         }
 
@@ -282,7 +282,7 @@ public class QueryWebPart extends VBox
                 }
                 catch (RuntimeException x)
                 {
-                    view = new HtmlView("<span class=error>" + PageFlowUtil.filter(x.getMessage()) + "</span>");
+                    view = HtmlView.err(x.getMessage());
                 }
             }
         }

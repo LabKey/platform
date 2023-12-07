@@ -762,7 +762,7 @@ public class StudyController extends BaseStudyController
             else if (ReportManager.get().canReadReport(getUser(), getContainer(), report))
                 return report.getRunReportView(getViewContext());
             else
-                return new HtmlView("User does not have read permission on this report.");
+                return HtmlView.of("User does not have read permission on this report.");
         }
     }
 
@@ -962,11 +962,11 @@ public class StudyController extends BaseStudyController
             Report report = queryView.getSettings().getReportView(context);
             if (report != null && !ReportManager.get().canReadReport(getUser(), getContainer(), report))
             {
-                return new HtmlView("User does not have read permission on this report.");
+                return HtmlView.of("User does not have read permission on this report.");
             }
             else if (report == null && (null==table || !table.hasPermission(getUser(),ReadPermission.class)))
             {
-                return new HtmlView("User does not have read permission on this dataset.");
+                return HtmlView.of("User does not have read permission on this dataset.");
             }
             else if (DiscussionService.get() != null)
             {
@@ -1091,7 +1091,7 @@ public class StudyController extends BaseStudyController
             }
             catch (StudyManager.ParticipantNotUniqueException x)
             {
-                return new HtmlView(PageFlowUtil.filter(x.getMessage()));
+                return HtmlView.of(x.getMessage());
             }
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
@@ -1211,7 +1211,7 @@ public class StudyController extends BaseStudyController
             }
             catch (StudyManager.ParticipantNotUniqueException x)
             {
-                return new HtmlView(PageFlowUtil.filter(x.getMessage()));
+                return HtmlView.of(x.getMessage());
             }
 
             PageConfig page = getPageConfig();
@@ -1672,7 +1672,7 @@ public class StudyController extends BaseStudyController
             }
 
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
+                return HtmlView.err("Unsupported operation for continuous study");
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
@@ -1915,7 +1915,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudyRedirectIfNull();
             if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous date study</span>");
+                return HtmlView.err("Unsupported operation for continuous date study");
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
@@ -2176,10 +2176,10 @@ public class StudyController extends BaseStudyController
 
             Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
             if (sharedStudy != null && sharedStudy.getShareVisitDefinitions())
-                return new HtmlView("<span class='labkey-error'>Can't delete visits from a study with shared visits.</span>");
+                return HtmlView.err("Can't delete visits from a study with shared visits.");
 
             if (_timepointType == TimepointType.CONTINUOUS)
-                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study.</span>");
+                return HtmlView.err("Unsupported operation for continuous study.");
 
             return new StudyJspView<>(getStudyRedirectIfNull(), "/org/labkey/study/view/bulkVisitDelete.jsp", form, errors);
         }
@@ -2267,7 +2267,7 @@ public class StudyController extends BaseStudyController
             _timepointType = study.getTimepointType();
 
             if (_timepointType == TimepointType.CONTINUOUS)
-                return new HtmlView("<span class='labkey-error'>Unsupported operation for continuous study</span>");
+                return HtmlView.err("Unsupported operation for continuous study");
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
@@ -2721,7 +2721,7 @@ public class StudyController extends BaseStudyController
             ActionURL url = LsidManager.get().getDisplayURL(form.getSourceLsid());
             if (url == null)
             {
-                return new HtmlView("The assay run that produced the data has been deleted.");
+                return HtmlView.of("The assay run that produced the data has been deleted.");
             }
             return HttpView.redirect(url);
         }
@@ -3658,7 +3658,7 @@ public class StudyController extends BaseStudyController
             if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
-                return new HtmlView("No data rows selected. " + PageFlowUtil.link("back").href("javascript:back()"));
+                return HtmlView.unsafe("No data rows selected. " + PageFlowUtil.link("back").onClick("back()"));
 
             StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, getUser());
             DatasetQuerySettings qs = new DatasetQuerySettings(getViewContext().getBindPropertyValues(), DatasetQueryView.DATAREGION);
@@ -4077,14 +4077,14 @@ public class StudyController extends BaseStudyController
         {
             if (reshow)
             {
-                return new HtmlView(
+                return HtmlView.unsafe(
                         "<div>" + _count + " rows were updated.<p/>" +
                                 PageFlowUtil.button("Done").href(new ActionURL(ManageVisitsAction.class, getContainer())) +
                                 "</div>");
             }
             else
             {
-                return new HtmlView(
+                return HtmlView.unsafe(
                         "<form method=POST>Click the button below to recalculate visit dates for all participants in this study.<p/>" +
                         PageFlowUtil.button("Recalculate Visit Dates").href(new ActionURL(UpdateParticipantVisitsAction.class, getContainer())).submit(true) +
                         new CsrfInput(getViewContext()) +
@@ -6369,7 +6369,7 @@ public class StudyController extends BaseStudyController
             if (getPageConfig().getTitle() == null)
                 setTitle("Clear Custom Mapping");
 
-            return new HtmlView("Are you sure you want to delete the visit import custom mapping for this study?");
+            return HtmlView.of("Are you sure you want to delete the visit import custom mapping for this study?");
         }
 
         @Override
@@ -6450,7 +6450,7 @@ public class StudyController extends BaseStudyController
         {
             if (form.getRowId() == null)
             {
-                return new HtmlView("<span class='labkey-error'>No participant group RowId provided.</span>");
+                return HtmlView.err("No participant group RowId provided.");
             }
             else
             {
@@ -6465,8 +6465,7 @@ public class StudyController extends BaseStudyController
                     }
                 }
 
-                return new HtmlView("<span class='labkey-error'>Could not find participant group for RowId " + form.getRowId()
-                        + " or you do not have permission to read it.</span>");
+                return HtmlView.err("Could not find participant group for RowId " + form.getRowId() + " or you do not have permission to read it.");
             }
         }
 

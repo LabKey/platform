@@ -125,8 +125,8 @@ public class AssayPublishStartAction extends AbstractPublishStartAction<AssayPub
         // if QC is enabled for this protocol, verify that the selected data has been approved, otherwise show an error
         if (!validateQCState(_runIds, ids))
         {
-            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>QC checks failed. There are unapproved rows of data in the link to study selection, " +
-                    "please change your selection or request a QC Analyst to approve the run data.</span>"));
+            return HtmlView.err("QC checks failed. There are unapproved rows of data in the link to study selection, " +
+                    "please change your selection or request a QC Analyst to approve the run data.");
         }
 
         // If the TargetStudy column is on the result domain, redirect past the choose target study page directly to the confirm page.
