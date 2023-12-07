@@ -272,9 +272,9 @@ function renderFormPanel(data, editable){
     {
 %>
     protocolDocs.push({
-        logo : <%=q(getWebappURL(att.getFileIcon()))%>,
-        text : <%=q((shortenFileName(att.getName())))%>,
-        removeURL : <%=q(att.getName())%>,
+        logo : <%=q(h(getWebappURL(att.getFileIcon())))%>,
+        text : <%=q(h(shortenFileName(att.getName())))%>,
+        removeURL : <%=q(h(att.getName()))%>,
         atId : <%=x%>
     });
 <%
@@ -294,10 +294,10 @@ function renderFormPanel(data, editable){
 
     const protoTemplate = new Ext4.XTemplate(
         '<tpl for=".">',
-            '<div class="protoDoc" id="attach-{atId:htmlEncode}">',
-                '<td>&nbsp;<img src="{logo:htmlEncode}" talt="logo"/></td>',
-                '<td>&nbsp; {text:htmlEncode} </td>',
-                '<td>&nbsp; [<a class="removelink" data-removeurl="{removeURL:htmlEncode}" attachid="attach-{atId:htmlEncode}">remove </a>]</td>',
+            '<div class="protoDoc" id="attach-{atId}">',
+                '<td>&nbsp;<img src="{logo}" talt="logo"/></td>',
+                '<td>&nbsp; {text} </td>',
+                '<td>&nbsp; [<a class="removeLink" data-removeurl="{removeURL}" data-attachid="attach-{atId}">remove </a>]</td>',
             '</div>',
         '</tpl>',
         '<div>',
