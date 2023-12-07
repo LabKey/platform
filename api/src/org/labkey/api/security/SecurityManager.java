@@ -220,9 +220,16 @@ public class SecurityManager
         };
     }
 
-    public static void registerAllowedConnectionSource(String serviceURL)
+    public static void registerAllowedConnectionSource(String key, String serviceURL)
     {
-        ContentSecurityPolicyFilter.registerAllowedConnectionSource(serviceURL);
+        if (StringUtils.trimToNull(serviceURL) == null)
+        {
+            ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(key);
+            _log.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
+            return;
+        }
+
+        ContentSecurityPolicyFilter.registerAllowedConnectionSource(key, serviceURL);
         _log.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
     }
 
