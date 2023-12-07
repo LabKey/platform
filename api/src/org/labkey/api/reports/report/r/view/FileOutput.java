@@ -61,7 +61,7 @@ public class FileOutput extends DownloadParamReplacement
         if (getReport() instanceof AttachmentParent)
             return new FileoutReportView(this, getReport());
         else
-            return HtmlView.of(DownloadParamReplacement.UNABlE_TO_RENDER);
+            return HtmlView.of(DownloadParamReplacement.UNABLE_TO_RENDER);
     }
 
     public static class FileoutReportView extends DownloadOutputView
