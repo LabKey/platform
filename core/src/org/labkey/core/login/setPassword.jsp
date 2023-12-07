@@ -225,7 +225,7 @@
                     const textIndex = Math.floor(percent * 6);
                     const text = showPlaceholderText ?  "Password Strength Gauge" : ["Very Weak", "Very Weak", "Weak", "Weak", "Strong", "Very Strong"][textIndex];
                     ctx.fillText(text, centerX, centerY + textHeightFix);
-                    canvas.text = "Password Strength: " + text;
+                    canvas.innerText = text;
                 })
             });
         };
