@@ -2755,21 +2755,21 @@ public class AdminController extends SpringActionController
                 transactionStats.add(CacheManager.getTransactionCacheStats(cache));
             }
 
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
 
             html.append(PageFlowUtil.link("Clear Caches and Refresh", getCachesURL(true, false)));
             html.append(PageFlowUtil.link("Refresh", getCachesURL(false, false)));
 
-            html.append("<br/><br/>\n");
+            html.unsafeAppend("<br/><br/>\n");
             appendStats(html, "Caches", cacheStats, false);
 
-            html.append("<br/><br/>\n");
+            html.unsafeAppend("<br/><br/>\n");
             appendStats(html, "Transaction Caches", transactionStats, true);
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
-        private void appendStats(StringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
+        private void appendStats(HtmlStringBuilder html, String title, List<CacheStats> allStats, boolean skipUnusedCaches)
         {
             List<CacheStats> stats = skipUnusedCaches ?
                 allStats.stream()
@@ -2779,24 +2779,24 @@ public class AdminController extends SpringActionController
 
             Collections.sort(stats);
 
-            html.append("<p><b>");
-            html.append(PageFlowUtil.filter(title));
-            html.append(" (").append(stats.size()).append(")</b></p>\n");
+            html.unsafeAppend("<p><b>");
+            html.append(title);
+            html.append(" (").append(stats.size()).unsafeAppend(")</b></p>\n");
 
-            html.append("<table class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">\n");
-            html.append("<tr><td class=\"labkey-column-header\">Debug Name</td>");
-            html.append("<td class=\"labkey-column-header\">Limit</td>");
-            html.append("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
-            html.append("<td class=\"labkey-column-header\">Current&nbsp;Size</td>");
-            html.append("<td class=\"labkey-column-header\">Gets</td>");
-            html.append("<td class=\"labkey-column-header\">Misses</td>");
-            html.append("<td class=\"labkey-column-header\">Puts</td>");
-            html.append("<td class=\"labkey-column-header\">Expirations</td>");
-            html.append("<td class=\"labkey-column-header\">Evictions</td>");
-            html.append("<td class=\"labkey-column-header\">Removes</td>");
-            html.append("<td class=\"labkey-column-header\">Clears</td>");
-            html.append("<td class=\"labkey-column-header\">Miss Percentage</td>");
-            html.append("<td class=\"labkey-column-header\">Clear</td></tr>");
+            html.unsafeAppend("<table class=\"labkey-data-region-legacy labkey-show-borders labkey-data-region-header-lock\">\n");
+            html.unsafeAppend("<tr><td class=\"labkey-column-header\">Debug Name</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Limit</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Max&nbsp;Size</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Current&nbsp;Size</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Gets</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Misses</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Puts</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Expirations</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Evictions</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Removes</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Clears</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Miss Percentage</td>");
+            html.unsafeAppend("<td class=\"labkey-column-header\">Clear</td></tr>");
 
             long size = 0;
             long gets = 0;
@@ -2832,20 +2832,20 @@ public class AdminController extends SpringActionController
                 html.append("<td>").append(PageFlowUtil.link("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
 
                 if (null != limit && maxSize >= limit)
-                    html.append("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
+                    html.unsafeAppend("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
 
-                html.append("</tr>\n");
+                html.unsafeAppend("</tr>\n");
                 rowCount++;
             }
 
             double ratio = 0 != gets ? misses / (double)gets : 0;
-            html.append("<tr class=\"labkey-row\"><td><b>Total</b></td>");
+            html.unsafeAppend("<tr class=\"labkey-row\"><td><b>Total</b></td>");
 
             appendLongs(html, null, null, size, gets, misses, puts, expirations, evictions, removes, clears);
             appendDoubles(html, ratio);
 
-            html.append("</tr>\n");
-            html.append("</table>\n");
+            html.unsafeAppend("</tr>\n");
+            html.unsafeAppend("</table>\n");
         }
 
         private static final List<String> PREFIXES_TO_SKIP = List.of(
@@ -2857,7 +2857,7 @@ public class AdminController extends SpringActionController
             "org.labkey.api.module.ModuleResourceCache"
         );
 
-        private void appendDescription(StringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
+        private void appendDescription(HtmlStringBuilder html, String description, @Nullable StackTraceElement[] creationStackTrace)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -2888,21 +2888,21 @@ public class AdminController extends SpringActionController
             }
         }
 
-        private void appendLongs(StringBuilder html, Long... stats)
+        private void appendLongs(HtmlStringBuilder html, Long... stats)
         {
             for (Long stat : stats)
             {
                 if (null == stat)
-                    html.append("<td>&nbsp;</td>");
+                    html.unsafeAppend("<td>&nbsp;</td>");
                 else
-                    html.append("<td align=\"right\">").append(commaf0.format(stat)).append("</td>");
+                    html.unsafeAppend("<td align=\"right\">").append(commaf0.format(stat)).unsafeAppend("</td>");
             }
         }
 
-        private void appendDoubles(StringBuilder html, double... stats)
+        private void appendDoubles(HtmlStringBuilder html, double... stats)
         {
             for (double stat : stats)
-                html.append("<td align=\"right\">").append(percent.format(stat)).append("</td>");
+                html.unsafeAppend("<td align=\"right\">").append(percent.format(stat)).unsafeAppend("</td>");
         }
 
         @Override
@@ -8474,15 +8474,15 @@ public class AdminController extends SpringActionController
             HtmlStringBuilder deleteInstructions = HtmlStringBuilder.of();
             if (hasAdminOpsPerm)
             {
-                deleteInstructions.append(unsafe("<br><br>")).append(
+                deleteInstructions.unsafeAppend("<br><br>").append(
                         "To delete a module that does not have a delete link, first delete its .module file and exploded module directory from your Labkey deployment directory, and restart the server. " +
                         "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.")
-                    .append(unsafe("<br><br>")).append(
+                    .unsafeAppend("<br><br>").append(
                         PageFlowUtil.link("Create new empty module").href(getCreateURL()));
             }
 
             HtmlStringBuilder docLink = HtmlStringBuilder.of();
-            docLink.append(unsafe("<br><br>")).append("Additional modules available, click ").append(new HelpTopic("defaultModules").getSimpleLinkHtml("here")).append(" to learn more.");
+            docLink.unsafeAppend("<br><br>").append("Additional modules available, click ").append(new HelpTopic("defaultModules").getSimpleLinkHtml("here")).append(" to learn more.");
 
             HtmlStringBuilder knownDescription = HtmlStringBuilder.of()
                 .append("Each of these modules is installed and has a valid module file. ").append(managedLink).append(unmanagedLink).append(deleteInstructions).append(docLink);
@@ -10190,30 +10190,30 @@ public class AdminController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             Collection<BlockListFilter.Suspicious> list = BlockListFilter.reportSuspicious();
-            StringBuilder sb = new StringBuilder();
+            HtmlStringBuilder sb = HtmlStringBuilder.of();
             if (list.isEmpty())
             {
                 sb.append("No suspicious activity.\n");
             }
             else
             {
-                sb.append("<table class='table'>");
-                sb.append("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
+                sb.unsafeAppend("<table class='table'>");
+                sb.unsafeAppend("<thead><th>host (user)</th><th>user-agent</th><th>count</th></thead>\n");
                 for (BlockListFilter.Suspicious s : list)
                 {
-                    sb.append("<tr><td>")
-                            .append(PageFlowUtil.filter(s.host));
+                    sb.unsafeAppend("<tr><td>")
+                            .append(s.host);
                     if (!isBlank(s.user))
-                            sb.append("&nbsp;(" + PageFlowUtil.filter(s.user) + ")");
-                     sb.append("</td><td>")
-                            .append(PageFlowUtil.filter(s.userAgent))
-                            .append("</td><td>")
-                            .append(PageFlowUtil.filter(s.count))
-                            .append("</td></tr>\n");
+                            sb.append(HtmlString.NBSP).append("(" + s.user + ")");
+                     sb.unsafeAppend("</td><td>")
+                            .append(s.userAgent)
+                            .unsafeAppend("</td><td>")
+                            .append(s.count)
+                            .unsafeAppend("</td></tr>\n");
                 }
-                sb.append("</table>");
+                sb.unsafeAppend("</table>");
             }
-            return new HtmlView(sb.toString());
+            return new HtmlView(sb);
         }
 
         @Override

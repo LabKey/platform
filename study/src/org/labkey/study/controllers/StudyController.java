@@ -915,7 +915,7 @@ public class StudyController extends BaseStudyController
             }
 
             StringBuilder sb = new StringBuilder();
-            if (def.getDescription() != null && def.getDescription().length() > 0)
+            if (def.getDescription() != null && !def.getDescription().isEmpty())
                 sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
             if (_cohortFilter != null)
                 sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");

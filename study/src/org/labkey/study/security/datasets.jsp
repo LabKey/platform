@@ -267,7 +267,7 @@ set on the alternate ID dataset will affect who can edit other datasets. Hover o
         // Highlight "special" datasets (cohort, altid, comments, etc.) in the grid
         String toolTip = getTooltip(study, ds.getDatasetId());
         HtmlString toolTipHtml = null == toolTip ? HtmlString.EMPTY_STRING : unsafe(" data-toggle=\"tooltip\" title=\"" + toolTip + "\"");
-        HtmlString label = null == toolTip ? h(ds.getLabel()) : HtmlStringBuilder.of().append(unsafe("<b>")).append(ds.getLabel()).append(unsafe("</b>")).getHtmlString();
+        HtmlString label = null == toolTip ? h(ds.getLabel()) : HtmlStringBuilder.of().unsafeAppend("<b>").append(ds.getLabel()).unsafeAppend("</b>").getHtmlString();
         %><td<%=toolTipHtml%>><%=label%></td><%
 
         for (Group g : restrictedGroups)
