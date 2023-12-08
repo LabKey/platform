@@ -113,7 +113,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
                 return view;
             }
             else
-                return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>The run has errors which prevent it from being displayed.</span>"));
+                return HtmlView.err("The run has errors which prevent it from being displayed.");
         }
         catch (ExperimentException e)
         {

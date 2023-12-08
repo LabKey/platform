@@ -2357,7 +2357,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
-            return new HtmlView("Are you sure you want to reset the site errors?");
+            return HtmlView.of("Are you sure you want to reset the site errors?");
         }
 
         @Override
@@ -6078,7 +6078,7 @@ public class AdminController extends SpringActionController
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
             VBox defaultsView = new VBox(
-                new HtmlView(
+                HtmlView.unsafe(
                     "<div class=\"labkey-announcement-title\"><span>Default settings</span></div><div class=\"labkey-title-area-line\"></div>" +
                         "You can change this folder's default settings for email notifications here.")
             );
@@ -6093,7 +6093,7 @@ public class AdminController extends SpringActionController
                 new JspView<>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", null, errors),
                 defaultsView,
                 new VBox(
-                    new HtmlView(
+                    HtmlView.unsafe(
                         "<div class='labkey-announcement-title'><span>User settings</span></div><div class='labkey-title-area-line'></div>" +
                             "The list below contains all users with read access to this folder who are able to receive notifications. Each user's current<br/>" +
                             "notification setting is visible in the appropriately named column.<br/><br/>" +
@@ -10802,7 +10802,7 @@ public class AdminController extends SpringActionController
         protected HttpView getTabView()
         {
             if (getContainer().isRoot())
-                return getErrorView("Menu bar must be configured for each project separately.");
+                return HtmlView.err("Menu bar must be configured for each project separately.");
 
             WebPartView v = new JspView<>("/org/labkey/core/admin/editMenuBar.jsp", null);
             v.setView("menubar", new VBox());
@@ -10810,11 +10810,6 @@ public class AdminController extends SpringActionController
 
             return v;
         }
-    }
-
-    private static HtmlView getErrorView(String msg)
-    {
-        return new HtmlView("<span class=\"labkey-error\">" + msg + "</span>");
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -10826,7 +10821,7 @@ public class AdminController extends SpringActionController
             Container c = getContainer();
 
             if (c.isRoot())
-                return getErrorView("Files must be configured for each project separately.");
+                return HtmlView.err("Files must be configured for each project separately.");
 
             if (!reshow || form.isPipelineRootForm())
             {

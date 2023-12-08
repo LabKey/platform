@@ -66,7 +66,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
         if (!validateScript(script, errors))
         {
             for (String error : errors)
-                view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
+                view.addView(HtmlView.err(error));
             return view;
         }
 
@@ -87,7 +87,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
             errors.add(error2);
 
             String err = "<font class=\"labkey-error\">" + error1 + "</font><pre>" + error2 + "</pre>";
-            HttpView errView = new HtmlView(err);
+            HttpView errView = HtmlView.unsafe(err);
             view.addView(errView);
         }
 

@@ -1964,14 +1964,14 @@ public class SecurityController extends SpringActionController
                 "<p>%1$s: Password %2$s.</p><p>Email sent. Click <a href=\"%3$s\" target=\"_blank\">here</a> to see the email.</p>%4$s",
                 PageFlowUtil.filter(form.getEmail()),
                 _loginExists ? "reset" : "created",
-                actionURL.getLocalURIString(),
+                PageFlowUtil.filter(actionURL.getLocalURIString()),
                 PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()))
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             setTitle("Password Reset Success");
 
-            return new HtmlView(page);
+            return HtmlView.unsafe(page);
         }
 
         @Override

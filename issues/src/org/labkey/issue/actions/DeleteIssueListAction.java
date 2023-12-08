@@ -77,7 +77,7 @@ public class DeleteIssueListAction extends FormViewAction<DeleteIssueListAction.
         if (!form.getIssueDefId().isEmpty())
             return new JspView<>("/org/labkey/issue/view/deleteIssueList.jsp", form);
         else
-            return new HtmlView("<span class='labkey-error'>Unable to find an Issue List with that ID.</span>");
+            return HtmlView.err("Unable to find an Issue List with that ID.");
     }
 
     @Override

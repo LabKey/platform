@@ -28,7 +28,7 @@ import java.io.File;
  */
 public abstract class DownloadParamReplacement extends AbstractParamReplacement
 {
-    protected static final String UNABlE_TO_RENDER = "Unable to render this output, no report associated with this replacement param";
+    protected static final String UNABLE_TO_RENDER = "Unable to render this output, no report associated with this replacement param";
 
     public DownloadParamReplacement(String id)
     {
@@ -69,6 +69,6 @@ public abstract class DownloadParamReplacement extends AbstractParamReplacement
     protected ScriptOutput renderAsScriptOutputError()
     {
         return new ScriptOutput(ScriptOutput.ScriptOutputType.error, getName(),
-                DownloadParamReplacement.UNABlE_TO_RENDER);
+                DownloadParamReplacement.UNABLE_TO_RENDER);
     }
 }

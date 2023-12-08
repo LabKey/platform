@@ -57,7 +57,7 @@ public class StudyMacroProvider implements MacroProvider
                 }
 
                 if (null == report)
-                    return new HtmlView("Could not find view with name = " + PageFlowUtil.filter(reportName) + " or id = " + reportIdStr + "<br>");
+                    return HtmlView.of("Could not find view with name = " + reportName + " or id = " + reportIdStr);
 
 
                 HttpView view = report.renderReport(parentContext);

@@ -144,7 +144,7 @@ public class TestController extends SpringActionController
         {
             ViewContext ctx = getViewContext();
             LEAKED_VIEW_CONTEXTS.add(ctx);
-            return new HtmlView("One ViewContext leaked: " + ctx.toString());
+            return HtmlView.of("One ViewContext leaked: " + ctx.toString());
         }
 
         @Override
@@ -166,7 +166,7 @@ public class TestController extends SpringActionController
         {
             int count = LEAKED_VIEW_CONTEXTS.size();
             LEAKED_VIEW_CONTEXTS.clear();
-            return new HtmlView("Cleared " + count + " leaked ViewContexts");
+            return HtmlView.of("Cleared " + count + " leaked ViewContexts");
         }
 
         @Override
@@ -525,7 +525,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors)
         {
-            return new HtmlView("SUCCESS you can " + _action);
+            return HtmlView.of("SUCCESS you can " + _action);
         }
 
         @Override

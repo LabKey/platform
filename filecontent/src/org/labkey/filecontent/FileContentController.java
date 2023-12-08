@@ -90,6 +90,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -1512,7 +1513,7 @@ public class FileContentController extends SpringActionController
     {
         public ImgView(String url)
         {
-            super("\n<img src=\"" + PageFlowUtil.filter(url) + "\">");
+            super(HtmlString.unsafe("\n<img src=\"" + PageFlowUtil.filter(url) + "\">"));
         }
     }
 

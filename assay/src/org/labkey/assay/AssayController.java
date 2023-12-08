@@ -549,7 +549,7 @@ public class AssayController extends SpringActionController
                     .append(HtmlString.unsafe("<table><tr><td><b>Select destination folder:</b></td></tr>"))
                     .append(tree.getHtmlString())
                     .append(HtmlString.unsafe("</table>")).getHtmlString());
-            HtmlView bbar = new HtmlView(
+            HtmlView bbar = HtmlView.unsafe(
                     PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
                     (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : ""));
             setHelpTopic("manageAssayDesign");
@@ -1570,7 +1570,7 @@ public class AssayController extends SpringActionController
                 return view;
             }
             else
-                return new HtmlView("No runs have been selected to update");
+                return HtmlView.of("No runs have been selected to update");
         }
 
         @Override

@@ -337,7 +337,7 @@ public class ReportsController extends BaseStudyController
             }
             else
             {
-                return new HtmlView("<span class='labkey-error'>The report to save is either invalid or was not specified.</span>");
+                return HtmlView.err("The report to save is either invalid or was not specified.");
             }
         }
 
@@ -1132,7 +1132,7 @@ public class ReportsController extends BaseStudyController
         {
             _report = getReport(form);
             if (_report == null)
-                return new HtmlView("Unable to locate the specified report");
+                return HtmlView.of("Unable to locate the specified report");
 
             Dataset def = getDatasetDefinition();
             if (def != null && _report != null)
@@ -1147,7 +1147,7 @@ public class ReportsController extends BaseStudyController
             if (ReportManager.get().canReadReport(getUser(), getContainer(), _report))
                 return _report.getRunReportView(getViewContext());
             else
-                return new HtmlView("User does not have read permission on this report.");
+                return HtmlView.of("User does not have read permission on this report.");
         }
 
         protected Dataset getDatasetDefinition()
@@ -1284,7 +1284,7 @@ public class ReportsController extends BaseStudyController
                 return view;
             }
             else
-                return new HtmlView("A study does not exist in this folder");
+                return HtmlView.of("A study does not exist in this folder");
         }
 
         @Override

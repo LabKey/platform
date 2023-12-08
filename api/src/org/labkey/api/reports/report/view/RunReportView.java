@@ -51,7 +51,7 @@ public abstract class RunReportView extends TabStripView
 
         if (report == null)
         {
-            include(new HtmlView("Unable to find the specified report"));
+            include(HtmlView.of("Unable to find the specified report"));
             return;
         }
 

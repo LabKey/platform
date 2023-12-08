@@ -2207,7 +2207,7 @@ public class LoginController extends SpringActionController
                 PageConfig page = getPageConfig();
                 page.setTemplate(PageConfig.Template.Dialog);
                 page.setTitle("Token Authentication Error");
-                return new HtmlView("Error: a valid returnUrl was not specified.");
+                return HtmlView.of("Error: a valid returnUrl was not specified.");
             }
 
             User user = getUser().isImpersonated() ? getUser().getImpersonatingUser() : getUser();

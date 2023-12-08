@@ -115,7 +115,7 @@ public class ReportsWebPart extends WebPartView
                 return;
             }
         }
-        include(new HtmlView("Unable to display the specified report."));        
+        include(HtmlView.of("Unable to display the specified report."));
     }
 
 
