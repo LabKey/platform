@@ -261,6 +261,7 @@
 </nav>
 <% if (!model.getCustomMenus().isEmpty()) { %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
+    <%--  note __menus must be a var, not a let or const  --%>
     var __menus = {};
     LABKEY.Utils.onReady(function() {
         <%
