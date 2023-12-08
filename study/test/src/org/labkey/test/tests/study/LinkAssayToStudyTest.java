@@ -209,7 +209,7 @@ public class LinkAssayToStudyTest extends AbstractAssayTest
         setFormElement(Locator.id("TextAreaDataCollector.textArea"), TEST_RUN2_DATA2);
         clickButton("Save and Finish");
 
-        assertTextPresent("VisitID must be of type Number (Double)");
+        assertTextPresent("Could not convert value 'g' (String) for Double field 'VisitID'");
         assertTextPresent(PROTOCOL_DOC2.getName());
         assertFormElementEquals(Locator.name("name"), TEST_RUN2);
         assertFormElementEquals(Locator.name("comments"), TEST_RUN2_COMMENTS);
