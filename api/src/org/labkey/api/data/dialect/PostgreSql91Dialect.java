@@ -762,6 +762,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         if (dataSource.isPrimary())
         {
             dataSource.setConnectionProperty("preparedThreshold", "0");
+            dataSource.setConnectionProperty("preparedStatementCacheQueries", "0");
         }
     }
 
