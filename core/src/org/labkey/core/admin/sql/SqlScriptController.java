@@ -502,33 +502,32 @@ public class SqlScriptController extends SpringActionController
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
 
-            StringBuilder formHtml = new StringBuilder();
+            HtmlStringBuilder formHtml = HtmlStringBuilder.of();
 
-            formHtml.append("<form method=\"get\">\n");
-            formHtml.append("  <table>\n");
-            formHtml.append("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
+            formHtml.unsafeAppend("<form method=\"get\">\n");
+            formHtml.unsafeAppend("  <table>\n");
+            formHtml.unsafeAppend("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
             formHtml.append(ModuleContext.formatVersion(_fromVersion));
-            formHtml.append("\"/></td></tr>\n");
-            formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
+            formHtml.unsafeAppend("\"/></td></tr>\n");
+            formHtml.unsafeAppend("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
             formHtml.append(ModuleContext.formatVersion(_toVersion));
-            formHtml.append("\"/></td></tr>\n");
+            formHtml.unsafeAppend("\"/></td></tr>\n");
 
             appendExtraRows(formHtml, form);
 
-            formHtml.append("    <tr><td colspan=2>");
+            formHtml.unsafeAppend("    <tr><td colspan=2>");
             formHtml.append(PageFlowUtil.button("Update").submit(true));
-            formHtml.append("</td></tr>\n");
-            formHtml.append("  </table>\n");
-            formHtml.append("</form><br>\n");
+            formHtml.unsafeAppend("</td></tr>\n");
+            formHtml.unsafeAppend("  </table>\n");
+            formHtml.unsafeAppend("</form><br>\n");
 
-            StringBuilder html = getScriptHtml(form);
-            html.insert(0, formHtml);
+            formHtml.append(getScriptHtml(form));
 
-            return new HtmlView(html.toString());
+            return new HtmlView(formHtml);
         }
 
-        protected abstract void appendExtraRows(StringBuilder html, K form);
-        public abstract StringBuilder getScriptHtml(K form);
+        protected abstract void appendExtraRows(HtmlStringBuilder html, K form);
+        public abstract HtmlStringBuilder getScriptHtml(K form);
     }
 
 
@@ -536,36 +535,36 @@ public class SqlScriptController extends SpringActionController
     public class ConsolidateScriptsAction extends AbstractScriptRangeAction<ConsolidateForm>
     {
         @Override
-        protected void appendExtraRows(StringBuilder html, ConsolidateForm form)
+        protected void appendExtraRows(HtmlStringBuilder html, ConsolidateForm form)
         {
-            html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
+            html.unsafeAppend("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
             html.append(form.getIncludeSingleScripts() ? " checked" : "");
-            html.append("/>Include single scripts that don't start with 0.000</td></tr>\n");
+            html.unsafeAppend("/>Include single scripts that don't start with 0.000</td></tr>\n");
         }
 
         @Override
-        public StringBuilder getScriptHtml(ConsolidateForm form)
+        public HtmlStringBuilder getScriptHtml(ConsolidateForm form)
         {
             List<ScriptConsolidator> consolidators = getConsolidators(form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
 
             for (ScriptConsolidator consolidator : consolidators)
             {
                 List<SqlScript> scripts = consolidator.getScripts();
                 String filename = consolidator.getFilename();
 
-                html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
+                html.unsafeAppend("<b>Schema ").append(consolidator.getSchemaName()).unsafeAppend("</b><br>\n");
 
                 for (SqlScript script : scripts)
-                    html.append(script.getDescription()).append("<br>\n");
+                    html.append(script.getDescription()).unsafeAppend("<br>\n");
 
-                html.append("<br>\n");
+                html.unsafeAppend("<br>\n");
 
                 ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
-                html.append(PageFlowUtil.button((1 == consolidator.getScripts().size() ? "copy" : "consolidate") + " to " + filename).href(consolidateURL)).append("<br><br>\n");
+                html.append(PageFlowUtil.button((1 == consolidator.getScripts().size() ? "copy" : "consolidate") + " to " + filename).href(consolidateURL)).unsafeAppend("<br><br>\n");
             }
 
-            if (0 == html.length())
+            if (html.isEmpty())
                 html.append("No schemas require consolidation in this range");
 
             return html;
