@@ -73,6 +73,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.PopupMenuView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.visualization.VisualizationUrls;
 
 import java.io.ByteArrayInputStream;
@@ -2425,12 +2426,15 @@ public class DataRegion extends DisplayElement
     {
         out.write("<td nowrap><label class=\"control-label\">");
 
-        out.write("<input type=\"checkbox\" name=\"~~SELECTALL~~\" onchange=\"");
+        PageConfig pageConfig = HttpView.currentPageConfig();
+        String id = pageConfig.makeId("selectAll_");
+        out.write("<input id=\"" + id + "\" type=\"checkbox\" name=\"~~SELECTALL~~\" />");
+        StringBuilder onChange = new StringBuilder();
         for (DisplayColumnGroup group : groups)
         {
-            group.writeCopyableOnChangeHandler(ctx, out);
+            group.appendCopyableOnChangeHandler(ctx, onChange);
         }
-        out.write("\" />");
+        pageConfig.addHandler(id, "change", onChange.toString());
         out.write("Same" + PageFlowUtil.popupHelp(HtmlString.of("If selected, all entries on this row will have the same value"), "Same"));
 
         out.write("</label></td>");
