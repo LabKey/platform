@@ -16,14 +16,12 @@
 
 package org.labkey.api.data;
 
+import org.labkey.api.view.HttpView;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
 
-/**
- * User: jeckels
-* Date: Mar 5, 2008
-*/
 public class DisplayColumnGroup
 {
     private final List<DisplayColumn> _columns;
@@ -52,24 +50,29 @@ public class DisplayColumnGroup
         return _copyable;
     }
 
-    public void writeSameCheckboxCell(RenderContext ctx, Writer out)
-            throws IOException
+    public void writeSameCheckboxCell(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<td>");
         if (isCopyable())
         {
-            out.write("<input type=checkbox name='" + getGroupFormFieldName(ctx) + "CheckBox' id='" + getGroupFormFieldName(ctx) + "CheckBox' onchange=\"");
-            out.write("b = this.checked;" );
+            String id = getGroupFormFieldName(ctx) + "CheckBox";
+            out.write("<input type=checkbox name='" + id + "' id='" + id + "' />");
+            StringBuilder onChange = new StringBuilder("b = this.checked;");
             for (int i = 1; i < getColumns().size(); i++)
             {
                 DisplayColumn col = getColumns().get(i);
                 ColumnInfo colInfo = col.getColumnInfo();
                 if (colInfo != null)
                 {
-                    out.write("document.getElementsByName('" + col.getFormFieldName(ctx) + "')[0].style.display = b ? 'none' : 'block';\n");
+                    onChange.append("document.getElementsByName('")
+                        .append(col.getFormFieldName(ctx))
+                        .append("')[0].style.display = b ? 'none' : 'block';\n");
                 }
             }
-            out.write(" if (b) { " + getGroupFormFieldName(ctx) + "Updated(); }\">");
+            onChange.append(" if (b) { ")
+                .append(getGroupFormFieldName(ctx))
+                .append("Updated(); }");
+            HttpView.currentPageConfig().addHandler(id, "change", onChange.toString());
         }
         out.write("</td>");
     }
@@ -118,11 +121,15 @@ public class DisplayColumnGroup
         out.write("}");
     }
 
-    public void writeCopyableOnChangeHandler(RenderContext ctx, Writer out) throws IOException
+    public void appendCopyableOnChangeHandler(RenderContext ctx, StringBuilder sb)
     {
         if (isCopyable())
         {
-            out.write("document.getElementById('" + getGroupFormFieldName(ctx) + "CheckBox').checked = this.checked; document.getElementById('" + getGroupFormFieldName(ctx) + "CheckBox').onchange();");
+            sb.append("document.getElementById('")
+                .append(getGroupFormFieldName(ctx))
+                .append("CheckBox').checked = this.checked; document.getElementById('")
+                .append(getGroupFormFieldName(ctx))
+                .append("CheckBox').onchange();");
         }
     }
 }

@@ -55,31 +55,30 @@
         <tr>
             <td>
                 <% addHandler("radioUseCustomViewFalse", "click", "return setCustomScriptState(!this.selected);"); %>
-                <input id="radioUseCustomViewFalse" type="radio" name="useCustomView"
-                       value="false"
-                       <%=checked(useCustomView)%>>Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
+                <input id="radioUseCustomViewFalse" type="radio" name="useCustomView" value="false"<%=checked(useCustomView)%>>
+                    Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
             <td>
                 <% addHandler("radioUseCustomViewTrue", "click", "return setCustomScriptState(this.selected);"); %>
-                <input id="radioUseCustomViewTrue" type="radio" name="useCustomView"
-                       value="true"
-                       <%=checked(useCustomView)%>>Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
+                <input id="radioUseCustomViewTrue" type="radio" name="useCustomView" value="true"<%=checked(!useCustomView)%>>
+                    Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
             <td>
-                <textarea rows="30" cols="150" name="customScript" id="customScript" onChange="LABKEY.setDirty(true); return true;"
-                        style="width:100%"
-                        <%=disabled(!useCustomView)%>><%= h(bean.getCustomScript() == null ? bean.getDefaultScript() : bean.getCustomScript())%></textarea><br>
+                <% addHandler("customScript", "change", "LABKEY.setDirty(true); return true;"); %>
+                <textarea rows="30" cols="150" name="customScript" id="customScript" style="width:100%"<%=disabled(!useCustomView)%>>
+                    <%= h(bean.getCustomScript() == null ? bean.getDefaultScript() : bean.getCustomScript())%>
+                </textarea><br>
             </td>
         </tr>
         <tr>
             <td>
                 <%= button("Save").submit(true).onClick("document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); document.forms['editorForm'].reshow.value = true; return true;") %>
                 <%= button("Save and Finish").submit(true).onClick("document.forms['editorForm'].customScript.disabled = false; LABKEY.setSubmit(true); return true;") %>
-                <%= text(bean.getReturnUrl() != null && bean.getReturnUrl().length() > 0 ?
+                <%= text(bean.getReturnUrl() != null && !bean.getReturnUrl().isEmpty() ?
                         button("Cancel").href(bean.getReturnUrl()).toString() :
                         button("Cancel").href(urlProvider(ReportUrls.class).urlManageViews(getContainer())).toString() ) %>
                 <%= button("Restore default script").submit(true).onClick("if (confirm('Restore default script?  You will lose any changes made to this page.')) document.getElementById('customScript').value = DEFAULT_SCRIPT_VALUE; return false;") %>
@@ -97,7 +96,7 @@
         </tr>
         <tr>
             <td>
-                <textarea rows="30" cols="150" style="width:100%" DISABLED><%= h(bean.getCustomScript()) %></textarea><br>
+                <textarea rows="30" cols="150" style="width:100%" disabled><%= h(bean.getCustomScript()) %></textarea><br>
             </td>
         </tr>
 <%

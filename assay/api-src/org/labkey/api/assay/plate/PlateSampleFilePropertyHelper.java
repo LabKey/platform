@@ -38,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -353,7 +354,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             @Override
             public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
             {
-                if(_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
+                if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
                 {
                     String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
                     String nounV2 = includesViruses ? "Sample and virus" : "Sample";
@@ -365,7 +366,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                     {
                         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
                         String filePath = PageFlowUtil.filter(pipelineRoot.relativePath(reshowFile).replace('\\', '/'));
-                        String updateInputFn = "<script type=\"text/javascript\">" +
+                        String updateInputFn = "<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">" +
                                 "function showMetadataPicker(showFilePicker) {\n" +
                                 "document.getElementById('previousMetadataFileName').style.display = (showFilePicker ? 'none' : 'block');\n" +
                                 "document.getElementById('newMetadataFileName').style.display = (!showFilePicker ? 'none' : 'block');\n" +
