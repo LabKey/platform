@@ -37,7 +37,7 @@ import java.util.Collections;
  */
 public class TypeAheadSelectDisplayColumn extends DataColumn
 {
-    private Integer _maxRows;
+    private final Integer _maxRows;
 
     public TypeAheadSelectDisplayColumn(ColumnInfo col, Integer maxRows)
     {
@@ -62,7 +62,7 @@ public class TypeAheadSelectDisplayColumn extends DataColumn
         String renderId = "query-select-div-" + UniqueID.getRequestScopedUID(ctx.getRequest());
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<script type=\"text/javascript\">");
+        sb.append("<script type=\"text/javascript\" nonce=\"").append(HttpView.currentPageConfig().getScriptNonce()).append("\">");
         //sb.append("LABKEY.requiresScript('http://localhost:3001/querySelectInput.js', function() {\n");
         sb.append("LABKEY.requiresScript('gen/querySelectInput', function() {\n");
         sb.append(" LABKEY.App.loadApp('querySelectInput', ").append(PageFlowUtil.jsString(renderId)).append(", {\n");
