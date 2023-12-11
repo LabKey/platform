@@ -414,7 +414,7 @@ public class SQLFragment implements Appendable, CharSequence
         else
             malformed = StringUtils.containsAny(identifier, "*/\\'\"`?;- \t\n");
         if (malformed && !AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to incorrectly formatted");
+            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to be incorrectly formatted");
 
         getStringBuilder().append(charseq);
         return this;
