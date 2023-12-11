@@ -26,7 +26,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.timeline.TimelineSettings" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.List" %>
@@ -35,13 +34,6 @@
 <%@ page import="java.util.TreeSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext3");
-    }
-%>
 <%
     HttpView<Portal.WebPart> me = (HttpView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart part = me.getModelBean();
@@ -120,7 +112,7 @@ function updateViews(queryName)
     for (var i = 0; i < viewNames.length; i++)
     {
         var opt = viewNames[i];
-        viewSelect.options[i] = new Option(opt == "" ? "<default view>" : opt, opt);
+        viewSelect.options[i] = new Option(opt === "" ? "<default view>" : opt, opt);
     }
 
     updateFields(settings.schemaName, settings.queryName, settings.viewName);
@@ -150,14 +142,14 @@ function populateFieldPickers(data)
         elem.options.length = 0;
         var selectedItem = 0;
         if (allowBlank)
-            elem.options[0] = new Option("", "", false, null == selectedValue || "" == selectedValue);
+            elem.options[0] = new Option("", "", false, null == selectedValue || "" === selectedValue);
         for (var i = 0; i < fields.length; i++)
         {
             var field = fields[i];
-            if (dataType && dataType != field.type)
+            if (dataType && dataType !== field.type)
                 continue;
 
-            if (selectedValue == field.name)
+            if (selectedValue === field.name)
                 selectedItem = elem.options.length;
 
             elem.options[elem.options.length] = new Option(field.name,  field.name);
@@ -165,7 +157,6 @@ function populateFieldPickers(data)
         elem.selectedIndex = selectedItem;
 
     }
-
 
     for (var i = 0; i < fieldPickers.length; i++)
     {
@@ -180,8 +171,17 @@ function clearFieldPickers()
         document.getElementById(fieldPickers[i].id).length = 0;
 }
 
-Ext.onReady(function()
+LABKEY.Utils.onReady(function()
 {
+    document.getElementById('schemaName')['onchange'] = function() { updateQueries(this.value); };
+    document.getElementById('queryName')['onchange'] = function() { updateViews(this.value); };
+    document.getElementById('viewName')['onchange'] = function() { updateFields(this.value); };
+
+    document.getElementById('startField')['onchange'] = function() { settings[this.id] = this.value; };
+    document.getElementById('endField')['onchange'] = function() { settings[this.id] = this.value; };
+    document.getElementById('titleField')['onchange'] = function() { settings[this.id] = this.value; };
+    document.getElementById('descriptionField')['onchange'] = function() { settings[this.id] = this.value; };
+
     updateFields(settings.schemaName, settings.queryName, settings.viewName);
 });
 </script>
@@ -194,9 +194,7 @@ Ext.onReady(function()
         <tr>
             <td class="ms-searchform">Schema:</td>
             <td>
-                <select name="schemaName" id="schemaName"
-                        title="Select a Schema Name"
-                        onchange="updateQueries(this.value);">
+                <select name="schemaName" id="schemaName" title="Select a Schema Name">
                     <labkey:options value="<%=settings.getSchemaName()%>" map="<%=schemaOptions%>" />
                 </select>
             </td>
@@ -204,62 +202,60 @@ Ext.onReady(function()
         <tr>
             <td class="ms-searchform" valign="top">Query and View:</td>
             <td>
-                            <select name="queryName" id="queryName"
-                                    title="Select a Table Name" onchange="updateViews(this.value);">
-                                <%
-                                Map<String, List<String>> tableNames = schemaTableNames.get(settings.getSchemaName());
-                                if (tableNames != null)
-                                {
-                                    for (String queryName : new TreeSet<>(tableNames.keySet()))
-                                    {
-                                        %><option value="<%=h(queryName)%>"<%=selected(queryName.equals(settings.getQueryName()))%>><%=h(queryName)%></option><%
-                                    }
-                                }
-                                %>
-                            </select>
-                            <br/>
-                            <select name="viewName" id="viewName"
-                                    title="Select a View Name" onchange="updateFields(this.value);">
-                                <%
-                                if (tableNames != null)
-                                {
-                                    List<String> viewNames = tableNames.get(settings.getQueryName());
-                                    if (viewNames != null)
-                                    {
-                                        for (String viewName : viewNames)
-                                        {
-                                            viewName = StringUtils.trimToEmpty(viewName);
-                                            String value = viewName.equals("") ? "<default view>" : viewName;
-                                            %><option value="<%=h(viewName)%>"<%=selected(viewName.equals(settings.getViewName()))%>><%=h(value)%></option><%
-                                        }
-                                    }
-                                }
-                                %>
-                            </select>
+                <select name="queryName" id="queryName" title="Select a Table Name">
+                    <%
+                    Map<String, List<String>> tableNames = schemaTableNames.get(settings.getSchemaName());
+                    if (tableNames != null)
+                    {
+                        for (String queryName : new TreeSet<>(tableNames.keySet()))
+                        {
+                            %><option value="<%=h(queryName)%>"<%=selected(queryName.equals(settings.getQueryName()))%>><%=h(queryName)%></option><%
+                        }
+                    }
+                    %>
+                </select>
+                <br/>
+                <select name="viewName" id="viewName" title="Select a View Name">
+                    <%
+                    if (tableNames != null)
+                    {
+                        List<String> viewNames = tableNames.get(settings.getQueryName());
+                        if (viewNames != null)
+                        {
+                            for (String viewName : viewNames)
+                            {
+                                viewName = StringUtils.trimToEmpty(viewName);
+                                String value = viewName.isEmpty() ? "<default view>" : viewName;
+                                %><option value="<%=h(viewName)%>"<%=selected(viewName.equals(settings.getViewName()))%>><%=h(value)%></option><%
+                            }
+                        }
+                    }
+                    %>
+                </select>
             </td>
         </tr>
         <tr>
             <td>Start:</td>
             <td>
-                <select name="startField" id="startField" onchange="settings[this.id] = this.value;"></select>
+                <select name="startField" id="startField"></select>
             </td>
         </tr>
         <tr>
             <td>End:</td>
             <td>
-                <select name="endField" id="endField" onchange="settings[this.id] = this.value;"></select>
+                <select name="endField" id="endField"></select>
             </td>
         </tr>
         <tr>
             <td>Title:</td>
             <td>
-                <select name="titleField" id="titleField" onchange="settings[this.id] = this.value;"></select>
+                <select name="titleField" id="titleField"></select>
             </td>
         </tr>
         <tr>
             <td>Description:</td>
             <td>
-                <select name="descriptionField" id="descriptionField" onchange="settings[this.id] = this.value;"></select>
+                <select name="descriptionField" id="descriptionField"></select>
             </td>
         </tr>
         <tr>
