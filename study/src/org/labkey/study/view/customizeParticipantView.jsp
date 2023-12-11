@@ -55,22 +55,21 @@
         <tr>
             <td>
                 <% addHandler("radioUseCustomViewFalse", "click", "return setCustomScriptState(!this.selected);"); %>
-                <input id="radioUseCustomViewFalse" type="radio" name="useCustomView" value="false"<%=checked(useCustomView)%>>
+                <input id="radioUseCustomViewFalse" type="radio" name="useCustomView" value="false"<%=checked(!useCustomView)%>>
                     Use standard <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
             <td>
                 <% addHandler("radioUseCustomViewTrue", "click", "return setCustomScriptState(this.selected);"); %>
-                <input id="radioUseCustomViewTrue" type="radio" name="useCustomView" value="true"<%=checked(!useCustomView)%>>
+                <input id="radioUseCustomViewTrue" type="radio" name="useCustomView" value="true"<%=checked(useCustomView)%>>
                     Use customized <%= h(subjectNoun.toLowerCase()) %> view<br>
             </td>
         </tr>
         <tr>
             <td>
                 <% addHandler("customScript", "change", "LABKEY.setDirty(true); return true;"); %>
-                <textarea rows="30" cols="150" name="customScript" id="customScript" style="width:100%"<%=disabled(!useCustomView)%>>
-                    <%= h(bean.getCustomScript() == null ? bean.getDefaultScript() : bean.getCustomScript())%>
+                <textarea rows="30" cols="150" name="customScript" id="customScript" style="width:100%; font-family: monospace;"<%=disabled(!useCustomView)%>><%= h(bean.getCustomScript() == null ? bean.getDefaultScript() : bean.getCustomScript())%>
                 </textarea><br>
             </td>
         </tr>
