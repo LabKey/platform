@@ -1177,7 +1177,7 @@ public class WikiController extends SpringActionController
                 }
                 else
                 {
-                    return new HtmlView("<pre>\n"+PageFlowUtil.filter(_wikiversion.getBody())+"\n</pre>");
+                    return HtmlView.unsafe("<pre>\n"+PageFlowUtil.filter(_wikiversion.getBody())+"\n</pre>");
                 }
             }
             else if (isPrint())

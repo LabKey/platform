@@ -18,6 +18,7 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 
 import java.io.PrintWriter;
 
@@ -56,6 +57,23 @@ public class HtmlView extends WebPartView
     public HtmlView(String html)
     {
         this(HtmlString.unsafe(html));
+    }
+
+    public static HtmlView of(String msg)
+    {
+        return new HtmlView(HtmlString.of(msg));
+    }
+
+    public static HtmlView err(String error) {
+        return new HtmlView(
+                HtmlStringBuilder.of(HtmlString.unsafe("<span class='labkey-error'>"))
+                        .append(error)
+                        .append(HtmlString.unsafe("</span>")));
+    }
+
+    public static HtmlView unsafe(String html)
+    {
+        return new HtmlView(HtmlString.unsafe(html));
     }
 
     /** Use the HtmlString or Renderable constructor instead */

@@ -770,7 +770,7 @@ public class SpecimenController extends SpringActionController
         public ModelAndView getView(Object form, BindException errors)
         {
             if (null == StudyService.get().getStudy(getContainer()))
-                return new HtmlView("This folder does not contain a study.");
+                return HtmlView.of("This folder does not contain a study.");
             SpecimenSearchWebPart specimenSearch = new SpecimenSearchWebPart(true);
             SpecimenWebPart specimenSummary = new SpecimenWebPart(true, StudyService.get().getStudy(getContainer()));
             return new VBox(specimenSummary, specimenSearch);
@@ -1179,7 +1179,7 @@ public class SpecimenController extends SpringActionController
                     throw new RedirectException(url);
                 }
             }
-            return new HtmlView("<span class='labkey-error'>Unable to resolve the Specimen ID and target Study</span>");
+            return HtmlView.err("Unable to resolve the Specimen ID and target Study");
         }
 
         @Override
@@ -2619,7 +2619,7 @@ public class SpecimenController extends SpringActionController
             }
             else
             {
-                vbox.addView(new HtmlView("An extended specimen request view has not been provided for this folder."));
+                vbox.addView(HtmlView.of("An extended specimen request view has not been provided for this folder."));
             }
             return vbox;
         }
@@ -3471,7 +3471,7 @@ public class SpecimenController extends SpringActionController
             if (!SpecimenRequestManager.get().hasEditRequestPermissions(getUser(), request) ||
                     SpecimenRequestManager.get().isInFinalState(request))
             {
-                return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
+                return HtmlView.err("You do not have permissions to modify this request.");
             }
 
             return getDefaultImportView(form, errors);
@@ -4099,7 +4099,7 @@ public class SpecimenController extends SpringActionController
                     }
                 }
                 if (selectedVials == null || selectedVials.size() == 0)
-                    return new HtmlView("No vials selected. " + PageFlowUtil.link("back").href("javascript:back()"));
+                    return HtmlView.unsafe("No vials selected. " + PageFlowUtil.link("back").onClick("back()"));
             }
 
             return new JspView<>("/org/labkey/specimen/view/updateComments.jsp",
@@ -5487,7 +5487,7 @@ public class SpecimenController extends SpringActionController
             StudyInternalService svc = StudyInternalService.get();
 
             if (!svc.hasEditableDatasets(study))
-                return new HtmlView("Comments can only be configured for studies with editable datasets.");
+                return HtmlView.of("Comments can only be configured for studies with editable datasets.");
 
             if (!form.isReshow())
             {
@@ -5641,7 +5641,7 @@ public class SpecimenController extends SpringActionController
                     url.addParameter(ParticipantCommentForm.params.vialCommentsToClear, rowId);
                 return HttpView.redirect(url);
             }
-            return new HtmlView("Dataset could not be found");
+            return HtmlView.of("Dataset could not be found");
         }
 
         @Override

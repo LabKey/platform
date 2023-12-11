@@ -256,7 +256,7 @@ public class SampleTypePublishConfirmAction extends AbstractPublishConfirmAction
     public ModelAndView getView(SampleTypePublishConfirmForm form, boolean reshow, BindException errors) throws Exception
     {
         if (_sampleType == null)
-            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>Could not resolve the source Sample Type.</span>"));
+            return HtmlView.err("Could not resolve the source Sample Type.");
 
         return super.getView(form, reshow, errors);
     }

@@ -32,6 +32,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.EditDatasetRowForm;
 import org.labkey.api.study.InsertUpdateAction;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -153,9 +154,7 @@ public class DatasetController extends BaseStudyController
                         history.addParameter("view","DatasetAuditEvent");
                         history.addParameter("query.lsid~eq", oldLsid);
 
-                        view.addView(new HtmlView(
-                            "Key values were modified.  <a href=\"" + history + "\">[previous history]</a>"
-                        ));
+                        view.addView(HtmlView.unsafe("Key values were modified.  <a href=\"" + PageFlowUtil.filter(history) + "\">[previous history]</a>"));
                     }
                 }
                 view.addView(new AuditChangesView(comment, oldData, newData));

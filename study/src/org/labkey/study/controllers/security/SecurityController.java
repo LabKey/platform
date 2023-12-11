@@ -488,7 +488,7 @@ public class SecurityController extends SpringActionController
                 if (reportId != null && (reportId.getReport(getViewContext()) != null))
                     return new JspView<>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport(getViewContext()));
                 else
-                    return new HtmlView("<span class=\"labkey-error\">The specified report ID is invalid or does not exist</span>");
+                    return HtmlView.err("The specified report ID is invalid or does not exist");
             }
         }
     }

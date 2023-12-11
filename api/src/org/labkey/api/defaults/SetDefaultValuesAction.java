@@ -172,7 +172,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         List<? extends DomainProperty> properties = domain.getProperties();
         if (properties.isEmpty())
         {
-            return new HtmlView("No fields are defined for this table.<br><br>" + 
+            return HtmlView.unsafe("No fields are defined for this table.<br><br>" +
                     PageFlowUtil.button("Cancel").href(domainIdForm.getReturnURLHelper()));
         }
 

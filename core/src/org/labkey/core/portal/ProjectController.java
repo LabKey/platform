@@ -280,7 +280,7 @@ public class ProjectController extends SpringActionController
                     {
                         throw new UnauthorizedException();
                     }
-                    return new HtmlView("You do not have permission to view this project directly, but " +
+                    return HtmlView.of("You do not have permission to view this project directly, but " +
                             "you may be able to choose a specific subfolder.");
                 }
             }

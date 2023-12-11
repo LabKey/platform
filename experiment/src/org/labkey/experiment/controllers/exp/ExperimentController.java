@@ -2657,7 +2657,7 @@ public class ExperimentController extends SpringActionController
                             "<input type=\"submit\">" +
                             new CsrfInput(getViewContext()) +
                             "</form>";
-            return new HtmlView(html);
+            return HtmlView.unsafe(html);
         }
 
         @Override

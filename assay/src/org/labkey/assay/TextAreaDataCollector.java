@@ -42,7 +42,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
     @Override
     public HttpView getView(ContextType context)
     {
-        return new HtmlView("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
+        return HtmlView.unsafe("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
                 "<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce()+ "\">\n" +
                 "    LABKEY.requiresExt3ClientAPI(function() {\n" +
                 "       Ext.EventManager.on('" + FORM_ELEMENT_NAME + "', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);\n" +

@@ -192,7 +192,7 @@ public class ExternalReport extends AbstractReport
             ext = ext.substring(1);
 
         if (null == StringUtils.trimToNull(getProgram()) || ((null == getDatasetId() || 0 == getDatasetId()) && null == getQueryName()))
-            return new HtmlView("Program and datasetId must be provided");
+            return HtmlView.of("Program and datasetId must be provided");
 
         File resultFile = null;
         File outFile = null;
@@ -211,7 +211,7 @@ public class ExternalReport extends AbstractReport
                 UserSchema schema = getStudyQuerySchema(viewContext.getUser(), ReadPermission.class, viewContext);
                 TableInfo mainTable = schema.getTable(getQueryName());
                 if (mainTable == null)
-                    return new HtmlView("Unable to get TableInfo for query: " + getQueryName());
+                    return HtmlView.of("Unable to get TableInfo for query: " + getQueryName());
                 factory = new TableSelector(mainTable);
             }
 
@@ -264,7 +264,7 @@ public class ExternalReport extends AbstractReport
                         PageFlowUtil.filter(getProgram()) + "&nbsp;" + PageFlowUtil.filter(getArguments()) + "<br><pre>" +
                         PageFlowUtil.filter(PageFlowUtil.getFileContentsAsString(outFile)) + "</pre>";
 
-                return new HtmlView(err);
+                return HtmlView.unsafe(err);
             }
             else
             {

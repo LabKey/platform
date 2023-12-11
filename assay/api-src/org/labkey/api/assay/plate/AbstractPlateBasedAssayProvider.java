@@ -285,7 +285,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         @Override
         public void render(RenderContext ctx) throws Exception
         {
-            HtmlView view = new HtmlView(
+            HtmlView view = HtmlView.unsafe(
                     "<input type=\"checkbox\" name=\"" +
                             INCLUDE_PARTICIPANT_AND_VISIT +
                             "\">I will also provide participant id and visit id");

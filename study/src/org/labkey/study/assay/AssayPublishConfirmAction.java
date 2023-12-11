@@ -293,7 +293,7 @@ public class AssayPublishConfirmAction extends AbstractPublishConfirmAction<Assa
     public ModelAndView getView(AssayPublishConfirmForm form, boolean reshow, BindException errors) throws Exception
     {
         if (_protocol == null)
-            return new HtmlView(HtmlString.unsafe("<span class='labkey-error'>Could not resolve the source protocol.</span>"));
+            return HtmlView.err("Could not resolve the source protocol.");
 
         return super.getView(form, reshow, errors);
     }

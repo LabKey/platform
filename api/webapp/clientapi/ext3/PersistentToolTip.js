@@ -21,7 +21,7 @@
  * @private
  * @namespace LabKey ToolTip Class.
  * Unlike Ext.ToolTip, this ToolTip class won't be dismissed when
- * then mouse is hovering over the ToolTip's popup element.
+ * the mouse is hovering over the ToolTip's popup element.
  */
 Ext.ns('LABKEY.ext');
 
@@ -120,7 +120,7 @@ Ext.reg('persistenttip', LABKEY.ext.PersistentToolTip);
 /**
  * @private
  * Adds a callout icon after the 'config.target' element.
- * If configued to autoLoad and a 'config.tpl' template is set,
+ * If configured to autoLoad and a 'config.tpl' template is set,
  * the template will be used to render the contents of the tooltip.
  *
  * @example

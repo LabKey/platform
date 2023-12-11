@@ -222,7 +222,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             } //pipe root does not exist
             else if (isCloudAndUnsupported(pipeRoot, _protocol))
             {
-                return new HtmlView("<p class='labkey-error'>The pipeline provider for this assay does not support using cloud-based storage. Please contact your administrator.</p>");
+                return HtmlView.err("The pipeline provider for this assay does not support using cloud-based storage. Please contact your administrator.");
             }
             else
             {
@@ -710,7 +710,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         if (newRunForm.isSuccessfulUploadComplete())
-            vbox.addView(new HtmlView("<p class=\"labkey-header-large\">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</p>"));
+            vbox.addView(HtmlView.unsafe("<p class=\"labkey-header-large\">Upload successful.  Upload another run below, or click Cancel to view previously uploaded runs.</p>"));
 
         vbox.addView(insertView);
         return vbox;

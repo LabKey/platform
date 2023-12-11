@@ -540,7 +540,7 @@ public class IssuesController extends SpringActionController
             }
             else
             {
-                view = new HtmlView("<span class='labkey-error'>Invalid or missing issue list name specified</span><p>");
+                view = HtmlView.err("Invalid or missing issue list name specified");
             }
 
             return view;

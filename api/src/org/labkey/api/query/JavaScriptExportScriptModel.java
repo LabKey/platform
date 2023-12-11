@@ -26,11 +26,6 @@ import org.labkey.api.util.PageFlowUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/*
-* User: Dave
-* Date: Apr 2, 2009
-* Time: 12:44:51 PM
-*/
 public class JavaScriptExportScriptModel extends ExportScriptModel
 {
     public JavaScriptExportScriptModel(QueryView view)
@@ -42,7 +37,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
     public String getFilters()
     {
         List<String> filterExprs = getFilterExpressions();
-        if (null == filterExprs || filterExprs.size() == 0)
+        if (null == filterExprs || filterExprs.isEmpty())
             return "null";
         
         StringBuilder ret = new StringBuilder("[");
@@ -123,12 +118,12 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         // list of fieldkeys represented as String[]
         // e.g. "columns": [ ["X"], [ "CreatedBy", "DisplayName" ] ]
         var columnArray = getJSONColumns();
-        if (columnArray != null && columnArray.length() > 0)
+        if (columnArray != null && !columnArray.isEmpty())
             config.put("columns", columnArray);
 
         // TODO, why does filterArray go in transforms[]????
         var filterArray = getJSONFilters();
-        if (filterArray != null && filterArray.length() > 0)
+        if (filterArray != null && !filterArray.isEmpty())
             config.put("filterArray", filterArray);
 
         // sort in URL format e.g. "sort": "-X,container/DisplayName"
@@ -152,10 +147,8 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
 
         for (SimpleFilter.FilterClause filterClause : filter.getClauses())
         {
-            if (!(filterClause instanceof CompareType.AbstractCompareClause))
+            if (!(filterClause instanceof CompareType.AbstractCompareClause clause))
                 throw new UnsupportedOperationException("Filter clause '" + filterClause.getClass().getName() + "' not currently supported in export scripts");
-
-            CompareType.AbstractCompareClause clause = (CompareType.AbstractCompareClause)filterClause;
 
             JSONObject filterObj = new JSONObject();
             List<String> fieldKey = clause.getFieldKey().getParts();

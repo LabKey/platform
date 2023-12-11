@@ -798,10 +798,10 @@ public class ListController extends SpringActionController
 
                     return box;
                 }
-                return new HtmlView("Unable to create the List history view");
+                return HtmlView.of("Unable to create the List history view");
             }
             else
-                return new HtmlView("Unable to find the specified List");
+                return HtmlView.of("Unable to find the specified List");
         }
 
         @Override
@@ -835,7 +835,7 @@ public class ListController extends SpringActionController
             _list = ListService.get().getList(getContainer(), listId);
             if (_list == null)
             {
-                return new HtmlView("This list is no longer available.");
+                return HtmlView.of("This list is no longer available.");
             }
 
             String comment = null;
@@ -869,7 +869,7 @@ public class ListController extends SpringActionController
                 return view;
             }
             else
-                return new HtmlView("No details available for this event.");
+                return HtmlView.of("No details available for this event.");
         }
 
         @Override

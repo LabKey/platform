@@ -106,7 +106,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             @Override
             public void handleValidationError(String error)
             {
-                view.addView(new HtmlView("<span class=\"labkey-error\">" + error + "</span>"));
+                view.addView(HtmlView.err(error));
             }
 
             @Override
@@ -251,7 +251,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
     private HttpView handleException(Exception e)
     {
-        return new HtmlView(ReportUtil.makeExceptionString(e, "<font class=\"labkey-error\">%s</font><pre>%s</pre>"));
+        return HtmlView.unsafe(ReportUtil.makeExceptionString(e, "<font class=\"labkey-error\">%s</font><pre>%s</pre>"));
     }
 
     @Override
@@ -566,7 +566,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         if (view != null)
             return view;
         else
-            return new HtmlView("No Data view available for this report");
+            return HtmlView.of("No Data view available for this report");
     }
 
     public static synchronized String getDefaultPerlPath()

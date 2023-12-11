@@ -261,7 +261,8 @@
 </nav>
 <% if (!model.getCustomMenus().isEmpty()) { %>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-    const __menus = {};
+    <%--  note __menus must be a var, not a let or const  --%>
+    var __menus = {};
     LABKEY.Utils.onReady(function() {
         <%
             for (Portal.WebPart menu : model.getCustomMenus())
