@@ -1768,7 +1768,7 @@ public class DbScope
                     // then set our default application name on the data source so it's set on every connection.
                     if (applicationName.equals(dialect.getDefaultApplicationName()))
                     {
-                        // Set LabKey's default application name ("LabKey Server") into the connectinon properties
+                        // Set LabKey's default application name ("LabKey Server") into the connection properties
                         applicationName = ds.setDefaultApplicationName();
                         LOG.info(message + " (the default name); all subsequent connections will use \"" + applicationName + "\" instead.");
                     }
