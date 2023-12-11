@@ -138,7 +138,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         // Issue 49036: InitialDilution does not always equal MinDilution (i.e. method Dilution vs Concentration)
         // so we need to join to the sample type table to get the InitialDilution value
         SamplesSchema schema = new SamplesSchema(_userSchema);
-        TableInfo samplesTable = schema.getTable(SAMPLE_TYPE_NAME_PREFIX + _protocol.getName(), null);
+        TableInfo samplesTable = schema.getTable(SAMPLE_TYPE_NAME_PREFIX + _protocol.getName(), getContainerFilter());
         if (samplesTable != null && samplesTable.getColumn("InitialDilution") != null)
         {
             List<ColumnInfo> columns = Arrays.asList(samplesTable.getColumn("LSID"), samplesTable.getColumn("InitialDilution"));
