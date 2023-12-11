@@ -22,10 +22,10 @@
 <%@ page import="org.labkey.api.assay.PreviouslyUploadedDataCollector" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.io.File" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -52,12 +52,12 @@
     var MAX_FILE_INPUTS = <%= bean.getMaxFileInputs() %>;
     var PREFIX = "<%= h(AssayDataCollector.PRIMARY_FILE) %>";
 
-    // Keep a list of all of the file groups (new uploads and reuse candidates) so that we can track down their
+    // Keep a list of the file groups (new uploads and reuse candidates) so that we can track down their
     // corresponding UI elements easily
     var _fileGroups = [];
 
     /**
-     * Spins through all of the files and sees how many are active and will be used. We immediately remove
+     * Spins through the files to see how many are active and will be used. We immediately remove
      * new uploads from the list, but leave previous uploads (with a strikethrough) - and we don't want to count them.
      */
     function getActiveFileCount()
@@ -498,7 +498,7 @@
         }
     }
 
-    Ext.onReady(initializeFileUploadInput);
+    LABKEY.Utils.onReady(initializeFileUploadInput);
 
     </labkey:loadClientDependencies>
 </script>
