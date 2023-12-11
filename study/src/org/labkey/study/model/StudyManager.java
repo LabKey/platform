@@ -134,6 +134,7 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -4146,7 +4147,15 @@ public class StudyManager
         }
 
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
-        return new TableSelector(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter, null).getObject(CustomParticipantView.class);
+        TableInfo ti = StudySchema.getInstance().getTableInfoParticipantView();
+        CustomParticipantView participantView = new TableSelector(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter, null).getObject(CustomParticipantView.class);
+        if (null == participantView)
+            return null;
+
+        Module studyModule = ModuleLoader.getInstance().getModule("study");
+        var htmlView = new ModuleHtmlView(studyModule, study.getSubjectNounSingular(), HtmlString.unsafe(participantView.getBody()));
+        participantView.setView(htmlView);
+        return participantView;
     }
 
     public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view)
