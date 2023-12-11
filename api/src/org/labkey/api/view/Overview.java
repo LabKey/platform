@@ -299,7 +299,7 @@ public class Overview implements HasHtmlString
             {
                 ret.append(_label);
             }
-            ret.append("</span></span>");
+            ret.unsafeAppend("</span></span>");
             return ret.getHtmlString();
         }
 
