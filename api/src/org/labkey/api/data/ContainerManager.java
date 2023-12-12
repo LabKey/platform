@@ -2568,7 +2568,7 @@ public class ContainerManager
         return ret.length == 0 ? null : ret[0];
     }
 
-    public static Container getMoveTargetContainer(@NotNull String entityType, @NotNull Container sourceContainer, User user, @Nullable String targetIdOrPath, Errors errors)
+    public static Container getMoveTargetContainer(@NotNull Container sourceContainer, User user, @Nullable String targetIdOrPath, Errors errors)
     {
         if (targetIdOrPath == null)
         {
@@ -2585,7 +2585,7 @@ public class ContainerManager
 
         if (!_targetContainer.hasPermission(user, InsertPermission.class))
         {
-            errors.reject(ERROR_GENERIC, "You do not have permission to move " + entityType + " to the target container: " + targetIdOrPath + ".");
+            errors.reject(ERROR_GENERIC, "You do not have permission to move rows to this target container: " + targetIdOrPath + ".");
             return null;
         }
 
