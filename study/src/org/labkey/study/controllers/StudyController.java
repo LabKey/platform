@@ -4606,7 +4606,7 @@ public class StudyController extends BaseStudyController
     private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
             "<div id=\"participantData\">Loading...</div>\n" +
             "\n" +
-            "<script type=\"text/javascript\">\n" +
+            "<script type=\"text/javascript\" nonce=\"<%=scriptNonce%>\">\n" +
             "    LABKEY.requiresClientAPI(function() {\n" +
             "       /* get the participant id from the request URL: this parameter is required. */\n" +
             "       var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
@@ -4637,7 +4637,7 @@ public class StudyController extends BaseStudyController
             "       /* place the webpart into the 'participantData' div: */\n" +
             "       participantWebPart.render();\n" +
             "   });\n" +
-            "</script> \n" +
+            "</script>\n" +
             "/* Adjust width of first column: */\n" +
             "<style>\n" +
             "  .labkey-data-region tr td:first-child {width: 300px}\n" +
