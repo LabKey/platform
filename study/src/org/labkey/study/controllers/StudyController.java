@@ -2440,7 +2440,7 @@ public class StudyController extends BaseStudyController
 
             if ((_study.getParticipantAliasDatasetId() != null) && (_study.getParticipantAliasDatasetId() == form.getDatasetId()))
             {
-                super.setImportMessage("This is the Alias Dataset.  You do not need to include information for the date column.");
+                super.setImportMessage("This is the Alias Dataset. You do not need to include information for the date column.");
             }
 
             _def = StudyManager.getInstance().getDatasetDefinition(_study, form.getDatasetId());
@@ -2482,7 +2482,7 @@ public class StudyController extends BaseStudyController
 
             // TODO need a shorthand for this check
             if (_def.isShared() && _def.getContainer().equals(_def.getDefinitionContainer()))
-                return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder.  Use a sub-study to import data."));
+                return new HtmlView("Error", HtmlString.of("Cannot insert dataset data in this folder. Use a sub-study to import data."));
 
             if (_def.getTypeURI() == null)
                 throw new NotFoundException("Dataset is not yet defined.");
@@ -3712,7 +3712,7 @@ public class StudyController extends BaseStudyController
                 newState = QCStateManager.getInstance().getStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
-                    errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");
+                    errors.reject(null, "The selected state could not be found. It may have been deleted from the database.");
                     return false;
                 }
             }
@@ -3971,7 +3971,7 @@ public class StudyController extends BaseStudyController
             if (!definitionFile.canRead())
                 errors.reject("importStudyBatch", "Can't read dataset file: " + path);
             if (lockFile.exists())
-                errors.reject("importStudyBatch", "Lock file exists.  Delete file before running import. " + lockFile.getName());
+                errors.reject("importStudyBatch", "Lock file exists. Delete file before running import. " + lockFile.getName());
 
             VirtualFile datasetsDir = new FileSystemFile(definitionFile.getParentFile());
             DatasetFileReader reader = new DatasetFileReader(datasetsDir, definitionFile.getName(), getStudyRedirectIfNull());
@@ -4199,7 +4199,7 @@ public class StudyController extends BaseStudyController
             for (VisitImpl visit : visits)
             {
                 // it's possible that a new visit has been created between when the update page was rendered
-                // and posted.  This will result in a visit that isn't in our ID maps.  There's no great way
+                // and posted. This will result in a visit that isn't in our ID maps. There's no great way
                 // to handle this, so we'll just skip setting display/chronological order on these visits for now.
                 if (displayOrder.containsKey(visit.getRowId()) && chronologicalOrder.containsKey(visit.getRowId()))
                 {
@@ -4612,7 +4612,7 @@ public class StudyController extends BaseStudyController
             "       /* get the participant id from the request URL: this parameter is required. */\n" +
             "       var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
             "       /* get the dataset id from the request URL: this is used to remember expand/collapse\n" +
-            "           state per-dataset.  This parameter is optional; we use -1 if it isn't provided. */\n" +
+            "           state per-dataset. This parameter is optional; we use -1 if it isn't provided. */\n" +
             "       var datasetId = LABKEY.ActionURL.getParameter('datasetId');\n" +
             "       if (!datasetId)\n" +
             "           datasetId = -1;\n" +
