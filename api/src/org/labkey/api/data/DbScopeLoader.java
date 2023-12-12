@@ -80,7 +80,7 @@ class DbScopeLoader
                     try
                     {
                         scope = new DbScope(this);
-                        firstConnectionConsumer.accept(scope);
+                        firstConnectionConsumer.accept(scope); // Do this before prepare(), which could open connections
                         scope.getSqlDialect().prepare(scope);
                     }
                     catch (Throwable t)
