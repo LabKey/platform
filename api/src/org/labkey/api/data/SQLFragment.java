@@ -406,12 +406,15 @@ public class SQLFragment implements Appendable, CharSequence
             return this;
         String identifier = charseq.toString().strip();
 
-        boolean quoted = identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\"");
-        if ((StringUtils.countMatches(identifier, '\"') % 2) != 0 || (!quoted && StringUtils.containsAny(identifier, "*/\\'\"?;- \t\n")))
-        {
-            if (!AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
-                throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to incorrectly formatted");
-        }
+        boolean malformed;
+        if (identifier.length() >= 2 && identifier.startsWith("\"") && identifier.endsWith("\""))
+            malformed = (StringUtils.countMatches(identifier, '\"') % 2) != 0;
+        else if (identifier.length() >= 2 && identifier.startsWith("`") && identifier.endsWith("`"))
+            malformed = (StringUtils.countMatches(identifier, '`') % 2) != 0;
+        else
+            malformed = StringUtils.containsAny(identifier, "*/\\'\"`?;- \t\n");
+        if (malformed && !AppProps.getInstance().isExperimentalFeatureEnabled(FEATUREFLAG_DISABLE_STRICT_CHECKS))
+            throw new IllegalArgumentException("SQLFragment.appendIdentifier(String) value appears to be incorrectly formatted: " + identifier);
 
         getStringBuilder().append(charseq);
         return this;
@@ -1136,6 +1139,25 @@ public class SQLFragment implements Appendable, CharSequence
             shouldFail(() -> new SQLFragment().appendIdentifier("?"));
             shouldFail(() -> new SQLFragment().appendIdentifier(";"));
             shouldFail(() -> new SQLFragment().appendIdentifier("\"column\"name\""));
+        }
+
+
+        String mysqlQuoteIdentifier(String id)
+        {
+            return "`" + id.replaceAll("`", "``") + "`";
+        }
+
+        @Test
+        public void testMysql()
+        {
+            // OK
+            new SQLFragment().appendIdentifier(mysqlQuoteIdentifier("mysql"));
+            new SQLFragment().appendIdentifier(mysqlQuoteIdentifier("my`sql"));
+            new SQLFragment().appendIdentifier(mysqlQuoteIdentifier("my\"sql"));
+
+            // not OK
+            shouldFail(() -> new SQLFragment().appendIdentifier("`"));
+            shouldFail(() -> new SQLFragment().appendIdentifier("`a`a`"));
         }
     }
 
