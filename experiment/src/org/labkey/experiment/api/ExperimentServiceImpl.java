@@ -8973,7 +8973,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
+    public Map<String, Object> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
     {
         if (dataObjects == null || dataObjects.isEmpty())
             throw new IllegalArgumentException("No sources provided to move operation.");
@@ -9065,7 +9065,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
-        return updateCounts;
+
+        return new HashMap<>(updateCounts);
     }
 
     private void addDataClassSummaryAuditEvent(User user, Container container, TableInfo dataClassTable, int rowCount, String auditUserComment)
@@ -9223,7 +9224,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Map<String, Integer> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
+    public Map<String, Object> moveAssayRuns(@NotNull List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior)
     {
         if (assayRuns.isEmpty())
             throw new IllegalArgumentException("No assayRuns provided to move operation.");
@@ -9285,7 +9286,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             transaction.commit();
         }
 
-        return assayMoveData.counts();
+        return new HashMap<>(assayMoveData.counts());
     }
 
     private boolean moveFile(AbstractAssayProvider.AssayFileMoveData renameData)

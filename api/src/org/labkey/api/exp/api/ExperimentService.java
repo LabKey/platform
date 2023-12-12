@@ -1026,11 +1026,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     int moveExperimentRuns(List<ExpRun> runs, Container targetContainer, User user);
 
-    Map<String, Integer> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior);
+    Map<String, Object> moveAssayRuns(List<? extends ExpRun> assayRuns, Container container, Container targetContainer, User user, String userComment, AuditBehaviorType auditBehavior);
 
     int aliasMapRowContainerUpdate(TableInfo aliasMapTable, List<Integer> dataIds, Container targetContainer);
 
-    Map<String, Integer> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
+    Map<String, Object> moveDataClassObjects(Collection<? extends ExpData> dataObjects, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException;
 
     int moveAuditEvents(Container targetContainer, List<String> runLsids);
 

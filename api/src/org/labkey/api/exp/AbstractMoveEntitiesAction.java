@@ -26,10 +26,10 @@ public abstract class AbstractMoveEntitiesAction extends MutatingApiAction<MoveE
     @Override
     public void validateForm(MoveEntitiesForm form, Errors errors)
     {
-        _targetContainer = ContainerManager.getMoveTargetContainer(_entityType, getContainer(), getUser(), form.getTargetContainer(), errors);
+        _targetContainer = ContainerManager.getMoveTargetContainer(getContainer(), getUser(), form.getTargetContainer(), errors);
     }
 
-    protected abstract Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException;
+    protected abstract Map<String, Object> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException;
 
     protected abstract void updateSelections(MoveEntitiesForm form);
 
@@ -54,7 +54,7 @@ public abstract class AbstractMoveEntitiesAction extends MutatingApiAction<MoveE
         ApiSimpleResponse resp = new ApiSimpleResponse();
         try
         {
-            Map<String, Integer> updateCounts = doMove(form);
+            Map<String, Object> updateCounts = doMove(form);
 
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", _entityType);
             updateSelections(form);
