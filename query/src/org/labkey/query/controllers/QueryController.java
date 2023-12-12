@@ -224,6 +224,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPOutputStream;
 
@@ -4255,6 +4256,21 @@ public class QueryController extends SpringActionController
                 return Collections.emptyList();
             }
         },
+        moveRows(UpdatePermission.class, QueryService.AuditAction.UPDATE)
+        {
+            @Override
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
+                    throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
+            {
+                BatchValidationException errors = new BatchValidationException();
+
+                Container targetContainer = (Container) configParameters.get(QueryUpdateService.ConfigParameters.TargetContainer);
+                Map<String, Object> updatedCounts = qus.moveRows(user, container, targetContainer, rows, errors, configParameters, extraContext);
+                if (errors.hasErrors())
+                    throw errors;
+                return Collections.singletonList(updatedCounts);
+            }
+        },
         update(UpdatePermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
@@ -4347,18 +4363,19 @@ public class QueryController extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    protected abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
+    protected abstract static class BaseSaveRowsAction<FORM extends ApiSaveRowsForm> extends MutatingApiAction<FORM>
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";
         public static final String PROP_CONTAINER_PATH = "containerPath";
+        public static final String PROP_TARGET_CONTAINER_PATH = "targetContainerPath";
         public static final String PROP_COMMAND = "command";
-        private static final String PROP_ROWS = "rows";
+        public static final String PROP_ROWS = "rows";
 
         private JSONObject _json;
 
         @Override
-        public void validateForm(ApiSaveRowsForm apiSaveRowsForm, Errors errors)
+        public void validateForm(FORM apiSaveRowsForm, Errors errors)
         {
             _json = apiSaveRowsForm.getJsonObject();
 
@@ -4375,11 +4392,19 @@ public class QueryController extends SpringActionController
 
         protected Container getContainerForCommand(JSONObject json)
         {
+            return getContainerForCommand(json, PROP_CONTAINER_PATH, getContainer());
+        }
+
+        protected Container getContainerForCommand(JSONObject json, String containerPathProp, @Nullable Container defaultContainer)
+        {
             Container container;
-            String containerPath = StringUtils.trimToNull(json.optString(PROP_CONTAINER_PATH));
+            String containerPath = StringUtils.trimToNull(json.optString(containerPathProp));
             if (containerPath == null)
             {
-                container = getContainer();
+                if (defaultContainer != null)
+                    container = defaultContainer;
+                else
+                    throw new IllegalArgumentException(containerPathProp + " is required but was not provided.");
             }
             else
             {
@@ -4492,6 +4517,12 @@ public class QueryController extends SpringActionController
             if (skipReselectRows)
                 configParameters.put(QueryUpdateService.ConfigParameters.SkipReselectRows, true);
 
+            if (json.optString(PROP_TARGET_CONTAINER_PATH, null) != null)
+            {
+                Container targetContainer = getContainerForCommand(json, PROP_TARGET_CONTAINER_PATH, null);
+                configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
+            }
+
             //set up the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
@@ -4524,10 +4555,17 @@ public class QueryController extends SpringActionController
                 if (auditEvent != null)
                     auditEvent.addComment(commandType.getAuditAction(), responseRows.size());
 
-                if (commandType != CommandType.importRows)
+                if (commandType == CommandType.moveRows)
+                {
+                    // moveRows returns a single map of updateCounts
+                    response.put("updateCounts", responseRows.get(0));
+                }
+                else if (commandType != CommandType.importRows)
+                {
                     response.put("rows", responseRows.stream()
                         .map(JsonUtil::toJsonPreserveNulls)
                         .collect(LabKeyCollectors.toJSONArray()));
+                }
 
                 // if there is any provenance information, save it here
                 ProvenanceService svc = ProvenanceService.get();
@@ -4652,7 +4690,7 @@ public class QueryController extends SpringActionController
     //
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public static class UpdateRowsAction extends BaseSaveRowsAction
+    public static class UpdateRowsAction extends BaseSaveRowsAction<ApiSaveRowsForm>
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -4672,7 +4710,7 @@ public class QueryController extends SpringActionController
 
     @RequiresAnyOf({ReadPermission.class, InsertPermission.class}) //will check below
     @ApiVersion(8.3)
-    public static class InsertRowsAction extends BaseSaveRowsAction
+    public static class InsertRowsAction extends BaseSaveRowsAction<ApiSaveRowsForm>
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -4693,7 +4731,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public static class ImportRowsAction extends BaseSaveRowsAction
+    public static class ImportRowsAction extends BaseSaveRowsAction<ApiSaveRowsForm>
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -4708,7 +4746,7 @@ public class QueryController extends SpringActionController
     @ActionNames("deleteRows, delRows")
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public static class DeleteRowsAction extends BaseSaveRowsAction
+    public static class DeleteRowsAction extends BaseSaveRowsAction<ApiSaveRowsForm>
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -4720,8 +4758,119 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermission(ReadPermission.class) //will check below // TODO verify this
+    @ApiVersion(8.3) // TODO what should this be or should it not be set?
+    public static class MoveRowsAction extends BaseSaveRowsAction<MoveRowsForm>
+    {
+        private Container _targetContainer;
+
+        @Override
+        public void validateForm(MoveRowsForm form, Errors errors)
+        {
+            super.validateForm(form, errors);
+
+            JSONObject json = getJsonObject();
+            if (json == null)
+                throw new IllegalArgumentException("Empty request");
+
+            String targetContainerPath = json.optString(PROP_TARGET_CONTAINER_PATH, null);
+            _targetContainer = ContainerManager.getMoveTargetContainer(getContainer(), getUser(), targetContainerPath, errors);
+        }
+
+        @Override
+        public ApiResponse execute(MoveRowsForm form, BindException errors) throws Exception
+        {
+            // if JSON does not have rows array, see if they were provided via selectionKey
+            if (!getJsonObject().has(PROP_ROWS))
+                setRowsFromSelectionKey(form);
+
+            JSONObject response = executeJson(getJsonObject(), CommandType.moveRows, true, errors);
+            if (response == null || errors.hasErrors())
+                return null;
+
+            updateSelections(form);
+
+            response.put("containerPath", _targetContainer.getPath());
+            return new ApiSimpleResponse(response);
+        }
+
+        private void updateSelections(MoveRowsForm form)
+        {
+            String selectionKey = form.getDataRegionSelectionKey();
+            if (selectionKey != null)
+            {
+                Set<String> rowIds = form.getIds(getViewContext(), false)
+                        .stream().map(Object::toString).collect(Collectors.toSet());
+                DataRegionSelection.setSelected(getViewContext(), selectionKey, rowIds, false);
+
+                // if moving run items from a type, the selections from other selectionKeys in that container will
+                // possibly be holding onto invalid keys after the move, so clear them based on the containerPath and selectionKey suffix
+                String[] keyParts = selectionKey.split("|");
+                if (keyParts.length > 1)
+                    DataRegionSelection.clearRelatedByContainerPath(getViewContext(), keyParts[keyParts.length - 1]);
+            }
+        }
+
+        private void setRowsFromSelectionKey(MoveRowsForm form)
+        {
+            Set<Integer> rowIds = form.getIds(getViewContext(), false); // handle clear of selectionKey after move complete
+
+            // convert rowIds to a JSONArray of JSONObjects with a single property "RowId"
+            JSONArray rows = new JSONArray();
+            for (Integer rowId : rowIds)
+            {
+                JSONObject row = new JSONObject();
+                row.put("RowId", rowId);
+                rows.put(row);
+            }
+            getJsonObject().put(PROP_ROWS, rows);
+        }
+    }
+
+    public static class MoveRowsForm extends ApiSaveRowsForm
+    {
+        private String _dataRegionSelectionKey;
+        private boolean _useSnapshotSelection;
+
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public boolean isUseSnapshotSelection()
+        {
+            return _useSnapshotSelection;
+        }
+
+        public void setUseSnapshotSelection(boolean useSnapshotSelection)
+        {
+            _useSnapshotSelection = useSnapshotSelection;
+        }
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            super.bindJson(json);
+            _dataRegionSelectionKey = json.optString("dataRegionSelectionKey", null);
+            _useSnapshotSelection = json.optBoolean("useSnapshotSelection", false);
+        }
+
+        public Set<Integer> getIds(ViewContext context, boolean clear)
+        {
+            if (_useSnapshotSelection)
+                return new HashSet<>(DataRegionSelection.getSnapshotSelectedIntegers(context, getDataRegionSelectionKey()));
+            else
+                return DataRegionSelection.getSelectedIntegers(context, getDataRegionSelectionKey(), clear);
+        }
+    }
+
     @RequiresNoPermission //will check below
-    public static class SaveRowsAction extends BaseSaveRowsAction
+    public static class SaveRowsAction extends BaseSaveRowsAction<ApiSaveRowsForm>
     {
         public static final String PROP_VALUES = "values";
         public static final String PROP_OLD_KEYS = "oldKeys";
