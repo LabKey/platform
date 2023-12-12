@@ -21,18 +21,10 @@
 <%@ page import="org.labkey.api.reports.report.QueryReport" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("clientapi/ext3");
-    }
-%>
 <%
     Report report = (Report)getModelBean();
     ViewContext context = getViewContext();
@@ -60,12 +52,12 @@
         }
 
         if (view != null && view.getTable() == null)
-            sb.append("Unable to create table: " + view.getSettings().getQueryName() + ", you may not have access to that data.");
+            sb.append("Unable to create table: ").append(view.getSettings().getQueryName()).append(", you may not have access to that data.");
     }
 %>
 
 <%
-    if (sb.length() > 0)
+    if (!sb.isEmpty())
     {
 %>
     <span class="labkey-error"><%=h(sb.toString(), true)%></span>
@@ -76,7 +68,7 @@
 %>
     <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
-        Ext.onReady(function() {
+        LABKEY.Utils.onReady(function() {
             var qwp = new LABKEY.QueryWebPart({
                 renderTo    : <%=q(renderId)%>,
                 schemaName  : <%=q(schemaName)%>,
