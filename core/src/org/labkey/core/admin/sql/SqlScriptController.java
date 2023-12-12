@@ -407,15 +407,15 @@ public class SqlScriptController extends SpringActionController
             html.unsafeAppend("<table><tr>");
             appendScripts(html, scriptsWithErrors);
 
-            html.append("<td>\n");
+            html.unsafeAppend("<td>\n");
 
             for (SqlScript script : scriptsWithErrors)
             {
-                html.append(errorMessages.get(script)).append("<br>\n");
+                html.append(errorMessages.get(script)).unsafeAppend("<br>\n");
             }
 
-            html.append("<td>\n");
-            html.append("</tr></table>");
+            html.unsafeAppend("<td>\n");
+            html.unsafeAppend("</tr></table>");
 
             return new HtmlView(html);
         }

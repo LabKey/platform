@@ -737,7 +737,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     sb.append(prefix);
                     prefix = HtmlString.EMPTY_STRING;
                     postfix = HtmlString.unsafe("</ul></p>");
-                    sb.unsafeAppend("<li>").append(PageFlowUtil.filter(assayDataset.getStudy().getLabel())).unsafeAppend("</li>");
+                    sb.unsafeAppend("<li>").append(assayDataset.getStudy().getLabel()).unsafeAppend("</li>");
                 }
             }
             sb.append(postfix);

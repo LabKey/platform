@@ -24,7 +24,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -32,8 +31,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.springframework.web.servlet.ModelAndView;
-
-import static org.labkey.api.util.DOM.B;
 
 /**
  * User: jeckels

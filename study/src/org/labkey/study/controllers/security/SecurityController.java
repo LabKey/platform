@@ -85,6 +85,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * User: Matthew
@@ -317,7 +318,7 @@ public class SecurityController extends SpringActionController
                         else
                         {
                             sb.unsafeAppend("The import was successful, but the following messages were generated:<br><br>");
-                            sb.append(StringUtils.join(messages, "<br>"));
+                            sb.unsafeAppend(messages.stream().map(PageFlowUtil::filter).collect(Collectors.joining("<br>")));
                         }
                         _messageText = sb.getHtmlString();
                     }

@@ -2819,7 +2819,7 @@ public class AdminController extends SpringActionController
                 removes += stat.getRemoves();
                 clears += stat.getClears();
 
-                html.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">");
+                html.unsafeAppend("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").unsafeAppend("\">");
 
                 appendDescription(html, stat.getDescription(), stat.getCreationStackTrace());
 
@@ -2829,7 +2829,7 @@ public class AdminController extends SpringActionController
                 appendLongs(html, limit, maxSize, stat.getSize(), stat.getGets(), stat.getMisses(), stat.getPuts(), stat.getExpirations(), stat.getEvictions(), stat.getRemoves(), stat.getClears());
                 appendDoubles(html, stat.getMissRatio());
 
-                html.append("<td>").append(PageFlowUtil.link("Clear", getCacheURL(stat.getDescription()))).append("</td>\n");
+                html.unsafeAppend("<td>").append(PageFlowUtil.link("Clear", getCacheURL(stat.getDescription()))).unsafeAppend("</td>\n");
 
                 if (null != limit && maxSize >= limit)
                     html.unsafeAppend("<td><font class=\"labkey-error\">This cache has been limited</font></td>");
