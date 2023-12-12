@@ -166,7 +166,7 @@ public class Stats
      */
     public static Double[] getTrailingMeans(Double[] values, int N)
     {
-        if (values == null || values.length <= 1 || values.length <= N)
+        if (values == null || values.length <= 1)
             return new Double[0];
 
         Double[] trailingMeans = new Double[values.length];
@@ -177,17 +177,12 @@ public class Stats
         {
             // Issue 49131: At the very beginning of the folder's date range, always calculate the values for the first N-1 samples,
             // based on their sequence. And so on until you hit N, when we start using the moving window.
-            if (i < N)
-            {
-                trailingMeans[i] = getMean(getValuesFromRange(values, start, end));
-                end++;
-            }
-            else
+            if (i >= N)
             {
                 start++;
-                trailingMeans[i] = getMean(getValuesFromRange(values, start, end));
-                end++;
             }
+            trailingMeans[i] = getMean(getValuesFromRange(values, start, end));
+            end++;
         }
 
         return trailingMeans;
@@ -213,40 +208,30 @@ public class Stats
         {
             // Issue 49131: At the very beginning of the folder's date range, always calculate the values for the first N-1 samples,
             // based on their sequence. And so on until you hit N, when we start using the moving window.
-            if (i < N)
-            {
-                Double[] vals = getValuesFromRange(values, start, end);
-                double sd = getStdDev(vals, false);
-                double mean = getMean(vals);
-                if (mean == 0)
-                {
-                    trailingCVs[i] = null;
-                }
-                else
-                {
-                    trailingCVs[i] = sd / mean * 100;
-                }
-                end++;
-            }
-            else
+            if (i >= N)
             {
                 start++;
-                Double[] vals = getValuesFromRange(values, start, end);
-                double sd = getStdDev(vals, false);
-                double mean = getMean(vals);
-                if (mean == 0)
-                {
-                    trailingCVs[i] = null;
-                }
-                else
-                {
-                    trailingCVs[i] = sd / mean * 100;
-                }
-                end++;
             }
+            calcCV(values, trailingCVs, start, end, i);
+            end++;
         }
 
         return trailingCVs;
+    }
+
+    private static void calcCV(Double[] values, Double[] trailingCVs, int start, int end, int i)
+    {
+        Double[] vals = getValuesFromRange(values, start, end);
+        double sd = getStdDev(vals, false);
+        double mean = getMean(vals);
+        if (mean == 0)
+        {
+            trailingCVs[i] = null;
+        }
+        else
+        {
+            trailingCVs[i] = sd / mean * 100;
+        }
     }
 
     private static Double[] getValuesFromRange(Double[] values, int start, int end)
