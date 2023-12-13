@@ -80,5 +80,10 @@ public class CustomParticipantView extends Entity
     public ModelAndView getView()
     {
         return _view != null ? _view : HtmlView.unsafe(_body);
-    }    
+    }
+
+    public void setView(ModelAndView view)
+    {
+        _view = view;
+    }
 }
