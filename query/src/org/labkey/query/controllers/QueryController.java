@@ -4801,6 +4801,7 @@ public class QueryController extends SpringActionController
 
             updateSelections(form);
 
+            response.put("success", true);
             response.put("containerPath", _targetContainer.getPath());
             return new ApiSimpleResponse(response);
         }
