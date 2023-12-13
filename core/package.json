@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "2.397.1-fb-moveRowsAPI.0",
+    "@labkey/components": "2.397.2-fb-moveRowsAPI.0",
     "@labkey/themes": "1.3.2"
   },
   "devDependencies": {
