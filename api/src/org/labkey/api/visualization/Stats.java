@@ -197,7 +197,7 @@ public class Stats
      */
     public static Double[] getTrailingCVs(Double[] values, int N)
     {
-        if (values == null || values.length <= 1 || values.length <= N)
+        if (values == null || values.length <= 1)
             return new Double[0];
 
         Double[] trailingCVs = new Double[values.length];
