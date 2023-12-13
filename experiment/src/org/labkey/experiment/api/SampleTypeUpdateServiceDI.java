@@ -1899,7 +1899,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             protected Object convert(Object o)
             {
                 Measurement.validateUnits((String) o, _metricUnit);
-                return o;
+                return Measurement.Unit.getUnit((String) o);
             }
         }
 

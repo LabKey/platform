@@ -1068,7 +1068,7 @@ public class TestController extends SpringActionController
             getPageConfig().addClientDependency(ClientDependency.fromPath("internal/jQuery"));
             getPageConfig().addClientDependency(ClientDependency.fromPath("clientapi"));
             getPageConfig().addClientDependency(ClientDependency.fromPath("query/testquery.js"));
-            return new HtmlView("</script><div id=testQueryDiv style='min-height:600px;min-width:800px;' nonce='" + getPageConfig().getScriptNonce()  + "'></div>");
+            return HtmlView.unsafe("<div id=testQueryDiv style='min-height:600px;min-width:800px;' nonce='" + filter(getPageConfig().getScriptNonce()) + "'></div>");
         }
 
         @Override

@@ -134,6 +134,7 @@ import org.labkey.api.study.model.ParticipantInfo;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -4145,8 +4146,20 @@ public class StudyManager
             }
         }
 
-        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
-        return new TableSelector(StudySchema.getInstance().getTableInfoParticipantView(), containerFilter, null).getObject(CustomParticipantView.class);
+        String key = new Path(study.getContainer().getId(),CustomParticipantView.class.getName()).toString();
+        return (CustomParticipantView) CacheManager.getSharedCache().get(key, study, (k, s) ->
+        {
+            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
+            TableInfo ti = StudySchema.getInstance().getTableInfoParticipantView();
+            CustomParticipantView participantView = new TableSelector(ti, containerFilter, null).getObject(CustomParticipantView.class);
+            if (null == participantView)
+                return null;
+
+            Module studyModule = ModuleLoader.getInstance().getModule("study");
+            var htmlView = new ModuleHtmlView(studyModule, study.getSubjectNounSingular(), HtmlString.unsafe(participantView.getBody()));
+            participantView.setView(htmlView);
+            return participantView;
+        });
     }
 
     public CustomParticipantView saveCustomParticipantView(Study study, User user, CustomParticipantView view)
@@ -4161,7 +4174,9 @@ public class StudyManager
         else
         {
             view.beforeUpdate(user);
-            return Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId());
+            var ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId());
+            CacheManager.getSharedCache().remove(new Path(view.getContainerId(),CustomParticipantView.class.getName()).toString());
+            return ret;
         }
     }
 
