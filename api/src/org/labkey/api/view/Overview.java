@@ -20,6 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.HasHtmlString;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.util.ArrayList;
@@ -29,7 +32,7 @@ import java.util.List;
  * Class for rendering a series of steps involved with setting something up.
  * Steps may be enabled or disabled.  If disabled, they are shown as grey.
  */
-public class Overview
+public class Overview implements HasHtmlString
 {
     private final User _user;
     private final Container _container;
@@ -37,8 +40,8 @@ public class Overview
     private final List<Action> _actions;
     
     private String _title;
-    private String _explanatoryHTML;
-    private String _statusHTML;
+    private HtmlString _explanatoryHTML;
+    private HtmlString _statusHTML;
 
     public Overview(User user, Container container)
     {
@@ -53,45 +56,53 @@ public class Overview
         return PageFlowUtil.filter(text);
     }
 
-    public String toString()
+    @Override
+    public HtmlString getHtmlString()
     {
-        StringBuilder ret = new StringBuilder();
-        ret.append("<div class=\"labkey-overview\">\n");
+        HtmlStringBuilder ret = HtmlStringBuilder.of();
+        ret.unsafeAppend("<div class=\"labkey-overview\">\n");
         if (!StringUtils.isEmpty(_title))
         {
-            ret.append("<b>");
-            ret.append(h(_title));
-            ret.append("</b><br>\n");
+            ret.unsafeAppend("<b>");
+            ret.append(_title);
+            ret.unsafeAppend("</b><br>\n");
         }
-        if (!StringUtils.isEmpty(_explanatoryHTML))
+        if (!HtmlString.isEmpty(_explanatoryHTML))
         {
-            ret.append("<i>");
+            ret.unsafeAppend("<i>");
             ret.append(_explanatoryHTML);
-            ret.append("</i><br>\n");
+            ret.unsafeAppend("</i><br>\n");
         }
 
-        if (!StringUtils.isEmpty(_statusHTML))
+        if (!HtmlString.isEmpty(_statusHTML))
         {
             ret.append(_statusHTML);
-            ret.append("<br>");
+            ret.unsafeAppend("<br>");
         }
-        if (_steps.size() != 0)
+        if (!_steps.isEmpty())
         {
-            ret.append("<ol>");
+            ret.unsafeAppend("<ol>");
             for (Step step : _steps)
             {
                 ret.append(step);
             }
-            ret.append("</ol>");
+            ret.unsafeAppend("</ol>");
         }
         for (Action miscAction : _actions)
         {
             ret.append(miscAction);
-            ret.append("<br>");
+            ret.unsafeAppend("<br>");
         }
-        ret.append("</div>");
-        return ret.toString();
+        ret.unsafeAppend("</div>");
+        return ret.getHtmlString();
     }
+
+    @Override
+    public String toString()
+    {
+        return getHtmlString().toString();
+    }
+
 
     public void addStep(Step step)
     {
@@ -131,7 +142,7 @@ public class Overview
      * Explanatory text is text that is intended to be ignored by users that know what they're doing.  It is
      * rendered in italics.
      */
-    public void setExplanatoryHTML(String html)
+    public void setExplanatoryHTML(HtmlString html)
     {
         _explanatoryHTML = html;
     }
@@ -140,12 +151,12 @@ public class Overview
      * Set the status text which appears at the top.
      * Status text sometimes changes and contains information that may be useful even to people who know how to use the product.
      */
-    public void setStatusHTML(String html)
+    public void setStatusHTML(HtmlString html)
     {
         _statusHTML = html;
     }
 
-    public static class Step
+    public static class Step implements HasHtmlString
     {
         public enum Status
         {
@@ -160,8 +171,8 @@ public class Overview
         private final Status _status;
         private final List<Action> _actions;
 
-        private String _expanatoryHTML;
-        private String _statusHTML;
+        private HtmlString _expanatoryHTML;
+        private HtmlString _statusHTML;
 
         public Step(String title, Status status)
         {
@@ -170,12 +181,12 @@ public class Overview
             _actions = new ArrayList<>();
         }
 
-        public void setExplanatoryHTML(String html)
+        public void setExplanatoryHTML(HtmlString html)
         {
             _expanatoryHTML = html;
         }
 
-        public void setStatusHTML(String html)
+        public void setStatusHTML(HtmlString html)
         {
             _statusHTML = html;
         }
@@ -187,18 +198,19 @@ public class Overview
             _actions.add(action);
         }
 
-        public String toString()
+        @Override
+        public HtmlString getHtmlString()
         {
-            StringBuilder ret = new StringBuilder("<li");
-            ret.append(" style=\"padding-bottom:0.5em\" class=\"labkey-indented");
+            HtmlStringBuilder ret = HtmlStringBuilder.of();
+            ret.unsafeAppend("<li style=\"padding-bottom:0.5em\" class=\"labkey-indented");
             if (_status == Status.disabled)
             {
                 ret.append(" labkey-disabled");
             }
-            ret.append("\">");
-            ret.append("<b>");
-            ret.append(h(_title));
-            ret.append("</b>");
+            ret.unsafeAppend("\">");
+            ret.unsafeAppend("<b>");
+            ret.append(_title);
+            ret.unsafeAppend("</b>");
             if (_status == Status.optional)
             {
                 ret.append(" (optional)");
@@ -211,34 +223,40 @@ public class Overview
             {
                 ret.append(" (required)");
             }
-            if (!StringUtils.isEmpty(_expanatoryHTML))
+            if (!HtmlString.isEmpty(_expanatoryHTML))
             {
-                ret.append("<br><i>");
+                ret.unsafeAppend("<br><i>");
                 ret.append(_expanatoryHTML);
-                ret.append("</i>");
+                ret.unsafeAppend("</i>");
             }
-            if (!(StringUtils.isEmpty(_statusHTML)))
+            if (!(HtmlString.isEmpty(_statusHTML)))
             {
-                ret.append("<br>");
+                ret.unsafeAppend("<br>");
                 ret.append(_statusHTML);
             }
             for (Action action : _actions)
             {
-                ret.append("<br>\n");
+                ret.unsafeAppend("<br>\n");
                 ret.append(action);
             }
-            ret.append("</li>");
-            return ret.toString();
+            ret.unsafeAppend("</li>");
+            return ret.getHtmlString();
+        }
+
+        @Override
+        public String toString()
+        {
+            return getHtmlString().toString();
         }
     }
 
-    public static class Action
+    public static class Action implements HasHtmlString
     {
         private final String _label;
         private final ActionURL _url;
 
-        private String _explanatoryHTML;
-        private String _descriptionHTML;
+        private HtmlString _explanatoryHTML;
+        private HtmlString _descriptionHTML;
 
         public Action(String label, ActionURL url)
         {
@@ -246,32 +264,33 @@ public class Overview
             _url = url;
         }
 
-        public void setExplanatoryHTML(String html)
+        public void setExplanatoryHTML(HtmlString html)
         {
             _explanatoryHTML = html;
         }
 
-        public void setDescriptionHTML(String html)
+        public void setDescriptionHTML(HtmlString html)
         {
             _descriptionHTML = html;
         }
 
-        public String toString()
+        @Override
+        public HtmlString getHtmlString()
         {
-            StringBuilder ret = new StringBuilder();
-            ret.append("<span class=\"action\">");
-            if (!StringUtils.isEmpty(_explanatoryHTML))
+            HtmlStringBuilder ret = HtmlStringBuilder.of();
+            ret.unsafeAppend("<span class=\"action\">");
+            if (!HtmlString.isEmpty(_explanatoryHTML))
             {
-                ret.append("<i>");
+                ret.unsafeAppend("<i>");
                 ret.append(_explanatoryHTML);
-                ret.append("</i><br>");
+                ret.unsafeAppend("</i><br>");
             }
-            if (!StringUtils.isEmpty(_descriptionHTML))
+            if (!HtmlString.isEmpty(_descriptionHTML))
             {
                 ret.append(_descriptionHTML);
-                ret.append("<br>");
+                ret.unsafeAppend("<br>");
             }
-            ret.append("<span class=\"action-label\">");
+            ret.unsafeAppend("<span class=\"action-label\">");
             if (_url != null)
             {
                 ret.append(PageFlowUtil.link(_label).href(_url));
@@ -280,8 +299,14 @@ public class Overview
             {
                 ret.append(_label);
             }
-            ret.append("</span></span>");
-            return ret.toString();
+            ret.unsafeAppend("</span></span>");
+            return ret.getHtmlString();
+        }
+
+        @Override
+        public String toString()
+        {
+            return getHtmlString().toString();
         }
     }
 }

@@ -55,6 +55,8 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
@@ -216,9 +218,10 @@ public class SqlScriptController extends SpringActionController
         {
             setHelpTopic("sqlScripts#admin");
 
-            StringBuilder html = new StringBuilder("<table>");
+            HtmlStringBuilder html = HtmlStringBuilder.of();
+            html.unsafeAppend("<table>");
 
-            html.append("<tr><td colspan=4>");
+            html.unsafeAppend("<tr><td colspan=4>");
 
             if (AppProps.getInstance().isDevMode())
             {
@@ -235,12 +238,12 @@ public class SqlScriptController extends SpringActionController
 
             // Make this link available on production deployments
             html.append(PageFlowUtil.link("upgrade code").href(new ActionURL(UpgradeCodeAction.class, ContainerManager.getRoot())));
-            html.append("</td></tr>");
-            html.append("<tr><td>&nbsp;</td></tr>");
+            html.unsafeAppend("</td></tr>");
+            html.unsafeAppend("<tr><td>&nbsp;</td></tr>");
 
-            html.append("<tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
-            html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
-            html.append("<tr valign=top>");
+            html.unsafeAppend("<tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
+            html.unsafeAppend("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
+            html.unsafeAppend("<tr valign=top>");
 
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
@@ -296,7 +299,7 @@ public class SqlScriptController extends SpringActionController
             appendScripts(html, allNotRun);
             appendScripts(html, incrementalNotRun);
 
-            html.append("</tr></table>");
+            html.unsafeAppend("</tr></table>");
 
             // In dev mode, check for some special scripts that need to remain, even though they appear to be incremental
             // and might not run during bootstrap.
@@ -311,19 +314,22 @@ public class SqlScriptController extends SpringActionController
                         .forEach(filename -> requiredScripts.add(new Pair<>(filename, module)));
                 }
 
-                StringBuilder warningHtml = new StringBuilder();
+                HtmlStringBuilder warningHtml = HtmlStringBuilder.of();
 
                 for (Pair<String, Module> pair : requiredScripts)
                 {
                     if (!allFilenames.contains(pair.getKey()))
-                        warningHtml.append("<span class=\"labkey-error\">Warning: The script ").append(PageFlowUtil.filter(pair.getKey())).append(" from module ").append(PageFlowUtil.filter(pair.getValue().getName())).append(" was not found!</span><br>\n");
+                        warningHtml.unsafeAppend("<span class=\"labkey-error\">Warning: The script ").append(pair.getKey()).append(" from module ").append(pair.getValue().getName()).unsafeAppend(" was not found!</span><br>\n");
                 }
 
                 if (!warningHtml.isEmpty())
-                    html.insert(0, warningHtml);
+                {
+                    warningHtml.append(html.getHtmlString());
+                    html = warningHtml;
+                }
             }
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
         @Override
@@ -335,10 +341,10 @@ public class SqlScriptController extends SpringActionController
 
 
     // We sort the list of scripts, so insist on an ArrayList
-    private void appendScripts(StringBuilder html, ArrayList<SqlScript> scripts)
+    private void appendScripts(HtmlStringBuilder html, ArrayList<SqlScript> scripts)
     {
         Container c = getContainer();
-        html.append("<td>\n");
+        html.unsafeAppend("<td>\n");
 
         if (scripts.isEmpty())
         {
@@ -354,16 +360,16 @@ public class SqlScriptController extends SpringActionController
                 url.addParameter("moduleName", script.getProvider().getProviderName());
                 url.addParameter("filename", script.getDescription());
 
-                html.append("<a href=\"");
-                html.append(PageFlowUtil.filter(url));
-                html.append("\">");
-                html.append(PageFlowUtil.filter(script.getDescription()));
+                html.unsafeAppend("<a href=\"");
+                html.append(url.toString());
+                html.unsafeAppend("\">");
+                html.append(script.getDescription());
 
-                html.append("</a><br>\n");
+                html.unsafeAppend("</a><br>\n");
             }
         }
 
-        html.append("</td>\n");
+        html.unsafeAppend("</td>\n");
     }
 
 
@@ -397,20 +403,21 @@ public class SqlScriptController extends SpringActionController
                 }
             }
 
-            StringBuilder html = new StringBuilder("<table><tr>");
+            HtmlStringBuilder html = HtmlStringBuilder.of();
+            html.unsafeAppend("<table><tr>");
             appendScripts(html, scriptsWithErrors);
 
-            html.append("<td>\n");
+            html.unsafeAppend("<td>\n");
 
             for (SqlScript script : scriptsWithErrors)
             {
-                html.append(errorMessages.get(script)).append("<br>\n");
+                html.append(errorMessages.get(script)).unsafeAppend("<br>\n");
             }
 
-            html.append("<td>\n");
-            html.append("</tr></table>");
+            html.unsafeAppend("<td>\n");
+            html.unsafeAppend("</tr></table>");
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
         @Override
@@ -495,33 +502,32 @@ public class SqlScriptController extends SpringActionController
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
 
-            StringBuilder formHtml = new StringBuilder();
+            HtmlStringBuilder formHtml = HtmlStringBuilder.of();
 
-            formHtml.append("<form method=\"get\">\n");
-            formHtml.append("  <table>\n");
-            formHtml.append("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
+            formHtml.unsafeAppend("<form method=\"get\">\n");
+            formHtml.unsafeAppend("  <table>\n");
+            formHtml.unsafeAppend("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
             formHtml.append(ModuleContext.formatVersion(_fromVersion));
-            formHtml.append("\"/></td></tr>\n");
-            formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
+            formHtml.unsafeAppend("\"/></td></tr>\n");
+            formHtml.unsafeAppend("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
             formHtml.append(ModuleContext.formatVersion(_toVersion));
-            formHtml.append("\"/></td></tr>\n");
+            formHtml.unsafeAppend("\"/></td></tr>\n");
 
             appendExtraRows(formHtml, form);
 
-            formHtml.append("    <tr><td colspan=2>");
+            formHtml.unsafeAppend("    <tr><td colspan=2>");
             formHtml.append(PageFlowUtil.button("Update").submit(true));
-            formHtml.append("</td></tr>\n");
-            formHtml.append("  </table>\n");
-            formHtml.append("</form><br>\n");
+            formHtml.unsafeAppend("</td></tr>\n");
+            formHtml.unsafeAppend("  </table>\n");
+            formHtml.unsafeAppend("</form><br>\n");
 
-            StringBuilder html = getScriptHtml(form);
-            html.insert(0, formHtml);
+            formHtml.append(getScriptHtml(form));
 
-            return new HtmlView(html.toString());
+            return new HtmlView(formHtml);
         }
 
-        protected abstract void appendExtraRows(StringBuilder html, K form);
-        public abstract StringBuilder getScriptHtml(K form);
+        protected abstract void appendExtraRows(HtmlStringBuilder html, K form);
+        public abstract HtmlStringBuilder getScriptHtml(K form);
     }
 
 
@@ -529,36 +535,36 @@ public class SqlScriptController extends SpringActionController
     public class ConsolidateScriptsAction extends AbstractScriptRangeAction<ConsolidateForm>
     {
         @Override
-        protected void appendExtraRows(StringBuilder html, ConsolidateForm form)
+        protected void appendExtraRows(HtmlStringBuilder html, ConsolidateForm form)
         {
-            html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
+            html.unsafeAppend("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
             html.append(form.getIncludeSingleScripts() ? " checked" : "");
-            html.append("/>Include single scripts that don't start with 0.000</td></tr>\n");
+            html.unsafeAppend("/>Include single scripts that don't start with 0.000</td></tr>\n");
         }
 
         @Override
-        public StringBuilder getScriptHtml(ConsolidateForm form)
+        public HtmlStringBuilder getScriptHtml(ConsolidateForm form)
         {
             List<ScriptConsolidator> consolidators = getConsolidators(form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
 
             for (ScriptConsolidator consolidator : consolidators)
             {
                 List<SqlScript> scripts = consolidator.getScripts();
                 String filename = consolidator.getFilename();
 
-                html.append("<b>Schema ").append(consolidator.getSchemaName()).append("</b><br>\n");
+                html.unsafeAppend("<b>Schema ").append(consolidator.getSchemaName()).unsafeAppend("</b><br>\n");
 
                 for (SqlScript script : scripts)
-                    html.append(script.getDescription()).append("<br>\n");
+                    html.append(script.getDescription()).unsafeAppend("<br>\n");
 
-                html.append("<br>\n");
+                html.unsafeAppend("<br>\n");
 
                 ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
-                html.append(PageFlowUtil.button((1 == consolidator.getScripts().size() ? "copy" : "consolidate") + " to " + filename).href(consolidateURL)).append("<br><br>\n");
+                html.append(PageFlowUtil.button((1 == consolidator.getScripts().size() ? "copy" : "consolidate") + " to " + filename).href(consolidateURL)).unsafeAppend("<br><br>\n");
             }
 
-            if (0 == html.length())
+            if (html.isEmpty())
                 html.append("No schemas require consolidation in this range");
 
             return html;
@@ -810,20 +816,20 @@ public class SqlScriptController extends SpringActionController
             ScriptConsolidator consolidator = getConsolidator(form);
             String consolidated = consolidator.getConsolidatedScript();
 
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
             html.append(getErrorHtml(consolidator.getErrors()));
 
-            html.append("<pre>\n");
-            html.append(PageFlowUtil.filter(consolidated));
-            html.append("</pre>\n");
+            html.unsafeAppend("<pre>\n");
+            html.append(consolidated);
+            html.unsafeAppend("</pre>\n");
 
-            html.append("<form method=\"post\">");
+            html.unsafeAppend("<form method=\"post\">");
             html.append(new CsrfInput(getViewContext()));
             html.append(PageFlowUtil.button("Save to " + consolidator.getFilename()).submit(true));
             html.append(PageFlowUtil.button("Back").href(getSuccessURL(form)));
-            html.append("</form>");
+            html.unsafeAppend("</form>");
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
         @Override
@@ -874,24 +880,24 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private static @NotNull String getErrorHtml(@NotNull Collection<String> errors)
+    private static @NotNull HtmlString getErrorHtml(@NotNull Collection<String> errors)
     {
         if (errors.isEmpty())
-            return "";
+            return HtmlString.EMPTY_STRING;
 
-        StringBuilder html = new StringBuilder();
+        HtmlStringBuilder html = HtmlStringBuilder.of();
 
-            html.append("<div class=\"labkey-error\">");
+            html.unsafeAppend("<div class=\"labkey-error\">");
 
             for (String message : errors)
             {
-                html.append(PageFlowUtil.filter(message));
-                html.append("<br>\n");
+                html.append(message);
+                html.unsafeAppend("<br>\n");
             }
 
-            html.append("</div>\n");
+            html.unsafeAppend("</div>\n");
 
-        return html.toString();
+        return html.getHtmlString();
     }
 
 
@@ -982,33 +988,33 @@ public class SqlScriptController extends SpringActionController
                 unclaimedFiles.addAll(allFiles);
             }
 
-            StringBuilder html = new StringBuilder();
-            html.append("  <table>\n");
-            html.append("    <tr><td>The SQL scripts listed below will never execute, because another script has the same" +
+            HtmlStringBuilder html = HtmlStringBuilder.of();
+            html.unsafeAppend("  <table>\n");
+            html.unsafeAppend("    <tr><td>The SQL scripts listed below will never execute, because another script has the same" +
                     " \"from\" version and a later \"to\" version. These scripts can be deleted safely.</td></tr>\n");
-            html.append("    <tr><td>&nbsp;</td></tr>\n");
-            html.append("  </table>\n");
+            html.unsafeAppend("    <tr><td>&nbsp;</td></tr>\n");
+            html.unsafeAppend("  </table>\n");
 
-            html.append("  <table>\n");
-            html.append("    <tr><th align=\"left\">Orphaned Script</th><th align=\"left\">Superseded By</th></tr>\n");
+            html.unsafeAppend("  <table>\n");
+            html.unsafeAppend("    <tr><th align=\"left\">Orphaned Script</th><th align=\"left\">Superseded By</th></tr>\n");
 
             for (SqlScript orphanedScript : orphanedScripts)
             {
-                html.append("    <tr><td>");
+                html.unsafeAppend("    <tr><td>");
                 html.append(orphanedScript.getDescription());
-                html.append("</td><td>");
+                html.unsafeAppend("</td><td>");
                 html.append(successors.get(orphanedScript).getDescription());
-                html.append("</td></tr>\n");
+                html.unsafeAppend("</td></tr>\n");
             }
 
-            html.append("  </table>\n");
+            html.unsafeAppend("  </table>\n");
 
             if (!unclaimedFiles.isEmpty())
             {
-                html.append("<br><b>WARNING: Unrecognized files ").append(unclaimedFiles.toString()).append("</b>");
+                html.unsafeAppend("<br><b>").append("WARNING: Unrecognized files ").append(unclaimedFiles.toString()).unsafeAppend("</b>");
             }
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
         private void addFiles(Set<String> allFiles, SqlDialect dialect, FileSqlScriptProvider provider)
@@ -1271,11 +1277,11 @@ public class SqlScriptController extends SpringActionController
             double previousRoundedVersion = -1;
             List<SqlScript> batch = new LinkedList<>();
 
-            StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading to schema version " + ModuleContext.formatVersion(toVersion) + " from any of the following schema versions: ");
+            HtmlStringBuilder html = HtmlStringBuilder.of("SQL scripts that will never run when upgrading to schema version " + ModuleContext.formatVersion(toVersion) + " from any of the following schema versions: ");
             String joinedVersions = fromVersions.stream()
                 .map(ModuleContext::formatVersion)
                 .collect(Collectors.joining(", "));
-            html.append("[").append(joinedVersions).append("]<br>");
+            html.append("[").append(joinedVersions).append("]").unsafeAppend("<br>");
 
             for (SqlScript script : unreachableScripts)
             {
@@ -1293,17 +1299,17 @@ public class SqlScriptController extends SpringActionController
 
             appendBatch(html, batch);
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
-        private void appendBatch(StringBuilder html, List<SqlScript> batch)
+        private void appendBatch(HtmlStringBuilder html, List<SqlScript> batch)
         {
             Collections.sort(batch);
 
             for (SqlScript sqlScript : batch)
-                html.append(sqlScript).append("<br>");
+                html.append(sqlScript.toString()).unsafeAppend("<br>");
 
-            html.append("<br>");
+            html.unsafeAppend("<br>");
         }
 
         @Override
