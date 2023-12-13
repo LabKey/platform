@@ -7734,7 +7734,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected Map<String, Object> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
+        protected Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
         {
             return ExperimentService.get().moveDataClassObjects(_dataClassObjects, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
         }
@@ -7767,7 +7767,6 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");
             }
         }
-
     }
 
     @RequiresPermission(UpdatePermission.class)

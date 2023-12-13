@@ -482,7 +482,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Integer> response = new HashMap<>();
 
         AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditConfigs.AuditBehavior) : null;
         String auditUserComment = configParameters != null ? (String) configParameters.get(AuditConfigs.AuditUserComment) : null;
@@ -501,7 +501,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
             SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
         }
-        return response;
+        return new HashMap<>(response);
     }
 
     private List<? extends ExpMaterial> getMaterialsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)

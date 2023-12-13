@@ -1754,7 +1754,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     record FileFieldRenameData(ExpSampleType sampleType, String sampleName, String fieldName, File sourceFile, File targetFile) { }
 
     @Override
-    public Map<String, Object> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
+    public Map<String, Integer> moveSamples(Collection<? extends ExpMaterial> samples, @NotNull Container sourceContainer, @NotNull Container targetContainer, @NotNull User user, @Nullable String userComment, @Nullable AuditBehaviorType auditBehavior) throws ExperimentException, BatchValidationException
     {
         if (samples == null || samples.isEmpty())
             throw new IllegalArgumentException("No samples provided to move operation.");
@@ -1875,7 +1875,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             transaction.commit();
         }
 
-        return new HashMap<>(updateCounts);
+        return updateCounts;
     }
 
     private Map<String, Integer> moveDerivationRuns(Collection<? extends ExpMaterial> samples, Container targetContainer, User user) throws ExperimentException, BatchValidationException

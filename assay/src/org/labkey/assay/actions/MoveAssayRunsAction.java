@@ -32,7 +32,7 @@ public class MoveAssayRunsAction extends AbstractMoveEntitiesAction
     }
 
     @Override
-    public Map<String, Object> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
+    public Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
     {
         return ExperimentService.get().moveAssayRuns(_expRuns, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
     }
