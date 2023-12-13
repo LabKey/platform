@@ -88,6 +88,12 @@ public class HtmlStringBuilder implements HasHtmlString, SafeToRender
         return this;
     }
 
+    public HtmlStringBuilder insert(int offset, HtmlString str)
+    {
+        _sb.insert(offset, str.toString());
+        return this;
+    }
+
     /**
      * startTag() and endTag() help reduce the usages of HtmlString.unsafe()
      * If you are using these a lot consider using org.labkey.api.util.DOM instead
