@@ -61,7 +61,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.AbstractMoveEntitiesAction;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
