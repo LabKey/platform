@@ -44,6 +44,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.NameExpressionValidationResult;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.defaults.DefaultValueService;
@@ -1498,14 +1500,20 @@ public class PropertyController extends SpringActionController
         if (kind == null)
             throw new IllegalArgumentException("No domain kind matches URI '" + domainURI + "'");
 
-        Domain d = PropertyService.get().getDomain(container, domainURI);
-        if (d == null)
-            throw new NotFoundException("Could not find domain for " + domainURI);
+        var expScope = DbSchema.get("exp", DbSchemaType.Module).getScope();
+        expScope.executeWithRetry((tx) ->
+        {
 
-        if (!kind.canDeleteDefinition(user, d))
-            throw new UnauthorizedException("You don't have permission to delete this domain");
+            Domain d = PropertyService.get().getDomain(container, domainURI);
+            if (d == null)
+                throw new NotFoundException("Could not find domain for " + domainURI);
 
-        kind.deleteDomain(user, d);
+            if (!kind.canDeleteDefinition(user, d))
+                throw new UnauthorizedException("You don't have permission to delete this domain");
+
+            kind.deleteDomain(user, d);
+            return true;
+        });
     }
 
     @NotNull
