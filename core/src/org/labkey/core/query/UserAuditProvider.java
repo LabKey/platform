@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: klum
@@ -142,7 +143,9 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         @Override
         public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
         {
+            PropertyStorageSpec.Index createdIndex = new PropertyStorageSpec.Index(false,  "Created");
             Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
+            indexes.remove(createdIndex);
             indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER));
             indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_USER));
             return indexes;
