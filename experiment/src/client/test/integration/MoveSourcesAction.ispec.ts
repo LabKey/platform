@@ -179,7 +179,7 @@ async function getAttachmentAuditLogs(folderOptions: RequestOptions, name: strin
     return response.body.rows;
 }
 
-describe('ExperimentController', () => {
+describe('Move Sources', () => {
 
     function getAbsoluteContainerPath(containerPath: string)
     {

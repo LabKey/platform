@@ -178,7 +178,7 @@ async function getSampleTimelineAuditLogs(sampleRowId: number, folderOptions: Re
 }
 
 
-describe('ExperimentController', () => {
+describe('Move Samples', () => {
     // NOTE: the MoveSamplesAction is in the experiment module, but the sample status related test cases won't
     // work here because the sample status feature is only "enabled" when the sampleManagement module is available.
     // See sampleManagement/src/client/test/integration/MoveSamplesAction.ispec.ts for additional test cases.
