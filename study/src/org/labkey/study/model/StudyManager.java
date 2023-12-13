@@ -4166,18 +4166,19 @@ public class StudyManager
     {
         if (view.isModuleParticipantView())
             throw new IllegalArgumentException("Module-defined participant views should not be saved to the database.");
+        CustomParticipantView ret;
         if (view.getRowId() == null)
         {
             view.beforeInsert(user, study.getContainer().getId());
-            return Table.insert(user, StudySchema.getInstance().getTableInfoParticipantView(), view);
+            ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantView(), view);
         }
         else
         {
             view.beforeUpdate(user);
-            var ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId());
-            CacheManager.getSharedCache().remove(new Path(view.getContainerId(),CustomParticipantView.class.getName()).toString());
-            return ret;
+            ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantView(), view, view.getRowId());
         }
+        CacheManager.getSharedCache().remove(new Path(view.getContainerId(),CustomParticipantView.class.getName()).toString());
+        return ret;
     }
 
     public interface ParticipantViewConfig
