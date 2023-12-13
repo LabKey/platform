@@ -160,6 +160,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.Link;
@@ -935,7 +936,7 @@ public class ExperimentController extends SpringActionController
             }
             while (!materialsToInvestigate.isEmpty());
 
-            StringBuilder updateLinks = new StringBuilder();
+            HtmlStringBuilder updateLinks = HtmlStringBuilder.of();
             ExpSampleType st = _material.getSampleType();
             if (st != null && st.getContainer() != null && st.getContainer().hasPermission(getUser(), UpdatePermission.class))
             {
@@ -963,7 +964,7 @@ public class ExperimentController extends SpringActionController
                 updateLinks.append(PageFlowUtil.link("derive samples from this sample").href(deriveURL)).append(" ");
             }
 
-            vbox.addView(new HtmlView(updateLinks.toString()));
+            vbox.addView(new HtmlView(updateLinks));
 
             ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), ExperimentRunType.ALL_RUNS_TYPE, true);
             runListView.setShowRecordSelectors(false);
@@ -1637,7 +1638,7 @@ public class ExperimentController extends SpringActionController
 
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, cpv));
 
-            StringBuilder updateLinks = new StringBuilder();
+            HtmlStringBuilder updateLinks = HtmlStringBuilder.of();
             List<ExpRunEditor> runEditors = ExperimentService.get().getRunEditors();
             for (ExpRunEditor editor : runEditors)
             {
@@ -1648,9 +1649,9 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
-            if (updateLinks.length() > 0)
+            if (!updateLinks.isEmpty())
             {
-                HtmlView view = new HtmlView(updateLinks.toString());
+                HtmlView view = new HtmlView(updateLinks);
                 vbox.addView(view);
             }
 
@@ -2694,7 +2695,7 @@ public class ExperimentController extends SpringActionController
         {
             ResponseHelper.setContentDisposition(getViewContext().getResponse(), ResponseHelper.ContentDispositionType.attachment, form.getName());
             getPageConfig().setTemplate(PageConfig.Template.None);
-            HtmlView v = new HtmlView(_responseHtml);
+            HtmlView v = HtmlView.unsafe(_responseHtml);
             v.setContentType("application/vnd.ms-excel");
             v.setFrame(WebPartView.FrameType.NONE);
             return v;

@@ -22,6 +22,7 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -47,17 +48,18 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
         _form = form;
         QueryDefinition qdef = form.getQueryDef();
 
-        StringBuilder html = new StringBuilder("<div class='labkey-query-source'><pre>");
+        HtmlStringBuilder html = HtmlStringBuilder.of();
+        html.unsafeAppend("<div class='labkey-query-source'><pre>");
         html.append(qdef.getSql());
-        html.append("</pre></div>");
+        html.unsafeAppend("</pre></div>");
         if (null != qdef.getMetadataXml())
         {
-            html.append("<div class='labkey-query-metadata'>Metadata:<pre>");
-            html.append(PageFlowUtil.filter(qdef.getMetadataXml()));
-            html.append("</pre></div>");
+            html.unsafeAppend("<div class='labkey-query-metadata'>Metadata:<pre>");
+            html.append(qdef.getMetadataXml());
+            html.unsafeAppend("</pre></div>");
         }
 
-        return new HtmlView(html.toString());
+        return new HtmlView(html);
     }
 
     @Override

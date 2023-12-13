@@ -203,22 +203,23 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
             if (pipeRoot == null || !pipeRoot.isValid())
             {
-                StringBuilder msg = new StringBuilder("<p class='labkey-error'>The pipeline directory (");
-                msg.append(pipeRoot);
+                HtmlStringBuilder msg = HtmlStringBuilder.of();
+                msg.unsafeAppend("<p class='labkey-error'>The pipeline directory (");
+                msg.append(String.valueOf(pipeRoot));
                 msg.append(") previously set for this folder does not exist or cannot be reached at this time.");
 
                 //if current user is an admin, include a link to the pipeline setup page
                 if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                 {
                     ActionURL urlhelper = PageFlowUtil.urlProvider(PipelineUrls.class).urlSetup(getContainer());
-                    msg.append("</p><p><a href='").append(urlhelper.getLocalURIString()).append("'>[Setup Pipeline]</a></p>");
+                    msg.unsafeAppend("</p><p><a href='").append(urlhelper.getLocalURIString()).unsafeAppend("'>[Setup Pipeline]</a></p>");
                 }
                 else
                 {
-                    msg.append(" Please contact your system administrator.</p>");
+                    msg.append(" Please contact your system administrator.").unsafeAppend("</p>");
                 }
 
-                return new HtmlView(msg.toString());
+                return new HtmlView(msg);
             } //pipe root does not exist
             else if (isCloudAndUnsupported(pipeRoot, _protocol))
             {
@@ -723,22 +724,24 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         if (!datasets.isEmpty())
         {
-            StringBuilder sb = new StringBuilder(String.format("<p>The run you are replacing has data that is linked to %d %s. ", datasets.size(), datasets.size() > 1 ? "studies" : "study"))
+            HtmlStringBuilder sb = HtmlStringBuilder.of()
+                    .unsafeAppend("<p>")
+                    .append(String.format("The run you are replacing has data that is linked to %d %s. ", datasets.size(), datasets.size() > 1 ? "studies" : "study"))
                     .append("After re-import assay data will no longer be linked properly and will need to be recalled and relinked.");
-            String prefix = "<ul>";
-            String postfix = "";
+            var prefix = HtmlString.unsafe("<ul>");
+            var postfix = HtmlString.unsafe("</p>");
             for (Dataset assayDataset : datasets)
             {
                 if (assayDataset.getContainer().hasPermission(user, ReadPermission.class) && assayDataset.canRead(user))
                 {
                     sb.append(prefix);
-                    prefix = "";
-                    postfix = "</ul>";
-                    sb.append("<li>").append(PageFlowUtil.filter(assayDataset.getStudy().getLabel())).append("</li>");
+                    prefix = HtmlString.EMPTY_STRING;
+                    postfix = HtmlString.unsafe("</ul></p>");
+                    sb.unsafeAppend("<li>").append(assayDataset.getStudy().getLabel()).unsafeAppend("</li>");
                 }
             }
             sb.append(postfix);
-            HtmlView view = new HtmlView(sb.toString());
+            HtmlView view = new HtmlView(sb);
             view.setTitle("Linked Study Data Warning");
 
             return view;
@@ -1202,7 +1205,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     uniqueErrorStrs.add(errStr);
                 }
                 if (!sb.isEmpty())
-                    sb.append(HtmlString.unsafe("</font>"));
+                    sb.unsafeAppend("</font>");
 
                 if (uniqueErrorStrs.size() > MAX_ERRORS)
                 {

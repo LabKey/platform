@@ -17,13 +17,17 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.module.ModuleLoader;
 
 /**
  * Captures options for doing a lineage search
- * Created by Nick Arnold on 2/12/2016.
  */
 public class ExpLineageOptions extends ResolveLsidsForm
 {
+    // Issue 37332: SQL Server can hit max recursion depth over 100 generations.
+    // Note: If this is adjusted higher, then consider separate default values for SQL Server and PostgreSQL.
+    public static final int LINEAGE_DEFAULT_MAXIMUM_DEPTH = 100;
+
     public enum LineageExpType
     {
         ALL,
@@ -180,5 +184,22 @@ public class ExpLineageOptions extends ResolveLsidsForm
     public void setSourceKey(String sourceKey)
     {
         _sourceKey = sourceKey;
+    }
+
+    public int getConfiguredDepth()
+    {
+        if (_depth != 0)
+            return Math.abs(_depth);
+
+        var module = ModuleLoader.getInstance().getModule(ExperimentService.MODULE_NAME);
+        var property = module.getModuleProperties().get(ExperimentService.LINEAGE_DEFAULT_MAXIMUM_DEPTH_PROPERTY_NAME);
+        if (property != null)
+        {
+            String sDepth = property.getEffectiveValue(null);
+            if (!StringUtils.isEmpty(sDepth))
+                return Integer.parseInt(sDepth);
+        }
+
+        return LINEAGE_DEFAULT_MAXIMUM_DEPTH;
     }
 }
