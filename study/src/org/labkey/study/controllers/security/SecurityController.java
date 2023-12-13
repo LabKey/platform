@@ -43,6 +43,8 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -83,6 +85,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * User: Matthew
@@ -225,7 +228,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ImportSecurityPolicyAction extends FormViewAction<ReturnUrlForm>
     {
-        private String _messageText = null;
+        private HtmlString _messageText = null;
 
         @Override
         public ModelAndView getView(ReturnUrlForm form, boolean reshow, BindException errors)
@@ -236,12 +239,12 @@ public class SecurityController extends SpringActionController
             }
             else if (_messageText != null)
             {
-                String btn = PageFlowUtil.button("continue")
+                var btn = PageFlowUtil.button("continue")
                         .dropdown(true) // does this need to be a dropdown?
-                        .href(new ActionURL(BeginAction.class, getContainer()))
-                        .toString();
+                        .href(new ActionURL(BeginAction.class, getContainer()));
 
-                return new HtmlView(_messageText + "<br>" + btn);
+                HtmlStringBuilder sb = HtmlStringBuilder.of(_messageText).append(HtmlString.BR).append(btn);
+                return new HtmlView(sb);
             }
             else
             {
@@ -307,17 +310,17 @@ public class SecurityController extends SpringActionController
                         FileUtil.copyData(is, tmpFile);
                         exporter.loadFromXmlFile(study, getUser(), tmpFile, messages);
 
-                        StringBuilder sb = new StringBuilder();
-                        if (messages.size() == 0)
+                        HtmlStringBuilder sb = HtmlStringBuilder.of();
+                        if (messages.isEmpty())
                         {
                             sb.append("The import was successful.");
                         }
                         else
                         {
-                            sb.append("The import was successful, but the following messages were generated:<br><br>");
-                            sb.append(StringUtils.join(messages, "<br>"));
+                            sb.unsafeAppend("The import was successful, but the following messages were generated:<br><br>");
+                            sb.unsafeAppend(messages.stream().map(PageFlowUtil::filter).collect(Collectors.joining("<br>")));
                         }
-                        _messageText = sb.toString();
+                        _messageText = sb.getHtmlString();
                     }
                 }
 
