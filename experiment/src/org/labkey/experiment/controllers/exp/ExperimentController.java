@@ -104,7 +104,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -7716,56 +7715,6 @@ public class ExperimentController extends SpringActionController
 
                 builder.append("</table>");
                 return new HtmlView("Aliquot Rollup Recalculation Result", builder.toString());
-            }
-        }
-    }
-
-    @ActionNames("moveSources, moveDataClassObjects")
-    @RequiresPermission(UpdatePermission.class)
-    public static class MoveDataClassObjectsAction extends AbstractMoveEntitiesAction
-    {
-        private List<? extends ExpData> _dataClassObjects;
-
-        @Override
-        public void validateForm(MoveEntitiesForm form, Errors errors)
-        {
-            _entityType = "sources";
-            super.validateForm(form, errors);
-            validateDataIds(form, errors);
-        }
-
-        @Override
-        protected Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
-        {
-            return ExperimentService.get().moveDataClassObjects(_dataClassObjects, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-        }
-
-        @Override
-        protected void updateSelections(MoveEntitiesForm form)
-        {
-            updateSelections(form, _dataClassObjects.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
-        }
-
-        private void validateDataIds(MoveEntitiesForm form, Errors errors)
-        {
-            Set<Integer> dataIds = form.getIds(false); // handle clear of selectionKey after move complete
-            if (dataIds == null || dataIds.isEmpty())
-            {
-                errors.reject(ERROR_GENERIC, "Source IDs must be specified for the move operation.");
-                return;
-            }
-
-            _dataClassObjects = ExperimentServiceImpl.get().getExpDatas(dataIds);
-            if (_dataClassObjects.size() != dataIds.size())
-            {
-                errors.reject(ERROR_GENERIC, "Unable to find all sources for the move operation.");
-                return;
-            }
-
-            // verify all sources are from the current container
-            if (_dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(getContainer())))
-            {
-                errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");
             }
         }
     }
