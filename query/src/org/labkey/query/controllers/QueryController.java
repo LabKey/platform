@@ -4369,6 +4369,7 @@ public class QueryController extends SpringActionController
         public static final String PROP_QUERY_NAME = "queryName";
         public static final String PROP_CONTAINER_PATH = "containerPath";
         public static final String PROP_TARGET_CONTAINER_PATH = "targetContainerPath";
+        public static final String PROP_TARGET_CONTAINER = "targetContainer";
         public static final String PROP_COMMAND = "command";
         public static final String PROP_ROWS = "rows";
 
@@ -4425,6 +4426,15 @@ public class QueryController extends SpringActionController
             }
 
             return container;
+        }
+
+        protected String getTargetContainerProp()
+        {
+            JSONObject json = getJsonObject();
+            if (json.has(PROP_TARGET_CONTAINER) && !json.has(PROP_TARGET_CONTAINER_PATH))
+                json.put(PROP_TARGET_CONTAINER_PATH, json.optString(PROP_TARGET_CONTAINER, null));
+
+            return json.optString(PROP_TARGET_CONTAINER_PATH, null);
         }
 
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
@@ -4509,6 +4519,8 @@ public class QueryController extends SpringActionController
             {
                 configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
                 String auditComment = json.optString("auditUserComment", null);
+                if (StringUtils.isEmpty(auditComment))
+                    auditComment = json.optString("userComment", null);
                 if (!StringUtils.isEmpty(auditComment))
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
@@ -4517,7 +4529,7 @@ public class QueryController extends SpringActionController
             if (skipReselectRows)
                 configParameters.put(QueryUpdateService.ConfigParameters.SkipReselectRows, true);
 
-            if (json.optString(PROP_TARGET_CONTAINER_PATH, null) != null)
+            if (getTargetContainerProp() != null)
             {
                 Container targetContainer = getContainerForCommand(json, PROP_TARGET_CONTAINER_PATH, null);
                 configParameters.put(QueryUpdateService.ConfigParameters.TargetContainer, targetContainer);
@@ -4773,8 +4785,7 @@ public class QueryController extends SpringActionController
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
 
-            String targetContainerPath = json.optString(PROP_TARGET_CONTAINER_PATH, null);
-            _targetContainer = ContainerManager.getMoveTargetContainer(getContainer(), getUser(), targetContainerPath, errors);
+            _targetContainer = ContainerManager.getMoveTargetContainer(getContainer(), getUser(), getTargetContainerProp(), errors);
         }
 
         @Override
