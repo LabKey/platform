@@ -143,13 +143,12 @@ public class UserAuditProvider extends AbstractAuditTypeProvider implements Audi
         @Override
         public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
         {
-            Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain)
-                    .stream()
-                    .filter(index -> index.columnNames.length != 1 || !index.columnNames[0].equalsIgnoreCase(COLUMN_NAME_CREATED))
-                    .collect(Collectors.toSet());
-           indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER));
-           indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_USER));
-           return indexes;
+            PropertyStorageSpec.Index createdIndex = new PropertyStorageSpec.Index(false,  "Created");
+            Set<PropertyStorageSpec.Index> indexes = super.getPropertyIndices(domain);
+            indexes.remove(createdIndex);
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_USER));
+            indexes.add(new PropertyStorageSpec.Index(false, COLUMN_NAME_CREATED, COLUMN_NAME_USER));
+            return indexes;
         }
 
         @Override
