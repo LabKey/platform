@@ -1375,7 +1375,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
-                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(sampleType.getContainer()))
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(container))
                     .addExtraPropsFn(() -> {
                         if (container != null)
                             return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));
