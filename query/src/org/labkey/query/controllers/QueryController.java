@@ -96,6 +96,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -4256,7 +4257,7 @@ public class QueryController extends SpringActionController
                 return Collections.emptyList();
             }
         },
-        moveRows(UpdatePermission.class, QueryService.AuditAction.UPDATE)
+        moveRows(MoveEntitiesPermission.class, QueryService.AuditAction.UPDATE)
         {
             @Override
             public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)

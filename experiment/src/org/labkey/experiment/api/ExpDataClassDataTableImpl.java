@@ -106,6 +106,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -174,6 +175,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClassDataTableSupplier = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(MoveEntitiesPermission.class);
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
         setImportURL(new DetailsURL(url));
 

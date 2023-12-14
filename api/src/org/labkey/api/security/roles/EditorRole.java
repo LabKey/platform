@@ -27,6 +27,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -56,6 +57,7 @@ public class EditorRole extends AbstractRole
             MediaReadPermission.class,
             NotebookReadPermission.class,
             InsertPermission.class,
+            MoveEntitiesPermission.class,
             UpdatePermission.class,
             EditSharedViewPermission.class,
             ShareReportPermission.class,
