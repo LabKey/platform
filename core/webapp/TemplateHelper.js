@@ -150,7 +150,7 @@
 
 
 /**
- * TemplateReport  organizes the data tranformation steps and html generation steps
+ * TemplateReport organizes the data transformation steps and html generation steps
  *
  *      STEP 1 -- call transformSelectRowsResult() then
  *          1a) NYI call config.afterTransform(result)
@@ -394,7 +394,7 @@ Ext4.define('LABKEY.TemplateReport',
     },
 
     /**
-     * takes a transformed result (see transformSelectRowsResult) and tranforms the data
+     * takes a transformed result (see transformSelectRowsResult) and transforms the data
      * into a report ready data-structure
      *
      *  ) computes breaklevels and rowspans
