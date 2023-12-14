@@ -442,7 +442,7 @@ describe('Move Samples', () => {
             // Assert
             const {exception, success} = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('You do not have permission to move rows to this target container: ' + PROJECT_NAME + '.');
+            expect(exception).toEqual('You do not have permission to move rows to the target container: ' + PROJECT_NAME + '.');
 
             const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInTop).toBe(false);

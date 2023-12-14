@@ -2585,7 +2585,7 @@ public class ContainerManager
 
         if (!_targetContainer.hasPermission(user, InsertPermission.class))
         {
-            errors.reject(ERROR_GENERIC, "You do not have permission to move rows to this target container: " + targetIdOrPath + ".");
+            errors.reject(ERROR_GENERIC, "You do not have permission to move rows to the target container: " + targetIdOrPath + ".");
             return null;
         }
 
