@@ -4771,8 +4771,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class) //will check below // TODO verify this
-    @ApiVersion(8.3) // TODO what should this be or should it not be set?
+    @RequiresPermission(ReadPermission.class) //will check below
     public static class MoveRowsAction extends BaseSaveRowsAction<MoveRowsForm>
     {
         private Container _targetContainer;
