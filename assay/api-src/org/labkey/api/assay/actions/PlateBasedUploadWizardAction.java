@@ -28,7 +28,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.sql.SQLException;
 import java.util.Map;
 

@@ -25,8 +25,8 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.ActionURL;
 
-import javax.mail.MessagingException;
-import javax.servlet.http.HttpSession;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 

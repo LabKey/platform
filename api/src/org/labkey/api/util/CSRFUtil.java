@@ -21,11 +21,11 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.JspContext;
-import javax.servlet.jsp.PageContext;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.jsp.JspContext;
+import jakarta.servlet.jsp.PageContext;
 
 /**
  * Anti-cross-site request forgery utility methods

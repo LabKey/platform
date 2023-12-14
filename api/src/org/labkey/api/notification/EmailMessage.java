@@ -18,9 +18,9 @@ package org.labkey.api.notification;
 import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.view.HttpView;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
 

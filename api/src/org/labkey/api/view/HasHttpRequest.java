@@ -2,7 +2,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface HasHttpRequest
 {

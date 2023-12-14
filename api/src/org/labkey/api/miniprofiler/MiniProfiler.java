@@ -32,7 +32,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;

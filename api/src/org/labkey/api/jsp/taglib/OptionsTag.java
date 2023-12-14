@@ -18,7 +18,7 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.element.Option.OptionBuilder;
 
-import javax.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;

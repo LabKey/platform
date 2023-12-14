@@ -30,15 +30,14 @@ import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SessionHelper;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
-import javax.servlet.http.HttpSessionContext;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.http.HttpSessionBindingListener;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -57,7 +56,6 @@ import java.util.stream.Collectors;
 /**
  * User: matthewb
  * Date: Feb 5, 2009
- * Time: 8:51:07 AM
  */
 public class AuthenticatedRequest extends HttpServletRequestWrapper implements AutoCloseable
 {
@@ -339,18 +337,6 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         }
 
         @Override
-        public HttpSessionContext getSessionContext()
-        {
-            return null==_real ? null : _real.getSessionContext();
-        }
-
-        @Override
-        public void putValue(String s, Object o)
-        {
-            setAttribute(s,o);
-        }
-
-        @Override
         public void setAttribute(String s, Object o)
         {
             if (_log.isDebugEnabled())
@@ -368,32 +354,13 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
         }
 
         @Override
-        public Object getValue(String s)
-        {
-            return null==_real ? _attributes.get(s) : _real.getValue(s);
-        }
-
-        @Override
         public Enumeration<String> getAttributeNames()
         {
             return null==_real ? _attributes.keys() : _real.getAttributeNames();
         }
 
         @Override
-        public String[] getValueNames()
-        {
-            return null==_real ? _attributes.keySet().toArray(new String[0]) : _real.getValueNames();
-        }
-
-        @Override
         public void removeAttribute(String s)
-        {
-            if (null != _real)
-                _real.removeAttribute(s);
-        }
-
-        @Override
-        public void removeValue(String s)
         {
             if (null != _real)
                 _real.removeAttribute(s);

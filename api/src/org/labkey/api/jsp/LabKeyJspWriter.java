@@ -21,7 +21,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.SafeToRender;
 
-import javax.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.JspWriter;
 import java.io.IOException;
 
 public class LabKeyJspWriter extends JspWriterWrapper

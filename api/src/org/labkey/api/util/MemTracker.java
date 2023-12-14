@@ -30,8 +30,8 @@ import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;

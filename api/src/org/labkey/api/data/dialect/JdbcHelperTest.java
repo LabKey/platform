@@ -19,7 +19,7 @@ package org.labkey.api.data.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.util.Set;
 
 /*

@@ -18,7 +18,7 @@ package org.labkey.api.security.impersonation;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 
 // We store implementations of this interface in session and construct ImpersonationContexts at each request. This

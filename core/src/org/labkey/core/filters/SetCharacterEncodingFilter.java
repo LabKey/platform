@@ -18,7 +18,7 @@
 package org.labkey.core.filters;
 
 
-import javax.servlet.*;
+import jakarta.servlet.*;
 import java.io.IOException;
 import java.util.Objects;
 

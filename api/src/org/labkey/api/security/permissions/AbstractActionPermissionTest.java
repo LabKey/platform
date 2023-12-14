@@ -51,8 +51,8 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

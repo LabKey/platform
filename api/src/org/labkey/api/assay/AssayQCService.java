@@ -25,7 +25,7 @@ import org.labkey.api.qc.DataState;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

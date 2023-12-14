@@ -15,7 +15,7 @@
  */
 package org.labkey.api.util;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 /**
  * Callback for when the server is up and running, and all modules have completed their startup.

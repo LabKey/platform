@@ -34,7 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;

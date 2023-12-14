@@ -18,7 +18,7 @@ package org.labkey.api.action;
 import org.labkey.api.security.MethodsAllowed;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import static org.labkey.api.util.HttpUtil.Method.POST;
 

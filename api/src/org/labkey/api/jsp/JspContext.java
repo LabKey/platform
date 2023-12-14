@@ -19,7 +19,7 @@ import org.apache.jasper.runtime.HttpJspBase;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.HttpView;
 
-import javax.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.JspWriter;
 
 /**
  * User: adam

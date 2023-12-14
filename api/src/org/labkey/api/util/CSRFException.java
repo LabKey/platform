@@ -18,7 +18,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.UnauthorizedException;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * User: matthewb

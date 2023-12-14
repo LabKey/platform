@@ -22,7 +22,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;

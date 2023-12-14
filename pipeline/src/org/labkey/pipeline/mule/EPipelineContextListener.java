@@ -19,7 +19,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 /**
  * <code>EPipelineContextListener</code>

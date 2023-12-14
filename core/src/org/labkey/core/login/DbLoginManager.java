@@ -42,7 +42,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;

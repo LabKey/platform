@@ -30,7 +30,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;

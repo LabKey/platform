@@ -22,7 +22,7 @@ import org.labkey.api.attachments.DocumentWriter;
 import org.labkey.api.util.ResponseHelper;
 import org.springframework.http.ContentDisposition;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

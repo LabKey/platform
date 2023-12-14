@@ -18,8 +18,8 @@ package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.util.HtmlString;
 
-import javax.servlet.jsp.JspWriter;
-import javax.servlet.jsp.tagext.SimpleTagSupport;
+import jakarta.servlet.jsp.JspWriter;
+import jakarta.servlet.jsp.tagext.SimpleTagSupport;
 
 public class SimpleTagBase extends SimpleTagSupport
 {

@@ -29,7 +29,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;

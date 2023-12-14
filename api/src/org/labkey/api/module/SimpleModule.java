@@ -40,7 +40,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartFactory;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Paths;

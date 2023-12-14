@@ -23,8 +23,8 @@ import org.junit.Test;
 import org.labkey.api.data.LockManager;
 import org.labkey.api.security.AuthenticatedRequest;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

@@ -29,7 +29,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

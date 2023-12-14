@@ -22,7 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.DateUtil;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;

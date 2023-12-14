@@ -38,7 +38,7 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.Connection;

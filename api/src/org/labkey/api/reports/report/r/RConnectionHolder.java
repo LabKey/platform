@@ -18,8 +18,8 @@ package org.labkey.api.reports.report.r;
 import org.rosuda.REngine.Rserve.RConnection;
 
 import javax.script.ScriptException;
-import javax.servlet.http.HttpSessionBindingEvent;
-import javax.servlet.http.HttpSessionBindingListener;
+import jakarta.servlet.http.HttpSessionBindingEvent;
+import jakarta.servlet.http.HttpSessionBindingListener;
 import java.util.HashSet;
 
 //

@@ -43,9 +43,9 @@ import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 
-import javax.mail.Address;
-import javax.mail.Message;
-import javax.mail.MessagingException;
+import jakarta.mail.Address;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

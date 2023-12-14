@@ -21,8 +21,8 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 
-import javax.mail.Address;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.Address;
+import jakarta.mail.internet.MimeMessage;
 
 public class SecurityMessage
 {

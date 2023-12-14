@@ -60,7 +60,7 @@ import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.view.CustomViewSetKey;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;

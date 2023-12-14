@@ -24,7 +24,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
 import java.util.Map;

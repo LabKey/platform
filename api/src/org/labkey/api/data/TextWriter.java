@@ -22,8 +22,8 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.writer.PrintWriters;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;

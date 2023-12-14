@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ConfigurationException;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;

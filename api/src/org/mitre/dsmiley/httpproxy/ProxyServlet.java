@@ -36,11 +36,11 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http.message.HeaderGroup;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -283,7 +283,7 @@ public class ProxyServlet extends HttpServlet {
     }
 
     /**
-     * Called from {@link #init(javax.servlet.ServletConfig)}. HttpClientBuilder offers many opportunities for
+     * Called from {@link #init(jakarta.servlet.ServletConfig)}. HttpClientBuilder offers many opportunities for
      * customization. Currently configures (thread-safe) PoolingClientConnectionManager, system properties, ignore
      * redirects (unless overridden in servlet config), and ignore cookies.
      * the passed in RequestConfig.
@@ -364,8 +364,14 @@ public class ProxyServlet extends HttpServlet {
             // Pass the response code. This method with the "reason phrase" is deprecated but it's the
             //   only way to pass the reason along too.
             int statusCode = proxyResponse.getCode(); // LKS override
-            //noinspection deprecation
-            servletResponse.setStatus(statusCode, proxyResponse.getReasonPhrase()); // LKS override
+            if (statusCode != HttpServletResponse.SC_OK && proxyResponse.getReasonPhrase() != null)
+            {
+                servletResponse.sendError(statusCode, proxyResponse.getReasonPhrase());
+            }
+            else
+            {
+                servletResponse.setStatus(statusCode);
+            }
 
             // Copying response headers to make sure SESSIONID or other Cookie which comes from the remote
             // server will be saved in client when the proxied url was redirected to another one.
@@ -581,11 +587,9 @@ public class ProxyServlet extends HttpServlet {
         String proxyCookieName = getProxyCookieName(cookie);
         Cookie servletCookie = new Cookie(proxyCookieName, cookie.getValue());
         setCookiePath(servletCookie, servletRequest, cookie); // LKS override
-        servletCookie.setComment(cookie.getComment());
         servletCookie.setMaxAge((int) cookie.getMaxAge());
         // don't set cookie domain
         servletCookie.setSecure(servletRequest.isSecure() && cookie.getSecure());
-        servletCookie.setVersion(cookie.getVersion());
         servletCookie.setHttpOnly(cookie.isHttpOnly());
         return servletCookie;
     }
@@ -734,7 +738,7 @@ public class ProxyServlet extends HttpServlet {
     }
 
     /**
-     * Allow overrides of {@link javax.servlet.http.HttpServletRequest#getPathInfo()}.
+     * Allow overrides of {@link jakarta.servlet.http.HttpServletRequest#getPathInfo()}.
      * Useful when url-pattern of servlet-mapping (web.xml) requires manipulation.
      */
     protected String rewritePathInfoFromRequest(HttpServletRequest servletRequest) {

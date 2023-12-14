@@ -49,7 +49,7 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import javax.script.ScriptEngine;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

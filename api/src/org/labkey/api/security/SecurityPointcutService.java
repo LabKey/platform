@@ -18,8 +18,8 @@ package org.labkey.api.security;
 import org.labkey.api.module.Module;
 import org.labkey.api.services.ServiceRegistry;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Created by matthew on 6/20/17.

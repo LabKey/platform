@@ -83,8 +83,8 @@ import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
 import org.labkey.assay.view.PlateMetadataDataCollector;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;

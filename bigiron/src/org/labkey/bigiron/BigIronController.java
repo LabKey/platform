@@ -26,7 +26,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.bigiron.mssql.GroupConcatInstallationManager;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Created by Josh on 11/17/2016.

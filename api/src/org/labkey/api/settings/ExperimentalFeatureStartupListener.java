@@ -5,7 +5,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AdminConsole.ExperimentalFeatureFlag;
 import org.labkey.api.util.StartupListener;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.util.Comparator;
 import java.util.Map;
 

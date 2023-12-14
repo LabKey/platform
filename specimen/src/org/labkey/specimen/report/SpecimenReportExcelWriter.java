@@ -29,8 +29,8 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ExceptionUtil;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
