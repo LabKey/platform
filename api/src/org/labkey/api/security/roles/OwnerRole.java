@@ -19,6 +19,7 @@ import org.labkey.api.security.permissions.AssayReadPermission;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.NotebookReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
@@ -40,6 +41,7 @@ public class OwnerRole extends AbstractContextualRole
                 DataClassReadPermission.class,
                 MediaReadPermission.class,
                 NotebookReadPermission.class,
+                MoveEntitiesPermission.class,
                 UpdatePermission.class,
                 DeletePermission.class);
     }

@@ -73,6 +73,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
@@ -392,6 +393,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
         if (getProvider().isEditableRuns(getProtocol()))
         {
             runTable.addAllowablePermission(UpdatePermission.class);
+            runTable.addAllowablePermission(MoveEntitiesPermission.class);
         }
         runTable.populate();
         LookupForeignKey assayRunFK = new LookupForeignKey(cf, null, null)

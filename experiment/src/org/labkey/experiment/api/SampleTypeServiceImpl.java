@@ -1859,17 +1859,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                 }
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
 
+            // add up the size of the value arrays in the fileMovesBySampleId map
+            int fileMoveCount = fileMovesBySampleId.values().stream().mapToInt(List::size).sum();
+            updateCounts.put("sampleFiles", fileMoveCount);
             transaction.addCommitTask(() -> {
-                int fileMoveCount = 0;
                 for (List<FileFieldRenameData> sampleFileRenameData : fileMovesBySampleId.values())
                 {
                     for (FileFieldRenameData renameData : sampleFileRenameData)
-                    {
-                        if (moveFile(renameData))
-                            fileMoveCount++;
-                    }
+                        moveFile(renameData);
                 }
-                updateCounts.put("sampleFiles", fileMoveCount);
             }, POSTCOMMIT);
 
             transaction.commit();

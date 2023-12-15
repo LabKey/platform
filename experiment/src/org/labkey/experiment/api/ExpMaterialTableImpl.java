@@ -69,6 +69,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -123,6 +124,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(MoveEntitiesPermission.class);
         setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
     }
 

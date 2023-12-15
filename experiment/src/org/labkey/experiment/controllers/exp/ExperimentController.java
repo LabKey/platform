@@ -61,7 +61,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.AbstractMoveEntitiesAction;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
@@ -104,7 +103,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -7719,130 +7717,6 @@ public class ExperimentController extends SpringActionController
             }
         }
     }
-
-    @ActionNames("moveSources, moveDataClassObjects")
-    @RequiresPermission(UpdatePermission.class)
-    public static class MoveDataClassObjectsAction extends AbstractMoveEntitiesAction
-    {
-        private List<? extends ExpData> _dataClassObjects;
-
-        @Override
-        public void validateForm(MoveEntitiesForm form, Errors errors)
-        {
-            _entityType = "sources";
-            super.validateForm(form, errors);
-            validateDataIds(form, errors);
-        }
-
-        @Override
-        protected Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
-        {
-            return ExperimentService.get().moveDataClassObjects(_dataClassObjects, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-        }
-
-        @Override
-        protected void updateSelections(MoveEntitiesForm form)
-        {
-            updateSelections(form, _dataClassObjects.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
-        }
-
-        private void validateDataIds(MoveEntitiesForm form, Errors errors)
-        {
-            Set<Integer> dataIds = form.getIds(false); // handle clear of selectionKey after move complete
-            if (dataIds == null || dataIds.isEmpty())
-            {
-                errors.reject(ERROR_GENERIC, "Source IDs must be specified for the move operation.");
-                return;
-            }
-
-            _dataClassObjects = ExperimentServiceImpl.get().getExpDatas(dataIds);
-            if (_dataClassObjects.size() != dataIds.size())
-            {
-                errors.reject(ERROR_GENERIC, "Unable to find all sources for the move operation.");
-                return;
-            }
-
-            // verify all sources are from the current container
-            if (_dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(getContainer())))
-            {
-                errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");
-            }
-        }
-
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public static class MoveSamplesAction extends AbstractMoveEntitiesAction
-    {
-        private List<? extends ExpMaterial> _materials;
-
-        @Override
-        public void validateForm(MoveEntitiesForm form, Errors errors)
-        {
-            _entityType = "samples";
-            super.validateForm(form, errors);
-            validateSampleIds(form, errors);
-        }
-
-        @Override
-        public Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
-        {
-            return SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-        }
-
-        private void validateSampleIds(MoveEntitiesForm form, Errors errors)
-        {
-            Set<Integer> sampleIds = form.getIds(false); // handle clear of selectionKey after move complete
-            if (sampleIds == null || sampleIds.isEmpty())
-            {
-                errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
-                return;
-            }
-
-            _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
-            if (_materials.size() != sampleIds.size())
-            {
-                errors.reject(ERROR_GENERIC, "Unable to find all samples for the move operation.");
-                return;
-            }
-
-            // verify all samples are from the current container
-            if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
-            {
-                errors.reject(ERROR_GENERIC, "All samples must be from the current container for the move operation.");
-                return;
-            }
-
-            // verify allowed moves based on sample statuses
-            List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
-            for (ExpMaterial material : _materials)
-            {
-                DataState sampleStatus = material.getSampleState();
-                if (sampleStatus == null) continue;
-
-                // prevent move for locked samples
-                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
-                {
-                    invalidStatusSamples.add(material);
-                }
-                // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
-                // only applies when moving from child to parent or child to sibling
-                else if (!getContainer().isProject() && sampleStatus.getContainer().equals(getContainer()))
-                {
-                    invalidStatusSamples.add(material);
-                }
-            }
-            if (!invalidStatusSamples.isEmpty())
-                errors.reject(ERROR_GENERIC, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
-        }
-
-        @Override
-        protected void updateSelections(MoveEntitiesForm form)
-        {
-            updateSelections(form, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
-        }
-    }
-
 
     /* Also see API CheckEdgesAction */
     @RequiresPermission(TroubleshooterPermission.class)
