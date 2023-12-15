@@ -1009,13 +1009,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
             .add(dataClass.getModified());
 
-        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch -> {
-            for (Data data : batch)
-            {
-                ExpDataImpl impl = new ExpDataImpl(data);
-                impl.index(task, null);
-            }
-        });
+        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch ->
+                task.addRunnable(() -> batch.forEach(data ->
+                    new ExpDataImpl(data).index(task, null)),
+                SearchService.PRIORITY.bulk)
+        );
     }
 
     private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)
