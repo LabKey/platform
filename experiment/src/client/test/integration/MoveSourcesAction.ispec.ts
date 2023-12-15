@@ -253,7 +253,7 @@ describe('Move Sources', () => {
         it('error, requires update permissions in current', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{}],
@@ -278,7 +278,7 @@ describe('Move Sources', () => {
         it('error, non-existent targetContainer param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: 'BOGUS',
+                targetContainerPath: 'BOGUS',
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
@@ -292,7 +292,7 @@ describe('Move Sources', () => {
         it('error, targetContainer cannot equal current for parent project', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: PROJECT_NAME,
+                targetContainerPath: PROJECT_NAME,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
@@ -306,7 +306,7 @@ describe('Move Sources', () => {
         it('error, targetContainer cannot equal current for subfolder', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
             }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
@@ -320,7 +320,7 @@ describe('Move Sources', () => {
         it('error, missing required rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
@@ -334,7 +334,7 @@ describe('Move Sources', () => {
         it('error, empty rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: []
@@ -349,7 +349,7 @@ describe('Move Sources', () => {
         it('error, invalid source ID', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: -1 }]
@@ -367,7 +367,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -390,7 +390,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -413,7 +413,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -436,7 +436,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -468,7 +468,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -497,12 +497,12 @@ describe('Move Sources', () => {
             const userComment =  "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -528,12 +528,12 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
                 auditBehavior: 'SUMMARY',
-                userComment
+                auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -563,7 +563,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -593,7 +593,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId }],
@@ -625,7 +625,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId1 }, { RowId: sourceRowId2 }, { RowId: sourceRowId3 }],
@@ -668,12 +668,12 @@ describe('Move Sources', () => {
             const sourceRowId1 = await createSourceWithAttachments('top2-movetosub1-1', topFolderOptions, {[ATTACHMENT_FIELD_1_NAME]: 'fileA.txt'}, "DETAILED");
             const userComment = "Moving files too";
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId1 }],
                 auditBehavior: "DETAILED",
-                userComment,
+                auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -697,7 +697,7 @@ describe('Move Sources', () => {
             const sourceRowId1 = await createSourceWithAttachments('sub12-movetotop-1', subfolder1Options, {[ATTACHMENT_FIELD_1_NAME]: 'fileB.txt', [ATTACHMENT_FIELD_2_NAME]: 'fileC.txt'}, "DETAILED");
 
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId1 }],
@@ -726,7 +726,7 @@ describe('Move Sources', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: [{ RowId: sourceRowId1 }, { RowId: sourceRowId2 }, { RowId: sourceRowId3 }],
@@ -787,7 +787,7 @@ describe('Move Sources', () => {
 
             // move sources to sibling folder
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: derivedSources,
@@ -854,7 +854,7 @@ describe('Move Sources', () => {
             const notMovingId3Before = await getSourceRunId(caseInsensitive(sub3ParentSamples[1], 'rowId'), subfolder3Options);
 
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: movingRowIds.reduce((prev, curr) => {

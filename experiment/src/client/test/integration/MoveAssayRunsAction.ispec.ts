@@ -172,7 +172,7 @@ describe('Move Assay Runs', () => {
         it('error, requires update permissions in current', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{}],
@@ -188,7 +188,7 @@ describe('Move Assay Runs', () => {
         it('error, empty rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: []
@@ -203,7 +203,7 @@ describe('Move Assay Runs', () => {
         it('error, invalid run ID', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: -1 }],
@@ -221,7 +221,7 @@ describe('Move Assay Runs', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }],
@@ -244,7 +244,7 @@ describe('Move Assay Runs', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }],
@@ -277,12 +277,12 @@ describe('Move Assay Runs', () => {
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -313,12 +313,12 @@ describe('Move Assay Runs', () => {
             const userComment = "Oops! Wrong child project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }],
                 auditBehavior: "SUMMARY",
-                userComment
+                auditUserComment: userComment,
             }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -349,12 +349,12 @@ describe('Move Assay Runs', () => {
             const userComment = "Oops! Wrong sub project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, {...subfolder2Options, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -390,12 +390,12 @@ describe('Move Assay Runs', () => {
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: rerunId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -439,12 +439,12 @@ describe('Move Assay Runs', () => {
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
@@ -464,12 +464,12 @@ describe('Move Assay Runs', () => {
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: [{ RowId: runId }, { RowId: run2Id }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -515,12 +515,12 @@ describe('Move Assay Runs', () => {
         const userComment = "Oops! Wrong project.";
         // Act
         const response = await server.post('query', 'moveRows.api', {
-            targetContainer: subfolder1Options.containerPath,
+            targetContainerPath: subfolder1Options.containerPath,
             schemaName: 'assay.General.assayWithRunFile',
             queryName: 'Runs',
             rows: [{ RowId: runId }],
             auditBehavior: "DETAILED",
-            userComment
+            auditUserComment: userComment,
         }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
         // Assert
@@ -559,12 +559,12 @@ describe('Move Assay Runs', () => {
         const userComment = "Oops! Wrong project.";
         // Act
         const response = await server.post('query', 'moveRows.api', {
-            targetContainer: subfolder1Options.containerPath,
+            targetContainerPath: subfolder1Options.containerPath,
             schemaName: 'assay.General.assayWithResultFile',
             queryName: 'Runs',
             rows: [{ RowId: runId }],
             auditBehavior: "DETAILED",
-            userComment
+            auditUserComment: userComment,
         }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
         // Assert

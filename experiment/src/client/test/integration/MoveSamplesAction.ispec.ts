@@ -251,7 +251,7 @@ describe('Move Samples', () => {
         it('error, no permissions', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{}],
@@ -266,7 +266,7 @@ describe('Move Samples', () => {
         it('error, requires update permissions in current', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{}],
@@ -295,7 +295,7 @@ describe('Move Samples', () => {
         it('error, non-existent targetContainer param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: 'BOGUS',
+                targetContainerPath: 'BOGUS',
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{}],
@@ -310,7 +310,7 @@ describe('Move Samples', () => {
         it('error, targetContainer cannot equal current for parent project', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: PROJECT_NAME,
+                targetContainerPath: PROJECT_NAME,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{}],
@@ -325,7 +325,7 @@ describe('Move Samples', () => {
         it('error, targetContainer cannot equal current for subfolder', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{}],
@@ -340,7 +340,7 @@ describe('Move Samples', () => {
         it('error, missing required rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
             }, {...topFolderOptions, ...editorUserOptions}).expect(400);
@@ -354,7 +354,7 @@ describe('Move Samples', () => {
         it('error, empty rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: []
@@ -369,7 +369,7 @@ describe('Move Samples', () => {
         it('error, invalid sample rowId', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ RowId: -1 }]
@@ -387,7 +387,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -410,7 +410,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -433,7 +433,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -456,7 +456,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -487,7 +487,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -515,12 +515,12 @@ describe('Move Samples', () => {
             const userComment = "Oops! Wrong project.";
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -545,12 +545,12 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
                 auditBehavior: 'SUMMARY',
-                userComment
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -579,7 +579,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -608,7 +608,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId }],
@@ -639,7 +639,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_2,
                 rows: [{ rowId: sampleRowId1 }, { rowId: sampleRowId2 }, { rowId: sampleRowId3 }],
@@ -679,12 +679,12 @@ describe('Move Samples', () => {
             const sampleRowId1 = await createSampleWithFileFields('top2-movetosub1-1', topFolderOptions, {[FILE_FIELD_1_NAME]: 'fileA.txt'}, "DETAILED");
             const userComment = "Moving files too";
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder1Options.containerPath,
+                targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId1 }],
                 auditBehavior: "DETAILED",
-                userComment,
+                auditUserComment: userComment,
             }, {...topFolderOptions, ...editorUserOptions}).expect(200);
 
             // Assert
@@ -714,7 +714,7 @@ describe('Move Samples', () => {
             }, "DETAILED");
 
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId1 }],
@@ -752,7 +752,7 @@ describe('Move Samples', () => {
             await createSampleWithFileFields('top2-withfile-1', topFolderOptions, {[FILE_FIELD_2_NAME]: 'fileD.txt'}, "DETAILED");
 
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId1 }],
@@ -784,7 +784,7 @@ describe('Move Samples', () => {
             const sampleRowId1 = await createSampleWithFileFields('sub12-movetosub2-1', subfolder1Options, {[FILE_FIELD_1_NAME]: 'fileF.txt'}, "DETAILED");
 
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId1 }],
@@ -813,7 +813,7 @@ describe('Move Samples', () => {
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: [{ rowId: sampleRowId1 }, { rowId: sampleRowId2 }, { rowId: sampleRowId3 }],
@@ -873,7 +873,7 @@ describe('Move Samples', () => {
 
             // move samples to sibling folder
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: derivedSamples,
@@ -927,7 +927,7 @@ describe('Move Samples', () => {
 
             // move samples to top folder
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: topFolderOptions.containerPath,
+                targetContainerPath: topFolderOptions.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: aliquots.slice(1),
@@ -994,7 +994,7 @@ describe('Move Samples', () => {
             movingRows.push(sub3ParentSamples[0]);
 
             const response = await server.post('query', 'moveRows.api', {
-                targetContainer: subfolder2Options.containerPath,
+                targetContainerPath: subfolder2Options.containerPath,
                 schemaName: 'samples',
                 queryName: SAMPLE_TYPE_NAME_1,
                 rows: movingRows,
