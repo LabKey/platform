@@ -4445,18 +4445,18 @@ public class QueryController extends SpringActionController
             User user = getUser();
 
             if (json == null)
-                throw new IllegalArgumentException("Empty request");
+                throw new ValidationException("Empty request");
 
             JSONArray rows;
             try
             {
                 rows = json.getJSONArray(PROP_ROWS);
                 if (rows.length() < 1)
-                    throw new IllegalArgumentException("No '" + PROP_ROWS + "' array supplied!");
+                    throw new ValidationException("No '" + PROP_ROWS + "' array supplied.");
             }
             catch (JSONException x)
             {
-                throw new IllegalArgumentException("No '" + PROP_ROWS + "' array supplied!");
+                throw new ValidationException("No '" + PROP_ROWS + "' array supplied.");
             }
 
             String schemaName = json.getString(PROP_SCHEMA_NAME);
@@ -4783,9 +4783,14 @@ public class QueryController extends SpringActionController
 
             JSONObject json = getJsonObject();
             if (json == null)
-                throw new IllegalArgumentException("Empty request");
-
-            _targetContainer = ContainerManager.getMoveTargetContainer(getContainer(), getUser(), getTargetContainerProp(), errors);
+            {
+                errors.reject(ERROR_MSG, "Empty request");
+            }
+            else
+            {
+                String queryName = json.optString(PROP_QUERY_NAME, null);
+                _targetContainer = ContainerManager.getMoveTargetContainer(queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
+            }
         }
 
         @Override

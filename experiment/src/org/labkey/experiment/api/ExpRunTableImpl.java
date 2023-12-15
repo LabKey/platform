@@ -1086,7 +1086,14 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             List<? extends ExpRun> expRuns = getRunsForMoveRows(container, rows, errors);
             if (!errors.hasErrors())
             {
-                response = ExperimentService.get().moveAssayRuns(expRuns, container, targetContainer, user, auditUserComment, auditType);
+                try
+                {
+                    response = ExperimentService.get().moveAssayRuns(expRuns, container, targetContainer, user, auditUserComment, auditType);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new BatchValidationException(new ValidationException(e.getMessage()));
+                }
                 SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "assayRuns");
             }
 

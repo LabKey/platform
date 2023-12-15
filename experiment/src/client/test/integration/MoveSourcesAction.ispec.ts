@@ -323,12 +323,12 @@ describe('Move Sources', () => {
                 targetContainer: subfolder1Options.containerPath,
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(500);
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
             const { exception, success } = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('No \'rows\' array supplied!');
+            expect(exception).toEqual("No 'rows' array supplied.");
         });
 
         it('error, empty rows param', async () => {
@@ -338,12 +338,12 @@ describe('Move Sources', () => {
                 schemaName: 'exp.data',
                 queryName: SOURCE_TYPE_NAME_1,
                 rows: []
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(500);
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
             const { exception, success } = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('No \'rows\' array supplied!');
+            expect(exception).toEqual("No 'rows' array supplied.");
         });
 
         it('error, invalid source ID', async () => {
@@ -422,7 +422,7 @@ describe('Move Sources', () => {
             // Assert
             const { exception, success } = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('You do not have permission to move rows to the target container: ' + PROJECT_NAME + '.');
+            expect(exception).toEqual("You do not have permission to move rows from '" + SOURCE_TYPE_NAME_1 + "' to the target container: " + PROJECT_NAME + ".");
 
             const existsInTop = await _sourceExists(sourceRowId, topFolderOptions);
             expect(existsInTop).toBe(false);

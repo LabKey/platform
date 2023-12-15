@@ -192,12 +192,12 @@ describe('Move Assay Runs', () => {
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
                 rows: []
-            }, {...topFolderOptions, ...editorUserOptions}).expect(500);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
             const {exception, success} = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('No \'rows\' array supplied!');
+            expect(exception).toEqual("No 'rows' array supplied.");
         });
 
         it('error, invalid run ID', async () => {
@@ -445,7 +445,7 @@ describe('Move Assay Runs', () => {
                 rows: [{ RowId: runId }],
                 auditBehavior: "DETAILED",
                 userComment
-            }, {...topFolderOptions, ...editorUserOptions}).expect(500);
+            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
 
             // Assert
             const {exception, success} = response.body;
