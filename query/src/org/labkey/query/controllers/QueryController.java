@@ -4370,7 +4370,6 @@ public class QueryController extends SpringActionController
         public static final String PROP_QUERY_NAME = "queryName";
         public static final String PROP_CONTAINER_PATH = "containerPath";
         public static final String PROP_TARGET_CONTAINER_PATH = "targetContainerPath";
-        public static final String PROP_TARGET_CONTAINER = "targetContainer";
         public static final String PROP_COMMAND = "command";
         public static final String PROP_ROWS = "rows";
 
@@ -4432,9 +4431,6 @@ public class QueryController extends SpringActionController
         protected String getTargetContainerProp()
         {
             JSONObject json = getJsonObject();
-            if (json.has(PROP_TARGET_CONTAINER) && !json.has(PROP_TARGET_CONTAINER_PATH))
-                json.put(PROP_TARGET_CONTAINER_PATH, json.optString(PROP_TARGET_CONTAINER, null));
-
             return json.optString(PROP_TARGET_CONTAINER_PATH, null);
         }
 
@@ -4520,8 +4516,6 @@ public class QueryController extends SpringActionController
             {
                 configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
                 String auditComment = json.optString("auditUserComment", null);
-                if (StringUtils.isEmpty(auditComment))
-                    auditComment = json.optString("userComment", null);
                 if (!StringUtils.isEmpty(auditComment))
                     configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditComment);
             }
@@ -4820,7 +4814,7 @@ public class QueryController extends SpringActionController
                         .stream().map(Object::toString).collect(Collectors.toSet());
                 DataRegionSelection.setSelected(getViewContext(), selectionKey, rowIds, false);
 
-                // if moving run items from a type, the selections from other selectionKeys in that container will
+                // if moving entities from a type, the selections from other selectionKeys in that container will
                 // possibly be holding onto invalid keys after the move, so clear them based on the containerPath and selectionKey suffix
                 String[] keyParts = selectionKey.split("|");
                 if (keyParts.length > 1)
