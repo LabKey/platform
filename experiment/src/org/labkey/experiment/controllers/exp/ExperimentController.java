@@ -5146,7 +5146,7 @@ public class ExperimentController extends SpringActionController
         private final Map<ExpMaterial, String> _inputMaterials = new LinkedHashMap<>();
 
         @Override
-        public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors)
         {
             _materials = form.lookupMaterials();
             if (_materials.isEmpty())
@@ -5214,7 +5214,7 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
             root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
-            ExpSampleType sampleType = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleType() : null;
+            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.get(0).getSampleType() : null;
             if (sampleType != null)
             {
                 root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
