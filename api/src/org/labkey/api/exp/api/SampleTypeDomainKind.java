@@ -255,7 +255,10 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
         if (domain == null)
+        {
+            reserved.remove("Name"); // Issue 48810: See SampleTypeService.createSampleType hasNameProperty
             return reserved;
+        }
 
         ExpSampleType st = getSampleType(domain);
         if (st == null)
