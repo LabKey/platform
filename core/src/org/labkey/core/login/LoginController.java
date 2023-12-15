@@ -702,7 +702,7 @@ public class LoginController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            PasswordRule passwordRule = DbLoginManager.getPasswordRule();
+            PasswordRule passwordRule = DbLoginService.get().getPasswordRule();
 
             response.put("full", passwordRule.getFullRuleHtml().toString());
             response.put("summary", passwordRule.getSummaryRuleHtml().toString());
@@ -2590,7 +2590,7 @@ public class LoginController extends SpringActionController
         {
             Map<String, Object> map = Map.of(
                 "currentSettings", Map.of(
-                    "strength", DbLoginManager.getPasswordRule(),
+                    "strength", DbLoginService.get().getPasswordRule(),
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
                 "passwordRules", Arrays.stream(PasswordRule.values()).map(rule->Map.of(rule.name(), rule.getFullRuleHtml())).toArray(),
