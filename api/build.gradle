@@ -51,6 +51,8 @@ List runtime = [
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
+    // Avoid pulling in the Activation API because we don't want to conflict with one loaded from $CATALINA_HOME/lib
+    all*.exclude group: "jakarta.activation", module: "jakarta.activation-api"
 
     creditable {
         canBeConsumed = false
@@ -105,6 +107,19 @@ dependencies {
     // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
     api "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
     api "com.sun.mail:jakarta.mail:${javaMailVersion}"
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.eclipse.angus:angus-activation:${angusActivationVersion}",
+            "Eclipse Angus Activation",
+            "Eclipse Foundation",
+            "https://projects.eclipse.org/projects/ee4j.angus",
+            "Eclipse Public License 2.0",
+            "https://projects.eclipse.org/license/epl-2.0",
+            "Implementation of the Jakarta Activation API",
+        )
+    )
 
     BuildUtils.addExternalDependency(
         project,
