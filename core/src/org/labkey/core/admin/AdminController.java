@@ -277,10 +277,6 @@ import static org.labkey.api.view.FolderManagement.PROJECTS_ONLY;
 import static org.labkey.api.view.FolderManagement.ROOT;
 import static org.labkey.api.view.FolderManagement.addTab;
 
-/**
- * User: Karl Lum
- * Date: Feb 27, 2008
- */
 public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
@@ -801,8 +797,7 @@ public class AdminController extends SpringActionController
     }
 
     /**
-     * Similar to SqlScriptController.GetModuleStatusAction except that Guest is
-     * allowed to check that the startup is complete.
+     * Similar to SqlScriptController.GetModuleStatusAction except that Guest is allowed to check that the startup is complete.
      */
     @RequiresNoPermission
     @AllowedDuringUpgrade
@@ -882,7 +877,7 @@ public class AdminController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade  // This action is invoked by HttpsUtil.checkSslRedirectConfiguration(), often while upgrade is in progress
-    public static class GuidAction extends ExportAction
+    public static class GuidAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception

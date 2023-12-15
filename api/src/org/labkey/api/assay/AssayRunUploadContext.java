@@ -42,13 +42,9 @@ import static java.util.Collections.emptyMap;
 /**
  * Provides information needed for assay import attempts, such as the values of batch and run fields, the container
  * into which the run should be inserted, etc. Specific assay implementations may need to extend the basic interface
- * to include assay-specific metadata that they require.
- *
- * Different implementations can get the information from different sources. Examples include HTTP POST data, a run
- * that's already in the database, or from files that are already on the server.
- *
- * User: brittp
- * Date: Jul 11, 2007
+ * to include assay-specific metadata that they require. Different implementations can get the information from
+ * different sources. Examples include HTTP POST data, a run that's already in the database, or from files that are
+ * already on the server.
 */
 public interface AssayRunUploadContext<ProviderType extends AssayProvider> extends ContainerUser, HasHttpRequest
 {
@@ -80,6 +76,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     /**
      * @return null if we're operating in a background thread, divorced from an in-process HTTP request
      */
+    @Override
     @Nullable
     HttpServletRequest getRequest();
 
@@ -99,7 +96,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     /**
      * Plate metadata for assays that support metadata integration
-     * @return
      */
     @Nullable
     default Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
@@ -112,7 +108,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
      * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
      * The map value is the role of the file.
      * Each input file will be attached as an input ExpData to the imported assay run.
-     *
      * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
      */
     @NotNull
@@ -326,7 +321,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
          * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
          * The map value is the role of the file.
          * Each input file will be attached as an input ExpData to the imported assay run.
-         *
          * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
          */
         public final FACTORY setInputDatas(Map<?, String> inputDatas)
@@ -409,8 +403,5 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public abstract AssayRunUploadContext<ProviderType> create();
     }
 
-    /**
-     *  
-     */
     default Map<String, Object> getUnresolvedRunProperties() { return  emptyMap(); }
 }

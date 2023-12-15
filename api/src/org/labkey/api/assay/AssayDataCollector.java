@@ -28,13 +28,9 @@ import java.util.Map;
 
 /**
  * Data collectors are responsible for getting the primary data file(s) for the assay to consume. Different
- * implementations gather the file(s) through different mechanisms - from a directory that already exists
- * on the server's file system, via a HTML textarea that the user has copy/pasted data into, etc.
- *
- * Instances will be associated with a single request and/or upload attempt, and so will be short-lived and can hold state.
- *
- * User: jeckels
- * Date: Jul 12, 2007
+ * implementations gather the file(s) through different mechanisms - from a directory that already exists on the
+ * server's file system, via a HTML textarea that the user has copy/pasted data into, etc. Instances will be associated
+ * with a single request and/or upload attempt, and so will be short-lived and can hold state.
  */
 public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 {
@@ -46,7 +42,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
     {
         Disallowed(null), AlreadyUploaded("Save and Import Another Run"), UploadRequired("Save and Import Another Run");
 
-        private String _buttonText;
+        private final String _buttonText;
 
         AdditionalUploadType(String buttonText)
         {
