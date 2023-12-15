@@ -42,6 +42,7 @@ import org.labkey.api.survey.SurveyService;
 import org.labkey.api.survey.model.Survey;
 import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UsageReportingLevel;
@@ -178,7 +179,7 @@ public class SurveyModule extends DefaultModule
         public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(AdminPermission.class))
-                return new HtmlView("Survey Designs", "You do not have permission to see this data");
+                return new HtmlView("Survey Designs", HtmlString.of("You do not have permission to see this data"));
 
             VBox view = new VBox();
             view.setTitle("Survey Designs");
@@ -187,7 +188,7 @@ public class SurveyModule extends DefaultModule
             BindException errors = new NullSafeBindException(this, "form");
             UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), SurveyQuerySchema.SCHEMA_NAME);
             if (schema == null)
-                return new HtmlView("Survey Designs", "The 'survey' schema is not enabled for this folder.");
+                return new HtmlView("Survey Designs", HtmlString.of("The 'survey' schema is not enabled for this folder."));
 
             QuerySettings settings = schema.getSettings(context, QueryView.DATAREGIONNAME_DEFAULT, SurveyQuerySchema.SURVEY_DESIGN_TABLE_NAME);
             settings.setReturnUrl(new ReturnURLString(context.getActionURL().clone()));
@@ -216,20 +217,20 @@ public class SurveyModule extends DefaultModule
         public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(ReadPermission.class) || context.getUser().isGuest())
-                return new HtmlView("Surveys", "You do not have permission to see this data");
+                return new HtmlView("Surveys", HtmlString.of("You do not have permission to see this data"));
 
             Map<String, String> props = webPart.getPropertyMap();
 
             String designIdStr = props.get("surveyDesignId");
             SurveyDesign surveyDesign;
             if (null == designIdStr)
-                return new HtmlView("Surveys", "There is no survey design selected to be displayed in this webpart.");
+                return new HtmlView("Surveys", HtmlString.of("There is no survey design selected to be displayed in this webpart."));
             else
             {
                 surveyDesign = SurveyManager.get().getSurveyDesign(context.getContainer(), context.getUser(), Integer.parseInt(designIdStr));
 
                 if (surveyDesign == null)
-                    return new HtmlView("Surveys", "The survey design configured for this webpart cannot be found and may have been deleted.");
+                    return new HtmlView("Surveys", HtmlString.of("The survey design configured for this webpart cannot be found and may have been deleted."));
             }
 
             try
@@ -256,7 +257,7 @@ public class SurveyModule extends DefaultModule
             }
             catch (NumberFormatException e)
             {
-                return new HtmlView("Surveys", "Survey Design id is invalid");
+                return new HtmlView("Surveys", HtmlString.of("Survey Design id is invalid"));
             }
         }
     }

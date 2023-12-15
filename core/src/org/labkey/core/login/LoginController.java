@@ -1032,16 +1032,16 @@ public class LoginController extends SpringActionController
 
         if (ModuleLoader.getInstance().isUpgradeRequired() || ModuleLoader.getInstance().isUpgradeInProgress())
         {
-            HtmlView updateMessageView = new HtmlView("Server upgrade in progress",
+            HtmlView updateMessageView = new HtmlView("Server upgrade in progress", HtmlString.unsafe(
                     "This server is being upgraded to a new version of LabKey Server.<br/>" +
-                    "Only Site Administrators are permitted to log in during the upgrade process.");
+                    "Only Site Administrators are permitted to log in during the upgrade process."));
             vBox.addView(updateMessageView);
         }
         else if (!ModuleLoader.getInstance().isStartupComplete())
         {
-            HtmlView startupMessageView = new HtmlView("Server startup in progress",
+            HtmlView startupMessageView = new HtmlView("Server startup in progress", HtmlString.unsafe(
                     "This server is starting up.<br/>" +
-                    "Only Site Administrators are permitted to log in during the startup process.");
+                    "Only Site Administrators are permitted to log in during the startup process."));
             vBox.addView(startupMessageView);
         }
         else if (isAdminOnlyMode())

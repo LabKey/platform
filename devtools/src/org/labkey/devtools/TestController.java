@@ -788,7 +788,7 @@ public class TestController extends SpringActionController
         public ModelAndView getView(Object o, BindException errors)
         {
             String title = getViewContext().getActionURL().getParameter("title");
-            return new HtmlView(title, "This is my HTML");
+            return new HtmlView(title, HtmlString.of("This is my HTML"));
         }
 
         @Override

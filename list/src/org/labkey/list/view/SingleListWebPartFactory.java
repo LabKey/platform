@@ -22,6 +22,7 @@ import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -57,7 +58,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         String title = (null == props.get("title") ? "List" : props.get("title"));
 
         if (null == listNameParam && null == listIdParam)
-            return new HtmlView(title, "There is no list selected to be displayed in this webpart");
+            return new HtmlView(title, HtmlString.of("There is no list selected to be displayed in this webpart"));
 
         ListQueryForm form;
 
@@ -73,7 +74,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
             }
             catch (NumberFormatException e)
             {
-                return new HtmlView(title, "List id is invalid");
+                return new HtmlView(title, HtmlString.of("List id is invalid"));
             }
         }
 
@@ -81,7 +82,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         form.bindParameters(portalCtx.getBindPropertyValues());
 
         if (null == form.getList())
-            return new HtmlView(title, "List does not exist");
+            return new HtmlView(title, HtmlString.of("List does not exist"));
 
         form.setViewName(viewName);
         return new SingleListWebPart(form, props);
