@@ -104,13 +104,14 @@ public enum TomcatVersion
         public void test()
         {
             // Good
-            test(100, TOMCAT_10_1);
+            test(101, TOMCAT_10_1);
 
             // Future
             test(110, TOMCAT_FUTURE);
             test(120, TOMCAT_FUTURE);
 
             // Bad
+            test(100, TOMCAT_UNSUPPORTED);
             test(90, TOMCAT_UNSUPPORTED);
             test(85, TOMCAT_UNSUPPORTED);
             test(80, TOMCAT_UNSUPPORTED);
