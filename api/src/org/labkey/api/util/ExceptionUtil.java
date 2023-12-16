@@ -932,7 +932,7 @@ public class ExceptionUtil
                 ApiSimpleResponse errorResponse = new ApiSimpleResponse("success", false);
 
                 if (responseStatusMessage != null || message != null)
-                    errorResponse.put("exception", StringUtils.defaultString(message,responseStatusMessage));
+                    errorResponse.put("exception", StringUtils.defaultString(message, responseStatusMessage));
 
                 ApiResponseWriter writer = responseFormat.createWriter(response, null, null);
 
