@@ -921,10 +921,7 @@ public class ExceptionUtil
                 response.setContentType(request.getContentType());
                 response.setCharacterEncoding("utf-8");
 
-                if (null == responseStatusMessage)
-                    response.setStatus(responseStatus);
-                else
-                    response.sendError(responseStatus, responseStatusMessage);
+                response.setStatus(responseStatus);
 
                 for (Map.Entry<String, String> entry : headers.entrySet())
                     response.addHeader(entry.getKey(), entry.getValue());
