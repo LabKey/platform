@@ -9063,6 +9063,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
+
         return updateCounts;
     }
 
@@ -9266,18 +9267,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            Map<String, Integer> counts = assayMoveData.counts();
+            int fileMoveCount = assayMoveData.fileMovesByRunId().values().stream().mapToInt(List::size).sum();
+            counts.put("movedFiles", fileMoveCount);
             transaction.addCommitTask(() -> {
-                int fileMoveCount = 0;
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                    {
-                        if (moveFile(renameData))
-                            fileMoveCount++;
-                    }
+                        moveFile(renameData);
                 }
-                Map<String, Integer> counts = assayMoveData.counts();
-                counts.put("movedFiles", fileMoveCount);
             }, POSTCOMMIT);
 
             transaction.commit();

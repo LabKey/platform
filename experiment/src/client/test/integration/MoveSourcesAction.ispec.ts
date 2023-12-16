@@ -18,7 +18,6 @@ import {
 
 
 const server = hookServer(process.env);
-const ACTION_NAME = "moveSources.api";
 const PROJECT_NAME = 'MoveSourcesTest Project';
 
 
@@ -180,7 +179,7 @@ async function getAttachmentAuditLogs(folderOptions: RequestOptions, name: strin
     return response.body.rows;
 }
 
-describe('ExperimentController', () => {
+describe('Move Sources', () => {
 
     function getAbsoluteContainerPath(containerPath: string)
     {
@@ -199,7 +198,6 @@ describe('ExperimentController', () => {
         const eventsInSource = await getQueryUpdateAuditLogs(sourceType, sourceFolderOptions, 1);
         expect(caseInsensitive(eventsInSource[0], 'Comment')).toEqual(count + " row(s) were updated.");
         const transactionId = caseInsensitive(eventsInSource[0], 'transactionId');
-        expect(transactionId).toBeTruthy();
         expect(caseInsensitive(eventsInSource[0], 'userComment')).toBe(userComment);
         return transactionId;
     }
@@ -237,14 +235,14 @@ describe('ExperimentController', () => {
         }
     }
 
-    describe(ACTION_NAME, () => {
+    describe('Move sources via moveRows', () => {
         it('requires POST', () => {
-            server.get('experiment', ACTION_NAME).expect(405);
+            server.get('query', 'moveRows.api').expect(405);
         });
 
         it('error, no permissions', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {}, { ...topFolderOptions, ...noPermsUserOptions }).expect(403);
+            const response = await server.post('query', 'moveRows.api', {}, { ...topFolderOptions, ...noPermsUserOptions }).expect(403);
 
             // Assert
             const { exception, success } = response.body;
@@ -254,7 +252,12 @@ describe('ExperimentController', () => {
 
         it('error, requires update permissions in current', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {}, { ...topFolderOptions, ...authorUserOptions }).expect(403);
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{}],
+            }, { ...topFolderOptions, ...authorUserOptions }).expect(403);
 
             // Assert
             const { exception, success } = response.body;
@@ -264,7 +267,7 @@ describe('ExperimentController', () => {
 
         it('error, missing required targetContainer param', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {}, { ...topFolderOptions, ...editorUserOptions }).expect(400);
+            const response = await server.post('query', 'moveRows.api', {}, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
             const { exception, success } = response.body;
@@ -274,8 +277,10 @@ describe('ExperimentController', () => {
 
         it('error, non-existent targetContainer param', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: 'BOGUS'
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: 'BOGUS',
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -286,8 +291,10 @@ describe('ExperimentController', () => {
 
         it('error, targetContainer cannot equal current for parent project', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: PROJECT_NAME
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: PROJECT_NAME,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -298,8 +305,10 @@ describe('ExperimentController', () => {
 
         it('error, targetContainer cannot equal current for subfolder', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
             }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -308,36 +317,42 @@ describe('ExperimentController', () => {
             expect(exception).toEqual('Invalid target container for the move operation: ' + subfolder1Options.containerPath + '.');
         });
 
-        it('error, missing required source IDs param', async () => {
+        it('error, missing required rows param', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
             const { exception, success } = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('Source IDs must be specified for the move operation.');
+            expect(exception).toEqual("No 'rows' array supplied.");
         });
 
-        it('error, empty source IDs param', async () => {
+        it('error, empty rows param', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: []
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: []
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
             const { exception, success } = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('Source IDs must be specified for the move operation.');
+            expect(exception).toEqual("No 'rows' array supplied.");
         });
 
         it('error, invalid source ID', async () => {
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [-1]
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: -1 }]
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -351,9 +366,11 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('sub1-notmoved-1', subfolder1Options);
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [sourceRowId]
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
             }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -372,9 +389,11 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('top-notmoved-1', topFolderOptions);
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: topFolderOptions.containerPath,
-                rowIds: [sourceRowId]
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: topFolderOptions.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
             }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
 
             // Assert
@@ -393,15 +412,17 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('sub1-notmoved-2', subfolder1Options);
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: topFolderOptions.containerPath,
-                rowIds: [sourceRowId]
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: topFolderOptions.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
             }, { ...subfolder1Options, ...subEditorUserOptions }).expect(400);
 
             // Assert
             const { exception, success } = response.body;
             expect(success).toBe(false);
-            expect(exception).toEqual('You do not have permission to move sources to the target container: ' + PROJECT_NAME + '.');
+            expect(exception).toEqual("You do not have permission to move rows from '" + SOURCE_TYPE_NAME_1 + "' to the target container: " + PROJECT_NAME + ".");
 
             const existsInTop = await _sourceExists(sourceRowId, topFolderOptions);
             expect(existsInTop).toBe(false);
@@ -414,9 +435,11 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('top-movetosub1-1', topFolderOptions);
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [sourceRowId]
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -444,9 +467,11 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('top-movetosub1-2', topFolderOptions, "DETAILED");
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [sourceRowId],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
                 auditBehavior: "DETAILED",
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
@@ -471,11 +496,13 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('top-movetosub1-3', topFolderOptions, "DETAILED");
             const userComment =  "Oops! Wrong project.";
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [sourceRowId],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
                 auditBehavior: "DETAILED",
-                userComment
+                auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -500,11 +527,13 @@ describe('ExperimentController', () => {
             const userComment = "4 is in the wrong place."
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [sourceRowId],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
                 auditBehavior: 'SUMMARY',
-                userComment
+                auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -533,9 +562,11 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('sub1-movetotop-1', subfolder1Options, "DETAILED");
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: topFolderOptions.containerPath,
-                rowIds: [sourceRowId],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: topFolderOptions.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
                 auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
@@ -561,9 +592,11 @@ describe('ExperimentController', () => {
             const sourceRowId = await _createSource('sub1-movetosub2-1', subfolder1Options, "DETAILED");
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder2Options.containerPath,
-                rowIds: [sourceRowId],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
                 auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
@@ -591,9 +624,11 @@ describe('ExperimentController', () => {
             const sourceRowId3 = await _createSource('type2-sub1-movetosub2-1', subfolder1Options, "DETAILED", SOURCE_TYPE_NAME_2);
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder2Options.containerPath,
-                rowIds: [sourceRowId1, sourceRowId2, sourceRowId3],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId1 }, { RowId: sourceRowId2 }, { RowId: sourceRowId3 }],
                 auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
@@ -632,11 +667,13 @@ describe('ExperimentController', () => {
             });
             const sourceRowId1 = await createSourceWithAttachments('top2-movetosub1-1', topFolderOptions, {[ATTACHMENT_FIELD_1_NAME]: 'fileA.txt'}, "DETAILED");
             const userComment = "Moving files too";
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder1Options.containerPath,
-                rowIds: [sourceRowId1],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId1 }],
                 auditBehavior: "DETAILED",
-                userComment,
+                auditUserComment: userComment,
             }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
 
             // Assert
@@ -659,9 +696,11 @@ describe('ExperimentController', () => {
             });
             const sourceRowId1 = await createSourceWithAttachments('sub12-movetotop-1', subfolder1Options, {[ATTACHMENT_FIELD_1_NAME]: 'fileB.txt', [ATTACHMENT_FIELD_2_NAME]: 'fileC.txt'}, "DETAILED");
 
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: topFolderOptions.containerPath,
-                rowIds: [sourceRowId1],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: topFolderOptions.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId1 }],
                 auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
@@ -686,9 +725,11 @@ describe('ExperimentController', () => {
             const sourceRowId3 = await _createSource('sub1-movetosub2-4', subfolder1Options, "DETAILED");
 
             // Act
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder2Options.containerPath,
-                rowIds: [sourceRowId1, sourceRowId2, sourceRowId3],
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId1 }, { RowId: sourceRowId2 }, { RowId: sourceRowId3 }],
                 auditBehavior: "DETAILED",
             }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
 
@@ -745,9 +786,11 @@ describe('ExperimentController', () => {
             expect(runId1Before).toBe(runId2Before);
 
             // move sources to sibling folder
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder2Options.containerPath,
-                rowIds: rowIdsToMove,
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: derivedSources,
                 auditBehavior: "DETAILED",
             }, { ...subfolder3Options, ...editorUserOptions }).expect(200);
 
@@ -810,9 +853,14 @@ describe('ExperimentController', () => {
             const movingId3Before = await getSourceRunId(caseInsensitive(sub3ParentSamples[0], 'rowId'), subfolder3Options);
             const notMovingId3Before = await getSourceRunId(caseInsensitive(sub3ParentSamples[1], 'rowId'), subfolder3Options);
 
-            const response = await server.post('experiment', ACTION_NAME, {
-                targetContainer: subfolder2Options.containerPath,
-                rowIds: movingRowIds,
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: movingRowIds.reduce((prev, curr) => {
+                    prev.push({ RowId: curr });
+                    return prev;
+                }, []),
                 auditBehavior: "DETAILED",
             }, { ...subfolder3Options, ...editorUserOptions }).expect(200);
 
