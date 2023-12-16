@@ -3539,7 +3539,7 @@ if (!LABKEY.DataRegions) {
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
             var showOpts = [];
-            if (region.showRows !== 'all')
+            if (region.showRows !== 'all' && region.maxRows !== ALL_ROWS_MAX)
                 showOpts.push("<span class='labkey-button show-all'>Show All</span>");
             if (region.showRows !== 'selected')
                 showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
