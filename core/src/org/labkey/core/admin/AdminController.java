@@ -245,6 +245,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
@@ -11123,7 +11124,6 @@ public class AdminController extends SpringActionController
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
-                var jsonStr = jsonObj.toString(2);
                 JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
@@ -11132,7 +11132,13 @@ public class AdminController extends SpringActionController
                     {
                         String path = new URLHelper(urlString).deleteParameters().getPath();
                         if (null == reports.put(path, Boolean.TRUE))
+                        {
+                            var userAgent = getViewContext().getRequest().getHeader("User-Agent");
+                            if (isNotBlank(userAgent))
+                                jsonObj.put("user-agent", userAgent);
+                            var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
+                        }
                     }
                 }
             }
