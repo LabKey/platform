@@ -3,6 +3,7 @@ package org.labkey.api.query;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.TransactionAuditProvider;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.gwt.client.AuditBehaviorType;
@@ -265,7 +266,7 @@ public class QueryImportPipelineJob extends PipelineJob
             if (_importContextBuilder.getAuditBehaviorType() != null && _importContextBuilder.getAuditBehaviorType() != AuditBehaviorType.NONE)
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
 
-            DataIteratorContext diContext = createDataIteratorContext(ve);
+            DataIteratorContext diContext = createDataIteratorContext(ve, getContainer());
             int importedCount = AbstractQueryImportAction.importData(loader, target, updateService, diContext, auditEvent, getInfo().getUser(), getInfo().getContainer());
 
             if (ve.hasErrors())
@@ -310,9 +311,9 @@ public class QueryImportPipelineJob extends PipelineJob
         }
     }
 
-    private DataIteratorContext createDataIteratorContext(BatchValidationException errors)
+    private DataIteratorContext createDataIteratorContext(BatchValidationException errors, Container container)
     {
-        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), errors, getLogger());
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), errors, getLogger(), container);
     }
 
     @Override

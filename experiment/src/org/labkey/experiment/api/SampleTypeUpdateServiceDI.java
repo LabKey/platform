@@ -346,8 +346,9 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (context.isCrossTypeImport())
-            return new ExpDataIterators.MultiSampleTypeDataIteratorBuilder(user, container, data);
+        boolean crossFolderImport = context.isCrossFolderImport() && !context.getInsertOption().updateOnly;
+        if (context.isCrossTypeImport() || crossFolderImport) // check one of folder columns is present
+            return new ExpDataIterators.MultiSampleTypeDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), crossFolderImport, _sampleType);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
 
@@ -1375,6 +1376,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 String name = source.getColumnInfo(i).getName();
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
+                if (!isContainerField)
+                    isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
                 if (isReservedHeader(name) || isContainerField)
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.
@@ -1396,6 +1399,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isStoredAmountHeader(name))
                         continue;
                     if (isUnitsHeader(name))
+                        continue;
+                    if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
                     drop.add(name);
                 }

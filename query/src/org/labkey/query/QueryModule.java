@@ -233,6 +233,8 @@ public class QueryModule extends DefaultModule
                 "Allow for lookup fields in product projects to query across all folders within the top-level folder.", false);
         AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, "Product projects display project-specific data",
                 "Only list project-specific data within product projects.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.CROSS_PROJECT_IMPORT_ENABLED, "Cross project file import",
+                "Allow import of sample data across projects", false);
     }
 
 
@@ -412,6 +414,7 @@ public class QueryModule extends DefaultModule
         json.put(QueryService.PRODUCT_PROJECTS_EXIST, isProductProjectsEnabled && container.hasProductProjects());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_ALL_FOLDER_LOOKUPS, QueryService.get().isProductProjectsAllFolderScopeEnabled());
         json.put(QueryService.EXPERIMENTAL_PRODUCT_PROJECT_DATA_LISTING_SCOPED, QueryService.get().isProductProjectsDataListingScopedToProject());
+        json.put(QueryService.CROSS_PROJECT_IMPORT_ENABLED, QueryService.get().isCrossProjectsImportEnabled(container));
 
         return json;
     }
