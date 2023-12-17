@@ -146,7 +146,9 @@ const TabNames = Object.freeze({
         row.id = "wiki-na-" + _newAttachmentIndex;
 
         var cell = row.insertCell(0);
-        cell.innerHTML = "<input type='file' name='formFiles[" + _newAttachmentIndex + "]' size='60' onChange='LABKEY._wiki.onAddAttachment(this," + _newAttachmentIndex + ")'>";
+        cell.innerHTML = "<input type='file' name='formFiles[" + _newAttachmentIndex + "]' size='60'>";
+        const nodeIndex = _newAttachmentIndex;
+        cell.childNodes[0]['onchange'] = function() { LABKEY._wiki.onAddAttachment(this, nodeIndex); };
 
         cell = row.insertCell(1);
         cell.id = "wiki-na-name-" + _newAttachmentIndex;
@@ -416,8 +418,10 @@ const TabNames = Object.freeze({
 
         getExistingAttachmentIconImg(index).src = LABKEY.ActionURL.getContextPath() + "/_icons/_deleted.gif";
         row.cells[1].style.textDecoration = "line-through";
-        row.cells[2].innerHTML = "<a onclick='LABKEY._wiki.onUndeleteAttachment(" + index + ")'><span>&nbsp; un-delete</span></a>"
+        row.cells[2].innerHTML = "<a><span>&nbsp; un-delete</span></a>"
                 + "<input type='hidden' name='toDelete' value=\"" + LABKEY.Utils.encodeHtml(_attachments[index].name) + "\"/>";
+        const nodeIndex = index;
+        row.cells[2].childNodes[0]['onclick'] = function() { LABKEY._wiki.onUndeleteAttachment(nodeIndex); };
 
         //add a prop so we know we need to save the attachments
         LABKEY.setDirty(true);
@@ -435,7 +439,9 @@ const TabNames = Object.freeze({
 
         getExistingAttachmentIconImg(index).src = _attachments[index].iconUrl;
         row.cells[1].style.textDecoration = "";
-        row.cells[2].innerHTML = "<a href='javascript:onDeleteAttachment("+ index +")'>&nbsp; delete</a>";
+        row.cells[2].innerHTML = "<a>&nbsp; delete</a>";
+        const nodeIndex = index;
+        row.cells[2].childNodes[0]['onclick'] = function(){ LABKEY._wiki.onDeleteAttachment(nodeIndex); };
     };
 
     var onDeletePage = function() {
@@ -613,7 +619,7 @@ const TabNames = Object.freeze({
         toSelect.children().remove();
 
         $.each(_formats, function(fmt, label) {
-            if (fmt != _wikiProps.rendererType) {
+            if (fmt !== _wikiProps.rendererType) {
                 toSelect.append('<option value=\"' + fmt + '\">' + label + '</option>');
             }
         });
@@ -754,7 +760,7 @@ const TabNames = Object.freeze({
             table.removeChild(table.childNodes[0]);
 
         var row, cell;
-        if (null == attachments || attachments.length == 0) {
+        if (attachments.length === 0) {
             row = table.insertRow(0);
             cell = row.insertCell(0);
             cell.innerHTML = "[none]";
@@ -775,7 +781,9 @@ const TabNames = Object.freeze({
 
                 cell = row.insertCell(2);
                 cell.id = "wiki-ea-del-" + idx;
-                cell.innerHTML = "<a href='javascript:LABKEY._wiki.onDeleteAttachment(" + idx + ")'>&nbsp; delete</a>";
+                cell.innerHTML = "<a>&nbsp; delete</a>";
+                const nodeIdx = idx;
+                cell.childNodes[0]['onclick'] = function() { LABKEY._wiki.onDeleteAttachment(nodeIdx); };
             }
         }
     };

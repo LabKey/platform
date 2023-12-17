@@ -898,8 +898,9 @@ LABKEY.Utils = new function(impl, $) {
         const fn = function()
         {
             const list = document.querySelectorAll(selector);
-            for (let i in list)
-                list[i]['on' + eventName] = handler;
+            list.forEach(function(element) {
+                element['on' + eventName] = handler;
+            });
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     };
