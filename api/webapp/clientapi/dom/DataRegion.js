@@ -13,7 +13,7 @@ if (!LABKEY.DataRegions) {
     // CONSTANTS
     //
     // Issue 48715: Limit the number of rows that can be displayed in a data region
-    var ALL_ROWS_MAX = 1_000;
+    var ALL_ROWS_MAX = 5_000;
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
     var DEFAULT_TIMEOUT = 30_000;
     var PARAM_PREFIX = '.param.';
@@ -1638,7 +1638,7 @@ if (!LABKEY.DataRegions) {
 
                     var offsets = [20, 40, 100, 250];
                     if (this.maxRows > 0 && offsets.indexOf(this.maxRows) === -1) {
-                        if (this.maxRows !== ALL_ROWS_MAX) {
+                        if (!_isMaxRowsAllRows(this)) {
                             offsets.push(this.maxRows);
                         }
                         offsets = offsets.sort(function(a, b) { return a - b; });
@@ -1665,7 +1665,7 @@ if (!LABKEY.DataRegions) {
                     _getShowLastSelector(this).click(_lastPage.bind(this));
                     _getShowAllSelector(this).click(this.showAllRows.bind(this));
 
-                    if (this.maxRows === ALL_ROWS_MAX && this.totalRows > this.maxRows) {
+                    if (_isMaxRowsAllRows(this) && this.totalRows > this.maxRows) {
                         this.addMessage('<span><b>Show all:</b> Displaying the first ' + ALL_ROWS_MAX.toLocaleString() + ' rows. Use paging to see more results.</span>');
                     }
 
@@ -1723,7 +1723,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _showAllEnabled = function(region) {
-        return (_showFirstEnabled(region) || _showLastEnabled(region)) && region.maxRows !== ALL_ROWS_MAX;
+        return (_showFirstEnabled(region) || _showLastEnabled(region)) && !_isMaxRowsAllRows(region);
     };
 
     var _getPaginationText = function(region) {
@@ -1772,8 +1772,12 @@ if (!LABKEY.DataRegions) {
         return false;
     };
 
+    var _isMaxRowsAllRows = function(region) {
+        return region.maxRows === ALL_ROWS_MAX;
+    };
+
     /**
-     * Forces the grid to show all rows, without any paging
+     * Forces the grid to show all rows, up to ALL_ROWS_MAX, without any paging
      */
     LABKEY.DataRegion.prototype.showAllRows = function() {
         _setMaxRows.bind(this, ALL_ROWS_MAX)();
@@ -3539,7 +3543,7 @@ if (!LABKEY.DataRegions) {
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
             var showOpts = [];
-            if (region.showRows !== 'all' && region.maxRows !== ALL_ROWS_MAX)
+            if (region.showRows !== 'all' && !_isMaxRowsAllRows(region))
                 showOpts.push("<span class='labkey-button show-all'>Show All</span>");
             if (region.showRows !== 'selected')
                 showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
