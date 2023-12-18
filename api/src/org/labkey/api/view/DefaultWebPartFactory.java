@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
 
 /**
@@ -45,7 +46,7 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
-            return new HtmlView("Not Authorized", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+            return new HtmlView("Not Authorized", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
 
         try
         {

@@ -15,10 +15,13 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls"%>
+<%@ page import="org.labkey.api.module.ModuleHtmlView"%>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.StudyModule" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CustomizeParticipantViewAction" %>
 <%@ page import="org.labkey.study.controllers.StudyController.CustomizeParticipantViewForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -106,6 +109,7 @@
 <%
     if (bean.getParticipantId() != null)
     {
+        ModuleHtmlView view = new ModuleHtmlView(ModuleLoader.getInstance().getModule(StudyModule.MODULE_NAME), "Custom Participant View", unsafe(useCustomView ? bean.getCustomScript() : bean.getDefaultScript()));
 %>
 <table width="100%">
     <tr class="labkey-wp-header">
@@ -113,7 +117,7 @@
     </tr>
     <tr>
         <td>
-            <%= unsafe(useCustomView ? bean.getCustomScript() : bean.getDefaultScript()) %>
+            <%= view.getHtml() %>
         </td>
     </tr>
 </table>

@@ -818,6 +818,12 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    @Override
+    public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new UnsupportedOperationException("Move is not supported for this table type.");
+    }
+
     protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 

@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import org.labkey.api.reports.Report;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -73,6 +74,6 @@ public class StudyMacroProvider implements MacroProvider
             }
         }
         else
-            return new HtmlView(null, "No such macro, study:" + PageFlowUtil.filter(name) + "<br>");
+            return HtmlView.of("No such macro, study:" + name);
     }
 }
