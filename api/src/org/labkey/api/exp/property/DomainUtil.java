@@ -631,7 +631,10 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        ValidationException ve = DomainUtil.validateProperties(null, domain, kind, null, user);
+        // Issue 48810: if not creating from templateInfo, validate reserved field names based on domainKind
+        DomainKind validateDomainKind = templateInfo == null ? kind : null;
+
+        ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
