@@ -252,11 +252,20 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
+        return getReservedPropertyNames(domain, user, false);
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
         if (domain == null)
         {
-            reserved.remove("Name"); // Issue 48810: See SampleTypeService.createSampleType hasNameProperty
+            // Issue 48810: See SampleTypeService.createSampleType hasNameProperty
+            if (forCreate)
+                reserved.remove("Name");
+
             return reserved;
         }
 

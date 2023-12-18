@@ -1213,7 +1213,7 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig, @Nullable User user)
     {
-        Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user))
+        Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user, domain == null))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
