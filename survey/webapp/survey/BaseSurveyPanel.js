@@ -654,17 +654,13 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                     '</div>'
                 ],
                 listeners: {
-                    afterrender: function() {
-                        LABKEY.Utils.attachEventHandlerForQuerySelector("li.labkey-side-bar-title", "click", function(event)
-                        {
+                    afterrender: function () {
+                        LABKEY.Utils.attachEventHandlerForQuerySelector("li.labkey-side-bar-title", "click", function (event) {
                             const target = event.currentTarget;
                             const step = parseInt(target.getAttribute('step'));
                             const panelId = target.getAttribute('panelid');
                             surveySidebarSectionClick(step, panelId);
                         });
-                    },
-                    refresh: function () {
-                        alert("refresh!");
                     }
                 },
                 data: {steps: this.getStepsDataArr()}
