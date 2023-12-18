@@ -93,6 +93,7 @@ import org.labkey.api.study.reports.CrosstabReportDescriptor;
 import org.labkey.api.study.security.StudySecurityEscalationAuditProvider;
 import org.labkey.api.study.security.permissions.ManageStudyPermission;
 import org.labkey.api.usageMetrics.UsageMetricsService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
@@ -561,10 +562,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+                return new HtmlView("Views", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Views", "This folder does not contain a study");
+                return new HtmlView("Views", HtmlString.of("This folder does not contain a study"));
             return new ReportsController.ReportsWebPart(!WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()));
         }
     }
@@ -631,10 +632,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView(getDisplayName(portalCtx.getContainer(),  webPart.getLocation()), portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+                return new HtmlView(getDisplayName(portalCtx.getContainer(),  webPart.getLocation()), HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Subject List", "This folder does not contain a study.");
+                return new HtmlView("Subject List", HtmlString.of("This folder does not contain a study."));
             return new SubjectsWebPart(portalCtx, HttpView.BODY.equals(webPart.getLocation()), webPart.getIndex());
         }
     }
@@ -660,10 +661,10 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView("Datasets", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+                return new HtmlView("Datasets", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Datasets", "This folder does not contain a study.");
+                return new HtmlView("Datasets", HtmlString.of("This folder does not contain a study."));
 
             return new DatasetsWebPartView();
         }

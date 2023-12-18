@@ -4899,10 +4899,11 @@ public class ExperimentController extends SpringActionController
                 message = "Could not map lsid to URL";
             }
 
-            String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
-                    " Lsid <input type=text name=lsid size=\"80\" value=\"" +
-                    (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
-                    PageFlowUtil.button("Go").submit(true) + "</form>";
+            HtmlStringBuilder html = HtmlStringBuilder.of();
+            html.append(message).unsafeAppend("<form action=\"").append(getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class).toString()).unsafeAppend("\">")
+                    .unsafeAppend(" Lsid <input type=text name=lsid size=\"80\" value=\"")
+                    .append(form.getLsid() == null ? "" : form.getLsid()).unsafeAppend("\">")
+                    .append(PageFlowUtil.button("Go").submit(true)).unsafeAppend("</form>");
 
             return new HtmlView("Enter LSID", html);
         }
@@ -7696,8 +7697,8 @@ public class ExperimentController extends SpringActionController
                 List<? extends ExpSampleType> sampleTypes = SampleTypeService.get()
                         .getSampleTypes(container, user, true);
 
-                StringBuilder builder = new StringBuilder();
-                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
+                HtmlStringBuilder builder = HtmlStringBuilder.of();
+                builder.unsafeAppend("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
 
                 SampleTypeService service = SampleTypeService.get();
                 for (ExpSampleType sampleType : sampleTypes)
@@ -7705,15 +7706,15 @@ public class ExperimentController extends SpringActionController
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
-                    builder.append("<tr><td>")
+                    builder.unsafeAppend("<tr><td>")
                             .append(sampleType.getName())
-                            .append("</td><td>")
+                            .unsafeAppend("</td><td>")
                             .append(updatedCount)
-                            .append("</td></tr>");
+                            .unsafeAppend("</td></tr>");
                 }
 
-                builder.append("</table>");
-                return new HtmlView("Aliquot Rollup Recalculation Result", builder.toString());
+                builder.unsafeAppend("</table>");
+                return new HtmlView("Aliquot Rollup Recalculation Result", builder);
             }
         }
     }
