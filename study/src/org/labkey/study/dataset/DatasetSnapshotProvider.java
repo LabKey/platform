@@ -272,8 +272,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                     // snapshot are updated
                                     if (!queryDef.getContainer().equals(qsDef.getContainer()))
                                     {
-                                        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
+                                        ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
                                             Collections.singletonList(def));
+                                        if (validationException.hasErrors())
+                                        {
+                                            errors.reject(SpringActionController.ERROR_MSG, validationException.getMessage());
+                                            return;
+                                        }
                                     }
                                     transaction.commit();
                                 }
@@ -504,7 +509,14 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                     return null;
 
                                 if (!suppressVisitManagerRecalc)
-                                    StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
+                                {
+                                    ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
+                                    if (validationException.hasErrors())
+                                    {
+                                        errors.reject(SpringActionController.ERROR_MSG, validationException.getMessage());
+                                        return null;
+                                    }
+                                }
 
                                 ViewContext context = form.getViewContext();
                                 new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,

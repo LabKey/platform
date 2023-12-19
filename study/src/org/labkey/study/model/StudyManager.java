@@ -41,11 +41,34 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Activity;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.CommitTaskOption;
 import org.labkey.api.data.DbScope.Transaction;
+import org.labkey.api.data.Filter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PHI;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SimpleFilter.OrClause;
 import org.labkey.api.data.SimpleFilter.SQLClause;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.BeanDataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -88,6 +111,7 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -1094,34 +1118,53 @@ public class StudyManager
         return visit;
     }
 
-    public VisitImpl ensureVisit(Study study, User user, BigDecimal sequenceNum, Visit.Type type, boolean saveIfNew)
+    /**
+     * Return a visit object regardless of whether it exists in the database but will not insert a new
+     * record into the database.
+     */
+    public VisitImpl getVisit(Study study, User user, BigDecimal sequenceNum, Visit.Type type)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
-        VisitImpl result = ensureVisitWithoutSaving(study, sequenceNum, type, visits);
-        if (saveIfNew && result.getRowId() == 0)
-        {
-            // Insert it into the database if it's new
-            return createVisit(study, user, result, visits);
-        }
-        return result;
+        return ensureVisitWithoutSaving(study, sequenceNum, type, visits);
     }
 
-    public boolean ensureVisits(Study study, User user, Set<BigDecimal> sequencenums, @Nullable Visit.Type type)
+    /**
+     * Ensures the existence of a visit for the specified sequence numbers and will insert into the database
+     * if the visit does not yet exist.  Do not call this method if you always want the visit to be created because
+     * this will check to see if the study is configured to allow the automatic creation of undefined visits.
+     *
+     * @param failForUndefinedVisits If true, new visits will not be created and an error will be added to the returned
+     *                               ValidationException object.
+     * @return ValidationException which will contain any relevant errors. Callers should check hasErrors on the object.
+     */
+    public @NotNull ValidationException ensureVisits(Study study, User user, Set<BigDecimal> sequencenums, @Nullable Visit.Type type,
+                                boolean failForUndefinedVisits)
     {
         List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
-        boolean created = false;
+        ValidationException errors = new ValidationException();
+        List<String> seqNumFailures = new ArrayList<>();
+
         for (BigDecimal sequencenum : sequencenums)
         {
             VisitImpl result = ensureVisitWithoutSaving(study, sequencenum, type, visits);
-            if (result.getRowId() == 0)
+            if (result.getRowId() == 0 && !failForUndefinedVisits)
             {
                 createVisit(study, user, result, visits);
                 // Refresh existing visits to avoid constraint violation, see #44425
                 visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
-                created = true;
             }
+            else
+                seqNumFailures.add(String.valueOf(sequencenum));
         }
-        return created;
+
+        if (!seqNumFailures.isEmpty())
+        {
+            String timepointNoun = study.getTimepointType().isVisitBased() ? "visits" : "timepoints";
+            errors.addError(new SimpleValidationError(String.format("Creating new %s is not allowed for this study. The following %s do not currently exist : (%s)",
+                    timepointNoun, timepointNoun,
+                    String.join(",", seqNumFailures))));
+        }
+        return errors;
     }
 
     private VisitImpl ensureVisitWithoutSaving(Study study, double seqNumDouble, @Nullable Visit.Type type, List<VisitImpl> existingVisits)

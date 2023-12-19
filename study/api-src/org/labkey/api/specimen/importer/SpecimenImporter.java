@@ -256,7 +256,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 SpecimenSchema.get().getTableInfoSpecimenPrimaryType(getContainer()).getSelectName(), SpecimenColumns.PRIMARYTYPE_COLUMNS);
     }
 
-    private void resyncStudy(boolean syncParticipantVisit)
+    private void resyncStudy(boolean syncParticipantVisit) throws ValidationException
     {
         TableInfo tableParticipant = SpecimenSchema.get().getTableInfoParticipant();
         TableInfo tableSpecimen = getTableInfoSpecimen();
@@ -271,7 +271,9 @@ public class SpecimenImporter extends SpecimenTableManager
         {
             Study study = StudyService.get().getStudy(getContainer());
             info("Updating study-wide subject/visit information...");
-            VisitService.get().updateParticipantVisitsWithCohortUpdate(study, getUser(), _logger);
+            ValidationException errors = VisitService.get().updateParticipantVisitsWithCohortUpdate(study, getUser(), _logger);
+            if (errors.hasErrors())
+                throw errors;
             info("Subject/visit update complete.");
         }
 

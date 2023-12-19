@@ -148,6 +148,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _allowReqLocClinic = true;
     private boolean _allowReqLocSal = true;
     private boolean _allowReqLocEndpoint = true;
+    private boolean _failForUndefinedTimepoints;
 
     private Integer _participantAliasDatasetId;
     private String _participantAliasSourceProperty;
@@ -927,6 +928,18 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _allowReqLocEndpoint = allowReqLocEndpoint;
     }
 
+    @Override
+    public boolean isFailForUndefinedTimepoints()
+    {
+        return _failForUndefinedTimepoints;
+    }
+
+    public void setFailForUndefinedTimepoints(boolean failForUndefinedTimepoints)
+    {
+        verifyMutability();
+        _failForUndefinedTimepoints = failForUndefinedTimepoints;
+    }
+
     public Integer getLastSpecimenRequest()
     {
         return _lastSpecimenRequest;
@@ -1230,7 +1243,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             VisitImpl result = StudyManager.getInstance().getVisitForSequence(this, sequenceNumBD);
             if (result == null && returnPotentialTimepoints)
             {
-                result = StudyManager.getInstance().ensureVisit(this, null, sequenceNumBD, null, false);
+                result = StudyManager.getInstance().getVisit(this, null, sequenceNumBD, null);
             }
             return result;
         }

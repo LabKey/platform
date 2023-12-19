@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SafeToRenderEnum;
@@ -178,7 +179,12 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                 if (job != null)
                     job.setStatus("UPDATE participants");
                 ctx.getLogger().info("Updating participant visits");
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), datasets, ctx.getLogger());
+                ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), datasets, null, null, true,
+                        ctx.isFailForUndefinedVisits() || study.isFailForUndefinedTimepoints(),
+                        ctx.getLogger());
+                if (validationException.hasErrors())
+                    ctx.getLogger().error(validationException);
+
                 ctx.getLogger().info("Finished updating participants");
             }
 

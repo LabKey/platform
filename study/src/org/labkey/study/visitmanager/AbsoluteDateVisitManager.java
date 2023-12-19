@@ -17,11 +17,13 @@
 package org.labkey.study.visitmanager;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.DataspaceContainerFilter;
@@ -147,8 +149,9 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
     }
 
     @Override
-    protected void updateVisitTable(User user, @Nullable Logger logger)
+    protected @NotNull ValidationException updateVisitTable(User user, @Nullable Logger logger, boolean failForUndefinedVisits)
     {
         // no-op
+        return new ValidationException();
     }
 }

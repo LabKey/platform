@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
@@ -118,7 +119,9 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
             // Issue 39822: update participant visits after importing study details like start date
-            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), study.getDatasets());
+            ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), study.getDatasets());
+            if (validationException.hasErrors())
+                throw validationException;
 
             ctx.getLogger().info("Done importing " + getDescription());
         }

@@ -152,6 +152,7 @@ public interface Study extends StudyEntity
     boolean isAllowReqLocClinic();
     boolean isAllowReqLocSal();
     boolean isAllowReqLocEndpoint();
+    boolean isFailForUndefinedTimepoints();
 
     // "is" prefix doesn't work with "Boolean", use get
     /**
