@@ -293,7 +293,6 @@ public class DatasetImportRunnable implements Runnable
                     assert cpuDelete.stop();
                 }
 
-
                 assert cpuImport.start();
                 _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
 
@@ -307,27 +306,11 @@ public class DatasetImportRunnable implements Runnable
 
             if (!batchErrors.hasErrors())
             {
-                // optional check if new visits exist before committing, visit based timepoint studies only
-                boolean shouldCommit = true;
-                if (_studyImportContext.isFailForUndefinedVisits() && _study.getTimepointType() == TimepointType.VISIT)
-                {
-                    List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
-                    if (!undefinedSequenceNums.isEmpty())
-                    {
-                        Collections.sort(undefinedSequenceNums);
-                        _logger.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
-                        shouldCommit = false;
-                    }
-                }
-
-                if (shouldCommit)
-                {
-                    assert cpuCommit.start();
-                    transaction.commit();
-                    for (var msg : importMessages)
-                        _logger.info(msg);
-                    assert cpuCommit.stop();
-                }
+                assert cpuCommit.start();
+                transaction.commit();
+                for (var msg : importMessages)
+                    _logger.info(msg);
+                assert cpuCommit.stop();
             }
             assert cpuImport.stop();
         }

@@ -1162,7 +1162,7 @@ public class StudyManager
             String timepointNoun = study.getTimepointType().isVisitBased() ? "visits" : "timepoints";
             errors.addError(new SimpleValidationError(String.format("Creating new %s is not allowed for this study. The following %s do not currently exist : (%s)",
                     timepointNoun, timepointNoun,
-                    String.join(",", seqNumFailures))));
+                    String.join(", ", seqNumFailures))));
         }
         return errors;
     }

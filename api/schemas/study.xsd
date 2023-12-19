@@ -469,6 +469,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:attribute name="failForUndefinedTimepoints" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>
+                        Indicates whether new timepoints can be created automatically when data is imported into the study.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
             <xs:anyAttribute processContents="lax"/>
         </xs:complexType>
 	</xs:element>

@@ -100,12 +100,12 @@ public abstract class VisitManager
      */
     public ValidationException updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets)
     {
-        return updateParticipantVisits(user, changedDatasets, null, null, true, true, null);
+        return updateParticipantVisits(user, changedDatasets, null, null, true, _study.isFailForUndefinedTimepoints(), null);
     }
 
     public ValidationException updateParticipantVisitsWithCohortUpdate(User user, @Nullable Logger logger)
     {
-        return updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
+        return updateParticipantVisits(user, Collections.emptyList(), null, null, true, _study.isFailForUndefinedTimepoints(), logger);
     }
 
     public ValidationException updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets,

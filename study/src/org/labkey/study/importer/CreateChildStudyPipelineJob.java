@@ -274,7 +274,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // Save the snapshot RowId to the destination study
                 StudyImpl mutableStudy = StudyManager.getInstance().getStudy(getDstContainer()).createMutable();
                 mutableStudy.setStudySnapshot(snapshot.getRowId());
-                StudyManager.getInstance().updateStudy(user, mutableStudy);
 
                 // export objects from the parent study, then import them into the new study
                 getLogger().info("Exporting data from parent study.");
@@ -309,6 +308,12 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 importTreatmentVisitMapData(errors, studyDir, studyImportContext);
 
                 new TopLevelStudyPropertiesImporter().process(studyImportContext, studyDir, errors);
+
+                // after the data has been imported, configure the new study setting for undefined timepoints
+                if (sourceStudy.isFailForUndefinedTimepoints())
+                    mutableStudy.setFailForUndefinedTimepoints(true);
+
+                StudyManager.getInstance().updateStudy(user, mutableStudy);
             }
 
             if (errors.hasErrors())

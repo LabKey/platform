@@ -828,6 +828,19 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 BindException errors = new NullSafeBindException(new Object(), "command");
                 QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).updateSnapshot(form, errors, _suppressVisitManagerRecalc);
+                if (errors.hasErrors())
+                {
+                    // log an error as well as an audit event to match exception handling within updateSnapshot
+                    LOG.error(errors.getMessage());
+                    StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
+                    if (study != null)
+                    {
+                        DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, _def.getName());
+                        if (dsDef != null)
+                            new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
+                                    "Dataset snapshot was not updated. Cause of failure: " + errors.getMessage(), null);
+                    }
+                }
             }
             catch(Exception e)
             {
