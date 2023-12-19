@@ -54,8 +54,8 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "2.399.0-fb-moveRowsJSAPI.3",
-    "@labkey/themes": "1.3.2-fb-moveRowsJSAPI.1"
+    "@labkey/components": "2.399.1",
+    "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
     "@labkey/build": "6.16.1",
