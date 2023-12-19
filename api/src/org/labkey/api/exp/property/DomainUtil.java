@@ -631,7 +631,10 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        ValidationException ve = DomainUtil.validateProperties(null, domain, null, null, user);
+        // Issue 48810: if not creating from templateInfo, validate reserved field names based on domainKind
+        DomainKind validateDomainKind = templateInfo == null ? kind : null;
+
+        ValidationException ve = DomainUtil.validateProperties(null, domain, validateDomainKind, null, user);
         if (ve.hasErrors())
         {
             throw new ValidationException(ve);
@@ -1213,7 +1216,7 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig, @Nullable User user)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind) ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user))
+        Set<String> reservedNames = null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain, user, domain == null))
                 : new CaseInsensitiveHashSet(updates.getReservedFieldNames());
         Set<String> reservedPrefixes = (null != domain && null != domainKind) ? domainKind.getReservedPropertyNamePrefixes() : updates.getReservedFieldNamePrefixes();
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
