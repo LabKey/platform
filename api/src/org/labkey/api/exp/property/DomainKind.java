@@ -110,6 +110,10 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @return set of strings containing the names. This will be compared ignoring case
      */
     abstract public Set<String> getReservedPropertyNames(Domain domain, User user);
+    public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    {
+        return getReservedPropertyNames(domain, user);
+    }
 
     public Set<String> getReservedPropertyNamePrefixes()
     {
