@@ -4030,7 +4030,7 @@ public class ExperimentController extends SpringActionController
                 updateService = tInfo.getUpdateService();
             }
 
-            if (_context.isCrossFolderImport())
+            if (_context.isCrossFolderImport() && !_context.getInsertOption().updateOnly)
             {
                 ColumnDescriptor[] dataColumns = dl.getColumns();
                 boolean hasContainerColumn = false;

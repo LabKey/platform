@@ -91,6 +91,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.FileUtil;
@@ -116,6 +117,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -2309,7 +2311,8 @@ public class ExpDataIterators
                 File dataFile,
                 List<Integer> fieldIndexes,
                 Map<Integer, String> dependencyIndexes,
-                List<String> dataRows
+                List<String> dataRows,
+                List<String> sampleIds
         ) { }
 
         private final DataIteratorContext _context;
@@ -2324,12 +2327,15 @@ public class ExpDataIterators
         private String _folderColName = null;
         // want to process the sample types in the order given in the original file, unless we have dependencies
         private final Map<String, TypeData> _fileDataMap = new TreeMap<>();
+        private final Map<String, TypeData> _updateOnlyFileDataMap = new TreeMap<>();
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
         private final int _sampleIdIndex;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
 
         private final Map<String, Container> _containerMap = new HashMap<>();
+
+        private final boolean _isCrossFolderUpdate;
 
         public MultiSampleTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
         {
@@ -2343,6 +2349,8 @@ public class ExpDataIterators
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
             _sampleIdIndex = map.getOrDefault("Name", -1);
+
+            _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
             if (_isCrossType)
             {
@@ -2371,13 +2379,13 @@ public class ExpDataIterators
                     }
                 });
 
-                if (_folderColIndex != null)
+                if (_folderColIndex != null || _isCrossFolderUpdate)
                 {
                     ContainerFilter cf = _container.getProductProjectsDataContainerFilter(user);
                     Collection<GUID> validContainerIds =  cf.getIds();
                     if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
                     {
-                        validContainerIds = cfp.generateIds(container, InsertPermission.class, null);
+                        validContainerIds = cfp.generateIds(container, context.getInsertOption().allowUpdate ? UpdatePermission.class : InsertPermission.class, null);
                     }
 
                     if (validContainerIds != null)
@@ -2390,6 +2398,127 @@ public class ExpDataIterators
                     }
                 }
             }
+        }
+
+        private void _importPartition(TypeData typeData)
+        {
+            writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
+            var updateService = typeData.tableInfo.getUpdateService();
+            if (updateService == null)
+            {
+                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
+            }
+            else
+            {
+                try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
+                {
+                    // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
+                    configureLoader(loader, typeData.tableInfo, null, true);
+                    updateService.loadRows(_user, typeData.container, loader, _context, null);
+                }
+                catch (SQLException | IOException e)
+                {
+                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                    LOG.error(msg, e);
+                    _context.getErrors().addRowError(new ValidationException(msg));
+                }
+            }
+        }
+
+        /**
+         *
+         * @param typeData
+         * @return true if has data from multiple containers, or from a container different from current container
+         */
+        private boolean handleCrossFolderUpdate(TypeData typeData)
+        {
+            String headerRow = typeData.dataRows.get(0);
+            String dataFileName = typeData.dataFile.getName();
+
+            ExpSampleTypeImpl sampleType = typeData.sampleType;
+
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleType.getRowId());
+            filter.addCondition(FieldKey.fromParts("Name"), typeData.sampleIds, CompareType.IN);
+
+            Map<String, List<Integer>> containerRows = new HashMap<>();
+            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
+            Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
+            boolean hasCrossFolderData = false;
+            for (Map<String, Object> row : rows)
+            {
+                String name = (String) row.get("name");
+                String dataContainer = (String) row.get("container");
+                int sampleRowId = typeData.sampleIds.indexOf(name) + 1 /* header row */;
+
+                if (!containerRows.containsKey(dataContainer))
+                {
+                    containerRows.put(dataContainer, new ArrayList<>());
+                    hasCrossFolderData = hasCrossFolderData || !dataContainer.equalsIgnoreCase(_container.getId());
+                }
+
+                containerRows.get(dataContainer).add(sampleRowId);
+            }
+
+            if (!hasCrossFolderData)
+                return false;
+
+            Map<String, TypeData> containerTypeDatas = new HashMap<>();
+            Map<String, Integer> containerIndexes = new HashMap<>();
+            for (String containerId : containerRows.keySet())
+            {
+                Container container = _containerMap.get(containerId);
+                if (container == null)
+                {
+                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + containerId));
+                    return true;
+                }
+                SamplesSchema schema = new SamplesSchema(_user, container);
+                QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
+                TableInfo samplesTable = qDef.getTable(schema, new ArrayList<>(), true);
+                if (samplesTable == null)
+                {
+                    _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
+                    return true;
+                }
+
+                List<String> dataRows = new ArrayList<>();
+                dataRows.add(headerRow);
+
+                File dataFile;
+                try
+                {
+                    dataFile = FileUtil.createTempFile("~containerSplit~", container.getRowId() + dataFileName);
+                }
+                catch (IOException e)
+                {
+                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                    LOG.error(msg, e);
+                    _context.getErrors().addRowError(new ValidationException(msg));
+                    return true;
+                }
+                List<Integer> dataRowIndexes = containerRows.get(containerId);
+                Collections.sort(dataRowIndexes);
+                containerIndexes.put(containerId, dataRowIndexes.get(0));
+                for (Integer dataRowIndex : dataRowIndexes)
+                    dataRows.add(typeData.dataRows.get(dataRowIndex));
+
+                TypeData containerTypeData = new TypeData(container, sampleType, samplesTable, dataFile, typeData.fieldIndexes, typeData.dependencyIndexes, dataRows, new ArrayList<>());
+                containerTypeDatas.put(containerId, containerTypeData);
+            }
+
+            List<String> orderedContainer = new ArrayList<>(containerRows.keySet());
+            orderedContainer.sort(Comparator.comparing(containerIndexes::get));
+            for (String containerId : orderedContainer)
+            {
+                if (_context.getErrors().hasErrors())
+                    return true;
+
+                TypeData containerTypeData = containerTypeDatas.get(containerId);
+                _updateOnlyFileDataMap.put(containerId + "-" + sampleType.getRowId(), containerTypeData);
+                _importPartition(containerTypeData);
+            }
+
+            return true;
         }
 
         @Override
@@ -2406,36 +2535,26 @@ public class ExpDataIterators
                 if (!_context.getErrors().hasErrors())
                 {
                     _context.setCrossTypeImport(false);
-                    _context.setCrossFolderImport(false);
 
-                    SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "multiFolderImport");
+                    if (_context.isCrossFolderImport())
+                    {
+                        _context.setCrossFolderImport(false);
+                        if (!_context.getInsertOption().updateOnly && importOrderKeys.size() > 1) // all updates are cross-folder due to lack of Container column
+                            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "multiFolderImport");
+                    }
 
                     // process the individual files
                     importOrderKeys.forEach(key -> {
                         if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
                         {
                             TypeData typeData = _fileDataMap.get(key);
-                            writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
-                            var updateService = typeData.tableInfo.getUpdateService();
-                            if (updateService == null)
+                            if (_isCrossFolderUpdate)
                             {
-                                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
+                                if (!handleCrossFolderUpdate(typeData))
+                                    _importPartition(typeData);
                             }
                             else
-                            {
-                                try (DataLoader loader = DataLoader.get().createLoader(typeData.dataFile, "text/plain", true, null, null))
-                                {
-                                    // We do not need to configure the loader for renamed columns as that has been taken care of when writing the file.
-                                    configureLoader(loader, typeData.tableInfo, null, true);
-                                    updateService.loadRows(_user, typeData.container, loader, _context, null);
-                                }
-                                catch (SQLException | IOException e)
-                                {
-                                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
-                                    LOG.error(msg, e);
-                                    _context.getErrors().addRowError(new ValidationException(msg));
-                                }
-                            }
+                                _importPartition(typeData);
                         }
                     });
                     _context.setCrossTypeImport(_isCrossType);
@@ -2462,7 +2581,7 @@ public class ExpDataIterators
                             targetContainer = _containerMap.get(rowFolderId);
                             if (targetContainer == null)
                             {
-                                _context.getErrors().addRowError(new ValidationException("Invalid value provided for '" + _folderColName + "'."));
+                                _context.getErrors().addRowError(new ValidationException("Invalid value provided for 'Container'."));
                                 return true;
                             }
                         }
@@ -2471,7 +2590,7 @@ public class ExpDataIterators
                     typeFolderData = _fileDataMap.get(typeFolderKey);
                     if (typeFolderData == null)
                     {
-                        ExpSampleTypeImpl sampleType = (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, _user, typeName);
+                        ExpSampleTypeImpl sampleType = _typeColIndex != null ? (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, _user, typeName) : (ExpSampleTypeImpl) _sampleType;
                         if (sampleType == null)
                             _context.getErrors().addRowError(new ValidationException(_typeColName + " '" + typeName + "' not found.") );
                         else
@@ -2503,6 +2622,10 @@ public class ExpDataIterators
         public void close() throws IOException
         {
             _fileDataMap.values().forEach(typeData -> {
+                if (typeData.dataFile != null)
+                    typeData.dataFile.delete();
+            });
+            _updateOnlyFileDataMap.values().forEach(typeData -> {
                 if (typeData.dataFile != null)
                     typeData.dataFile.delete();
             });
@@ -2571,7 +2694,7 @@ public class ExpDataIterators
                 _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
                 return null;
             }
-            File dataFile = FileUtil.createTempFile("~importSplit-", sampleType.getName() + ".tsv");
+            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + sampleType.getName() + ".tsv");
             Set<String> validFields = new CaseInsensitiveHashSet();
             samplesTable.getColumns().forEach(column -> {
                 if (!IGNORED_FIELD_NAMES.contains(column.getName()))
@@ -2644,7 +2767,7 @@ public class ExpDataIterators
 
             List<String> dataRows = new ArrayList<String>();
             dataRows.add(StringUtils.join(header, "\t"));
-            return new TypeData(container, sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows);
+            return new TypeData(container, sampleType, samplesTable, dataFile, fieldIndexes, dependencyIndexes, dataRows, new ArrayList<>());
         }
 
         private void addDataRow(TypeData typeData)
@@ -2659,7 +2782,11 @@ public class ExpDataIterators
                 if (data != null)
                 {
                     if (index == _sampleIdIndex)
+                    {
                         _idsPerType.computeIfAbsent(typeData.sampleType.getName(), k -> new HashSet<>()).add(data.toString());
+                        if (_isCrossFolderUpdate)
+                            typeData.sampleIds.add(data.toString());
+                    }
 
                     // if the data represents a derivation dependency between types, and we're creating ids within the file,
                     // capture a dependency map, so we can try to figure out a good ordering to use for importing the data.
