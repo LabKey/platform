@@ -654,7 +654,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                     '</div>'
                 ],
                 listeners: {
-                    afterrender: function () {
+                    afterlayout: function () {
                         LABKEY.Utils.attachEventHandlerForQuerySelector("li.labkey-side-bar-title", "click", function (event) {
                             const target = event.currentTarget;
                             const step = parseInt(target.getAttribute('step'));
