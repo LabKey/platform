@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.DefaultWebPartFactory;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -24,11 +25,11 @@ public class SpecimenWebPartFactory extends DefaultWebPartFactory
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
-            return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
+            return new HtmlView("Specimens", HtmlString.of(portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data"));
 
         Study study = StudyService.get().getStudy(portalCtx.getContainer());
         if (null == study)
-            return new HtmlView("Specimens", "This folder does not contain a study.");
+            return new HtmlView("Specimens", HtmlString.of("This folder does not contain a study."));
         return new SpecimenWebPart(webPart.getLocation().equals(HttpView.BODY), study);
     }
 }

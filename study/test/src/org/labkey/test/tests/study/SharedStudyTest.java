@@ -144,7 +144,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testVisitsContainerFilter()
     {
         log("Create shared custom view in project with 'folder' column");
-        beginAt("/query/" + getProjectName() + "/executeQuery.view?schemaName=study&query.queryName=Visit");
+        beginAt("/" + getProjectName() + "/query-executeQuery.view?schemaName=study&query.queryName=Visit");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
         _customizeViewsHelper.addColumn("Folder");
@@ -157,7 +157,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
 
         log("Verify visit folder is project");
-        beginAt("/query/" + getProjectName() + "/" + STUDY1 + "/executeQuery.view?schemaName=study&query.queryName=Visit&query.viewName=" + viewName);
+        beginAt("/" + getProjectName() + "/" + STUDY1 + "/query-executeQuery.view?schemaName=study&query.queryName=Visit&query.viewName=" + viewName);
         table = new DataRegionTable("query", this);
         assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
     }
@@ -166,7 +166,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     public void testVisitLookup()
     {
         log("Create custom view with 'folder' column");
-        beginAt("/query/" + getProjectName() + "/" + STUDY1 + "/executeQuery.view?schemaName=study&query.queryName=PVString_Two");
+        beginAt("/" + getProjectName() + "/" + STUDY1 + "/query-executeQuery.view?schemaName=study&query.queryName=PVString_Two");
         _customizeViewsHelper.openCustomizeViewPanel();
         _customizeViewsHelper.showHiddenItems();
         _customizeViewsHelper.addColumn(new String[]{"PandaVisit", "Visit", "Folder"});

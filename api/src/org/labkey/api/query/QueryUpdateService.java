@@ -111,7 +111,8 @@ public interface QueryUpdateService extends HasPermission
         CheckForCrossProjectData,                // (Bool) Check if data belong to other projects
         SkipInsertOptionValidation,  // (Bool) Skip assert(supportsInsertOption(context.getInsertOption())) for special scenarios (e.g., folder import uses merge action that's otherwise not supported for a table),
         PreferPKOverObjectUriAsKey,    // (Bool) Prefer getPkColumnNames instead of getObjectURIColumnName to use as keys
-        SkipReselectRows // (Bool) If true, skip qus.getRows and use raw returned rows. Applicable for CommandType.insert/insertWithKeys/update/updateChangingKeys
+        SkipReselectRows, // (Bool) If true, skip qus.getRows and use raw returned rows. Applicable for CommandType.insert/insertWithKeys/update/updateChangingKeys
+        TargetContainer
     }
 
 
@@ -214,6 +215,26 @@ public interface QueryUpdateService extends HasPermission
     int mergeRows(User user, Container container, DataIteratorBuilder rows,
                          BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws SQLException;
+
+    /**
+     * Move a set of rows from the source container to a target container for a table.
+     *
+     * @param user The current user.
+     * @param container The container in which the rows should exist, i.e. source container.
+     * @param targetContainer The target container in which the rows should be moved.
+     * @param rows The row values, must include the primary key.
+     * @param configParameters Extra information about how to configure the requested action. {@link ConfigParameters}
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers,
+     *                           passed through from client code (depending on scope of request)
+     * @return Map with the names and counts of the items that were moved.
+     * @throws InvalidKeyException Thrown if the keys are not valid.
+     * @throws BatchValidationException Thrown if the data fails one of the validation checks
+     * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
+     * @throws SQLException Thrown if there was an error communicating with the database.
+     */
+    Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows,
+                 BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /** use updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) */
     @Deprecated

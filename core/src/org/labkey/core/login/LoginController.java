@@ -703,7 +703,7 @@ public class LoginController extends SpringActionController
         public Object execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            PasswordRule passwordRule = DbLoginManager.getPasswordRule();
+            PasswordRule passwordRule = DbLoginService.get().getPasswordRule();
 
             response.put("full", passwordRule.getFullRuleHtml().toString());
             response.put("summary", passwordRule.getSummaryRuleHtml().toString());
@@ -1033,16 +1033,16 @@ public class LoginController extends SpringActionController
 
         if (ModuleLoader.getInstance().isUpgradeRequired() || ModuleLoader.getInstance().isUpgradeInProgress())
         {
-            HtmlView updateMessageView = new HtmlView("Server upgrade in progress",
+            HtmlView updateMessageView = new HtmlView("Server upgrade in progress", HtmlString.unsafe(
                     "This server is being upgraded to a new version of LabKey Server.<br/>" +
-                    "Only Site Administrators are permitted to log in during the upgrade process.");
+                    "Only Site Administrators are permitted to log in during the upgrade process."));
             vBox.addView(updateMessageView);
         }
         else if (!ModuleLoader.getInstance().isStartupComplete())
         {
-            HtmlView startupMessageView = new HtmlView("Server startup in progress",
+            HtmlView startupMessageView = new HtmlView("Server startup in progress", HtmlString.unsafe(
                     "This server is starting up.<br/>" +
-                    "Only Site Administrators are permitted to log in during the startup process.");
+                    "Only Site Administrators are permitted to log in during the startup process."));
             vBox.addView(startupMessageView);
         }
         else if (isAdminOnlyMode())
@@ -2591,7 +2591,7 @@ public class LoginController extends SpringActionController
         {
             Map<String, Object> map = Map.of(
                 "currentSettings", Map.of(
-                    "strength", DbLoginManager.getPasswordRule(),
+                    "strength", DbLoginService.get().getPasswordRule(),
                     "expiration", DbLoginManager.getPasswordExpiration()
                     ),
                 "passwordRules", Arrays.stream(PasswordRule.values()).map(rule->Map.of(rule.name(), rule.getFullRuleHtml())).toArray(),

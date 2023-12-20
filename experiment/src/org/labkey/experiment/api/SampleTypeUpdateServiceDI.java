@@ -62,6 +62,7 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -77,6 +78,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
@@ -94,6 +96,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -121,6 +124,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -128,6 +132,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
@@ -471,6 +476,83 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         return results;
+    }
+
+    @Override
+    public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<String, Integer> response = new HashMap<>();
+
+        AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditConfigs.AuditBehavior) : null;
+        String auditUserComment = configParameters != null ? (String) configParameters.get(AuditConfigs.AuditUserComment) : null;
+
+        List<? extends ExpMaterial> materials = getMaterialsForMoveRows(container, rows, errors);
+        if (!errors.hasErrors())
+        {
+            try
+            {
+                response = SampleTypeService.get().moveSamples(materials, container, targetContainer, user, auditUserComment, auditType);
+            }
+            catch (ExperimentException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+
+            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+        }
+        return new HashMap<>(response);
+    }
+
+    private List<? extends ExpMaterial> getMaterialsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+    {
+        Set<Integer> sampleIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+        if (sampleIds.isEmpty())
+        {
+            errors.addRowError(new ValidationException("Sample IDs must be specified for the move operation."));
+            return null;
+        }
+
+        List<? extends ExpMaterial> materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
+        if (materials.size() != sampleIds.size())
+        {
+            errors.addRowError(new ValidationException("Unable to find all samples for the move operation."));
+            return null;
+        }
+
+        // verify all samples are from the source container
+        if (materials.stream().anyMatch(material -> !material.getContainer().equals(container)))
+        {
+            errors.addRowError(new ValidationException("All samples must be from the current container for the move operation."));
+            return null;
+        }
+
+        // verify allowed moves based on sample statuses
+        List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
+        for (ExpMaterial material : materials)
+        {
+            DataState sampleStatus = material.getSampleState();
+            if (sampleStatus == null) continue;
+
+            // prevent move for locked samples
+            if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
+            {
+                invalidStatusSamples.add(material);
+            }
+            // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
+            // only applies when moving from child to parent or child to sibling
+            else if (!container.isProject() && sampleStatus.getContainer().equals(container))
+            {
+                invalidStatusSamples.add(material);
+            }
+        }
+        if (!invalidStatusSamples.isEmpty())
+        {
+            errors.addRowError(new ValidationException(SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move)));
+            return null;
+        }
+
+        return materials;
     }
 
     @Override

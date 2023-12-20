@@ -63,6 +63,7 @@ import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyColumn;
@@ -105,10 +106,12 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.CachingSupplier;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -137,10 +140,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 
 /**
  * User: kevink
@@ -170,6 +175,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClassDataTableSupplier = new CachingSupplier<>(_dataClass::getTinfo);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(MoveEntitiesPermission.class);
         ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
         setImportURL(new DetailsURL(url));
 
@@ -1075,6 +1081,57 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
         {
             return _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
+        }
+
+        @Override
+        public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            Map<String, Integer> response = new HashMap<>();
+
+            AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
+            String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
+
+            List<? extends ExpData> dataClassObjects = getDataClassObjectsForMoveRows(container, rows, errors);
+            if (!errors.hasErrors())
+            {
+                try
+                {
+                    response = ExperimentService.get().moveDataClassObjects(dataClassObjects, container, targetContainer, user, auditUserComment, auditType);
+                }
+                catch (ExperimentException e)
+                {
+                    throw new QueryUpdateServiceException(e);
+                }
+
+                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "sources");
+            }
+            return new HashMap<>(response);
+        }
+
+        private List<? extends ExpData> getDataClassObjectsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+        {
+            Set<Integer> dataIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+            if (dataIds.isEmpty())
+            {
+                errors.addRowError(new ValidationException("Source IDs must be specified for the move operation."));
+                return null;
+            }
+
+            List<? extends ExpData> dataClassObjects = ExperimentServiceImpl.get().getExpDatas(dataIds);
+            if (dataClassObjects.size() != dataIds.size())
+            {
+                errors.addRowError(new ValidationException("Unable to find all sources for the move operation."));
+                return null;
+            }
+
+            // verify all sources are from the current container
+            if (dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(container)))
+            {
+                errors.addRowError(new ValidationException("All sources must be from the current container for the move operation."));
+                return null;
+            }
+
+            return dataClassObjects;
         }
 
         @Override

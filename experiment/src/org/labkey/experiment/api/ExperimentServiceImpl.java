@@ -1009,13 +1009,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
             .add(dataClass.getModified());
 
-        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch -> {
-            for (Data data : batch)
-            {
-                ExpDataImpl impl = new ExpDataImpl(data);
-                impl.index(task, null);
-            }
-        });
+        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch ->
+                task.addRunnable(() -> batch.forEach(data ->
+                    new ExpDataImpl(data).index(task, null)),
+                SearchService.PRIORITY.bulk)
+        );
     }
 
     private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)
@@ -9065,6 +9063,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
+
         return updateCounts;
     }
 
@@ -9268,18 +9267,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            Map<String, Integer> counts = assayMoveData.counts();
+            int fileMoveCount = assayMoveData.fileMovesByRunId().values().stream().mapToInt(List::size).sum();
+            counts.put("movedFiles", fileMoveCount);
             transaction.addCommitTask(() -> {
-                int fileMoveCount = 0;
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                    {
-                        if (moveFile(renameData))
-                            fileMoveCount++;
-                    }
+                        moveFile(renameData);
                 }
-                Map<String, Integer> counts = assayMoveData.counts();
-                counts.put("movedFiles", fileMoveCount);
             }, POSTCOMMIT);
 
             transaction.commit();

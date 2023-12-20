@@ -36,8 +36,6 @@ import java.util.Map;
  * This data collector doesn't write any files to the assay upload temp directory, but it may reference them
  * after an error causes the page to reshow. Therefore, it needs to subclass AbstractTempDirDataCollector so that
  * it migrates the files to the main assay file directory after a successful import.
- * User: jeckels
- * Date: Aug 3, 2007
  */
 public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
@@ -91,7 +89,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
     }
 
     @Override
-    public HttpView getView(ContextType context)
+    public HtmlView getView(ContextType context)
     {
         HtmlStringBuilder sb = HtmlStringBuilder.of();
         String separator = "";

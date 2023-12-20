@@ -25,9 +25,6 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * Base class for actions that want to stream some sort of file (typically dynamically generated) back to the user
  * instead of returning an HTML page to be displayed in the browser.
- *
- * User: adam
- * Date: Jan 10, 2008
  */
 public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
 {

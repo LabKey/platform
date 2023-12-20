@@ -15,6 +15,8 @@
  */
 package org.labkey.api.security.permissions;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Describes the ability to change existing objects within the system.
  * User: Dave
@@ -25,5 +27,10 @@ public class UpdatePermission extends AbstractPermission
     public UpdatePermission()
     {
         super("Update", "May update information.");
+    }
+
+    protected UpdatePermission(@NotNull String name, @NotNull String description)
+    {
+        super(name, description);
     }
 }
