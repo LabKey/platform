@@ -183,7 +183,7 @@ public abstract class ContainerFilter
         SQLFragment sql;
         if (columnInfo != null)
         {
-            // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambigious
+            // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambiguous
             SQLFragment value = columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS);
             sql = new SQLFragment(value.getSQL().replace(ExprColumn.STR_TABLE_ALIAS+".", ""), value.getParams());
         }
