@@ -103,9 +103,9 @@ public abstract class VisitManager
         return updateParticipantVisits(user, changedDatasets, null, null, true, _study.isFailForUndefinedTimepoints(), null);
     }
 
-    public ValidationException updateParticipantVisitsWithCohortUpdate(User user, @Nullable Logger logger)
+    public ValidationException updateParticipantVisitsWithCohortUpdate(User user, boolean failForUndefinedVisits, @Nullable Logger logger)
     {
-        return updateParticipantVisits(user, Collections.emptyList(), null, null, true, _study.isFailForUndefinedTimepoints(), logger);
+        return updateParticipantVisits(user, Collections.emptyList(), null, null, true, failForUndefinedVisits, logger);
     }
 
     public ValidationException updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets,

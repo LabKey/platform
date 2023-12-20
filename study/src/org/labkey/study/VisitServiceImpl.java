@@ -22,9 +22,9 @@ public class VisitServiceImpl implements VisitService
     }
 
     @Override
-    public @NotNull ValidationException updateParticipantVisitsWithCohortUpdate(Study study, User user, @Nullable Logger logger)
+    public @NotNull ValidationException updateParticipantVisitsWithCohortUpdate(Study study, User user, boolean failForUndefinedVisits, @Nullable Logger logger)
     {
-        return StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsWithCohortUpdate(user, logger);
+        return StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsWithCohortUpdate(user, failForUndefinedVisits, logger);
     }
 
     @Override

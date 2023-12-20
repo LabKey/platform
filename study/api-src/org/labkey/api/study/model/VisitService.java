@@ -28,7 +28,7 @@ public interface VisitService
 
     List<? extends Visit> getVisits(Study study, Visit.Order order);
 
-    ValidationException updateParticipantVisitsWithCohortUpdate(Study study, User user, @Nullable Logger logger);
+    ValidationException updateParticipantVisitsWithCohortUpdate(Study study, User user, boolean failForUndefinedVisits, @Nullable Logger logger);
 
     /**
      * Updates this study's participant, visit, and participant visit tables. Also updates automatic cohort assignments.

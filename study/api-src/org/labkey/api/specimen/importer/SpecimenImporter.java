@@ -256,7 +256,7 @@ public class SpecimenImporter extends SpecimenTableManager
                 SpecimenSchema.get().getTableInfoSpecimenPrimaryType(getContainer()).getSelectName(), SpecimenColumns.PRIMARYTYPE_COLUMNS);
     }
 
-    private void resyncStudy(boolean syncParticipantVisit) throws ValidationException
+    private void resyncStudy(boolean syncParticipantVisit, boolean failForUndefinedVisits) throws ValidationException
     {
         TableInfo tableParticipant = SpecimenSchema.get().getTableInfoParticipant();
         TableInfo tableSpecimen = getTableInfoSpecimen();
@@ -271,7 +271,7 @@ public class SpecimenImporter extends SpecimenTableManager
         {
             Study study = StudyService.get().getStudy(getContainer());
             info("Updating study-wide subject/visit information...");
-            ValidationException errors = VisitService.get().updateParticipantVisitsWithCohortUpdate(study, getUser(), _logger);
+            ValidationException errors = VisitService.get().updateParticipantVisitsWithCohortUpdate(study, getUser(), failForUndefinedVisits, _logger);
             if (errors.hasErrors())
                 throw errors;
             info("Subject/visit update complete.");
@@ -304,14 +304,16 @@ public class SpecimenImporter extends SpecimenTableManager
             throws IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<>());
-        process(sifMap, merge, ctx.getLogger(), job, syncParticipantVisit, false, ctx.isFailForUndefinedVisits());
+        Study study = StudyService.get().getStudy(getContainer());
+        process(sifMap, merge, ctx.getLogger(), job, syncParticipantVisit, false, ctx.isFailForUndefinedVisits() || study.isFailForUndefinedTimepoints());
     }
 
     protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job,
                            boolean syncParticipantVisit, boolean editingSpecimens)
             throws IOException, ValidationException
     {
-        process(sifMap, merge, logger, job, syncParticipantVisit, editingSpecimens, false);
+        Study study = StudyService.get().getStudy(getContainer());
+        process(sifMap, merge, logger, job, syncParticipantVisit, editingSpecimens, study.isFailForUndefinedTimepoints());
     }
 
     private void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job,
@@ -369,10 +371,6 @@ public class SpecimenImporter extends SpecimenTableManager
             SpecimenImportFile specimenFile = sifMap.get(_specimensTableType);
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(specimenFile, merge);
 
-            Study study = StudyService.get().getStudy(getContainer());
-            if (loadInfo.getRowCount() > 0 && failForUndefinedVisits && study.getTimepointType() == TimepointType.VISIT)
-                checkForUndefinedVisits(loadInfo, study);
-
             // NOTE: if no rows were loaded in the temp table, don't remove existing materials/specimens/vials/events.
             if (loadInfo.getRowCount() > 0)
                 populateSpecimenTables(loadInfo, merge);
@@ -392,7 +390,7 @@ public class SpecimenImporter extends SpecimenTableManager
 
             setStatus(GENERAL_JOB_STATUS_MSG + " (update study)");
             _iTimer.setPhase(ImportPhases.ResyncStudy);
-            resyncStudy(syncParticipantVisit);
+            resyncStudy(syncParticipantVisit, failForUndefinedVisits);
 
             ensureNotCanceled();
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
@@ -452,29 +450,6 @@ public class SpecimenImporter extends SpecimenTableManager
             tempTablesHolder.getSelectInsertTempTableInfo().delete();
 
         return new SpecimenLoadInfo(getUser(), getContainer(), DbSchema.getTemp(), columns, rowCount, tempTablesHolder.getTempTableInfo());
-    }
-
-    private void checkForUndefinedVisits(SpecimenLoadInfo info, Study study) throws ValidationException
-    {
-        SQLFragment sql = new SQLFragment()
-            .append("SELECT DISTINCT VisitValue FROM ")
-            .append(info.getTempTableName())
-            .append(" tt ")
-            .append("\nLEFT JOIN study.Visit v")
-            .append("\nON tt.VisitValue >= v.SequenceNumMin AND tt.VisitValue <=v.SequenceNumMax AND v.Container = ?")
-            .append("\nWHERE tt.VisitValue IS NOT NULL AND v.RowId IS NULL");
-
-        // shared visit container
-        Study visitStudy = StudyService.get().getStudyForVisits(study);
-        sql.add(visitStudy.getContainer().getId());
-
-        SqlSelector selector = new SqlSelector(SpecimenSchema.get().getSchema(), sql);
-        List<Double> undefinedVisits = selector.getArrayList(Double.class);
-        if (!undefinedVisits.isEmpty())
-        {
-            Collections.sort(undefinedVisits);
-            throw new ValidationException("The following undefined visits exist in the specimen data: " + StringUtils.join(undefinedVisits, ", "));
-        }
     }
 
     private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws ValidationException
