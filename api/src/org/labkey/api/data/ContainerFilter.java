@@ -55,8 +55,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * Represents which set of containers should be included when querying for data. In general, the code will
  * default to showing data from just the current container, but alternative ContainerFilters can resolve items
  * in the /Shared project, in parent containers, or a variety of other scoping locations.
- * User: jeckels
- * Date: Nov 3, 2008
  */
 public abstract class ContainerFilter
 {
