@@ -84,8 +84,8 @@
 <p>
 <labkey:panel title="Automatic Visit Creation" width="800">
     <labkey:form action="<%=urlFor(StudyController.ManageVisitsAction.class)%>" method="POST">
-        <div>By default, new visit rows will be created in the study during the insert or update of any dataset rows
-            which have a new, undefined visit. If, instead you would like
+        <div>By default, new visit rows will be created in the study during the insert or update of any dataset or
+            specimen rows which have a new, undefined visit. If, instead you would like
             for the operation to fail when it encounters a visit that is not already defined in the study, check the box
             below.
         </div><br>
