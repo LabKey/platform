@@ -40,6 +40,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -57,10 +58,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Aug 16, 2010 4:59:46 PM
- */
 public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 {
     private static final String SAMPLE_FILE_INPUT_NAME = "__sampleMetadataFile__";
@@ -68,13 +65,14 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     public static final String SAMPLE_WELLGROUP_COLUMN = "SampleWellGroup";
     public static final String PLATELOCATION_COLUMN = "PlateLocation";
 
+    private final Container _container;
+    private final SampleMetadataInputFormat _metadataInputFormat;
+
     protected ExpProtocol _protocol;
     protected Map<String, Map<DomainProperty, String>> _sampleProperties;
     protected String _metadataNoun = "Sample";
     protected String _wellGroupColumnName = SAMPLE_WELLGROUP_COLUMN;
-    private Container _container;
     private File _metadataFile;
-    private SampleMetadataInputFormat _metadataInputFormat;
 
     public PlateSampleFilePropertyHelper(Container container, ExpProtocol protocol, List<? extends DomainProperty> domainProperties, Plate template, SampleMetadataInputFormat inputFormat)
     {
@@ -86,9 +84,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
     private MultipartFile getMetadataFile(HttpServletRequest request)
     {
-        if (request instanceof MultipartHttpServletRequest)
+        if (request instanceof MultipartHttpServletRequest multipartRequest)
         {
-            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
             String entryKeyToFind;
             if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
             {
@@ -118,13 +115,10 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     @Override
     public Map<String, Map<DomainProperty, String>> getPostedPropertyValues(HttpServletRequest request) throws ExperimentException
     {
-        Map<String, Map<DomainProperty, String>> result = new HashMap<>();
         Map<String, Map<DomainProperty, String>> sampleProperties = getSampleProperties(request);
         if (sampleProperties == null || sampleProperties.isEmpty())
             throw new ExperimentException(_metadataNoun + " metadata must be provided.");
-        for (Map.Entry<String, Map<DomainProperty, String>> entry : sampleProperties.entrySet())
-            result.put(entry.getKey(), entry.getValue());
-        return result;
+        return new HashMap<>(sampleProperties);
     }
 
     protected File getSampleMetadata(HttpServletRequest request) throws ExperimentException
@@ -170,11 +164,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         {
             throw new RuntimeException(e);
         }
-        finally
-        {
-            try { if (fos != null) fos.close(); } catch (IOException ignored) {}
-            try { if (is != null) is.close(); } catch (IOException ignored) {}
-        }
+
         return _metadataFile;
     }
 
@@ -238,12 +228,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 
                 validateMetadataRow(row, wellGroupName, wellgroup);
 
-                Map<DomainProperty, String> sampleProperties = allProperties.get(wellgroup.getName());
-                if (sampleProperties == null)
-                {
-                    sampleProperties = new HashMap<>();
-                    allProperties.put(wellgroup.getName(), sampleProperties);
-                }
+                Map<DomainProperty, String> sampleProperties = allProperties.computeIfAbsent(wellgroup.getName(), k -> new HashMap<>());
 
                 for (DomainProperty property : _domainProperties)
                 {
@@ -260,7 +245,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         }
         catch (IOException e)
         {
-            throw new ExperimentException("Unable to parse sample properties file.  Please verify that the file is a valid TSV, CSV or Excel file.", e);
+            throw new ExperimentException("Unable to parse sample properties file. Please verify that the file is a valid TSV, CSV or Excel file.", e);
         }
         _sampleProperties = allProperties;
         return _sampleProperties;
@@ -273,7 +258,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         {
             throw new ExperimentException("Well group \"" + wellGroupName + "\" is listed in plate location " +
                     plateLocation + ", but the stored plate template indicates that this group should be in location " +
-                    wellgroup.getPositionDescription() + ".  Please contact an administrator to correct the saved template " +
+                    wellgroup.getPositionDescription() + ". Please contact an administrator to correct the saved template " +
                     "if sample locations have changed on the plate.");
         }
     }
@@ -364,6 +349,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                     out.write("<br>");
                     if (reshowFile != null)
                     {
+                        PageConfig pageConfig = HttpView.currentPageConfig();
                         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(ctx.getContainer());
                         String filePath = PageFlowUtil.filter(pipelineRoot.relativePath(reshowFile).replace('\\', '/'));
                         String updateInputFn = "<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">" +
@@ -374,18 +360,18 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                                 "</script>";
                         out.write(updateInputFn);
                         out.write("\n<table><tr>");
-                        out.write("\n<td><input type=\"radio\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" +
-                                METADATA_PROVIDER_OPTION_PREVUPLOAD + "\"  onChange=\"showMetadataPicker(!this.checked);\" CHECKED></td>");
+                        out.write("\n<td><input type=\"radio\" id=\"optionPrevUpload\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_PREVUPLOAD + "\" checked></td>");
+                        pageConfig.addHandler("optionPrevUpload", "change", "showMetadataPicker(!this.checked);");
                         out.write("\n<td>Use the metadata that was already uploaded to the server</td>");
                         out.write("\n</tr><tr>");
                         out.write("\n<td></td><td><div id=\"previousMetadataFileName\" style=\"display:block\">" + PageFlowUtil.filter(reshowFile.getName()) + "</div></td>");
                         out.write("\n</tr><tr>");
                         out.write("\n<td><input type=\"hidden\" name=\"" + METADATA_PREVUPLOAD_LOCATION + "\" value=\"" + filePath  + "\">");
-                        out.write("\n<input type=\"radio\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" +
-                                METADATA_PROVIDER_OPTION_NEWUPLOAD + "\" onChange=\"showMetadataPicker(this.checked);\"></td>");
+                        out.write("\n<input type=\"radio\" id=\"optionNewUpload\" name=\"" + METADATA_PROVIDER_INPUT_NAME + "\" value=\"" + METADATA_PROVIDER_OPTION_NEWUPLOAD + "\"></td>");
+                        pageConfig.addHandler("optionNewUpload", "change", "showMetadataPicker(this.checked);");
                         out.write("\n<td>Upload a data file</td>");
                         out.write("\n</tr><tr>");
-                        out.write("\n<td></td><td><div id=\"newMetadataFileName\"  style=\"display:none\"><input type=\"file\" id=\"" +
+                        out.write("\n<td></td><td><div id=\"newMetadataFileName\" style=\"display:none\"><input type=\"file\" id=\"" +
                                 SAMPLE_FILE_INPUT_NAME + "\" name=\"" + SAMPLE_FILE_INPUT_NAME + "\" size=\"40\" style=\"border: none\"></div></td>");
                         out.write("\n</tr></table>");
                     }
@@ -399,7 +385,6 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                 }
             }
         });
-
     }
 
     public SampleMetadataInputFormat getMetadataInputFormat()
