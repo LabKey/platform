@@ -88,7 +88,7 @@ public class NAbSpecimenTable extends FilteredTable<AssayProtocolSchema>
         SQLFragment sql = new SQLFragment("RunId IN (SELECT RowId FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
         sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container"), _userSchema.getContainer()));
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container")));
         sql.append(")");
         addCondition(sql, CONTAINER_FIELD_KEY);
     }

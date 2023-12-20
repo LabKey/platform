@@ -298,7 +298,7 @@ public class SurveyManager
         DbSchema schema = SurveySchema.getInstance().getSchema();
         SQLFragment sql = new SQLFragment("SELECT * FROM ").append(SurveySchema.getInstance().getSurveyDesignsTable(), "sd");
         sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(schema, new SQLFragment("sd.container"), container));
+        sql.append(filter.getSQLFragment(schema, new SQLFragment("sd.container")));
         return new SqlSelector(schema, sql).getArray(SurveyDesign.class);
     }
 

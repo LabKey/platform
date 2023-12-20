@@ -197,13 +197,6 @@ public abstract class ContainerFilter
     }
 
     /** Create an expression for a WHERE clause */
-    @Deprecated
-    public final SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container)
-    {
-        assert null==_container || null==container || _container.equals(container);
-        return getSQLFragment(schema, containerColumnSQL, true);
-    }
-
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL)
     {
         return getSQLFragment(schema, containerColumnSQL, true);
@@ -716,7 +709,7 @@ public abstract class ContainerFilter
         {
             super(current, user);
 
-            //Note: dont force upstream code to consider this
+            // Note: don't force upstream code to consider this
             _extraContainers = new ArrayList<>(extraContainers);
             _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
         }

@@ -338,7 +338,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment("SELECT DISTINCT er.ProtocolLSID FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE ");
-        sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container"), c));
+        sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container")));
 
         // Translate the LSIDs into protocol objects
         List<ExpProtocolImpl> result = new ArrayList<>();
@@ -2021,7 +2021,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append(" pa.runid IN (SELECT rowid FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), container));
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container")));
         sql.append("))");
         return new TreeSet<>(new SqlSelector(getSchema(), sql).getCollection(String.class));
     }
