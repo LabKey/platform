@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.plate;
 
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayFileWriter;
@@ -61,7 +62,6 @@ import java.util.Set;
 public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 {
     private static final String SAMPLE_FILE_INPUT_NAME = "__sampleMetadataFile__";
-    private static final int BUFFER_SIZE = 2048;
     public static final String SAMPLE_WELLGROUP_COLUMN = "SampleWellGroup";
     public static final String PLATELOCATION_COLUMN = "PlateLocation";
 
@@ -147,28 +147,22 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         MultipartFile metadata = getMetadataFile(request);
         if (metadata == null)
             return null;
-        BufferedOutputStream fos = null;
-        InputStream is = null;
+
         try
         {
             File uploadDirectory = AssayFileWriter.ensureUploadDirectory(_container);
             _metadataFile = AssayFileWriter.findUniqueFileName(metadata.getOriginalFilename(), uploadDirectory);
-            fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
-            is = metadata.getInputStream();
-            byte[] data = new byte[BUFFER_SIZE];
-            int bytes;
-            while ((bytes = is.read(data, 0, BUFFER_SIZE)) != -1)
-                fos.write(data, 0, bytes);
+            try (BufferedOutputStream fos = new BufferedOutputStream(new FileOutputStream(_metadataFile));
+                InputStream is = metadata.getInputStream())
+            {
+                IOUtils.copy(is, fos);
+            }
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-        finally
-        {
-            try { if (fos != null) fos.close(); } catch (IOException ignored) {}
-            try { if (is != null) is.close(); } catch (IOException ignored) {}
-        }
+
         return _metadataFile;
     }
 
