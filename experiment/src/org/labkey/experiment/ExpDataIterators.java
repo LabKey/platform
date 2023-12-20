@@ -2326,7 +2326,7 @@ public class ExpDataIterators
         private Integer _folderColIndex = null;
         private String _folderColName = null;
         // want to process the sample types in the order given in the original file, unless we have dependencies
-        private final Map<String, TypeData> _fileDataMap = new TreeMap<>();
+        private final Map<String, Map<String, TypeData>> _typeFolderDataMap = new TreeMap<>();
         private final Map<String, TypeData> _updateOnlyFileDataMap = new TreeMap<>();
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
         private final int _sampleIdIndex;
@@ -2531,7 +2531,7 @@ public class ExpDataIterators
 
             if (!hasNext)
             {
-                Collection<String> importOrderKeys = getImportOrderKeys();
+                Collection<String> importOrderKeys = getImportOrderTypeKeys();
                 if (!_context.getErrors().hasErrors())
                 {
                     _context.setCrossTypeImport(false);
@@ -2545,16 +2545,19 @@ public class ExpDataIterators
 
                     // process the individual files
                     importOrderKeys.forEach(key -> {
-                        if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
+                        Map<String, TypeData> typeFolderData = _typeFolderDataMap.get(key);
+                        for (TypeData typeData : typeFolderData.values())
                         {
-                            TypeData typeData = _fileDataMap.get(key);
-                            if (_isCrossFolderUpdate)
+                            if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
                             {
-                                if (!handleCrossFolderUpdate(typeData))
+                                if (_isCrossFolderUpdate)
+                                {
+                                    if (!handleCrossFolderUpdate(typeData))
+                                        _importPartition(typeData);
+                                }
+                                else
                                     _importPartition(typeData);
                             }
-                            else
-                                _importPartition(typeData);
                         }
                     });
                     _context.setCrossTypeImport(_isCrossType);
@@ -2586,8 +2589,9 @@ public class ExpDataIterators
                             }
                         }
                     }
-                    String typeFolderKey = typeName + "_" + targetContainer.getRowId();
-                    typeFolderData = _fileDataMap.get(typeFolderKey);
+
+                    Map<String, TypeData> typeFolderMap = _typeFolderDataMap.computeIfAbsent(typeName, k -> new TreeMap<>());
+                    typeFolderData = typeFolderMap.get(targetContainer.getId());
                     if (typeFolderData == null)
                     {
                         ExpSampleTypeImpl sampleType = _typeColIndex != null ? (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, _user, typeName) : (ExpSampleTypeImpl) _sampleType;
@@ -2599,7 +2603,7 @@ public class ExpDataIterators
                             {
                                 typeFolderData = createHeaderRow(sampleType, targetContainer);
                                 if (typeFolderData != null)
-                                    _fileDataMap.put(typeFolderKey, typeFolderData);
+                                    typeFolderMap.put(targetContainer.getId(), typeFolderData);
                             }
                             catch (IOException e)
                             {
@@ -2621,9 +2625,11 @@ public class ExpDataIterators
         @Override
         public void close() throws IOException
         {
-            _fileDataMap.values().forEach(typeData -> {
-                if (typeData.dataFile != null)
-                    typeData.dataFile.delete();
+            _typeFolderDataMap.values().forEach(typeMap -> {
+                typeMap.values().forEach(typeData -> {
+                    if (typeData.dataFile != null)
+                        typeData.dataFile.delete();
+                });
             });
             _updateOnlyFileDataMap.values().forEach(typeData -> {
                 if (typeData.dataFile != null)
@@ -2632,10 +2638,10 @@ public class ExpDataIterators
             super.close();
         }
 
-        private Collection<String> getImportOrderKeys()
+        private Collection<String> getImportOrderTypeKeys()
         {
             List<String> keys = new ArrayList<>();
-            Set<String> allKeys = _fileDataMap.keySet();
+            Set<String> allKeys = _typeFolderDataMap.keySet();
             // if the parents referenced in the file are not samples that are potentially being created in this file, there is no dependency
             _idsPerType.forEach((typeName, ids) -> {
                 Set<String> parentIds = _parentIdsPerType.get(typeName);
@@ -2677,7 +2683,7 @@ public class ExpDataIterators
                     _context.getErrors().addRowError(new ValidationException("Unable to determine ordering for sample type imports. " +
                             "A cycle of derivation dependencies among the sample types exists. " +
                             "Adjust or remove dependencies for this import."));
-                return _fileDataMap.keySet();
+                return _typeFolderDataMap.keySet();
             }
 
             return keys;
