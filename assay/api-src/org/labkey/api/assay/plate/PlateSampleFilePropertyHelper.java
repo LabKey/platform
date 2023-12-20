@@ -164,7 +164,11 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         {
             throw new RuntimeException(e);
         }
-
+        finally
+        {
+            try { if (fos != null) fos.close(); } catch (IOException ignored) {}
+            try { if (is != null) is.close(); } catch (IOException ignored) {}
+        }
         return _metadataFile;
     }
 
