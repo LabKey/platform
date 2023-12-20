@@ -101,8 +101,10 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.query.PublishAuditProvider;
@@ -1690,15 +1692,16 @@ public class StudyPublishManager implements StudyPublishService
             // optionally add columns added through a view, useful for picking up any lineage fields
             if (qs != null)
             {
-                QueryView view = new QueryView(userSchema, qs, null);
-                // Issue 45238 - configure as API style invocation to skip setting up buttons and other items that
-                // rely on being invoked inside an HTTP request/ViewContext
-                view.setApiResponseView(true);
-                DataView dataView = view.createDataView();
-                for (Map.Entry<FieldKey, ColumnInfo> entry : dataView.getDataRegion().getSelectColumns().entrySet())
+                if (HttpView.hasCurrentView())
+                    getViewColumns(userSchema, qs, columns);
+                else
                 {
-                    if (!columns.containsKey(entry.getKey()))
-                        columns.put(entry.getKey(), entry.getValue());
+                    // Issue 49253 : the QueryView needs a view context to initialize properly. If we are running in a background job
+                    // push a fake view context onto the stack and remove it when we are done
+                    try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(user, container, new ActionURL()))
+                    {
+                        getViewColumns(userSchema, qs, columns);
+                    }
                 }
             }
 
@@ -1732,5 +1735,19 @@ public class StudyPublishManager implements StudyPublishService
             }
         }
         return fieldKeyMap;
+    }
+
+    private void getViewColumns(UserSchema userSchema, QuerySettings qs, Map<FieldKey, ColumnInfo> columns)
+    {
+        QueryView view = new QueryView(userSchema, qs, null);
+        // Issue 45238 - configure as API style invocation to skip setting up buttons and other items that
+        // rely on being invoked inside an HTTP request/ViewContext
+        view.setApiResponseView(true);
+        DataView dataView = view.createDataView();
+        for (Map.Entry<FieldKey, ColumnInfo> entry : dataView.getDataRegion().getSelectColumns().entrySet())
+        {
+            if (!columns.containsKey(entry.getKey()))
+                columns.put(entry.getKey(), entry.getValue());
+        }
     }
 }
