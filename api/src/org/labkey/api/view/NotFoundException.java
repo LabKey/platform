@@ -17,7 +17,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Throw to indicate that the client has referred to a resource that does not exist. Uncaught, this will

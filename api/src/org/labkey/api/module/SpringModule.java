@@ -31,17 +31,16 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterRegistration;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
-import javax.servlet.SessionCookieConfig;
-import javax.servlet.SessionTrackingMode;
-import javax.servlet.descriptor.JspConfigDescriptor;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRegistration;
+import jakarta.servlet.SessionCookieConfig;
+import jakarta.servlet.SessionTrackingMode;
+import jakarta.servlet.descriptor.JspConfigDescriptor;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -61,8 +60,6 @@ import java.util.Set;
 /**
  * User: matthewb
  * Date: May 24, 2007
- * Time: 9:00:37 AM
- *
  * SpringModule knows how to load spring application context information (applicationContext.xml etc)
  */
 public abstract class SpringModule extends DefaultModule
@@ -364,33 +361,9 @@ public abstract class SpringModule extends DefaultModule
         }
 
         @Override
-        public Servlet getServlet(String string) throws ServletException
-        {
-            return _wrapped.getServlet(string);
-        }
-
-        @Override
-        public Enumeration<Servlet> getServlets()
-        {
-            return _wrapped.getServlets();
-        }
-
-        @Override
-        public Enumeration<String> getServletNames()
-        {
-            return _wrapped.getServletNames();
-        }
-
-        @Override
         public void log(String string)
         {
             _log.info(string);
-        }
-
-        @Override
-        public void log(Exception exception, String string)
-        {
-            _log.error(string, exception);
         }
 
         @Override

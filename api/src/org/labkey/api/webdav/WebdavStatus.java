@@ -15,7 +15,7 @@
  */
 package org.labkey.api.webdav;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public enum WebdavStatus
 {

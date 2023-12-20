@@ -24,7 +24,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.remoteapi.query.Filter;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;

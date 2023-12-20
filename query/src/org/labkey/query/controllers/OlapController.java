@@ -111,9 +111,9 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -969,15 +969,16 @@ public class OlapController extends SpringActionController
             OlapSchemaDescriptor d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
 
             // TODO cache servlet, maybe in session?
-            MondrianXmlaServlet servlet = new MondrianXmlaServlet()
-            {
-                {
-                    this.server = getServer();
-                }
-            };
-            servlet.init(config);
-            servlet.service(getViewContext().getRequest(), getViewContext().getResponse());
-            servlet.destroy();
+            // TODO Jakarta - Mondrian upgrade
+//            MondrianXmlaServlet servlet = new MondrianXmlaServlet()
+//            {
+//                {
+//                    this.server = getServer();
+//                }
+//            };
+//            servlet.init(config);
+//            servlet.service(getViewContext().getRequest(), getViewContext().getResponse());
+//            servlet.destroy();
             return null;
         }
     }

@@ -17,7 +17,7 @@ package org.labkey.api.security.impersonation;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;

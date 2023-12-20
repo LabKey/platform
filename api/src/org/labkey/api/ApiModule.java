@@ -113,9 +113,9 @@ import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 
 import javax.management.StandardMBean;
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRegistration;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRegistration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -179,9 +179,10 @@ public class ApiModule extends CodeOnlyModule
         servletCtx.addServlet("ImageServlet", new ImageServlet()).
                 addMapping("*.image");
 
-        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new KaptchaServlet());
-        kaptchaDynamic.setInitParameter("kaptcha.textproducer.char.length", "6");
-        kaptchaDynamic.addMapping("/kaptcha.jpg");
+         // TODO Jakarta - find a replacement for Kaptcha, which hasn't been updated since 2010
+//        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new KaptchaServlet());
+//        kaptchaDynamic.setInitParameter("kaptcha.textproducer.char.length", "6");
+//        kaptchaDynamic.addMapping("/kaptcha.jpg");
 
         // File Servlet. Maps standard requests for files onto the filecontent module.
         // Requests like http://host/labkey/files/home/test.pdf become

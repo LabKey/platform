@@ -61,7 +61,7 @@ import org.labkey.study.query.DataspaceQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;

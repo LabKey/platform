@@ -43,7 +43,7 @@ import org.labkey.api.assay.plate.WellData;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;

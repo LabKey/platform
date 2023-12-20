@@ -18,9 +18,9 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.SessionHelper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.websocket.server.HandshakeRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.websocket.server.HandshakeRequest;
 
 /**
  * Session keys are bound to a single HTTP session, and offer a way to authenticate headless clients when they are

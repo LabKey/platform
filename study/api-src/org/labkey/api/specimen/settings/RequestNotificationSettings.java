@@ -21,7 +21,7 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.SafeToRenderEnum;
 
-import javax.mail.Address;
+import jakarta.mail.Address;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

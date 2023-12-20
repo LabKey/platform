@@ -58,7 +58,7 @@ import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.management.StandardMBean;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

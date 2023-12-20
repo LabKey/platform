@@ -20,8 +20,8 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 
-import javax.servlet.jsp.JspException;
-import javax.servlet.jsp.tagext.BodyTagSupport;
+import jakarta.servlet.jsp.JspException;
+import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
 /** This tag works perfectly well, however, it breaks editing script in IntelliJ */
