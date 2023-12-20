@@ -93,7 +93,7 @@ Ext4.onReady(function()
                 isApplyToMultipleFolders: <%=bean.isApplyToMultipleFolders()%>,
                 isFailForUndefinedVisits: <%=bean.isFailForUndefinedVisits()%>,
                 isCloudRoot: <%=bean.isCloudRoot()%>,   // Remove as part of Issue #43835
-                showFailForUndefinedVisits: <%=(timepointType == null || timepointType == TimepointType.VISIT) && !study.isFailForUndefinedTimepoints()%>
+                showFailForUndefinedVisits: <%=(timepointType == null || timepointType == TimepointType.VISIT) && ((study == null) || !study.isFailForUndefinedTimepoints())%>
             });
         },
         failure: function(response)
