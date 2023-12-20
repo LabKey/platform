@@ -106,6 +106,7 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FileServlet;
 import org.labkey.api.view.JspTemplate;
+import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
@@ -179,10 +180,9 @@ public class ApiModule extends CodeOnlyModule
         servletCtx.addServlet("ImageServlet", new ImageServlet()).
                 addMapping("*.image");
 
-         // TODO Jakarta - find a replacement for Kaptcha, which hasn't been updated since 2010
-//        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new KaptchaServlet());
-//        kaptchaDynamic.setInitParameter("kaptcha.textproducer.char.length", "6");
-//        kaptchaDynamic.addMapping("/kaptcha.jpg");
+        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new LabKeyKaptchaServlet());
+        kaptchaDynamic.setInitParameter("kaptcha.textproducer.char.length", "6");
+        kaptchaDynamic.addMapping("/kaptcha.jpg");
 
         // File Servlet. Maps standard requests for files onto the filecontent module.
         // Requests like http://host/labkey/files/home/test.pdf become
