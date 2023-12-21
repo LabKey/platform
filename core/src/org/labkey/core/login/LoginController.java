@@ -80,6 +80,7 @@ import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -427,7 +428,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            String expectedKatpcha = (String)getViewContext().getRequest().getSession(true).getAttribute("KAPTCHA_SESSION_KEY");
+            String expectedKatpcha = (String)getViewContext().getRequest().getSession(true).getAttribute(LabKeyKaptchaServlet.SESSION_KEY_VALUE);
             if (expectedKatpcha == null)
             {
                 logger.error("Captcha not initialized for self-registration attempt");
