@@ -1130,8 +1130,7 @@ public class StudyManager
 
     /**
      * Ensures the existence of a visit for the specified sequence numbers and will insert into the database
-     * if the visit does not yet exist.  Do not call this method if you always want the visit to be created because
-     * this will check to see if the study is configured to allow the automatic creation of undefined visits.
+     * if the visit does not yet exist.
      *
      * @param failForUndefinedVisits If true, new visits will not be created and an error will be added to the returned
      *                               ValidationException object.
