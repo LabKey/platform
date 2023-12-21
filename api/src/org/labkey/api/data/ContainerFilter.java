@@ -55,8 +55,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  * Represents which set of containers should be included when querying for data. In general, the code will
  * default to showing data from just the current container, but alternative ContainerFilters can resolve items
  * in the /Shared project, in parent containers, or a variety of other scoping locations.
- * User: jeckels
- * Date: Nov 3, 2008
  */
 public abstract class ContainerFilter
 {
@@ -185,7 +183,7 @@ public abstract class ContainerFilter
         SQLFragment sql;
         if (columnInfo != null)
         {
-            // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambigious
+            // NOTE: we really should know the tableAlias here, but we don't, so caller has to guarantee that the columninfo is unambiguous
             SQLFragment value = columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS);
             sql = new SQLFragment(value.getSQL().replace(ExprColumn.STR_TABLE_ALIAS+".", ""), value.getParams());
         }
@@ -197,13 +195,6 @@ public abstract class ContainerFilter
     }
 
     /** Create an expression for a WHERE clause */
-    @Deprecated
-    public final SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container)
-    {
-        assert null==_container || null==container || _container.equals(container);
-        return getSQLFragment(schema, containerColumnSQL, true);
-    }
-
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL)
     {
         return getSQLFragment(schema, containerColumnSQL, true);
@@ -716,7 +707,7 @@ public abstract class ContainerFilter
         {
             super(current, user);
 
-            //Note: dont force upstream code to consider this
+            // Note: don't force upstream code to consider this
             _extraContainers = new ArrayList<>(extraContainers);
             _extraContainers.removeIf(c -> c.getContainerType().isDuplicatedInContainerFilter());
         }
