@@ -166,7 +166,8 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                         ctx.isFailForUndefinedVisits() || study.isFailForUndefinedTimepoints(),
                         ctx.getLogger());
                 if (validationException.hasErrors())
-                    throw validationException;
+                    validationException.getErrors().forEach(ve -> ctx.getLogger().error(ve.getMessage()));
+
                 ctx.getLogger().info("Subject/visit update complete.");
 
                 // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.

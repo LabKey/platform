@@ -118,14 +118,16 @@ public class TopLevelStudyPropertiesImporter implements InternalStudyImporter
 
             StudyManager.getInstance().updateStudy(ctx.getUser(), study);
 
-            // Issue 39822: update participant visits after importing study details like start date
-            ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), study.getDatasets(),
-                    null, null, true,
-                    ctx.isFailForUndefinedVisits() || study.isFailForUndefinedTimepoints(),
-                    null);
-            if (validationException.hasErrors())
-                throw validationException;
-
+            if (!errors.hasErrors())
+            {
+                // Issue 39822: update participant visits after importing study details like start date
+                ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), study.getDatasets(),
+                        null, null, true,
+                        ctx.isFailForUndefinedVisits() || study.isFailForUndefinedTimepoints(),
+                        null);
+                if (validationException.hasErrors())
+                    validationException.getErrors().forEach(ve -> errors.reject(null, ve.getMessage()));
+            }
             ctx.getLogger().info("Done importing " + getDescription());
         }
     }
