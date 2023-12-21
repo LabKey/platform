@@ -11130,7 +11130,10 @@ public class AdminController extends SpringActionController
                     String urlString = cspReport.optString("document-uri", null);
                     if (urlString != null)
                     {
-                        String path = new URLHelper(urlString).deleteParameters().getPath();
+                        var documentUrl = new URLHelper(urlString).deleteParameters();
+                        if ("localhost".equals(documentUrl.getHost()) && "CrawlerTest-injectJsp.view".equals(documentUrl.getFile()))
+                            return ret;
+                        String path = documentUrl.getPath();
                         if (null == reports.put(path, Boolean.TRUE))
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
                     }

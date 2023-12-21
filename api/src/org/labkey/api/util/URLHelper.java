@@ -724,7 +724,7 @@ public class URLHelper implements Cloneable, Serializable, JSONString
 
     public String getFile()
     {
-        if (!_path.isDirectory())
+        if (_path.isDirectory())
             return null;
         return _path.getName();
     }
