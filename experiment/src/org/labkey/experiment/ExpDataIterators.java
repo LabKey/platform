@@ -2381,7 +2381,9 @@ public class ExpDataIterators
 
                 if (_folderColIndex != null || _isCrossFolderUpdate)
                 {
-                    ContainerFilter cf = _container.getProductProjectsDataContainerFilter(user);
+                    ContainerFilter cf = ContainerFilter.current(container);
+                    if (container.isProductProjectsEnabled())
+                        cf = new ContainerFilter.AllInProjectPlusShared(container, user);
                     Collection<GUID> validContainerIds =  cf.getIds();
                     if (cf instanceof ContainerFilter.ContainerFilterWithPermission cfp)
                     {
@@ -2469,7 +2471,8 @@ public class ExpDataIterators
                 Container container = _containerMap.get(containerId);
                 if (container == null)
                 {
-                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + containerId));
+                    Container folder = ContainerManager.getForId(containerId);
+                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + folder));
                     return true;
                 }
                 SamplesSchema schema = new SamplesSchema(_user, container);
