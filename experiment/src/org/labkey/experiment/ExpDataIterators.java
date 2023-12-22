@@ -2472,7 +2472,7 @@ public class ExpDataIterators
                 if (container == null)
                 {
                     Container folder = ContainerManager.getForId(containerId);
-                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + folder));
+                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + (folder != null ? folder.getName() : containerId)));
                     return true;
                 }
                 SamplesSchema schema = new SamplesSchema(_user, container);
