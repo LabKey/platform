@@ -2217,14 +2217,20 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         newBars = selection.enter().append('g').attr('class', 'error-bar');
         newBars.append('path').attr('class','error-bar-top');
-        newBars.append('path').attr('class','error-bar-bottom');
+        if (!geom.topOnly) {
+            newBars.append('path').attr('class', 'error-bar-bottom');
+        }
 
         selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        if (!geom.topOnly) {
+            selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        }
 
         if (geom.dashed) {
             selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));
-            selection.selectAll('.error-bar-bottom').style("stroke-dasharray", ("2, 1"));
+            if (!geom.topOnly) {
+                selection.selectAll('.error-bar-bottom').style("stroke-dasharray", ("2, 1"));
+            }
         }
     };
 
