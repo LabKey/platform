@@ -2396,6 +2396,7 @@ public class ExpDataIterators
                         {
                             Container validContainer = ContainerManager.getForId(containerId);
                             _containerMap.put(validContainer.getId(), validContainer);
+                            _containerMap.put(validContainer.getName(), validContainer); // for multi-type import, container column lookup is not yet resolved
                         }
                     }
                 }
