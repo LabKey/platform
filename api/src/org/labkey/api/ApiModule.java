@@ -97,6 +97,7 @@ import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.AppPropsTestCase;
 import org.labkey.api.settings.ExperimentalFeatureStartupListener;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -123,6 +124,8 @@ import java.util.List;
 import java.util.Set;
 
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
+import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
+import static org.labkey.api.settings.SiteSettingsProperties.apiKeyExpirationSeconds;
 
 /**
  * {@link org.labkey.api.module.Module} implementation for the API module itself, registering some of the basic
@@ -372,6 +375,8 @@ public class ApiModule extends CodeOnlyModule
 
         LookAndFeelProperties properties = LookAndFeelProperties.getInstance(context.getContainer());
         json.put(applicationMenuDisplayMode.name(), properties.getApplicationMenuDisplayMode());
+        json.put(allowApiKeys.name(), AppProps.getInstance().isAllowApiKeys());
+        json.put(apiKeyExpirationSeconds.name(), AppProps.getInstance().getApiKeyExpirationSeconds());
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
