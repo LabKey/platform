@@ -104,7 +104,7 @@ public class PipelineQuerySchema extends UserSchema
             folderColumn.setFk(new ContainerForeignKey(this));
             folderColumn.setDisplayColumnFactory(ContainerDisplayColumn.FACTORY);
             table.addColumn(folderColumn);
-            String urlExp = "/pipeline-status/details.view?rowId=${rowId}";
+            String urlExp = "/pipeline-status-details.view?rowId=${rowId}";
             table.setDetailsURL(DetailsURL.fromString(urlExp));
             table.setDescription("Contains one row per pipeline job");
 

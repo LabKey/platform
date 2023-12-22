@@ -15,22 +15,20 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.junit.runner.Description" %>
+<%@ page import="org.junit.runner.Request" %>
+<%@ page import="org.junit.runner.Runner" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.junit.JunitController" %>
 <%@ page import="org.labkey.core.junit.JunitController.JUnitViewBean" %>
-<%@ page import="org.labkey.core.junit.JunitController.RunAction" %>
 <%@ page import="org.labkey.core.junit.JunitController.Run2Action" %>
 <%@ page import="org.labkey.core.junit.JunitController.Run3Action" %>
+<%@ page import="org.labkey.core.junit.JunitController.RunAction" %>
 <%@ page import="static org.labkey.api.util.DOM.*" %>
 <%@ page import="static org.labkey.api.util.DOM.Attribute.*" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NBSP" %>
-<%@ page import="org.junit.runner.Request" %>
-<%@ page import="org.junit.runner.Runner" %>
-<%@ page import="org.junit.runner.Description" %>
-<%@ page import="org.w3c.dom.css.CSS2Properties" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<JUnitViewBean> me = (JspView<JUnitViewBean>) HttpView.currentView();

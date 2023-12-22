@@ -17,7 +17,6 @@ package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.util.HtmlString;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
 
