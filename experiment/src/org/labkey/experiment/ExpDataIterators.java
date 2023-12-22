@@ -2298,7 +2298,7 @@ public class ExpDataIterators
         }
     }
 
-    public static class MultiSampleTypeDataIterator extends WrapperDataIterator
+    public static class MultiSampleTypeCrossProjectDataIterator extends WrapperDataIterator
     {
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
@@ -2337,7 +2337,7 @@ public class ExpDataIterators
 
         private final boolean _isCrossFolderUpdate;
 
-        public MultiSampleTypeDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
+        public MultiSampleTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
         {
             super(di);
             _context = context;
@@ -2829,7 +2829,7 @@ public class ExpDataIterators
         }
     }
 
-    public static class MultiSampleTypeDataIteratorBuilder implements DataIteratorBuilder
+    public static class MultiSampleTypeCrossProjectDataIteratorBuilder implements DataIteratorBuilder
     {
         private final DataIteratorBuilder _in;
         private final Container _container;
@@ -2838,7 +2838,7 @@ public class ExpDataIterators
         private final boolean _isCrossFolder;
         private final ExpSampleType _sampleType;
 
-        public MultiSampleTypeDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
+        public MultiSampleTypeCrossProjectDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
         {
             _in = in;
             _container = container;
@@ -2852,7 +2852,7 @@ public class ExpDataIterators
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new MultiSampleTypeDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _sampleType));
+            return LoggingDataIterator.wrap(new MultiSampleTypeCrossProjectDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _sampleType));
         }
     }
 }
