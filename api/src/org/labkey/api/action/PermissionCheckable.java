@@ -16,9 +16,8 @@
 
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.UnauthorizedException;
-
-import javax.annotation.Nullable;
 
 /**
  * Interface for {@link Action} classes that want to handle permission checks
