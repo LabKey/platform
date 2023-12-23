@@ -1,11 +1,10 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-
-import javax.annotation.Nullable;
 
 /**
  * Service which exists to provide mostly application specific functionality around how name expressions work in

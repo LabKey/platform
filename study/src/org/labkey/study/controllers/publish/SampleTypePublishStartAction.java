@@ -1,5 +1,6 @@
 package org.labkey.study.controllers.publish;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleTypeService;
@@ -14,7 +15,6 @@ import org.labkey.api.view.ViewForm;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
