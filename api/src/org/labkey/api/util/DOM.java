@@ -1167,14 +1167,6 @@ public class DOM
     {
         return (html) -> Element.address.render(html, NOAT, body);
     }
-    public static Renderable AREA(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.area.render(html, attrs, body);
-    }
-    public static Renderable AREA(Object... body)
-    {
-        return (html) -> Element.area.render(html, NOAT, body);
-    }
     public static Renderable ARTICLE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
         return (html) -> Element.article.render(html, attrs, body);
@@ -1206,14 +1198,6 @@ public class DOM
     public static Renderable B(Object... body)
     {
         return (html) -> Element.b.render(html, NOAT, body);
-    }
-    public static Renderable BASE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.base.render(html, attrs, body);
-    }
-    public static Renderable BASE(Object... body)
-    {
-        return (html) -> Element.base.render(html, NOAT, body);
     }
     public static Renderable BDI(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
@@ -1255,14 +1239,6 @@ public class DOM
     {
         return (html) -> Element.body.render(html, NOAT, body);
     }
-    public static Renderable BR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.br.render(html, attrs, body);
-    }
-    public static Renderable BR(Object... body)
-    {
-        return (html) -> Element.br.render(html, NOAT, body);
-    }
     public static Renderable BUTTON(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
         return (html) -> Element.button.render(html, attrs, body);
@@ -1302,14 +1278,6 @@ public class DOM
     public static Renderable CODE(Object... body)
     {
         return (html) -> Element.code.render(html, NOAT, body);
-    }
-    public static Renderable COL(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.col.render(html, attrs, body);
-    }
-    public static Renderable COL(Object... body)
-    {
-        return (html) -> Element.col.render(html, NOAT, body);
     }
     public static Renderable COLGROUP(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
@@ -1406,14 +1374,6 @@ public class DOM
     public static Renderable EM(Object... body)
     {
         return (html) -> Element.em.render(html, NOAT, body);
-    }
-    public static Renderable EMBED(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.embed.render(html, attrs, body);
-    }
-    public static Renderable EMBED(Object... body)
-    {
-        return (html) -> Element.embed.render(html, NOAT, body);
     }
     public static Renderable FIELDSET(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
@@ -1535,14 +1495,6 @@ public class DOM
     {
         return (html) -> Element.hgroup.render(html, NOAT, body);
     }
-    public static Renderable HR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.hr.render(html, attrs, body);
-    }
-    public static Renderable HR(Object... body)
-    {
-        return (html) -> Element.hr.render(html, NOAT, body);
-    }
     public static Renderable HTML(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
         return (html) -> Element.html.render(html, attrs, body);
@@ -1566,22 +1518,6 @@ public class DOM
     public static Renderable IFRAME(Object... body)
     {
         return (html) -> Element.iframe.render(html, NOAT, body);
-    }
-    public static Renderable IMG(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.img.render(html, attrs, body);
-    }
-    public static Renderable IMG(Object... body)
-    {
-        return (html) -> Element.img.render(html, NOAT, body);
-    }
-    public static Renderable INPUT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.input.render(html, attrs, body);
-    }
-    public static Renderable INPUT(Object... body)
-    {
-        return (html) -> Element.input.render(html, NOAT, body);
     }
     public static Renderable INS(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
@@ -1631,14 +1567,6 @@ public class DOM
     {
         return (html) -> Element.li.render(html, NOAT, body);
     }
-    public static Renderable LINK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.link.render(html, attrs, body);
-    }
-    public static Renderable LINK(Object... body)
-    {
-        return (html) -> Element.link.render(html, NOAT, body);
-    }
     public static Renderable MAIN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
         return (html) -> Element.main.render(html, attrs, body);
@@ -1678,14 +1606,6 @@ public class DOM
     public static Renderable MENUITEM(Object... body)
     {
         return (html) -> Element.menuitem.render(html, NOAT, body);
-    }
-    public static Renderable META(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.meta.render(html, attrs, body);
-    }
-    public static Renderable META(Object... body)
-    {
-        return (html) -> Element.meta.render(html, NOAT, body);
     }
     public static Renderable METER(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
@@ -1879,14 +1799,6 @@ public class DOM
     {
         return (html) -> Element.small.render(html, NOAT, body);
     }
-    public static Renderable SOURCE(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.source.render(html, attrs, body);
-    }
-    public static Renderable SOURCE(Object... body)
-    {
-        return (html) -> Element.source.render(html, NOAT, body);
-    }
     public static Renderable SPAN(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
         return (html) -> Element.span.render(html, attrs, body);
@@ -2015,14 +1927,6 @@ public class DOM
     {
         return (html) -> Element.tr.render(html, NOAT, body);
     }
-    public static Renderable TRACK(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.track.render(html, attrs, body);
-    }
-    public static Renderable TRACK(Object... body)
-    {
-        return (html) -> Element.track.render(html, NOAT, body);
-    }
     public static Renderable U(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
         return (html) -> Element.u.render(html, attrs, body);
@@ -2054,14 +1958,6 @@ public class DOM
     public static Renderable VIDEO(Object... body)
     {
         return (html) -> Element.video.render(html, NOAT, body);
-    }
-    public static Renderable WBR(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
-    {
-        return (html) -> Element.wbr.render(html, attrs, body);
-    }
-    public static Renderable WBR(Object... body)
-    {
-        return (html) -> Element.wbr.render(html, NOAT, body);
     }
     public static Renderable WEBVIEW(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {

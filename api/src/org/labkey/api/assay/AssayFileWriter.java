@@ -47,10 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-/**
- * User: jeckels
- * Date: Sep 21, 2007
- */
 public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends AssayProvider>>
 {
     private static final Logger LOG = LogManager.getLogger(AssayFileWriter.class);
@@ -176,7 +172,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
     public static Path findUniqueFileName(String originalFilename, Path dir)
     {
-        if (originalFilename == null || "".equals(originalFilename))
+        if (originalFilename == null || originalFilename.isEmpty())
         {
             originalFilename = "[unnamed]";
         }
@@ -250,9 +246,8 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
     {
         Map<String, File> files = new TreeMap<>();
         Set<String> originalFileNames = new HashSet<>();
-        if (context.getRequest() instanceof MultipartHttpServletRequest)
+        if (context.getRequest() instanceof MultipartHttpServletRequest multipartRequest)
         {
-            MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();
             Iterator<Map.Entry<String, List<MultipartFile>>> iter = multipartRequest.getMultiFileMap().entrySet().iterator();
             File dir = getFileTargetDir(context);
             Deque<File> overflowFiles = new ArrayDeque<>();  // using a deque for easy removal of single elements
@@ -292,7 +287,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
             // now process overflow files, if any
             for (String unusedParameterName : unusedParameterNames)
             {
-                if (overflowFiles.size() < 1)
+                if (overflowFiles.isEmpty())
                     break;  // we're done
                 else
                 {
@@ -300,7 +295,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
                 }
             }
 
-            if (overflowFiles.size() > 0)  // too many files; shouldn't happen, but if it does, throw an error
+            if (!overflowFiles.isEmpty())  // too many files; shouldn't happen, but if it does, throw an error
                 throw new ExperimentException("Tried to save too many files: number of keys is " + parameterNames.size() +
                         ", but " + overflowFiles.size() + " extra file(s) were found.");
         }

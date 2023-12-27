@@ -166,17 +166,22 @@ public class Stats
      */
     public static Double[] getTrailingMeans(Double[] values, int N)
     {
-        if (values == null || values.length <= 1 || values.length <= N)
+        if (values == null || values.length <= 1)
             return new Double[0];
 
-        int numOfTrailingValues = values.length - N + 1;
-        Double[] trailingMeans = new Double[numOfTrailingValues];
+        Double[] trailingMeans = new Double[values.length];
         int start = 0;
-        int end = N;
-        for (int i = 0; i < numOfTrailingValues; i++)
+        int end = 1;
+        trailingMeans[0] = values[0];
+        for (int i = 1; i < values.length; i++)
         {
+            // Issue 49131: At the very beginning of the folder's date range, always calculate the values for the first N-1 samples,
+            // based on their sequence. And so on until you hit N, when we start using the moving window.
+            if (i >= N)
+            {
+                start++;
+            }
             trailingMeans[i] = getMean(getValuesFromRange(values, start, end));
-            start++;
             end++;
         }
 
@@ -192,37 +197,47 @@ public class Stats
      */
     public static Double[] getTrailingCVs(Double[] values, int N)
     {
-        if (values == null || values.length <= 1 || values.length <= N)
+        if (values == null || values.length <= 1)
             return new Double[0];
 
-        int numOfTrailingValues = values.length - N + 1;
-        Double[] trailingCVs = new Double[numOfTrailingValues];
+        Double[] trailingCVs = new Double[values.length];
         int start = 0;
-        int end = N;
-        for (int i = 0; i < numOfTrailingValues; i++)
+        int end = 1;
+        trailingCVs[0] = 0.0;
+        for (int i = 1; i < values.length; i++)
         {
-            Double[] vals = getValuesFromRange(values, start, end);
-            double sd = getStdDev(vals, false);
-            double mean = getMean(vals);
-            if (mean == 0)
+            // Issue 49131: At the very beginning of the folder's date range, always calculate the values for the first N-1 samples,
+            // based on their sequence. And so on until you hit N, when we start using the moving window.
+            if (i >= N)
             {
-                trailingCVs[i] = null;
+                start++;
             }
-            else
-            {
-                trailingCVs[i] = sd / mean * 100;
-            }
-            start++;
+            calcCV(values, trailingCVs, start, end, i);
             end++;
         }
 
         return trailingCVs;
     }
 
+    private static void calcCV(Double[] values, Double[] trailingCVs, int start, int end, int i)
+    {
+        Double[] vals = getValuesFromRange(values, start, end);
+        double sd = getStdDev(vals, false);
+        double mean = getMean(vals);
+        if (mean == 0)
+        {
+            trailingCVs[i] = null;
+        }
+        else
+        {
+            trailingCVs[i] = sd / mean * 100;
+        }
+    }
+
     private static Double[] getValuesFromRange(Double[] values, int start, int end)
     {
-        Double[] valuesFromRange = new Double[end-start];
-        if (end - start >= 0) System.arraycopy(values, start, valuesFromRange, 0, end - start);
+        Double[] valuesFromRange = new Double[end-start+1];
+        if (end - start >= 0) System.arraycopy(values, start, valuesFromRange, 0, end - start + 1);
         return valuesFromRange;
     }
 }

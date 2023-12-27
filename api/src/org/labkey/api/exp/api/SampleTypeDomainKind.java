@@ -262,7 +262,9 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
 
         if (domain == null)
         {
-            // Issue 48810: See SampleTypeService.createSampleType hasNameProperty
+            // Issue 48810: See SampleTypeService.createSampleType hasNameProperty. We are adding in a "name" col on the
+            // client side right before calling the saveDomain API, so we need to "exclude" it from the reserved set in
+            // this case.
             if (forCreate)
                 reserved.remove("Name");
 

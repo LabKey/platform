@@ -613,7 +613,7 @@ public class PageConfig
      *  NOTE element.addListener(function) is not the same as element.onclick=function!
      * This is for onevent handlers
      */
-    public void addHandler(String id, String event, String handler)
+    public void addHandler(String id, String event, @Nullable String handler)
     {
         if (StringUtils.isBlank(id) || StringUtils.isBlank(event))
             throw new IllegalArgumentException();

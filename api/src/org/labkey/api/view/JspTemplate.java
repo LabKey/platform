@@ -28,8 +28,6 @@ import java.io.StringWriter;
 
 /**
  * Executes a JSP and renders output to a string. Useful for JSP templating of SQL queries, etc.
- * User: adam
- * Date: Aug 10, 2010
  */
 public class JspTemplate<ModelClass> extends JspView<ModelClass>
 {

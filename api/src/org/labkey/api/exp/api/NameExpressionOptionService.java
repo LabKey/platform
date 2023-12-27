@@ -52,6 +52,14 @@ public interface NameExpressionOptionService
     boolean allowUserSpecifiedNames(Container c);
 
     /**
+     * Returns the persisted value of the setting "allowUserSpecificNames" for the provided container.
+     * Only use this method if you're looking for the value for this container specifically, otherwise,
+     * use {@link NameExpressionOptionService#allowUserSpecifiedNames(Container)} for using/operating against
+     * the setting.
+     */
+    boolean getAllowUserSpecificNamesValue(Container c);
+
+    /**
      * Set whether user-specified names for samples and dataclasses are allowed for this folder. If set to false
      * it is required that all samples and dataclasses in the folder have a configured name expression.
      */
@@ -78,6 +86,12 @@ public interface NameExpressionOptionService
 
         @Override
         public boolean allowUserSpecifiedNames(Container c)
+        {
+            return true;
+        }
+
+        @Override
+        public boolean getAllowUserSpecificNamesValue(Container c)
         {
             return true;
         }
