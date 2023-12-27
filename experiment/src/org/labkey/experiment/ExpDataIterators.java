@@ -2405,6 +2405,9 @@ public class ExpDataIterators
 
         private void _importPartition(TypeData typeData)
         {
+            if (_context.getErrors().hasErrors())
+                return;
+
             writeRowsToFile(typeData); // write the last rows that have been collected since the last write, if any
             var updateService = typeData.tableInfo.getUpdateService();
             if (updateService == null)
@@ -2474,7 +2477,7 @@ public class ExpDataIterators
                 {
                     Container folder = ContainerManager.getForId(containerId);
                     _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + (folder != null ? folder.getName() : containerId)));
-                    return true;
+                    return false;
                 }
                 SamplesSchema schema = new SamplesSchema(_user, container);
                 QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
@@ -2482,7 +2485,7 @@ public class ExpDataIterators
                 if (samplesTable == null)
                 {
                     _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
-                    return true;
+                    return false;
                 }
 
                 List<String> dataRows = new ArrayList<>();
@@ -2498,7 +2501,7 @@ public class ExpDataIterators
                     String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
                     LOG.error(msg, e);
                     _context.getErrors().addRowError(new ValidationException(msg));
-                    return true;
+                    return false;
                 }
                 List<Integer> dataRowIndexes = containerRows.get(containerId);
                 Collections.sort(dataRowIndexes);
@@ -2511,11 +2514,11 @@ public class ExpDataIterators
             }
 
             List<String> orderedContainer = new ArrayList<>(containerRows.keySet());
-            orderedContainer.sort(Comparator.comparing(containerIndexes::get));
+            orderedContainer.sort(Comparator.comparing(containerIndexes::get)); // respect original row ordering so rows with lower indexes generally gets a smaller rowId
             for (String containerId : orderedContainer)
             {
                 if (_context.getErrors().hasErrors())
-                    return true;
+                    return false;
 
                 TypeData containerTypeData = containerTypeDatas.get(containerId);
                 _updateOnlyFileDataMap.put(containerId + "-" + sampleType.getRowId(), containerTypeData);
