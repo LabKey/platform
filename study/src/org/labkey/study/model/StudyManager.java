@@ -1158,9 +1158,9 @@ public class StudyManager
 
         if (!seqNumFailures.isEmpty())
         {
-            String timepointNoun = study.getTimepointType().isVisitBased() ? "visits" : "timepoints";
-            errors.addError(new SimpleValidationError(String.format("Creating new %s is not allowed for this study. The following %s do not currently exist : (%s)",
-                    timepointNoun, timepointNoun,
+            String timepointNoun = study.getTimepointType().isVisitBased() ? "visit" : "timepoint";
+            errors.addError(new SimpleValidationError(String.format("Creating new %ss is not allowed for this study. The following %s not currently exist : (%s)",
+                    timepointNoun, timepointNoun + (seqNumFailures.size() > 1 ? "s do" : " does"),
                     String.join(", ", seqNumFailures))));
         }
         return errors;
