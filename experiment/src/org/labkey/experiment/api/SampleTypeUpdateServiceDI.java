@@ -346,8 +346,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (context.isCrossTypeImport())
-            return new ExpDataIterators.MultiSampleTypeDataIteratorBuilder(user, container, data);
+        if (context.isCrossTypeImport() || context.isCrossFolderImport())
+            return new ExpDataIterators.MultiSampleTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
 
@@ -1003,19 +1003,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
-    private ContainerFilter getSampleDataCF(Container container, User user)
-    {
-        if (!container.isProductProjectsEnabled())
-            return ContainerFilter.current(container);
-
-        if (container.isProject())
-            return new ContainerFilter.CurrentAndSubfoldersPlusShared(container, user);
-        else if (!container.isProject() && container.getProject() != null)
-            return new ContainerFilter.CurrentPlusProjectAndShared(container, user);
-
-        return ContainerFilter.current(container);
-    }
-
     private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
@@ -1168,18 +1155,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
-            SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user)); // don't use TinfoMaterial here since UserSchema is needed
-            if (tInfo == null)
-                throw new QueryUpdateServiceException("Unable to get the existing sample record");
+            ContainerFilter allCf = ContainerFilter.current(container); // use a relaxed CF to find existing data from cross containers
+            if (container.isProductProjectsEnabled())
+                allCf = new ContainerFilter.AllInProjectPlusShared(container, user);
 
-            existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
-            Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
+            SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+            existingDataFilter.addCondition(FieldKey.fromParts("Container"), allCf.getIds(), CompareType.IN);
+
+            existingDataFilter.addCondition(FieldKey.fromParts(useLsid ? "LSID" : "Name"), allKeys, CompareType.IN);
+            Map<String, Object>[] cfRows = new TableSelector(ExperimentService.get().getTinfoMaterial(), existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
             {
-                String dataContainer = (String) row.get("folder");
+                String dataContainer = (String) row.get("container");
                 if (!dataContainer.equals(container.getId()))
-                    throw new InvalidKeyException("Sample does not belong to the current container: " + (String) row.get("name") + ".");
+                    throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + (String) row.get("name") + ".");
             }
 
         }
@@ -1375,6 +1364,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 String name = source.getColumnInfo(i).getName();
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
+                if (!isContainerField)
+                    isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
                 if (isReservedHeader(name) || isContainerField)
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.
@@ -1396,6 +1387,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isStoredAmountHeader(name))
                         continue;
                     if (isUnitsHeader(name))
+                        continue;
+                    if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
                     drop.add(name);
                 }
