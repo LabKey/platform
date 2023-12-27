@@ -13,25 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
-import ReactDOM from 'react-dom'
-import { AppContainer } from 'react-hot-loader'
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-import { App } from './SampleTypeDesigner'
+import { App } from './SampleTypeDesigner';
 
-const render = () => {
-    ReactDOM.render(
-        <AppContainer>
-            <App/>
-        </AppContainer>,
-        document.getElementById('app')
-    )
+const render = (): void => {
+    ReactDOM.render(<App />, document.getElementById('app'));
 };
-
-declare const module: any;
-
-if (module.hot) {
-    module.hot.accept();
-}
-
 render();

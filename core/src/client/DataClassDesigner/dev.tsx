@@ -13,24 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react'
-import ReactDOM from 'react-dom'
-import { AppContainer } from 'react-hot-loader'
-import { App } from './DataClassDesigner'
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-const render = () => {
-    ReactDOM.render(
-        <AppContainer>
-            <App/>
-        </AppContainer>,
-        document.getElementById('app')
-    )
+import { App } from './DataClassDesigner';
+
+const render = (): void => {
+    ReactDOM.render(<App />, document.getElementById('app'));
 };
-
-declare const module: any;
-
-if (module.hot) {
-    module.hot.accept();
-}
 
 render();
