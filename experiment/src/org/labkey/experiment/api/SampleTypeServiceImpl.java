@@ -321,7 +321,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
         sql.append(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
                 "pa.RunId = r.RowId AND ");
-        sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
+        sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container")));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
         Map<String, ExpSampleType> result = new LinkedHashMap<>();
