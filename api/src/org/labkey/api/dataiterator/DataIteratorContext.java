@@ -50,6 +50,7 @@ public class DataIteratorContext
     boolean _supportAutoIncrementKey = false;
     boolean _allowImportLookupByAlternateKey = false;
     boolean _crossTypeImport = false;
+    boolean _crossFolderImport = false;
     boolean _allowCreateStorage = false;
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
@@ -177,6 +178,16 @@ public class DataIteratorContext
     public void setCrossTypeImport(boolean crossTypeImport)
     {
         _crossTypeImport = crossTypeImport;
+    }
+
+    public boolean isCrossFolderImport()
+    {
+        return _crossFolderImport;
+    }
+
+    public void setCrossFolderImport(boolean crossFolderImport)
+    {
+        _crossFolderImport = crossFolderImport;
     }
 
     public boolean isAllowCreateStorage()
