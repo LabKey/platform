@@ -159,6 +159,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -914,11 +915,11 @@ public class StudyController extends BaseStudyController
                 return null;
             }
 
-            StringBuilder sb = new StringBuilder();
-            if (def.getDescription() != null && def.getDescription().length() > 0)
-                sb.append(PageFlowUtil.filter(def.getDescription(), true, true)).append("<br/>");
+            HtmlStringBuilder sb = HtmlStringBuilder.of();
+            if (def.getDescription() != null && !def.getDescription().isEmpty())
+                sb.unsafeAppend(PageFlowUtil.filter(def.getDescription(), true, true)).unsafeAppend("<br/>");
             if (_cohortFilter != null)
-                sb.append("<br/><span><b>Cohort :</b> ").append(filter(_cohortFilter.getDescription(getContainer(), getUser()))).append("</span>");
+                sb.unsafeAppend("<br/><span><b>Cohort :</b> ").append(_cohortFilter.getDescription(getContainer(), getUser())).unsafeAppend("</span>");
 
             if (QCStateManager.getInstance().showStates(getContainer()))
             {
@@ -930,25 +931,25 @@ public class StudyController extends BaseStudyController
                     String selectedQCLabel = selectedQCStateLabelFromUrl(getViewContext().getActionURL(), settings.getDataRegionName(), set.getLabel(), publicQCUrlFilterValue, privateQCUrlFilterValue);
                     if (selectedQCLabel != null && selectedQCLabel.equals(set.getLabel()))
                     {
-                        sb.append("<br/><span><b>QC States:</b> ").append(filter(set.getLabel())).append("</span>");
+                        sb.unsafeAppend("<br/><span><b>QC States:</b> ").append(set.getLabel()).unsafeAppend("</span>");
                         break;
                     }
                 }
             }
             if (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate") != null)
             {
-                sb.append("<br/><span><b>Data Cut Date:</b> ");
+                sb.unsafeAppend("<br/><span><b>Data Cut Date:</b> ");
                 Object refreshDate = (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
                 if (refreshDate instanceof Date)
                 {
-                    sb.append(filter(DateUtil.formatDate(getContainer(), (Date)refreshDate)));
+                    sb.append(DateUtil.formatDate(getContainer(), (Date)refreshDate));
                 }
                 else
                 {
                     sb.append(ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate").toString());
                 }
             }
-            HtmlView header = new HtmlView(sb.toString());
+            HtmlView header = new HtmlView(sb);
             VBox view = new VBox(header, queryView);
 
             String status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
@@ -2105,7 +2106,7 @@ public class StudyController extends BaseStudyController
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
             Collection<VisitImpl> visits = getUnusedVisits(study);
-            StringBuilder sb = new StringBuilder();
+            HtmlStringBuilder sb = HtmlStringBuilder.of();
 
             if (visits.isEmpty())
             {
@@ -2114,23 +2115,23 @@ public class StudyController extends BaseStudyController
             else
             {
                 // Put them in a table to help with StudyTest verification
-                sb.append("<table id=\"visitsToDelete\">\n");
-                sb.append("<tr><td>Are you sure you want to delete the unused visits listed below?</td></tr>\n<tr><td>&nbsp;</td></tr>\n");
+                sb.unsafeAppend("<table id=\"visitsToDelete\">\n");
+                sb.unsafeAppend("<tr><td>Are you sure you want to delete the unused visits listed below?</td></tr>\n<tr><td>&nbsp;</td></tr>\n");
 
                 for (VisitImpl visit : visits)
                 {
-                    sb.append("<tr><td>")
-                        .append(PageFlowUtil.filter(visit.getLabel()))
+                    sb.unsafeAppend("<tr><td>")
+                        .append(visit.getLabel())
                         .append(" (")
-                        .append(PageFlowUtil.filter(visit.getSequenceString()))
+                        .append(visit.getSequenceString())
                         .append(")")
-                        .append("</td></tr>\n");
+                        .unsafeAppend("</td></tr>\n");
                 }
 
-                sb.append("</table>\n");
+                sb.unsafeAppend("</table>\n");
             }
 
-            return new HtmlView(sb.toString());
+            return new HtmlView(sb);
         }
 
         @Override
@@ -4606,7 +4607,7 @@ public class StudyController extends BaseStudyController
     private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
             "<div id=\"participantData\">Loading...</div>\n" +
             "\n" +
-            "<script type=\"text/javascript\">\n" +
+            "<script type=\"text/javascript\" nonce=\"<%=scriptNonce%>\">\n" +
             "    LABKEY.requiresClientAPI(function() {\n" +
             "       /* get the participant id from the request URL: this parameter is required. */\n" +
             "       var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
@@ -4637,7 +4638,7 @@ public class StudyController extends BaseStudyController
             "       /* place the webpart into the 'participantData' div: */\n" +
             "       participantWebPart.render();\n" +
             "   });\n" +
-            "</script> \n" +
+            "</script>\n" +
             "/* Adjust width of first column: */\n" +
             "<style>\n" +
             "  .labkey-data-region tr td:first-child {width: 300px}\n" +

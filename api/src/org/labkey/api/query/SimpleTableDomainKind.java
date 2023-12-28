@@ -244,7 +244,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
-        SimpleUserSchema.SimpleTable table = getTable(domain, user);
+        SimpleUserSchema.SimpleTable table = domain != null ? getTable(domain, user) : null;
         if (table != null)
         {
             // return the set of built-in column names.

@@ -20,6 +20,9 @@
 package org.labkey.wiki;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -140,10 +143,10 @@ public class DiffMatchPatch
     diffs = diff_compute(text1, text2, checklines);
 
     // Restore the prefix and suffix
-    if (commonprefix.length() != 0) {
+    if (!commonprefix.isEmpty()) {
       diffs.addFirst(new Diff(Operation.EQUAL, commonprefix));
     }
-    if (commonsuffix.length() != 0) {
+    if (!commonsuffix.isEmpty()) {
       diffs.addLast(new Diff(Operation.EQUAL, commonsuffix));
     }
 
@@ -857,7 +860,7 @@ public class DiffMatchPatch
         bestEquality2 = equality2;
         bestScore = diff_cleanupSemanticScore(equality1, edit)
             + diff_cleanupSemanticScore(edit, equality2);
-        while (edit.length() != 0 && equality2.length() != 0
+        while (!edit.isEmpty() && !equality2.isEmpty()
             && edit.charAt(0) == equality2.charAt(0)) {
           equality1 += edit.charAt(0);
           edit = edit.substring(1) + equality2.charAt(0);
@@ -875,7 +878,7 @@ public class DiffMatchPatch
 
         if (!prevDiff.text.equals(bestEquality1)) {
           // We have an improvement, save it back to the diff.
-          if (bestEquality1.length() != 0) {
+          if (!bestEquality1.isEmpty()) {
             prevDiff.text = bestEquality1;
           } else {
             pointer.previous(); // Walk past nextDiff.
@@ -886,7 +889,7 @@ public class DiffMatchPatch
             pointer.next(); // Walk past nextDiff.
           }
           thisDiff.text = bestEdit;
-          if (bestEquality2.length() != 0) {
+          if (!bestEquality2.isEmpty()) {
             nextDiff.text = bestEquality2;
           } else {
             pointer.remove(); // Delete nextDiff.
@@ -1130,10 +1133,10 @@ public class DiffMatchPatch
             }
           }
           // Insert the merged records.
-          if (text_delete.length() != 0) {
+          if (!text_delete.isEmpty()) {
             pointer.add(new Diff(Operation.DELETE, text_delete));
           }
-          if (text_insert.length() != 0) {
+          if (!text_insert.isEmpty()) {
             pointer.add(new Diff(Operation.INSERT, text_insert));
           }
           // Step forward to the equality.
@@ -1292,18 +1295,18 @@ public class DiffMatchPatch
    * @param diffs List of Diff objects.
    * @return Compact HTML representation.
    */
-  public String diff_prettyHtmlCompact(List<Diff> diffs) {
-    StringBuilder html = new StringBuilder();
+  public HtmlString diff_prettyHtmlCompact(List<Diff> diffs) {
+    HtmlStringBuilder html = HtmlStringBuilder.of();
     int i = 0;
-    for (Diff aDiff : diffs) {
-      String text = aDiff.text.replace("&", "&amp;").replace("<", "&lt;")
-          .replace(">", "&gt;").replace("\n", LB);
+    for (Diff aDiff : diffs)
+    {
+      String text = PageFlowUtil.filter(aDiff.text, true, false, LB);
       switch (aDiff.operation)
       {
-        case INSERT -> html.append("<INS STYLE=\"background:#E6FFE6;\" TITLE=\"i=").append(i)
-                .append("\">").append(text).append("</INS>");
-        case DELETE -> html.append("<DEL STYLE=\"background:#FFE6E6;\" TITLE=\"i=").append(i)
-                .append("\">").append(text).append("</DEL>");
+        case INSERT -> html.unsafeAppend("<INS STYLE=\"background:#E6FFE6;\" TITLE=\"i=").append(i)
+                .unsafeAppend("\">").append(text).unsafeAppend("</INS>");
+        case DELETE -> html.unsafeAppend("<DEL STYLE=\"background:#FFE6E6;\" TITLE=\"i=").append(i)
+                .unsafeAppend("\">").append(text).unsafeAppend("</DEL>");
         case EQUAL -> {
                 int lines = StringUtils.countMatches(text, LB);
                 if (lines > 4)
@@ -1314,14 +1317,14 @@ public class DiffMatchPatch
 
                     text = text.substring(0, start) + "<BR><SPAN STYLE=\"color:#808080;\">[" + (lines - 4) + " unchanged lines]</SPAN><BR><BR>" + text.substring(end);
                 }
-                html.append("<SPAN TITLE=\"i=").append(i).append("\">").append(text).append("</SPAN>");
+                html.unsafeAppend("<SPAN TITLE=\"i=").append(i).unsafeAppend("\">").unsafeAppend(text).unsafeAppend("</SPAN>");
         }
       }
       if (aDiff.operation != Operation.DELETE) {
         i += aDiff.text.length();
       }
     }
-    return html.toString();
+    return html.getHtmlString();
   }
 
   /**
@@ -1385,7 +1388,7 @@ public class DiffMatchPatch
       }
     }
     String delta = text.toString();
-    if (delta.length() != 0) {
+    if (!delta.isEmpty()) {
       // Strip off trailing tab character.
       delta = delta.substring(0, delta.length() - 1);
       delta = unescapeForEncodeUriCompatability(delta);
@@ -1676,13 +1679,13 @@ public class DiffMatchPatch
     // Add the prefix.
     String prefix = text.substring(Math.max(0, patch.start2 - padding),
         patch.start2);
-    if (prefix.length() != 0) {
+    if (!prefix.isEmpty()) {
       patch.diffs.addFirst(new Diff(Operation.EQUAL, prefix));
     }
     // Add the suffix.
     String suffix = text.substring(patch.start2 + patch.length1,
         Math.min(text.length(), patch.start2 + patch.length1 + padding));
-    if (suffix.length() != 0) {
+    if (!suffix.isEmpty()) {
       patch.diffs.addLast(new Diff(Operation.EQUAL, suffix));
     }
 
@@ -2005,7 +2008,7 @@ public class DiffMatchPatch
         empty = true;
         patch.start1 = start1 - precontext.length();
         patch.start2 = start2 - precontext.length();
-        if (precontext.length() != 0) {
+        if (!precontext.isEmpty()) {
           patch.length1 = patch.length2 = precontext.length();
           patch.diffs.add(new Diff(Operation.EQUAL, precontext));
         }
@@ -2050,7 +2053,7 @@ public class DiffMatchPatch
         } else {
           postcontext = diff_text1(bigpatch.diffs);
         }
-        if (postcontext.length() != 0) {
+        if (!postcontext.isEmpty()) {
           patch.length1 += postcontext.length();
           patch.length2 += postcontext.length();
           if (!patch.diffs.isEmpty()

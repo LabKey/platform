@@ -25,6 +25,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.data.MultiValuedRenderContext;
 import org.labkey.api.data.Results;
@@ -784,7 +786,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             task = ss.defaultTask();
         }
 
-        WebdavResource doc = createDocument(tableInfo);
+        var expScope = DbSchema.get("exp", DbSchemaType.Module).getScope();
+        var doc = expScope.executeWithRetryReadOnly((tx) -> createDocument(tableInfo));
+
         task.addResource(doc, SearchService.PRIORITY.item);
     }
 

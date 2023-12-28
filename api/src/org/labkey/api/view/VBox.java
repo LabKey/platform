@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.util.DOM;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +50,15 @@ public class VBox extends WebPartView
             return;
         _views.add(v);
     }
+
+
+    public void addView(DOM.Renderable r)
+    {
+        if (null == r)
+            return;
+        _views.add(new HtmlView(r));
+    }
+
 
     public void addView(ModelAndView v, int index)
     {

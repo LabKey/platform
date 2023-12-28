@@ -216,6 +216,11 @@ public class PageFlowUtil
     /** HTML encode a string */
     static public String filter(CharSequence s, boolean encodeSpace, boolean encodeLinks)
     {
+        return filter(s, encodeSpace, encodeLinks, "<br>\n");
+    }
+
+    static public String filter(CharSequence s, boolean encodeSpace, boolean encodeLinks, String NL)
+    {
         if (null == s || s.isEmpty())
             return "";
 
@@ -254,7 +259,7 @@ public class PageFlowUtil
                     break;
                 case '\n':
                     if (encodeSpace)
-                        sb.append("<br>\n");
+                        sb.append(NL);
                     else
                         sb.append(c);
                     break;

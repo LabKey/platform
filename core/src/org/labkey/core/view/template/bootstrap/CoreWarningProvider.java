@@ -28,6 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.DbLoginService;
 import org.labkey.api.security.impersonation.AbstractImpersonationContextFactory;
 import org.labkey.api.security.permissions.TroubleshooterPermission;
 import org.labkey.api.settings.AppProps;
@@ -204,8 +205,8 @@ public class CoreWarningProvider implements WarningProvider
 
     private void getPasswordRuleWarnings(Warnings warnings, boolean showAllWarnings)
     {
-        if (showAllWarnings || (!AppProps.getInstance().isDevMode() && DbLoginManager.getPasswordRule().isDeprecated()))
-            warnings.add(HtmlString.of("Database authentication is configured with \"" + DbLoginManager.getPasswordRule().name() + "\" strength, which is not appropriate for production deployments. This option will be removed in the next major release."));
+        if (showAllWarnings || (!AppProps.getInstance().isDevMode() && DbLoginService.get().getPasswordRule().isDeprecated()))
+            warnings.add(HtmlString.of("Database authentication is configured with \"" + DbLoginService.get().getPasswordRule().name() + "\" strength, which is not appropriate for production deployments. This option will be removed in the next major release."));
     }
 
     private void getHeapSizeWarnings(Warnings warnings, boolean showAllWarnings)

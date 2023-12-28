@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -464,6 +465,24 @@ public class PropertyStorageSpec
             return piColumns.isEmpty();
         }
 
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+
+            Index otherIndex = (Index) obj;
+            if (!isSameIndex(this, otherIndex))
+                return false;
+
+            return this.isClustered == otherIndex.isClustered;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(Arrays.hashCode(columnNames), isClustered, isClustered);
+        }
     }
 
     public enum Special

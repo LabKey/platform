@@ -37,6 +37,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -54,6 +55,7 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 /*
  * User: brittp
  * Date: Jan 27, 2009
@@ -69,7 +71,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     {
     }
 
-    public SetDefaultValuesAction(Class formClass)
+    public SetDefaultValuesAction(Class<?> formClass)
     {
         super(formClass);
     }
@@ -91,7 +93,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
 
         @Override
-        public Class getJavaType()
+        public Class<?> getJavaType()
         {
             return _property.getPropertyDescriptor().getPropertyType().getJavaType();
         }
@@ -233,7 +235,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
 
         List<Container> overridees = DefaultValueService.get().getDefaultValueOverridees(domainIdForm.getContainer(), domain);
         boolean inherited = !overridees.isEmpty();
-        StringBuilder headerHtml = new StringBuilder("<span class=\"normal\">");
+        HtmlStringBuilder headerHtml = HtmlStringBuilder.of().unsafeAppend("<span class=\"normal\">");
         if (!defaultsDefined)
         {
             if (inherited)
@@ -243,44 +245,44 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
         else
             headerHtml.append("Defaults are currently defined for this table in this folder.");
-        headerHtml.append("</span>");
+        headerHtml.unsafeAppend("</span>");
         if (!domain.getContainer().equals(getContainer()) && domain.getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             ActionURL url = buildSetInheritedDefaultsURL(domain, domainIdForm);
             headerHtml.append(PageFlowUtil.link("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
-        headerHtml.append("<p>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.</p>");
+        headerHtml.unsafeAppend("<p>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.</p>");
 
-        HtmlView headerView = new HtmlView(headerHtml.toString());
+        HtmlView headerView = new HtmlView(headerHtml);
 
-        StringBuilder overrideHtml = new StringBuilder();
+        HtmlStringBuilder overrideHtml = HtmlStringBuilder.of();
         if (!overridees.isEmpty())
         {
-            overrideHtml.append("<span class=\"normal\">");
+            overrideHtml.unsafeAppend("<span class=\"normal\">");
             if (!defaultsDefined)
                 overrideHtml.append("If saved, these values will override defaults set in the following folder:");
             else
                 overrideHtml.append("These values override defaults set in the following folder:");
-            overrideHtml.append("</span><br>");
+            overrideHtml.unsafeAppend("</span><br>");
             Container container = overridees.get(overridees.size() - 1);
-            appendEditURL(overrideHtml, container, domainIdForm);
+            overrideHtml.append(editURL(container, domainIdForm));
         }
         List<Container> overriders = DefaultValueService.get().getDefaultValueOverriders(domainIdForm.getContainer(), domain);
         if (!overriders.isEmpty())
         {
             if (!overridees.isEmpty())
-                overrideHtml.append("<br>");
-            overrideHtml.append("<span class=\"normal\">");
+                overrideHtml.unsafeAppend("<br>");
+            overrideHtml.unsafeAppend("<span class=\"normal\">");
             if (!defaultsDefined)
                 overrideHtml.append("If saved, these values will be overridden by defaults the following folder(s):");
             else
                 overrideHtml.append("These values are overridden by defaults set in the following folder(s):");
-            overrideHtml.append("</span><br>");
+            overrideHtml.unsafeAppend("</span><br>");
             for (Container container : overriders)
-                appendEditURL(overrideHtml, container, domainIdForm);
+                overrideHtml.append(editURL(container, domainIdForm));
         }
 
-        return new VBox(headerView, view, new HtmlView(overrideHtml.toString()));
+        return new VBox(headerView, view, new HtmlView(overrideHtml));
     }
 
     private ActionURL buildSetInheritedDefaultsURL(Domain domain, FormType domainIdForm)
@@ -314,12 +316,14 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         formDefaults.put(propName, stringValue);
     }
 
-    private void appendEditURL(StringBuilder builder, Container container, FormType domainIdForm)
+    private HtmlString editURL(Container container, FormType domainIdForm)
     {
+        StringBuilder builder = new StringBuilder();
         ActionURL editURL = buildSetInheritedDefaultsURL(container, domainIdForm);
         builder.append("<a href=\"").append(PageFlowUtil.filter(editURL.getLocalURIString())).append("\">");
         builder.append(PageFlowUtil.filter(container.getPath()));
         builder.append("</a><br>");
+        return HtmlString.unsafe(builder.toString());
     }
 
     @Override

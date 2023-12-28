@@ -363,7 +363,7 @@ LABKEY.internal.UserNotificationPanel =
             }
             else {
                 html += "<div class='labkey-notification-clear-all " + (LABKEY.notifications.unreadCount > 0 ? "" : "labkey-hidden")
-                        + "' onclick='LABKEY.Notification.clearAllUnread(); return true;'>Clear all</div>";
+                        + "'>Clear all</div>";
 
                 html += "<div class='labkey-notification-none " + (LABKEY.notifications.unreadCount == 0 ? "" : "labkey-hidden")
                         + "'>No new notifications</div>";
@@ -393,11 +393,11 @@ LABKEY.internal.UserNotificationPanel =
                                     d = new Date(info.Created), today = new Date(),
                                     dStr = d.toDateString() == today.toDateString() ? 'Today' : monthNames[d.getMonth()] + ' ' + d.getDate();
 
-                            html += "<div class='labkey-notification' id='notification-" + rowId + "' onclick='LABKEY.Notification.goToActionLink(event, " + rowId + "); return true;'>"
+                            html += "<div class='labkey-notification' id='notification-" + rowId + "' data-rowid='" + rowId + "'>"
                                     + "   <div class='fa " + info.IconCls + " labkey-notification-icon'></div>"
                                     + "   <div class='labkey-notification-close'>"
-                                    + "      <div class='fa fa-times labkey-notification-times' onclick='LABKEY.Notification.markAsRead(" + rowId + "); return true;'></div>"
-                                    + "      <div class='fa fa-angle-down labkey-notification-toggle' onclick='LABKEY.Notification.toggleBody(this); return true;'></div>"
+                                    + "      <div class='fa fa-times labkey-notification-times' data-rowid='" + rowId + "'></div>"
+                                    + "      <div class='fa fa-angle-down labkey-notification-toggle'></div>"
                                     + "   </div>"
                                     + "   <div class='labkey-notification-createdby'>" + dStr + " - " + LABKEY.Utils.encodeHtml(info.CreatedBy) + "</div>"
                                     + "   <div class='labkey-notification-body'>" + info.HtmlContent + "</div>"
@@ -409,11 +409,36 @@ LABKEY.internal.UserNotificationPanel =
                 html += "</div>";
 
                 if (LABKEY.notifications.unreadCount > 0 || LABKEY.notifications.hasRead) {
-                    html += "<div class='labkey-notification-footer' onclick='LABKEY.Notification.goToViewAll(); return true;'><span>View all notifications</span></div>";
+                    html += "<div class='labkey-notification-footer'><span>View all notifications</span></div>";
                 }
             }
 
             $('#' + notificationPanelId).html(html);
+
+            $('.labkey-notification-toggle').click(function (event) {
+                event.stopPropagation();
+                LABKEY.Notification.toggleBody(this);
+            });
+
+            $('.labkey-notification-times').click(function (event) {
+                event.stopPropagation();
+                LABKEY.Notification.markAsRead(this.getAttribute('data-rowid'));
+            });
+
+            $('.labkey-notification').click(function (event) {
+                event.stopPropagation();
+                LABKEY.Notification.goToActionLink(event, this.getAttribute('data-rowid'));
+            });
+
+            $('.labkey-notification-clear-all').click(function (event) {
+                event.stopPropagation();
+                LABKEY.Notification.clearAllUnread();
+            });
+
+            $('.labkey-notification-footer').click(function (event) {
+                event.stopPropagation();
+                LABKEY.Notification.goToViewAll();
+            });
         }
 
         LABKEY.Notification.onChange(renderNotifications);

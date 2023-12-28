@@ -154,12 +154,12 @@ public class SearchUtils
                 for (int i = 0; i < queryString.length(); i++)
                 {
                     if (problemLocation == i)
-                        html.append(unsafe("<span ")).append(HIGHLIGHT_STYLE).append(unsafe(">"));
+                        html.unsafeAppend("<span ").append(HIGHLIGHT_STYLE).unsafeAppend(">");
 
                     html.append(queryString.charAt(i));
 
                     if (problemLocation == i)
-                        html.append(unsafe("</span>"));
+                        html.unsafeAppend("</span>");
                 }
 
                 html.append("': ");

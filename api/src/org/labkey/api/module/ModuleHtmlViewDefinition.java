@@ -98,6 +98,12 @@ public class ModuleHtmlViewDefinition
         }
     }
 
+    public ModuleHtmlViewDefinition(String name, HtmlString body)
+    {
+        _name = name;
+        _html = body;
+    }
+
     private void parseMetadata(Resource r)
     {
         if (r.exists())

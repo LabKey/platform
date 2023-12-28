@@ -123,7 +123,6 @@ LABKEY.Utils = new function(impl, $) {
         if (null == rowElem)
             return null;
 
-
         var nextRow = rowElem.nextSibling;
         while (nextRow != null && !nextRow.tagName)
             nextRow = nextRow.nextSibling;
@@ -133,25 +132,16 @@ LABKEY.Utils = new function(impl, $) {
 
         if (targetTagName)
         {
-            if (nextRow.tagName != targetTagName)
+            if (nextRow.tagName !== targetTagName)
                 return null;
         }
         else
         {
-            if (nextRow.tagName != "TR")
+            if (nextRow.tagName !== "TR")
                 return null;
         }
 
         return nextRow;
-    };
-
-    var isValidQuerySelector = function(selector) {
-        try {
-            document.createDocumentFragment().querySelector(selector);
-        } catch(ignore) {
-            return false;
-        }
-        return true;
     };
 
     /**
@@ -170,7 +160,7 @@ LABKEY.Utils = new function(impl, $) {
      */
     impl.displayAjaxErrorResponse = function(responseObj, exceptionObj, showExceptionClass, msgPrefix)
     {
-        if (responseObj.status == 0)
+        if (responseObj.status === 0)
         {
             // Don't show an error dialog if the user cancelled the request in the browser, like navigating
             // to another page
@@ -587,7 +577,7 @@ LABKEY.Utils = new function(impl, $) {
     impl.tabInputHandler = function(elementSelector) {
         // http://stackoverflow.com/questions/1738808/keypress-in-jquery-press-tab-inside-textarea-when-editing-an-existing-text
         $(elementSelector).keydown(function (e) {
-            if (e.keyCode == 9) {
+            if (e.keyCode === 9) {
                 var myValue = "\t";
                 var startPos = this.selectionStart;
                 var endPos = this.selectionEnd;
@@ -735,7 +725,7 @@ LABKEY.Utils = new function(impl, $) {
                 {
                     // Shove a tab in at the cursor
                     t.value = t.value.slice(0,ss).concat('\t').concat(t.value.slice(ss,t.value.length));
-                    if (ss == se)
+                    if (ss === se)
                     {
                         ss++;
                         se = ss;
@@ -812,24 +802,24 @@ LABKEY.Utils = new function(impl, $) {
         var url = elem.dataset.href ? elem.dataset.href : elem.href;
         if (targetTagName)
         {
-            while (elem.tagName != targetTagName)
+            while (elem.tagName !== targetTagName)
                 elem = elem.parentNode;
         }
         else
         {
-            while (elem.tagName != 'TR')
+            while (elem.tagName !== 'TR')
                 elem = elem.parentNode;
         }
 
         var nextRow = getNextRow(elem, targetTagName);
-        if (null != nextRow && nextRow.style.display != "none")
+        if (null != nextRow && nextRow.style.display !== "none")
             collapse = true;
 
         while (nextRow != null)
         {
-            if (nextRow.className.indexOf("labkey-header") != -1)
+            if (nextRow.className.indexOf("labkey-header") !== -1)
                 break;
-            if (nextRow.style.display != "none")
+            if (nextRow.style.display !== "none")
                 nextRow.style.display = "none";
             else
                 nextRow.style.display = "";
@@ -886,7 +876,7 @@ LABKEY.Utils = new function(impl, $) {
                 {
                     // Issue 46371: LKS grid column header locking clones the header row which results in multiple
                     //      DOM elements with the same id attr, but only the first was getting the event handler attached
-                    const list = document.querySelectorAll('#' + el);
+                    const list = document.querySelectorAll('#' + CSS.escape(el));
                     for (let i in list)
                         list[i]['on' + eventName] = handler;
                 }
@@ -908,8 +898,9 @@ LABKEY.Utils = new function(impl, $) {
         const fn = function()
         {
             const list = document.querySelectorAll(selector);
-            for (let i in list)
-                list[i]['on' + eventName] = handler;
+            list.forEach(function(element) {
+                element['on' + eventName] = handler;
+            });
         };
         (immediate || document.readyState!=="loading") ? fn() : document.addEventListener('load', fn);
     };

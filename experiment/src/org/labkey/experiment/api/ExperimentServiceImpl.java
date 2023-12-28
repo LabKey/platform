@@ -338,7 +338,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         SQLFragment sql = new SQLFragment("SELECT DISTINCT er.ProtocolLSID FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE ");
-        sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container"), c));
+        sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container")));
 
         // Translate the LSIDs into protocol objects
         List<ExpProtocolImpl> result = new ArrayList<>();
@@ -1009,13 +1009,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
             .add(dataClass.getModified());
 
-        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch -> {
-            for (Data data : batch)
-            {
-                ExpDataImpl impl = new ExpDataImpl(data);
-                impl.index(task, null);
-            }
-        });
+        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch ->
+                task.addRunnable(() -> batch.forEach(data ->
+                    new ExpDataImpl(data).index(task, null)),
+                SearchService.PRIORITY.bulk)
+        );
     }
 
     private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)
@@ -2023,7 +2021,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.append(" pa.runid IN (SELECT rowid FROM ");
         sql.append(getTinfoExperimentRun(), "er");
         sql.append(" WHERE ");
-        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), container));
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container")));
         sql.append("))");
         return new TreeSet<>(new SqlSelector(getSchema(), sql).getCollection(String.class));
     }
@@ -9065,6 +9063,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             }, DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
+
         return updateCounts;
     }
 
@@ -9268,18 +9267,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 }
             }
 
+            Map<String, Integer> counts = assayMoveData.counts();
+            int fileMoveCount = assayMoveData.fileMovesByRunId().values().stream().mapToInt(List::size).sum();
+            counts.put("movedFiles", fileMoveCount);
             transaction.addCommitTask(() -> {
-                int fileMoveCount = 0;
                 for (List<AbstractAssayProvider.AssayFileMoveData> runFileRenameData : assayMoveData.fileMovesByRunId().values())
                 {
                     for (AbstractAssayProvider.AssayFileMoveData renameData : runFileRenameData)
-                    {
-                        if (moveFile(renameData))
-                            fileMoveCount++;
-                    }
+                        moveFile(renameData);
                 }
-                Map<String, Integer> counts = assayMoveData.counts();
-                counts.put("movedFiles", fileMoveCount);
             }, POSTCOMMIT);
 
             transaction.commit();

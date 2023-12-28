@@ -958,7 +958,7 @@ public enum PropertyType
         return inputType;
     }
 
-    public Class getJavaType()
+    public Class<?> getJavaType()
     {
         return javaType;
     }

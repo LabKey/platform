@@ -63,7 +63,8 @@ public class DbLoginManager implements DbLoginService
         return configurations.iterator().next();
     }
 
-    public static PasswordRule getPasswordRule()
+    @Override
+    public PasswordRule getPasswordRule()
     {
         return getConfiguration().getPasswordRule();
     }

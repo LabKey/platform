@@ -88,6 +88,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -306,17 +307,17 @@ public class PipelineController extends SpringActionController
                     ActionURL urlOverride = getViewContext().cloneActionURL();
                     urlOverride.addParameter(Params.overrideRoot, "1");
                     ActionURL urlEditParent = urlSetup(root.getContainer());
-                    StringBuilder html = new StringBuilder();
-                    html.append("<p>This folder inherits its pipeline root settings from the folder '");
-                    html.append(PageFlowUtil.filter(root.getContainer().getPath()));
-                    html.append("'.<br>You can either ");
+                    HtmlStringBuilder html = HtmlStringBuilder.of();
+                    html.unsafeAppend("<p>This folder inherits its pipeline root settings from the folder '");
+                    html.append(root.getContainer().getPath());
+                    html.unsafeAppend("'.<br>You can either ");
                     html.append(PageFlowUtil.link("override", urlOverride));
-                    html.append(" the inherited settings in this folder,<br>or ");
+                    html.unsafeAppend(" the inherited settings in this folder,<br>or ");
                     html.append(PageFlowUtil.link("modify the setting for all folders", urlEditParent));
-                    html.append(" by setting the value in the folder '");
-                    html.append(PageFlowUtil.filter(root.getContainer().getPath()));
-                    html.append("'.</p>");
-                    return new HtmlView(html.toString());
+                    html.unsafeAppend(" by setting the value in the folder '");
+                    html.append(root.getContainer().getPath());
+                    html.unsafeAppend("'.</p>");
+                    return new HtmlView(html);
                 }
             }
 
@@ -1225,7 +1226,7 @@ public class PipelineController extends SpringActionController
                 _archiveFile = PipelineManager.validateFolderImportFileNioPath(form.getFilePath(), currentPipelineRoot, errors);
 
                 // Be sure that the set of folder to apply the import to match the setting to enable/disable them
-                if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().size() == 0))
+                if (form.isApplyToMultipleFolders() && (form.getFolderRowIds() == null || form.getFolderRowIds().isEmpty()))
                 {
                     errors.reject(ERROR_MSG, "At least one folder must be selected when 'apply to multiple folders' is enabled.");
                 }
@@ -1265,7 +1266,7 @@ public class PipelineController extends SpringActionController
                 }
 
                 // Be sure that the provided data types to import match the setting to enable/disable them
-                if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().size() == 0))
+                if (form.isSpecificImportOptions() && (form.getDataTypes() == null || form.getDataTypes().isEmpty()))
                 {
                     errors.reject(ERROR_MSG, "At least one folder data type must be selected when 'select specific objects to import' is enabled.");
                 }

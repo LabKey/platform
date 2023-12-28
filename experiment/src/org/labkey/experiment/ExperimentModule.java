@@ -43,6 +43,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -68,6 +69,7 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.module.Summary;
 import org.labkey.api.ontology.OntologyService;
@@ -232,7 +234,6 @@ public class ExperimentModule extends SpringModule
         AdminConsole.addExperimentalFeatureFlag(ExpMaterialTable.USE_MATERIALIZED_SAMPLETYPE, "Use materialized views for sample type tables",
                 "PROTOTYPE: possible approach for improving query performance.", false);
 
-
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
@@ -240,6 +241,8 @@ public class ExperimentModule extends SpringModule
 
         WebdavService.get().addExpDataProvider((path, container) -> ExperimentService.get().getAllExpDataByURL(path, container));
         ExperimentService.get().registerObjectReferencer(ExperimentServiceImpl.get());
+
+        addModuleProperty(new LineageMaximumDepthModuleProperty(this));
     }
 
     @Override

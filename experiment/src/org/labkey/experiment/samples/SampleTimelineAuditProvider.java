@@ -166,13 +166,13 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             super(SampleTimelineAuditEvent.EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-            fields.add(createPropertyDescriptor(SAMPLE_TYPE_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(SAMPLE_TYPE_COLUMN_NAME, PropertyType.STRING, 100));
             fields.add(createPropertyDescriptor(SAMPLE_TYPE_ID_COLUMN_NAME, PropertyType.INTEGER));
-            fields.add(createPropertyDescriptor(SAMPLE_NAME_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(SAMPLE_NAME_COLUMN_NAME, PropertyType.STRING, 200));
             fields.add(createPropertyDescriptor(SAMPLE_ID_COLUMN_NAME, PropertyType.INTEGER));
-            fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING, 300));
             fields.add(createPropertyDescriptor(IS_LINEAGE_UPDATE_COLUMN_NAME, PropertyType.BOOLEAN));
-            fields.add(createPropertyDescriptor(INVENTORY_UPDATE_TYPE_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(INVENTORY_UPDATE_TYPE_COLUMN_NAME, PropertyType.STRING, 25));
             fields.add(createPropertyDescriptor(METADATA_COLUMN_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(COLUMN_NAME_USER_COMMENT, PropertyType.STRING, -1));
             fields.add(createOldDataMapPropertyDescriptor());

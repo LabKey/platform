@@ -25,6 +25,7 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.ConnectionWrapper.Closer;
+import org.labkey.api.data.DbScope.LabKeyDataSource;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.LimitRowsCustomizer;
 import org.labkey.api.data.dialect.LimitRowsSqlGenerator.StandardLimitRowsCustomizer;
@@ -38,9 +39,7 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
 import javax.servlet.ServletException;
-import javax.sql.DataSource;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -57,7 +56,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -756,11 +754,21 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         throw new ConfigurationException(message, advice);
     }
 
+    @Override
+    public void prepare(LabKeyDataSource dataSource)
+    {
+        // PostgreSQL JDBC driver introduced caching of PreparedStatements starting with 9.4.1202, with no provision for uncaching.
+        // This has caused many problems. See Issue 26116 and Issue 49216.
+        if (dataSource.isPrimary())
+        {
+            dataSource.setConnectionProperty("preparedThreshold", "0");
+            dataSource.setConnectionProperty("preparedStatementCacheQueries", "0");
+        }
+    }
 
     @Override
     public void prepare(DbScope scope)
     {
-        disablePreparedStatementCaching(scope);
         initializeUserDefinedTypes(scope);
         initializeInClauseGenerator(scope);
         determineSettings(scope);
@@ -771,26 +779,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     public void prepareConnection(Connection conn)
     {
-    }
-
-    // PostgreSQL JDBC driver introduced caching of PreparedStatements starting with 9.4.1202, with no provision for uncaching.
-    // This has caused many problems, most recently #26116 (postgres error when changing varchar scale in domain editor). Use
-    // reflection to programmatically set a property that disables this caching on every PostgreSQL DataSource.
-    private void disablePreparedStatementCaching(DbScope scope)
-    {
-        DataSource ds = scope.getDataSource();
-
-        try
-        {
-            Field f = ds.getClass().getDeclaredField("connectionProperties");
-            f.setAccessible(true);
-            Properties props = (Properties) f.get(ds);
-            props.put("preparedStatementCacheQueries", "0");
-        }
-        catch (NoSuchFieldException | IllegalAccessException e)
-        {
-            LOG.error("Error attempting to set preparedStatementCacheQueries property", e);
-        }
     }
 
     // When a new PostgreSQL DbScope is created, we enumerate the domains (user-defined types) in the public schema

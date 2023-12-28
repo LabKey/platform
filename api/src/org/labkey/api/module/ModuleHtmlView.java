@@ -105,6 +105,13 @@ public class ModuleHtmlView extends HtmlView
         return new ModuleHtmlView(viewDefinition, module, webpart);
     }
 
+
+    public ModuleHtmlView(Module module, String name, HtmlString body)
+    {
+        this(new ModuleHtmlViewDefinition(name, body), module, null);
+    }
+
+
     private ModuleHtmlView(ModuleHtmlViewDefinition viewdef, @NotNull Module module, @Nullable WebPart webpart)
     {
         _debugViewDescription = getClass().getSimpleName() + ": " + module.getName() + "/" + viewdef.getName();

@@ -60,6 +60,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -1170,7 +1171,7 @@ public class WikiController extends SpringActionController
                 if ("none".equals(getViewContext().getRequest().getParameter("_template")))
                 {
                     getPageConfig().setTemplate(Template.None);
-                    HtmlView html = new HtmlView(_wikiversion.getBody());
+                    HtmlView html = HtmlView.unsafe(_wikiversion.getBody());
                     html.setFrame(WebPartView.FrameType.NONE);
                     html.setContentType("text/plain");
                     return html;
@@ -1397,14 +1398,14 @@ public class WikiController extends SpringActionController
 
             DiffMatchPatch diffTool = new DiffMatchPatch();
             List<Diff> diffs = diffTool.diff_main(StringUtils.trimToEmpty(_wikiVersion1.getBody()), StringUtils.trimToEmpty(_wikiVersion2.getBody()));
-            String htmlDiffs = diffTool.diff_prettyHtmlCompact(diffs);
+            HtmlString htmlDiffs = diffTool.diff_prettyHtmlCompact(diffs);
             HtmlView htmlView = new HtmlView(htmlDiffs);
             htmlView.setTitle("Source Differences");
 
             TextExtractor te1 = new TextExtractor(_wikiVersion1.getHtml(getContainer(), _wiki));
             TextExtractor te2 = new TextExtractor(_wikiVersion2.getHtml(getContainer(), _wiki));
             diffs = diffTool.diff_main(te1.extract(), te2.extract());
-            String textDiffs = diffTool.diff_prettyHtmlCompact(diffs);
+            HtmlString textDiffs = diffTool.diff_prettyHtmlCompact(diffs);
             HtmlView textView = new HtmlView(textDiffs);
             textView.setTitle("Text Differences");
 
@@ -2760,17 +2761,17 @@ public class WikiController extends SpringActionController
                 }
             }
 
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
             html.append(renderTable(c, pagesWithInvalidLinks, "Pages with invalid links", false));
             html.append(renderUnusedAttachments(c, unusedAttachments));
             html.append(renderTable(c, pagesAndReferences, "Back links (i.e., pages with a list of all referencing pages)", true));
 
-            return new HtmlView(html.toString());
+            return new HtmlView(html);
         }
 
-        private StringBuilder renderUnusedAttachments(Container c, Map<Wiki, Collection<String>> unusedAttachments)
+        private HtmlStringBuilder renderUnusedAttachments(Container c, Map<Wiki, Collection<String>> unusedAttachments)
         {
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
             int row = 0;
 
             for (Entry<Wiki, Collection<String>> entry : unusedAttachments.entrySet())
@@ -2778,40 +2779,42 @@ public class WikiController extends SpringActionController
                 String name = entry.getKey().getName();
                 Collection<String> unused = entry.getValue();
 
-                html.append("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\"><td>");
+                html.unsafeAppend("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").unsafeAppend("\"><td>");
                 html.append(getSimpleLink(name, getPageURL(c, name)));
-                html.append("</td><td>");
+                html.unsafeAppend("</td><td>");
                 String sep = "";
 
                 for (String attachmentName : unused)
                 {
                     html.append(sep);
-                    html.append(PageFlowUtil.filter(attachmentName));
+                    html.append(attachmentName);
                     sep = ", ";
                 }
 
-                html.append("</td></tr>\n");
+                html.unsafeAppend("</td></tr>\n");
             }
 
-            if (html.length() > 0)
-            {
-                html.insert(0, "<table>\n<tr><td colspan=2><b>" + PageFlowUtil.filter("Pages with unlinked attachments") + "</b></td></tr>\n");
-                html.append("</table><br>\n");
-            }
+            if (html.isEmpty())
+                return html;
 
-            return html;
+            HtmlStringBuilder ret = HtmlStringBuilder.of();
+            ret.unsafeAppend("<table>\n<tr><td colspan=2><b>").append("Pages with unlinked attachments").unsafeAppend("</b></td></tr>\n");
+            ret.append(html);
+            ret.unsafeAppend("</table><br>\n");
+
+            return ret;
         }
 
-        private StringBuilder renderTable(Container c, MultiValuedMap<Wiki, String> mmap, String title, boolean linkToNames)
+        private HtmlStringBuilder renderTable(Container c, MultiValuedMap<Wiki, String> mmap, String title, boolean linkToNames)
         {
-            StringBuilder html = new StringBuilder();
+            HtmlStringBuilder html = HtmlStringBuilder.of();
             Set<Wiki> wikis = new TreeSet<>((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()));
             wikis.addAll(mmap.keySet());
             int row = 0;
 
             for (Wiki wiki : wikis)
             {
-                StringBuilder linksHtml = new StringBuilder();
+                HtmlStringBuilder linksHtml = HtmlStringBuilder.of();
                 List<String> names = new ArrayList<>(mmap.get(wiki));
                 names.sort(String.CASE_INSENSITIVE_ORDER);
                 String sep = "";
@@ -2819,33 +2822,38 @@ public class WikiController extends SpringActionController
                 for (String name : names)
                 {
                     linksHtml.append(sep);
-                    linksHtml.append(linkToNames ? getSimpleLink(name, getPageURL(c, name)) : PageFlowUtil.filter(name));
+                    if (linkToNames)
+                        linksHtml.append(getSimpleLink(name, getPageURL(c, name)));
+                    else
+                        linksHtml.append(name);
                     sep = ", ";
                 }
 
-                if (0 == linksHtml.length())
+                if (linksHtml.isEmpty())
                     continue;
 
-                html.append("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\"><td>");
+                html.unsafeAppend("    <tr class=\"").append(row++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row").unsafeAppend("\"><td>");
                 html.append(getSimpleLink(wiki.getName(), getPageURL(c, wiki.getName())));
 
-                html.append("</td><td>");
+                html.unsafeAppend("</td><td>");
                 html.append(linksHtml);
                 html.append("</td></tr>\n");
             }
 
-            if (html.length() > 0)
-            {
-                html.insert(0, "<table>\n<tr><td colspan=2><b>" + PageFlowUtil.filter(title) + "</b></td></tr>\n");
-                html.append("</table><br>\n");
-            }
+            if (html.isEmpty())
+                return html;
 
-            return html;
+            HtmlStringBuilder ret = HtmlStringBuilder.of();
+            ret.unsafeAppend("<table>\n<tr><td colspan=2><b>").append(title).unsafeAppend("</b></td></tr>\n");
+            ret.append(html);
+            ret.unsafeAppend("</table><br>\n");
+
+            return ret;
         }
 
-        private String getSimpleLink(String name, ActionURL url)
+        private HtmlString getSimpleLink(String name, ActionURL url)
         {
-            return "<a href=\"" + PageFlowUtil.filter(url) + "\">" + PageFlowUtil.filter(name) + "</a>";
+            return HtmlString.unsafe("<a href=\"" + PageFlowUtil.filter(url) + "\">" + PageFlowUtil.filter(name) + "</a>");
         }
 
         @Override

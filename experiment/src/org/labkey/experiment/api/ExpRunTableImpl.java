@@ -20,10 +20,12 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.*;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -32,6 +34,7 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -39,12 +42,14 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -58,6 +63,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -68,13 +74,19 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
 {
@@ -1061,6 +1073,78 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return ExperimentServiceImpl.get().getExpRun(lsid);
             }
             return null;
+        }
+
+        @Override
+        public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            Map<String, Integer> response = new HashMap<>();
+
+            AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
+            String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
+
+            List<? extends ExpRun> expRuns = getRunsForMoveRows(container, rows, errors);
+            if (!errors.hasErrors())
+            {
+                try
+                {
+                    response = ExperimentService.get().moveAssayRuns(expRuns, container, targetContainer, user, auditUserComment, auditType);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw new BatchValidationException(new ValidationException(e.getMessage()));
+                }
+                SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "assayRuns");
+            }
+
+            return new HashMap<>(response);
+        }
+
+        private List<? extends ExpRun> getRunsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+        {
+            Set<Integer> runIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+            if (runIds.isEmpty())
+            {
+                errors.addRowError(new ValidationException("Run IDs must be specified for the move operation."));
+                return null;
+            }
+
+            Set<Integer> runIdsCascadeMove = new HashSet<>();
+            for (int runId : runIds)
+            {
+                ExpRun run = ExperimentService.get().getExpRun(runId);
+                if (run != null)
+                    addReplacesRuns(run, runIdsCascadeMove);
+            }
+            if (runIdsCascadeMove.size() > 0)
+                runIds.addAll(runIdsCascadeMove);
+
+            List<? extends ExpRun> expRuns = ExperimentService.get().getExpRuns(runIds);
+            if (expRuns.size() != runIds.size())
+            {
+                errors.addRowError(new ValidationException("Unable to find all runs for the move operation."));
+                return null;
+            }
+
+            // verify all runs are from the current container
+            if (expRuns.stream().anyMatch(run -> !run.getContainer().equals(container)))
+            {
+                errors.addRowError(new ValidationException("All assay runs must be from the current container for the move operation."));
+                return null;
+            }
+
+            // verify allowed moves based on assay QC statuses ?
+
+            return expRuns;
+        }
+
+        private void addReplacesRuns(ExpRun run, Set<Integer> runIds)
+        {
+            for (ExpRun replacedRun : run.getReplacesRuns())
+            {
+                runIds.add(replacedRun.getRowId());
+                addReplacesRuns(replacedRun, runIds);
+            }
         }
 
         @Override

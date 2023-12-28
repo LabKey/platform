@@ -2614,7 +2614,7 @@ public class SpecimenController extends SpringActionController
             ExtendedSpecimenRequestView view = SpecimenManager.get().getExtendedSpecimenRequestView(getViewContext());
             if (view != null && view.isActive())
             {
-                HtmlView requestView = new HtmlView(view.getBody());
+                HtmlView requestView = HtmlView.unsafe(view.getBody());
                 vbox.addView(requestView);
             }
             else

@@ -290,6 +290,8 @@ public class ModuleProperty
             }
         }
 
+        validate(user, c, value);
+
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(PropertyManager.SHARED_USER, c, getCategory(), true);
 
         if (!StringUtils.isEmpty(value))
@@ -298,6 +300,10 @@ public class ModuleProperty
             props.remove(getName());
 
         props.save();
+    }
+
+    public void validate(@Nullable User user, Container c, @Nullable String value)
+    {
     }
 
     /**

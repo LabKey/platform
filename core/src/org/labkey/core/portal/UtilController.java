@@ -88,7 +88,7 @@ public class UtilController extends SpringActionController
                 runner.execute();
                 String svg = PageFlowUtil.getFileContentsAsString(svgFile);
                 String html = svg.substring(svg.indexOf("<svg"));
-                HtmlView v = new HtmlView(html);
+                HtmlView v = HtmlView.unsafe(html);
                 v.setFrame(WebPartView.FrameType.NONE);
                 return v;
             }

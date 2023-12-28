@@ -19,7 +19,8 @@ package org.labkey.api.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
@@ -30,12 +31,11 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+
 /**
  * This data collector doesn't write any files to the assay upload temp directory, but it may reference them
  * after an error causes the page to reshow. Therefore, it needs to subclass AbstractTempDirDataCollector so that
  * it migrates the files to the main assay file directory after a successful import.
- * User: jeckels
- * Date: Aug 3, 2007
  */
 public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
@@ -89,9 +89,9 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
     }
 
     @Override
-    public HttpView getView(ContextType context)
+    public HtmlView getView(ContextType context)
     {
-        StringBuilder sb = new StringBuilder();
+        HtmlStringBuilder sb = HtmlStringBuilder.of();
         String separator = "";
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
         {
@@ -100,27 +100,27 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
             {
                 sb.append(separator);
                 separator = ", ";
-                sb.append(PageFlowUtil.filter(entry.getValue().getName()));
+                sb.append(entry.getValue().getName());
                 sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
             }
         }
-        return new HtmlView(sb.toString());
+        return new HtmlView(sb);
     }
 
-    public String getHiddenFormElementHTML(Container container, String formElementName, File file)
+    public HtmlString getHiddenFormElementHTML(Container container, String formElementName, File file)
     {
         PipeRoot pipeRoot = getPipelineRoot(container);
-        StringBuilder sb = new StringBuilder();
-        sb.append("<input name=\"");
+        HtmlStringBuilder sb = HtmlStringBuilder.of();
+        sb.unsafeAppend("<input name=\"");
         sb.append(_type.getPathFormElementName());
-        sb.append("\" type=\"hidden\" value=\"");
-        sb.append(PageFlowUtil.filter(pipeRoot.relativePath(file).replace('\\', '/')));
-        sb.append("\"/><input type=\"hidden\" name=\"");
+        sb.unsafeAppend("\" type=\"hidden\" value=\"");
+        sb.append(pipeRoot.relativePath(file).replace('\\', '/'));
+        sb.unsafeAppend("\"/><input type=\"hidden\" name=\"");
         sb.append(_type.getNameFormElementName());
-        sb.append("\" value=\"");
-        sb.append(PageFlowUtil.filter(formElementName));
-        sb.append("\"/>");
-        return sb.toString();
+        sb.unsafeAppend("\" value=\"");
+        sb.append(formElementName);
+        sb.unsafeAppend("\"/>");
+        return sb.getHtmlString();
     }
 
     @Override
