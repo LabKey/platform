@@ -389,10 +389,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             {
                 if (pkCol.getJdbcType() == JdbcType.GUID)
                 {
-                    if (k == null)
+                    if (k == null || (k instanceof String strKey && !GUID.isGUID(strKey)))
+                    {
+                        map.put(k, MISS);
                         return null;
-                    if (k instanceof String strKey && !GUID.isGUID(strKey))
-                        return null;
+                    }
                 }
 
                 try
