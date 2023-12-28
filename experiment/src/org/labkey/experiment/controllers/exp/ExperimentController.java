@@ -61,7 +61,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.*;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.exp.AbstractMoveEntitiesAction;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DeleteForm;
 import org.labkey.api.exp.DuplicateMaterialException;
@@ -104,7 +103,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -4022,7 +4020,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
-            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null);
+            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null, getContainer());
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
@@ -4030,6 +4028,22 @@ public class ExperimentController extends SpringActionController
             {
                 tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
                 updateService = tInfo.getUpdateService();
+            }
+
+            if (_context.isCrossFolderImport() && !_context.getInsertOption().updateOnly)
+            {
+                ColumnDescriptor[] dataColumns = dl.getColumns();
+                boolean hasContainerColumn = false;
+                for (ColumnDescriptor dataColumn : dataColumns)
+                {
+                    if (dataColumn.getColumnName().equalsIgnoreCase("container"))
+                    {
+                        hasContainerColumn = true;
+                        break;
+                    }
+                }
+                if (!hasContainerColumn)
+                    _context.setCrossFolderImport(false);
             }
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
@@ -4901,10 +4915,11 @@ public class ExperimentController extends SpringActionController
                 message = "Could not map lsid to URL";
             }
 
-            String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
-                    " Lsid <input type=text name=lsid size=\"80\" value=\"" +
-                    (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
-                    PageFlowUtil.button("Go").submit(true) + "</form>";
+            HtmlStringBuilder html = HtmlStringBuilder.of();
+            html.append(message).unsafeAppend("<form action=\"").append(getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class).toString()).unsafeAppend("\">")
+                    .unsafeAppend(" Lsid <input type=text name=lsid size=\"80\" value=\"")
+                    .append(form.getLsid() == null ? "" : form.getLsid()).unsafeAppend("\">")
+                    .append(PageFlowUtil.button("Go").submit(true)).unsafeAppend("</form>");
 
             return new HtmlView("Enter LSID", html);
         }
@@ -5148,7 +5163,7 @@ public class ExperimentController extends SpringActionController
         private final Map<ExpMaterial, String> _inputMaterials = new LinkedHashMap<>();
 
         @Override
-        public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(DeriveMaterialForm form, boolean reshow, BindException errors)
         {
             _materials = form.lookupMaterials();
             if (_materials.isEmpty())
@@ -5216,7 +5231,7 @@ public class ExperimentController extends SpringActionController
             setHelpTopic("sampleSets");
             addRootNavTrail(root);
             root.addChild("Sample Types", ExperimentUrlsImpl.get().getShowSampleTypeListURL(getContainer()));
-            ExpSampleType sampleType = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleType() : null;
+            ExpSampleType sampleType = _materials != null && !_materials.isEmpty() ? _materials.get(0).getSampleType() : null;
             if (sampleType != null)
             {
                 root.addChild(sampleType.getName(), ExperimentUrlsImpl.get().getShowSampleTypeURL(sampleType));
@@ -7698,8 +7713,8 @@ public class ExperimentController extends SpringActionController
                 List<? extends ExpSampleType> sampleTypes = SampleTypeService.get()
                         .getSampleTypes(container, user, true);
 
-                StringBuilder builder = new StringBuilder();
-                builder.append("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
+                HtmlStringBuilder builder = HtmlStringBuilder.of();
+                builder.unsafeAppend("<table class=\"DataRegion\"><tr><th>Sample Type</th><th>#Recomputed</th></tr>");
 
                 SampleTypeService service = SampleTypeService.get();
                 for (ExpSampleType sampleType : sampleTypes)
@@ -7707,142 +7722,18 @@ public class ExperimentController extends SpringActionController
                     int updatedCount;
                     updatedCount = service.recomputeSampleTypeRollup(sampleType, container);
                     SampleTypeServiceImpl.get().refreshSampleTypeMaterializedView(sampleType, false);
-                    builder.append("<tr><td>")
+                    builder.unsafeAppend("<tr><td>")
                             .append(sampleType.getName())
-                            .append("</td><td>")
+                            .unsafeAppend("</td><td>")
                             .append(updatedCount)
-                            .append("</td></tr>");
+                            .unsafeAppend("</td></tr>");
                 }
 
-                builder.append("</table>");
-                return new HtmlView("Aliquot Rollup Recalculation Result", builder.toString());
+                builder.unsafeAppend("</table>");
+                return new HtmlView("Aliquot Rollup Recalculation Result", builder);
             }
         }
     }
-
-    @ActionNames("moveSources, moveDataClassObjects")
-    @RequiresPermission(UpdatePermission.class)
-    public static class MoveDataClassObjectsAction extends AbstractMoveEntitiesAction
-    {
-        private List<? extends ExpData> _dataClassObjects;
-
-        @Override
-        public void validateForm(MoveEntitiesForm form, Errors errors)
-        {
-            _entityType = "sources";
-            super.validateForm(form, errors);
-            validateDataIds(form, errors);
-        }
-
-        @Override
-        protected Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
-        {
-            return ExperimentService.get().moveDataClassObjects(_dataClassObjects, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-        }
-
-        @Override
-        protected void updateSelections(MoveEntitiesForm form)
-        {
-            updateSelections(form, _dataClassObjects.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
-        }
-
-        private void validateDataIds(MoveEntitiesForm form, Errors errors)
-        {
-            Set<Integer> dataIds = form.getIds(false); // handle clear of selectionKey after move complete
-            if (dataIds == null || dataIds.isEmpty())
-            {
-                errors.reject(ERROR_GENERIC, "Source IDs must be specified for the move operation.");
-                return;
-            }
-
-            _dataClassObjects = ExperimentServiceImpl.get().getExpDatas(dataIds);
-            if (_dataClassObjects.size() != dataIds.size())
-            {
-                errors.reject(ERROR_GENERIC, "Unable to find all sources for the move operation.");
-                return;
-            }
-
-            // verify all sources are from the current container
-            if (_dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(getContainer())))
-            {
-                errors.reject(ERROR_GENERIC, "All sources must be from the current container for the move operation.");
-            }
-        }
-
-    }
-
-    @RequiresPermission(UpdatePermission.class)
-    public static class MoveSamplesAction extends AbstractMoveEntitiesAction
-    {
-        private List<? extends ExpMaterial> _materials;
-
-        @Override
-        public void validateForm(MoveEntitiesForm form, Errors errors)
-        {
-            _entityType = "samples";
-            super.validateForm(form, errors);
-            validateSampleIds(form, errors);
-        }
-
-        @Override
-        public Map<String, Integer> doMove(MoveEntitiesForm form) throws ExperimentException, BatchValidationException
-        {
-            return SampleTypeService.get().moveSamples(_materials, getContainer(), _targetContainer, getUser(), form.getUserComment(), form.getAuditBehavior());
-        }
-
-        private void validateSampleIds(MoveEntitiesForm form, Errors errors)
-        {
-            Set<Integer> sampleIds = form.getIds(false); // handle clear of selectionKey after move complete
-            if (sampleIds == null || sampleIds.isEmpty())
-            {
-                errors.reject(ERROR_GENERIC, "Sample IDs must be specified for the move operation.");
-                return;
-            }
-
-            _materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
-            if (_materials.size() != sampleIds.size())
-            {
-                errors.reject(ERROR_GENERIC, "Unable to find all samples for the move operation.");
-                return;
-            }
-
-            // verify all samples are from the current container
-            if (_materials.stream().anyMatch(material -> !material.getContainer().equals(getContainer())))
-            {
-                errors.reject(ERROR_GENERIC, "All samples must be from the current container for the move operation.");
-                return;
-            }
-
-            // verify allowed moves based on sample statuses
-            List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
-            for (ExpMaterial material : _materials)
-            {
-                DataState sampleStatus = material.getSampleState();
-                if (sampleStatus == null) continue;
-
-                // prevent move for locked samples
-                if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
-                {
-                    invalidStatusSamples.add(material);
-                }
-                // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
-                // only applies when moving from child to parent or child to sibling
-                else if (!getContainer().isProject() && sampleStatus.getContainer().equals(getContainer()))
-                {
-                    invalidStatusSamples.add(material);
-                }
-            }
-            if (!invalidStatusSamples.isEmpty())
-                errors.reject(ERROR_GENERIC, SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move));
-        }
-
-        @Override
-        protected void updateSelections(MoveEntitiesForm form)
-        {
-            updateSelections(form, _materials.stream().map(material -> Integer.toString(material.getRowId())).collect(Collectors.toSet()));
-        }
-    }
-
 
     /* Also see API CheckEdgesAction */
     @RequiresPermission(TroubleshooterPermission.class)

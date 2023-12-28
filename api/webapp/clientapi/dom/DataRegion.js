@@ -12,8 +12,10 @@ if (!LABKEY.DataRegions) {
     //
     // CONSTANTS
     //
+    // Issue 48715: Limit the number of rows that can be displayed in a data region
+    var ALL_ROWS_MAX = 5_000;
     var CUSTOM_VIEW_PANELID = '~~customizeView~~';
-    var DEFAULT_TIMEOUT = 30000;
+    var DEFAULT_TIMEOUT = 30_000;
     var PARAM_PREFIX = '.param.';
     var SORT_ASC = '+';
     var SORT_DESC = '-';
@@ -31,7 +33,7 @@ if (!LABKEY.DataRegions) {
     var SHOW_ROWS_PREFIX = '.showRows';
     var VIEWNAME_PREFIX = '.viewName';
 
-    // 33536: These prefixes should match the URL parameter key exactly
+    // Issue 33536: These prefixes should match the URL parameter key exactly
     var EXACT_MATCH_PREFIXES = [
         COLUMNS_PREFIX,
         CONTAINER_FILTER_NAME,
@@ -213,7 +215,7 @@ if (!LABKEY.DataRegions) {
 
         if (config.buttonBar && config.buttonBar.items && LABKEY.Utils.isArray(config.buttonBar.items)) {
             // Be tolerant of the caller passing in undefined items, as pageSize has been removed as an option. Strip
-            // them out so they don't cause problems downstream. See issue 34562
+            // them out so they don't cause problems downstream. See Issue 34562.
             config.buttonBar.items = config.buttonBar.items.filter(function (value, index, arr) {
                 return value;
             });
@@ -854,7 +856,7 @@ if (!LABKEY.DataRegions) {
     var _selClickLock; // lock to prevent removing a row highlight that was just applied
     var _selDocClick; // global (shared across all Data Region instances) click event handler instance
 
-    // 32898: Clear row highlights on document click
+    // Issue 32898: Clear row highlights on document click
     var _onDocumentClick = function() {
         if (_selClickLock) {
             var form = _getFormSelector(_selClickLock);
@@ -1349,7 +1351,7 @@ if (!LABKEY.DataRegions) {
      * Clear the message box contents.
      */
     LABKEY.DataRegion.prototype.clearMessage = function() {
-        if (this.msgbox) this.msgbox.clear();
+        if (this.msgbox) this.msgbox.removeAll();
     };
 
     /**
@@ -1636,7 +1638,9 @@ if (!LABKEY.DataRegions) {
 
                     var offsets = [20, 40, 100, 250];
                     if (this.maxRows > 0 && offsets.indexOf(this.maxRows) === -1) {
-                        offsets.push(this.maxRows);
+                        if (!_isMaxRowsAllRows(this)) {
+                            offsets.push(this.maxRows);
+                        }
                         offsets = offsets.sort(function(a, b) { return a - b; });
                     }
 
@@ -1659,7 +1663,11 @@ if (!LABKEY.DataRegions) {
                     //bind functions to menu items
                     _getShowFirstSelector(this).click(_firstPage.bind(this));
                     _getShowLastSelector(this).click(_lastPage.bind(this));
-                    _getShowAllSelector(this).click(_showRows.bind(this, this, 'all'));
+                    _getShowAllSelector(this).click(this.showAllRows.bind(this));
+
+                    if (_isMaxRowsAllRows(this) && this.totalRows > this.maxRows) {
+                        this.addMessage('<span><b>Show all:</b> Displaying the first ' + ALL_ROWS_MAX.toLocaleString() + ' rows. Use paging to see more results.</span>');
+                    }
 
                     for (var key in offsetIds) {
                         if (offsetIds.hasOwnProperty(key)) {
@@ -1715,7 +1723,7 @@ if (!LABKEY.DataRegions) {
     };
 
     var _showAllEnabled = function(region) {
-        return _showFirstEnabled(region) || _showLastEnabled(region);
+        return (_showFirstEnabled(region) || _showLastEnabled(region)) && !_isMaxRowsAllRows(region);
     };
 
     var _getPaginationText = function(region) {
@@ -1764,11 +1772,15 @@ if (!LABKEY.DataRegions) {
         return false;
     };
 
+    var _isMaxRowsAllRows = function(region) {
+        return region.maxRows === ALL_ROWS_MAX;
+    };
+
     /**
-     * Forces the grid to show all rows, without any paging
+     * Forces the grid to show all rows, up to ALL_ROWS_MAX, without any paging
      */
     LABKEY.DataRegion.prototype.showAllRows = function() {
-        _showRows(this, 'all');
+        _setMaxRows.bind(this, ALL_ROWS_MAX)();
     };
 
     /**
@@ -1912,7 +1924,7 @@ if (!LABKEY.DataRegions) {
             ctxBar.find('.ctx-clear-all').off('click').on('click', $.proxy(this.clearAllFilters, this));
         }
 
-        // 35396: Support ButtonBarOptions <onRender>
+        // Issue 35396: Support ButtonBarOptions <onRender>
         if (LABKEY.Utils.isArray(this.buttonBarOnRenders)) {
             for (var i=0; i < this.buttonBarOnRenders.length; i++) {
                 var scriptFnName = this.buttonBarOnRenders[i];
@@ -3212,7 +3224,7 @@ if (!LABKEY.DataRegions) {
                             return;
                         }
                         else if (REQUIRE_NAME_PREFIX.hasOwnProperty(key)) {
-                            // 26686: Block known parameters, should be prefixed by region name
+                            // Issue 26686: Block known parameters, should be prefixed by region name
                             return;
                         }
 
@@ -3531,7 +3543,7 @@ if (!LABKEY.DataRegions) {
 
             msg += "&nbsp;" + "<span class='labkey-button select-none'>Select None</span>";
             var showOpts = [];
-            if (region.showRows !== 'all')
+            if (region.showRows !== 'all' && !_isMaxRowsAllRows(region))
                 showOpts.push("<span class='labkey-button show-all'>Show All</span>");
             if (region.showRows !== 'selected')
                 showOpts.push("<span class='labkey-button show-selected'>Show Selected</span>");
@@ -3759,7 +3771,7 @@ if (!LABKEY.DataRegions) {
 
         _processButtonBar(region, json);
 
-        // 10505: add non-removable sorts and filters to json (not url params).
+        // Issue 10505: add non-removable sorts and filters to json (not url params).
         if (region.sort || region.filters || region.aggregates) {
             json.filters = {};
 
@@ -3927,9 +3939,7 @@ if (!LABKEY.DataRegions) {
 
         if (newParams) {
             newParams.forEach(function(pair) {
-                //
-                // Filters may repeat themselves #25337
-                //
+                // Issue 25337: Filters may repeat themselves
                 if (_isFilter(region, pair[0])) {
                     if (params[pair[0]] == undefined) {
                         params[pair[0]] = [];
@@ -3955,10 +3965,7 @@ if (!LABKEY.DataRegions) {
             });
         }
 
-        //
-        // 40226: Don't include parameters that are being logically excluded
-        //
-
+        // Issue 40226: Don't include parameters that are being logically excluded
         if (skipPrefixes) {
             skipPrefixes.forEach(function(skipKey) {
                 if (params.hasOwnProperty(skipKey) && !newParamPrefixes.hasOwnProperty(skipKey)) {
@@ -4029,7 +4036,7 @@ if (!LABKEY.DataRegions) {
             _showSelectMessage(region, msg);
         }
 
-        // 10566: for javascript perf on IE stash the requires selection buttons
+        // Issue 10566: for javascript perf on IE stash the requires selection buttons
         if (!region._requiresSelectionButtons) {
             // escape ', ", and \
             var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
@@ -4294,7 +4301,7 @@ if (!LABKEY.DataRegions) {
                 .on('resize', resizeTask)
                 .on('scroll', onScroll);
         $(document)
-                .on('DOMNodeInserted', domTask); // 13121
+                .on('DOMNodeInserted', domTask); // Issue 13121
 
         // ensure that resize/scroll fire at the end of initialization
         domTask();

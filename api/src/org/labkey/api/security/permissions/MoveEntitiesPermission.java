@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2009-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import React from 'react';
-import ReactDOM from 'react-dom';
+package org.labkey.api.security.permissions;
 
-import { App } from './DataClassDesigner';
-
-const render = (): void => {
-    ReactDOM.render(<App />, document.getElementById('app'));
-};
-
-render();
+/**
+ * Describes the ability to move entities between containers within the system.
+ */
+public class MoveEntitiesPermission extends UpdatePermission
+{
+    public MoveEntitiesPermission()
+    {
+        super("Move Entities", "May move entities between containers.");
+    }
+}

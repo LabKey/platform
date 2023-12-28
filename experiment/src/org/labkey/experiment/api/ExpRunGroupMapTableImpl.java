@@ -118,7 +118,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
         // Filter out hidden run groups
         ret.append(" WHERE e.Hidden = ? AND rl.ExperimentId = e.RowId AND rl.ExperimentRunId = er.RowId AND ");
         ret.add(false);
-        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container"), getExpSchema().getContainer()));
+        ret.append(getContainerFilter().getSQLFragment(ExperimentServiceImpl.get().getSchema(), new SQLFragment("er.Container")));
         ret.append(") X ");
         SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable, null);
         ret.append("\n").append(filterFrag).append(") ").append(alias);

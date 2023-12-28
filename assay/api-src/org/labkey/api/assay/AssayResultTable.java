@@ -402,12 +402,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     protected void applyContainerFilter(ContainerFilter filter)
     {
         // There isn't a container column directly on this table so do a special filter
-        if (getContainer() != null)
-        {
-            FieldKey containerColumn = FieldKey.fromParts("Container");
-            clearConditions(containerColumn);
-            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), getContainer()), containerColumn);
-        }
+        FieldKey containerColumn = FieldKey.fromParts("Container");
+        clearConditions(containerColumn);
+        addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("Container")), containerColumn);
     }
 
     @NotNull

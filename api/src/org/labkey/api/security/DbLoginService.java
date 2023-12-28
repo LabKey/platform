@@ -28,4 +28,6 @@ public interface DbLoginService
     }
 
     AuthenticationResult attemptSetPassword(Container c, User currentUser, String rawPassword, String rawPassword2, HttpServletRequest request, ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, boolean changeOperation, BindException errors) throws InvalidEmailException;
+
+    PasswordRule getPasswordRule();
 }

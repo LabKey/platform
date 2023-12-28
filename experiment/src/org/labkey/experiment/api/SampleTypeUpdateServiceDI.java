@@ -62,6 +62,7 @@ import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SampleUpdateAliquotedFromDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.WrapperDataIterator;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
@@ -77,6 +78,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.inventory.InventoryService;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.qc.SampleStatusService;
@@ -94,6 +96,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.publish.StudyPublishService;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -121,6 +124,7 @@ import java.util.stream.Stream;
 import static java.util.Collections.emptyMap;
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.labkey.api.data.TableSelector.ALL_COLUMNS;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs;
 import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipAliquotRollup;
 import static org.labkey.api.exp.api.SampleTypeService.ConfigParameters.SkipMaxSampleCounterFunction;
@@ -128,6 +132,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.AliquotedFromLSID
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.LSID;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Name;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RootMaterialRowId;
+import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
@@ -341,8 +346,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
-        if (context.isCrossTypeImport())
-            return new ExpDataIterators.MultiSampleTypeDataIteratorBuilder(user, container, data);
+        if (context.isCrossTypeImport() || context.isCrossFolderImport())
+            return new ExpDataIterators.MultiSampleTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
 
@@ -471,6 +476,83 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         }
 
         return results;
+    }
+
+    @Override
+    public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        Map<String, Integer> response = new HashMap<>();
+
+        AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditConfigs.AuditBehavior) : null;
+        String auditUserComment = configParameters != null ? (String) configParameters.get(AuditConfigs.AuditUserComment) : null;
+
+        List<? extends ExpMaterial> materials = getMaterialsForMoveRows(container, rows, errors);
+        if (!errors.hasErrors())
+        {
+            try
+            {
+                response = SampleTypeService.get().moveSamples(materials, container, targetContainer, user, auditUserComment, auditType);
+            }
+            catch (ExperimentException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+
+            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "samples");
+        }
+        return new HashMap<>(response);
+    }
+
+    private List<? extends ExpMaterial> getMaterialsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+    {
+        Set<Integer> sampleIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
+        if (sampleIds.isEmpty())
+        {
+            errors.addRowError(new ValidationException("Sample IDs must be specified for the move operation."));
+            return null;
+        }
+
+        List<? extends ExpMaterial> materials = ExperimentServiceImpl.get().getExpMaterials(sampleIds);
+        if (materials.size() != sampleIds.size())
+        {
+            errors.addRowError(new ValidationException("Unable to find all samples for the move operation."));
+            return null;
+        }
+
+        // verify all samples are from the source container
+        if (materials.stream().anyMatch(material -> !material.getContainer().equals(container)))
+        {
+            errors.addRowError(new ValidationException("All samples must be from the current container for the move operation."));
+            return null;
+        }
+
+        // verify allowed moves based on sample statuses
+        List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
+        for (ExpMaterial material : materials)
+        {
+            DataState sampleStatus = material.getSampleState();
+            if (sampleStatus == null) continue;
+
+            // prevent move for locked samples
+            if (!material.isOperationPermitted(SampleTypeService.SampleOperations.Move))
+            {
+                invalidStatusSamples.add(material);
+            }
+            // prevent moving samples if data QC state doesn't exist in target container scope (i.e. home project),
+            // only applies when moving from child to parent or child to sibling
+            else if (!container.isProject() && sampleStatus.getContainer().equals(container))
+            {
+                invalidStatusSamples.add(material);
+            }
+        }
+        if (!invalidStatusSamples.isEmpty())
+        {
+            errors.addRowError(new ValidationException(SampleTypeService.get().getOperationNotPermittedMessage(invalidStatusSamples, SampleTypeService.SampleOperations.Move)));
+            return null;
+        }
+
+        return materials;
     }
 
     @Override
@@ -921,19 +1003,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return getMaterialMapsWithInput(keys, user, container, verifyNoCrossFolderData, verifyExisting, columns);
     }
 
-    private ContainerFilter getSampleDataCF(Container container, User user)
-    {
-        if (!container.isProductProjectsEnabled())
-            return ContainerFilter.current(container);
-
-        if (container.isProject())
-            return new ContainerFilter.CurrentAndSubfoldersPlusShared(container, user);
-        else if (!container.isProject() && container.getProject() != null)
-            return new ContainerFilter.CurrentPlusProjectAndShared(container, user);
-
-        return ContainerFilter.current(container);
-    }
-
     private record ExistingRowSelect(TableInfo tableInfo, Set<String> columns, boolean includeParent, boolean addContainerFilter) {}
 
     private @NotNull ExistingRowSelect getExistingRowSelect(@Nullable Set<String> dataColumns)
@@ -1086,18 +1155,20 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         if (checkCrossFolderData && !allKeys.isEmpty())
         {
-            SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
-            TableInfo tInfo = QueryService.get().getUserSchema(user, container, SamplesSchema.SCHEMA_NAME).getTable(getQueryTable().getName(), getSampleDataCF(container, user)); // don't use TinfoMaterial here since UserSchema is needed
-            if (tInfo == null)
-                throw new QueryUpdateServiceException("Unable to get the existing sample record");
+            ContainerFilter allCf = ContainerFilter.current(container); // use a relaxed CF to find existing data from cross containers
+            if (container.isProductProjectsEnabled())
+                allCf = new ContainerFilter.AllInProjectPlusShared(container, user);
 
-            existingDataFilter.addCondition(FieldKey.fromParts(useLsid? "LSID" : "Name"), allKeys, CompareType.IN);
-            Map<String, Object>[] cfRows = new TableSelector(tInfo, existingDataFilter, null).getMapArray();
+            SimpleFilter existingDataFilter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleTypeId);
+            existingDataFilter.addCondition(FieldKey.fromParts("Container"), allCf.getIds(), CompareType.IN);
+
+            existingDataFilter.addCondition(FieldKey.fromParts(useLsid ? "LSID" : "Name"), allKeys, CompareType.IN);
+            Map<String, Object>[] cfRows = new TableSelector(ExperimentService.get().getTinfoMaterial(), existingDataFilter, null).getMapArray();
             for (Map<String, Object> row : cfRows)
             {
-                String dataContainer = (String) row.get("folder");
+                String dataContainer = (String) row.get("container");
                 if (!dataContainer.equals(container.getId()))
-                    throw new InvalidKeyException("Sample does not belong to the current container: " + (String) row.get("name") + ".");
+                    throw new InvalidKeyException("Sample does not belong to " + container.getName() + " container: " + (String) row.get("name") + ".");
             }
 
         }
@@ -1293,6 +1364,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             {
                 String name = source.getColumnInfo(i).getName();
                 boolean isContainerField = name.equalsIgnoreCase(containerFieldLabel);
+                if (!isContainerField)
+                    isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
                 if (isReservedHeader(name) || isContainerField)
                 {
                     // Allow some fields on exp.materials to be loaded by the TabLoader.
@@ -1314,6 +1387,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                     if (isStoredAmountHeader(name))
                         continue;
                     if (isUnitsHeader(name))
+                        continue;
+                    if (isContainerField && context.isCrossFolderImport() && !context.getInsertOption().updateOnly)
                         continue;
                     drop.add(name);
                 }

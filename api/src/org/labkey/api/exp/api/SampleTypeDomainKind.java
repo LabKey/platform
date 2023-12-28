@@ -252,10 +252,24 @@ public class SampleTypeDomainKind extends AbstractDomainKind<SampleTypeDomainKin
     @Override
     public Set<String> getReservedPropertyNames(Domain domain, User user)
     {
+        return getReservedPropertyNames(domain, user, false);
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain, User user, boolean forCreate)
+    {
         Set<String> reserved = new CaseInsensitiveHashSet(RESERVED_NAMES);
 
         if (domain == null)
+        {
+            // Issue 48810: See SampleTypeService.createSampleType hasNameProperty. We are adding in a "name" col on the
+            // client side right before calling the saveDomain API, so we need to "exclude" it from the reserved set in
+            // this case.
+            if (forCreate)
+                reserved.remove("Name");
+
             return reserved;
+        }
 
         ExpSampleType st = getSampleType(domain);
         if (st == null)

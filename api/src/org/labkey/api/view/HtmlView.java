@@ -76,13 +76,6 @@ public class HtmlView extends WebPartView
         return new HtmlView(HtmlString.unsafe(html));
     }
 
-    /** Use the HtmlString or Renderable constructor instead */
-    @Deprecated
-    public HtmlView(String title, String html)
-    {
-        this(title, HtmlString.unsafe(html));
-    }
-
     public HtmlView(String title, HtmlString html)
     {
         this(html);

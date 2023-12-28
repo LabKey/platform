@@ -29,6 +29,9 @@ UPDATE exp.material AS mat SET RootMaterialRowId = (
     SELECT RootMaterialRowId FROM materialroottemp AS root WHERE mat.RowId = root.RowId
 );
 
+-- Issue 49328: Ensure RootMaterialRowId is set for all materials
+UPDATE exp.material as mat SET RootMaterialRowId = RowId WHERE RootMaterialRowId IS NULL;
+
 -- Drop the temporary table
 DROP TABLE materialroottemp;
 

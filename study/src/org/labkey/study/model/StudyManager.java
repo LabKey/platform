@@ -3110,7 +3110,7 @@ public class StudyManager
                 throw new IllegalStateException("provide a user to query the participants table");
             if (null == cf)
                 cf = new DataspaceContainerFilter(user, study);
-            filter = cf.getSQLFragment(SCHEMA.getSchema(), new SQLFragment("Container"), study.getContainer());
+            filter = cf.getSQLFragment(SCHEMA.getSchema(), new SQLFragment("Container"));
         }
         return filter;
     }

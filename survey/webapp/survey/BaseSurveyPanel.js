@@ -91,7 +91,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 labelSeparator: '',
                 padding: section.padding || 1
             };
-            sectionPanel.border = section.border != undefined ? section.border : 1;
+            sectionPanel.border = section.border !== undefined ? section.border : 1;
             sectionPanel.hasHeadingRow = section.hasHeadingRow;
         }
         else
@@ -101,7 +101,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 labelSeparator: '',
                 padding: section.padding || 10
             };
-            sectionPanel.border = section.border != undefined ? section.border : 0;
+            sectionPanel.border = section.border !== undefined ? section.border : 0;
         }
 
         if (section.toolbarButtonHandlerKey)
@@ -113,7 +113,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
 
         // for card layout, add the section title as a displayfield instead of a panel header
-        if (this.surveyLayout == 'card' && !isSubSection)
+        if (this.surveyLayout === 'card' && !isSubSection)
         {
             sectionPanel.header = false;
             if (section.title)
@@ -121,17 +121,17 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
         else if (isSubSection)
         {
-            sectionPanel.header = section.header != undefined ? section.header : false;
+            sectionPanel.header = section.header !== undefined ? section.header : false;
         }
         else
         {
-            sectionPanel.header = section.header != undefined ? section.header : true;
+            sectionPanel.header = section.header !== undefined ? section.header : true;
         }
 
-        if (this.surveyLayout != 'card' || !section.title || isSubSection)
+        if (this.surveyLayout !== 'card' || !section.title || isSubSection)
         {
-            sectionPanel.collapsed = section.collapsed != undefined ? section.collapsed : false;
-            if (section.collapsible == undefined)
+            sectionPanel.collapsed = section.collapsed !== undefined ? section.collapsed : false;
+            if (section.collapsible === undefined)
                 sectionPanel.collapsible = true;
             else
                 sectionPanel.collapsible = section.collapsible;
@@ -161,7 +161,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 if (section.allowDelete && section.numColumns)
                 {
                     // If there are columns and allowDelete is true, add a check box on the left of each row
-                    if (0 == i % section.numColumns)
+                    if (0 === i % section.numColumns)
                     {
                         sectionPanel.add(this.createDeleteCheckbox(section, i / section.numColumns));
                     }
@@ -219,7 +219,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             // the labkey formhelper doesn't support file upload fields, so we'll step in here and
             // add one manually
-            if (question.inputType == 'file')
+            if (question.inputType === 'file')
             {
                 var attachment = undefined;
                 var entry = this.rowMap[question.name];
@@ -266,7 +266,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     customizeQuestionConfig : function(question, config, hidden) {
         // make the field label for required questions bold and end with an *
-        if (question.required != undefined && question.required)
+        if (question.required !== undefined && question.required)
         {
             config.allowBlank = false;
             config.origFieldLabel = config.fieldLabel;
@@ -279,14 +279,14 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         }
 
         // customize the checkbox config to make sure unchecked values get submitted
-        if (question.inputType != undefined && question.inputType == 'checkbox')
+        if (question.inputType !== undefined && question.inputType === 'checkbox')
         {
             config.inputValue = 'true';
             config.uncheckedValue = 'false';
         }
 
         // set the date field format
-        if (config.xtype == 'datefield')
+        if (config.xtype === 'datefield')
         {
             config.format = question.format ? question.format : "Y-m-d";
         }
@@ -296,7 +296,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             config.fieldLabel += "<br/>" + question.description;
 
         // if hidden, apply that to the config
-        if (hidden != undefined && hidden)
+        if (hidden !== undefined && hidden)
             config.hidden = true;
 
         // if the question has a short caption (used in the submit button disabled info), make sure it is applied
@@ -376,7 +376,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     },
 
     createDeleteCheckbox: function(section, index) {
-        if (0 == index && section.hasHeadingRow)
+        if (0 === index && section.hasHeadingRow)
         {
             return {
                 xtype: 'displayfield',
@@ -410,7 +410,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         var title = this.startSectionTitle;
         var items = [];
 
-        if (this.surveyLayout == 'card')
+        if (this.surveyLayout === 'card')
             items.push(this.getCardSectionHeader(title, null));
 
         if (this.useDefaultLabel) {
@@ -435,7 +435,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             listeners: {
                 scope: this,
                 change: function(cmp, newValue) {
-                    this.surveyLabel = newValue == null || newValue.length == 0 ? null : newValue;
+                    this.surveyLabel = newValue == null || newValue.length === 0 ? null : newValue;
                 },
                 validitychange: function(cmp, isValid) {
                     // this is the only form field that is required before the survey can be saved
@@ -466,7 +466,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     addSurveyEndPanel : function(saveDisabledInfo) {
 
-        var simpleSaveCancel = this.saveSubmitMode && 'save/cancel' == this.saveSubmitMode;
+        var simpleSaveCancel = this.saveSubmitMode && 'save/cancel' === this.saveSubmitMode;
 
         // add a final panel that has the Save/Submit buttons and required field checks
         this.updateSubmittedInfo = Ext4.create('Ext.form.DisplayField', {
@@ -618,7 +618,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
         // in card layout, we add a side bar with the section titles and next/previous buttons
         var bbar = [];
-        if (this.surveyLayout == 'card')
+        if (this.surveyLayout === 'card')
         {
             var sidebarWidth = surveyConfig.survey.sidebarWidth ? surveyConfig.survey.sidebarWidth : 250;
             var mainPanelWidth = surveyConfig.survey.mainPanelWidth ? surveyConfig.survey.mainPanelWidth : this.width;
@@ -628,7 +628,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             window.surveySidebarSectionClick = function(step, itemId){
                 // need to use component query to get back at the FormPanel object
                 var panels = Ext4.ComponentQuery.query('#' + itemId);
-                if (panels.length == 1)
+                if (panels.length === 1)
                 {
                     panels[0].updateStep(step);
                 }
@@ -645,7 +645,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                         '<tpl if="values.currentStep == true">',
                             '<li class="labkey-ancillary-wizard-active-step">{value}</li>',
                         '<tpl elseif="values.isDisabled == false">',
-                            '<li onclick="surveySidebarSectionClick({step}, \'{panelId}\');" class="labkey-side-bar-title">{value}</li>',
+                            '<li step="{step}" panelid="{panelId}" class="labkey-side-bar-title">{value}</li>',
                         '<tpl else>',
                             '<li class="labkey-side-bar-title-disabled">{value}</li>',
                         '</tpl>',
@@ -653,6 +653,16 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                     '</ol>',
                     '</div>'
                 ],
+                listeners: {
+                    afterlayout: function () {
+                        LABKEY.Utils.attachEventHandlerForQuerySelector("li.labkey-side-bar-title", "click", function (event) {
+                            const target = event.currentTarget;
+                            const step = parseInt(target.getAttribute('step'));
+                            const panelId = target.getAttribute('panelid');
+                            surveySidebarSectionClick(step, panelId);
+                        });
+                    }
+                },
                 data: {steps: this.getStepsDataArr()}
             });
             this.add(this.sideBar);
@@ -675,7 +685,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             this.progressBar = Ext4.create('Ext.ProgressBar', {
                 value: (this.currentStep+1)/this.sections.length,
                 text: "Page " + (this.currentStep+1) + " of " + this.sections.length,
-                hidden: this.showProgressBar != undefined ? !this.showProgressBar : true,
+                hidden: this.showProgressBar !== undefined ? !this.showProgressBar : true,
                 width: this.progressBarWidth || 300
             });
 
@@ -685,7 +695,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             layout: this.surveyLayout,
             border: false,
-            minHeight: this.surveyLayout == 'card' ? 500 : undefined,
+            minHeight: this.surveyLayout === 'card' ? 500 : undefined,
             height: this.fixedHeight ? this.fixedHeight : undefined,
             bodyStyle : 'padding: 10px;',
             activeItem: this.currentStep,
@@ -701,7 +711,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         {
             for (var i = 0; i < this.sections.length; i++)
             {
-                if (this.sections[i].title == goToSection)
+                if (this.sections[i].title === goToSection)
                     return i;
             }
         }
@@ -745,7 +755,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             steps.push({
                 value: this.sections[i].title,
                 step: i,
-                currentStep: i == this.currentStep,
+                currentStep: i === this.currentStep,
                 isDisabled: this.sections[i].isDisabled,
                 panelId: this.itemId
             });
@@ -760,8 +770,8 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         this.sideBar.update({steps: this.getStepsDataArr()});
         this.centerPanel.getLayout().setActiveItem(this.currentStep);
 
-        this.prevBtn.setDisabled(this.currentStep == 0);
-        this.nextBtn.setDisabled(this.currentStep == this.sections.length-1);
+        this.prevBtn.setDisabled(this.currentStep === 0);
+        this.nextBtn.setDisabled(this.currentStep === this.sections.length-1);
 
         if (this.progressBar)
         {
@@ -850,7 +860,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
         var name = cmp.getName();
 
         // special case for radiogroups to set that valid status for the group instead of the radio field
-        if (cmp.getXType() == "radiofield" && cmp.findParentByType("radiogroup"))
+        if (cmp.getXType() === "radiofield" && cmp.findParentByType("radiogroup"))
             name = cmp.findParentByType("radiogroup").getName();
 
         this.validStatus[name] = isValid;
@@ -904,9 +914,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     clearFieldValue : function(field) {
         // only "reset" form fields that are not displayfields
-        if (field && field.isFormField && field.getXType() != 'displayfield')
+        if (field && field.isFormField && field.getXType() !== 'displayfield')
         {
-            if (field.clearValue != undefined)
+            if (field.clearValue !== undefined)
                 field.clearValue();
             else
                 field.setValue(null);
@@ -921,31 +931,31 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             var changed = false;
 
             // special case for checkbox fields since the value is never null (i.e. true or false)
-            if (cmp.getXType() == "checkboxfield")
+            if (cmp.getXType() === "checkboxfield")
             {
                 sectionPanel.completedQuestions = sectionPanel.completedQuestions + (newValue ? 1 : -1);
                 changed = true;
             }
             // special case for any custom question types
-            else if (cmp.getXType() == "surveygridquestion")
+            else if (cmp.getXType() === "surveygridquestion")
             {
-                if (newValue > 0 && oldValue == 0)
+                if (newValue > 0 && oldValue === 0)
                 {
                     sectionPanel.completedQuestions++;
                     changed = true;
                 }
-                else if (newValue == 0 && oldValue > 0)
+                else if (newValue === 0 && oldValue > 0)
                 {
                     sectionPanel.completedQuestions--;
                     changed = true;
                 }
             }
-            else if ((oldValue == null || oldValue.toString().length == 0) && (newValue != null && newValue.toString().length > 0))
+            else if ((oldValue == null || oldValue.toString().length === 0) && (newValue != null && newValue.toString().length > 0))
             {
                 sectionPanel.completedQuestions++;
                 changed = true;
             }
-            else if ((newValue == null || newValue.toString().length == 0) && (oldValue != null && oldValue.toString().length > 0))
+            else if ((newValue == null || newValue.toString().length === 0) && (oldValue != null && oldValue.toString().length > 0))
             {
                 sectionPanel.completedQuestions--;
                 changed = true;
@@ -990,15 +1000,15 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
                 if (field.isDirty() || field.xtype === "checkbox")
                 {
                     // special casing for radiogroups and radiofields, i.e. skip the group field and use the individual radio fields
-                    if (field.getXType() == 'radiogroup') {
+                    if (field.getXType() === 'radiogroup') {
                         // skip the radiogroup itself in favor of the radiofields
                     }
-                    else if (field.getXType() == 'checkboxgroup') {
+                    else if (field.getXType() === 'checkboxgroup') {
                         if (field.getName()) {
                             values[field.getName()] = field.getValue();
                         }
                     }
-                    else if (field.getXType() == "radiofield") {
+                    else if (field.getXType() === "radiofield") {
                         if (field.getValue()) { // this will be true for only the selected radio field in the group
                             this.addFieldValue(values, field.getName(), field.getGroupValue());
                         }
@@ -1089,7 +1099,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             message = error.errorInfo;
 
         // explicitly check for equals true because hidePanel could be an object
-        if (hidePanel == true)
+        if (hidePanel === true)
             this.update("<span class='labkey-error'>" + message + "</span>");
         else
             Ext4.MessageBox.alert('Error', message != null ? message : 'An unknown error has occurred.');
@@ -1111,7 +1121,7 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
             {
                 // get the field value to determine if it is not null (special case for radiogroups)
                 var value = cmp.getValue();
-                if (cmp.getXType() == "radiogroup")
+                if (cmp.getXType() === "radiogroup")
                     value = cmp.getChecked().length > 0 ? cmp.getValue() : null;
 
                 if (!cmp.isHidden() && !value)

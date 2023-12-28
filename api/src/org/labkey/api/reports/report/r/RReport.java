@@ -820,7 +820,7 @@ public class RReport extends ExternalScriptEngineReport
     {
         try
         {
-            return new JspTemplate("/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp").render();
+            return new JspTemplate<>("/org/labkey/api/reports/report/view/rReportDesignerSyntaxRef.jsp").render();
         }
         catch (Exception e)
         {

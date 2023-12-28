@@ -245,6 +245,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.data.MultiValuedRenderContext.VALUE_DELIMITER_REGEX;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
@@ -277,10 +278,6 @@ import static org.labkey.api.view.FolderManagement.PROJECTS_ONLY;
 import static org.labkey.api.view.FolderManagement.ROOT;
 import static org.labkey.api.view.FolderManagement.addTab;
 
-/**
- * User: Karl Lum
- * Date: Feb 27, 2008
- */
 public class AdminController extends SpringActionController
 {
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
@@ -801,8 +798,7 @@ public class AdminController extends SpringActionController
     }
 
     /**
-     * Similar to SqlScriptController.GetModuleStatusAction except that Guest is
-     * allowed to check that the startup is complete.
+     * Similar to SqlScriptController.GetModuleStatusAction except that Guest is allowed to check that the startup is complete.
      */
     @RequiresNoPermission
     @AllowedDuringUpgrade
@@ -882,7 +878,7 @@ public class AdminController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade  // This action is invoked by HttpsUtil.checkSslRedirectConfiguration(), often while upgrade is in progress
-    public static class GuidAction extends ExportAction
+    public static class GuidAction extends ExportAction<Object>
     {
         @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
@@ -11128,7 +11124,6 @@ public class AdminController extends SpringActionController
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
-                var jsonStr = jsonObj.toString(2);
                 JSONObject cspReport = jsonObj.optJSONObject("csp-report");
                 if (cspReport != null)
                 {
@@ -11137,7 +11132,13 @@ public class AdminController extends SpringActionController
                     {
                         String path = new URLHelper(urlString).deleteParameters().getPath();
                         if (null == reports.put(path, Boolean.TRUE))
+                        {
+                            var userAgent = getViewContext().getRequest().getHeader("User-Agent");
+                            if (isNotBlank(userAgent))
+                                jsonObj.put("user-agent", userAgent);
+                            var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
+                        }
                     }
                 }
             }
