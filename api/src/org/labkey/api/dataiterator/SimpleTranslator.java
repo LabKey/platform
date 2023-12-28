@@ -387,6 +387,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             }
             else
             {
+                if (pkCol.getJdbcType() == JdbcType.GUID)
+                {
+                    if (k == null)
+                        return null;
+                    if (k instanceof String strKey && !GUID.isGUID(strKey))
+                        return null;
+                }
+
                 try
                 {
                     if (_allowBulkLoads && _bulkLoads.add(Pair.of(pkCol, pkCol)))
