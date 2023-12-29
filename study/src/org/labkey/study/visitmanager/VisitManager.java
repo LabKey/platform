@@ -40,6 +40,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exceptions.TableNotFoundException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenSchema;
@@ -97,27 +98,25 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      */
-    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets)
+    public ValidationException updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets)
     {
-        updateParticipantVisits(user, changedDatasets, null, null, true, null);
+        return updateParticipantVisits(user, changedDatasets, null, null, true, _study.isFailForUndefinedTimepoints(), null);
     }
 
-    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
+    public ValidationException updateParticipantVisitsWithCohortUpdate(User user, boolean failForUndefinedVisits, @Nullable Logger logger)
     {
-        updateParticipantVisits(user, changedDatasets, null, null, true, logger);
+        return updateParticipantVisits(user, Collections.emptyList(), null, null, true, failForUndefinedVisits, logger);
     }
 
-    public void updateParticipantVisitsWithCohortUpdate(User user, @Nullable Logger logger)
-    {
-        updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
-    }
-
-    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
-                                        @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
+    public ValidationException updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets,
+                                        @Nullable Set<String> potentiallyAddedParticipants,
+                                        @Nullable Set<String> potentiallyDeletedParticipants,
+                                        boolean participantVisitResyncRequired,
+                                        boolean failForUndefinedVisits,
                                         @Nullable Logger logger)
     {
-        updateParticipantVisits(user, changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants,
-                                participantVisitResyncRequired, false, logger);
+        return _updateParticipantVisits(user, changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants,
+                                participantVisitResyncRequired, failForUndefinedVisits, logger);
     }
 
     protected void info(@Nullable Logger logger, String message)
@@ -131,16 +130,19 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
-     * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+     * If null, all the changedDatasets and specimens will be checked to see if they contain new participants
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
      * study. If null, all participants will be checked to see if they are still in the study.
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
-     * @param forceUpdateCohorts If true, forces updateParticipantCohorts() (specimen import case)
+     * @param failForUndefinedVisits If true, will return an error if visits do not currently exist in the study
      * @param logger Log4j logger to use for detailed performance information
      */
-    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
-                                        @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
-                                        boolean forceUpdateCohorts, @Nullable Logger logger)
+    private ValidationException _updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets,
+                                          @Nullable Set<String> potentiallyAddedParticipants,
+                                          @Nullable Set<String> potentiallyDeletedParticipants,
+                                          boolean participantVisitResyncRequired,
+                                          boolean failForUndefinedVisits,
+                                          @Nullable Logger logger)
     {
         info(logger, "Updating participants");
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
@@ -163,22 +165,21 @@ public abstract class VisitManager
             }
         }
         info(logger, "Updating visit table");
-        updateVisitTable(user, logger);
+        ValidationException errors = updateVisitTable(user, logger, failForUndefinedVisits);
 
         info(logger, "Updating cohorts");
         Integer cohortDatasetId = _study.getParticipantCohortDatasetId();
         // Only bother updating cohort assignment if we're doing automatic cohort assignment and there's an edit
         // to the dataset that specifies the cohort
-        if (!_study.isManualCohortAssignment() &&
-                cohortDatasetId != null &&
-                    (forceUpdateCohorts ||
-                    changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId))))
+        if (!_study.isManualCohortAssignment() && cohortDatasetId != null &&
+                changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId)))
         {
             CohortManager.getInstance().updateParticipantCohorts(user, getStudy());
         }
 
         info(logger, "Clearing participant visit caches");
         StudyManager.getInstance().clearParticipantVisitCaches(getStudy());
+        return errors;
     }
 
 
@@ -200,7 +201,14 @@ public abstract class VisitManager
         updateParticipantVisitTable(user, logger);
     }
 
-    protected abstract void updateVisitTable(User user, @Nullable Logger logger);
+    /**
+     * Update the visit table and will also create new visits if they don't already exist.
+     *
+     * @param failForUndefinedVisits If true, new visits will not be created and an error will be added to the returned
+     *                               ValidationException object.
+     * @return ValidationException which will contain any relevant errors. Callers should check hasErrors on the object.
+     */
+    protected abstract @NotNull ValidationException updateVisitTable(User user, @Nullable Logger logger, boolean failForUndefinedVisits);
 
     // Produce appropriate SQL for getVisitSummary(). The SQL must select dataset ID, sequence number, and then the specified statistics;
     // it also needs to filter by cohort and qcstates.

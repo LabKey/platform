@@ -1,7 +1,9 @@
 package org.labkey.study;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
@@ -20,14 +22,14 @@ public class VisitServiceImpl implements VisitService
     }
 
     @Override
-    public void updateParticipantVisitsWithCohortUpdate(Study study, User user, @Nullable Logger logger)
+    public @NotNull ValidationException updateParticipantVisitsWithCohortUpdate(Study study, User user, boolean failForUndefinedVisits, @Nullable Logger logger)
     {
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsWithCohortUpdate(user, logger);
+        return StudyManager.getInstance().getVisitManager(study).updateParticipantVisitsWithCohortUpdate(user, failForUndefinedVisits, logger);
     }
 
     @Override
-    public void updateParticipantVisits(Study study, User user)
+    public @NotNull ValidationException updateParticipantVisits(Study study, User user)
     {
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
+        return StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.emptySet());
     }
 }

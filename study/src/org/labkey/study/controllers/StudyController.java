@@ -1656,10 +1656,14 @@ public class StudyController extends BaseStudyController
         @Override
         public void validateCommand(StudyPropertiesForm target, Errors errors)
         {
-            if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
-                errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
-            if (target.getDefaultTimepointDuration() < 1)
-                errors.reject(ERROR_MSG, "Default timepoint duration must be a positive number.");
+            StudyImpl study = getStudy();
+            if (study.getTimepointType() == TimepointType.DATE)
+            {
+                if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
+                    errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
+                if (target.getDefaultTimepointDuration() < 1)
+                    errors.reject(ERROR_MSG, "Default timepoint duration must be a positive number.");
+            }
         }
 
         @Override
@@ -1686,8 +1690,13 @@ public class StudyController extends BaseStudyController
             StudyImpl study = getStudyThrowIfNull().createMutable();
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
 
-            study.setStartDate(form.getStartDate());
-            study.setDefaultTimepointDuration(form.getDefaultTimepointDuration());
+            if (study.getTimepointType() == TimepointType.DATE)
+            {
+                study.setStartDate(form.getStartDate());
+                study.setDefaultTimepointDuration(form.getDefaultTimepointDuration());
+            }
+            study.setFailForUndefinedTimepoints(form.isFailForUndefinedTimepoints());
+
             StudyManager.getInstance().updateStudy(getUser(), study);
 
             return true;
@@ -2110,7 +2119,7 @@ public class StudyController extends BaseStudyController
 
             if (visits.isEmpty())
             {
-                sb.append("No unused visits found.<br>");
+                sb.unsafeAppend("No unused visits found.<br>");
             }
             else
             {
@@ -5422,6 +5431,7 @@ public class StudyController extends BaseStudyController
         private boolean _allowReqLocEndpoint = true;
         private boolean _shareDatasets = false;
         private boolean _shareVisits = false;
+        private boolean _failForUndefinedTimepoints;
 
         public String getLabel()
         {
@@ -5661,6 +5671,16 @@ public class StudyController extends BaseStudyController
         public void setShareVisits(boolean shareDatasets)
         {
             _shareVisits = shareDatasets;
+        }
+
+        public boolean isFailForUndefinedTimepoints()
+        {
+            return _failForUndefinedTimepoints;
+        }
+
+        public void setFailForUndefinedTimepoints(boolean failForUndefinedTimepoints)
+        {
+            _failForUndefinedTimepoints = failForUndefinedTimepoints;
         }
     }
 
