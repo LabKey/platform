@@ -100,7 +100,7 @@ public abstract class ExistingRecordDataIterator extends WrapperDataIterator
             {
                 pkSuppliers.clear();
                 pkColumns.clear();
-                throw new IllegalStateException("Key column not found: " + name);
+                throw new IllegalArgumentException("Key column not found: " + name);
             }
             pkSuppliers.add(in.getSupplier(index));
             pkColumns.add(col);
