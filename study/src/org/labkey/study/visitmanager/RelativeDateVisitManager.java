@@ -327,7 +327,7 @@ public class RelativeDateVisitManager extends VisitManager
         return errors;
     }
 
-    public void recomputeDates(Date oldStartDate, User user)
+    public @Nullable ValidationException recomputeDates(Date oldStartDate, User user)
     {
         if (null != oldStartDate)
         {
@@ -348,9 +348,10 @@ public class RelativeDateVisitManager extends VisitManager
                 executor.execute("DELETE FROM " + tableVisit + " WHERE Container=?", c);
 
                 //Now recompute everything
-                updateParticipantVisits(user, getStudy().getDatasets());
+                return updateParticipantVisits(user, getStudy().getDatasets());
             }
         }
+        return null;
     }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container

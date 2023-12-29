@@ -1282,6 +1282,9 @@ public class StudyPublishManager implements StudyPublishService
                         ExpMaterialTable.Column.RowId.toString(),
                         publishErrors
                     );
+
+                    if (!publishErrors.isEmpty())
+                        publishErrors.forEach(LOG::error);
                 }
                 else
                 {

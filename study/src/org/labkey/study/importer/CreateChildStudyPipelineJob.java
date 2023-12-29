@@ -35,6 +35,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
@@ -313,7 +314,9 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 if (sourceStudy.isFailForUndefinedTimepoints())
                     mutableStudy.setFailForUndefinedTimepoints(true);
 
-                StudyManager.getInstance().updateStudy(user, mutableStudy);
+                ValidationException validationException = StudyManager.getInstance().updateStudy(user, mutableStudy);
+                if (validationException.hasErrors())
+                    errors.reject(null, validationException.getMessage());
             }
 
             if (errors.hasErrors())

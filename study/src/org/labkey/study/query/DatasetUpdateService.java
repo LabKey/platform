@@ -57,6 +57,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.security.StudySecurityEscalator;
 import org.labkey.study.model.DatasetDefinition;
@@ -546,9 +547,11 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
                              boolean participantVisitResyncRequired) throws ValidationException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+
         ValidationException errors = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset),
                 potentiallyAddedParticipants, potentiallyDeletedParticipants, participantVisitResyncRequired,
-                study.isFailForUndefinedTimepoints(), null);
+                sharedStudy != null ? sharedStudy.isFailForUndefinedTimepoints() : study.isFailForUndefinedTimepoints(), null);
 
         if (errors.hasErrors())
             throw errors;

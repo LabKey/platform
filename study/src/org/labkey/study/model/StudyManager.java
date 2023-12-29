@@ -647,17 +647,18 @@ public class StudyManager
         return study;
     }
 
-    public void updateStudy(@Nullable User user, StudyImpl study)
+    public ValidationException updateStudy(@Nullable User user, StudyImpl study)
     {
         StudyImpl oldStudy = getStudy(study.getContainer());
         Date oldStartDate = oldStudy.getStartDate();
         _studyHelper.update(user, study, study.getContainer());
+        ValidationException errors = new ValidationException();
 
         if (oldStudy.getTimepointType() == TimepointType.DATE && !Objects.equals(study.getStartDate(), oldStartDate))
         {
             // start date has changed, and datasets may use that value. Uncache.
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) getVisitManager(study);
-            visitManager.recomputeDates(oldStartDate, user);
+            errors = visitManager.recomputeDates(oldStartDate, user);
             clearCaches(study.getContainer(), true);
         }
         else
@@ -672,6 +673,7 @@ public class StudyManager
             StudyService.get().addStudyAuditEvent(study.getContainer(), user, comment);
         }
         QueryService.get().updateLastModified();
+        return errors;
     }
 
     public void createDatasetDefinition(User user, Container container, int datasetId)
