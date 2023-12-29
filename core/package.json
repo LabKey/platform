@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.2.2-fb-issue41718.0",
+    "@labkey/components": "3.2.3",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
