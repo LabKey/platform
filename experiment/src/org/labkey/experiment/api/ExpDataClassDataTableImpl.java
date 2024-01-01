@@ -264,7 +264,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 c.setNullable(nameExpression != null);
 
                 // shut off this field in insert and update views if user-specified names are not allowed
-                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                if (!NameExpressionOptionService.get().getAllowUserSpecificNamesValue(getContainer()))
                 {
                     c.setShownInInsertView(false);
                     c.setShownInUpdateView(false);
@@ -1022,7 +1022,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 }
                 Map<String, String> finalImportAliasMap = importAliasMap;
                 di = LoggingDataIterator.wrap(new NameExpressionDataIterator(di, context, dataClassTInfo, getContainer(), _dataClass.getMaxDataCounterFunction(), DATA_COUNTER_SEQ_PREFIX + _dataClass.getRowId() + "-", importAliasMap)
-                        .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                        .setAllowUserSpecifiedNames(NameExpressionOptionService.get().getAllowUserSpecificNamesValue(getContainer()))
                         .addExtraPropsFn(() -> {
                             Map<String, Object> props = new HashMap<>();
                             props.put(PARENT_IMPORT_ALIAS_MAP_PROP, finalImportAliasMap);
