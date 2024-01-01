@@ -38,7 +38,7 @@ public class Constants
      */
     public static double getLowestSchemaVersion()
     {
-        return 23.000;
+        return 24.000;
     }
 
     /**
