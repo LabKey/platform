@@ -83,6 +83,11 @@ sourceSets {
   }
 }
 
+configurations.configureEach {
+    attributes.attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, objects.named(TargetJvmEnvironment.class, TargetJvmEnvironment.STANDARD_JVM))
+}
+
+
 
 dependencies {
     // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
