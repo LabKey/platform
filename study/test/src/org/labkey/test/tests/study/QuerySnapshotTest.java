@@ -418,7 +418,7 @@ public class QuerySnapshotTest extends StudyBaseTest
 
         clickFolder(FOLDER_1);
         clickAndWait(Locator.linkWithText(CALC_COL_QUERY_SNAPSHOT));
-        waitForSnapshotUpdate("-2");
+        waitForSnapshotUpdate("999151515");
 
         // delete the snapshot
         table.goToView("Edit Snapshot");

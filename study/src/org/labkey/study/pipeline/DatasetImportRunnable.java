@@ -17,7 +17,6 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -40,9 +39,7 @@ import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.Filter;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -293,7 +290,6 @@ public class DatasetImportRunnable implements Runnable
                     assert cpuDelete.stop();
                 }
 
-
                 assert cpuImport.start();
                 _logger.info(_datasetDefinition.getLabel() + ": Starting import from " + _fileName);
 
@@ -307,20 +303,27 @@ public class DatasetImportRunnable implements Runnable
 
             if (!batchErrors.hasErrors())
             {
-                // optional check if new visits exist before committing, visit based timepoint studies only
-                boolean shouldCommit = true;
-                if (_studyImportContext.isFailForUndefinedVisits() && _study.getTimepointType() == TimepointType.VISIT)
+                boolean commit = true;
+                if (_studyImportContext.isFailForUndefinedVisits() || _study.isFailForUndefinedTimepoints())
                 {
-                    List<Double> undefinedSequenceNums = StudyManager.getInstance().getUndefinedSequenceNumsForDataset(_datasetDefinition.getContainer(), _datasetDefinition.getDatasetId());
-                    if (!undefinedSequenceNums.isEmpty())
+                    // check for undefined visits and don't commit the data if there are errors
+                    ValidationException validationException = StudyManager.getInstance().getVisitManager(_study).updateParticipantVisits(
+                            _studyImportContext.getUser(),
+                            Collections.singletonList(_datasetDefinition),
+                            null,
+                            null,
+                            true,
+                            _studyImportContext.isFailForUndefinedVisits() || _study.isFailForUndefinedTimepoints(),
+                            _logger);
+
+                    if (validationException.hasErrors())
                     {
-                        Collections.sort(undefinedSequenceNums);
-                        _logger.error("The following undefined visits exist in the dataset data: " + StringUtils.join(undefinedSequenceNums, ", "));
-                        shouldCommit = false;
+                        commit = false;
+                        batchErrors.addRowError(validationException);
                     }
                 }
 
-                if (shouldCommit)
+                if (commit)
                 {
                     assert cpuCommit.start();
                     transaction.commit();

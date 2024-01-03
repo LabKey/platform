@@ -57,9 +57,7 @@ public class SampleUpdateAliquotedFromDataIterator extends WrapperDataIterator
         Integer index = map.get(keyCol);
         ColumnInfo col = target.getColumn(keyCol);
         if (null == index || null == col)
-        {
-            throw new IllegalStateException("Key column not found: " + keyCol);
-        }
+            throw new IllegalArgumentException("Key column not found: " + keyCol);
         pkSupplier = in.getSupplier(index);
         pkColumn = col;
     }

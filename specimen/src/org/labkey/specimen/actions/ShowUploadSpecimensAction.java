@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
@@ -262,7 +263,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             if (!errors.hasErrors())
                 importer.process(specimenRows, form.isMerge());
         }
-        catch (IllegalStateException e)
+        catch (IllegalStateException | ValidationException e)
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
         }

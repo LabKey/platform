@@ -71,6 +71,7 @@ class StudyXmlWriter implements InternalStudyWriter
         studyXml.setAlternateIdPrefix(study.getAlternateIdPrefix());
         studyXml.setAlternateIdDigits(study.getAlternateIdDigits());
         studyXml.setDefaultTimepointDuration(study.getDefaultTimepointDuration());
+        studyXml.setFailForUndefinedTimepoints(study.isFailForUndefinedTimepoints());
 
         if (study.getParticipantAliasDatasetId() != null && study.getParticipantAliasProperty() != null && study.getParticipantAliasSourceProperty() != null)
         {

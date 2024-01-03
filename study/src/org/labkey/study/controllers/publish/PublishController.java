@@ -334,7 +334,6 @@ public class PublishController extends SpringActionController
         public void run()
         {
             setStatus(TaskStatus.running);
-            TaskStatus finalStatus = TaskStatus.complete;
             try
             {
                 if (_targetStudyContainer != null)
@@ -374,10 +373,8 @@ public class PublishController extends SpringActionController
             catch (Throwable t)
             {
                 error("Failure", t);
-                finalStatus = TaskStatus.error;
             }
             info("Auto link to study complete");
-            setStatus(finalStatus);
         }
     }
 }

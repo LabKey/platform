@@ -272,8 +272,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                     // snapshot are updated
                                     if (!queryDef.getContainer().equals(qsDef.getContainer()))
                                     {
-                                        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
+                                        ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
                                             Collections.singletonList(def));
+                                        if (validationException.hasErrors())
+                                        {
+                                            errors.reject(SpringActionController.ERROR_MSG, validationException.getMessage());
+                                            return;
+                                        }
                                     }
                                     transaction.commit();
                                 }
@@ -504,7 +509,14 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                     return null;
 
                                 if (!suppressVisitManagerRecalc)
-                                    StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
+                                {
+                                    ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
+                                    if (validationException.hasErrors())
+                                    {
+                                        errors.reject(SpringActionController.ERROR_MSG, validationException.getMessage());
+                                        return null;
+                                    }
+                                }
 
                                 ViewContext context = form.getViewContext();
                                 new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
@@ -816,6 +828,19 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                 BindException errors = new NullSafeBindException(new Object(), "command");
                 QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).updateSnapshot(form, errors, _suppressVisitManagerRecalc);
+                if (errors.hasErrors())
+                {
+                    // log an error as well as an audit event to match exception handling within updateSnapshot
+                    LOG.error(errors.getMessage());
+                    StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
+                    if (study != null)
+                    {
+                        DatasetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, _def.getName());
+                        if (dsDef != null)
+                            new DatasetDefinition.DatasetAuditHandler(dsDef).addAuditEvent(context.getUser(), context.getContainer(), AuditBehaviorType.DETAILED,
+                                    "Dataset snapshot was not updated. Cause of failure: " + errors.getMessage(), null);
+                    }
+                }
             }
             catch(Exception e)
             {

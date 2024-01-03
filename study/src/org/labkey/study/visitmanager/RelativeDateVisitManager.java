@@ -17,6 +17,7 @@
 package org.labkey.study.visitmanager;
 
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -29,6 +30,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
@@ -299,7 +301,7 @@ public class RelativeDateVisitManager extends VisitManager
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
     @Override
-    protected void updateVisitTable(final User user, @Nullable Logger logger)
+    protected @NotNull ValidationException updateVisitTable(final User user, @Nullable Logger logger, boolean failForUndefinedVisits)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -317,13 +319,15 @@ public class RelativeDateVisitManager extends VisitManager
             daysToEnsure.add(seqNum);
         });
 
-        StudyManager.getInstance().ensureVisits(getStudy(), user, daysToEnsure, null);
+        ValidationException errors = StudyManager.getInstance().ensureVisits(getStudy(), user, daysToEnsure, null, failForUndefinedVisits);
 
         if (daysToEnsure.size() > 0)
             _updateVisitRowId();
+
+        return errors;
     }
 
-    public void recomputeDates(Date oldStartDate, User user)
+    public @Nullable ValidationException recomputeDates(Date oldStartDate, User user)
     {
         if (null != oldStartDate)
         {
@@ -344,9 +348,10 @@ public class RelativeDateVisitManager extends VisitManager
                 executor.execute("DELETE FROM " + tableVisit + " WHERE Container=?", c);
 
                 //Now recompute everything
-                updateParticipantVisits(user, getStudy().getDatasets());
+                return updateParticipantVisits(user, getStudy().getDatasets());
             }
         }
+        return null;
     }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
