@@ -76,6 +76,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String QCSTATE_TABLE_NAME = "QCState";
     public static final String DATA_STATES_TABLE_NAME = "DataStates";
     public static final String API_KEYS_TABLE_NAME = "APIKeys";
+    public static final String USER_API_KEYS_TABLE_NAME = "UserAPIKeys";
     public static final String MISSING_VALUE_INDICATOR_TABLE_NAME = "MVIndicators";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
@@ -109,7 +110,7 @@ public class CoreQuerySchema extends UserSchema
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
-            VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME);
+            VIEW_CATEGORY_TABLE_NAME, MISSING_VALUE_INDICATOR_TABLE_NAME, USER_API_KEYS_TABLE_NAME);
 
         if (getUser().hasRootPermission(UserManagementPermission.class))
             names.add(API_KEYS_TABLE_NAME);
@@ -161,6 +162,8 @@ public class CoreQuerySchema extends UserSchema
             return getDataStatesTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
+        if (USER_API_KEYS_TABLE_NAME.equalsIgnoreCase(name))
+            return new UserApiKeysTableInfo(this);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))
