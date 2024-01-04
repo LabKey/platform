@@ -1056,7 +1056,7 @@ public class UserManager
             removeRecentUser(userToAdjust);
 
             addToUserHistory(userToAdjust, "User account " + userToAdjust.getEmail() + " was " +
-                    (active ? "re-enabled" : "disabled") + " " + extendedMessage
+                    (active ? "reactivated" : "deactivated") + " " + extendedMessage
             );
 
             transaction.commit();

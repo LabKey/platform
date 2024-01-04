@@ -57,6 +57,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.security.StudySecurityEscalator;
 import org.labkey.study.model.DatasetDefinition;
@@ -218,8 +219,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (count > 0)
         {
-            StudyManager.datasetModified(_dataset, true);
-            resyncStudy(user, container, null, null, true);
+            try
+            {
+                StudyManager.datasetModified(_dataset, true);
+                resyncStudy(user, container, null, null, true);
+            }
+            catch (ValidationException e)
+            {
+                errors.addRowError(e);
+            }
         }
         return count;
     }
@@ -230,8 +238,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !Boolean.TRUE.equals(context.getConfigParameterBoolean(Config.SkipResyncStudy)))
         {
-            StudyManager.datasetModified(_dataset, true);
-            resyncStudy(user, container, null, null, true);
+            try
+            {
+                StudyManager.datasetModified(_dataset, true);
+                resyncStudy(user, container, null, null, true);
+            }
+            catch (ValidationException e)
+            {
+                context.getErrors().addRowError(e);
+            }
         }
         return count;
     }
@@ -283,8 +298,15 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
             if (configParameters == null || !Boolean.TRUE.equals(configParameters.get(DatasetUpdateService.Config.SkipResyncStudy)))
             {
-                StudyManager.datasetModified(_dataset, true);
-                resyncStudy(user, container);
+                try
+                {
+                    StudyManager.datasetModified(_dataset, true);
+                    resyncStudy(user, container);
+                }
+                catch (ValidationException e)
+                {
+                    errors.addRowError(e);
+                }
             }
         }
         return result;
@@ -483,19 +505,26 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> updateRows(User user, final Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-            List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
-            if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
-            {
-                PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
-                PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
-                setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
-            }
-
-            resyncStudy(user, container);
-            return result;
+        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, errors, configParameters, extraScriptContext);
+        if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
+        {
+            PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
+            PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
+            setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
         }
 
-    private void resyncStudy(User user, Container container)
+        try
+        {
+            resyncStudy(user, container);
+        }
+        catch (ValidationException e)
+        {
+            errors.addRowError(e);
+        }
+        return result;
+    }
+
+    private void resyncStudy(User user, Container container) throws ValidationException
     {
         resyncStudy(user, container, _potentiallyNewParticipants, _potentiallyDeletedParticipants, _participantVisitResyncRequired);
 
@@ -508,15 +537,24 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
       * Resyncs the study : updates the participant, visit, and (optionally) participant visit tables. Also updates automatic cohort assignments.
       *
       * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
-      * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+      * If null, all the changedDatasets and specimens will be checked to see if they contain new participants
       * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
       * study. If null, all participants will be checked to see if they are still in the study.
       * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
     */
-    private void resyncStudy(User user, Container container, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
+    private void resyncStudy(User user, Container container, @Nullable Set<String> potentiallyAddedParticipants,
+                             @Nullable Set<String> potentiallyDeletedParticipants,
+                             boolean participantVisitResyncRequired) throws ValidationException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), potentiallyAddedParticipants, potentiallyDeletedParticipants, participantVisitResyncRequired, null);
+        Study sharedStudy = StudyManager.getInstance().getSharedStudy(study);
+
+        ValidationException errors = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset),
+                potentiallyAddedParticipants, potentiallyDeletedParticipants, participantVisitResyncRequired,
+                sharedStudy != null ? sharedStudy.isFailForUndefinedTimepoints() : study.isFailForUndefinedTimepoints(), null);
+
+        if (errors.hasErrors())
+            throw errors;
     }
 
     @Override
@@ -658,7 +696,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
-        resyncStudy(user, container);
+        try
+        {
+            resyncStudy(user, container);
+        }
+        catch (ValidationException e)
+        {
+            throw new BatchValidationException(e);
+        }
         return result;
     }
 

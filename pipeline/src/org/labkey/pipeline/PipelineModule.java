@@ -117,7 +117,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @Override
     public Double getSchemaVersion()
     {
-        return 23.002;
+        return 24.000;
     }
 
     @Override

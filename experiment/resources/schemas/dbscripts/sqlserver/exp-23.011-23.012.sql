@@ -9,6 +9,10 @@ FROM exp.Material Material
 INNER JOIN exp.Material Parent ON Material.rootmateriallsid = Parent.lsid;
 GO
 
+-- Issue 49328: Ensure RootMaterialRowId is set for all materials
+UPDATE exp.Material SET rootmaterialrowid = rowid WHERE rootmaterialrowid IS NULL;
+GO
+
 -- Add NOT NULL constraint to "RootMaterialRowId"
 ALTER TABLE exp.Material ALTER COLUMN rootmaterialrowid INTEGER NOT NULL;
 GO

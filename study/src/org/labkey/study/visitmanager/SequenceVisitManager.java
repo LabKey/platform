@@ -18,6 +18,7 @@ package org.labkey.study.visitmanager;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -30,6 +31,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.CohortFilter;
 import org.labkey.api.study.Study;
@@ -37,7 +39,6 @@ import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.model.ParticipantGroup;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyUnionTableInfo;
 import org.labkey.study.model.DatasetDefinition;
@@ -495,10 +496,11 @@ public class SequenceVisitManager extends VisitManager
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
     @Override
-    protected void updateVisitTable(User user, @Nullable Logger logger)
+    protected @NotNull ValidationException updateVisitTable(User user, @Nullable Logger logger, boolean failForUndefinedVisits)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        ValidationException errors = new ValidationException();
 
         SQLFragment sql = new SQLFragment("SELECT DISTINCT SequenceNum\n" +
                 "FROM " + tableParticipantVisit + "\n"+
@@ -513,9 +515,10 @@ public class SequenceVisitManager extends VisitManager
         if (sequenceNums.size() > 0)
         {
             info(logger, "Ensure visits for " + sequenceNums.size() + " distinct sequence numbers");
-            StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null);
+            errors = StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null, failForUndefinedVisits);
             _updateVisitRowId(true, logger);
         }
+        return errors;
     }
 
 

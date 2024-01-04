@@ -56,8 +56,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     private final File SPECIMENS_ONLY_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement_Specimens.folder.zip");
     private final File EXPLODED_FOLDER_ARCHIVE = TestFileUtils.getSampleData("study/StudyVisitManagement.folder");
 
-    private final String SPECIMEN_UNDEFINED_VISIT_MSG = "The following undefined visits exist in the specimen data:";
-    private final String DATASET_UNDEFINED_VISIT_MSG = "The following undefined visits exist in the dataset data:";
+    private final String STUDY_UNDEFINED_VISIT_MSG = "Creating new visits is not allowed for this study. The following visits do not currently exist :";
 
     @BeforeClass
     public static void setupProject()
@@ -156,14 +155,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     public void testFailForUndefinedVisitsSpecimen()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsSpecimen");
-        testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, SPECIMEN_UNDEFINED_VISIT_MSG, 3);
+        testFailForUndefinedVisits(SPECIMENS_ONLY_FOLDER_ARCHIVE, STUDY_UNDEFINED_VISIT_MSG, 3);
     }
 
     @Test
     public void testFailForUndefinedVisitsDataset()
     {
         _containerHelper.createSubfolder(getProjectName(), "testFailForUndefinedVisitsDataset");
-        testFailForUndefinedVisits(DATASETS_ONLY_FOLDER_ARCHIVE, DATASET_UNDEFINED_VISIT_MSG, 11);
+        testFailForUndefinedVisits(DATASETS_ONLY_FOLDER_ARCHIVE, STUDY_UNDEFINED_VISIT_MSG, 11);
     }
 
     private void testFailForUndefinedVisits(File archive, String errorMsgPrefix, int numExpectedErrors)
@@ -171,7 +170,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // first try importing the datasets only archive, expecting this to give an error
         importFolderArchiveWithFailureFlag(archive, true, 1, true);
         List<String> definedVisits = Arrays.asList("301.0 - 391.0", "400.0 - 499.0", "501.0");
-        List<String> undefinedVisits = Arrays.asList("601.0", "701.0");
+        List<String> undefinedVisits = Arrays.asList("601.0000", "701.0000");
         verifyUndefinedVisitError(errorMsgPrefix, definedVisits, undefinedVisits);
 
         // then import the full archive, expecting this to succeed
@@ -224,8 +223,8 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
 
         // verify the expected import failure message and defined visits
         definedVisits = Arrays.asList("301.0 - 391.0", "400.0 - 499.0", "501.0");
-        List<String> undefinedVisits = Arrays.asList("601.0", "701.0");
-        verifyUndefinedVisitError(DATASET_UNDEFINED_VISIT_MSG, definedVisits, undefinedVisits);
+        List<String> undefinedVisits = Arrays.asList("601.0000", "701.0000");
+        verifyUndefinedVisitError(STUDY_UNDEFINED_VISIT_MSG, definedVisits, undefinedVisits);
 
         // test reload again with the failure bit unset
         startFolderImport(false);
@@ -254,7 +253,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
     private void verifyUndefinedVisitError(String errorMsgPrefix, @NotNull List<String> definedVisits, @Nullable List<String> undefinedVisits)
     {
         clickAndWait(Locator.linkWithText("ERROR"));
-        new PipelineStatusDetailsPage(getDriver()).assertLogTextContains(errorMsgPrefix + " " + StringUtils.join(undefinedVisits, ", "));
+        new PipelineStatusDetailsPage(getDriver()).assertLogTextContains(errorMsgPrefix + " (" + StringUtils.join(undefinedVisits, ", ") + ")");
         verifyStudyVisits(definedVisits, undefinedVisits);
     }
 
