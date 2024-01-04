@@ -702,3 +702,16 @@ SELECT core.executeJavaInitializationCode('setDefaultExcludedProjects');
 ALTER TABLE core.qcstate RENAME TO DataStates;
 
 ALTER TABLE core.DataStates ADD COLUMN StateType VARCHAR(20);
+
+/* 22.xxx SQL scripts */
+
+ALTER TABLE core.UsersData ADD System BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE INDEX IX_Notification_User ON core.Notifications(UserId);
+
+-- Move compliance schema management to Signing module
+UPDATE core.SqlScripts SET modulename = 'Signing' WHERE modulename = 'Compliance';
+
+DELETE FROM core.ReportEngines WHERE type = 'Docker';
+
+ALTER TABLE core.containeraliases ALTER COLUMN path TYPE VARCHAR(4000);

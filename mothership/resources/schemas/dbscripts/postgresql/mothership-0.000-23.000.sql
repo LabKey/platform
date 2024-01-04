@@ -210,3 +210,69 @@ ALTER TABLE mothership.SoftwareRelease ALTER COLUMN VcsRevision TYPE VARCHAR(40)
 ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT UQ_SoftwareRelease UNIQUE (Container, VcsRevision, VcsUrl, VcsBranch, VcsTag, BuildTime);
 
 ALTER TABLE mothership.ServerSession ALTER COLUMN JsonMetrics TYPE JSONB USING JsonMetrics::JSONB;
+
+/* 22.xxx SQL scripts */
+
+ALTER TABLE mothership.ServerSession ADD COLUMN ServerHostName VARCHAR(256);
+UPDATE mothership.ServerSession SET ServerHostName = (SELECT ServerHostName FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
+
+ALTER TABLE mothership.ServerSession ADD COLUMN ServerIP VARCHAR(20);
+UPDATE mothership.ServerSession SET ServerIP = (SELECT ServerIP FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
+
+ALTER TABLE mothership.ServerSession ADD COLUMN OriginalServerSessionId INT;
+CREATE INDEX IX_ServerSession_OriginalServerSessionId ON mothership.ServerSession(OriginalServerSessionId);
+ALTER TABLE mothership.ServerSession
+    ADD CONSTRAINT FK_ServerSession_OriginalServerSessionId FOREIGN KEY (OriginalServerSessionId)
+        REFERENCES mothership.ServerSession (ServerSessionId);
+
+ALTER TABLE mothership.ServerSession RENAME COLUMN ActiveUserCount TO RecentUserCount;
+
+-- Migrate potentially mutable fields from install to session level
+ALTER TABLE mothership.ServerSession ADD COLUMN OrganizationName VARCHAR(200);
+UPDATE mothership.ServerSession SET OrganizationName = (SELECT OrganizationName FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
+ALTER TABLE mothership.ServerInstallation DROP COLUMN OrganizationName;
+
+ALTER TABLE mothership.ServerSession ADD COLUMN SystemShortName VARCHAR(200);
+UPDATE mothership.ServerSession SET SystemShortName = (SELECT SystemShortName FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
+ALTER TABLE mothership.ServerInstallation DROP COLUMN SystemShortName;
+
+ALTER TABLE mothership.ServerSession ADD COLUMN SystemDescription VARCHAR(200);
+UPDATE mothership.ServerSession SET SystemDescription = (SELECT SystemDescription FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
+ALTER TABLE mothership.ServerInstallation DROP COLUMN SystemDescription;
+
+ALTER TABLE mothership.ServerSession ADD COLUMN LogoLink VARCHAR(200);
+UPDATE mothership.ServerSession SET LogoLink = (SELECT LogoLink FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
+ALTER TABLE mothership.ServerInstallation DROP COLUMN LogoLink;
+
+-- We don't care about tracking this anymore
+ALTER TABLE mothership.ServerInstallation DROP COLUMN UsedInstaller;
+
+-- We only want to track this at the session level
+ALTER TABLE mothership.ServerInstallation DROP COLUMN ServerIp;
+
+-- Going forward, we identify servers based on the combination of GUID (from the DB) and their host name
+-- This helps differentiate staging from production and other cases where a copy of the same DB is used by multiple servers
+ALTER TABLE mothership.ServerInstallation DROP CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID;
+ALTER TABLE mothership.ServerInstallation ADD CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID_ServerHostName UNIQUE (ServerInstallationGUID, ServerHostName);
+
+-- Create new install records for every host name we've seen
+INSERT INTO mothership.ServerInstallation (ServerInstallationGUID,
+                                           Note,
+                                           Container,
+                                           ServerHostName,
+                                           IgnoreExceptions)
+SELECT DISTINCT ServerInstallationGUID,
+                Note,
+                si.Container,
+                ss.ServerHostName,
+                IgnoreExceptions
+FROM mothership.ServerInstallation si
+INNER JOIN mothership.ServerSession ss ON
+    si.ServerInstallationId = ss.ServerInstallationId AND
+    si.ServerHostName != ss.ServerHostName;
+
+-- Point the sessions to the appropriate install based on their host name
+UPDATE mothership.ServerSession ss SET ServerInstallationId =
+    (SELECT si2.ServerInstallationId FROM mothership.ServerInstallation si1
+                                     INNER JOIN mothership.serverinstallation si2 ON ss.serverhostname = si2.ServerHostName AND si1.serverinstallationguid = si2.serverinstallationguid
+                                     WHERE si1.serverinstallationid = ss.serverinstallationid);

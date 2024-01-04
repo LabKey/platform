@@ -98,12 +98,12 @@ public class ScriptReorderer
             patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
             // Specific sp_rename pattern for table rename
-            patterns.add(new SqlPattern("(EXEC )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "',\\s*'" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+            patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "',\\s*'" + TABLE_NAME2_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
 
             // All other sp_renames
-            patterns.add(new SqlPattern("(EXEC )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists\\s*'(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
-            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists\\s*'(\\w+)',\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
+            patterns.add(new SqlPattern("(EXEC(UTE)? )?sp_rename (@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(?<table>\\w+)',\\s*'(?<schema>\\w+)',\\s*'(TABLE|INDEX|DEFAULT|CONSTRAINT)'.*?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC(UTE)? core\\.fn_dropifexists\\s*'(\\w+)',\\s*'(?<schema>\\w+)'.*?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
 
             // Index names are prefixed with their associated table names on SQL Server
             patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, Operation.Other));

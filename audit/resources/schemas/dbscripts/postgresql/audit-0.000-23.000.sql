@@ -69,3 +69,7 @@ LANGUAGE plpgsql;
 SELECT audit.updateSelectQueryIdentifiedData();
 
 DROP FUNCTION audit.updateSelectQueryIdentifiedData();
+
+/* 22.xxx SQL scripts */
+
+SELECT core.executeJavaUpgradeCode('updateRowIdToBigInt');

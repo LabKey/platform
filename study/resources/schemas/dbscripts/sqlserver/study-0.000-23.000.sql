@@ -1026,3 +1026,13 @@ ALTER TABLE study.Dataset ADD PublishSourceType NVARCHAR(50);
 GO
 UPDATE study.Dataset SET PublishSourceType = 'Assay'
     WHERE PublishSourceId IS NOT NULL;
+
+/* 22.xxx SQL scripts */
+
+EXEC core.executeJavaUpgradeCode 'moveSpecimenTemplatePropertiesAgain';
+
+EXEC core.fn_dropifexists 'Study', 'study', 'DEFAULT', 'AllowReload';
+ALTER TABLE study.study DROP COLUMN AllowReload;
+ALTER TABLE study.study DROP COLUMN LastReload;
+ALTER TABLE study.study DROP COLUMN ReloadInterval;
+ALTER TABLE study.study DROP COLUMN ReloadUser;

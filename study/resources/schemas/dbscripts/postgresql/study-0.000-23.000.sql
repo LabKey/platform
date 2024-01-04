@@ -1006,3 +1006,12 @@ ALTER TABLE study.Dataset RENAME COLUMN ProtocolId TO PublishSourceId;
 ALTER TABLE study.Dataset ADD COLUMN PublishSourceType VARCHAR(50);
 UPDATE study.Dataset SET PublishSourceType = 'Assay'
     WHERE PublishSourceId IS NOT NULL;
+
+/* 22.xxx SQL scripts */
+
+SELECT core.executeJavaUpgradeCode('moveSpecimenTemplatePropertiesAgain');
+
+ALTER TABLE study.study DROP COLUMN AllowReload;
+ALTER TABLE study.study DROP COLUMN LastReload;
+ALTER TABLE study.study DROP COLUMN ReloadInterval;
+ALTER TABLE study.study DROP COLUMN ReloadUser;

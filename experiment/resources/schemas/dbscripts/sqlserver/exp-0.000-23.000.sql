@@ -1513,3 +1513,51 @@ CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid)
 
 ALTER TABLE exp.PropertyDescriptor ADD Scannable BIT NOT NULL DEFAULT 0;
 GO
+
+/* 22.xxx SQL scripts */
+
+ALTER TABLE exp.list ALTER COLUMN Name NVARCHAR(200);
+GO
+
+UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun' AND Status IS NULL;
+
+CREATE TABLE exp.ObjectLegacyNames
+(
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    ObjectId INT NOT NULL,
+    ObjectType NVARCHAR(20) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
+
+    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId)
+);
+GO
+ALTER TABLE exp.Material ADD MaterialSourceId INT NULL;
+GO
+UPDATE exp.Material SET MaterialSourceId = (
+    SELECT distinct rowId FROM exp.materialSource WHERE materialSource.lsid = Material.cpastype
+) WHERE Material.cpastype <> 'Material';
+GO
+CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
+GO
+EXEC core.executeJavaUpgradeCode 'addProvisionedSampleName';
+
+EXEC core.fn_dropifexists 'materialsource', 'exp', 'CONSTRAINT', 'UQ_MaterialSource_Container_Name';
+
+ALTER TABLE exp.Edge DROP CONSTRAINT UQ_Edge_FromTo_RunId;
+ALTER TABLE exp.Edge DROP CONSTRAINT UQ_Edge_ToFrom_RunId;
+
+ALTER TABLE exp.Edge ALTER COLUMN RunId INT NULL;
+
+ALTER TABLE exp.Edge ADD SourceId INT NULL;
+ALTER TABLE exp.Edge ADD SourceKey NVARCHAR(200) NULL;
+
+ALTER TABLE exp.Edge ADD CONSTRAINT FK_Edge_SourceId_Object FOREIGN KEY (SourceId) REFERENCES exp.Object (Objectid);
+ALTER TABLE exp.Edge ADD CONSTRAINT UQ_Edge_FromTo_RunId_SourceId_SourceKey UNIQUE (FromObjectId, ToObjectId, RunId, SourceId, SourceKey);
+
+CREATE INDEX IX_Edge_ToObjectId ON exp.Edge(ToObjectId);
+CREATE INDEX IX_Edge_SourceId ON exp.Edge(SourceId);
+GO

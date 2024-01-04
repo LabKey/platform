@@ -72,3 +72,7 @@ GO
 EXEC audit.updateSelectQueryIdentifiedData;
 
 DROP PROCEDURE audit.updateSelectQueryIdentifiedData;
+
+/* 22.xxx SQL scripts */
+
+EXEC core.executeJavaUpgradeCode 'updateRowIdToBigInt';

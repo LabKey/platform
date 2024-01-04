@@ -1497,3 +1497,49 @@ UPDATE exp.Material SET RecomputeRollup=TRUE WHERE lsid IN
 CREATE INDEX IDX_exp_material_recompute ON exp.Material (container, rowid, lsid) WHERE RecomputeRollup=TRUE;
 
 ALTER TABLE exp.PropertyDescriptor ADD COLUMN Scannable BOOLEAN NOT NULL DEFAULT false;
+
+/* 22.xxx SQL scripts */
+
+ALTER TABLE exp.list ALTER COLUMN Name TYPE VARCHAR(200);
+
+UPDATE exp.Protocol SET Status = 'Active' WHERE ApplicationType = 'ExperimentRun' AND Status IS NULL;
+
+CREATE TABLE exp.ObjectLegacyNames
+(
+    RowId SERIAL NOT NULL,
+    ObjectId INT NOT NULL,
+    ObjectType VARCHAR(20) NOT NULL,
+    Name VARCHAR(200) NOT NULL,
+    Created TIMESTAMP,
+    CreatedBy INT,
+    Modified TIMESTAMP,
+    ModifiedBy INT,
+
+    CONSTRAINT PK_ObjectLegacyNames PRIMARY KEY (RowId)
+);
+
+ALTER TABLE exp.Material ADD COLUMN MaterialSourceId INT NULL;
+UPDATE exp.Material SET MaterialSourceId = (
+        SELECT distinct rowId FROM exp.materialSource WHERE materialSource.lsid = Material.cpastype
+    ) WHERE Material.cpastype <> 'Material';
+
+CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
+
+SELECT core.executeJavaUpgradeCode('addProvisionedSampleName');
+
+SELECT core.fn_dropifexists('materialsource', 'exp', 'constraint', 'UQ_MaterialSource_Container_Name');
+
+ALTER TABLE exp.Edge
+    DROP CONSTRAINT UQ_Edge_FromTo_RunId,
+    DROP CONSTRAINT UQ_Edge_ToFrom_RunId,
+
+    ALTER COLUMN RunId DROP NOT NULL,
+
+    ADD SourceId INT NULL,
+    ADD SourceKey VARCHAR(200) NULL,
+
+    ADD CONSTRAINT FK_Edge_SourceId_Object FOREIGN KEY (SourceId) REFERENCES exp.Object (Objectid),
+    ADD CONSTRAINT UQ_Edge_FromTo_RunId_SourceId_SourceKey UNIQUE (FromObjectId, ToObjectId, RunId, SourceId, SourceKey);
+
+CREATE INDEX IX_Edge_ToObjectId ON exp.Edge(ToObjectId);
+CREATE INDEX IX_Edge_SourceId ON exp.Edge(SourceId);
