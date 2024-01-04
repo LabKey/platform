@@ -20,21 +20,26 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -110,8 +115,10 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         var columnInfo = super.wrapColumn(col);
 
         // require a plate name
+/*
         if (columnInfo.getName().equalsIgnoreCase("Name"))
             columnInfo.setRequired(true);
+*/
 
         return columnInfo;
     }
@@ -185,6 +192,12 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 return data;
             }
 
+            if (!nameMap.containsKey("plateSet"))
+            {
+                context.getErrors().addRowError(new ValidationException("Plate set is a required field"));
+                return data;
+            }
+
             // generate a value for the lsid
             lsidGenerator.addColumn(plateTable.getColumn("lsid"),
                     (Supplier) () -> PlateManager.get().getLsid(Plate.class, container));
@@ -196,13 +209,21 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                         (Supplier) () -> GUID.makeGUID());
             }
 
+            SimpleTranslator nameExpressionTranslator = new SimpleTranslator(lsidGenerator, context);
+            nameExpressionTranslator.setDebugName("nameExpressionTranslator");
+            nameExpressionTranslator.selectAll();
             if (!nameMap.containsKey("name"))
             {
-                context.getErrors().addRowError(new ValidationException("Name is a required field"));
-                return data;
+                ColumnInfo nameCol = plateTable.getColumn("name");
+                nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
-            ValidatorIterator vi = new ValidatorIterator(lsidGenerator, context, container, user);
+            nameExpressionTranslator.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR),
+                    (Supplier) () -> PlateService.get().getPlateNameExpression());
+            DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateTable);
+            DataIterator di = LoggingDataIterator.wrap(new NameExpressionDataIterator(builtInColumnsTranslator, context, plateTable, container, null, null, null));
+
+            ValidatorIterator vi = new ValidatorIterator(di, context, container, user);
             vi.addValidator(nameMap.get("name"), new UniquePlateNameValidator(container));
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, vi, container, user, context);

@@ -195,4 +195,24 @@ public class AssayUpgradeCode implements UpgradeCode
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + AbstractPlateBasedAssayProvider.PLATE_TEMPLATE_SUFFIX);
         return prop != null ? PlateManager.get().getPlate(protocol.getContainer(), prop.getStringValue()) : null;
     }
+
+    /**
+     * Called from assay-24.000-24.001.sql
+     *
+     * The referenced upgrade script creates a new plate set for every plate in the system. We now
+     * want to iterate over each plate set to set the name using the configured name expression. We will
+     * also do the same for each plate but most likely there will be no plates in the system with a blank name
+     * since that was previously not allowed.
+     */
+    public static void updatePlateSetNames(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            tx.commit();
+        }
+    }
 }

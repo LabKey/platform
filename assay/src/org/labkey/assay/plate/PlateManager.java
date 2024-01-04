@@ -31,6 +31,7 @@ import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateTypeHandler;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
@@ -135,6 +136,10 @@ public class PlateManager implements PlateService
     private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
     private final Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
+
+    // name expressions, currently not configurable
+    private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
+    private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/Name}-:withCounter}";
 
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
@@ -317,6 +322,12 @@ public class PlateManager implements PlateService
     public List<Plate> getPlateTemplates(Container container)
     {
         return PlateCache.getPlateTemplates(container);
+    }
+
+    @Override
+    public @Nullable PlateSet getPlateSet(Container container, int plateSetId)
+    {
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getObject(container, plateSetId, PlateSetImpl.class);
     }
 
     @Override
@@ -1627,6 +1638,18 @@ public class PlateManager implements PlateService
         }
 
         return getFields(container, plateRowId);
+    }
+
+    @Override
+    public @NotNull String getPlateSetNameExpression()
+    {
+        return PLATE_SET_NAME_EXPRESSION;
+    }
+
+    @Override
+    public @NotNull String getPlateNameExpression()
+    {
+        return PLATE_NAME_EXPRESSION;
     }
 
     public static final class TestCase
