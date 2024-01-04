@@ -8,6 +8,7 @@ import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -25,7 +26,6 @@ public class UserApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
         addCondition(new SimpleFilter(FieldKey.fromParts("CreatedBy"), schema.getUser().getUserId(), CompareType.EQUAL));
     }
 
-
     @Override
     public boolean supportsContainerFilter()
     {
@@ -33,10 +33,17 @@ public class UserApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> perm)
     {
-        // We allow only read and delete on this table.
-        return perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class);
+        if (principal instanceof User user)
+        {
+           if (user.isImpersonated())
+               return false;
+
+            // We allow only read and delete on this table.
+            return perm.equals(ReadPermission.class) || perm.equals(DeletePermission.class);
+        }
+        return false;
     }
 
     @Override
