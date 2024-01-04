@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
@@ -58,6 +59,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private String _dataFileId;
     private String _type;
     private boolean _isTemplate;
+    private Integer _plateSetId;
 
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private List<WellGroupImpl> _deletedGroups;
@@ -529,6 +531,23 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setTemplate(boolean template)
     {
         _isTemplate = template;
+    }
+
+    public void setPlateSet(Integer plateSetId)
+    {
+        _plateSetId = plateSetId;
+    }
+
+    public Integer getPlateSet()
+    {
+        return _plateSetId;
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull PlateSet getPlateSetObject()
+    {
+        return PlateManager.get().getPlateSet(getContainer(), getPlateSet());
     }
 
     @JsonIgnore
