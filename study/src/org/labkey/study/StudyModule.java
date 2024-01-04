@@ -209,7 +209,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public Double getSchemaVersion()
     {
-        return 23.002;
+        return 24.000;
     }
 
     @Override

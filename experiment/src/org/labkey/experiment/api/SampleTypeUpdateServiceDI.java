@@ -624,7 +624,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
         String oldName = (String) oldRow.get(Name.name());
         boolean hasNameChange = !StringUtils.isEmpty(newName) && !newName.equals(oldName);
-        if (hasNameChange && !NameExpressionOptionService.get().allowUserSpecifiedNames(c))
+        if (hasNameChange && !NameExpressionOptionService.get().getAllowUserSpecificNamesValue(c))
             throw new ValidationException("User-specified sample name not allowed");
 
         String oldAliquotedFromLSID = (String) oldRow.get(AliquotedFromLSID.name());
@@ -1450,7 +1450,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
             // sampleset.createSampleNames() + generate lsid
             // TODO: does not handle insertIgnore
             DataIterator names = new _GenerateNamesDataIterator(sampleType, container, user, DataIteratorUtil.wrapMap(dataIterator, false), context, batchSize)
-                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().allowUserSpecifiedNames(container))
+                    .setAllowUserSpecifiedNames(NameExpressionOptionService.get().getAllowUserSpecificNamesValue(container))
                     .addExtraPropsFn(() -> {
                         if (container != null)
                             return Map.of(NameExpressionOptionService.FOLDER_PREFIX_TOKEN, StringUtils.trimToEmpty(NameExpressionOptionService.get().getExpressionPrefix(container)));

@@ -93,7 +93,7 @@ public class StudyImportFinalTask
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
 
             // after the data has been imported, configure the new study setting for undefined timepoints
-            if (studyXml.isSetFailForUndefinedTimepoints() && !study.isFailForUndefinedTimepoints())
+            if (studyXml.getFailForUndefinedTimepoints() && !study.isFailForUndefinedTimepoints())
             {
                 StudyImpl mutableStudy = study.createMutable();
                 mutableStudy.setFailForUndefinedTimepoints(true);

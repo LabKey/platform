@@ -158,10 +158,6 @@ import static org.labkey.api.data.ColumnRenderPropertiesImpl.STORAGE_UNIQUE_ID_C
 import static org.labkey.api.data.ColumnRenderPropertiesImpl.TEXT_CHOICE_CONCEPT_URI;
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
-/**
- * User: phussey (Peter Hussey)
- * Date: Jul 18, 2005
- */
 public class ExperimentModule extends SpringModule
 {
     private static final String SAMPLE_TYPE_WEB_PART_NAME = "Sample Types";
@@ -178,7 +174,7 @@ public class ExperimentModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 23.013;
+        return 24.000;
     }
 
     @Nullable
