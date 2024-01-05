@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* mothership-0.00-12.10.sql */
-
 CREATE SCHEMA mothership;
 
 CREATE TABLE mothership.SoftwareRelease
@@ -27,27 +25,8 @@ CREATE TABLE mothership.SoftwareRelease
     SVNURL VARCHAR(200),
 
     CONSTRAINT PK_SoftwareRelease PRIMARY KEY (SoftwareReleaseId),
-    CONSTRAINT UQ_SoftwareRelease UNIQUE (Container, SVNRevision, SVNURL),
     CONSTRAINT FK_SoftwareRelease_Container FOREIGN KEY (Container) REFERENCES core.containers(ENTITYID)
 );
-
-/* mothership-13.20-13.30.sql */
-
--- Add DESCRIPTION column to unique constraint on table SoftwareRelease. Support for enhancement 18609
-
-ALTER TABLE mothership.SoftwareRelease DROP CONSTRAINT UQ_SoftwareRelease;
-
-ALTER TABLE mothership.SoftwareRelease ADD CONSTRAINT UQ_SoftwareRelease UNIQUE
-(
-    Container,
-    SVNRevision,
-    SVNURL,
-    Description
-);
-
-/* mothership-19.20-19.30.sql */
-
-ALTER TABLE mothership.SoftwareRelease DROP CONSTRAINT UQ_SoftwareRelease;
 
 ALTER TABLE mothership.SoftwareRelease ADD COLUMN BuildTime TIMESTAMP;
 ALTER TABLE mothership.SoftwareRelease ADD COLUMN VcsTag VARCHAR(100);
@@ -78,8 +57,6 @@ CREATE TABLE mothership.ExceptionStackTrace
 );
 CREATE INDEX IX_ExceptionStackTrace_Container ON mothership.ExceptionStackTrace(container);
 
-/* mothership-13.10-13.20.sql */
-
 ALTER TABLE mothership.ExceptionStackTrace ADD COLUMN ModifiedBy USERID;
 ALTER TABLE mothership.ExceptionStackTrace ADD COLUMN Modified TIMESTAMP;
 
@@ -91,50 +68,21 @@ ALTER TABLE mothership.exceptionstacktrace
 CREATE TABLE mothership.ServerInstallation
 (
     ServerInstallationId SERIAL NOT NULL,
-    ServerInstallationGUID ENTITYID NOT NULL,
-    Note VARCHAR(150),
+    ServerInstallationGUID VARCHAR(1000) NOT NULL,
+    Note VARCHAR(500),
     Container ENTITYID NOT NULL,
-    SystemDescription VARCHAR(200),
-    LogoLink VARCHAR(200),
-    OrganizationName VARCHAR(200),
-    SystemShortName VARCHAR(200),
-    ServerIP VARCHAR(20),
     ServerHostName VARCHAR(256),
 
     CONSTRAINT PK_ServerInstallation PRIMARY KEY (ServerInstallationId),
-    CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID UNIQUE (ServerInstallationGUID),
     CONSTRAINT FK_ServerInstallation_Container FOREIGN KEY (Container) REFERENCES core.Containers(ENTITYID)
 );
 CREATE INDEX IX_ServerInstallation_Container ON mothership.ServerInstallation(Container);
 
-ALTER TABLE mothership.ServerInstallation ADD COLUMN UsedInstaller BOOLEAN;
-
-ALTER TABLE mothership.ServerInstallation ALTER COLUMN Note TYPE VARCHAR(500);
-
-/* mothership-14.31-14.32.sql */
-
-ALTER TABLE mothership.ServerInstallation ALTER COLUMN ServerInstallationGUID TYPE VARCHAR(1000);
-
-ALTER TABLE mothership.serverinstallation ADD COLUMN IgnoreExceptions BOOLEAN;
-
-ALTER TABLE mothership.ServerInstallation DROP COLUMN OrganizationName;
-
-ALTER TABLE mothership.ServerInstallation DROP COLUMN SystemShortName;
-
-ALTER TABLE mothership.ServerInstallation DROP COLUMN SystemDescription;
-
-ALTER TABLE mothership.ServerInstallation DROP COLUMN LogoLink;
-
--- We don't care about tracking this anymore
-ALTER TABLE mothership.ServerInstallation DROP COLUMN UsedInstaller;
-
--- We only want to track this at the session level
-ALTER TABLE mothership.ServerInstallation DROP COLUMN ServerIp;
-
 -- Going forward, we identify servers based on the combination of GUID (from the DB) and their host name
 -- This helps differentiate staging from production and other cases where a copy of the same DB is used by multiple servers
-ALTER TABLE mothership.ServerInstallation DROP CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID;
 ALTER TABLE mothership.ServerInstallation ADD CONSTRAINT UQ_ServerInstallation_ServerInstallationGUID_ServerHostName UNIQUE (ServerInstallationGUID, ServerHostName);
+
+ALTER TABLE mothership.serverinstallation ADD COLUMN IgnoreExceptions BOOLEAN;
 
 CREATE TABLE mothership.ServerSession
 (
@@ -169,18 +117,12 @@ CREATE TABLE mothership.ServerSession
 );
 CREATE INDEX IX_ServerSession_ServerInstallationId ON mothership.serversession(ServerInstallationId);
 
-/* mothership-16.20-16.30.sql */
-
 ALTER TABLE mothership.ServerSession ADD COLUMN Distribution VARCHAR(500) NULL;
 ALTER TABLE mothership.ServerSession ADD COLUMN JsonMetrics VARCHAR NULL;
 ALTER TABLE mothership.ServerSession ADD COLUMN UsageReportingLevel VARCHAR(10) NULL;
 ALTER TABLE mothership.ServerSession ADD COLUMN ExceptionReportingLevel VARCHAR(10) NULL;
 
-/* mothership-18.30-19.10.sql */
-
 ALTER TABLE mothership.ServerSession ALTER COLUMN JsonMetrics TYPE JSONB USING JsonMetrics::JSONB;
-
-/* 22.xxx SQL scripts */
 
 ALTER TABLE mothership.ServerSession ADD COLUMN ServerHostName VARCHAR(256);
 UPDATE mothership.ServerSession SET ServerHostName = (SELECT ServerHostName FROM mothership.ServerInstallation si WHERE si.serverinstallationid = ServerSession.serverinstallationid);
@@ -210,6 +152,7 @@ UPDATE mothership.ServerSession ss SET ServerInstallationId =
     (SELECT si2.ServerInstallationId FROM mothership.ServerInstallation si1
                                      INNER JOIN mothership.serverinstallation si2 ON ss.serverhostname = si2.ServerHostName AND si1.serverinstallationguid = si2.serverinstallationguid
                                      WHERE si1.serverinstallationid = ss.serverinstallationid);
+
 CREATE TABLE mothership.ExceptionReport
 (
     ExceptionReportId SERIAL NOT NULL,
@@ -232,13 +175,8 @@ CREATE TABLE mothership.ExceptionReport
 );
 CREATE INDEX IX_ExceptionReport_ExceptionStackTraceId ON mothership.exceptionreport(ExceptionStackTraceId);
 CREATE INDEX IX_ExceptionReport_ServerSessionId ON mothership.exceptionreport(ServerSessionId);
-
-/* mothership-16.30-17.10.sql */
-
 CREATE INDEX IX_ExceptionReport_Created ON mothership.exceptionreport(created DESC);
-/* mothership-17.20-17.30.sql */
 
-ALTER TABLE mothership.exceptionreport
-    ADD COLUMN ErrorCode VARCHAR(6);
+ALTER TABLE mothership.exceptionreport ADD COLUMN ErrorCode VARCHAR(6);
 
 CREATE INDEX IX_ExceptionReport_ErrorCode ON mothership.exceptionreport (ErrorCode);
