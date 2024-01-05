@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
@@ -19,6 +18,7 @@ public class UserApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
     public UserApiKeysTableInfo(@NotNull CoreQuerySchema schema)
     {
         super(schema.getDbSchema().getTable(CoreQuerySchema.API_KEYS_TABLE_NAME), schema);
+        setTitle("API Keys");
         addWrapColumn(getRealTable().getColumn("RowId")).setHidden(true);
         addWrapColumn(getRealTable().getColumn("CreatedBy")).setHidden(true);
         addWrapColumn(getRealTable().getColumn("Created"));
@@ -49,6 +49,6 @@ public class UserApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
     @Override
     public @Nullable QueryUpdateService getUpdateService()
     {
-        return new DefaultQueryUpdateService(this, getRealTable());
+        return new UserApiKeysUpdateService(this, getRealTable());
     }
 }

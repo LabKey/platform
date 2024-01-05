@@ -45,6 +45,7 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.core.security.UserApiKeyQueryView;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 import org.springframework.validation.BindException;
@@ -100,6 +101,10 @@ public class CoreQuerySchema extends UserSchema
         if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
         {
             return new WorkbookQueryView(context, this);
+        }
+        else if (USER_API_KEYS_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
+        {
+            return new UserApiKeyQueryView(context, this);
         }
         return super.createView(context, settings, errors);
     }
