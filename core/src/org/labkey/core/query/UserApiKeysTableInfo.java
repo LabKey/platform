@@ -18,7 +18,7 @@ public class UserApiKeysTableInfo extends FilteredTable<CoreQuerySchema>
     public UserApiKeysTableInfo(@NotNull CoreQuerySchema schema)
     {
         super(schema.getDbSchema().getTable(CoreQuerySchema.API_KEYS_TABLE_NAME), schema);
-        setTitle("API Keys");
+        setTitle("User API Keys");
         addWrapColumn(getRealTable().getColumn("RowId")).setHidden(true);
         addWrapColumn(getRealTable().getColumn("CreatedBy")).setHidden(true);
         addWrapColumn(getRealTable().getColumn("Created"));
