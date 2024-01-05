@@ -54,6 +54,13 @@ CREATE TABLE pipeline.StatusFiles
 );
 CREATE CLUSTERED INDEX IX_StatusFiles_Container_JobParent ON pipeline.StatusFiles (Container ASC, JobParent ASC);
 
+/* pipeline-14.10-14.20.sql */
+
+ALTER TABLE pipeline.StatusFiles ADD ActiveHostName NVARCHAR(255) NULL;
+
+/* 22.xxx SQL scripts */
+
+ALTER TABLE pipeline.StatusFiles ADD TaskPipelineId NVARCHAR(255);
 CREATE TABLE pipeline.PipelineRoots
 (
     _ts TIMESTAMP,
@@ -79,14 +86,7 @@ CREATE TABLE pipeline.PipelineRoots
     CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
 );
 
-/* pipeline-10.20-10.30.sql */
-
-ALTER TABLE pipeline.PipelineRoots
-    ADD SupplementalPath NVARCHAR(300);
-
-/* pipeline-14.10-14.20.sql */
-
-ALTER TABLE pipeline.StatusFiles ADD ActiveHostName NVARCHAR(255) NULL;
+ALTER TABLE pipeline.PipelineRoots ADD SupplementalPath NVARCHAR(300);
 
 /* pipeline-15.30-16.10.sql */
 
@@ -96,11 +96,9 @@ ALTER TABLE pipeline.PipelineRoots DROP COLUMN KeyPassword;
 
 DELETE FROM pipeline.PipelineRoots WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
 
-ALTER TABLE pipeline.PipelineRoots ADD
-    CONSTRAINT FK_PipelineRoots_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+ALTER TABLE pipeline.PipelineRoots ADD CONSTRAINT FK_PipelineRoots_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 
-ALTER TABLE pipeline.PipelineRoots ADD
-    CONSTRAINT UQ_PipelineRoots_Container_Type UNIQUE (Container, Type);
+ALTER TABLE pipeline.PipelineRoots ADD CONSTRAINT UQ_PipelineRoots_Container_Type UNIQUE (Container, Type);
 
 /* pipeline-17.20-17.30.sql */
 
@@ -146,6 +144,3 @@ CREATE TABLE pipeline.TriggeredFiles
   CONSTRAINT UQ_TriggeredFiles_Container_TriggerId_FilePath UNIQUE (Container, TriggerId, FilePath)
 );
 
-/* 22.xxx SQL scripts */
-
-ALTER TABLE pipeline.StatusFiles ADD TaskPipelineId NVARCHAR(255);
