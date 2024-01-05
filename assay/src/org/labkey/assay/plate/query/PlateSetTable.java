@@ -12,6 +12,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -24,6 +25,7 @@ import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
@@ -41,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "PlateSet";
@@ -52,6 +56,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
         defaultVisibleColumns.add(FieldKey.fromParts("Archived"));
     }
 
@@ -59,6 +64,13 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super(schema, AssayDbSchema.getInstance().getTableInfoPlateSet(), cf);
         setTitleColumn("Name");
+    }
+
+    @Override
+    public void addColumns()
+    {
+        super.addColumns();
+        addPlateCountColumn();
     }
 
     @Override
@@ -85,6 +97,16 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             columnInfo.setIsRootDbSequence(true);
         }
         return columnInfo;
+    }
+
+    private void addPlateCountColumn()
+    {
+        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS plateCount FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoPlate(), "PT")
+                .append(" WHERE PT.PlateSet = " + STR_TABLE_ALIAS + ".RowId)");
+        ExprColumn countCol = new ExprColumn(this, "PlateCount", sql, JdbcType.INTEGER);
+        countCol.setDescription("The number of plates that are assigned to this plate set");
+        addColumn(countCol);
     }
 
     @Override
