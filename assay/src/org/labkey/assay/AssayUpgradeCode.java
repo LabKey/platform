@@ -9,14 +9,20 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DeferredUpgrade;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -31,6 +37,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
@@ -200,9 +207,7 @@ public class AssayUpgradeCode implements UpgradeCode
      * Called from assay-24.000-24.001.sql
      *
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
-     * want to iterate over each plate set to set the name using the configured name expression. We will
-     * also do the same for each plate but most likely there will be no plates in the system with a blank name
-     * since that was previously not allowed.
+     * want to iterate over each plate set to set the name using the configured name expression.
      */
     public static void updatePlateSetNames(ModuleContext ctx) throws Exception
     {
@@ -212,6 +217,25 @@ public class AssayUpgradeCode implements UpgradeCode
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
+            _log.info("Start updating temporary plate set names with the configured name expression");
+            List<PlateSetImpl> plateSets = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getArrayList(PlateSetImpl.class);
+
+            NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateSetNameExpression(), AssayDbSchema.getInstance().getTableInfoPlateSet(), false, null, null, null);
+            NameGenerator.State state = nameGenerator.createState(false);
+            for (PlateSetImpl plateSet : plateSets)
+            {
+                Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateSetImpl.class).toMap(plateSet, new ArrayListMap<>());
+                String name = nameGenerator.generateName(state, plateRow);
+                state.cleanUp();
+
+                SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
+                        .append(" SET Name = ?")
+                        .add(name)
+                        .append(" WHERE RowId = ?")
+                        .add(plateSet.getRowId());
+                new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+            }
+            _log.info("Successfully updated " + plateSets.size() + " plate set names");
             tx.commit();
         }
     }

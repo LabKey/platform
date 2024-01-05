@@ -23,10 +23,10 @@ ALTER TABLE assay.Plate ADD COLUMN PlateSet INTEGER;
 UPDATE assay.Plate SET PlateSet = (SELECT PS.RowID FROM assay.PlateSet PS WHERE Plate.RowId = PlateId);
 ALTER TABLE assay.plate ALTER PlateSet SET NOT NULL;
 
--- Add the FK to the plate table
+-- Add the FK to the plate table and drop the temporary plate ID column in the plate set table
 ALTER TABLE assay.Plate ADD CONSTRAINT FK_Plate_PlateSet FOREIGN KEY (PlateSet) REFERENCES assay.PlateSet (RowId);
-
--- Drop the temporary plate ID column in the plate set table
 ALTER TABLE assay.PlateSet DROP COLUMN PlateId;
+CREATE INDEX IX_Plate_PlateSet ON assay.Plate (PlateSet);
 
 -- Run the java upgrade script to update plate set and plate tables to create the name expression based name values
+SELECT core.executeJavaUpgradeCode('updatePlateSetNames');
