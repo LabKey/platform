@@ -123,6 +123,18 @@ UPDATE study.Study SET ValidateQueriesAfterImport = 1 WHERE AllowReload = 1;
 
 ALTER TABLE study.Study ADD ShareVisitDefinitions BIT NOT NULL DEFAULT 0;
 
+/* 21.xxx SQL scripts */
+
+EXEC sp_rename 'study.Study.DefaultAssayQCState', 'DefaultPublishDataQCState', 'COLUMN';
+
+/* 22.xxx SQL scripts */
+
+EXEC core.fn_dropifexists 'Study', 'study', 'DEFAULT', 'AllowReload';
+
+ALTER TABLE study.study DROP COLUMN AllowReload;
+ALTER TABLE study.study DROP COLUMN LastReload;
+ALTER TABLE study.study DROP COLUMN ReloadInterval;
+ALTER TABLE study.study DROP COLUMN ReloadUser;
 CREATE TABLE study.Cohort
 (
     RowId INT IDENTITY(1,1),
@@ -245,6 +257,13 @@ ALTER TABLE study.dataset ADD Tag VARCHAR(1000);
 ALTER TABLE study.dataset ADD dataSharing NVARCHAR(20) NOT NULL DEFAULT 'NONE';
 ALTER TABLE study.dataset ADD UseTimeKeyField BIT NOT NULL DEFAULT 0;
 ALTER TABLE study.Dataset ALTER COLUMN TypeURI NVARCHAR(300);
+
+EXEC sp_rename 'study.Dataset.ProtocolId', 'PublishSourceId', 'COLUMN';
+
+ALTER TABLE study.Dataset ADD PublishSourceType NVARCHAR(50);
+GO
+UPDATE study.Dataset SET PublishSourceType = 'Assay'
+    WHERE PublishSourceId IS NOT NULL;
 
 -- ParticipantId is not a sequence, we assume these are externally defined
 CREATE TABLE study.Participant
@@ -1015,24 +1034,3 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
   CONSTRAINT pk_studydesignchallengetypes PRIMARY KEY (Container, Name)
 );
-
-/* 21.xxx SQL scripts */
-
-EXEC sp_rename 'study.Study.DefaultAssayQCState', 'DefaultPublishDataQCState', 'COLUMN';
-
-EXEC sp_rename 'study.Dataset.ProtocolId', 'PublishSourceId', 'COLUMN';
-
-ALTER TABLE study.Dataset ADD PublishSourceType NVARCHAR(50);
-GO
-UPDATE study.Dataset SET PublishSourceType = 'Assay'
-    WHERE PublishSourceId IS NOT NULL;
-
-/* 22.xxx SQL scripts */
-
-EXEC core.executeJavaUpgradeCode 'moveSpecimenTemplatePropertiesAgain';
-
-EXEC core.fn_dropifexists 'Study', 'study', 'DEFAULT', 'AllowReload';
-ALTER TABLE study.study DROP COLUMN AllowReload;
-ALTER TABLE study.study DROP COLUMN LastReload;
-ALTER TABLE study.study DROP COLUMN ReloadInterval;
-ALTER TABLE study.study DROP COLUMN ReloadUser;
