@@ -786,7 +786,7 @@ UPDATE exp.Material SET RunId = NULL WHERE RunId IN (SELECT RowId FROM exp.Exper
 UPDATE exp.Data SET SourceApplicationId = NULL WHERE SourceApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers)));
 UPDATE exp.Material SET SourceApplicationId = NULL WHERE SourceApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers)));
 
--- Clean up ophaned runs and their objects
+-- Clean up orphaned runs and their objects
 DELETE FROM exp.DataInput WHERE TargetApplicationId IN
 	(SELECT RowId FROM exp.ProtocolApplication WHERE
 		ProtocolLSID IN (SELECT Lsid FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
@@ -1524,8 +1524,6 @@ UPDATE exp.Material SET MaterialSourceId = (
     ) WHERE Material.cpastype <> 'Material';
 
 CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
-
-SELECT core.executeJavaUpgradeCode('addProvisionedSampleName');
 
 SELECT core.fn_dropifexists('materialsource', 'exp', 'constraint', 'UQ_MaterialSource_Container_Name');
 

@@ -749,7 +749,7 @@ UPDATE exp.Material SET RunId = NULL WHERE RunId IN (SELECT RowId FROM exp.Exper
 UPDATE exp.Data SET SourceApplicationId = NULL WHERE SourceApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers)));
 UPDATE exp.Material SET SourceApplicationId = NULL WHERE SourceApplicationId IN (SELECT RowId FROM exp.ProtocolApplication WHERE RunId IN (SELECT RowId FROM exp.ExperimentRun WHERE Container NOT IN (SELECT EntityId FROM core.containers)));
 
--- Clean up ophaned runs and their objects
+-- Clean up orphaned runs and their objects
 DELETE FROM exp.DataInput WHERE TargetApplicationId IN
 	(SELECT RowId FROM exp.ProtocolApplication WHERE
 		ProtocolLSID IN (SELECT Lsid FROM exp.Protocol WHERE Container NOT IN (SELECT EntityId FROM core.Containers))
@@ -1062,24 +1062,24 @@ GO
 
 CREATE TABLE exp.DataClass
 (
-  RowId INT IDENTITY(1,1) NOT NULL,
-  Name NVARCHAR(200) NOT NULL,
-  LSID LSIDtype NOT NULL,
-  Container EntityId NOT NULL,
-  Created DATETIME NULL,
-  CreatedBy INT NULL,
-  Modified DATETIME NULL,
-  ModifiedBy INT NULL,
-  Description NTEXT NULL,
-  MaterialSourceId INT NULL,
-  NameExpression NVARCHAR(200) NULL,
+    RowId INT IDENTITY(1,1) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Container EntityId NOT NULL,
+    Created DATETIME NULL,
+    CreatedBy INT NULL,
+    Modified DATETIME NULL,
+    ModifiedBy INT NULL,
+    Description NTEXT NULL,
+    MaterialSourceId INT NULL,
+    NameExpression NVARCHAR(200) NULL,
 
-  CONSTRAINT PK_DataClass PRIMARY KEY (RowId),
-  CONSTRAINT UQ_DataClass_LSID UNIQUE (LSID),
-  CONSTRAINT UQ_DataClass_Container_Name UNIQUE (Container, Name),
+    CONSTRAINT PK_DataClass PRIMARY KEY (RowId),
+    CONSTRAINT UQ_DataClass_LSID UNIQUE (LSID),
+    CONSTRAINT UQ_DataClass_Container_Name UNIQUE (Container, Name),
 
-  CONSTRAINT FK_DataClass_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-  CONSTRAINT FK_DataClass_MaterialSource FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
+    CONSTRAINT FK_DataClass_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
+    CONSTRAINT FK_DataClass_MaterialSource FOREIGN KEY (MaterialSourceId) REFERENCES exp.MaterialSource (RowId)
 );
 CREATE INDEX IX_DataClass_Container ON exp.DataClass(Container);
 
@@ -1103,36 +1103,36 @@ CREATE UNIQUE INDEX UQ_Data_DataClass_Name
 
 CREATE TABLE exp.Alias
 (
-  RowId INT IDENTITY (1, 1) NOT NULL,
-  Created DATETIME,
-  CreatedBy INT,
-  Modified DATETIME,
-  ModifiedBy INT,
+    RowId INT IDENTITY (1, 1) NOT NULL,
+    Created DATETIME,
+    CreatedBy INT,
+    Modified DATETIME,
+    ModifiedBy INT,
 
-  Name NVARCHAR(500) NOT NULL,
+    Name NVARCHAR(500) NOT NULL,
 
-  CONSTRAINT PK_Alias PRIMARY KEY (RowId),
-  CONSTRAINT UQ_Alias_Name UNIQUE (Name)
+    CONSTRAINT PK_Alias PRIMARY KEY (RowId),
+    CONSTRAINT UQ_Alias_Name UNIQUE (Name)
 );
 
 CREATE TABLE exp.DataAliasMap
 (
-  LSID LSIDtype NOT NULL,
-  Alias INT NOT NULL,
-  Container EntityId NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Alias INT NOT NULL,
+    Container EntityId NOT NULL,
 
-  CONSTRAINT PK_DataAliasMap PRIMARY KEY (LSID, Alias),
-  CONSTRAINT FK_DataAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
+    CONSTRAINT PK_DataAliasMap PRIMARY KEY (LSID, Alias),
+    CONSTRAINT FK_DataAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
 );
 
 CREATE TABLE exp.MaterialAliasMap
 (
-  LSID LSIDtype NOT NULL,
-  Alias INT NOT NULL,
-  Container EntityId NOT NULL,
+    LSID LSIDtype NOT NULL,
+    Alias INT NOT NULL,
+    Container EntityId NOT NULL,
 
-  CONSTRAINT PK_MaterialAliasMap PRIMARY KEY (LSID, Alias),
-  CONSTRAINT FK_MaterialAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
+    CONSTRAINT PK_MaterialAliasMap PRIMARY KEY (LSID, Alias),
+    CONSTRAINT FK_MaterialAlias_RowId FOREIGN KEY (Alias) REFERENCES exp.Alias(RowId)
 );
 
 CREATE INDEX IX_Alias_Name ON exp.Alias(Name);
@@ -1146,11 +1146,11 @@ CREATE INDEX IX_MaterialAliasMap ON exp.MaterialAliasMap(LSID, Alias, Container)
 /* exp-16.10-16.20.sql */
 
 ALTER TABLE exp.data
-   ALTER COLUMN cpastype nvarchar(300);
+    ALTER COLUMN cpastype nvarchar(300);
 
 UPDATE exp.data
-  SET cpastype = (SELECT lsid FROM exp.dataclass WHERE exp.data.classId = exp.dataclass.rowid)
-  WHERE classid IS NOT NULL;
+    SET cpastype = (SELECT lsid FROM exp.dataclass WHERE exp.data.classId = exp.dataclass.rowid)
+    WHERE classid IS NOT NULL;
 
 ALTER TABLE exp.Data ADD LastIndexed DATETIME NULL;
 ALTER TABLE exp.DomainDescriptor ADD TemplateInfo NVARCHAR(4000) NULL;
@@ -1543,7 +1543,6 @@ UPDATE exp.Material SET MaterialSourceId = (
 GO
 CREATE INDEX IDX_material_name_sourceid ON exp.Material (name, materialSourceId);
 GO
-EXEC core.executeJavaUpgradeCode 'addProvisionedSampleName';
 
 EXEC core.fn_dropifexists 'materialsource', 'exp', 'CONSTRAINT', 'UQ_MaterialSource_Container_Name';
 
