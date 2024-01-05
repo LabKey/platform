@@ -125,6 +125,7 @@ import java.util.Set;
 
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
+import static org.labkey.api.settings.SiteSettingsProperties.allowSessionKeys;
 import static org.labkey.api.settings.SiteSettingsProperties.apiKeyExpirationSeconds;
 
 /**
@@ -377,6 +378,7 @@ public class ApiModule extends CodeOnlyModule
         json.put(applicationMenuDisplayMode.name(), properties.getApplicationMenuDisplayMode());
         json.put(allowApiKeys.name(), AppProps.getInstance().isAllowApiKeys());
         json.put(apiKeyExpirationSeconds.name(), AppProps.getInstance().getApiKeyExpirationSeconds());
+        json.put(allowSessionKeys.name(), AppProps.getInstance().isAllowSessionKeys());
 
         json.put("moduleNames", ModuleLoader.getInstance().getModules().stream().map(module -> module.getName().toLowerCase()).toArray());
         return json;
