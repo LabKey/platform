@@ -46,6 +46,8 @@ CREATE TABLE comm.Announcements
 
 CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier);
 
+ALTER TABLE comm.Announcements ADD DiscussionSrcEntityType VARCHAR(100) NULL;
+
 CREATE TABLE comm.Pages
 (
     RowId INT IDENTITY(1,1) NOT NULL,
@@ -120,52 +122,30 @@ CREATE TABLE comm.RSSFeeds
 
 CREATE TABLE comm.Tours
 (
-  RowId INT IDENTITY(1,1) NOT NULL,
-  Title NVARCHAR(500) NOT NULL,
-  Description NVARCHAR(4000),
-  Container ENTITYID NOT NULL,
-  EntityId ENTITYID NOT NULL,
-  Created DATETIME,
-  CreatedBy USERID,
-  Modified DATETIME,
-  ModifiedBy USERID,
-  Json NVARCHAR(MAX),
-  Mode INT NOT NULL DEFAULT 0,
+    RowId INT IDENTITY(1,1) NOT NULL,
+    Title NVARCHAR(500) NOT NULL,
+    Description NVARCHAR(4000),
+    Container ENTITYID NOT NULL,
+    EntityId ENTITYID NOT NULL,
+    Created DATETIME,
+    CreatedBy USERID,
+    Modified DATETIME,
+    ModifiedBy USERID,
+    Json NVARCHAR(MAX),
+    Mode INT NOT NULL DEFAULT 0,
 
-  CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
+    CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
 );
-
-/* 21.xxx SQL scripts */
-
-UPDATE prop.properties
-SET value = 'secureOff'
-WHERE name = 'secure' AND value = 'false' AND
-    "set" IN (SELECT "set" FROM prop.propertysets WHERE category = 'messageBoardSettings');
-
-UPDATE prop.properties
-SET value = 'secureWithoutEmail'
-WHERE name = 'secure' AND value = 'true' AND
-    "set" IN (SELECT "set" FROM prop.propertysets WHERE category = 'messageBoardSettings');
-
-ALTER TABLE comm.Announcements ADD DiscussionSrcEntityType VARCHAR(100) NULL;
-
-/* 22.xxx SQL scripts */
 
 CREATE TABLE comm.PageAliases
 (
     Container ENTITYID NOT NULL,
     Alias NVARCHAR(255) NOT NULL,
-    RowId INT NOT NULL,
+    PageRowId INT NOT NULL,
 
     CONSTRAINT PK_PageAliases PRIMARY KEY (Container, Alias)
 );
 
-EXEC sp_rename 'comm.PageAliases.RowId', 'PageRowId', 'COLUMN';
-
 -- Switch from PK to UNIQUE INDEX to match PostgreSQL
 ALTER TABLE comm.PageAliases DROP CONSTRAINT PK_PageAliases;
 CREATE UNIQUE INDEX UQ_PageAliases ON comm.PageAliases (Container, Alias);
-
-EXEC core.fn_dropifexists 'EmailFormats', 'comm', 'TABLE', NULL;
-EXEC core.fn_dropifexists 'EmailPrefs', 'comm', 'TABLE', NULL;
-EXEC core.fn_dropifexists 'EmailOptions', 'comm', 'TABLE', NULL;

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* audit-0.00-12.10.sql */
-
 CREATE SCHEMA audit;
 
 CREATE TABLE audit.AuditLog
@@ -41,35 +39,8 @@ CREATE TABLE audit.AuditLog
 );
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 
-/* audit-12.20-12.30.sql */
-
 CREATE INDEX IX_AuditLog_IntKey1 ON audit.AuditLog(IntKey1);
 CREATE INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created);
 CLUSTER audit.AuditLog USING IX_AuditLog_EventType_Created;
-
-/* audit-16.20-16.30.sql */
-
-CREATE OR REPLACE FUNCTION audit.updateSelectQueryIdentifiedData() RETURNS integer AS $BODY$
-
-DECLARE
-    tempName TEXT;
-BEGIN
-    SELECT INTO tempName storagetablename
-        FROM exp.domaindescriptor WHERE name = 'SelectQueryAuditDomain';
-    IF (tempName IS NOT NULL)
-    THEN
-        EXECUTE 'ALTER TABLE audit.' || tempName || ' ALTER COLUMN identifieddata TYPE TEXT';
-    END IF;
-    RETURN 0;
-END
-
-$BODY$
-LANGUAGE plpgsql;
-
-SELECT audit.updateSelectQueryIdentifiedData();
-
-DROP FUNCTION audit.updateSelectQueryIdentifiedData();
-
-/* 22.xxx SQL scripts */
 
 SELECT core.executeJavaUpgradeCode('updateRowIdToBigInt');

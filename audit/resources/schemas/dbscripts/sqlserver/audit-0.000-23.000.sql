@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* audit-0.00-12.10.sql */
-
 CREATE SCHEMA audit;
 GO
 
@@ -42,8 +40,6 @@ CREATE TABLE audit.AuditLog
 );
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 
-/* audit-12.20-12.30.sql */
-
 CREATE INDEX IX_AuditLog_IntKey1 ON audit.AuditLog(IntKey1);
 ALTER TABLE audit.AuditLog DROP CONSTRAINT PK_AuditLog;
 CREATE CLUSTERED INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created DESC);
@@ -51,28 +47,5 @@ CREATE CLUSTERED INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType
 ALTER TABLE audit.AuditLog ADD CONSTRAINT PK_AuditLog PRIMARY KEY (RowId);
 
 GO
-
-/* audit-16.20-16.30.sql */
-
-CREATE PROCEDURE audit.updateSelectQueryIdentifiedData AS
-BEGIN
-DECLARE
-    @tempName VARCHAR(100);
-
-    SELECT @tempName = storagetablename
-        FROM exp.domaindescriptor WHERE name = 'SelectQueryAuditDomain';
-    IF (@tempName IS NOT NULL)
-    BEGIN
-        EXEC ('ALTER TABLE audit.' + @tempName + ' ALTER COLUMN identifieddata NVARCHAR(MAX)')
-    END
-    RETURN 0;
-END
-GO
-
-EXEC audit.updateSelectQueryIdentifiedData;
-
-DROP PROCEDURE audit.updateSelectQueryIdentifiedData;
-
-/* 22.xxx SQL scripts */
 
 EXEC core.executeJavaUpgradeCode 'updateRowIdToBigInt';

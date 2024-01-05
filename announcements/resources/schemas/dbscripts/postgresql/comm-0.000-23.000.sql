@@ -45,6 +45,8 @@ CREATE TABLE comm.Announcements
 
 CREATE INDEX IX_DiscussionSrcIdentifier ON comm.announcements(Container, DiscussionSrcIdentifier);
 
+ALTER TABLE comm.Announcements ADD DiscussionSrcEntityType VARCHAR(100) NULL;
+
 CREATE TABLE comm.Pages
 (
     RowId SERIAL,
@@ -136,37 +138,12 @@ CREATE TABLE comm.Tours
     CONSTRAINT PK_ToursId PRIMARY KEY (RowId)
 );
 
-/* 21.xxx SQL scripts */
-
-UPDATE prop.properties
-SET value = 'secureOff'
-WHERE name = 'secure' AND value = 'false' AND
-    "set" IN (SELECT "set" FROM prop.propertysets WHERE category = 'messageBoardSettings');
-
-UPDATE prop.properties
-SET value = 'secureWithoutEmail'
-WHERE name = 'secure' AND value = 'true' AND
-    "set" IN (SELECT "set" FROM prop.propertysets WHERE category = 'messageBoardSettings');
-
-ALTER TABLE comm.Announcements ADD DiscussionSrcEntityType VARCHAR(100) NULL;
-
-/* 22.xxx SQL scripts */
-
 CREATE TABLE comm.PageAliases
 (
     Container ENTITYID NOT NULL,
     Alias VARCHAR(255) NOT NULL,
-    RowId INT NOT NULL,
-
-    CONSTRAINT PK_PageAliases PRIMARY KEY (Container, Alias)
+    PageRowId INT NOT NULL
 );
 
-ALTER TABLE comm.PageAliases RENAME COLUMN RowId TO PageRowId;
-
 -- Aliases should be case-insensitive
-ALTER TABLE comm.PageAliases DROP CONSTRAINT PK_PageAliases;
 CREATE UNIQUE INDEX UQ_PageAliases ON comm.PageAliases (Container, LOWER(Alias));
-
-DROP TABLE IF EXISTS comm.EmailFormats;
-DROP TABLE IF EXISTS comm.EmailPrefs;
-DROP TABLE IF EXISTS comm.EmailOptions;
