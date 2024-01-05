@@ -40,8 +40,17 @@ public class UserApiKeysUpdateService extends DefaultQueryUpdateService
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
     {
+        if (oldRowMap == null)
+            return null;
+
         validateUser(user, oldRowMap);
-        return super.deleteRow(user, container, oldRowMap);
+
+        // We allow deletion of API keys from any container since they are defined globally,
+        // so we skip the container permission check from the base class.
+        aliasColumns(_columnMapping, oldRowMap);
+
+        _delete(container, oldRowMap);
+        return oldRowMap;
     }
 
     @Override
