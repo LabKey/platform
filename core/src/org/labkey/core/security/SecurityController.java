@@ -15,6 +15,7 @@
  */
 package org.labkey.core.security;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -47,18 +48,25 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.external.tools.ExternalToolsViewProvider;
 import org.labkey.api.external.tools.ExternalToolsViewService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.*;
@@ -77,6 +85,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DotRunner;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
@@ -104,6 +113,7 @@ import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.user.SecurityAccessView;
 import org.labkey.core.user.UserController;
 import org.labkey.core.user.UserController.AccessDetailRow;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -2401,6 +2411,94 @@ public class SecurityController extends SpringActionController
                 response.put("apikey", apiKey);
 
             return response;
+        }
+    }
+
+    @RequiresLogin
+    public static class DeleteApiKeysAction extends FormHandlerAction<QueryForm>
+    {
+        @Override
+        public void validateCommand(QueryForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(QueryForm form, BindException errors) throws Exception
+        {
+            TableInfo table = new CoreQuerySchema(getUser(), getContainer()).getTable(CoreQuerySchema.USER_API_KEYS_TABLE_NAME);
+            if (table == null)
+                throw new NotFoundException("");
+
+            QueryUpdateService updateService = table.getUpdateService();
+            if (updateService == null)
+                throw new UnsupportedOperationException("Unable to delete - no QueryUpdateService registered for " + form.getSchemaName() + "." + form.getQueryName());
+
+            Set<String> ids = DataRegionSelection.getSelected(form.getViewContext(), null, true);
+            List<ColumnInfo> pks = table.getPkColumns();
+            int numPks = pks.size();
+
+            //normalize the pks to arrays of correctly-typed objects
+            List<Map<String, Object>> keyValues = new ArrayList<>(ids.size());
+            for (String id : ids)
+            {
+                String[] stringValues = new String[]{id};
+
+                Map<String, Object> rowKeyValues = new CaseInsensitiveHashMap<>();
+                for (int idx = 0; idx < numPks; ++idx)
+                {
+                    ColumnInfo keyColumn = pks.get(idx);
+                    Object keyValue = keyColumn.getJavaClass() == String.class ? stringValues[idx] : ConvertUtils.convert(stringValues[idx], keyColumn.getJavaClass());
+                    rowKeyValues.put(keyColumn.getName(), keyValue);
+                }
+                keyValues.add(rowKeyValues);
+            }
+
+            DbSchema dbSchema = table.getSchema();
+            try
+            {
+                dbSchema.getScope().executeWithRetry(tx ->
+                {
+                    try
+                    {
+                        updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
+                    }
+                    catch (SQLException x)
+                    {
+                        if (!RuntimeSQLException.isConstraintException(x))
+                            throw new RuntimeSQLException(x);
+                        errors.reject(ERROR_GENERIC, x.getMessage());
+                    }
+                    catch (DataIntegrityViolationException | OptimisticConflictException e)
+                    {
+                        errors.reject(ERROR_GENERIC, null == e.getMessage() ? e.toString() : e.getMessage());
+                    }
+                    catch (BatchValidationException x)
+                    {
+                        x.addToErrors(errors);
+                    }
+                    catch (Exception x)
+                    {
+                        errors.reject(ERROR_GENERIC, null == x.getMessage() ? x.toString() : x.getMessage());
+                        ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+                    }
+                    // need to throw here to avoid committing tx
+                    if (errors.hasErrors())
+                        throw new DbScope.RetryPassthroughException(errors);
+                    return true;
+                });
+            }
+            catch (DbScope.RetryPassthroughException x)
+            {
+                if (x.getCause() != errors)
+                    x.throwRuntimeException();
+            }
+            return !errors.hasErrors();
+        }
+
+        @Override
+        public ActionURL getSuccessURL(QueryForm form)
+        {
+            return form.getReturnActionURL();
         }
     }
 
