@@ -70,11 +70,6 @@ import java.util.Set;
 
 import static org.labkey.api.issues.IssuesSchema.ISSUE_DEF_SCHEMA_NAME;
 
-/**
- * User: migra
- * Date: Jul 18, 2005
- * Time: 3:48:21 PM
- */
 public class IssuesModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String NAME = "Issues";
@@ -88,7 +83,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public Double getSchemaVersion()
     {
-        return 23.000;
+        return 24.000;
     }
 
     @Override

@@ -83,7 +83,6 @@ sourceSets {
   }
 }
 
-
 dependencies {
     // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
     // and so the dependencies are included in the dependencies.txt file.

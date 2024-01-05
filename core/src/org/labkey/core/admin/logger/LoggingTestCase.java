@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.test.TestWhen;
-import org.labkey.api.util.PageFlowUtil;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,12 +28,13 @@ public class LoggingTestCase extends Assert
         // log4j2.xml file is found first.
         String filename = "log4j2.xml";
         String substring = "labkeyWebapp/WEB-INF/classes/log4j2.xml"; // Our standard log4j2.xml file
+        String substring2 = "labkeywebapp/WEB-INF/classes/log4j2.xml"; // From an embedded distribution
 
         List<URL> list = Collections.list(getClass().getClassLoader().getResources(filename));
         assertFalse("Didn't find expected file: " + filename, list.isEmpty());
         String first = list.get(0).toString();
         assertTrue("Did not find substring \"" + substring + "\" in file path of the first " + filename + " file on the class path. Here's what was found: "
-            + list.stream().map(URL::toString).collect(Collectors.joining(", ")), first.contains(substring));
+            + list.stream().map(URL::toString).collect(Collectors.joining(", ")), first.contains(substring) || first.contains(substring2));
     }
 
     @Test

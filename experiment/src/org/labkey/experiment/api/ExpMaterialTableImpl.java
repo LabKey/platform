@@ -257,7 +257,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 var nameCol = wrapColumn(alias, _rootTable.getColumn(column.toString()));
                 // shut off this field in insert and update views if user specified names are not allowed
-                if (!NameExpressionOptionService.get().allowUserSpecifiedNames(getContainer()))
+                if (!NameExpressionOptionService.get().getAllowUserSpecificNamesValue(getContainer()))
                 {
                     nameCol.setShownInInsertView(false);
                     nameCol.setShownInUpdateView(false);

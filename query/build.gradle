@@ -115,4 +115,4 @@ sourceSets {
 }
 
 
-apply plugin: 'org.labkey.antlr'
+apply plugin: 'org.labkey.build.antlr'
