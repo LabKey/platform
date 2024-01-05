@@ -68,9 +68,9 @@ public class UserApiKeysUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected int truncateRows(User user, Container container) throws QueryUpdateServiceException, SQLException
+    protected int truncateRows(User user, Container container)
     {
-        throw new UnauthorizedException("You do not have permission to delete the selected row.");
+        throw new UnsupportedOperationException("Truncation of table core.UserApiKeys is not supported.");
     }
 
     protected void validateUser(User user, Map<String, Object> row)
