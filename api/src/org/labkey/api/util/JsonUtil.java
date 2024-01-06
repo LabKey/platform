@@ -135,14 +135,14 @@ public class JsonUtil
         @Override
         public ObjectMapper copy()
         {
-            _checkInvalidCopy(ObjectMapper.class);
+            _checkInvalidCopy(LabKeyObjectMapper.class);
             return new LabKeyObjectMapper(this);
         }
 
         @Override
         public ObjectMapper copyWith(JsonFactory factory)
         {
-            _checkInvalidCopy(ObjectMapper.class);
+            _checkInvalidCopy(LabKeyObjectMapper.class);
             return new LabKeyObjectMapper(this, factory);
         }
     }
