@@ -48,6 +48,7 @@
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="static org.junit.Assert.assertNotNull" %>
 <%@ page import="static org.junit.Assert.assertTrue" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
     final String aliasPrefix = "MultiValueTest-";
@@ -98,7 +99,7 @@
         MockHttpServletResponse resp = ViewServlet.GET(url, getUser(), null);
         String content = resp.getContentAsString();
 
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
         ObjectNode n = om.readValue(content, ObjectNode.class);
         Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
         ArrayNode rows = n.withArray("rows");
@@ -213,7 +214,7 @@
         MockHttpServletResponse resp = ViewServlet.GET(selectUrl, getUser(), null);
         String content = resp.getContentAsString();
 
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
         ObjectNode n = om.readValue(content, ObjectNode.class);
         Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
         ArrayNode rows = n.withArray("rows");
@@ -304,7 +305,7 @@
         String content = resp.getContentAsString();
         //System.out.println("query response:\n" + content);
 
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = new ObjectMapper().copy();
         ObjectNode n = om.readValue(content, ObjectNode.class);
         Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
         ArrayNode rows = n.withArray("rows");

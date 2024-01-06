@@ -15,12 +15,16 @@
  */
 package org.labkey.api.util;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.JsonpCharacterEscapes;
+import com.fasterxml.jackson.core.io.CharacterEscapes;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -63,7 +67,7 @@ public class JsonUtil
 
     public static ObjectMapper createDefaultMapper()
     {
-        ObjectMapper result = new ObjectMapper();
+        ObjectMapper result = new LabKeyObjectMapper();
         // Allow org.json classes to be serialized by Jackson
         result.registerModule(new JsonOrgModule());
         // We must register JavaTimeModule in order to serialize LocalDate, etc.
@@ -71,6 +75,78 @@ public class JsonUtil
         result.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
         return result;
     }
+
+
+    private static final int[] labkeyAsciiEscapes;
+    static
+    {
+        labkeyAsciiEscapes = CharacterEscapes.standardAsciiEscapesForJSON().clone();
+        labkeyAsciiEscapes['/'] = '/';
+    }
+
+
+    static class LabKeyCharacterEscapes extends JsonpCharacterEscapes
+    {
+        private static final LabKeyCharacterEscapes sInstance = new LabKeyCharacterEscapes();
+        @Override
+        public int[] getEscapeCodesForAscii()
+        {
+            return labkeyAsciiEscapes;
+        }
+    }
+
+    static class LabKeyJsonFactory extends MappingJsonFactory
+    {
+        LabKeyJsonFactory()
+        {
+            setCharacterEscapes(LabKeyCharacterEscapes.sInstance);
+        }
+
+        LabKeyJsonFactory(LabKeyJsonFactory src, ObjectMapper mapper)
+        {
+            super(src, mapper);
+        }
+
+        @Override
+        public JsonFactory copy()
+        {
+            _checkInvalidCopy(LabKeyJsonFactory.class);
+            return new LabKeyJsonFactory(this, null);
+        }
+    }
+
+    static class LabKeyObjectMapper extends ObjectMapper
+    {
+        LabKeyObjectMapper()
+        {
+            super(new LabKeyJsonFactory());
+        }
+
+        LabKeyObjectMapper(LabKeyObjectMapper src)
+        {
+            this(src, null);
+        }
+
+        LabKeyObjectMapper(LabKeyObjectMapper src, JsonFactory factory)
+        {
+            super(src, factory);
+        }
+
+        @Override
+        public ObjectMapper copy()
+        {
+            _checkInvalidCopy(ObjectMapper.class);
+            return new LabKeyObjectMapper(this);
+        }
+
+        @Override
+        public ObjectMapper copyWith(JsonFactory factory)
+        {
+            _checkInvalidCopy(ObjectMapper.class);
+            return new LabKeyObjectMapper(this, factory);
+        }
+    }
+
 
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
     {
@@ -227,7 +303,7 @@ public class JsonUtil
     // See Issue 47618
     public static String stripComments(String jsonWithComments) throws JsonProcessingException
     {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = DEFAULT_MAPPER.copy();
         mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
         mapper.enable(JsonParser.Feature.ALLOW_TRAILING_COMMA); // NLP *.ctc.json files have trailing commas, so allow them
         return mapper.writeValueAsString(mapper.readTree(jsonWithComments));
@@ -478,6 +554,19 @@ public class JsonUtil
             assertThrows(JSONException.class, () -> new JSONObject(response));
             JsonUtil.sanitizeMap(response);
             JSONObject json = new JSONObject(response);
+        }
+
+        @Test
+        public void testJavascript() throws Exception
+        {
+            // just verifying current behavior: JSONObject escapes /, ObjectMapper does not escape /
+            assertEquals("{\"key<\\/\":\"<\\/script>\"}", new JSONObject(Map.of("key</","</script>")).toString());
+            assertEquals("{\"key</\":\"</script>\"}", new ObjectMapper().writeValueAsString(Map.of("key</","</script>")));
+
+            // our ObjectMapper should act like JSONObject.toString()
+            assertEquals("{\"key<\\/\":\"<\\/script>\"}", DEFAULT_MAPPER.writeValueAsString(Map.of("key</","</script>")));
+            // test copy() while we're here
+            assertEquals("{\"key<\\/\":\"<\\/script>\"}", DEFAULT_MAPPER.copy().writeValueAsString(Map.of("key</","</script>")));
         }
 
         private Map<String, Object> getFloatRun()
