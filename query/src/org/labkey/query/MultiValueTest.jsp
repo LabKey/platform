@@ -99,8 +99,7 @@
         MockHttpServletResponse resp = ViewServlet.GET(url, getUser(), null);
         String content = resp.getContentAsString();
 
-        ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
-        ObjectNode n = om.readValue(content, ObjectNode.class);
+        ObjectNode n = JsonUtil.DEFAULT_MAPPER.readValue(content, ObjectNode.class);
         Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
         ArrayNode rows = n.withArray("rows");
 
@@ -214,8 +213,7 @@
         MockHttpServletResponse resp = ViewServlet.GET(selectUrl, getUser(), null);
         String content = resp.getContentAsString();
 
-        ObjectMapper om = JsonUtil.DEFAULT_MAPPER.copy();
-        ObjectNode n = om.readValue(content, ObjectNode.class);
+        ObjectNode n = JsonUtil.DEFAULT_MAPPER.readValue(content, ObjectNode.class);
         Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
         ArrayNode rows = n.withArray("rows");
 
@@ -305,8 +303,7 @@
         String content = resp.getContentAsString();
         //System.out.println("query response:\n" + content);
 
-        ObjectMapper om = new ObjectMapper().copy();
-        ObjectNode n = om.readValue(content, ObjectNode.class);
+        ObjectNode n = JsonUtil.DEFAULT_MAPPER.readValue(content, ObjectNode.class);
         Assert.assertEquals("Expected only one row", n.get("rowCount").asInt(), 1);
         ArrayNode rows = n.withArray("rows");
 
