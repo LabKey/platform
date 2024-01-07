@@ -29,11 +29,13 @@
 <%@ page import="org.labkey.study.controllers.StudyController.VisitVisibilityAction" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     List<VisitImpl> allVisits = getVisits(Visit.Order.DISPLAY);
 %>
+<labkey:errors/>
 <table class="lk-fields-table">
     <tr>
         <td>View study schedule</td>
@@ -79,6 +81,19 @@
         <td><%= link("Create New Visit", CreateVisitAction.class)%></td>
     </tr>
 </table>
+<p>
+<labkey:panel title="Automatic Visit Creation" width="800">
+    <labkey:form action="<%=urlFor(StudyController.ManageVisitsAction.class)%>" method="POST">
+        <div>By default, new visit rows will be created in the study during the insert or update of any dataset or
+            specimen rows which have a new, undefined visit. If, instead you would like
+            for the operation to fail when it encounters a visit that is not already defined in the study, check the box
+            below.
+        </div><br>
+        <labkey:input type="checkbox" name="failForUndefinedTimepoints" value="true"
+                      label="Fail data import for undefined visits" checked="<%=getStudy().isFailForUndefinedTimepoints()%>"/>
+        <%= button("Update").submit(true) %>
+    </labkey:form>
+</labkey:panel>
 
 <%
     if (allVisits.size() > 0)

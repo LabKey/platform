@@ -5,6 +5,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.importer.SimpleStudyImportContext;
@@ -36,7 +37,7 @@ public interface SpecimenMigrationService
     ActionURL getUpdateSpecimenQueryRowURL(Container c, String schemaName, TableInfo table);
 
     void importSpecimenArchive(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
-                               boolean syncParticipantVisit) throws PipelineJobException;
+                               boolean syncParticipantVisit) throws PipelineJobException, ValidationException;
 
     void clearRequestCaches(Container c);
     void clearGroupedValuesForColumn(Container container);

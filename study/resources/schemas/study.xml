@@ -159,6 +159,9 @@
       <column columnName="ValidateQueriesAfterImport">
         <description>Flag to perform query validation after import.</description>
       </column>
+      <column columnName="FailForUndefinedTimepoints">
+        <description>Flag to prevent the creation of new timepoints during data import.</description>
+      </column>
     </columns>
   </table>
   <table tableName="Site" tableDbType="NOT_IN_DB">

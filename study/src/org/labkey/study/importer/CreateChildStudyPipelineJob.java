@@ -35,6 +35,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
@@ -274,7 +275,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // Save the snapshot RowId to the destination study
                 StudyImpl mutableStudy = StudyManager.getInstance().getStudy(getDstContainer()).createMutable();
                 mutableStudy.setStudySnapshot(snapshot.getRowId());
-                StudyManager.getInstance().updateStudy(user, mutableStudy);
 
                 // export objects from the parent study, then import them into the new study
                 getLogger().info("Exporting data from parent study.");
@@ -309,6 +309,14 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 importTreatmentVisitMapData(errors, studyDir, studyImportContext);
 
                 new TopLevelStudyPropertiesImporter().process(studyImportContext, studyDir, errors);
+
+                // after the data has been imported, configure the new study setting for undefined timepoints
+                if (sourceStudy.isFailForUndefinedTimepoints())
+                    mutableStudy.setFailForUndefinedTimepoints(true);
+
+                ValidationException validationException = StudyManager.getInstance().updateStudy(user, mutableStudy);
+                if (validationException.hasErrors())
+                    errors.reject(null, validationException.getMessage());
             }
 
             if (errors.hasErrors())

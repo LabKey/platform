@@ -88,6 +88,17 @@
                   value="<%=DateUtil.formatDate(getContainer(), form.getStartDate())%>" />
     <labkey:input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration"
                   label="Default Timepoint Duration" value="<%=form.getDefaultTimepointDuration()%>" />
+    <br>
+    <div>
+        <h3 class="panel-title">Automatic Timepoint Creation</h3>
+    </div>
+    <div>By default, new timepoint rows will be created in the study during the insert or update of any dataset or
+        specimen rows which have a new, undefined timepoint. If, instead you would like
+        for the operation to fail when it encounters a visit that is not already defined in the study, check the box
+        below.
+    </div><br>
+    <labkey:input type="checkbox" name="failForUndefinedTimepoints" value="true"
+                  label="Fail data import for undefined timepoints" checked="<%=getStudy().isFailForUndefinedTimepoints()%>"/>
     <%= button("Update").submit(true) %>
     <%= generateBackButton() %>
 </labkey:form>
