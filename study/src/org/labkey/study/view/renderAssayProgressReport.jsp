@@ -24,6 +24,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -39,7 +40,6 @@
     AssayProgressReport.AssayReportBean form = me.getModelBean();
     List<Map<String, String>> legend = AssayProgressReport.SpecimenStatus.serialize();
     String renderId = "participant-report-div-" + getRequestScopedUID();
-    ObjectMapper jsonMapper = new ObjectMapper();
     List<Map<Object, Object>> assays = new ArrayList<>();
 
     for (Map.Entry<Integer, Map<String, Object>> entry : form.getAssayData().entrySet())
@@ -58,8 +58,8 @@
             new LABKEY.ext4.AssayProgressReport({
                 renderTo        : <%=q(renderId)%>,
                 reportId        : <%=q(form.getId().toString())%>,
-                assays          : <%=text(jsonMapper.writeValueAsString(assays))%>,
-                legend          : <%=text(jsonMapper.writeValueAsString(legend))%>
+                assays          : <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(assays))%>,
+                legend          : <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(legend))%>
             });
         });
     </labkey:loadClientDependencies>

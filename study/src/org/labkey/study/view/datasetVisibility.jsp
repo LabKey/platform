@@ -34,6 +34,7 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -54,7 +55,6 @@
     ArrayList<Integer> emptyDatasets = new ArrayList<>();
 
     String storeId = "dataset-visibility-category-store";
-    ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> datasetInfo = new ArrayList<>();
     for (Map.Entry<Integer, DatasetVisibilityData> entry : bean.entrySet())
@@ -244,7 +244,7 @@
 
     Ext4.onReady(function()
     {
-        var datasetInfo = <%=text(jsonMapper.writeValueAsString(datasetInfo))%>;
+        var datasetInfo = <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(datasetInfo))%>;
         var store = LABKEY.study.DataViewUtil.getViewCategoriesStore({
             storeId : '<%=h(storeId)%>',
             container: <%=q((sharedStudy != null ? sharedStudy.getContainer() : study.getContainer()).getPath())%>
