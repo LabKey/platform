@@ -1708,10 +1708,30 @@ public class AssayController extends SpringActionController
             Set<Integer> notPermittedIds = new HashSet<>();
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
+                List<? extends ExpRun> allRuns = ExperimentService.get().getExpRuns(permittedIds);
+
                 ExperimentService.get().getObjectReferencers().forEach(referencer ->
                         notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
                 permittedIds.removeAll(notPermittedIds);
+
+                List<Map<String, Object>> allowedRows = new ArrayList<>();
+                List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+
+                allRuns.forEach((dataObject) -> {
+                    Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "ContainerPath", dataObject.getContainer().getPath());
+                    if (permittedIds.contains(dataObject.getRowId()))
+                        allowedRows.add(rowMap);
+                    else
+                        notAllowedRows.add(rowMap);
+                });
+
+                Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
+                partitionedIds.put("allowed", allowedRows);
+                partitionedIds.put("notAllowed", notAllowedRows);
+                return success(partitionedIds);
+
             }
+
             return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
 
         }

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* pipeline-0.00-10.10.sql */
-
 CREATE SCHEMA pipeline;
 GO
 
@@ -54,6 +52,9 @@ CREATE TABLE pipeline.StatusFiles
 );
 CREATE CLUSTERED INDEX IX_StatusFiles_Container_JobParent ON pipeline.StatusFiles (Container ASC, JobParent ASC);
 
+ALTER TABLE pipeline.StatusFiles ADD ActiveHostName NVARCHAR(255) NULL;
+ALTER TABLE pipeline.StatusFiles ADD TaskPipelineId NVARCHAR(255);
+
 CREATE TABLE pipeline.PipelineRoots
 (
     _ts TIMESTAMP,
@@ -79,16 +80,7 @@ CREATE TABLE pipeline.PipelineRoots
     CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
 );
 
-/* pipeline-10.20-10.30.sql */
-
-ALTER TABLE pipeline.PipelineRoots
-    ADD SupplementalPath NVARCHAR(300);
-
-/* pipeline-14.10-14.20.sql */
-
-ALTER TABLE pipeline.StatusFiles ADD ActiveHostName NVARCHAR(255) NULL;
-
-/* pipeline-15.30-16.10.sql */
+ALTER TABLE pipeline.PipelineRoots ADD SupplementalPath NVARCHAR(300);
 
 ALTER TABLE pipeline.PipelineRoots DROP COLUMN KeyBytes;
 ALTER TABLE pipeline.PipelineRoots DROP COLUMN CertBytes;
@@ -96,13 +88,9 @@ ALTER TABLE pipeline.PipelineRoots DROP COLUMN KeyPassword;
 
 DELETE FROM pipeline.PipelineRoots WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
 
-ALTER TABLE pipeline.PipelineRoots ADD
-    CONSTRAINT FK_PipelineRoots_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
+ALTER TABLE pipeline.PipelineRoots ADD CONSTRAINT FK_PipelineRoots_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
 
-ALTER TABLE pipeline.PipelineRoots ADD
-    CONSTRAINT UQ_PipelineRoots_Container_Type UNIQUE (Container, Type);
-
-/* pipeline-17.20-17.30.sql */
+ALTER TABLE pipeline.PipelineRoots ADD CONSTRAINT UQ_PipelineRoots_Container_Type UNIQUE (Container, Type);
 
 CREATE TABLE pipeline.TriggerConfigurations
 (
@@ -126,11 +114,7 @@ CREATE TABLE pipeline.TriggerConfigurations
   CONSTRAINT UQ_TriggerConfigurations_Name UNIQUE (Container, Name)
 );
 
-/* pipeline-17.30-18.10.sql */
-
 ALTER TABLE pipeline.TriggerConfigurations ADD customConfiguration NVARCHAR(MAX);
-
-/* pipeline-18.10-18.20.sql */
 
 CREATE TABLE pipeline.TriggeredFiles
 (

@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-/* audit-0.00-12.10.sql */
-
 CREATE SCHEMA audit;
+GO
 
 CREATE TABLE audit.AuditLog
 (
-    RowId SERIAL,
-    Key1 VARCHAR(1000) NULL,
-    Key2 VARCHAR(1000) NULL,
-    Key3 VARCHAR(1000) NULL,
+    RowId INT IDENTITY(1,1) NOT NULL,
+    Key1 NVARCHAR(1000) NULL,
+    Key2 NVARCHAR(1000) NULL,
+    Key3 NVARCHAR(1000) NULL,
     IntKey1 INT NULL,
     IntKey2 INT NULL,
     IntKey3 INT NULL,
-    Comment VARCHAR(500),
-    EventType VARCHAR(64),
+    Comment NVARCHAR(500),
+    EventType NVARCHAR(64),
     CreatedBy USERID NOT NULL,
-    Created TIMESTAMP,
+    Created DATETIME,
     ContainerId ENTITYID NOT NULL,
     EntityId ENTITYID NULL,
     Lsid LSIDtype,
@@ -41,31 +40,12 @@ CREATE TABLE audit.AuditLog
 );
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 
-/* audit-12.20-12.30.sql */
-
 CREATE INDEX IX_AuditLog_IntKey1 ON audit.AuditLog(IntKey1);
-CREATE INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created);
-CLUSTER audit.AuditLog USING IX_AuditLog_EventType_Created;
+ALTER TABLE audit.AuditLog DROP CONSTRAINT PK_AuditLog;
+CREATE CLUSTERED INDEX IX_AuditLog_EventType_Created ON audit.AuditLog(EventType, Created DESC);
+-- NONCLUSTERED
+ALTER TABLE audit.AuditLog ADD CONSTRAINT PK_AuditLog PRIMARY KEY (RowId);
 
-/* audit-16.20-16.30.sql */
+GO
 
-CREATE OR REPLACE FUNCTION audit.updateSelectQueryIdentifiedData() RETURNS integer AS $BODY$
-
-DECLARE
-    tempName TEXT;
-BEGIN
-    SELECT INTO tempName storagetablename
-        FROM exp.domaindescriptor WHERE name = 'SelectQueryAuditDomain';
-    IF (tempName IS NOT NULL)
-    THEN
-        EXECUTE 'ALTER TABLE audit.' || tempName || ' ALTER COLUMN identifieddata TYPE TEXT';
-    END IF;
-    RETURN 0;
-END
-
-$BODY$
-LANGUAGE plpgsql;
-
-SELECT audit.updateSelectQueryIdentifiedData();
-
-DROP FUNCTION audit.updateSelectQueryIdentifiedData();
+EXEC core.executeJavaUpgradeCode 'updateRowIdToBigInt';

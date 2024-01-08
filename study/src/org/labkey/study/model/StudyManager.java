@@ -4829,19 +4829,6 @@ public class StudyManager
 
     public static class StudyUpgradeCode implements UpgradeCode
     {
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void moveSpecimenTemplatePropertiesAgain(final ModuleContext context)
-        {
-            if (!context.isNewInstall())
-            {
-                // SpecimenRequestNotificationEmailTemplate was moved to specimen module in 22.3; move its template properties to the new location
-                EmailTemplateService.get().relocateEmailTemplateProperties(
-                    "org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate",
-                    "org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate"
-                );
-            }
-        }
-
         /**
          * Called from study-23.000-23.001.sql
          * Issue : 46986. Move the study design domains to the project folder (if not already there), since
