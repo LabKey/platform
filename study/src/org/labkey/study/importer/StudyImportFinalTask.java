@@ -21,7 +21,10 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.study.importer.SimpleStudyImporter;
 import org.labkey.api.study.importer.SimpleStudyImporter.Timing;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.StudySerializationRegistry;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;
@@ -84,6 +87,17 @@ public class StudyImportFinalTask
             {
                 if (importer.getTiming() == Timing.Late)
                     importer.process(ctx, vf, errors);
+            }
+
+            StudyDocument.Study studyXml = ctx.getXml();
+            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+
+            // after the data has been imported, configure the new study setting for undefined timepoints
+            if (studyXml.getFailForUndefinedTimepoints() && !study.isFailForUndefinedTimepoints())
+            {
+                StudyImpl mutableStudy = study.createMutable();
+                mutableStudy.setFailForUndefinedTimepoints(true);
+                StudyManager.getInstance().updateStudy(ctx.getUser(), mutableStudy);
             }
         }
         catch (Exception e)

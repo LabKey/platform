@@ -456,15 +456,20 @@ public class StudyPublishManager implements StudyPublishService
                 logPublishEvent(publishSource.first, source, dataMaps, user, sourceContainer, targetContainer, dataset);
             }
 
+            //Make sure that the study is updated with the correct timepoints.
+            ValidationException validationErrors = StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
+            if (validationErrors.hasErrors())
+            {
+                errors.add(validationErrors.getMessage());
+                return null;
+            }
+
             transaction.commit();
         }
         catch (ChangePropertyDescriptorException | IOException e)
         {
             throw UnexpectedException.wrap(e);
         }
-
-        //Make sure that the study is updated with the correct timepoints.
-        StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
         return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
     }
@@ -978,12 +983,17 @@ public class StudyPublishManager implements StudyPublishService
                     defaultQCState = DataStateManager.getInstance().getStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DatasetDefinition.CheckForDuplicates.sourceOnly,
                         defaultQCState, insertOption, null, importLookupByAlternateKey, auditBehaviorType);
+
+                if (!errors.hasErrors())
+                {
+                    ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
+                    if (validationException.hasErrors())
+                        errors.addRowError(validationException);
+                }
+
                 if (!errors.hasErrors())
                     transaction.commit();
             }
-
-            if (!errors.hasErrors())
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singleton(dsd));
         }
         catch (IOException x)
         {
@@ -1272,6 +1282,9 @@ public class StudyPublishManager implements StudyPublishService
                         ExpMaterialTable.Column.RowId.toString(),
                         publishErrors
                     );
+
+                    if (!publishErrors.isEmpty())
+                        publishErrors.forEach(LOG::error);
                 }
                 else
                 {

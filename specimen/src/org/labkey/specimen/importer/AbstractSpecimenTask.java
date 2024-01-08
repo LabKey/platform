@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.specimen.importer.SpecimenImporter;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
@@ -98,7 +99,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
     }
 
     public static void doImport(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
-            boolean syncParticipantVisit) throws PipelineJobException
+            boolean syncParticipantVisit) throws PipelineJobException, ValidationException
     {
         doImport(inputFile, job, ctx, merge, syncParticipantVisit, new DefaultImportHelper());
     }
@@ -115,7 +116,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
     }
 
     public static void doImport(@Nullable Path inputFile, PipelineJob job, SimpleStudyImportContext ctx, boolean merge,
-                                boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException
+                                boolean syncParticipantVisit, ImportHelper importHelper) throws PipelineJobException, ValidationException
     {
         // do nothing if we've specified data types and specimen is not one of them
         if (!ctx.isDataTypeSelected(SpecimenArchiveDataTypes.SPECIMENS))
@@ -172,7 +173,11 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
             // we need to force a participant/visit refresh in those study containers (if any):
             for (Study dependentStudy : StudyService.get().getAncillaryStudies(ctx.getContainer()))
-                VisitService.get().updateParticipantVisits(dependentStudy, ctx.getUser());
+            {
+                ValidationException errors = VisitService.get().updateParticipantVisits(dependentStudy, ctx.getUser());
+                if (errors.hasErrors())
+                    throw errors;
+            }
         }
     }
 

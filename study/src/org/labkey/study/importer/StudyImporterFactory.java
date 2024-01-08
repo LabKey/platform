@@ -27,6 +27,7 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.cloud.CloudArchiveImporterSupport;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.specimen.SpecimenMigrationService;
 import org.labkey.api.study.SpecimenService;
@@ -161,7 +162,12 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 }
 
                 ctx.getLogger().info("Updating study-wide subject/visit information...");
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, datasets, null, null, true, ctx.getLogger());
+                ValidationException validationException = StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, datasets, null, null, true,
+                        ctx.isFailForUndefinedVisits() || study.isFailForUndefinedTimepoints(),
+                        ctx.getLogger());
+                if (validationException.hasErrors())
+                    validationException.getErrors().forEach(ve -> ctx.getLogger().error(ve.getMessage()));
+
                 ctx.getLogger().info("Subject/visit update complete.");
 
                 // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.
