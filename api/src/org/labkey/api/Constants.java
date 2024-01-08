@@ -47,7 +47,7 @@ public class Constants
      */
     public static double getEarliestUpgradeVersion()
     {
-        return 22.000;
+        return 23.000;
     }
 
     /**
@@ -144,7 +144,7 @@ public class Constants
         {
             double version = 16.20;
 
-            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20, 19.30, 20.000, 21.000, 22.000, 23.000})
+            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20, 19.30, 20.000, 21.000, 22.000, 23.000, 24.000, 25.000})
             {
                 double previous = version;
                 version = incrementVersion(version);

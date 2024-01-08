@@ -1,1 +1,0 @@
-EXEC core.fn_dropifexists 'materialsource', 'exp', 'CONSTRAINT', 'UQ_MaterialSource_Container_Name';

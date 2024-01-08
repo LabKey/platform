@@ -96,6 +96,10 @@ CREATE TABLE core.UsersData
   CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
 );
 
+/* 22.xxx SQL scripts */
+
+ALTER TABLE core.UsersData ADD System BOOLEAN NOT NULL DEFAULT FALSE;
+
 CREATE TABLE core.Containers
 (
   _ts TIMESTAMP DEFAULT now(),
@@ -120,6 +124,9 @@ CREATE TABLE core.Containers
 );
 
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
+
+ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
+ALTER TABLE core.Containers ADD ExpirationDate TIMESTAMP NULL;
 
 -- table for all modules
 CREATE TABLE core.Modules
@@ -210,6 +217,8 @@ CREATE TABLE core.ContainerAliases
   CONSTRAINT UK_ContainerAliases_Paths UNIQUE (Path),
   CONSTRAINT FK_ContainerAliases_Containers FOREIGN KEY (ContainerId) REFERENCES core.Containers(EntityId)
 );
+
+ALTER TABLE core.containeraliases ALTER COLUMN path TYPE VARCHAR(4000);
 
 CREATE TABLE core.MappedDirectories
 (
@@ -371,7 +380,9 @@ CREATE TABLE core.Notifications
   CONSTRAINT UQ_Notifications_ContainerUserObjectType UNIQUE (Container, UserId, ObjectId, Type)
 );
 
-CREATE TABLE core.QCState
+CREATE INDEX IX_Notification_User ON core.Notifications(UserId);
+
+CREATE TABLE core.DataStates
 (
   RowId SERIAL,
   Label VARCHAR(64) NULL,
@@ -381,6 +392,8 @@ CREATE TABLE core.QCState
   CONSTRAINT PK_QCState PRIMARY KEY (RowId),
   CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
 );
+
+ALTER TABLE core.DataStates ADD COLUMN StateType VARCHAR(20);
 
 CREATE TABLE core.APIKeys
 (
@@ -687,18 +700,4 @@ $BODY$
 LANGUAGE plpgsql VOLATILE
 COST 100;
 
-/* 21.xxx SQL scripts */
-
--- Rename 'MobileAppStudy' module to 'Response'
-UPDATE core.sqlscripts SET modulename = 'Response' WHERE modulename = 'MobileAppStudy';
-UPDATE core.modules SET name = 'Response', classname = 'org.labkey.response.ResponseModule'
-    WHERE name = 'MobileAppStudy';
-
-ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
-ALTER TABLE core.Containers ADD ExpirationDate TIMESTAMP NULL;
-
 SELECT core.executeJavaInitializationCode('setDefaultExcludedProjects');
-
-ALTER TABLE core.qcstate RENAME TO DataStates;
-
-ALTER TABLE core.DataStates ADD COLUMN StateType VARCHAR(20);

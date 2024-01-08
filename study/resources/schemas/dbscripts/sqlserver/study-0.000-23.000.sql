@@ -119,10 +119,21 @@ ALTER TABLE study.Study ADD ShareDatasetDefinitions BIT NOT NULL DEFAULT 0;
 -- Add new skip query validation column to study.study
 ALTER TABLE study.Study ADD ValidateQueriesAfterImport BIT NOT NULL DEFAULT 0;
 GO
-UPDATE study.Study SET ValidateQueriesAfterImport = 1 WHERE AllowReload = 1;
 
 ALTER TABLE study.Study ADD ShareVisitDefinitions BIT NOT NULL DEFAULT 0;
 
+/* 21.xxx SQL scripts */
+
+EXEC sp_rename 'study.Study.DefaultAssayQCState', 'DefaultPublishDataQCState', 'COLUMN';
+
+/* 22.xxx SQL scripts */
+
+EXEC core.fn_dropifexists 'Study', 'study', 'DEFAULT', 'AllowReload';
+
+ALTER TABLE study.study DROP COLUMN AllowReload;
+ALTER TABLE study.study DROP COLUMN LastReload;
+ALTER TABLE study.study DROP COLUMN ReloadInterval;
+ALTER TABLE study.study DROP COLUMN ReloadUser;
 CREATE TABLE study.Cohort
 (
     RowId INT IDENTITY(1,1),
@@ -246,6 +257,13 @@ ALTER TABLE study.dataset ADD dataSharing NVARCHAR(20) NOT NULL DEFAULT 'NONE';
 ALTER TABLE study.dataset ADD UseTimeKeyField BIT NOT NULL DEFAULT 0;
 ALTER TABLE study.Dataset ALTER COLUMN TypeURI NVARCHAR(300);
 
+EXEC sp_rename 'study.Dataset.ProtocolId', 'PublishSourceId', 'COLUMN';
+
+ALTER TABLE study.Dataset ADD PublishSourceType NVARCHAR(50);
+GO
+UPDATE study.Dataset SET PublishSourceType = 'Assay'
+    WHERE PublishSourceId IS NOT NULL;
+
 -- ParticipantId is not a sequence, we assume these are externally defined
 CREATE TABLE study.Participant
 (
@@ -281,6 +299,7 @@ ALTER TABLE study.Participant ADD Modified DATETIME;
 GO
 
 UPDATE study.Participant SET Modified = CURRENT_TIMESTAMP;
+
 CREATE TABLE study.SampleRequestStatus
 (
     RowId INT IDENTITY(1,1),
@@ -501,8 +520,6 @@ CREATE TABLE study.StudyDesign
     CONSTRAINT UQ_StudyDesignLabel UNIQUE (Container, Label)
 );
 
-UPDATE study.StudyDesign SET sourceContainer=Container WHERE sourceContainer NOT IN (SELECT entityid FROM core.containers);
-
 CREATE TABLE study.StudyDesignVersion
 (
     -- standard fields
@@ -616,16 +633,10 @@ ALTER TABLE study.ParticipantCategory ADD ModifiedBy USERID
 GO
 ALTER TABLE study.ParticipantCategory ADD Modified DATETIME
 GO
-UPDATE study.ParticipantCategory SET ModifiedBy = CreatedBy
-GO
-UPDATE study.ParticipantCategory SET Modified = Created
-GO
 
 -- Create an owner column to represent shared or private participant categories
 ALTER TABLE study.ParticipantCategory ADD OwnerId USERID NOT NULL DEFAULT -1;
 GO
-
-UPDATE study.ParticipantCategory SET OwnerId = CreatedBy WHERE Shared <> 1;
 
 ALTER TABLE study.ParticipantCategory DROP CONSTRAINT uq_label_container;
 ALTER TABLE study.ParticipantCategory DROP COLUMN Shared;
@@ -662,12 +673,6 @@ ALTER TABLE study.ParticipantGroup ADD Created DATETIME;
 ALTER TABLE study.ParticipantGroup ADD ModifiedBy USERID;
 ALTER TABLE study.ParticipantGroup ADD Modified DATETIME;
 GO
-
-UPDATE study.ParticipantGroup SET CreatedBy = ParticipantCategory.CreatedBy FROM study.ParticipantCategory WHERE CategoryId = ParticipantCategory.RowId;
-UPDATE study.ParticipantGroup SET Created = ParticipantCategory.Created FROM study.ParticipantCategory WHERE CategoryId = ParticipantCategory.RowId;
-
-UPDATE study.ParticipantGroup SET ModifiedBy = CreatedBy;
-UPDATE study.ParticipantGroup SET Modified = Created;
 
 -- maps participants to participant groups
 CREATE TABLE study.ParticipantGroupMap
@@ -714,10 +719,6 @@ CREATE INDEX IX_StudySnapshot_Destination ON study.StudySnapshot(Destination, Ro
 
 ALTER TABLE study.StudySnapshot ADD ModifiedBy USERID;
 ALTER TABLE study.StudySnapshot ADD Modified DATETIME;
-GO
-
-UPDATE study.StudySnapshot SET ModifiedBy = CreatedBy;
-UPDATE study.StudySnapshot SET Modified = Created;
 GO
 
 ALTER TABLE study.StudySnapshot ADD Type VARCHAR(10);
@@ -801,7 +802,7 @@ CREATE TABLE study.StudyDesignSampleTypes
 
 CREATE TABLE study.StudyDesignUnits
 (
-  Name NVARCHAR(3) NOT NULL, -- storage name
+  Name NVARCHAR(5) NOT NULL, -- storage name
   Label NVARCHAR(200) NOT NULL,
   Inactive BIT NOT NULL DEFAULT 0,
 
@@ -813,11 +814,6 @@ CREATE TABLE study.StudyDesignUnits
 
   CONSTRAINT pk_studydesignunits PRIMARY KEY (Container, Name)
 );
-
--- Issue 19442: Change study.StudyDesignUnits “Name” field from 3 chars to 5 chars field length
-ALTER TABLE study.StudyDesignUnits DROP CONSTRAINT pk_studydesignunits;
-ALTER TABLE study.StudyDesignUnits ALTER COLUMN Name NVARCHAR(5) NOT NULL;
-ALTER TABLE study.StudyDesignUnits ADD CONSTRAINT pk_studydesignunits PRIMARY KEY (Container, Name);
 
 CREATE TABLE study.StudyDesignAssays
 (
@@ -992,11 +988,9 @@ CREATE TABLE study.DoseAndRoute
   Modified DATETIME,
   Container ENTITYID NOT NULL,
 
-  CONSTRAINT PK_DoseAndRoute PRIMARY KEY (RowId),
-  CONSTRAINT DoseAndRoute_Dose_Route_ProductId UNIQUE (Dose, Route, ProductId)
+  CONSTRAINT PK_DoseAndRoute PRIMARY KEY (RowId)
 );
 
-ALTER TABLE study.DoseAndRoute DROP CONSTRAINT DoseAndRoute_Dose_Route_ProductId;
 ALTER TABLE study.DoseAndRoute ADD CONSTRAINT DoseAndRoute_Container_Dose_Route_ProductId UNIQUE (Container, Dose, Route, ProductId);
 
 ALTER TABLE study.DoseAndRoute DROP COLUMN Label;
@@ -1015,14 +1009,3 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
   CONSTRAINT pk_studydesignchallengetypes PRIMARY KEY (Container, Name)
 );
-
-/* 21.xxx SQL scripts */
-
-EXEC sp_rename 'study.Study.DefaultAssayQCState', 'DefaultPublishDataQCState', 'COLUMN';
-
-EXEC sp_rename 'study.Dataset.ProtocolId', 'PublishSourceId', 'COLUMN';
-
-ALTER TABLE study.Dataset ADD PublishSourceType NVARCHAR(50);
-GO
-UPDATE study.Dataset SET PublishSourceType = 'Assay'
-    WHERE PublishSourceId IS NOT NULL;
