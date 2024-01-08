@@ -428,6 +428,9 @@ public class PageFlowUtil
                 case '\\':
                     js.append("\\\\");
                     break;
+                case '/':
+                    js.append("\\/"); // JSONObject.toString() escapes '/'
+                    break;
                 case '\n':
                     js.append("\\n");
                     break;

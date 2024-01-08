@@ -155,7 +155,8 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class SecurityManager
 {
-    private static final Logger _log = LogHelper.getLogger(SecurityManager.class, "User and group creation and management");
+    private static final Logger LOG = LogHelper.getLogger(SecurityManager.class, "User and group creation and management");
+    private static final Logger AUTH_LOG = LogHelper.getLogger(Authentication.class, "Authentication attempts via session, Basic auth, or API key header");
     private static final CoreSchema core = CoreSchema.getInstance();
     private static final List<ViewFactory> VIEW_FACTORIES = new CopyOnWriteArrayList<>();
     private static final List<TermsOfUseProvider> TERMS_OF_USE_PROVIDERS = new CopyOnWriteArrayList<>();
@@ -192,6 +193,9 @@ public class SecurityManager
         EmailTemplateService.get().registerTemplate(PasswordResetAdminEmailTemplate.class);
     }
 
+    // Static nested class to separate authentication logging from other SecurityManager logging
+    private static class Authentication {}
+
     public static UsageMetricsProvider getMetricsProvider()
     {
         return () -> {
@@ -225,12 +229,12 @@ public class SecurityManager
         if (StringUtils.trimToNull(serviceURL) == null)
         {
             ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(key);
-            _log.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
+            LOG.trace(String.format("Unregistered [%1$s] as an allowed connection source", key));
             return;
         }
 
         ContentSecurityPolicyFilter.registerAllowedConnectionSource(key, serviceURL);
-        _log.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
+        LOG.trace(String.format("Registered [%1$s] as an allowed connection source", serviceURL));
     }
 
     public enum PermissionSet
@@ -377,7 +381,7 @@ public class SecurityManager
             }
             catch (Throwable t)
             {
-                _log.error("fireAddPrincipalToGroup", t);
+                LOG.error("fireAddPrincipalToGroup", t);
             }
         }
     }
@@ -399,7 +403,7 @@ public class SecurityManager
             }
             catch (Throwable t)
             {
-                _log.error("fireDeletePrincipalFromGroup", t);
+                LOG.error("fireDeletePrincipalFromGroup", t);
                 errors.add(t);
             }
         }
@@ -488,7 +492,6 @@ public class SecurityManager
             String password = basicCredentials.getValue();
             if (rawEmail.equalsIgnoreCase("guest"))
                 return User.guest;
-            new ValidEmail(rawEmail);  // validate email address
 
             return AuthenticationManager.authenticate(request, rawEmail, password);
         }
@@ -540,12 +543,18 @@ public class SecurityManager
 
     public static Pair<User, HttpServletRequest> attemptAuthentication(HttpServletRequest request) throws UnsupportedEncodingException
     {
+        AUTH_LOG.debug("Starting authentication attempt via session, Basic auth, or API key header");
+
         // Current best practice is to pass API keys via an "apikey" header, but they can be passed via basic auth
         // (username "apikey"), supported for backwards compatibility and clients that don't support custom headers.
         @Nullable Pair<String, String> basicCredentials = getBasicCredentials(request);
+        AUTH_LOG.debug("   " + (null == basicCredentials ? "Basic auth credentials not provided" : "Basic auth credentials provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character password"));
 
         if (null == basicCredentials)
+        {
             basicCredentials = getApiKey(request);
+            AUTH_LOG.debug("   " + (null == basicCredentials ? "API key not provided" : "API key provided: " + basicCredentials.getKey() + " and " + basicCredentials.getValue().length() + " character key"));
+        }
 
         // Handle session API key early, if present and valid
         if (basicCredentials != null)
@@ -560,6 +569,11 @@ public class SecurityManager
                 if (null != session)
                 {
                     request = new SessionReplacingRequest(request, session);
+                    AUTH_LOG.debug("   API key is a valid session key");
+                }
+                else
+                {
+                    AUTH_LOG.debug("   API key is not a valid session key");
                 }
             }
         }
@@ -567,67 +581,81 @@ public class SecurityManager
         assert null == request.getUserPrincipal();
 
         User u = null;
-        HttpSession session = request.getSession(false);
-        User sessionUser = getSessionUser(request);
 
-        if (null != sessionUser)
+        try
         {
-            // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
-            // group memberships are calculated on every request (but just once)
-            assert sessionUser._groups == null;
+            HttpSession session = request.getSession(false);
+            User sessionUser = getSessionUser(request);
 
-            ImpersonationContextFactory factory = (ImpersonationContextFactory)session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
-
-            if (null != factory)
+            if (null != sessionUser)
             {
-                sessionUser.setImpersonationContext(factory.getImpersonationContext());
-            }
-            else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
-            {
-                sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
-            }
+                AUTH_LOG.debug("   Session user present: " + sessionUser);
 
-            List<AuthenticationValidator> validators = getValidators(session);
+                // NOTE: UserCache.getUser() above returns a cloned object so _groups should be null. This is important to ensure
+                // group memberships are calculated on every request (but just once)
+                assert sessionUser._groups == null;
 
-            // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
-            if (null != validators)
-            {
-                boolean valid = true;
+                ImpersonationContextFactory factory = (ImpersonationContextFactory) session.getAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
 
-                // Enumerate all validators on every request (no short circuit) in case the validators have internal state or side effects
-                for (AuthenticationValidator validator : validators)
+                if (null != factory)
                 {
-                    valid &= validator.test(request);
+                    sessionUser.setImpersonationContext(factory.getImpersonationContext());
+                }
+                else if ("true".equalsIgnoreCase(request.getHeader("LabKey-Disallow-Global-Roles")))
+                {
+                    sessionUser.setImpersonationContext(DisallowPrivilegedRolesContext.get());
                 }
 
-                if (!valid)
+                List<AuthenticationValidator> validators = getValidators(session);
+
+                // If we have validators, enumerate them to validate the session user's current login (e.g., smart card is still present)
+                if (null != validators)
                 {
-                    // If impersonating, stop so it gets logged
-                    if (sessionUser.isImpersonated())
+                    boolean valid = true;
+
+                    // Enumerate all validators on every request (no short circuit) in case the validators have internal state or side effects
+                    for (AuthenticationValidator validator : validators)
                     {
-                        SecurityManager.stopImpersonating(request, factory);
-                        sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
+                        valid &= validator.test(request);
                     }
 
-                    // Now logout the session user
-                    logoutUser(request, sessionUser, null);
-                    sessionUser = null;
+                    if (!valid)
+                    {
+                        // If impersonating, stop so it gets logged
+                        if (sessionUser.isImpersonated())
+                        {
+                            SecurityManager.stopImpersonating(request, factory);
+                            sessionUser = sessionUser.getImpersonatingUser(); // Need to log out the admin
+                        }
+
+                        // Now logout the session user
+                        logoutUser(request, sessionUser, null);
+                        sessionUser = null;
+                    }
+                }
+
+                u = sessionUser;
+            }
+            else
+            {
+                AUTH_LOG.debug("   Session user not present");
+            }
+
+            if (null == u && null != basicCredentials)
+            {
+                u = authenticateBasic(request, basicCredentials);
+                if (null != u)
+                {
+                    AUTH_LOG.debug("   Basic authentication succeeded: " + u);
+                    request.setAttribute(AUTHENTICATION_METHOD, "Basic");
+                    // accept Guest as valid credentials from authenticateBasic()
+                    return new Pair<>(u, request);
+                }
+                else
+                {
+                    AUTH_LOG.debug("   Basic authentication failed");
                 }
             }
-
-            u = sessionUser;
-        }
-
-        if (null == u && null != basicCredentials)
-        {
-            u = authenticateBasic(request, basicCredentials);
-            if (null != u)
-            {
-                request.setAttribute(AUTHENTICATION_METHOD, "Basic");
-                // accept Guest as valid credentials from authenticateBasic()
-                return new Pair<>(u, request);
-            }
-        }
 
 //  We don't register any RequestAuthenticationProvider implementations, so don't bother
 //        if (null == u)
@@ -635,7 +663,12 @@ public class SecurityManager
 //            u = AuthenticationManager.attemptRequestAuthentication(request);
 //        }
 
-        return null == u || u.isGuest() ? null : new Pair<>(u, request);
+            return null == u || u.isGuest() ? null : new Pair<>(u, request);
+        }
+        finally
+        {
+            AUTH_LOG.debug("Finishing authentication attempt via session, Basic auth, or API key header. User: " + u);
+        }
     }
 
     /**
@@ -657,7 +690,7 @@ public class SecurityManager
             apiKey = PageFlowUtil.getCookieValue(request.getCookies(), TRANSFORM_SESSION_ID, null);
             if (null != apiKey)
             {
-                _log.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
+                AUTH_LOG.warn("Using '" + TRANSFORM_SESSION_ID + "' cookie for authentication is deprecated; use 'apikey' instead");
             }
             else
             {
@@ -1085,7 +1118,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(e.getSQLState()))
                     {
-                        _log.debug("createUser: Something failed user: " + email, e);
+                        LOG.debug("createUser: Something failed user: " + email, e);
                         throw e;
                     }
                 }
@@ -1099,7 +1132,7 @@ public class SecurityManager
                 if (null == userId)
                 {
                     assert false : "User should either exist or not; synchronization problem?";
-                    _log.debug("createUser: Something failed user: " + email);
+                    LOG.debug("createUser: Something failed user: " + email);
                     return null;
                 }
 
@@ -1118,7 +1151,7 @@ public class SecurityManager
                 {
                     if (!"23000".equals(x.getSQLState()))
                     {
-                        _log.debug("createUser: Something failed user: " + email, x);
+                        LOG.debug("createUser: Something failed user: " + email, x);
                         throw x;
                     }
                 }
@@ -1627,7 +1660,7 @@ public class SecurityManager
         catch (DataIntegrityViolationException e)
         {
             // Assume this is a race condition and ignore, see #14795
-            _log.warn("Member could not be added: " + e.getMessage());
+            LOG.warn("Member could not be added: " + e.getMessage());
         }
 
         fireAddPrincipalToGroup(group, principal);
@@ -3071,7 +3104,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            _log.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
+                            LOG.error("Invalid role for group specified in startup properties GroupRoles: " + roleName);
                             continue;
                         }
                         policy.addRoleAssignment(group, role);
@@ -3124,7 +3157,7 @@ public class SecurityManager
                         if (null == role)
                         {
                             // Issue 36611: The provisioner startup properties break deployment of older products
-                            _log.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
+                            LOG.warn("Invalid role for user specified in startup properties UserRoles: " + roleName);
                             continue;
                         }
                         policy.addRoleAssignment(user, role);

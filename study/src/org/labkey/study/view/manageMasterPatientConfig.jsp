@@ -36,6 +36,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -45,7 +46,6 @@
     MasterPatientIndexService.FolderSettings settings = service != null ? service.getFolderSettings(getContainer()) : new MasterPatientIndexService.FolderSettings();
     String docLink = new HelpTopic("empi").getHelpTopicHref();
 
-    ObjectMapper jsonMapper = new ObjectMapper();
     Map<String, List<String>> datasetMap = new HashMap<>();
     StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
     for (DatasetDefinition def : study.getDatasets())
@@ -70,7 +70,7 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     (function($){
-        var datasetMap = <%=text(jsonMapper.writeValueAsString(datasetMap))%>;
+        var datasetMap = <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(datasetMap))%>;
         var selectedDataset = <%=q(!StringUtils.isBlank(settings.getDataset()) ? settings.getDataset() : "")%>;
         var selectedField = <%=q(!StringUtils.isBlank(settings.getFieldName()) ? settings.getFieldName() : "")%>;
 
