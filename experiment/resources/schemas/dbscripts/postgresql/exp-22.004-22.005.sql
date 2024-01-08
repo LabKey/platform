@@ -1,1 +1,0 @@
-SELECT core.fn_dropifexists('materialsource', 'exp', 'constraint', 'UQ_MaterialSource_Container_Name');

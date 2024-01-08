@@ -1088,7 +1088,7 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermission(DesignListPermission.class)
-    public class SetDefaultValuesListAction extends SetDefaultValuesAction
+    public static class SetDefaultValuesListAction extends SetDefaultValuesAction
     {
     }
 
