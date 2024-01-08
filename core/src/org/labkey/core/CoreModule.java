@@ -15,6 +15,7 @@
  */
 package org.labkey.core;
 
+import com.fasterxml.jackson.core.io.CharTypes;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -311,6 +312,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
         SqlDialectRegistry.register(new PostgreSqlDialectFactory());
+
+        try
+        {
+            var field = CharTypes.class.getDeclaredField("sOutputEscapes128");
+            field.setAccessible(true);
+            ((int[])field.get(null))['/'] = '/';
+            field.setAccessible(false);
+        }
+        catch (NoSuchFieldException|IllegalArgumentException|IllegalAccessException x)
+        {
+            // pass
+        }
     }
 
     private CoreWarningProvider _warningProvider;
