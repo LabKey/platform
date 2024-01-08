@@ -15,6 +15,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequence;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
@@ -22,6 +24,8 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.Lsid;
@@ -217,6 +221,17 @@ public class AssayUpgradeCode implements UpgradeCode
         DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction tx = scope.ensureTransaction())
         {
+            SQLFragment sql = new SQLFragment("SELECT MAX(rowId) FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "");
+            Integer maxRowId = new SqlSelector(AssayDbSchema.getInstance().getSchema(), sql).getObject(Integer.class);
+
+            if (maxRowId != null)
+            {
+                // reset the DbSequence
+                TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
+                DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), plateSetTable.getDbSequenceName("RowId"));
+                sequence.ensureMinimum(maxRowId);
+            }
+
             _log.info("Start updating temporary plate set names with the configured name expression");
             List<PlateSetImpl> plateSets = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getArrayList(PlateSetImpl.class);
 
@@ -228,12 +243,12 @@ public class AssayUpgradeCode implements UpgradeCode
                 String name = nameGenerator.generateName(state, plateRow);
                 state.cleanUp();
 
-                SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
+                SQLFragment sql2 = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
                         .append(" SET Name = ?")
                         .add(name)
                         .append(" WHERE RowId = ?")
                         .add(plateSet.getRowId());
-                new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+                new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
             }
             _log.info("Successfully updated " + plateSets.size() + " plate set names");
             tx.commit();

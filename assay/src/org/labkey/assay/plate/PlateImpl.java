@@ -545,7 +545,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @Override
     @JsonIgnore
-    public @NotNull PlateSet getPlateSetObject()
+    public @Nullable PlateSet getPlateSetObject()
     {
         return PlateManager.get().getPlateSet(getContainer(), getPlateSet());
     }
