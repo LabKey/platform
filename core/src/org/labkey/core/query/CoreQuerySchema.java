@@ -112,6 +112,7 @@ public class CoreQuerySchema extends UserSchema
     @Override
     public Set<String> getTableNames()
     {
+        // USER_API_KEYS_TABLE_NAME is deliberately not added here; this table is accessible via the ApiKeyViewProvider
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
