@@ -29,6 +29,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -59,7 +60,6 @@
 
     String uniqueId = "" + UniqueID.getServerSessionScopedUID();
     String appId = "create-pipeline-trigger-" + uniqueId;
-    ObjectMapper jsonMapper = new ObjectMapper();
     FormSchema detailsFormSchema = PipelineJobService.get().getFormSchema(getContainer());
     Map<String, FormSchema> taskFormSchemas = new HashMap<>();
     Map<String, FormSchema> customFieldFormSchemas = new HashMap<>();
@@ -92,10 +92,10 @@
     <div id="<%=h(appId)%>"></div>
 
     <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-        const detailsFormSchema = JSON.parse(<%=q(jsonMapper.writeValueAsString(detailsFormSchema))%>);
-        const taskFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(taskFormSchemas))%>);
-        const customFieldFormSchemas = JSON.parse(<%=q(jsonMapper.writeValueAsString(customFieldFormSchemas))%>);
-        const tasksHelpText = JSON.parse(<%=q(jsonMapper.writeValueAsString(tasksHelpText))%>);
+        const detailsFormSchema = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(detailsFormSchema))%>);
+        const taskFormSchemas = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(taskFormSchemas))%>);
+        const customFieldFormSchemas = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(customFieldFormSchemas))%>);
+        const tasksHelpText = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(tasksHelpText))%>);
         const rowId = <%=bean.getRowId()%>;
         const details = {
             "assay provider": <%=q(bean.getAssayProvider())%> || undefined,

@@ -48,6 +48,7 @@
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.reports.report.python.IpynbReport" %>
+<%@ page import="org.labkey.api.util.JsonUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -102,7 +103,6 @@
     baseViewURL.replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 
     String renderId = makeId("report-design-panel-");
-    ObjectMapper jsonMapper = new ObjectMapper();
 
     List<Map<String, Object>> sharedScripts = new ArrayList<>();
     for (Report r : report.getAvailableSharedScripts(ctx, bean))
@@ -198,8 +198,8 @@
                 preferSourceTab : <%=mode.preferSourceTab()%>,
                 sourceAndHelp   : <%=sourceAndHelp%>,
                 redirectUrl     : <%=q(bean.getRedirectUrl())%>,
-                sharedScripts   : <%=text(jsonMapper.writeValueAsString(sharedScripts))%>,
-                reportConfig    : <%=text(jsonMapper.writeValueAsString(reportConfig))%>,
+                sharedScripts   : <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(sharedScripts))%>,
+                reportConfig    : <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(reportConfig))%>,
                 script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>,
                 htmlEncodedProps: true
             });
