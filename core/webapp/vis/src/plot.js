@@ -1805,6 +1805,7 @@ boxPlot.render();
         // Handles Y Axis domain when performing percent or standard deviation conversions
         var convertYAxisDomain = function (value, stddev, mean, props) {
             var maxValue, minValue;
+            let cushion = 0.2;
             if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.MovingRange
                     && config.properties.valueConversion === 'percentDeviation') {
                 maxValue = mean * LABKEY.vis.Stat.MOVING_RANGE_UPPER_LIMIT_WEIGHT;
@@ -1812,8 +1813,8 @@ boxPlot.render();
             } else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.LeveyJennings
                         && config.properties.valueConversion === 'standardDeviation') {
                 if (config.properties.boundType === 'stddev') {
-                    maxValue = config.properties.upperBound + 0.2;
-                    minValue = config.properties.lowerBound - 0.2;
+                    maxValue = config.properties.upperBound + cushion;
+                    minValue = config.properties.lowerBound - cushion;
                 }
                 else {
                     maxValue = 3.2;
@@ -1821,12 +1822,12 @@ boxPlot.render();
                 }
             }
             else if (config.properties.boundType === 'absolute') {
-                maxValue = config.properties.upperBound;
-                maxValue = config.properties.lowerBound;
+                maxValue = config.properties.upperBound + cushion;
+                minValue = config.properties.lowerBound - cushion;
             }
             else if (!config.properties.combined && stddev) {
-                maxValue = mean + ((config.properties.upperBound + 0.2) * stddev);
-                minValue = mean + ((config.properties.lowerBound - 0.2) * stddev);
+                maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
+                minValue = mean + ((config.properties.lowerBound - cushion) * stddev);
             }
 
             if (maxValue !== undefined && minValue !== undefined) {
