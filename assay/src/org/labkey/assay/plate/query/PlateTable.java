@@ -110,20 +110,6 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public MutableColumnInfo wrapColumn(ColumnInfo col)
-    {
-        var columnInfo = super.wrapColumn(col);
-
-        // require a plate name
-/*
-        if (columnInfo.getName().equalsIgnoreCase("Name"))
-            columnInfo.setRequired(true);
-*/
-
-        return columnInfo;
-    }
-
-    @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;
