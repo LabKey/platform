@@ -1008,7 +1008,7 @@ public class PlateManager implements PlateService
 
         // delete all empty plate sets in this container
         SQLFragment sql3 = new SQLFragment("DELETE FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "PS")
+                .append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
                 .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "").append(")")
                 .append(" AND Container = ?")
                 .add(container);
