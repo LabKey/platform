@@ -251,10 +251,8 @@ public class JSONDataLoader extends DataLoader
 
     protected void init(InputStream is) throws IOException
     {
-        // TODO: JsonFactory is threadsafe and can be configured once and shared across the application.
-        JsonFactory factory = new JsonFactory();
-        _mapper = new ObjectMapper(factory);
-        _parser = factory.createParser(is);
+        _mapper = JsonUtil.createDefaultMapper();
+        _parser = _mapper.getFactory().createParser(is);
         enterTopLevel();
     }
 
@@ -936,8 +934,8 @@ public class JSONDataLoader extends DataLoader
     {
         JsonParser createParser(String json) throws IOException
         {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonFactory factory = new JsonFactory(mapper);
+            ObjectMapper mapper = JsonUtil.createDefaultMapper();
+            JsonFactory factory = mapper.getFactory();
             JsonParser parser = factory.createParser(json);
             parser.nextToken();
             return parser;

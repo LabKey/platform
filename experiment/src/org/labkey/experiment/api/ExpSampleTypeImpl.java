@@ -64,6 +64,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.MediaReadPermission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -1005,10 +1006,9 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
 
         try
         {
-            ObjectMapper mapper = new ObjectMapper();
             TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
 
-            return mapper.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
+            return JsonUtil.DEFAULT_MAPPER.readValue(ms.getMaterialParentImportAliasMap(), typeRef);
         }
         catch (IOException e)
         {

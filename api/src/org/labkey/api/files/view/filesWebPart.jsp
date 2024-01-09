@@ -77,7 +77,7 @@
 <div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
-        var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=text(sep)%>'<%=text(action.name())%>'<% sep = ","; }%>];
+        var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=text(sep)%><%=q(action.name())%><% sep = ","; }%>];
         var startDirectory;
 
         <% if (bean.getDirectory() != null) { %>

@@ -75,7 +75,7 @@ public class JsonTest extends Assert
     {
         try
         {
-            ObjectMapper mapper = new ObjectMapper().setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+            ObjectMapper mapper = JsonUtil.createDefaultMapper().setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
             Customer roundTripC1 = mapper.readValue(mapper.writeValueAsString(c1), Customer.class);
             assertEquals(c1, roundTripC1);
             Customer roundTripC2 = mapper.readValue(mapper.writeValueAsString(c2), Customer.class);

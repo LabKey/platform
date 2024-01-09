@@ -51,6 +51,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DataClassReadPermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
@@ -321,6 +322,8 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public TableInfo getTinfo()
     {
         Domain d = getDomain();
+        if (null == d)
+            throw new NullPointerException("domain is null");
         return StorageProvisioner.createTableInfo(d);
     }
 
@@ -505,10 +508,9 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
         try
         {
-            ObjectMapper mapper = new ObjectMapper();
             TypeReference<CaseInsensitiveHashMap<String>> typeRef = new TypeReference<>() {};
 
-            return mapper.readValue(ds.getDataParentImportAliasMap(), typeRef);
+            return JsonUtil.DEFAULT_MAPPER.readValue(ds.getDataParentImportAliasMap(), typeRef);
         }
         catch (IOException e)
         {

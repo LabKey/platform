@@ -80,7 +80,7 @@
         var sqvModel = Ext4.create('LABKEY.sqv.Model', {});
 
         var sourceContainerCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeContainerComboConfig({
-            name: '<%= text(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME) %>',
+            name: <%= q(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME) %>,
             id : 'thawListContainer',
             fieldLabel: 'Folder',
             value: <%=(container == null ? JavaScriptFragment.NULL : q(container.getPath())) %>,
@@ -97,7 +97,7 @@
             forceSelection : true,
             initialValue : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME))%>,
             fieldLabel : 'Schema',
-            name: '<%= text(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME) %>',
+            name: <%= q(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME) %>,
             validateOnBlur: false,
             width: 500
         }));
@@ -109,7 +109,7 @@
             typeAhead : true,
             typeAheadDelay : 250,
             fieldLabel : 'Query',
-            name: '<%= text(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME) %>',
+            name: <%= q(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME) %>,
             initialValue : <%=q(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME))%>,
             width: 500
         }));
@@ -129,7 +129,7 @@
     addParticipantVisitResolverSelectionChangeListener(function()
     {
         handleAllowedDefaultOptionsForThawList();
-        if (document.getElementById('<%=text(listTypeId)%>').checked)
+        if (document.getElementById(<%=q(listTypeId)%>).checked)
             showChooseList();
         else
             thawListQueryPickerPanel.doLayout();
@@ -147,7 +147,7 @@
 
         if (document.getElementById('RadioBtn-Lookup').checked)
         {
-            var textRadio = Ext4.get('<%=text(textTypeId)%>');
+            var textRadio = Ext4.get(<%=q(textTypeId)%>);
             if ((textRadio && textRadio.dom.checked) || <%=textType%>)
                 toggleDisableResetDefault(true); // Don't allow trying to set the default to the text type, as this is not supported.
         }
@@ -172,7 +172,7 @@
     { %>
     // Allow tabs in the TSV text area
         <labkey:loadClientDependencies>
-            Ext.EventManager.on('<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+            Ext.EventManager.on(<%= q(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>, 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
         </labkey:loadClientDependencies>
     <% } %>
 </script>

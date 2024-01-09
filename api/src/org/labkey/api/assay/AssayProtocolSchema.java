@@ -85,6 +85,7 @@ import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -913,7 +914,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
 
             try
             {
-                Map<String, String> decodedVals = new ObjectMapper().readValue(val.toString(), Map.class);
+                Map<String, String> decodedVals = JsonUtil.DEFAULT_MAPPER.readValue(val.toString(), Map.class);
                 HtmlStringBuilder sb = HtmlStringBuilder.of(decodedVals.remove(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME));
 
                 // Issue 21126 If lookup was pasted tsv, could still get a default list entry in properties list. Fix the redisplay

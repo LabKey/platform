@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 
 import java.io.IOException;
 
@@ -51,7 +52,7 @@ public class JsonPrettyPrintDisplayColumnFactory extends ExpandableTextDisplayCo
             if (null == value)
                 return HtmlString.EMPTY_STRING;
 
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtil.createDefaultMapper();
             DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
             pp.indentArraysWith(new DefaultIndenter());
 
