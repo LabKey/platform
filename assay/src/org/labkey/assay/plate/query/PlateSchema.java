@@ -16,8 +16,6 @@
 
 package org.labkey.assay.plate.query;
 
-import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -45,7 +43,8 @@ public class PlateSchema extends SimpleUserSchema
     private static final Set<String> AVAILABLE_TABLES = new CaseInsensitiveTreeSet(List.of(
             PlateTable.NAME,
             WellGroupTable.NAME,
-            WellTable.NAME
+            WellTable.NAME,
+            PlateSetTable.NAME
     ));
 
     public PlateSchema(User user, Container container)
@@ -69,6 +68,8 @@ public class PlateSchema extends SimpleUserSchema
             return new WellGroupTable(this, cf).init();
         if (name.equalsIgnoreCase(WellTable.NAME))
             return new WellTable(this, cf).init();
+        if (name.equalsIgnoreCase(PlateSetTable.NAME))
+            return new PlateSetTable(this, cf).init();
 
         return null;
     }
