@@ -143,7 +143,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         SampleType,
         DataClass,
         AssayDesign,
-        StorageLocation
+        StorageLocation,
+        DashboardSampleType
     }
 
     @Nullable
