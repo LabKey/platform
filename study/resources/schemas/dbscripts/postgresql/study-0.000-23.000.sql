@@ -32,13 +32,9 @@ CREATE TABLE study.Study
     LSID VARCHAR(200) NOT NULL,
     manualCohortAssignment BOOLEAN NOT NULL DEFAULT FALSE,
     DefaultPipelineQCState INT,
-    DefaultAssayQCState INT,
+    DefaultPublishDataQCState INT,
     DefaultDirectEntryQCState INT,
     ShowPrivateDataByDefault BOOLEAN NOT NULL DEFAULT FALSE,
-    AllowReload BOOLEAN NOT NULL DEFAULT FALSE,
-    ReloadInterval INT NULL,
-    LastReload TIMESTAMP NULL,
-    ReloadUser UserId,
     AdvancedCohorts BOOLEAN NOT NULL DEFAULT FALSE,
     ParticipantCommentDataSetId INT NULL,
     ParticipantCommentProperty VARCHAR(200) NULL,
@@ -53,7 +49,7 @@ CREATE TABLE study.Study
 
 ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.DataStates (RowId);
 ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.DataStates (RowId);
-ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.DataStates (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultPublishDataQCState) REFERENCES core.DataStates (RowId);
 
 ALTER TABLE study.Study
     ADD COLUMN BlankQCStatePublic BOOLEAN NOT NULL DEFAULT FALSE;
@@ -104,7 +100,6 @@ ALTER TABLE study.Study ADD COLUMN ShareDatasetDefinitions BOOLEAN NOT NULL DEFA
 
 -- Add new skip query validation column to study.study
 ALTER TABLE study.Study ADD COLUMN ValidateQueriesAfterImport BOOLEAN NOT NULL DEFAULT FALSE;
-UPDATE study.Study SET ValidateQueriesAfterImport = TRUE WHERE AllowReload = TRUE;
 
 ALTER TABLE study.Study ADD COLUMN ShareVisitDefinitions BOOLEAN NOT NULL DEFAULT false;
 
@@ -221,6 +216,12 @@ ALTER TABLE study.dataset ADD COLUMN Tag VARCHAR(1000);
 ALTER TABLE study.dataset ADD COLUMN dataSharing VARCHAR(20) NOT NULL DEFAULT 'NONE';
 ALTER TABLE study.dataset ADD COLUMN UseTimeKeyField BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE study.Dataset ALTER COLUMN TypeURI TYPE VARCHAR(300);
+
+ALTER TABLE study.Dataset RENAME COLUMN ProtocolId TO PublishSourceId;
+
+ALTER TABLE study.Dataset ADD COLUMN PublishSourceType VARCHAR(50);
+UPDATE study.Dataset SET PublishSourceType = 'Assay'
+    WHERE PublishSourceId IS NOT NULL;
 
 CREATE TABLE study.SampleRequestStatus
 (
@@ -347,6 +348,7 @@ ALTER TABLE study.Participant ADD LastIndexed TIMESTAMP NULL;
 -- Add Modified column so we can actually use LastIndexed, #31139
 ALTER TABLE study.Participant ADD COLUMN Modified TIMESTAMP;
 UPDATE study.Participant SET Modified = CURRENT_TIMESTAMP;
+
 CREATE TABLE study.SampleRequestSpecimen
 (
     RowId SERIAL,
@@ -475,8 +477,6 @@ CREATE TABLE study.StudyDesign
     CONSTRAINT UQ_StudyDesignLabel UNIQUE (Container, Label)
 );
 
-UPDATE study.StudyDesign SET sourceContainer=Container WHERE sourceContainer NOT IN (SELECT entityid FROM core.containers);
-
 CREATE TABLE study.StudyDesignVersion
 (
     -- standard fields
@@ -549,8 +549,6 @@ CREATE TABLE study.SampleAvailabilityRule
 ALTER TABLE exp.objectproperty DROP CONSTRAINT pk_objectproperty;
 ALTER TABLE exp.objectproperty DROP CONSTRAINT fk_objectproperty_object;
 ALTER TABLE exp.objectproperty DROP CONSTRAINT fk_objectproperty_propertydescriptor;
-DROP INDEX exp.idx_objectproperty_propertyid;
-
 DELETE FROM exp.ObjectProperty
 WHERE propertyid IN (SELECT DP.propertyid FROM exp.propertydomain DP JOIN exp.domaindescriptor D on DP.domainid = D.domainid JOIN study.dataset DS ON D.domainuri = DS.typeuri);
 
@@ -562,10 +560,6 @@ ALTER TABLE exp.objectproperty
   ADD CONSTRAINT fk_objectproperty_propertydescriptor FOREIGN KEY (propertyid)
       REFERENCES exp.propertydescriptor (propertyid) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION;
-CREATE INDEX idx_objectproperty_propertyid
-  ON exp.objectproperty
-  USING btree
-  (propertyid);
 
 CREATE TABLE study.VisitAliases
 (
@@ -615,12 +609,8 @@ ALTER TABLE study.participantcategory
 ALTER TABLE study.ParticipantCategory ADD ModifiedBy USERID;
 ALTER TABLE study.ParticipantCategory ADD Modified TIMESTAMP;
 
-UPDATE study.ParticipantCategory SET ModifiedBy = CreatedBy;
-UPDATE study.ParticipantCategory SET Modified = Created;
-
 -- Create an owner column to represent shared or private participant categories
 ALTER TABLE study.ParticipantCategory ADD COLUMN OwnerId USERID NOT NULL DEFAULT -1;
-UPDATE study.ParticipantCategory SET OwnerId = CreatedBy WHERE NOT shared;
 
 ALTER TABLE study.ParticipantCategory DROP CONSTRAINT uq_label_container;
 ALTER TABLE study.ParticipantCategory DROP COLUMN shared;
@@ -651,12 +641,6 @@ ALTER TABLE study.ParticipantGroup ADD COLUMN CreatedBy USERID;
 ALTER TABLE study.ParticipantGroup ADD COLUMN Created TIMESTAMP;
 ALTER TABLE study.ParticipantGroup ADD COLUMN ModifiedBy USERID;
 ALTER TABLE study.ParticipantGroup ADD COLUMN Modified TIMESTAMP;
-
-UPDATE study.ParticipantGroup SET CreatedBy = ParticipantCategory.CreatedBy FROM study.ParticipantCategory WHERE CategoryId = ParticipantCategory.RowId;
-UPDATE study.ParticipantGroup SET Created = ParticipantCategory.Created FROM study.ParticipantCategory WHERE CategoryId = ParticipantCategory.RowId;
-
-UPDATE study.ParticipantGroup SET ModifiedBy = CreatedBy;
-UPDATE study.ParticipantGroup SET Modified = Created;
 
 -- maps participants to participant groups
 CREATE TABLE study.ParticipantGroupMap
@@ -700,10 +684,6 @@ CREATE INDEX IX_StudySnapshot_Destination ON study.StudySnapshot(Destination, Ro
 
 ALTER TABLE study.StudySnapshot ADD ModifiedBy USERID;
 ALTER TABLE study.StudySnapshot ADD Modified TIMESTAMP;
-
-UPDATE study.StudySnapshot SET ModifiedBy = CreatedBy;
-UPDATE study.StudySnapshot SET Modified = Created;
-
 ALTER TABLE study.StudySnapshot ADD COLUMN Type VARCHAR(10);
 
 CREATE TABLE study.StudyDesignImmunogenTypes
@@ -784,7 +764,7 @@ CREATE TABLE study.StudyDesignSampleTypes
 
 CREATE TABLE study.StudyDesignUnits
 (
-  Name VARCHAR(3) NOT NULL, -- storage name
+  Name VARCHAR(5) NOT NULL, -- storage name
   Label VARCHAR(200) NOT NULL,
   Inactive BOOLEAN NOT NULL DEFAULT FALSE,
 
@@ -796,9 +776,6 @@ CREATE TABLE study.StudyDesignUnits
 
   CONSTRAINT pk_studydesignunits PRIMARY KEY (Container, Name)
 );
-
--- Issue 19442: Change study.StudyDesignUnits “Name” field from 3 chars to 5 chars field length
-ALTER TABLE study.StudyDesignUnits ALTER COLUMN Name TYPE VARCHAR(5);
 
 CREATE TABLE study.StudyDesignAssays
 (
@@ -996,13 +973,3 @@ CREATE TABLE study.StudyDesignChallengeTypes
 
   CONSTRAINT pk_studydesignchallengetypes PRIMARY KEY (Container, Name)
 );
-
-/* 21.xxx SQL scripts */
-
-ALTER TABLE study.Study RENAME COLUMN DefaultAssayQCState TO DefaultPublishDataQCState;
-
-ALTER TABLE study.Dataset RENAME COLUMN ProtocolId TO PublishSourceId;
-
-ALTER TABLE study.Dataset ADD COLUMN PublishSourceType VARCHAR(50);
-UPDATE study.Dataset SET PublishSourceType = 'Assay'
-    WHERE PublishSourceId IS NOT NULL;

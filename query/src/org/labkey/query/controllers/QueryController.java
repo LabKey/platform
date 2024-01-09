@@ -4976,7 +4976,7 @@ public class QueryController extends SpringActionController
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
-                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors);
+                    JSONObject commandResponse = executeJson(commandObject, command, transacted, errors);
                     // Bail out immediately if we're going to return a failure-type response message
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;

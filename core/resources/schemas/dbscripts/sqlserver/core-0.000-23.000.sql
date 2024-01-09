@@ -96,6 +96,8 @@ CREATE TABLE core.UsersData
     CONSTRAINT UQ_DisplayName UNIQUE (DisplayName)
 );
 
+ALTER TABLE core.UsersData ADD System BIT NOT NULL DEFAULT 0;
+
 CREATE TABLE core.Containers
 (
     _ts TIMESTAMP,
@@ -120,6 +122,9 @@ CREATE TABLE core.Containers
 );
 
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
+
+ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
+ALTER TABLE core.Containers ADD ExpirationDate DATETIME NULL;
 
 -- table for all modules
 CREATE TABLE core.Modules
@@ -211,6 +216,7 @@ CREATE TABLE core.ContainerAliases
     CONSTRAINT FK_ContainerAliases_Containers FOREIGN KEY (ContainerId) REFERENCES core.Containers(EntityId)
 );
 
+ALTER TABLE core.containeraliases ALTER COLUMN path NVARCHAR(4000);
 CREATE TABLE core.MappedDirectories
 (
     EntityId ENTITYID NOT NULL,
@@ -349,36 +355,40 @@ CREATE TABLE core.ShortURL
 
 CREATE TABLE core.Notifications
 (
-  RowId INT IDENTITY(1,1) NOT NULL,
-  Container ENTITYID NOT NULL,
-  CreatedBy USERID,
-  Created DATETIME,
+    RowId INT IDENTITY(1,1) NOT NULL,
+    Container ENTITYID NOT NULL,
+    CreatedBy USERID,
+    Created DATETIME,
 
-  UserId USERID NOT NULL,
-  ObjectId NVARCHAR(64) NOT NULL,
-  Type NVARCHAR(200) NOT NULL,
-  ReadOn DATETIME,
-  ActionLinkText NVARCHAR(2000),
-  ActionLinkURL NVARCHAR(4000),
-  Content NVARCHAR(MAX),
-  ContentType NVARCHAR(100),
+    UserId USERID NOT NULL,
+    ObjectId NVARCHAR(64) NOT NULL,
+    Type NVARCHAR(200) NOT NULL,
+    ReadOn DATETIME,
+    ActionLinkText NVARCHAR(2000),
+    ActionLinkURL NVARCHAR(4000),
+    Content NVARCHAR(MAX),
+    ContentType NVARCHAR(100),
 
-  CONSTRAINT PK_Notifications PRIMARY KEY (RowId),
-  CONSTRAINT FK_Notifications_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
-  CONSTRAINT UQ_Notifications_ContainerUserObjectType UNIQUE (Container, UserId, ObjectId, Type)
+    CONSTRAINT PK_Notifications PRIMARY KEY (RowId),
+    CONSTRAINT FK_Notifications_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT UQ_Notifications_ContainerUserObjectType UNIQUE (Container, UserId, ObjectId, Type)
 );
 
-CREATE TABLE core.QCState
+CREATE INDEX IX_Notification_User ON core.Notifications(UserId);
+
+CREATE TABLE core.DataStates
 (
-  RowId INT IDENTITY(1,1),
-  Label NVARCHAR(64) NULL,
-  Description NVARCHAR(500) NULL,
-  Container ENTITYID NOT NULL,
-  PublicData BIT NOT NULL,
+    RowId INT IDENTITY(1,1),
+    Label NVARCHAR(64) NULL,
+    Description NVARCHAR(500) NULL,
+    Container ENTITYID NOT NULL,
+    PublicData BIT NOT NULL,
 
-  CONSTRAINT PK_QCState PRIMARY KEY (RowId),
-  CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
+    CONSTRAINT PK_QCState PRIMARY KEY (RowId),
+    CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
 );
+
+ALTER TABLE core.DataStates ADD StateType NVARCHAR(20);
 
 CREATE TABLE core.APIKeys
 (
@@ -394,40 +404,40 @@ CREATE TABLE core.APIKeys
 
 CREATE TABLE core.ReportEngines
 (
-  RowId INT IDENTITY(1,1) NOT NULL,
-  Name NVARCHAR(255) NOT NULL,
-  CreatedBy USERID,
-  ModifiedBy USERID,
-  Created DATETIME,
-  Modified DATETIME,
+    RowId INT IDENTITY(1,1) NOT NULL,
+    Name NVARCHAR(255) NOT NULL,
+    CreatedBy USERID,
+    ModifiedBy USERID,
+    Created DATETIME,
+    Modified DATETIME,
 
-  Enabled BIT NOT NULL DEFAULT 0,
-  Type NVARCHAR(64) NOT NULL,
-  Description NVARCHAR(255),
-  Configuration NVARCHAR(MAX),
+    Enabled BIT NOT NULL DEFAULT 0,
+    Type NVARCHAR(64) NOT NULL,
+    Description NVARCHAR(255),
+    Configuration NVARCHAR(MAX),
 
-  CONSTRAINT PK_ReportEngines PRIMARY KEY (RowId),
-  CONSTRAINT UQ_Name_Type UNIQUE (Name, Type)
+    CONSTRAINT PK_ReportEngines PRIMARY KEY (RowId),
+    CONSTRAINT UQ_Name_Type UNIQUE (Name, Type)
 );
 
 CREATE TABLE core.ReportEngineMap
 (
-  EngineId INTEGER NOT NULL,
-  Container ENTITYID NOT NULL,
-  EngineContext NVARCHAR(64) NOT NULL DEFAULT 'report',
+    EngineId INTEGER NOT NULL,
+    Container ENTITYID NOT NULL,
+    EngineContext NVARCHAR(64) NOT NULL DEFAULT 'report',
 
-  CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext),
-  CONSTRAINT FK_ReportEngineMap_ReportEngines FOREIGN KEY (EngineId) REFERENCES core.ReportEngines (RowId)
+    CONSTRAINT PK_ReportEngineMap PRIMARY KEY (EngineId, Container, EngineContext),
+    CONSTRAINT FK_ReportEngineMap_ReportEngines FOREIGN KEY (EngineId) REFERENCES core.ReportEngines (RowId)
 );
 
 CREATE TABLE core.PrincipalRelations
 (
-  userid USERID NOT NULL,
-  otherid USERID NOT NULL,
-  relationship NVARCHAR(100) NOT NULL,
-  created DATETIME,
+    userid USERID NOT NULL,
+    otherid USERID NOT NULL,
+    relationship NVARCHAR(100) NOT NULL,
+    created DATETIME,
 
-  CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
+    CONSTRAINT PK_PrincipalRelations PRIMARY KEY (userid, otherid, relationship)
 );
 
 CREATE TABLE core.AuthenticationConfigurations
@@ -572,12 +582,18 @@ BEGIN
        objtype    Required. The type of object being dropped. Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, COLUMN
        subobjtype Optional. When dropping INDEX, CONSTRAINT, DEFAULT, or COLUMN, the name of the object being dropped
        printCmds  Optional, 1 or 0. If 1, the cascading drop commands for SCHEMA and COLUMN will be printed for debugging purposes
+
+    Note for implementors: Names that are part of SQL commands executed below should be bracketed to handle names that
+    have spaces, special characters, or reserved words. Names that are used in comparisons, in this code and in WHERE
+    clauses, must not be bracketed. @fullname is bracketed, since it's only used in SQL commands. All other vars are not
+    bracketed since they're often used in comparisons. When referencing @objname, @objschema, @subobjname, etc. be sure
+    to add brackets where required.
    */
   DECLARE @ret_code INTEGER
   DECLARE @fullname VARCHAR(500)
   DECLARE @fkConstName sysname, @fkTableName sysname, @fkSchema sysname
   SELECT @ret_code = 0
-  SELECT @fullname = (@objschema + '.' + @objname)
+  SELECT @fullname = ('[' + @objschema + '].[' + @objname + ']') -- @fullname is always bracketed, to handle names that are reserved words, etc.
   IF (UPPER(@objtype)) = 'TABLE'
     BEGIN
       IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsTable') =1
@@ -585,15 +601,15 @@ BEGIN
           EXEC('DROP TABLE ' + @fullname )
           SELECT @ret_code = 1
         END
-      ELSE IF @objname LIKE '##%' AND OBJECT_ID('tempdb.dbo.' + @objname) IS NOT NULL
+      ELSE IF @objname LIKE '##%' AND OBJECT_ID('tempdb.dbo.[' + @objname + ']') IS NOT NULL
         BEGIN
-          EXEC('DROP TABLE ' + @objname )
+          EXEC('DROP TABLE [' + @objname + ']')
           SELECT @ret_code = 1
         END
     END
   ELSE IF (UPPER(@objtype)) = 'VIEW'
     BEGIN
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsView') =1
+      IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsView') =1
         BEGIN
           EXEC('DROP VIEW ' + @fullname )
           SELECT @ret_code =1
@@ -602,7 +618,7 @@ BEGIN
   ELSE IF (UPPER(@objtype)) = 'INDEX'
     BEGIN
       DECLARE @fullername VARCHAR(500)
-      SELECT @fullername = @fullname + '.' + @subobjname
+      SELECT @fullername = @fullname + '.[' + @subobjname + ']' -- Unlikely to require brackets, but doesn't hurt
       IF INDEXPROPERTY(OBJECT_ID(@fullname), @subobjname, 'IndexID') IS NOT NULL
         BEGIN
           EXEC('DROP INDEX ' + @fullername )
@@ -620,7 +636,7 @@ BEGIN
     BEGIN
       IF OBJECTPROPERTY(OBJECT_ID(@objschema + '.' + @subobjname), 'IsConstraint') = 1
         BEGIN
-          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @subobjname)
+          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @subobjname + ']')
           SELECT @ret_code =1
         END
     END
@@ -637,8 +653,8 @@ BEGIN
 
       IF @DEFAULT IS NOT NULL AND OBJECTPROPERTY(OBJECT_ID(@objschema + '.' + @DEFAULT), 'IsConstraint') = 1
         BEGIN
-          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
-          if (@printCmds = 1) PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @DEFAULT)
+          EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @DEFAULT + ']')
+          if (@printCmds = 1) PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @DEFAULT + ']')
           SELECT @ret_code =1
         END
     END
@@ -671,9 +687,9 @@ BEGIN
               FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
               WHILE @@fetch_status = 0
                 BEGIN
-                  SELECT @fullname = @fkSchema + '.' +@fkTableName
-                  EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
-                  if (@printCmds = 1) PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @fkConstName)
+                  SELECT @fullname = '[' + @fkSchema + '].[' +@fkTableName + ']'
+                  EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @fkConstName + ']')
+                  if (@printCmds = 1) PRINT('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @fkConstName + ']')
 
                   FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
                 END
@@ -697,7 +713,7 @@ BEGIN
               FETCH NEXT FROM soCursor INTO @soName, @type, @parent, @fkschemaid
               WHILE @@fetch_status = 0
                 BEGIN
-                  SELECT @fullname = @objschema + '.' + @soName
+                  SELECT @fullname = '[' + @objschema + '].[' + @soName + ']'
                   IF (@type = 'V')
                     BEGIN
                       EXEC('DROP VIEW ' + @fullname)
@@ -755,8 +771,8 @@ BEGIN
                 END
               ELSE
                 BEGIN
-                  EXEC('DROP SCHEMA ' + @objschema)
-                  if (@printCmds = 1) PRINT('DROP SCHEMA ' + @objschema)
+                  EXEC('DROP SCHEMA [' + @objschema + ']')
+                  if (@printCmds = 1) PRINT('DROP SCHEMA [' + @objschema + ']')
                 END
             END
           SELECT @ret_code =1
@@ -769,7 +785,7 @@ BEGIN
           RAISERROR ('Invalid @objschema, not attempting to drop sys object', 16, 1)
           RETURN @ret_code
         END
-      IF OBJECTPROPERTY(OBJECT_ID(@fullname),'IsProcedure') =1
+      IF OBJECTPROPERTY(OBJECT_ID(@fullname), 'IsProcedure') =1
         BEGIN
           EXEC('DROP PROCEDURE ' + @fullname )
           SELECT @ret_code =1
@@ -834,8 +850,8 @@ BEGIN
           FETCH NEXT FROM cur_indexes INTO @index
           WHILE (@@FETCH_STATUS = 0)
             BEGIN
-              if (@printCmds = 1) PRINT('DROP INDEX ' + @index + ' ON ' + @fullname + '-- index drop')
-              EXEC('DROP INDEX ' + @index + ' ON ' + @fullname)
+              if (@printCmds = 1) PRINT('DROP INDEX [' + @index + '] ON ' + @fullname + '-- index drop')
+              EXEC('DROP INDEX [' + @index + '] ON ' + @fullname)
               FETCH NEXT FROM cur_indexes INTO @index
             END
           CLOSE cur_indexes
@@ -846,9 +862,9 @@ BEGIN
           FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
           WHILE @@fetch_status = 0
             BEGIN
-              SELECT @fkFullName = @fkSchema + '.' +@fkTableName
-              if (@printCmds = 1) PRINT('ALTER TABLE ' + @fkFullName + ' DROP CONSTRAINT ' + @fkConstName + ' -- FK drop')
-              EXEC('ALTER TABLE ' + @fkFullname + ' DROP CONSTRAINT ' + @fkConstName)
+              SELECT @fkFullName = '[' + @fkSchema + '].[' +@fkTableName + ']'
+              if (@printCmds = 1) PRINT('ALTER TABLE ' + @fkFullName + ' DROP CONSTRAINT [' + @fkConstName + '] -- FK drop')
+              EXEC('ALTER TABLE ' + @fkFullname + ' DROP CONSTRAINT [' + @fkConstName + ']')
               FETCH NEXT FROM fkCursor INTO @fkConstName, @fkTableName, @fkSchema
             END
           CLOSE fkCursor
@@ -858,8 +874,8 @@ BEGIN
           SELECT @ConstraintName = Name FROM SYS.DEFAULT_CONSTRAINTS WHERE PARENT_OBJECT_ID = @tableID AND PARENT_COLUMN_ID = (SELECT column_id FROM sys.columns WHERE NAME = N'' + @subobjname AND object_id = @tableID)
           IF @ConstraintName IS NOT NULL
             BEGIN
-              if (@printCmds = 1) PRINT ('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @ConstraintName + ' -- default constraint drop')
-              EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @ConstraintName)
+              if (@printCmds = 1) PRINT ('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @ConstraintName + '] -- default constraint drop')
+              EXEC('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @ConstraintName + ']')
             END
 
           -- Drop other constraints, including PK
@@ -870,13 +886,13 @@ BEGIN
               from information_schema.constraint_column_usage
               where TABLE_SCHEMA = @objschema and table_name = @objname and column_name = @subobjname )
             if @constraintName is null break
-            if (@printCmds = 1) PRINT ('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @ConstraintName + ' -- other constraint drop')
-            exec ('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT ' + @ConstraintName)
+            if (@printCmds = 1) PRINT ('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @ConstraintName + '] -- other constraint drop')
+            exec ('ALTER TABLE ' + @fullname + ' DROP CONSTRAINT [' + @ConstraintName + ']')
           end
 
           -- Now drop the column
-          if (@printCmds = 1) PRINT ('ALTER TABLE ' + @fullname + ' DROP COLUMN ' + @subobjname )
-          EXEC('ALTER TABLE ' + @fullname + ' DROP COLUMN ' + @subobjname )
+          if (@printCmds = 1) PRINT ('ALTER TABLE ' + @fullname + ' DROP COLUMN [' + @subobjname + ']')
+          EXEC('ALTER TABLE ' + @fullname + ' DROP COLUMN [' + @subobjname + ']')
           SELECT @ret_code =1
 
           DEALLOCATE cur_indexes
@@ -896,21 +912,11 @@ BEGIN
         END
     END
   ELSE
-    RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, COLUMN', 16,1, @objtype )
+    RAISERROR('Invalid object type - %s   Valid values are TABLE, VIEW, INDEX, CONSTRAINT, DEFAULT, SCHEMA, PROCEDURE, FUNCTION, AGGREGATE, SYNONYM, COLUMN', 16, 1, @objtype )
 
   RETURN @ret_code;
 END;
 
 GO
 
-/* 21.xxx SQL scripts */
-
-ALTER TABLE core.Containers ADD LockState VARCHAR(25) NULL;
-ALTER TABLE core.Containers ADD ExpirationDate DATETIME NULL;
-
 EXEC core.executeJavaInitializationCode 'setDefaultExcludedProjects';
-
-EXEC sp_rename 'core.qcstate', 'DataStates'
-GO
-
-ALTER TABLE core.DataStates ADD StateType NVARCHAR(20);
