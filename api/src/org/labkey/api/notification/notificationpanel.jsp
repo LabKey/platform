@@ -43,7 +43,7 @@
     %>
     <a id="<%=h(linkId)%>" href="#">
         <i class="fa fa-inbox labkey-notification-inbox"></i>
-        <span id=<%=q(notificationCountId)%>>&nbsp;</span>
+        <span id="<%=h(notificationCountId)%>">&nbsp;</span>
     </a>
 </li>
 
