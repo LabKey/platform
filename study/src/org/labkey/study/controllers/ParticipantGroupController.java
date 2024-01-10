@@ -1087,7 +1087,7 @@ public class ParticipantGroupController extends BaseStudyController
                     }
 
                     //if the label has changed, update the category label as well
-                    if (!form.getCategoryLabel().equalsIgnoreCase(category.getLabel()))
+                    if (null != form.getCategoryLabel() && !form.getCategoryLabel().equalsIgnoreCase(category.getLabel()))
                     {
                         category.setLabel(form.getCategoryLabel());
                         ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
