@@ -1308,7 +1308,7 @@ public class PlateManager implements PlateService
         return null;
     }
 
-    public @NotNull Map<String, List<Map<String, Integer>>> getPlateOperationConfirmationData(
+    public @NotNull Map<String, List<Map<String, Object>>> getPlateOperationConfirmationData(
         @NotNull Container container,
         @NotNull User user,
         @NotNull Set<Integer> plateRowIds
@@ -1321,18 +1321,42 @@ public class PlateManager implements PlateService
                 notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "plate")));
         permittedIds.removeAll(notPermittedIds);
 
-        // TODO: This is really expensive. Find a way to consolidate this check into a single query.
+        Map<Integer, Plate> plates = new HashMap<>();
+        plateRowIds.forEach(rowId -> {
+            // TODO: This is really expensive. Find a way to consolidate this check into a single query.
+            if (rowId != null)
+                plates.put(rowId, getPlate(container, rowId));
+        });
+
         permittedIds.forEach(plateRowId -> {
-            Plate plate = getPlate(container, plateRowId);
+            Plate plate = plates.get(plateRowId);
             if (plate == null || getRunCountUsingPlate(container, user, plate) > 0)
                 notPermittedIds.add(plateRowId);
         });
         permittedIds.removeAll(notPermittedIds);
 
-        return Map.of(
-        "allowed", permittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList(),
-            "notAllowed", notPermittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList()
-        );
+        List<Map<String, Object>> allowedRows = new ArrayList<>();
+        permittedIds.forEach(rowId -> {
+            Plate plate = plates.get(rowId);
+            allowedRows.add(CaseInsensitiveHashMap.of("RowId", rowId, "Name", plate.getName(), "ContainerPath", plate.getContainer().getPath()));
+        });
+
+        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+        notPermittedIds.forEach(rowId -> {
+            Plate plate = plates.get(rowId);
+            Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
+            rowMap.put("RowId", rowId);
+
+            if (plate != null)
+            {
+                rowMap.put("Name", plate.getName());
+                rowMap.put("ContainerPath", plate.getContainer().getPath());
+            }
+
+            notAllowedRows.add(rowMap);
+        });
+
+        return Map.of("allowed", allowedRows, "notAllowed", notAllowedRows);
     }
 
     private void deindexPlates(Collection<Lsid> plateLsids)
