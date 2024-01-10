@@ -1,11 +1,17 @@
 package org.labkey.assay.plate;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
@@ -15,20 +21,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateSetImpl extends Entity implements PlateSet
 {
-    private int _rowId;
+    private Integer _rowId;
     private String _name;
     private boolean _archived;
     private Container _container;
 
+    public PlateSetImpl()
+    {
+        // no-param constructor for reflection
+    }
+
     @Override
-    public int getRowId()
+    public Integer getRowId()
     {
         return _rowId;
     }
 
-    public void setRowId(int rowId)
+    public void setRowId(Integer rowId)
     {
         _rowId = rowId;
     }
@@ -38,6 +50,7 @@ public class PlateSetImpl extends Entity implements PlateSet
         _container = container;
     }
 
+    @JsonIgnore
     @Override
     public Container getContainer()
     {
@@ -77,5 +90,20 @@ public class PlateSetImpl extends Entity implements PlateSet
         });
 
         return plates;
+    }
+
+    @JsonProperty("plateCount")
+    public Integer getPlateCount()
+    {
+        if (_rowId == null)
+            return 0;
+
+        TableInfo table = AssayDbSchema.getInstance().getTableInfoPlate();
+        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM ")
+                .append(table, "P")
+                .append(" WHERE PlateSet = ?")
+                .add(_rowId);
+
+        return new SqlSelector(table.getSchema(), sql).getObject(Integer.class);
     }
 }
