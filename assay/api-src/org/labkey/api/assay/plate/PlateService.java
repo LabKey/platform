@@ -158,6 +158,13 @@ public interface PlateService
     List<Plate> getPlateTemplates(Container container);
 
     /**
+     * Gets the plate set by ID
+     *
+     * @return A plate set instance or null if it can't be located
+     */
+    @Nullable PlateSet getPlateSet(Container container, int plateSetId);
+
+    /**
      * Returns the number of assay runs that are linked to the specified plate. Currently, this only works
      * for the standard assay with plate support since other assays types do not store the plate ID with the
      * run.
@@ -251,6 +258,12 @@ public interface PlateService
      * Create the plate metadata domain for this container.
      */
     @NotNull Domain ensurePlateMetadataDomain(Container container, User user) throws ValidationException;
+
+    /**
+     * Name expressions for plate sets and plates.
+     */
+    @NotNull String getPlateSetNameExpression();
+    @NotNull String getPlateNameExpression();
 
     /**
      * A PlateDetailsResolver implementation provides a URL where a detailed, plate-type specific

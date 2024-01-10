@@ -29,6 +29,14 @@
       <column columnName="Name">
         <description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</description>
       </column>
+      <column columnName="PlateSet">
+        <description>The Plate Set that this plate is assigned to.</description>
+        <fk>
+          <fkColumnName>RowId</fkColumnName>
+          <fkTable>PlateSet</fkTable>
+          <fkDbSchema>assay</fkDbSchema>
+        </fk>
+      </column>
       <column columnName="CreatedBy">
         <datatype>int</datatype>
         <columnTitle>Created By</columnTitle>
@@ -163,6 +171,19 @@
       <column columnName="PlateId"/>
       <column columnName="PropertyURI"/>
       <column columnName="PropertyId"/>
+    </columns>
+  </table>
+  <table tableName="PlateSet" tableDbType="TABLE">
+    <description>Contains one row per plate set.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="Name"/>
+      <column columnName="Container"/>
+      <column columnName="CreatedBy"/>
+      <column columnName="Created"/>
+      <column columnName="ModifiedBy"/>
+      <column columnName="Modified"/>
+      <column columnName="Archived"/>
     </columns>
   </table>
 </tables>
