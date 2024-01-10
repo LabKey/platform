@@ -62,7 +62,7 @@
 <labkey:errors/>
 <labkey:form id="<%=importFormId%>" action="<%=urlFor(StartFolderImportAction.class)%>" method="post">
     <input type="hidden" name="fromZip" value=<%=bean.isFromZip()%>>
-    <input type="hidden" name="filePath" value="<%=h(bean.getFilePath())"%>>
+    <input type="hidden" name="filePath" value="<%=h(bean.getFilePath())%>">
     <div id="startPipelineImportForm"></div>
 </labkey:form>
 
