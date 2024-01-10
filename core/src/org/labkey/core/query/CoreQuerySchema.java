@@ -45,6 +45,7 @@ import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
+import org.labkey.core.security.UserApiKeyQueryView;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 import org.springframework.validation.BindException;
@@ -76,6 +77,7 @@ public class CoreQuerySchema extends UserSchema
     public static final String QCSTATE_TABLE_NAME = "QCState";
     public static final String DATA_STATES_TABLE_NAME = "DataStates";
     public static final String API_KEYS_TABLE_NAME = "APIKeys";
+    public static final String USER_API_KEYS_TABLE_NAME = "UserAPIKeys";
     public static final String MISSING_VALUE_INDICATOR_TABLE_NAME = "MVIndicators";
     public static final String USERS_MSG_SETTINGS_TABLE_NAME = "UsersMsgPrefs";
     public static final String SCHEMA_DESCR = "Contains data about the system users and groups.";
@@ -100,12 +102,17 @@ public class CoreQuerySchema extends UserSchema
         {
             return new WorkbookQueryView(context, this);
         }
+        else if (USER_API_KEYS_TABLE_NAME.equalsIgnoreCase(settings.getQueryName()))
+        {
+            return new UserApiKeyQueryView(context, this);
+        }
         return super.createView(context, settings, errors);
     }
 
     @Override
     public Set<String> getTableNames()
     {
+        // USER_API_KEYS_TABLE_NAME is deliberately not added here; this table is accessible via the ApiKeyViewProvider
         Set<String> names = PageFlowUtil.set(
             USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME, MODULES_TABLE_NAME, MEMBERS_TABLE_NAME,
             CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME, QCSTATE_TABLE_NAME, DATA_STATES_TABLE_NAME,
@@ -161,6 +168,8 @@ public class CoreQuerySchema extends UserSchema
             return getDataStatesTable();
         if (API_KEYS_TABLE_NAME.equalsIgnoreCase(name) && getUser().hasRootPermission(UserManagementPermission.class))
             return new ApiKeysTableInfo(this);
+        if (USER_API_KEYS_TABLE_NAME.equalsIgnoreCase(name))
+            return new UserApiKeysTableInfo(this);
         if (VIEW_CATEGORY_TABLE_NAME.equalsIgnoreCase(name))
             return new ViewCategoryTable(ViewCategoryManager.getInstance().getTableInfoCategories(), this, cf);
         if (MISSING_VALUE_INDICATOR_TABLE_NAME.equalsIgnoreCase(name))

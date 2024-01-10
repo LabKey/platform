@@ -1,6 +1,8 @@
 package org.labkey.core.security;
 
 import org.labkey.api.external.tools.ExternalToolsViewProvider;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.PopupUserView;
@@ -18,10 +20,7 @@ public class ApiKeyViewProvider implements ExternalToolsViewProvider
         List<ModelAndView> views = new LinkedList<>();
         if (PopupUserView.allowApiKeyPage(user))
         {
-            JspView<Object> view = new JspView<>("/org/labkey/core/security/apiKey.jsp");
-            view.setTitle("API Keys");
-            view.setFrame(WebPartView.FrameType.PORTAL);
-            views.add(view);
+            views.add(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("core"), ModuleHtmlView.getGeneratedViewPath("apiKeys")));
         }
 
         return views;
