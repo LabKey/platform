@@ -8643,12 +8643,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user)
+    public void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable DataTypeForExclusion relatedDataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user)
     {
         if (excludedDataTypeRowIds == null)
             return;
 
         Set<Integer> previousExclusions = _getContainerDataTypeExclusions(dataType, excludedContainerId);
+        Set<Integer> relatedExclusions = relatedDataType != null ? _getContainerDataTypeExclusions(relatedDataType, excludedContainerId) : null;
         Set<Integer> updatedExclusions = new HashSet<>(excludedDataTypeRowIds);
 
         Set<Integer> toAdd = new HashSet<>(updatedExclusions);
@@ -8660,7 +8661,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!toAdd.isEmpty())
         {
             for (Integer add : toAdd)
+            {
                 addDataTypeExclusion(add, dataType, excludedContainerId, user);
+
+                // if this exclusion type has a related exclusion, remove the related exclusion on add
+                if (relatedExclusions != null && relatedExclusions.contains(add))
+                    removeDataTypeExclusion(Collections.singleton(add), relatedDataType, excludedContainerId);
+            }
         }
 
         if (!toRemove.isEmpty())
