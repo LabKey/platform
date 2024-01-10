@@ -16,23 +16,28 @@ public class LogHelper
 
     private static final Map<String, String> LOGGER_NOTES = new ConcurrentHashMap<>();
 
+    private static Logger registerNote(Logger logger, String note)
+    {
+        // Always use the Logger's name when saving or retrieving notes
+        LOGGER_NOTES.put(logger.getName(), note);
+        return logger;
+    }
+
     public static Logger getLogger(Class<?> c, String note)
     {
-        LOGGER_NOTES.put(c.getName(), note);
         //noinspection SSBasedInspection
-        return LogManager.getLogger(c);
+        return registerNote(LogManager.getLogger(c), note);
     }
 
     public static Logger getLogger(Package p, String note)
     {
-        LOGGER_NOTES.put(p.getName(), note);
         //noinspection SSBasedInspection
-        return LogManager.getLogger(p.getName());
+        return registerNote(LogManager.getLogger(p.getName()), note);
     }
 
-    public static String getNote(String className)
+    public static String getNote(String loggerName)
     {
-        return LOGGER_NOTES.get(className);
+        return LOGGER_NOTES.get(loggerName);
     }
 
     public static String getLabKeyLogDir()
