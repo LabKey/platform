@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.4.1-apiKeyGeneration.16",
+    "@labkey/components": "3.5.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
