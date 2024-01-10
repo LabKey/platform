@@ -331,10 +331,8 @@ public class FileContentServiceImpl implements FileContentService, WarningProvid
             }
             else
             {
-                File fileRootFile = new File(parentRoot.toFile(), getRelativePath(c, firstOverride));
-                _log.info("File root for '%s': '%s'".formatted(c.getPath(), fileRootFile.toString()));
                 // For local, the path may be several directories deep (since it matches the LK folder path), so we should create the directories for that path
-                fileRootPath = fileRootFile.toPath();
+                fileRootPath = new File(parentRoot.toFile(), getRelativePath(c, firstOverride)).toPath();
 
                 try
                 {

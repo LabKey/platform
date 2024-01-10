@@ -374,6 +374,10 @@ public class PublishController extends SpringActionController
             {
                 error("Failure", t);
             }
+
+            if (getErrors() == 0)
+                setStatus(TaskStatus.complete);
+
             info("Auto link to study complete");
         }
     }
