@@ -4612,7 +4612,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         List<Map<String, Object>> allowedRows = new ArrayList<>();
         List<Map<String, Object>> notAllowedRows = new ArrayList<>();
         allData.forEach((dataObject) -> {
-            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName());
+            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName(), "ContainerPath", dataObject.getContainer().getPath());
             if (permittedIds.contains(dataObject.getRowId()))
                 allowedRows.add(rowMap);
             else

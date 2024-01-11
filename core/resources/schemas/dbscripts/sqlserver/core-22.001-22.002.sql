@@ -1,1 +1,0 @@
-ALTER TABLE core.UsersData ADD System BIT NOT NULL DEFAULT 0;

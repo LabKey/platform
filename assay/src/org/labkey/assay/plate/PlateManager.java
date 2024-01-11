@@ -31,6 +31,7 @@ import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateTypeHandler;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
@@ -96,6 +97,7 @@ import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.plate.model.WellGroupBean;
 import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateSetTable;
 import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.plate.query.WellGroupTable;
 import org.labkey.assay.plate.query.WellTable;
@@ -135,6 +137,10 @@ public class PlateManager implements PlateService
     private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
     private final Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
+
+    // name expressions, currently not configurable
+    private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
+    private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/Name}-:withCounter}";
 
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
@@ -317,6 +323,12 @@ public class PlateManager implements PlateService
     public List<Plate> getPlateTemplates(Container container)
     {
         return PlateCache.getPlateTemplates(container);
+    }
+
+    @Override
+    public @Nullable PlateSet getPlateSet(Container container, int plateSetId)
+    {
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getObject(container, plateSetId, PlateSetImpl.class);
     }
 
     @Override
@@ -652,6 +664,13 @@ public class PlateManager implements PlateService
         {
             Integer plateId = plate.getRowId();
             String plateInstanceLsid = plate.getLSID();
+
+            if (!updateExisting && plate.getPlateSet() == null)
+            {
+                // ensure a plate set for each new plate
+                Integer plateSetId = ensureDefaultPlateSet(container, user);
+                plate.setPlateSet(plateSetId);
+            }
             Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateImpl.class).toMap(plate, new ArrayListMap<>());
             QueryUpdateService qus = getPlateUpdateService(container, user);
             BatchValidationException errors = new BatchValidationException();
@@ -791,6 +810,22 @@ public class PlateManager implements PlateService
 
             return plateId;
         }
+    }
+
+    // creates a default plate set in the specified container and returns its ID
+    private Integer ensureDefaultPlateSet(Container container, User user) throws Exception
+    {
+        BatchValidationException errors = new BatchValidationException();
+        QueryUpdateService qus = getPlateSetUpdateService(container, user);
+        PlateSetImpl plateSet = new PlateSetImpl();
+        plateSet.beforeInsert(user, container.getId());
+        Map<String, Object> plateSetRow = ObjectFactory.Registry.getFactory(PlateSetImpl.class).toMap(plateSet, new ArrayListMap<>());
+
+        List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateSetRow), errors, null, null);
+        if (errors.hasErrors())
+            throw errors;
+
+        return (Integer)insertedRows.get(0).get("RowId");
     }
 
     // return a list of wellId and wellGroupId pairs
@@ -970,6 +1005,15 @@ public class PlateManager implements PlateService
         Table.delete(schema.getTableInfoWell(), filter);
         Table.delete(schema.getTableInfoWellGroup(), filter);
         Table.delete(schema.getTableInfoPlate(), filter);
+
+        // delete all empty plate sets in this container
+        SQLFragment sql3 = new SQLFragment("DELETE FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
+                .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "").append(")")
+                .append(" AND Container = ?")
+                .add(container);
+        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql3);
+
         clearCache(container);
     }
 
@@ -1020,6 +1064,17 @@ public class PlateManager implements PlateService
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for Plates.");
+
+        return qus;
+    }
+
+    private @NotNull QueryUpdateService getPlateSetUpdateService(Container container, User user)
+    {
+        UserSchema schema = getPlateUserSchema(container, user);
+        TableInfo tableInfo = schema.getTable(PlateSetTable.NAME);
+        QueryUpdateService qus = tableInfo.getUpdateService();
+        if (qus == null)
+            throw new IllegalStateException("Unable to resolve QueryUpdateService for PlateSets.");
 
         return qus;
     }
@@ -1627,6 +1682,18 @@ public class PlateManager implements PlateService
         }
 
         return getFields(container, plateRowId);
+    }
+
+    @Override
+    public @NotNull String getPlateSetNameExpression()
+    {
+        return PLATE_SET_NAME_EXPRESSION;
+    }
+
+    @Override
+    public @NotNull String getPlateNameExpression()
+    {
+        return PLATE_NAME_EXPRESSION;
     }
 
     public static final class TestCase

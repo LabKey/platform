@@ -118,11 +118,6 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 import static org.labkey.api.security.AuthenticationProvider.FailureReason.complexity;
 import static org.labkey.api.security.AuthenticationProvider.FailureReason.expired;
 
-/**
- * User: adam
- * Date: Oct 10, 2007
- * Time: 6:53:03 PM
- */
 public class AuthenticationManager
 {
     public static final String ALL_DOMAINS = "*";
@@ -905,7 +900,7 @@ public class AuthenticationManager
     }
 
 
-    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
+    private static @NotNull PrimaryAuthenticationResult _authenticate(HttpServletRequest request, final String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
         if (areNotBlank(id, password))
         {
@@ -964,27 +959,19 @@ public class AuthenticationManager
             if (null != firstFailure)
             {
                 User user = null;
-                String emailAddress = null;
+                String emailAddress = id;
 
-                // Try to determine who is attempting to login.
-                if (!StringUtils.isBlank(id))
+                try
                 {
-                    emailAddress = id;
-                    ValidEmail email = null;
-
-                    try
-                    {
-                        email = new ValidEmail(id);
-                        // If this user doesn't exist we can still report the normalized email address.
-                        // FailureReason can determine whether to log the email address or not.
-                        emailAddress = firstFailure.getFailureReason().getEmailAddress(email);
-                    }
-                    catch (InvalidEmailException e)
-                    {
-                    }
-
-                    if (null != email)
-                        user = UserManager.getUser(email);
+                    ValidEmail email = new ValidEmail(id);
+                    // If this user doesn't exist we can still report the normalized email address.
+                    // FailureReason can determine whether to log the email address or not.
+                    emailAddress = firstFailure.getFailureReason().getEmailAddress(email);
+                    user = UserManager.getUser(email);
+                }
+                catch (InvalidEmailException ignored)
+                {
+                    // id might not be a valid email address, e.g., "apikey" with no default domain set
                 }
 
                 String ipAddress = request.getHeader("X-FORWARDED-FOR");
@@ -1197,8 +1184,8 @@ public class AuthenticationManager
 
     // Attempts to authenticate using only LoginFormAuthenticationProviders (e.g., DbLogin, LDAP). This is for the case
     // where you have an id & password in hand and want to ignore SSO and other delegated authentication mechanisms that
-    // rely on cookies, browser redirects, etc. Current usages include basic auth and test cases. Note that this will
-    // always fail if any secondary authentication is enabled (e.g., Duo).
+    // rely on cookies, browser redirects, etc. Current usages include basic auth, API keys, and test cases. Note that
+    // this will always fail if any secondary authentication is enabled (e.g., Duo).
 
     // Returns null if credentials are incorrect, user doesn't exist, user is inactive, or secondary auth is enabled.
     public static @Nullable User authenticate(HttpServletRequest request, String id, String password) throws InvalidEmailException

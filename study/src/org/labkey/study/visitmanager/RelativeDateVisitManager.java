@@ -327,7 +327,7 @@ public class RelativeDateVisitManager extends VisitManager
         return errors;
     }
 
-    public @Nullable ValidationException recomputeDates(Date oldStartDate, User user)
+    public @NotNull ValidationException recomputeDates(Date oldStartDate, User user)
     {
         if (null != oldStartDate)
         {
@@ -351,7 +351,7 @@ public class RelativeDateVisitManager extends VisitManager
                 return updateParticipantVisits(user, getStudy().getDatasets());
             }
         }
-        return null;
+        return new ValidationException();
     }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
