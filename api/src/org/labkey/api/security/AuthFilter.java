@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.core5.http.HttpStatus;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
@@ -184,7 +185,7 @@ public class AuthFilter implements Filter
         }
         catch (UnsupportedEncodingException uee)
         {
-            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, uee.getMessage());
+            resp.sendError(HttpStatus.SC_BAD_REQUEST, uee.getMessage());
             return;
         }
 

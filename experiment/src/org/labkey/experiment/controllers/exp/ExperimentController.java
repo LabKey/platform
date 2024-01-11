@@ -18,6 +18,7 @@ package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -2512,7 +2513,7 @@ public class ExperimentController extends SpringActionController
             catch (JSONException | ClassCastException e)
             {
                 // We can get a ClassCastException if we expect an array and get a simple String, for example
-                ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, false, false);
+                ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpStatus.SC_UNPROCESSABLE_ENTITY, "Failed to convert to Excel - invalid input", e, false, false);
             }
         }
     }
@@ -2591,7 +2592,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (JSONException e)
             {
-                ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to table - invalid input", e, false, false);
+                ExceptionUtil.renderErrorView(getViewContext(), getPageConfig(), ErrorRenderer.ErrorType.notFound, HttpStatus.SC_UNPROCESSABLE_ENTITY, "Failed to convert to table - invalid input", e, false, false);
             }
         }
     }

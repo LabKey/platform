@@ -67,13 +67,13 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
                     // Indicates the request was cancelled because the user navigated to another page
                     // Don't bother showing any dialog at all
                     return;
-                case 401:
+                case 403: // HttpStatus.SC_UNAUTHORIZED
                     message = "You do not have permission to perform this operation. Your session may have expired.";
                     break;
-                case 404:
+                case 404: // HttpStatus.SC_NOT_FOUND
                     message = "Not found.";
                     break;
-                case 500:
+                case 500: // HttpStatus.SC_INTERNAL_SERVER_ERROR
                     message = "The server encountered an error";
                     if(statusCodeException.getMessage() != null)
                         message += ": " + statusCodeException.getMessage();

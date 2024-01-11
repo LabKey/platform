@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.poi.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1253,7 +1254,7 @@ public class PropertyController extends SpringActionController
         {
             if (files.isEmpty())
             {
-                throw new UploadException("No file(s) uploaded, or the uploaded file was empty", 400);
+                throw new UploadException("No file(s) uploaded, or the uploaded file was empty", HttpStatus.SC_BAD_REQUEST);
             }
             if (files.size() > 1)
             {
@@ -1265,7 +1266,7 @@ public class PropertyController extends SpringActionController
                     separator = ", ";
                     message.append(fileStringPair.getValue());
                 }
-                throw new UploadException("Only one file is supported, but " + files.size() + " were uploaded: " + message, 400);
+                throw new UploadException("Only one file is supported, but " + files.size() + " were uploaded: " + message, HttpStatus.SC_BAD_REQUEST);
             }
             // Store the file in the session, and delete it when the session expires
             HttpSession session = getViewContext().getSession();

@@ -15,33 +15,28 @@
  */
 package org.labkey.api.action;
 
+import org.apache.hc.core5.http.HttpStatus;
 import org.labkey.api.util.SkipMothershipLogging;
+import org.labkey.api.view.BadRequestException;
 
 /**
  * Signals the client API caller that they somehow made an invalid request. These errors are not reported to the
  * mothership.
- * User: jeckels
- * Date: Oct 5, 2010
  */
-public class ApiUsageException extends RuntimeException implements SkipMothershipLogging
+public class ApiUsageException extends BadRequestException implements SkipMothershipLogging
 {
-    public ApiUsageException()
+    public ApiUsageException(String message, Throwable cause)
     {
-        super();
+        super(message, cause, HttpStatus.SC_UNPROCESSABLE_ENTITY, HowBad.MaybeBad);
     }
 
     public ApiUsageException(String message)
     {
-        super(message);
-    }
-
-    public ApiUsageException(String message, Throwable cause)
-    {
-        super(message, cause);
+        this(message, null);
     }
 
     public ApiUsageException(Throwable cause)
     {
-        super(cause.getMessage() == null ? cause.toString() : cause.getMessage(), cause);
+        this(cause.getMessage(), cause);
     }
 }
