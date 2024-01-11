@@ -4,8 +4,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
+import org.labkey.remoteapi.domain.DomainDetailsResponse;
 import org.labkey.remoteapi.domain.DomainResponse;
-import org.labkey.remoteapi.domain.GetDomainCommand;
+import org.labkey.remoteapi.domain.GetDomainDetailsCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
@@ -86,14 +87,14 @@ public abstract class ProvenanceAssayHelper extends BaseWebDriverTest
         clickAndWait(Locator.lkButton("Save and Finish"));
     }
 
-    protected DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
+    protected DomainDetailsResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
     {
         CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
         domainCommand.getDomainDesign().setFields(fields);
         domainCommand.getDomainDesign().setDescription(description);
 
         DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
+        GetDomainDetailsCommand getDomainCommand = new GetDomainDetailsCommand(domainResponse.getDomain().getDomainId());
         return getDomainCommand.execute(createDefaultConnection(), getProjectName());
     }
 
