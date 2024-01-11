@@ -73,11 +73,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-/**
- * User: brittp
- * Date: Nov 1, 2006
- * Time: 4:37:02 PM
- */
 public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Plate";
@@ -86,14 +81,13 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Rows"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
         defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Template"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Rows"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
     }
 
     public PlateTable(PlateSchema schema, @Nullable ContainerFilter cf)
