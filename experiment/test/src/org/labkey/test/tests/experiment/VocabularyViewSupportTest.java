@@ -11,7 +11,7 @@ import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsResponse;
-import org.labkey.remoteapi.domain.DomainResponse;
+import org.labkey.remoteapi.domain.DomainDetailsResponse;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.query.InsertRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsCommand;
@@ -111,7 +111,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         fields.add(pd2);
         fields.add(pd3);
 
-        DomainResponse domainResponse = createDomain(domainKind, domainName, description, fields);
+        DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, description, fields);
         int domainId = domainResponse.getDomain().getDomainId().intValue();
 
         log("Create a sampleset");
@@ -224,7 +224,7 @@ public class VocabularyViewSupportTest extends ProvenanceAssayHelper
         fields.add(pd1);
         fields.add(pd2);
 
-        DomainResponse domainResponse = createDomain(domainKind, domainName, description, fields);
+        DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, description, fields);
         int domainId = domainResponse.getDomain().getDomainId().intValue();
         String domainProperty = domainName + domainId;
 

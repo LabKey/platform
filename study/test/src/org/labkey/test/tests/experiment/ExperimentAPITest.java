@@ -39,8 +39,9 @@ import org.labkey.remoteapi.assay.SaveAssayBatchResponse;
 import org.labkey.remoteapi.assay.SaveAssayRunsCommand;
 import org.labkey.remoteapi.assay.SaveAssayRunsResponse;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
+import org.labkey.remoteapi.domain.DomainDetailsResponse;
 import org.labkey.remoteapi.domain.DomainResponse;
-import org.labkey.remoteapi.domain.GetDomainCommand;
+import org.labkey.remoteapi.domain.GetDomainDetailsCommand;
 import org.labkey.remoteapi.domain.ListDomainsCommand;
 import org.labkey.remoteapi.domain.ListDomainsResponse;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
@@ -281,14 +282,14 @@ public class ExperimentAPITest extends BaseWebDriverTest
         return getResponse.getBatch();
     }
 
-    private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
+    private DomainDetailsResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
     {
         CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
         domainCommand.getDomainDesign().setDescription(description);
         domainCommand.getDomainDesign().setFields(fields);
 
         DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
+        GetDomainDetailsCommand getDomainCommand = new GetDomainDetailsCommand(domainResponse.getDomain().getDomainId());
         return getDomainCommand.execute(createDefaultConnection(), getProjectName());
     }
 
@@ -308,7 +309,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         fields.add(new PropertyDescriptor(prop1Name, prop1range));
         fields.add(new PropertyDescriptor(prop2Name, prop2range));
 
-        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription,fields);
+        DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription,fields);
 
         //verifying properties got added in domainResponse
         assertEquals("First Adhoc property not found.", domainResponse.getDomain().getFields().get(0).getName(), prop1Name);
@@ -347,7 +348,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         List<PropertyDescriptor> fields = new ArrayList<>();
         fields.add(new PropertyDescriptor(propertyName, rangeURI));
 
-        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription, fields);
+        DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription, fields);
 
         assertEquals("Property not added in Domain.", propertyName, domainResponse.getDomain().getFields().get(0).getName());
 
@@ -397,7 +398,7 @@ public class ExperimentAPITest extends BaseWebDriverTest
         String assayName = "ImportRunAssay";
 
         // 1. Create Vocabulary Domain with one adhoc property with CreateDomainApi
-        DomainResponse domainResponse = createDomain(domainKind, domainName, domainDescription, List.of(new PropertyDescriptor(propertyName,  rangeURI)));
+        DomainDetailsResponse domainResponse = createDomain(domainKind, domainName, domainDescription, List.of(new PropertyDescriptor(propertyName,  rangeURI)));
 
         assertEquals("Property not added in Vocabulary Domain.", propertyName, domainResponse.getDomain().getFields().get(0).getName());
 
