@@ -1148,14 +1148,17 @@ public class StudyManager
         for (BigDecimal sequencenum : sequencenums)
         {
             VisitImpl result = ensureVisitWithoutSaving(study, sequencenum, type, visits);
-            if (result.getRowId() == 0 && !failForUndefinedVisits)
+            if (result.getRowId() == 0)
             {
-                createVisit(study, user, result, visits);
-                // Refresh existing visits to avoid constraint violation, see #44425
-                visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+                if (!failForUndefinedVisits)
+                {
+                    createVisit(study, user, result, visits);
+                    // Refresh existing visits to avoid constraint violation, see #44425
+                    visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+                }
+                else
+                    seqNumFailures.add(String.valueOf(sequencenum));
             }
-            else
-                seqNumFailures.add(String.valueOf(sequencenum));
         }
 
         if (!seqNumFailures.isEmpty())
@@ -4829,19 +4832,6 @@ public class StudyManager
 
     public static class StudyUpgradeCode implements UpgradeCode
     {
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void moveSpecimenTemplatePropertiesAgain(final ModuleContext context)
-        {
-            if (!context.isNewInstall())
-            {
-                // SpecimenRequestNotificationEmailTemplate was moved to specimen module in 22.3; move its template properties to the new location
-                EmailTemplateService.get().relocateEmailTemplateProperties(
-                    "org.labkey.api.specimen.view.SpecimenRequestNotificationEmailTemplate",
-                    "org.labkey.specimen.view.SpecimenRequestNotificationEmailTemplate"
-                );
-            }
-        }
-
         /**
          * Called from study-23.000-23.001.sql
          * Issue : 46986. Move the study design domains to the project folder (if not already there), since

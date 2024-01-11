@@ -1086,6 +1086,13 @@ public class ParticipantGroupController extends BaseStudyController
                         ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
                     }
 
+                    //if the label has changed, update the category label as well
+                    if (null != form.getCategoryLabel() && !form.getCategoryLabel().equalsIgnoreCase(category.getLabel()))
+                    {
+                        category.setLabel(form.getCategoryLabel());
+                        ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
+                    }
+
                     deleteImplicitCategory(oldCategoryId, category);
                 }
                 transaction.commit();
