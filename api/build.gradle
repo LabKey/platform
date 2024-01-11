@@ -370,7 +370,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.gwtproject:gwt-servlet-jakarta:${gwtServletVersion}",
+            "org.gwtproject:gwt-servlet-jakarta:${gwtServletJakartaVersion}",
             "Server Support for Google Web Toolkit",
             "Google",
             "http://code.google.com/webtoolkit/",
