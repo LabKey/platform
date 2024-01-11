@@ -1954,7 +1954,6 @@ core/src/org/labkey/core/reports/DocumentConversionServiceImpl.java -text
 core/src/org/labkey/core/reports/ExternalScriptEngineDefinitionImpl.java -text
 core/src/org/labkey/core/reports/ScriptEngineManagerImpl.java -text
 core/src/org/labkey/core/security/addUsers.jsp -text
-core/src/org/labkey/core/security/apiKey.jsp -text
 core/src/org/labkey/core/security/group.jsp -text
 core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/GroupView.java -text

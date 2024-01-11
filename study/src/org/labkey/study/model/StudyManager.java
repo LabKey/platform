@@ -1148,14 +1148,17 @@ public class StudyManager
         for (BigDecimal sequencenum : sequencenums)
         {
             VisitImpl result = ensureVisitWithoutSaving(study, sequencenum, type, visits);
-            if (result.getRowId() == 0 && !failForUndefinedVisits)
+            if (result.getRowId() == 0)
             {
-                createVisit(study, user, result, visits);
-                // Refresh existing visits to avoid constraint violation, see #44425
-                visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+                if (!failForUndefinedVisits)
+                {
+                    createVisit(study, user, result, visits);
+                    // Refresh existing visits to avoid constraint violation, see #44425
+                    visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+                }
+                else
+                    seqNumFailures.add(String.valueOf(sequencenum));
             }
-            else
-                seqNumFailures.add(String.valueOf(sequencenum));
         }
 
         if (!seqNumFailures.isEmpty())
