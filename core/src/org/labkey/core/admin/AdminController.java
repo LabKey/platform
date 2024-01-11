@@ -190,6 +190,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.MessagingException;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
@@ -294,6 +295,16 @@ public class AdminController extends SpringActionController
 
     private static long _errorMark = 0;
     private static long _primaryLogMark = 0;
+
+
+    @Override
+    protected void beforeAction(Controller action) throws ServletException
+    {
+        super.beforeAction(action);
+        if (action instanceof BaseViewAction<?> viewaction)
+            viewaction.getPageConfig().setNoIndex();
+    }
+
 
     public static void registerAdminConsoleLinks()
     {

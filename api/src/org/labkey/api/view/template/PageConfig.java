@@ -61,6 +61,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Objects.requireNonNullElse;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.labkey.api.data.DataRegion.CONTAINER_FILTER_NAME;
 import static org.labkey.api.util.PageFlowUtil.jsString;
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -402,7 +403,7 @@ public class PageConfig
     }
 
 
-    String[] ignoreParameters = new String[] {"_dc", "_template", "_print", "_debug", "_docid", DataRegion.LAST_FILTER_PARAM};
+    static final Set<String> ignoreParameters = Set.of("_dc", "_template", "_print", "_debug", "_docid", DataRegion.LAST_FILTER_PARAM);
 
     @Nullable
     private String getCanonicalLink(URLHelper current)
@@ -411,16 +412,28 @@ public class PageConfig
             return _canonicalLink;
         if (null == current)
             return null;
-        URLHelper u = null;
-        if (current instanceof ActionURL && !((ActionURL)current).isCanonical())
-            u = current.clone();
-        for (String p : ignoreParameters)
-        {
-            if (null != current.getParameter(p))
-                u = (null==u ? current.clone() : u).deleteParameter(p);
-        }
-        return null == u ? null : u.getURIString();
+        return makeCanonicalLink(current);
     }
+
+
+    private static String makeCanonicalLink(URLHelper current)
+    {
+        var params = current.getParameters();
+        URLHelper u = current.clone().deleteParameters();
+
+        for (var pair : params)
+        {
+            if (ignoreParameters.contains(pair.getKey()))
+                continue;
+            // Strip container filters from the URL to prevent crawlers from over-indexing a URL with different parameter values
+            if (pair.getKey().endsWith(CONTAINER_FILTER_NAME))
+
+                continue;
+            u.addParameter(pair.getKey(), pair.getValue());
+        }
+        return  u.getURIString();
+    }
+
 
     public HtmlString getPreloadTags()
     {
