@@ -381,7 +381,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.hamcrest:hamcrest-core:${hamcrestVersion}",
+            "org.hamcrest:hamcrest:${hamcrestVersion}",
             "Hamcrest",
             "Java Hamcrest",
             "http://hamcrest.org/JavaHamcrest/",
