@@ -4436,6 +4436,11 @@ public class QueryController extends SpringActionController
 
         protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors) throws Exception
         {
+            return executeJson(json, commandType, allowTransaction, errors, null);
+        }
+
+        protected JSONObject executeJson(JSONObject json, CommandType commandType, boolean allowTransaction, Errors errors, @Nullable TransactionAuditProvider.TransactionAuditEvent tAuditEvent) throws Exception
+        {
             JSONObject response = new JSONObject();
             Container container = getContainerForCommand(json);
             User user = getUser();
@@ -4550,6 +4555,8 @@ public class QueryController extends SpringActionController
                 {
                     if (transaction.getAuditEvent() != null)
                         auditEvent = transaction.getAuditEvent();
+                    else if (tAuditEvent != null)
+                        auditEvent = tAuditEvent;
                     else
                     {
                         auditEvent = AbstractQueryUpdateService.createTransactionAuditEvent(container, commandType.getAuditAction());
@@ -4976,7 +4983,7 @@ public class QueryController extends SpringActionController
                     }
                     commandObject.put("extraContext", commandExtraContext);
 
-                    JSONObject commandResponse = executeJson(commandObject, command, transacted, errors);
+                    JSONObject commandResponse = executeJson(commandObject, command, !transacted, errors, transaction.getAuditEvent());
                     // Bail out immediately if we're going to return a failure-type response message
                     if (commandResponse == null || (errors.hasErrors() && !isSuccessOnValidationError()))
                         return null;
