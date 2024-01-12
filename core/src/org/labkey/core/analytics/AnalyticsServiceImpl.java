@@ -205,7 +205,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
     private static final String GA4_TRACKING_SCRIPT_TEMPLATE =
             """
                     <!-- Global site tag (gtag.js) - Google Analytics -->
-                    <script async src="${GA4_JS:htmlEncode}"></script>
+                    <script async src="${GA4_JS:htmlEncode}" nonce="${SCRIPT_NONCE:htmlEncode}"></script>
                     <script nonce="${SCRIPT_NONCE:htmlEncode}">
                       window.dataLayer = window.dataLayer || [];
                       function gtag(){dataLayer.push(arguments);}
