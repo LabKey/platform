@@ -219,11 +219,47 @@ public class RReport extends ExternalScriptEngineReport
         return DEFAULT_APP_PATH;
     }
 
+
     public static String toR(String s)
     {
-        String r = PageFlowUtil.jsString(s);
-        return "\"" + StringUtils.strip(r, "'") + "\"";
+        if (s == null)
+            return "\"\"";
+
+        StringBuilder r = new StringBuilder(s.length() + 10);
+        r.append("\"");
+        int len = s.length();
+        for (int i = 0 ; i<len ; i++)
+        {
+            char c = s.charAt(i);
+            switch (c)
+            {
+                case '\\':
+                    r.append("\\\\");
+                    break;
+                case '\n':
+                    r.append("\\n");
+                    break;
+                case '\r':
+                    r.append("\\r");
+                    break;
+                case '\'':
+                    r.append("\\'");
+                    break;
+                case '\"':
+                    r.append("\\\"");
+                    break;
+                case '\t':
+                    r.append("\\t");
+                    break;
+                default:
+                    r.append(c);
+                    break;
+            }
+        }
+        r.append("\"");
+        return r.toString();
     }
+
 
     // static for access by RserveScriptEngine with no backing report
     public static void appendParamList(StringBuilder labkey, Map<String, Object> inputParameters)

@@ -432,6 +432,9 @@ public class PageFlowUtil
                 case '\\':
                     js.append("\\\\");
                     break;
+                case '/':
+                    js.append("\\/");
+                    break;
                 case '\n':
                     js.append("\\n");
                     break;
