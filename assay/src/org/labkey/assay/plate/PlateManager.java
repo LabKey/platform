@@ -85,9 +85,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -1770,6 +1772,46 @@ public class PlateManager implements PlateService
         }
 
         return plateSet;
+    }
+
+    public void archivePlateSets(Container container, User user, List<Integer> plateSetIds, boolean archive) throws Exception
+    {
+        String action = archive ? "archive" : "restore";
+        Class<? extends Permission> perm = archive ? DeletePermission.class : UpdatePermission.class;
+
+        if (!container.hasPermission(user, perm))
+            throw new UnauthorizedException("Failed to " + action + " plate sets. Insufficient permissions.");
+
+        if (plateSetIds.isEmpty())
+            throw new ValidationException("Failed to " + action + " plate sets. No plate sets specified.");
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            TableInfo plateSetTable = AssayDbSchema.getInstance().getTableInfoPlateSet();
+
+            // Ensure user has permission in all containers
+            {
+                SQLFragment sql = new SQLFragment("SELECT DISTINCT container FROM ")
+                        .append(plateSetTable, "PS")
+                        .append(" WHERE rowId ")
+                        .appendInClause(plateSetIds, plateSetTable.getSqlDialect());
+
+                for (String containerId : new SqlSelector(plateSetTable.getSchema(), sql).getCollection(String.class))
+                {
+                    Container c = ContainerManager.getForId(containerId);
+                    if (c != null && !c.hasPermission(user, perm))
+                        throw new UnauthorizedException("Failed to " + action + " plate sets. Insufficient permissions in " + c.getPath());
+                }
+            }
+
+            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "PS")
+                    .append(" SET archived = ?").add(archive)
+                    .append(" WHERE rowId ").appendInClause(plateSetIds, plateSetTable.getSqlDialect());
+
+            new SqlExecutor(plateSetTable.getSchema()).execute(sql);
+
+            tx.commit();
+        }
     }
 
     public static final class TestCase

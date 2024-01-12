@@ -926,4 +926,59 @@ public class PlateController extends SpringActionController
             return null;
         }
     }
+
+    public static class ArchiveForm
+    {
+        private List<Integer> _plateSetIds;
+        private boolean _restore;
+
+        public List<Integer> getPlateSetIds()
+        {
+            return _plateSetIds;
+        }
+
+        public void setPlateSetIds(List<Integer> plateSetIds)
+        {
+            _plateSetIds = plateSetIds;
+        }
+
+        public boolean isRestore()
+        {
+            return _restore;
+        }
+
+        public void setRestore(boolean restore)
+        {
+            _restore = restore;
+        }
+    }
+
+    @Marshal(Marshaller.JSONObject)
+    @RequiresPermission(DeletePermission.class)
+    public static class ArchivePlateSetsAction extends MutatingApiAction<ArchiveForm>
+    {
+        @Override
+        public void validateForm(ArchiveForm form, Errors errors)
+        {
+            if (form.getPlateSetIds() == null)
+                errors.reject(ERROR_GENERIC, "\"plateSetIds\" is a required field.");
+        }
+
+        @Override
+        public Object execute(ArchiveForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateManager.get().archivePlateSets(getContainer(), getUser(), form.getPlateSetIds(), !form.isRestore());
+                return success();
+            }
+            catch (Exception e)
+            {
+                String action = form.isRestore() ? "restore" : "archive";
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to " + action + " plate sets. An error has occurred.");
+            }
+
+            return null;
+        }
+    }
 }
