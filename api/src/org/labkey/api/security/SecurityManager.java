@@ -2958,7 +2958,7 @@ public class SecurityManager
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
-                errors.addError(mailErrorHtml.length() != 0 ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
+                errors.addError(!mailErrorHtml.isEmpty() ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }

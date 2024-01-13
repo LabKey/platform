@@ -4115,7 +4115,7 @@ public class AdminController extends SpringActionController
                     contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
                         .append("Checking Container Column References...");
                     HtmlString strTemp = DbSchema.checkAllContainerCols(getUser(), false);
-                    if (strTemp.length() > 0)
+                    if (!strTemp.isEmpty())
                     {
                         contentBuilder.append(strTemp);
                         currentUrl = getViewContext().cloneActionURL();
@@ -4130,7 +4130,7 @@ public class AdminController extends SpringActionController
                     contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
                         .append("Checking PropertyDescriptor and DomainDescriptor consistency...");
                     strTemp = OntologyManager.doProjectColumnCheck(false);
-                    if (strTemp.length() > 0)
+                    if (!strTemp.isEmpty())
                     {
                         contentBuilder.append(strTemp);
                         currentUrl = getViewContext().cloneActionURL();

@@ -73,7 +73,7 @@ public class MVDisplayColumn extends DataColumn
 
             // If we have a raw value, include it in the popup
             HtmlString value = super.getFormattedHtml(ctx);
-            if (value.length() != 0)
+            if (!value.isEmpty())
                 popupText.append(HtmlString.unsafe("<p>The value as originally entered was: '"))
                     .append(value)
                     .append(HtmlString.unsafe("'.</p>"));

@@ -16,7 +16,6 @@
 
 package org.labkey.api.jsp;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -71,9 +70,8 @@ import static org.labkey.api.util.HtmlString.EMPTY_STRING;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
- * Base class for nearly all JSP pages that we use.
- * This is the place to put methods that will be useful to lots
- * of pages, regardless of what they do, or what module they are in.
+ * Base class for nearly all JSP pages that we use. This is the place to put methods that will be useful to lots of
+ * pages, regardless of what they do, or what module they are in.
  * <p/>
  * BE VERY CAREFUL NOT TO ADD POORLY NAMED METHODS TO THIS CLASS!!!!
  * <p/>
@@ -120,7 +118,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     // Encoded version of the context path
     public HtmlString getContextPath()
     {
-        return HtmlString.of(_viewContext.getContextPath());
+        return h(_viewContext.getContextPath());
     }
 
     /**
@@ -132,7 +130,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public HtmlString getWebappURL(String path)
     {
-        return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
+        return h(PageFlowUtil.staticResourceUrl(path));
     }
 
     /**
@@ -195,7 +193,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Html escape a string.
      * The name comes from Embedded Ruby.
      */
-    public HtmlString h(String str)
+    public static HtmlString h(String str)
     {
         return HtmlString.of(str);
     }
@@ -204,32 +202,32 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * Html escape an object.toString().
      * The name comes from Embedded Ruby.
      */
-    public HtmlString h(Object o)
+    public static HtmlString h(Object o)
     {
-        return HtmlString.of(o == null ? null : o.toString());
+        return h(o == null ? null : o.toString());
     }
 
     /**
      * Html escape a string.
      * The name comes from Embedded Ruby.
      */
-    public HtmlString h(String str, boolean encodeSpace)
+    public static HtmlString h(String str, boolean encodeSpace)
     {
         return HtmlString.of(str, encodeSpace);
     }
 
-    public HtmlString h(URLHelper url)
+    public static HtmlString h(URLHelper url)
     {
-        return HtmlString.of(url == null ? null : url.toString());
+        return h(url == null ? null : url.toString());
     }
 
     // Note: If you have a stream, use LabKeyCollectors.toJsonArray()
-    public JSONArray toJsonArray(Collection<?> c)
+    public static JSONArray toJsonArray(Collection<?> c)
     {
         return new JSONArray(c);
     }
 
-    public JSONObject toJsonObject(Map<?, ?> c)
+    public static JSONObject toJsonObject(Map<?, ?> c)
     {
         return new JSONObject(c);
     }
@@ -239,7 +237,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * @param indentFactor Number of spaces to add to each level of indentation
      * @return JavaScriptFragment holding the JSON representation
      */
-    public JavaScriptFragment json(JSONArray array, int indentFactor)
+    public static JavaScriptFragment json(JSONArray array, int indentFactor)
     {
         return JavaScriptFragment.unsafe(array.toString(indentFactor));
     }
@@ -249,7 +247,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * @param indentFactor Number of spaces to add to each level of indentation
      * @return JavaScriptFragment holding the JSON representation
      */
-    public JavaScriptFragment json(JSONObject jsonObject, int indentFactor)
+    public static JavaScriptFragment json(JSONObject jsonObject, int indentFactor)
     {
         return JavaScriptFragment.unsafe(jsonObject.toString(indentFactor));
     }
@@ -333,7 +331,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
 
-    private static final HtmlString CHECKED = HtmlString.of(" checked");
+    private static final HtmlString CHECKED = h(" checked");
 
     /** Returns " checked" (if true) or "" (false) */
     public HtmlString checked(boolean checked)
@@ -667,22 +665,16 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return l;
     }
 
-    public String formatErrorsForPathStr(String path)
+    public @NotNull HtmlString formatErrorsForPath(String path)
     {
         List<ObjectError> l = getErrorsForPath(path);
         return _formatErrorList(l, false);
     }
 
-    public HtmlString formatErrorsForPath(String path)
-    {
-        return HtmlString.unsafe(formatErrorsForPathStr(path));
-    }
-
-    //Set<String> _returnedErrors = new HashSet<String>();
-    IdentityHashMap<ObjectError, String> _returnedErrors = new IdentityHashMap<>();
+    private final IdentityHashMap<ObjectError, String> _returnedErrors = new IdentityHashMap<>();
 
     // For extra credit, return list of errors not returned by formatErrorsForPath() or formatErrorForPath()
-    public List<ObjectError> getMissedErrors(String bean)
+    public @NotNull List<ObjectError> getMissedErrors(String bean)
     {
         Errors errors = getErrors(bean);
         ArrayList<ObjectError> missed = new ArrayList<>();
@@ -701,60 +693,51 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return missed;
     }
 
-    protected String formatMissedErrorsStr(String bean)
+    protected @NotNull HtmlString formatMissedErrors(String bean)
     {
         List<ObjectError> l = getMissedErrors(bean);
         // fieldNames==true is ugly, but these errors are probably not displayed in the right place on the form
         return _formatErrorList(l, true);
     }
 
-    protected HtmlString formatMissedErrors(String bean)
-    {
-        return HtmlString.unsafe(formatMissedErrorsStr(bean));
-    }
-
-    protected HtmlString formatMissedErrors(String bean, String prefix, String suffix)
-    {
-        String str = formatMissedErrorsStr(bean);
-        if (StringUtils.isEmpty(str))
-            return HtmlString.of(str);
-        else
-            return HtmlString.unsafe(prefix + str + suffix);
-    }
-
     // If errors exist, returns formatted errors in a <tr> with the specified colspan (or no colspan, for 0 or 1) followed by a blank line
-    // If no errors, returns an empty string
-    protected HtmlString formatMissedErrorsInTable(String bean, int colspan)
+    // If no errors, returns an empty HtmlString
+    protected @NotNull HtmlString formatMissedErrorsInTable(String bean, int colspan)
     {
-        String errorHTML = formatMissedErrorsStr(bean);
+        HtmlString errorHTML = formatMissedErrors(bean);
 
-        if (StringUtils.isEmpty(errorHTML))
-            return HtmlString.of(errorHTML);
+        if (errorHTML.isEmpty())
+            return errorHTML;
         else
-            return HtmlString.unsafe("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
+            return HtmlStringBuilder.of(HtmlString.unsafe("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">"))
+                .append(errorHTML)
+                .append(HtmlString.unsafe("</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>"))
+                .getHtmlString();
     }
 
-    // TODO: Should return HtmlString!
-    protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
+    private @NotNull HtmlString _formatErrorList(List<ObjectError> l, boolean fieldNames)
     {
-        if (l.size() == 0)
-            return "";
+        if (l.isEmpty())
+            return EMPTY_STRING;
+
         ViewContext context = getViewContext();
-        StringBuilder message = new StringBuilder();
-        String br = "";
-        message.append("<div class=\"labkey-error\">");
+        HtmlStringBuilder message = HtmlStringBuilder.of(HtmlString.unsafe("<div class=\"labkey-error\">"));
+        HtmlString br = EMPTY_STRING;
         for (ObjectError e : l)
         {
             message.append(br);
-            br = "<br>";
+            br = HtmlString.BR;
             if (fieldNames && e instanceof FieldError)
             {
-                message.append("<b>").append(h(((FieldError) e).getField())).append(":</b>&nbsp;");
+                message.append(HtmlString.unsafe("<b>"))
+                    .append(((FieldError) e).getField())
+                    .append(HtmlString.unsafe(":</b>&nbsp;"));
             }
-            message.append(h(context.getMessage(e)));
+            message.append(context.getMessage(e));
         }
-        message.append("</div>");
-        return message.toString();
+        message.append(HtmlString.unsafe("</div>"));
+
+        return message.getHtmlString();
     }
 
     protected enum Method

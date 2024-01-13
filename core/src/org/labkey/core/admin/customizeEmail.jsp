@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.collections.LabKeyCollectors" %>
@@ -23,6 +22,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate" %>
 <%@ page import="org.labkey.api.util.emailTemplate.EmailTemplate.ContentType" %>
@@ -66,12 +66,12 @@
     Container c = getContainer();
 
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
-    String errorHTML = formatMissedErrorsStr("form");
+    HtmlString errorHTML = formatMissedErrors("form");
 
     boolean showRootLookAndFeelLink = ContainerManager.getRoot().hasPermission(getUser(), AdminPermission.class);
     boolean showProjectSettingsLink = c.getProject() != null && c.getProject().hasPermission(getUser(), AdminPermission.class);
 %>
-<%=text(errorHTML)%>
+<%=errorHTML%>
 
 <labkey:form action="<%=urlFor(CustomizeEmailAction.class)%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
@@ -216,9 +216,9 @@
         for (const id of ['standardReplacements', 'customReplacements'])
         {
             var table = Ext4.get(id).dom;
-            if (table != undefined) {
+            if (table !== undefined) {
                 // delete all rows first
-                var count = table.rows.length;
+                const count = table.rows.length;
                 for (var i = 0; i < count; i++) {
                     table.deleteRow(0);
                 }
@@ -231,12 +231,12 @@
         // delete all rows first
         clearValidSubstitutions();
 
-        if (record == undefined || record.standardReplacements == undefined)
+        if (record === undefined || record.standardReplacements === undefined)
         {
             var selection = Ext4.get('templateClass').dom;
             for (var i=0; i < this.emailTemplates.length; i++)
             {
-                if (this.emailTemplates[i].name == selection.value)
+                if (this.emailTemplates[i].name === selection.value)
                 {
                     record = this.emailTemplates[i];
                     break;
@@ -279,7 +279,7 @@
             if (replacements !== undefined) {
                 for (var i = 0; i < replacements.length; i++) {
                     row = table.insertRow(table.rows.length);
-                    row.className = i % 2 == 0 ? "labkey-alternate-row" : "labkey-row";
+                    row.className = i % 2 === 0 ? "labkey-alternate-row" : "labkey-row";
 
                     cell = row.insertCell(0);
                     cell.innerHTML = "<b>" + replacements[i].paramName + "</b>";
@@ -295,13 +295,13 @@
 
                     cell = row.insertCell(4);
                     var paramValue = replacements[i].paramValue;
-                    cell.innerHTML = paramValue != '' ? paramValue : "<em>not available in designer</em>";
+                    cell.innerHTML = paramValue !== '' ? paramValue : "<em>not available in designer</em>";
                 }
             }
         }
     }
 <%
-    if (StringUtils.isEmpty(errorHTML)) { %>
+    if (errorHTML.isEmpty()) { %>
     Ext4.onReady(function()
     {
         if (LABKEY.ActionURL.getParameter('templateClass'))
