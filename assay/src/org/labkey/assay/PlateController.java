@@ -35,6 +35,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
@@ -65,7 +66,6 @@ import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateUrls;
-import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -545,7 +545,7 @@ public class PlateController extends SpringActionController
     public static class CreatePlateForm implements ApiJsonForm
     {
         private String _name;
-        private PlateType _plateType;
+        private Integer _plateType;
         private List<Map<String, Object>> _data = new ArrayList<>();
 
         public String getName()
@@ -553,7 +553,7 @@ public class PlateController extends SpringActionController
             return _name;
         }
 
-        public PlateType getPlateType()
+        public Integer getPlateType()
         {
             return _plateType;
         }
@@ -572,7 +572,7 @@ public class PlateController extends SpringActionController
                 _name = json.getString("name");
 
             if (json.has("plateType"))
-                _plateType = objectMapper.convertValue(json.getJSONObject("plateType"), PlateType.class);
+                _plateType = json.getInt("plateType");
 
             if (json.has("data"))
             {
@@ -596,6 +596,8 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
     {
+        private PlateType _plateType;
+
         @Override
         public void validateForm(CreatePlateForm form, Errors errors)
         {
@@ -603,6 +605,10 @@ public class PlateController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Plate \"name\" is required.");
             if (form.getPlateType() == null)
                 errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
+
+            _plateType = PlateManager.get().getPlateType(form.getPlateType());
+            if (_plateType == null)
+                errors.reject(ERROR_REQUIRED, "Plate type id \"" + form.getPlateType() + "\" is invalid.");
         }
 
         @Override
@@ -610,7 +616,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName(), form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), null, form.getData());
                 return success(plate);
             }
             catch (Exception e)

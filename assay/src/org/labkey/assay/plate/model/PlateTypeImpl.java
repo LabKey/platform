@@ -1,27 +1,39 @@
 package org.labkey.assay.plate.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.labkey.api.assay.plate.PlateType;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PlateType
+public class PlateTypeImpl implements PlateType
 {
+    private Integer _rowId;
     private String _assayType;
     private Integer _cols;
     private String _description;
     private Integer _rows;
     private String _type;
 
-    public PlateType()
+    public PlateTypeImpl()
     {
     }
 
-    public PlateType(String assayType, String type, String description, Integer rows, Integer cols)
+    public PlateTypeImpl(String assayType, String type, String description, Integer rows, Integer cols)
     {
         _assayType = assayType;
         _type = type;
         _description = description;
         _cols = cols;
         _rows = rows;
+    }
+
+    public Integer getRowId()
+    {
+        return _rowId;
+    }
+
+    public void setRowId(Integer rowId)
+    {
+        _rowId = rowId;
     }
 
     public String getAssayType()
@@ -37,6 +49,17 @@ public class PlateType
     public Integer getCols()
     {
         return _cols;
+    }
+
+    @Override
+    public Integer getColumns()
+    {
+        return _cols;
+    }
+
+    public void setColumns(Integer cols)
+    {
+        _cols = cols;
     }
 
     public void setCols(Integer cols)

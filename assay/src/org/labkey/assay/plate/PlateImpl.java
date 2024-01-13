@@ -24,6 +24,7 @@ import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
@@ -60,6 +61,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private String _type;
     private boolean _isTemplate;
     private Integer _plateSetId;
+    private Integer _plateTypeId;
 
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private List<WellGroupImpl> _deletedGroups;
@@ -541,6 +543,23 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public Integer getPlateSet()
     {
         return _plateSetId;
+    }
+
+    public Integer getPlateTypeId()
+    {
+        return _plateTypeId;
+    }
+
+    public void setPlateTypeId(Integer plateTypeId)
+    {
+        _plateTypeId = plateTypeId;
+    }
+
+    @Override
+    @JsonIgnore
+    public @Nullable PlateType getPlateType()
+    {
+        return PlateManager.get().getPlateType(_plateTypeId);
     }
 
     @Override

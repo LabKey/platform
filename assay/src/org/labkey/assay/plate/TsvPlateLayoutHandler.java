@@ -1,19 +1,20 @@
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
+import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.Pair;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
+public class TsvPlateLayoutHandler extends AbstractPlateLayoutHandler
 {
     public static final String BLANK_PLATE = "blank";
     public static final String TYPE = "Standard";
@@ -25,7 +26,8 @@ public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
     }
 
     @Override
-    public List<String> getTemplateTypes(Pair<Integer, Integer> size)
+    @NotNull
+    public List<String> getLayoutTypes(PlateType plateType)
     {
         return Collections.singletonList(BLANK_PLATE);
     }
@@ -42,17 +44,14 @@ public class TsvPlateTypeHandler extends AbstractPlateTypeHandler
     }
 
     @Override
-    public List<Pair<Integer, Integer>> getSupportedPlateSizes()
+    protected List<Pair<Integer, Integer>> getSupportedPlateSizes()
     {
-        List<Pair<Integer, Integer>> sizes = new ArrayList<>();
-        sizes.add(new Pair<>(3, 4));
-        sizes.add(new Pair<>(4, 6));
-        sizes.add(new Pair<>(6, 8));
-        sizes.add(new Pair<>(8, 12));
-        sizes.add(new Pair<>(16, 24));
-        sizes.add(new Pair<>(32, 48));
-
-        return sizes;
+        return List.of(new Pair<>(3, 4),
+                new Pair<>(4, 6),
+                new Pair<>(6, 8),
+                new Pair<>(8, 12),
+                new Pair<>(16, 24),
+                new Pair<>(32, 48));
     }
 
     @Override

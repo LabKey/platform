@@ -37,6 +37,15 @@
           <fkDbSchema>assay</fkDbSchema>
         </fk>
       </column>
+      <column columnName="PlateTypeId">
+        <columnTitle>PlateType</columnTitle>
+        <description>The plate type of this plate.</description>
+        <fk>
+          <fkColumnName>RowId</fkColumnName>
+          <fkTable>PlateType</fkTable>
+          <fkDbSchema>assay</fkDbSchema>
+        </fk>
+      </column>
       <column columnName="CreatedBy">
         <datatype>int</datatype>
         <columnTitle>Created By</columnTitle>
@@ -184,6 +193,17 @@
       <column columnName="ModifiedBy"/>
       <column columnName="Modified"/>
       <column columnName="Archived"/>
+    </columns>
+  </table>
+  <table tableName="PlateType" tableDbType="TABLE">
+    <description>Contains one row per plate type.</description>
+    <columns>
+      <column columnName="RowId">
+        <isHidden>true</isHidden>
+      </column>
+      <column columnName="Rows"/>
+      <column columnName="Columns"/>
+      <column columnName="Description"/>
     </columns>
   </table>
 </tables>

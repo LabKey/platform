@@ -18,17 +18,22 @@ package org.labkey.api.assay.plate;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * User: klum
  * Date: Jun 13, 2012
  */
-public abstract class AbstractPlateTypeHandler implements PlateTypeHandler
+public abstract class AbstractPlateLayoutHandler implements PlateLayoutHandler
 {
+    Map<Pair<Integer, Integer>, PlateType> _plateTypeMap;
+
     @Override
     public void validateTemplate(Container container, User user, Plate template) throws ValidationException
     {
@@ -38,6 +43,22 @@ public abstract class AbstractPlateTypeHandler implements PlateTypeHandler
     public Map<String, List<String>> getDefaultGroupsForTypes()
     {
         return Collections.emptyMap();
+    }
+
+    abstract protected List<Pair<Integer, Integer>> getSupportedPlateSizes();
+
+    @Override
+    public List<PlateType> getSupportedPlateTypes()
+    {
+        if (_plateTypeMap == null)
+        {
+            _plateTypeMap = new HashMap<>();
+            for (PlateType type : PlateService.get().getPlateTypes())
+            {
+                _plateTypeMap.put(new Pair<>(type.getRows(), type.getColumns()), type);
+            }
+        }
+        return getSupportedPlateSizes().stream().filter(size -> _plateTypeMap.containsKey(size)).map(size -> _plateTypeMap.get(size)).collect(Collectors.toList());
     }
 
     @Override

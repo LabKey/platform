@@ -91,6 +91,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
         defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("Template"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateTypeId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Rows"));
         defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
         defaultVisibleColumns.add(FieldKey.fromParts("Type"));

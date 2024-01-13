@@ -165,6 +165,13 @@ public interface PlateService
     @Nullable PlateSet getPlateSet(Container container, int plateSetId);
 
     /**
+     * Returns the list of available plate types.
+     * @return
+     */
+    @NotNull List<? extends PlateType> getPlateTypes();
+
+
+    /**
      * Returns the number of assay runs that are linked to the specified plate. Currently, this only works
      * for the standard assay with plate support since other assays types do not store the plate ID with the
      * run.
@@ -235,7 +242,7 @@ public interface PlateService
     /**
      * Registers a handler for a particular type of plate
      */
-    void registerPlateTypeHandler(PlateTypeHandler handler);
+    void registerPlateLayoutHandler(PlateLayoutHandler handler);
 
     /**
      * Calculates a dilution curve for the specified well groups.

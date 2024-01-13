@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.search.SearchService;
@@ -15,7 +16,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.assay.plate.model.PlateType;
 
 import java.util.Collection;
 import java.util.Date;
@@ -73,7 +73,7 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
 
         StringBuilder body = new StringBuilder();
 
-        PlateType plateType = PlateManager.get().getPlateType(plate);
+        PlateType plateType = plate.getPlateType();
         if (plateType != null)
             append(body, plateType.getDescription());
 

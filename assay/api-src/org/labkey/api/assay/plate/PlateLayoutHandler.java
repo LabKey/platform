@@ -16,25 +16,25 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.sql.SQLException;
 import java.util.Map;
 
 /**
- * User: jeckels
- * Date: Apr 23, 2007
+ * Represents a handler that can create assay specific plate layouts
  */
-public interface PlateTypeHandler
+public interface PlateLayoutHandler
 {
+    @NotNull
     String getAssayType();
 
-    List<String> getTemplateTypes(Pair<Integer, Integer> size);
+    @NotNull List<String> getLayoutTypes(PlateType plateType);
 
     /**
      * createTemplate will be given a null value for templateTypeName when it is creating a new template which is a
@@ -42,7 +42,7 @@ public interface PlateTypeHandler
      */
     Plate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount) throws SQLException;
 
-    List<Pair<Integer, Integer>> getSupportedPlateSizes();
+    List<PlateType> getSupportedPlateTypes();
 
     List<WellGroup.Type> getWellGroupTypes();
 

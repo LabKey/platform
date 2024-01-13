@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTypeHandler;
+import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -60,7 +60,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         try
         {
             Plate template;
-            PlateTypeHandler handler;
+            PlateLayoutHandler handler;
 
             if (templateName != null)
             {
@@ -69,14 +69,14 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (template == null)
                     throw new Exception("Plate " + templateName + " does not exist.");
 
-                handler = PlateManager.get().getPlateTypeHandler(template.getType());
+                handler = PlateManager.get().getPlateLayoutHandler(template.getType());
                 if (handler == null)
                     throw new Exception("Plate template type " + template.getType() + " does not exist.");
             }
             else
             {
                 // new default template
-                handler = PlateManager.get().getPlateTypeHandler(assayTypeName);
+                handler = PlateManager.get().getPlateLayoutHandler(assayTypeName);
                 if (handler == null)
                     throw new Exception("Plate template type " + assayTypeName + " does not exist.");
 
@@ -133,7 +133,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
                 WellGroup.Type.REPLICATE, WellGroup.Type.OTHER);
 
-        PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(template.getType());
+        PlateLayoutHandler handler = PlateManager.get().getPlateLayoutHandler(template.getType());
         if (handler != null)
             wellTypes = handler.getWellGroupTypes();
 
@@ -229,7 +229,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 group.setProperties(gwtGroup.getProperties());
             }
 
-            PlateManager.get().getPlateTypeHandler(template.getType()).validateTemplate(getContainer(), getUser(), template);
+            PlateManager.get().getPlateLayoutHandler(template.getType()).validateTemplate(getContainer(), getUser(), template);
             return PlateService.get().save(getContainer(), getUser(), template);
         }
         catch (BatchValidationException | ValidationException e)
