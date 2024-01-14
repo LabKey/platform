@@ -52,13 +52,13 @@ if (null == ss)
 else
 {
     HtmlString indexPathHelp = HtmlStringBuilder.of("The index path setting supports string substitution of specific server properties. For example, the value:")
-        .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;./temp/${serverGuid}/labkey_full_text_index</code><br><br>"))
+        .unsafeAppend("<br><br><code>&nbsp;&nbsp;./temp/${serverGuid}/labkey_full_text_index</code><br><br>")
         .append("will currently result in this path:")
-        .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;"))
+        .unsafeAppend("<br><br><code>&nbsp;&nbsp;")
         .append("./temp/" + AdminBean.serverGuid + "/labkey_full_text_index")
-        .append(HtmlString.unsafe("</code><br><br>"))
+        .unsafeAppend("</code><br><br>")
         .append("The supported properties and their current values are listed in the table below. Note that illegal file system characters within the values are replaced with underscores.")
-        .append(HtmlString.unsafe("<br><br>"))
+        .unsafeAppend("<br><br>")
         .append(AdminBean.getPropertyGridHtml(LuceneSearchServiceImpl.getEscapedSystemPropertyMap()))
         .getHtmlString();
 

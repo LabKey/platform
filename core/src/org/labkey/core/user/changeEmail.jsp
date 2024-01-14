@@ -17,6 +17,7 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.security.permissions.UpdateUserPermission"%>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -24,15 +25,12 @@
 <%@ page import="org.labkey.core.user.UserController.ChangeEmailAction" %>
 <%@ page import="org.labkey.core.user.UserController.DetailsAction" %>
 <%@ page import="org.labkey.core.user.UserController.UserForm" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.DOM" %>
-<%@ page import="org.labkey.api.util.HtmlStringBuilder" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    String errors = formatMissedErrorsStr("form");
-    if (errors.length() > 0)
+    HtmlString errors = formatMissedErrors("form");
+    if (!errors.isEmpty())
     {
-        %><%=text(errors)%><%
+        %><%=errors%><%
         return;
     }
 

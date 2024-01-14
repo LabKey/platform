@@ -26,16 +26,18 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Objects" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     void errorRow(JspWriter out, String path) throws IOException
     {
-        String err = formatErrorsForPathStr(path);
-        if (null != err && err.length() > 0)
+        HtmlString err = formatErrorsForPath(path);
+        if (!err.isEmpty())
         {
             out.print(unsafe("<tr><td colspan=2>"));
-            out.print(unsafe(err)); // TODO: Switch once formatErrorsForPathStr() returns HtmlString
+            out.print(err);
             out.println(unsafe("</td></tr>"));
         }
     }
@@ -47,7 +49,7 @@
 %>
 <%
     TestController.ComplexForm form = (TestController.ComplexForm) getModelBean();
-    String enctype = StringUtils.defaultString((String) request.getAttribute("enctype"), "application/x-www-form-urlencoded");
+    String enctype = Objects.toString(request.getAttribute("enctype"), "application/x-www-form-urlencoded");
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 

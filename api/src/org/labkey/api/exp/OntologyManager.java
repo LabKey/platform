@@ -3748,7 +3748,7 @@ public class OntologyManager
                 {
                     fixProjectColumn(descriptorTable, uriColumn, idColumn, container, projectId, newProjectId);
                     msgBuilder
-                        .append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
+                        .unsafeAppend("<br/>&nbsp;&nbsp;&nbsp;")
                         .append("Fixed inconsistent project ids found for ")
                         .append(descriptorTable).append(" in folder ")
                         .append(ContainerManager.getForId(containerId).getPath());
@@ -3756,7 +3756,7 @@ public class OntologyManager
                 }
                 else
                     msgBuilder
-                        .append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
+                        .unsafeAppend("<br/>&nbsp;&nbsp;&nbsp;")
                         .append("ERROR: Inconsistent project ids found for ")
                         .append(descriptorTable).append(" in folder ").append(container.getPath());
             }

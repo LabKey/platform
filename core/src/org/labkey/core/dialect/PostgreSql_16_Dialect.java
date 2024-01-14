@@ -12,6 +12,7 @@ public class PostgreSql_16_Dialect extends PostgreSql_15_Dialect
     {
         Set<String> words = super.getReservedWords();
         words.add("system_user");
+        words.remove("string");
 
         return words;
     }
