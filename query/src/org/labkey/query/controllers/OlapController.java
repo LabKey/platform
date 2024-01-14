@@ -19,7 +19,6 @@ import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import mondrian.olap.MondrianException;
 import mondrian.olap.MondrianServer;
-import mondrian.xmla.impl.MondrianXmlaServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -36,7 +36,6 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -87,8 +86,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
-import org.labkey.api.view.template.PageConfig;
 import org.labkey.query.olap.BitSetQueryImpl;
 import org.labkey.query.olap.CustomOlapSchemaDescriptor;
 import org.labkey.query.olap.MdxQueryImpl;
@@ -111,9 +108,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.ServletConfig;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -123,10 +118,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -925,7 +917,7 @@ public class OlapController extends SpringActionController
     }
 
 
-
+/*
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class XmlaAction extends SimpleViewAction<OlapForm>
@@ -982,8 +974,7 @@ public class OlapController extends SpringActionController
             return null;
         }
     }
-
-
+*/
 
 
     // for testing
@@ -1588,8 +1579,8 @@ public class OlapController extends SpringActionController
                 controller.new JsonQueryAction(),
                 controller.new CountDistinctQueryAction(),
                 controller.new TestBrowserAction(),
-                controller.new ExecuteMdxAction(),
-                controller.new XmlaAction()
+                controller.new ExecuteMdxAction()
+//                , controller.new XmlaAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
