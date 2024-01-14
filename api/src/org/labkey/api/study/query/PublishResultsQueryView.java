@@ -707,11 +707,11 @@ public class PublishResultsQueryView extends QueryView
                 }
             }
 
-            HtmlStringBuilder builder = HtmlStringBuilder.of();
-            builder.append(HtmlString.unsafe("<p>The Sample ID in this row does"));
+            HtmlStringBuilder builder = HtmlStringBuilder.of()
+                .unsafeAppend("<p>The Sample ID in this row does");
             if (!isSampleMatched)
-                builder.append(HtmlString.unsafe(" <strong>not</strong>"));
-            builder.append(HtmlString.unsafe(" match a sample in the study.</p>"));
+                builder.unsafeAppend(" <strong>not</strong>");
+            builder.unsafeAppend(" match a sample in the study.</p>");
 
             return new Pair<>(isSampleMatched, builder.getHtmlString());
         }

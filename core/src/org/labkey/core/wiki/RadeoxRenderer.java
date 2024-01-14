@@ -949,7 +949,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         private void test(String wiki, String html)
         {
             assertEquals(html, HtmlString.toString(_r.format(wiki).getHtml()));
-            assertEquals(HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX).append(HtmlString.unsafe(html)).append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(), _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
+            assertEquals(HtmlStringBuilder.of(WikiRenderingService.WIKI_PREFIX).unsafeAppend(html).append(WikiRenderingService.WIKI_SUFFIX).getHtmlString(), _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
 
         @Test

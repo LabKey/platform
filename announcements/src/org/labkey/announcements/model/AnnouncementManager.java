@@ -1063,7 +1063,7 @@ public class AnnouncementManager
         if (includeGroups)
         {
             HtmlString groupList = SecurityManager.getGroupList(container, UserManager.getUser(formattedUserId));
-            if (groupList.length() > 0)
+            if (!groupList.isEmpty())
             {
                 builder.append(" (").append(groupList).append(")");
             }

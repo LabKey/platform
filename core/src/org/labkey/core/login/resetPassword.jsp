@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
 <%@ page import="org.labkey.core.login.LoginController.ResetPasswordAction" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -35,12 +36,12 @@
 <%
     LoginForm form = ((JspView<LoginForm>)HttpView.currentView()).getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
-    String errors = formatMissedErrorsStr("form");
+    HtmlString errors = formatMissedErrors("form");
 %>
 <labkey:form method="POST" action="<%=urlFor(ResetPasswordAction.class)%>" className="auth-form">
     <div class="auth-header">Reset Password</div>
-    <% if (errors.length() > 0) { %>
-        <%=unsafe(errors)%>
+    <% if (!errors.isEmpty()) { %>
+        <%=errors%>
     <% } %>
     <div class="auth-form-body">
         <p>To reset your password, type in your email address and click the Reset button.</p>

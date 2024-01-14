@@ -82,15 +82,15 @@
     {
         HtmlString shortNameHelp = HtmlStringBuilder.of("The header short name supports string substitution of server properties. " +
                 "Note that the substituted values will be visible to all users including guests (e.g., on the login page).")
-            .append(HtmlString.unsafe("<br><br>"))
+            .unsafeAppend("<br><br>")
             .append("As an example, a header short name set to:")
-            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion} built ${buildTime}</code><br><br>"))
+            .unsafeAppend("<br><br><code>&nbsp;&nbsp;LabKey ${releaseVersion} built ${buildTime}</code><br><br>")
             .append("will currently result in this header text:")
-            .append(HtmlString.unsafe("<br><br><code>&nbsp;&nbsp;"))
+            .unsafeAppend("<br><br><code>&nbsp;&nbsp;")
             .append("LabKey " + AdminBean.releaseVersion + " built " + AdminBean.buildTime)
-            .append(HtmlString.unsafe("</code><br><br>"))
+            .unsafeAppend("</code><br><br>")
             .append("The supported properties and their current values are listed in the table below.")
-            .append(HtmlString.unsafe("<br><br>"))
+            .unsafeAppend("<br><br>")
             .append(AdminBean.getPropertyGridHtml(AdminBean.getPropertyMap()))
             .getHtmlString();
 %>

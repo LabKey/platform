@@ -1432,8 +1432,8 @@ public class SecurityController extends SpringActionController
 
         public void addMessage(HtmlString message)
         {
-            if (_message.length() != 0)
-                _message.append(HtmlString.unsafe("<br/>"));
+            if (!_message.isEmpty())
+                _message.unsafeAppend("<br/>");
             _message.append(message);
         }
 
@@ -2019,11 +2019,11 @@ public class SecurityController extends SpringActionController
         public ModelAndView getFailView(EmailForm form, BindException errors)
         {
             HtmlStringBuilder builder = HtmlStringBuilder.of()
-                .append(HtmlString.unsafe("<p>"))
+                .unsafeAppend("<p>")
                 .append(form.getEmail() + ": Password " + (_loginExists ? "reset" : "created") + ".")
-                .append(HtmlString.unsafe("</p><p>"))
+                .unsafeAppend("</p><p>")
                 .append(getErrorMessage(errors))
-                .append(HtmlString.unsafe("</p>"))
+                .unsafeAppend("</p>")
                 .append(PageFlowUtil.button("Done").href(form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL())));
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -2051,7 +2051,7 @@ public class SecurityController extends SpringActionController
             ActionURL mailHref = new ActionURL(ShowResetEmailAction.class, getContainer()).addParameter("email", emailAddress);
 
             HtmlStringBuilder builder = HtmlStringBuilder.of()
-                .append(HtmlString.unsafe("<p>"))
+                .unsafeAppend("<p>")
                 .append("You can attempt to resend this mail later by going to the Site Users link, clicking on the appropriate user from the list, and resetting their password.");
             if (mailHref != null)
             {
@@ -2059,10 +2059,10 @@ public class SecurityController extends SpringActionController
                     .append(new Link.LinkBuilder("contents of the message").href(mailHref).target("_blank").clearClasses())
                     .append(" into an email client and send it to the user manually.");
             }
-            builder.append(HtmlString.unsafe("</p>\n<p>"))
+            builder.unsafeAppend("</p>\n<p>")
                 .append("For help on fixing your mail server settings, please consult the SMTP section of the ")
                 .append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"))
-                .append(HtmlString.unsafe(".</p>"));
+                .unsafeAppend(".</p>");
 
             return builder.getHtmlString();
         }
