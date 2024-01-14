@@ -4112,7 +4112,7 @@ public class AdminController extends SpringActionController
                 {
                     LOG.info("Starting database check"); // Debugging test timeout
                     LOG.info("Checking container column references"); // Debugging test timeout
-                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                    contentBuilder.unsafeAppend("\n<br/><br/>")
                         .append("Checking Container Column References...");
                     HtmlString strTemp = DbSchema.checkAllContainerCols(getUser(), false);
                     if (!strTemp.isEmpty())
@@ -4120,14 +4120,14 @@ public class AdminController extends SpringActionController
                         contentBuilder.append(strTemp);
                         currentUrl = getViewContext().cloneActionURL();
                         currentUrl.addParameter("_fix", "container");
-                        contentBuilder.append(HtmlString.unsafe("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;"))
+                        contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
                             .append(new LinkBuilder("here").href(currentUrl).clearClasses())
                             .append(" to attempt recovery.");
                     }
 
                     LOG.info("Checking PropertyDescriptor and DomainDescriptor consistency"); // Debugging test timeout
-                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                    contentBuilder.unsafeAppend("\n<br/><br/>")
                         .append("Checking PropertyDescriptor and DomainDescriptor consistency...");
                     strTemp = OntologyManager.doProjectColumnCheck(false);
                     if (!strTemp.isEmpty())
@@ -4135,16 +4135,16 @@ public class AdminController extends SpringActionController
                         contentBuilder.append(strTemp);
                         currentUrl = getViewContext().cloneActionURL();
                         currentUrl.addParameter("_fix", "descriptor");
-                        contentBuilder.append(HtmlString.unsafe("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;"))
+                        contentBuilder.unsafeAppend("<br/><br/>&nbsp;&nbsp;&nbsp;&nbsp;")
                             .append(" click ")
                             .append(new LinkBuilder("here").href(currentUrl).clearClasses())
                             .append(" to attempt recovery.");
                     }
 
                     LOG.info("Checking Schema consistency with tableXML"); // Debugging test timeout
-                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                    contentBuilder.unsafeAppend("\n<br/><br/>")
                         .append("Checking Schema consistency with tableXML.")
-                        .append(HtmlString.unsafe("<br><br>"));
+                        .unsafeAppend("<br><br>");
                     Set<DbSchema> schemas = DbSchema.getAllSchemasToTest();
 
                     for (DbSchema schema : schemas)
@@ -4153,29 +4153,29 @@ public class AdminController extends SpringActionController
                         List<SiteValidationResult> results = schemaResult.getResults(null);
                         if (results.isEmpty())
                         {
-                            contentBuilder.append(HtmlString.unsafe("<b>"))
+                            contentBuilder.unsafeAppend("<b>")
                                 .append(schema.getDisplayName())
                                 .append(": OK")
-                                .append(HtmlString.unsafe("</b><br>"));
+                                .unsafeAppend("</b><br>");
                         }
                         else
                         {
-                            contentBuilder.append(HtmlString.unsafe("<b>"))
+                            contentBuilder.unsafeAppend("<b>")
                                 .append(schema.getDisplayName())
-                                .append(HtmlString.unsafe("</b><br<ul style=\"list-style: none;\">"));
+                                .unsafeAppend("</b><br<ul style=\"list-style: none;\">");
                             for (var r : results)
                             {
                                 HtmlString item = isBlank(r.getMessage()) ? NBSP : HtmlString.of(r.getMessage());
-                                contentBuilder.append(HtmlString.unsafe("<li>"))
+                                contentBuilder.unsafeAppend("<li>")
                                     .append(item)
-                                    .append(HtmlString.unsafe("</li>\n"));
+                                    .unsafeAppend("</li>\n");
                             }
-                            contentBuilder.append(HtmlString.unsafe("</ul>"));
+                            contentBuilder.unsafeAppend("</ul>");
                         }
                     }
 
                     LOG.info("Checking consistency of provisioned storage"); // Debugging test timeout
-                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                    contentBuilder.unsafeAppend("\n<br/><br/>")
                         .append("Checking Consistency of Provisioned Storage...\n");
                     StorageProvisioner.ProvisioningReport pr = StorageProvisioner.get().getProvisioningReport();
                     contentBuilder.append(String.format("%d domains use Storage Provisioner", pr.getProvisionedDomains().size()));
@@ -4183,24 +4183,24 @@ public class AdminController extends SpringActionController
                     {
                         for (String error : dr.getErrors())
                         {
-                            contentBuilder.append(HtmlString.unsafe("<div class=\"warning\">"))
+                            contentBuilder.unsafeAppend("<div class=\"warning\">")
                                 .append(error)
-                                .append(HtmlString.unsafe("</div>"));
+                                .unsafeAppend("</div>");
                         }
                     }
                     for (String error : pr.getGlobalErrors())
                     {
-                        contentBuilder.append(HtmlString.unsafe("<div class=\"warning\">"))
+                        contentBuilder.unsafeAppend("<div class=\"warning\">")
                             .append(error)
-                            .append(HtmlString.unsafe("</div>"));
+                            .unsafeAppend("</div>");
                     }
 
                     LOG.info("Database check complete"); // Debugging test timeout
-                    contentBuilder.append(HtmlString.unsafe("\n<br/><br/>"))
+                    contentBuilder.unsafeAppend("\n<br/><br/>")
                         .append("Database Consistency checker complete");
                 }
 
-                contentBuilder.append(HtmlString.unsafe("</td></tr></table>"));
+                contentBuilder.unsafeAppend("</td></tr></table>");
 
                 return new HtmlView(contentBuilder);
             }
@@ -8489,7 +8489,7 @@ public class AdminController extends SpringActionController
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                 "module is no longer part of the deployed distribution, the module has been renamed, the server location where the module " +
                 "is stored is not accessible, or the module file is corrupted.")
-                .append(HtmlString.unsafe("<br><br>")).append("The delete links below will remove all record of a module from the database tables.");
+                .unsafeAppend("<br><br>").append("The delete links below will remove all record of a module from the database tables.");
             HtmlString noModulesDescription = HtmlString.of("A module is considered \"unknown\" if it was installed on this server " +
                     "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules.");
             HttpView unknown = new ModulesView(unknownModules, "Unknown", unknownDescription.getHtmlString(), noModulesDescription, Collections.emptySet(), filter);

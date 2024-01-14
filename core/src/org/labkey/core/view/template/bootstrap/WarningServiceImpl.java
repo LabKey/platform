@@ -161,16 +161,16 @@ public class WarningServiceImpl implements WarningService
     {
         HtmlStringBuilder html = HtmlStringBuilder.of(HtmlString.unsafe("<div class=\"alert alert-warning alert-dismissable\">\n<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>\n<div class=\"lk-dismissable-warn\">"));
         appendMessageContent(warnings, html);
-        html.append(HtmlString.unsafe("</div>\n"));
+        html.unsafeAppend("</div>\n");
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         if (coreUrls != null)
         {
             String dismissURL = coreUrls.getDismissWarningsActionURL(context).toString();
-            html.append(HtmlString.unsafe("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n"));
-            html.append(HtmlString.unsafe(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL))));
-            html.append(HtmlString.unsafe("</script>\n"));
+            html.unsafeAppend("<script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">\n");
+            html.unsafeAppend(String.format(DISMISSAL_SCRIPT_FORMAT, PageFlowUtil.jsString(dismissURL)));
+            html.unsafeAppend("</script>\n");
         }
-        html.append(HtmlString.unsafe("</div>"));
+        html.unsafeAppend("</div>");
 
         return html.getHtmlString();
     }

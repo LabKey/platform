@@ -858,19 +858,19 @@ public class DbSchema
         {
             new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
                 + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3").forEach(rs -> {
-                    sbOut.append(HtmlString.unsafe("<br/>&nbsp;&nbsp;&nbsp;"))
+                    sbOut.unsafeAppend("<br/>&nbsp;&nbsp;&nbsp;")
                         .append("ERROR:  ")
                         .append(rs.getString(1))
-                        .append(HtmlString.unsafe(" &nbsp;&nbsp;&nbsp;&nbsp; "))
+                        .unsafeAppend(" &nbsp;&nbsp;&nbsp;&nbsp; ")
                         .append(rs.getString(2))
                         .append("." )
                         .append(rs.getString(3))
                         .append(" = ")
                         .append(rs.getString(4))
-                        .append(HtmlString.unsafe("&nbsp;&nbsp;&nbsp;"))
+                        .unsafeAppend("&nbsp;&nbsp;&nbsp;")
                         .append("Module:  ")
                         .append(rs.getString(5))
-                        .append(HtmlString.unsafe("&nbsp;&nbsp;&nbsp;"))
+                        .unsafeAppend("&nbsp;&nbsp;&nbsp;")
                         .append("Container:  ")
                         .append(rs.getString(6))
                         .append("\n");

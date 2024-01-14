@@ -711,7 +711,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
         else
             return HtmlStringBuilder.of(HtmlString.unsafe("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">"))
                 .append(errorHTML)
-                .append(HtmlString.unsafe("</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>"))
+                .unsafeAppend("</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>")
                 .getHtmlString();
     }
 
@@ -729,13 +729,13 @@ public abstract class JspBase extends JspContext implements HasViewContext
             br = HtmlString.BR;
             if (fieldNames && e instanceof FieldError)
             {
-                message.append(HtmlString.unsafe("<b>"))
+                message.unsafeAppend("<b>")
                     .append(((FieldError) e).getField())
-                    .append(HtmlString.unsafe(":</b>&nbsp;"));
+                    .unsafeAppend(":</b>&nbsp;");
             }
             message.append(context.getMessage(e));
         }
-        message.append(HtmlString.unsafe("</div>"));
+        message.unsafeAppend("</div>");
 
         return message.getHtmlString();
     }
@@ -814,7 +814,10 @@ public abstract class JspBase extends JspContext implements HasViewContext
         if (canUpdate)
             return EMPTY_STRING;
         else
-            return HtmlStringBuilder.of(prefix).append(HtmlString.unsafe("<strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong><br>")).append(suffix).getHtmlString();
+            return HtmlStringBuilder.of(prefix)
+                .unsafeAppend("<strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong><br>")
+                .append(suffix)
+                .getHtmlString();
     }
 
     protected HtmlString getScriptNonce()

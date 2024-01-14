@@ -66,9 +66,10 @@ public class HtmlView extends WebPartView
 
     public static HtmlView err(String error) {
         return new HtmlView(
-                HtmlStringBuilder.of(HtmlString.unsafe("<span class='labkey-error'>"))
-                        .append(error)
-                        .append(HtmlString.unsafe("</span>")));
+            HtmlStringBuilder.of(HtmlString.unsafe("<span class='labkey-error'>"))
+                .append(error)
+                .unsafeAppend("</span>")
+        );
     }
 
     public static HtmlView unsafe(String html)
