@@ -16,7 +16,7 @@
  */
 %>
 <%@ page import="org.apache.commons.collections4.IteratorUtils" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.devtools.TestController" %>
 <%@ page import="org.springframework.validation.BindingResult" %>
 <%@ page import="org.springframework.validation.Errors" %>
@@ -26,23 +26,24 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Objects" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     void errorRow(JspWriter out, String path) throws IOException
     {
-        String err = formatErrorsForPathStr(path);
-        if (!StringUtils.isEmpty(err))
+        HtmlString err = formatErrorsForPath(path);
+        if (!err.isEmpty())
         {
             out.print(unsafe("<tr><td colspan=2>"));
-            out.print(unsafe(err));
+            out.print(err);
             out.println(unsafe("</td></tr>"));
         }
     }
 %>
 <%
     TestController.SimpleForm form = (TestController.SimpleForm) getModelBean();
-    String enctype = StringUtils.defaultString(form.encType, "application/x-www-form-urlencoded");
+    String enctype = Objects.toString(form.encType, "application/x-www-form-urlencoded");
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 <%=formatErrorsForPath("form")%>

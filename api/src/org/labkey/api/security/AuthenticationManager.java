@@ -1584,9 +1584,9 @@ public class AuthenticationManager
                 {
                     HtmlString message = HtmlString.of("Sign in using " + _configuration.getDescription());
                     return HtmlStringBuilder.of(HtmlString.unsafe("<img src=\"")).append(logoUrl)
-                        .append(HtmlString.unsafe("\" alt=\"")).append(message)
-                        .append(HtmlString.unsafe("\" title=\"")).append(message)
-                        .append(HtmlString.unsafe("\" height=\"")).append(logoType.getHeight()).append(HtmlString.unsafe("px\">")).getHtmlString();
+                        .unsafeAppend("\" alt=\"").append(message)
+                        .unsafeAppend("\" title=\"").append(message)
+                        .unsafeAppend("\" height=\"").append(logoType.getHeight()).unsafeAppend("px\">").getHtmlString();
                 }
             }
             catch (RuntimeSQLException e)

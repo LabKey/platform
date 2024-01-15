@@ -170,20 +170,20 @@ public class AdminBean
     public static HtmlString getPropertyGridHtml(Map<String, String> propertyMap)
     {
         HtmlStringBuilder builder = HtmlStringBuilder.of()
-            .append(HtmlString.unsafe("<table class=\"labkey-data-region-legacy labkey-show-borders\">"))
-            .append(HtmlString.unsafe("<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>"))
+            .unsafeAppend("<table class=\"labkey-data-region-legacy labkey-show-borders\">")
+            .unsafeAppend("<tr class=\"labkey-frame\"><th>Property</th><th>Current Value</th></tr>")
             .append
             (
                 propertyMap.entrySet().stream()
                     .map(e -> HtmlStringBuilder.of(HtmlString.unsafe("<tr valign=top class=\"labkey-row\"><td>"))
                         .append(e.getKey())
-                        .append(HtmlString.unsafe("</td><td>"))
+                        .unsafeAppend("</td><td>")
                         .append(formatValue(e.getKey(), e.getValue()))
-                        .append(HtmlString.unsafe("</td></tr>\n"))
+                        .unsafeAppend("</td></tr>\n")
                         .getHtmlString())
                     .collect(LabKeyCollectors.joining(HtmlString.unsafe("\n")))
             )
-           .append(HtmlString.unsafe("</table>\n"));
+           .unsafeAppend("</table>\n");
 
         return builder.getHtmlString();
     }
@@ -192,6 +192,6 @@ public class AdminBean
     {
         // Format GUID properties with monospace font
         return StringUtils.endsWithIgnoreCase(key, "GUID") ? HtmlStringBuilder.of(HtmlString.unsafe("<span style=\"font-family:monospace\">"))
-            .append(value).append(HtmlString.unsafe("</span>")).getHtmlString() : HtmlString.of(value);
+            .append(value).unsafeAppend("</span>").getHtmlString() : HtmlString.of(value);
     }
 }
