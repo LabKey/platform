@@ -316,7 +316,7 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             String error = file.getError();
 
             if (null != error)
-                builder.append(error).append(HtmlString.unsafe("<br><br>"));
+                builder.append(error).unsafeAppend("<br><br>");
         }
 
         HtmlString html = builder.getHtmlString();

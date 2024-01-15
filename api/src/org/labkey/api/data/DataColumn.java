@@ -569,14 +569,14 @@ public class DataColumn extends DisplayColumn
             if (getRequiresHtmlFiltering())
                 formatted = PageFlowUtil.filter(formatted);
 
-            if (formatted.length() == 0)
+            if (formatted.isEmpty())
                 formatted = "&nbsp;";
             else if (isPreserveNewlines())
                 formatted = formatted.replaceAll("\\n", "<br>\n");
             else if (value instanceof Date)
                 formatted = "<nobr>" + formatted + "</nobr>";
 
-            hsb.append(HtmlString.unsafe(formatted));
+            hsb.unsafeAppend(formatted);
         }
 
         return hsb.getHtmlString();
