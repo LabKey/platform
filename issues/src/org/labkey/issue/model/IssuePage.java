@@ -471,11 +471,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         if (label != null)
         {
             HtmlStringBuilder html = HtmlStringBuilder.of()
-                .append(HtmlString.unsafe("<td class=\"lk-form-label\">"))
+                .unsafeAppend("<td class=\"lk-form-label\">")
                 .append(label);
             if (label.length() < 100) //prevents silly-looking colons on extremely long labels (see: email prefs)
                 html.append(":");
-            html.append(HtmlString.unsafe("</td>"));
+            html.unsafeAppend("</td>");
 
             return html.getHtmlString();
         }
@@ -648,9 +648,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
         HtmlStringBuilder builder = HtmlStringBuilder.of();
 
-        if (attachments.size() > 0)
+        if (!attachments.isEmpty())
         {
-            builder.append(HtmlString.unsafe("<table class=\"issues-attachments\"><tr><td>&nbsp;</td></tr>"));
+            builder.unsafeAppend("<table class=\"issues-attachments\"><tr><td>&nbsp;</td></tr>");
 
             for (Attachment a : attachments)
             {
@@ -661,7 +661,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
                 HtmlStringBuilder icon = HtmlStringBuilder.of(HtmlString.unsafe("<img src=\""))
                     .append(context.getRequest().getContextPath())
                     .append(a.getFileIcon())
-                    .append(HtmlString.unsafe("\">&nbsp;"))
+                    .unsafeAppend("\">&nbsp;")
                     .append(a.getName());
 
                 builder.append(new LinkBuilder(icon.getHtmlString()).href(download).target("_blank").clearClasses());

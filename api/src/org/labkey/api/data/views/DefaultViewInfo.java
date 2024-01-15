@@ -72,6 +72,7 @@ public class DefaultViewInfo implements DataViewInfo
     private String _schemaName;
     private String _queryName;
     private String _viewName;
+    private String _dataRegionName;
 
     private int _displayOrder;
 
@@ -435,6 +436,18 @@ public class DefaultViewInfo implements DataViewInfo
     public String getViewName() { return _viewName; }
 
     public void setViewName(String viewName) { _viewName = viewName; }
+
+    @Nullable
+    @Override
+    public String getDataRegionName()
+    {
+        return _dataRegionName;
+    }
+
+    public void setDataRegionName(String dataRegionName)
+    {
+        _dataRegionName = dataRegionName;
+    }
 
     @Override
     public int getDisplayOrder() {return _displayOrder; }

@@ -16,7 +16,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.BaseScanner.Handler;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -569,19 +568,19 @@ public class ToolsController extends SpringActionController
             {
                 builder
                     .append("The following " + (missingModuleActions.size() > 1 ? "actions' controllers" : "action's controller") + " could not be resolved to a module running in this deployment:")
-                    .append(HtmlString.unsafe("<br><br>\n"));
-                missingModuleActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
-                builder.append(HtmlString.unsafe("<br>\n"));
+                    .unsafeAppend("<br><br>\n");
+                missingModuleActions.forEach(id->builder.append(id.toString()).unsafeAppend("<br>\n"));
+                builder.unsafeAppend("<br>\n");
                 builder.append("The associated module(s) might not support " + DbScope.getLabKeyScope().getDatabaseProductName() + ".");
-                builder.append(HtmlString.unsafe("<br><br>\n"));
+                builder.unsafeAppend("<br><br>\n");
             }
 
             if (!missingActions.isEmpty())
             {
                 builder
                     .append("The following " + (missingActions.size() > 1 ? "actions were" : "action was") + " not found in the action's controller:")
-                    .append(HtmlString.unsafe("<br><br>\n"));
-                missingActions.forEach(id->builder.append(id.toString()).append(HtmlString.unsafe("<br>\n")));
+                    .unsafeAppend("<br><br>\n");
+                missingActions.forEach(id->builder.append(id.toString()).unsafeAppend("<br>\n"));
             }
 
             return new HtmlView(builder);

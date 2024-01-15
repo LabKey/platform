@@ -172,4 +172,9 @@ public final class HtmlString implements SafeToRender, DOM.Renderable, Comparabl
     {
         return JSoupUtil.convertHtmlToText(_s);
     }
+
+    public boolean isEmpty()
+    {
+        return length() == 0;
+    }
 }

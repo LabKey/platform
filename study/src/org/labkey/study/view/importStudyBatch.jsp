@@ -54,7 +54,7 @@ for (DatasetImportRunnable runnable : runnables)
     else
     {
         hasError = true;
-        message = HtmlStringBuilder.of(HtmlString.unsafe("<font class=labkey-error>")).append(error).append(HtmlString.unsafe("</font>")).getHtmlString();
+        message = HtmlStringBuilder.of(HtmlString.unsafe("<font class=labkey-error>")).append(error).unsafeAppend("</font>").getHtmlString();
     }
     %>
     <tr class="<%=getShadeRowClass(row++)%>">

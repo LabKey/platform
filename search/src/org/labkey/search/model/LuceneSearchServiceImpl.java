@@ -43,6 +43,7 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.FieldComparator;
 import org.apache.lucene.search.FieldComparatorSource;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Pruning;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
@@ -2126,7 +2127,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     private static class ContainerFieldComparatorSource extends FieldComparatorSource
     {
         @Override
-        public FieldComparator<?> newComparator(String fieldname, int numHits, boolean enabledSkipping, boolean reversed)
+        public FieldComparator<?> newComparator(String fieldname, int numHits, Pruning pruning, boolean reversed)
         {
             return new FieldComparator.TermValComparator(numHits, fieldname, reversed) {
                 @Override
