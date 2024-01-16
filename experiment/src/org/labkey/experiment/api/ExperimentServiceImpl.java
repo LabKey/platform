@@ -8664,7 +8664,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             {
                 addDataTypeExclusion(add, dataType, excludedContainerId, user);
 
-                // if this exclusion type has a related exclusion, remove the related exclusion on add
+                // Prevent "double exclusion" for related exclusion types (i.e. if a sample type is excluded from the
+                // project, then we can delete any "Dashboard Sample Type" exclusions for that same sample type).
+                // Note that "double exclusions" won't cause any harm, they just aren't necessary and can be cleaned up here.
                 if (relatedExclusions != null && relatedExclusions.contains(add))
                     removeDataTypeExclusion(Collections.singleton(add), relatedDataType, excludedContainerId);
             }
