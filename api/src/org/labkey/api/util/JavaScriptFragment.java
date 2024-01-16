@@ -36,6 +36,17 @@ public class JavaScriptFragment implements SafeToRender
         return new JavaScriptFragment(s);
     }
 
+    /** Create escaped javascript string literal */
+    public static @NotNull JavaScriptFragment asString(String s)
+    {
+        if (null == s)
+            return JavaScriptFragment.NULL;
+        var js = PageFlowUtil.jsString(s);
+        assert !StringUtils.contains(s, "</");
+        return new JavaScriptFragment(js);
+    }
+
+    /** Format "Object value" as JSON and render into a JavaScriptFragment */
     public static @NotNull JavaScriptFragment asJson(Object value)
     {
         if (null == value)
