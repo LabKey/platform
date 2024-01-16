@@ -40,7 +40,7 @@
 %>
 
 This webpart displays a list of survey instances created by the end user. Select which survey design this webpart should use:<br><br>
-<div id=<%=q(divId)%>></div>
+<div id="<%=h(divId)%>"></div>
 
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function(){
