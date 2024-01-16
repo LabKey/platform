@@ -87,14 +87,6 @@
         <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
         <shownInUpdateView>false</shownInUpdateView>
       </column>
-      <column columnName="Rows">
-        <description>The number of rows in each plate.</description>
-        <shownInUpdateView>false</shownInUpdateView>
-      </column>
-      <column columnName="Columns">
-        <description>The number of columns in each plate.</description>
-        <shownInUpdateView>false</shownInUpdateView>
-      </column>
       <column columnName="DataFileId">
         <isUserEditable>false</isUserEditable>
         <description>A unique text identifier (a GUID) for the data file associated with each plate.</description>

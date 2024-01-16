@@ -66,6 +66,32 @@
         <url-pattern>*.post</url-pattern>
     </filter-mapping>
 
+    <filter>
+        <filter-name>Content Security Policy Filter Filter</filter-name>
+        <filter-class>org.labkey.filters.ContentSecurityPolicyFilter</filter-class>
+        <init-param>
+            <param-name>policy</param-name>
+            <param-value>
+                default-src 'self' https: http: ;
+                connect-src 'self' ${LABKEY.ALLOWED.CONNECTIONS} ;
+                object-src 'none' ;
+                style-src 'self' https: 'unsafe-inline' ;
+                img-src 'self' https: data: http://chart.apis.google.com ;
+                script-src 'unsafe-eval' 'strict-dynamic'
+                'nonce-${REQUEST.SCRIPT.NONCE}' ;
+                base-uri 'self' ;
+                frame-ancestors 'self' ;
+                report-uri
+                http://localhost:8080/labkey/admin-contentsecuritypolicyreport.api ;
+                report-to
+                http://localhost:8080/labkey/admin-contentsecuritypolicyreport.api ;
+            </param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>Content Security Policy Filter Filter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <welcome-file-list>
         <welcome-file>/</welcome-file>

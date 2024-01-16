@@ -81,8 +81,6 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Rows"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
         defaultVisibleColumns.add(FieldKey.fromParts("Type"));
         defaultVisibleColumns.add(FieldKey.fromParts("PlateTypeId"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
@@ -235,12 +233,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
-            // disallow plate size changes
-            if ((row.containsKey("rows") && ObjectUtils.notEqual(oldRow.get("rows"), row.get("rows"))) ||
-                    (row.containsKey("columns") && ObjectUtils.notEqual(oldRow.get("columns"), row.get("columns"))))
-            {
-                throw new QueryUpdateServiceException("Changing the plate size (rows or columns) is not allowed.");
-            }
+            // disallow plate type changes
+            if (row.containsKey("plateTypeId") && ObjectUtils.notEqual(oldRow.get("plateTypeId"), row.get("plateTypeId")))
+                throw new QueryUpdateServiceException("Changing the plate type is not allowed.");
 
             // if the name is changing, check for duplicates
             String oldName = (String) oldRow.get("Name");
