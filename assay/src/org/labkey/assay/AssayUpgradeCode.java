@@ -83,7 +83,7 @@ public class AssayUpgradeCode implements UpgradeCode
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider == null)
-                    continue;;
+                    continue;
 
                 Domain resultsDomain = provider.getResultsDomain(protocol);
                 if (null == resultsDomain || null == resultsDomain.getStorageTableName() || null == resultsDomain.getTypeURI())
@@ -157,7 +157,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
     /**
      * Called from assay-23.002-23.003.sql
-     *
+     * <p>
      * Switch from storing the protocol plate template by name to the plate lsid.
      */
     @DeferredUpgrade
@@ -209,7 +209,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
     /**
      * Called from assay-24.000-24.001.sql
-     *
+     * <p>
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
      * want to iterate over each plate set to set the name using the configured name expression.
      */

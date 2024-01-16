@@ -133,6 +133,8 @@
             <xsd:enumeration value="where"/>
             <xsd:enumeration value="inexpancestorsof"/>
             <xsd:enumeration value="inexpdescendantsof"/>
+            <xsd:enumeration value="notinexpancestorsof"/>
+            <xsd:enumeration value="notinexpdescendantsof"/>
         </xsd:restriction>
     </xsd:simpleType>
 

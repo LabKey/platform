@@ -86,6 +86,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.GUID;
@@ -93,6 +94,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.model.PlateTypeImpl;
@@ -128,6 +130,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 
 public class PlateManager implements PlateService
 {
@@ -218,6 +221,7 @@ public class PlateManager implements PlateService
         @NotNull User user,
         @NotNull PlateType plateType,
         @Nullable String plateName,
+        @Nullable Integer plateSetId,
         @Nullable String assayType,
         @Nullable List<Map<String, Object>> data
     ) throws Exception
@@ -228,6 +232,14 @@ public class PlateManager implements PlateService
             Plate plateTemplate = PlateService.get().createPlateTemplate(container, assayType, plateType);
 
             plate = createPlate(plateTemplate, null, null);
+            if (plateSetId != null)
+            {
+                PlateSet plateSet = getPlateSet(container, plateSetId);
+                if (plateSet == null)
+                    throw new IllegalArgumentException("Failed to create plate. Plate set with rowId (" + plateSetId + ") is not available in " + container.getPath());
+                ((PlateImpl) plate).setPlateSet(plateSetId);
+            }
+
             if (StringUtils.trimToNull(plateName) != null)
                 plate.setName(plateName.trim());
 
@@ -666,7 +678,6 @@ public class PlateManager implements PlateService
         try (DbScope.Transaction transaction = ensureTransaction())
         {
             Integer plateId = plate.getRowId();
-            String plateInstanceLsid = plate.getLSID();
 
             if (!updateExisting && plate.getPlateSet() == null)
             {
@@ -694,12 +705,13 @@ public class PlateManager implements PlateService
                 List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateRow), errors, null, null);
                 if (errors.hasErrors())
                     throw errors;
-                plateId = (Integer)insertedRows.get(0).get("RowId");
-                plateInstanceLsid = (String)insertedRows.get(0).get("Lsid");
+                Map<String, Object> row = insertedRows.get(0);
+                plateId = (Integer) row.get("RowId");
                 plate.setRowId(plateId);
-                plate.setLsid(plateInstanceLsid);
+                plate.setLsid((String) row.get("Lsid"));
+                plate.setName((String) row.get("Name"));
             }
-            savePropertyBag(container, plateInstanceLsid, plate.getProperties(), updateExisting);
+            savePropertyBag(container, plate.getLSID(), plate.getProperties(), updateExisting);
 
             // delete well groups first
             List<WellGroupImpl> deletedWellGroups = plate.getDeletedWellGroups();
@@ -1300,7 +1312,7 @@ public class PlateManager implements PlateService
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getObject(plateTypeId, PlateTypeImpl.class);
     }
 
-    public @NotNull Map<String, List<Map<String, Integer>>> getPlateOperationConfirmationData(
+    public @NotNull Map<String, List<Map<String, Object>>> getPlateOperationConfirmationData(
         @NotNull Container container,
         @NotNull User user,
         @NotNull Set<Integer> plateRowIds
@@ -1313,18 +1325,42 @@ public class PlateManager implements PlateService
                 notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "plate")));
         permittedIds.removeAll(notPermittedIds);
 
-        // TODO: This is really expensive. Find a way to consolidate this check into a single query.
+        Map<Integer, Plate> plates = new HashMap<>();
+        plateRowIds.forEach(rowId -> {
+            // TODO: This is really expensive. Find a way to consolidate this check into a single query.
+            if (rowId != null)
+                plates.put(rowId, getPlate(container, rowId));
+        });
+
         permittedIds.forEach(plateRowId -> {
-            Plate plate = getPlate(container, plateRowId);
+            Plate plate = plates.get(plateRowId);
             if (plate == null || getRunCountUsingPlate(container, user, plate) > 0)
                 notPermittedIds.add(plateRowId);
         });
         permittedIds.removeAll(notPermittedIds);
 
-        return Map.of(
-        "allowed", permittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList(),
-            "notAllowed", notPermittedIds.stream().map(rowId -> Map.of("RowId", rowId)).toList()
-        );
+        List<Map<String, Object>> allowedRows = new ArrayList<>();
+        permittedIds.forEach(rowId -> {
+            Plate plate = plates.get(rowId);
+            allowedRows.add(CaseInsensitiveHashMap.of("RowId", rowId, "Name", plate.getName(), "ContainerPath", plate.getContainer().getPath()));
+        });
+
+        List<Map<String, Object>> notAllowedRows = new ArrayList<>();
+        notPermittedIds.forEach(rowId -> {
+            Plate plate = plates.get(rowId);
+            Map<String, Object> rowMap = new CaseInsensitiveHashMap<>();
+            rowMap.put("RowId", rowId);
+
+            if (plate != null)
+            {
+                rowMap.put("Name", plate.getName());
+                rowMap.put("ContainerPath", plate.getContainer().getPath());
+            }
+
+            notAllowedRows.add(rowMap);
+        });
+
+        return Map.of("allowed", allowedRows, "notAllowed", notAllowedRows);
     }
 
     private void deindexPlates(Collection<Lsid> plateLsids)
@@ -1700,6 +1736,46 @@ public class PlateManager implements PlateService
         return PLATE_NAME_EXPRESSION;
     }
 
+    public PlateSetImpl createPlateSet(Container container, User user, @NotNull PlateSetImpl plateSet, @Nullable List<PlateType> plateTypes) throws Exception
+    {
+        if (!container.hasPermission(user, InsertPermission.class))
+            throw new UnauthorizedException("Failed to create plate set. Insufficient permissions.");
+
+        if (plateSet.getRowId() != null)
+            throw new ValidationException("Failed to create plate set. Cannot create plate set with rowId (" + plateSet.getRowId() + ").");
+
+        if (plateTypes != null && plateTypes.size() > MAX_PLATES)
+            throw new ValidationException(String.format("Failed to create plate set. Plate sets can have a maximum of %d plates.", MAX_PLATES));
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            BatchValidationException errors = new BatchValidationException();
+            QueryUpdateService qus = getPlateSetUpdateService(container, user);
+
+            Map<String, Object> plateSetRow = ObjectFactory.Registry.getFactory(PlateSetImpl.class).toMap(plateSet, new ArrayListMap<>());
+            List<Map<String, Object>> rows = qus.insertRows(user, container, Collections.singletonList(plateSetRow), errors, null, null);
+            if (errors.hasErrors())
+                throw errors;
+
+            Integer plateSetId = (Integer) rows.get(0).get("RowId");
+
+            if (plateTypes != null)
+            {
+                for (PlateType plateType : plateTypes)
+                {
+                    // TODO: Write a cheaper plate create/save for multiple plates
+                    if (plateType != null)
+                        createAndSavePlate(container, user, plateType, null, plateSetId, null, null);
+                }
+            }
+
+            plateSet = (PlateSetImpl) getPlateSet(container, plateSetId);
+            tx.commit();
+        }
+
+        return plateSet;
+    }
+
     public static final class TestCase
     {
         private static Container container;
@@ -1859,7 +1935,7 @@ public class PlateManager implements PlateService
             assertNotNull("96 well plate type was not found", plateType);
 
             // Act
-            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "testCreateAndSavePlate plate", null, null);
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "testCreateAndSavePlate plate", null, null, null);
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
@@ -2030,7 +2106,7 @@ public class PlateManager implements PlateService
                             "properties/barcode", "B5678"
                     )
             );
-            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", null, rows);
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", null, null, rows);
             assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
             TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);

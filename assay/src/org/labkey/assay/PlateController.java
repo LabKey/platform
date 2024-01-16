@@ -16,7 +16,6 @@
 package org.labkey.assay;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -65,6 +64,7 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
@@ -546,11 +546,17 @@ public class PlateController extends SpringActionController
     {
         private String _name;
         private Integer _plateType;
+        private Integer _plateSetId;
         private List<Map<String, Object>> _data = new ArrayList<>();
 
         public String getName()
         {
             return _name;
+        }
+
+        public Integer getPlateSetId()
+        {
+            return _plateSetId;
         }
 
         public Integer getPlateType()
@@ -570,6 +576,9 @@ public class PlateController extends SpringActionController
 
             if (json.has("name"))
                 _name = json.getString("name");
+
+            if (json.has("plateSetId"))
+                _plateSetId = json.getInt("plateSetId");
 
             if (json.has("plateType"))
                 _plateType = json.getInt("plateType");
@@ -601,8 +610,6 @@ public class PlateController extends SpringActionController
         @Override
         public void validateForm(CreatePlateForm form, Errors errors)
         {
-            if (StringUtils.trimToNull(form.getName()) == null)
-                errors.reject(ERROR_REQUIRED, "Plate \"name\" is required.");
             if (form.getPlateType() == null)
                 errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
 
@@ -616,7 +623,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), null, form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), null, null, form.getData());
                 return success(plate);
             }
             catch (Exception e)
@@ -858,6 +865,73 @@ public class PlateController extends SpringActionController
                 ((PlateImpl) plate).setRunCount(PlateManager.get().getRunCountUsingPlate(plate.getContainer(), getUser(), plate));
 
             return plate;
+        }
+    }
+
+    public static class CreatePlateSetForm
+    {
+        private String _name;
+        private List<Integer> _plateTypes = new ArrayList<>();
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public List<Integer> getPlateTypes()
+        {
+            return _plateTypes;
+        }
+
+        public void setPlateTypes(List<Integer> plateTypes)
+        {
+            _plateTypes = plateTypes;
+        }
+    }
+
+    @Marshal(Marshaller.JSONObject)
+    @RequiresPermission(InsertPermission.class)
+    public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
+    {
+        List<PlateType> _plateTypes = new ArrayList<>();
+
+        @Override
+        public void validateForm(CreatePlateSetForm form, Errors errors)
+        {
+            for (Integer plateTypeId : form.getPlateTypes())
+            {
+                PlateType plateType = PlateManager.get().getPlateType(plateTypeId);
+                if (plateType == null)
+                {
+                    errors.reject(ERROR_REQUIRED, "Plate type id \"" + plateTypeId + "\" is invalid.");
+                    break;
+                }
+                _plateTypes.add(plateType);
+            }
+        }
+
+        @Override
+        public Object execute(CreatePlateSetForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateSetImpl plateSet = new PlateSetImpl();
+                plateSet.setName(form.getName());
+
+                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, _plateTypes);
+                return success(plateSet);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create plate set. An error has occurred.");
+            }
+
+            return null;
         }
     }
 }
