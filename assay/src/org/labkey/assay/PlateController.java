@@ -547,7 +547,7 @@ public class PlateController extends SpringActionController
     {
         private String _name;
         private Integer _plateSetId;
-        private PlateType _plateType;
+         private PlateType _plateType;
         private List<Map<String, Object>> _data = new ArrayList<>();
 
         public String getName()
