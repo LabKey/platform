@@ -1777,7 +1777,7 @@ public class PlateManager implements PlateService
     public void archivePlateSets(Container container, User user, List<Integer> plateSetIds, boolean archive) throws Exception
     {
         String action = archive ? "archive" : "restore";
-        Class<? extends Permission> perm = archive ? DeletePermission.class : UpdatePermission.class;
+        Class<? extends Permission> perm = UpdatePermission.class;
 
         if (!container.hasPermission(user, perm))
             throw new UnauthorizedException("Failed to " + action + " plate sets. Insufficient permissions.");
