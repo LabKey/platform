@@ -623,7 +623,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), null, null, form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), null, form.getData());
                 return success(plate);
             }
             catch (Exception e)
