@@ -954,7 +954,7 @@ public class PlateController extends SpringActionController
     }
 
     @Marshal(Marshaller.JSONObject)
-    @RequiresPermission(DeletePermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class ArchivePlateSetsAction extends MutatingApiAction<ArchiveForm>
     {
         @Override
