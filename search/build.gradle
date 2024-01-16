@@ -276,10 +276,10 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.tukaani:xz:${tukaaniXZVersion}",         // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
+            "org.tukaani:xz:${tukaaniXZVersion}", // Transitive dependency of commons-compress -- Issue 38298: Errors when indexing .7z files in search
             "XZ for Java",
             "tukaani.org",
-            "https://tukaani.org/xz/java.htm/",
+            "https://tukaani.org/xz/java.html",
             "public",
             "https://tukaani.org/xz/java.html#Licensing",
             "Transitive dependency of commons-compress to support additional compression types for search"
@@ -331,7 +331,7 @@ dependencies {
             "org.ccil.cowan.tagsoup:tagsoup:1.2.1",
             "TagSoup",
             "TagSoup",
-            "http://vrici.lojban.org/~cowan/XML/tagsoup/",
+            "http://vrici.lojban.org/~cowan/tagsoup/",
             ExternalDependency.APACHE_2_LICENSE_NAME,
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Parser for HTML/XML"

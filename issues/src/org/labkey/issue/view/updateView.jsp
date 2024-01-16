@@ -363,7 +363,7 @@
                     <%
                         HtmlStringBuilder builder = HtmlStringBuilder.of(bean.getLabel("NotifyList", true))
                             .append(popup)
-                            .append(HtmlString.unsafe("<br/><br/>"));
+                            .unsafeAppend("<br/><br/>");
 
                         if (!user.isGuest())
                         {

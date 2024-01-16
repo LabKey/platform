@@ -54,10 +54,11 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Archived"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
+        defaultVisibleColumns.add(FieldKey.fromParts("ModifiedBy"));
     }
 
     public PlateSetTable(PlateSchema schema, @Nullable ContainerFilter cf)

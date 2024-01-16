@@ -926,7 +926,7 @@ public abstract class AssayProtocolSchema extends AssaySchema implements UserSch
                 }
                 for (Map.Entry<String, String> decodedVal : decodedVals.entrySet())
                 {
-                    sb.append(HtmlString.unsafe("<br/>"));
+                    sb.unsafeAppend("<br/>");
                     sb.append(StringUtils.substringAfter(decodedVal.getKey(), ThawListResolverType.NAMESPACE_PREFIX));
                     sb.append(" : ");
                     sb.append(decodedVal.getValue());

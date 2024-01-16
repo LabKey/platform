@@ -436,7 +436,10 @@ public class PageConfig
         HtmlStringBuilder sb = HtmlStringBuilder.of();
         //noinspection RedundantOperationOnEmptyContainer
         fonts.stream().map(PageFlowUtil::staticResourceUrl).forEach(url->
-                sb.append(HtmlString.unsafe("<link rel=\"preload\" as=\"font\" type=\"font/ttf\" crossorigin href=\"")).append(url).append(HtmlString.unsafe("\">")));
+            sb.unsafeAppend("<link rel=\"preload\" as=\"font\" type=\"font/ttf\" crossorigin href=\"")
+                .append(url)
+                .unsafeAppend("\">")
+        );
         return sb.getHtmlString();
     }
 
@@ -451,17 +454,17 @@ public class PageConfig
         String canonical = getCanonicalLink(url);
         if (null != canonical)
         {
-            sb.append(HtmlString.unsafe("<link rel=\"canonical\" href=\""))
-                    .append(canonical).append(HtmlString.unsafe("\">\n"));
+            sb.unsafeAppend("<link rel=\"canonical\" href=\"")
+                .append(canonical).unsafeAppend("\">\n");
         }
 
         if (!_meta.isEmpty())
         {
             for (Map.Entry<String, Collection<String>>  e : _meta.asMap().entrySet())
             {
-                sb.append(HtmlString.unsafe("<meta name=\"")).append(e.getKey())
-                        .append(HtmlString.unsafe("\" content=\"")).append(StringUtils.join(e.getValue(), ", "))
-                        .append(HtmlString.unsafe("\">\n"));
+                sb.unsafeAppend("<meta name=\"").append(e.getKey())
+                    .unsafeAppend("\" content=\"").append(StringUtils.join(e.getValue(), ", "))
+                    .unsafeAppend("\">\n");
             }
         }
         return sb.getHtmlString();
@@ -516,7 +519,7 @@ public class PageConfig
         if (_template != Template.Print)
         {
             // Keep an empty div for re-addition of dismissible messages onto the page
-            messages.append(HtmlString.unsafe("<div class=\"lk-dismissable-alert-ct\">"));
+            messages.unsafeAppend("<div class=\"lk-dismissable-alert-ct\">");
             if (context != null && context.getRequest() != null)
             {
                 Warnings warnings = WarningService.get().getWarnings(context);
@@ -536,12 +539,12 @@ public class PageConfig
                     messages.append(WarningService.get().getWarningsHtml(warnings, context));
                 }
             }
-            messages.append(HtmlString.unsafe("</div>"));
+            messages.unsafeAppend("</div>");
 
             // Display a <noscript> warning message
-            messages.append(HtmlString.unsafe("<noscript>"));
-            messages.append(HtmlString.unsafe("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>"));
-            messages.append(HtmlString.unsafe("</noscript>"));
+            messages.unsafeAppend("<noscript>");
+            messages.unsafeAppend("<div class=\"alert alert-warning\" role=\"alert\">JavaScript is disabled. For the full experience enable JavaScript in your browser.</div>");
+            messages.unsafeAppend("</noscript>");
         }
 
         return messages;
@@ -591,7 +594,7 @@ public class PageConfig
     public HtmlString getScriptTagStart()
     {
         HtmlString nonce = getScriptNonce();
-        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\">")).getHtmlString();
+        return HtmlStringBuilder.of(HtmlString.unsafe("\n<script type=\"text/javascript\" nonce=\"")).append(nonce).unsafeAppend("\">").getHtmlString();
     }
 
 
@@ -626,7 +629,6 @@ public class PageConfig
     /**
      *   When a page wants to attach an event handler to a lot of elements, it may be
      *   more efficient to specify a selector than a long list of ids.
-     *
      *   All elements that match this selector must have the same handler!
      */
     public void addHandlerForQuerySelector(String selector, String event, String handler)
