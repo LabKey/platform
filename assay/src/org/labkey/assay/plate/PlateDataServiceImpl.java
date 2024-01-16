@@ -23,8 +23,9 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -80,7 +81,10 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (handler == null)
                     throw new Exception("Plate template type " + assayTypeName + " does not exist.");
 
-                template = handler.createTemplate(templateTypeName, getContainer(), rowCount, columnCount);
+                PlateType plateType = PlateService.get().getPlateType(rowCount, columnCount);
+                if (plateType == null)
+                    throw new Exception("The plate type : (" + rowCount + " x " + columnCount + ") does not exist");
+                template = handler.createTemplate(templateTypeName, getContainer(), plateType);
             }
 
             // Translate PlateTemplate to GWTPlate
@@ -183,7 +187,10 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                     PlateService.get().deletePlate(getContainer(), getUser(), other.getRowId());
                 }
 
-                template = PlateManager.get().createPlateTemplate(getContainer(), gwtPlate.getType(), gwtPlate.getRows(), gwtPlate.getCols());
+                PlateType plateType = PlateService.get().getPlateType(gwtPlate.getRows(), gwtPlate.getCols());
+                if (plateType == null)
+                    throw new Exception("The plate type : (" + gwtPlate.getRows() + " x " + gwtPlate.getCols() + ") does not exist");
+                template = PlateManager.get().createPlateTemplate(getContainer(), gwtPlate.getType(), plateType);
             }
 
             template.setName(gwtPlate.getName());

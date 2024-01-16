@@ -51,8 +51,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 {
     private String _name;
     private Integer _rowId;
-    private int _rows;
-    private int _columns;
     private int _createdBy;
     private long _created;
     private int _modifiedBy;
@@ -84,20 +82,19 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _plateNumber = 1;
     }
 
-    public PlateImpl(Container container, String name, String type, int rowCount, int colCount)
+    public PlateImpl(Container container, String name, String type, @NotNull PlateType plateType)
     {
         super(container);
         _name = name;
         _type = type;
-        _rows = rowCount;
-        _columns = colCount;
         _container = container;
         _dataFileId = GUID.makeGUID();
+        _plateTypeId = plateType.getRowId();
     }
 
     public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        this(plate.getContainer(), plate.getName(), plate.getType(), plate.getRows(), plate.getColumns());
+        this(plate.getContainer(), plate.getName(), plate.getType(), plate.getPlateType());
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
@@ -285,9 +282,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
+    @JsonIgnore
     public int getColumns()
     {
-        return _columns;
+        return getPlateType().getColumns();
     }
 
     @Override
@@ -297,9 +295,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
+    @JsonIgnore
     public int getRows()
     {
-        return _rows;
+        return getPlateType().getRows();
     }
 
     @JsonIgnore
@@ -317,16 +316,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setRowId(Integer rowId)
     {
         _rowId = rowId;
-    }
-
-    public void setColumns(int columns)
-    {
-        _columns = columns;
-    }
-
-    public void setRows(int rows)
-    {
-        _rows = rows;
     }
 
     @Override
@@ -557,7 +546,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     @Override
     @JsonIgnore
-    public @Nullable PlateType getPlateType()
+    public @NotNull PlateType getPlateType()
     {
         return PlateManager.get().getPlateType(_plateTypeId);
     }

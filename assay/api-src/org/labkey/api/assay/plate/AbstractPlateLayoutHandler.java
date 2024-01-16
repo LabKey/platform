@@ -47,6 +47,12 @@ public abstract class AbstractPlateLayoutHandler implements PlateLayoutHandler
 
     abstract protected List<Pair<Integer, Integer>> getSupportedPlateSizes();
 
+    protected void validatePlateType(PlateType plateType)
+    {
+        if (!getSupportedPlateTypes().contains(plateType))
+            throw new IllegalStateException("The plate type : " + plateType.getDescription() + " is not supported for this layout handler.");
+    }
+
     @Override
     public List<PlateType> getSupportedPlateTypes()
     {

@@ -40,7 +40,7 @@ public interface Plate extends PropertySet, Identifiable
 
     boolean isTemplate();
 
-    @Nullable PlateType getPlateType();
+    @NotNull PlateType getPlateType();
 
     @Nullable PlateSet getPlateSetObject();
 

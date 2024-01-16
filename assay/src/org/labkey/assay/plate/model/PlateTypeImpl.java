@@ -3,6 +3,8 @@ package org.labkey.assay.plate.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.assay.plate.PlateType;
 
+import java.util.Objects;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateTypeImpl implements PlateType
 {
@@ -26,6 +28,7 @@ public class PlateTypeImpl implements PlateType
         _rows = rows;
     }
 
+    @Override
     public Integer getRowId()
     {
         return _rowId;
@@ -95,5 +98,21 @@ public class PlateTypeImpl implements PlateType
     public void setType(String type)
     {
         _type = type;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (31 * _rows) + _cols;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        if (!Objects.equals(_rows, ((PlateTypeImpl) obj)._rows)) return false;
+        return Objects.equals(_cols, ((PlateTypeImpl) obj)._cols);
     }
 }

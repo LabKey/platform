@@ -38,7 +38,6 @@
         </fk>
       </column>
       <column columnName="PlateTypeId">
-        <columnTitle>PlateType</columnTitle>
         <description>The plate type of this plate.</description>
         <fk>
           <fkColumnName>RowId</fkColumnName>
