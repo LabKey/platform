@@ -7,7 +7,9 @@ import java.util.List;
 
 public interface PlateSet
 {
-    int getRowId();
+    int MAX_PLATES = 60;
+
+    Integer getRowId();
 
     Container getContainer();
 
