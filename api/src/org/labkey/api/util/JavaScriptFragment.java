@@ -42,7 +42,7 @@ public class JavaScriptFragment implements SafeToRender
         if (null == s)
             return JavaScriptFragment.NULL;
         var js = PageFlowUtil.jsString(s);
-        assert !StringUtils.contains(s, "</");
+        assert !StringUtils.contains(js, "</");
         return new JavaScriptFragment(js);
     }
 
