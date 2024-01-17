@@ -11120,6 +11120,10 @@ public class AdminController extends SpringActionController
             if (!_log.isWarnEnabled())
                 return ret;
 
+            var userAgent = getViewContext().getRequest().getHeader("User-Agent");
+            if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
+                return ret;
+
             // NOTE User will always be "guest".  Seems like a bad design to force the server to accept guest w/o CSRF here.
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
@@ -11131,9 +11135,8 @@ public class AdminController extends SpringActionController
                     if (urlString != null)
                     {
                         String path = new URLHelper(urlString).deleteParameters().getPath();
-                        if (null == reports.put(path, Boolean.TRUE))
+                        if (null == reports.put(path, Boolean.TRUE) || _log.isDebugEnabled())
                         {
-                            var userAgent = getViewContext().getRequest().getHeader("User-Agent");
                             if (isNotBlank(userAgent))
                                 jsonObj.put("user-agent", userAgent);
                             var jsonStr = jsonObj.toString(2);
