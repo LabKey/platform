@@ -163,7 +163,7 @@ public class ContainerManager
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
     public static final String TABFOLDER_CHILDREN_DELETED = "tabChildrenDeleted";
-    public static final String AUDIT_SETTINGS_PROPERTY_SET_NAME = "AuditSettings";
+    public static final String AUDIT_SETTINGS_PROPERTY_SET_NAME = "containerAuditSettings";
     public static final String REQUIRE_USER_COMMENTS_PROPERTY_NAME = "requireUserComments";
 
     private static final List<ContainerSecurableResourceProvider> _resourceProviders = new CopyOnWriteArrayList<>();
@@ -2132,6 +2132,17 @@ public class ContainerManager
     public static long getWorkbookCount()
     {
         return new TableSelector(CORE.getTableInfoContainers(), new SimpleFilter(FieldKey.fromParts("type"), "workbook"), null).getRowCount();
+    }
+
+    public static long getAuditCommentRequiredCount()
+    {
+        SQLFragment sql = new SQLFragment(
+                "SELECT COUNT(*) FROM\n" +
+                "   core.containers c\n" +
+                "       JOIN prop.propertysets ps on c.entityid = ps.objectid\n" +
+                "       JOIN prop.properties p on p.set = ps.set\n" +
+                "WHERE ps.category = '" + AUDIT_SETTINGS_PROPERTY_SET_NAME + "' AND p.name='"+ REQUIRE_USER_COMMENTS_PROPERTY_NAME + "' and p.value='true'");
+        return new SqlSelector(CORE.getSchema(), sql).getObject(Long.class);
     }
 
 
