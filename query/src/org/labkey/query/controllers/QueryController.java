@@ -4787,12 +4787,18 @@ public class QueryController extends SpringActionController
             JSONObject json = getJsonObject();
             if (json == null)
             {
-                errors.reject(ERROR_MSG, "Empty request");
+                errors.reject(ERROR_GENERIC, "Empty request");
             }
             else
             {
-                String queryName = json.optString(PROP_QUERY_NAME, null);
-                _targetContainer = ContainerManager.getMoveTargetContainer(queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
+                // Since we are moving between containers, we know we have product projects enabled
+                if (getContainer().getProject().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
+                    errors.reject(ERROR_GENERIC, "A reason for the move of data is required.");
+                else
+                {
+                    String queryName = json.optString(PROP_QUERY_NAME, null);
+                    _targetContainer = ContainerManager.getMoveTargetContainer(queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
+                }
             }
         }
 
