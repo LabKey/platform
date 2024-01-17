@@ -97,6 +97,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.data.ContainerManager.AUDIT_SETTINGS_PROPERTY_SET_NAME;
+import static org.labkey.api.data.ContainerManager.REQUIRE_USER_COMMENTS_PROPERTY_NAME;
+
 
 /**
  * Basic hierarchical structure for holding data within LabKey Server. Security is configured at the container level.
@@ -1028,6 +1031,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return ContainerManager.getFolderType(this);
     }
 
+    @NotNull
+    public Boolean getAuditCommentsRequired()
+    {
+        Map<String, String> props = PropertyManager.getProperties(this, AUDIT_SETTINGS_PROPERTY_SET_NAME);
+        return Boolean.parseBoolean(props.getOrDefault(REQUIRE_USER_COMMENTS_PROPERTY_NAME, "false"));
+    }
+
     /**
      * Sets the default module for a "mixed" type folder. We try not to create
      * these any more. Instead each folder is "owned" by a module
@@ -1400,6 +1410,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 containerProps.put("activeModules", activeModuleNames);
                 containerProps.put("folderType", getFolderType().getName());
                 containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
+                containerProps.put("auditCommentsRequired", getAuditCommentsRequired());
             }
         }
         else

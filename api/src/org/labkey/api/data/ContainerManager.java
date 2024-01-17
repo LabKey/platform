@@ -163,6 +163,8 @@ public class ContainerManager
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
     public static final String FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN = "ctFolderTypeOverridden";
     public static final String TABFOLDER_CHILDREN_DELETED = "tabChildrenDeleted";
+    public static final String AUDIT_SETTINGS_PROPERTY_SET_NAME = "AuditSettings";
+    public static final String REQUIRE_USER_COMMENTS_PROPERTY_NAME = "requireUserComments";
 
     private static final List<ContainerSecurableResourceProvider> _resourceProviders = new CopyOnWriteArrayList<>();
 
@@ -425,6 +427,18 @@ public class ContainerManager
         return c;
     }
 
+    public static void setRequireAuditComments(Container container, User user, @NotNull Boolean required)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, AUDIT_SETTINGS_PROPERTY_SET_NAME, true);
+        String originalValue = props.get(REQUIRE_USER_COMMENTS_PROPERTY_NAME);
+        props.put(REQUIRE_USER_COMMENTS_PROPERTY_NAME, required.toString());
+        props.save();
+
+        addAuditEvent(user, container,
+                "Changed " + REQUIRE_USER_COMMENTS_PROPERTY_NAME + " from \"" +
+                        originalValue + "\" to \"" + required + "\"");
+    }
+
     public static void setFolderType(Container c, FolderType folderType, User user, BindException errors)
     {
         FolderType oldType = c.getFolderType();
@@ -609,6 +623,7 @@ public class ContainerManager
         Map<String, String> props = PropertyManager.getProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME);
         return props.get(FOLDER_TYPE_PROPERTY_NAME);
     }
+
 
     @NotNull
     public static Map<String, Integer> getFolderTypeNameContainerCounts(Container root)
