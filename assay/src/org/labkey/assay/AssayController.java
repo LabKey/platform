@@ -545,12 +545,15 @@ public class AssayController extends SpringActionController
             };
             ActionURL copyHereURL = urlProvider(AssayUrls.class).getDesignerURL(form.getContainer(), _protocol, true, null);
             HtmlView fileTree = new HtmlView(HtmlStringBuilder.of()
-                    .append(HtmlString.unsafe("<table><tr><td><b>Select destination folder:</b></td></tr>"))
-                    .append(tree.getHtmlString())
-                    .append(HtmlString.unsafe("</table>")).getHtmlString());
+                .unsafeAppend("<table><tr><td><b>Select destination folder:</b></td></tr>")
+                .append(tree.getHtmlString())
+                .unsafeAppend("</table>")
+                .getHtmlString()
+            );
             HtmlView bbar = HtmlView.unsafe(
-                    PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
-                    (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : ""));
+            PageFlowUtil.button("Cancel").href(new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())) + " " +
+                    (form.getContainer().hasPermission(getUser(), InsertPermission.class) ? PageFlowUtil.button("Copy to Current Folder").href(copyHereURL) : "")
+            );
             setHelpTopic("manageAssayDesign");
             return new VBox(bbar, fileTree, bbar);
         }

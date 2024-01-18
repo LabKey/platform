@@ -795,7 +795,7 @@ public class ReportsController extends SpringActionController
                 HtmlStringBuilder sb = HtmlStringBuilder.of();
 
                 for (ValidationError error : reportErrors)
-                    sb.append(error.getMessage()).append(HtmlString.unsafe("<br>"));
+                    sb.append(error.getMessage()).unsafeAppend("<br>");
 
                 return new HtmlView(sb.getHtmlString());
             }

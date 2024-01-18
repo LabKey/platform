@@ -113,7 +113,7 @@
                                 description = HtmlStringBuilder
                                     .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))
                                     .append(task.getDescription())
-                                    .append(HtmlString.unsafe("</span>"));
+                                    .unsafeAppend("</span>");
                             if (!task.canDisable())
                             {
                     %><tr><td><input type="checkbox" disabled checked/><%=description%></td></tr><%
@@ -174,7 +174,7 @@
                     description = HtmlStringBuilder
                         .of(HtmlString.unsafe("<span class=\"labkey-disabled-text-link labkey-enabled-option\">"))
                         .append(task.getDescription())
-                        .append(HtmlString.unsafe("</span>"));
+                        .unsafeAppend("</span>");
                 %><div><%=description%></div><%
             }
         %>

@@ -1691,12 +1691,12 @@ public class PageFlowUtil
         ResourceURL faviconURL = TemplateResourceHandler.FAVICON.getURL(c);
 
         HtmlStringBuilder builder = HtmlStringBuilder.of()
-            .append(HtmlString.unsafe("<link rel=\"shortcut icon\" href=\""))
+            .unsafeAppend("<link rel=\"shortcut icon\" href=\"")
             .append(faviconURL.toString())
-            .append(HtmlString.unsafe("\">\n"))
-            .append(HtmlString.unsafe("<link rel=\"icon\" href=\""))
+            .unsafeAppend("\">\n")
+            .unsafeAppend("<link rel=\"icon\" href=\"")
             .append(faviconURL.toString())
-            .append(HtmlString.unsafe("\">\n"));
+            .unsafeAppend("\">\n");
 
         return builder.getHtmlString();
     }
@@ -1805,14 +1805,14 @@ public class PageFlowUtil
             {
                 for (String script : r.getCssPaths(c))
                 {
-                    html.append(HtmlString.unsafe("<link href=\""));
+                    html.unsafeAppend("<link href=\"");
                     if (!ClientDependency.isExternalDependency(script))
                     {
                         html.append(AppProps.getInstance().getContextPath());
                         html.append("/");
                     }
                     html.append(script);
-                    html.append(HtmlString.unsafe("\" type=\"text/css\" rel=\"stylesheet\">"));
+                    html.unsafeAppend("\" type=\"text/css\" rel=\"stylesheet\">");
 
                     cssFiles.add(script);
                 }
@@ -1822,7 +1822,7 @@ public class PageFlowUtil
         builder.append(html);
 
         //cache list of CSS files to prevent double-loading
-        if (cssFiles.size() > 0)
+        if (!cssFiles.isEmpty())
         {
             SafeToRenderBuilder scriptBuilder = SafeToRenderBuilder.of();
             scriptBuilder.append(HttpView.currentPageConfig().getScriptTagStart());
@@ -1967,9 +1967,9 @@ public class PageFlowUtil
     {
         HtmlString nonce = HttpView.currentPageConfig().getScriptNonce();
         return HtmlStringBuilder.of()
-            .append(HtmlString.unsafe("<script src=\""))
+            .unsafeAppend("<script src=\"")
             .append(staticResourceUrl(path))
-            .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"))
+            .unsafeAppend("\" type=\"text/javascript\" nonce=\"").append(nonce).unsafeAppend("\"></script>\n")
             .getHtmlString();
     }
 
@@ -2005,8 +2005,8 @@ public class PageFlowUtil
         {
             var path = ClientDependency.isExternalDependency(s) ? s : staticResourceUrl("/" + s);
             builder.append(HtmlString.unsafe("<script src=\""))
-                    .append(HtmlString.of(path))
-                    .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"));
+                .append(HtmlString.of(path))
+                .append(HtmlString.unsafe("\" type=\"text/javascript\" nonce=\"")).append(nonce).append(HtmlString.unsafe("\"></script>\n"));
         }
 
         return builder.getSafeToRender();

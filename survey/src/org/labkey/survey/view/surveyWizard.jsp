@@ -76,9 +76,9 @@
     else
     {
 %>
-<div id=<%=q(headerRenderId)%>></div>
-<div id=<%=q(formRenderId)%>></div>
-<div id=<%=q(footerRenderId)%>></div>
+<div id="<%=h(headerRenderId)%>"></div>
+<div id="<%=h(formRenderId)%>"></div>
+<div id="<%=h(footerRenderId)%>"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     Ext4.onReady(function(){

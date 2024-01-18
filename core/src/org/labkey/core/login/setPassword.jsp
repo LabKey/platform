@@ -42,7 +42,7 @@
 %>
 <%
     SetPasswordBean bean = ((JspView<SetPasswordBean>)HttpView.currentView()).getModelBean();
-    String errors = formatMissedErrorsStr("form");
+    HtmlString errors = formatMissedErrors("form");
     int gaugeWidth = 350;
     int gaugeHeight = 30;
     String firstPasswordId = null;
@@ -59,7 +59,7 @@
     <% } %>
 
     <% if (!errors.isEmpty()) { %>
-        <%=text(errors)%>
+        <%=errors%>
     <% } %>
 
     <div class="auth-form-body">

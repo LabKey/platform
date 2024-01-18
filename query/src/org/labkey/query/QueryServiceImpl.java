@@ -237,6 +237,8 @@ public class QueryServiceImpl implements QueryService
             WHERE,
             INDESCENDANTSOF,
             INANCESTORSOF,
+            NOTINDESCENDANTSOF,
+            NOTINANCESTORSOF,
             COLUMN_IN,
             COLUMN_NOT_IN
     ));
@@ -255,7 +257,7 @@ public class QueryServiceImpl implements QueryService
         @Override
         public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return InLineageOfClause.create(false, fieldKey, (String) value);
+            return InLineageOfClause.create(false, fieldKey, (String) value, false);
         }
     };
 
@@ -264,7 +266,25 @@ public class QueryServiceImpl implements QueryService
         @Override
         public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return InLineageOfClause.create(true, fieldKey, (String) value);
+            return InLineageOfClause.create(true, fieldKey, (String) value, false);
+        }
+    };
+
+    public static final CompareType NOTINDESCENDANTSOF = new CompareType("NOT IN DESCENDANTS OF", "notinexpdescendantsof", "NOT_IN_EXP_DESCENDANTS_OF", true /* dataValueRequired */, "sql", OperatorType.NOTINEXPDESCENDANTSOF)
+    {
+        @Override
+        public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return InLineageOfClause.create(false, fieldKey, (String) value, true);
+        }
+    };
+
+    public static final CompareType NOTINANCESTORSOF = new CompareType("NOT IN ANCESTORS OF", "notinexpancestorsof", "NOT_IN_EXP_ANCESTORS_OF", true /* dataValueRequired */, "sql", OperatorType.NOTINEXPANCESTORSOF)
+    {
+        @Override
+        public WhereClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+        {
+            return InLineageOfClause.create(true, fieldKey, (String) value, true);
         }
     };
 
@@ -529,19 +549,19 @@ public class QueryServiceImpl implements QueryService
     /* It would be nice to put with class ChildOfMethod and class ParentOfMethod, but our build dependencies mean this goes here for now */
     private static class InLineageOfClause extends WhereClause
     {
-        static InLineageOfClause create(boolean parents, FieldKey fk, String value)
+        static InLineageOfClause create(boolean parents, FieldKey fk, String value, boolean negate)
         {
             if (null != fk.getParent() || !StringUtils.startsWithIgnoreCase(value, "SELECT "))
                 throw new IllegalArgumentException("Bad filter syntax, value should start with 'SELECT '");
-            return new InLineageOfClause(parents, value);
+            return new InLineageOfClause(parents, value, negate);
         }
 
-        InLineageOfClause(boolean parents, String value)
+        InLineageOfClause(boolean parents, String value, boolean negate)
         {
             // I don't have a table info available.  So I can't tell a) if this is an ExpTable b) if
             // this table Supports expObject() method.  Due to a hack in QuerySeriveImpl.ensureRequiredColumns()
             // The object id column will be available if that method is supported, but I have to find it later.
-            super("\"" + BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI + "\" IN " + (parents ? "EXPANCESTORSOF" : "EXPDESCENDANTSOF") + " (" + value + ")");
+            super("\"" + BuiltInColumnTypes.EXPOBJECTID_CONCEPT_URI + "\" " + (negate ? "NOT " : "") + "IN " + (parents ? "EXPANCESTORSOF" : "EXPDESCENDANTSOF") + " (" + value + ")");
         }
 
         @Override

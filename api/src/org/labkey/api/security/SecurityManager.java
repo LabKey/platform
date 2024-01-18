@@ -2534,9 +2534,9 @@ public class SecurityManager
                 if (currentUser.hasSiteAdminPermission())
                 {
                     message.append("  Click ");
-                    message.append(HtmlString.unsafe("<a href=\""));
+                    message.unsafeAppend("<a href=\"");
                     message.append(createVerificationURL(context.getContainer(), email, newUserStatus.getVerification(), extraParameters).toString());
-                    message.append(HtmlString.unsafe("\" target=\"_blank\">here</a>"));
+                    message.unsafeAppend("\" target=\"_blank\">here</a>");
                     message.append(" to change the password from the random one that was assigned.");
                 }
 
@@ -2547,9 +2547,9 @@ public class SecurityManager
         {
             message.append(HtmlString.BR);
             message.append(email.getEmailAddress());
-            message.append(HtmlString.unsafe(" was added successfully, but could not be emailed due to a failure:<br><pre>"));
+            message.unsafeAppend(" was added successfully, but could not be emailed due to a failure:<br><pre>");
             message.append(e.getMessage());
-            message.append(HtmlString.unsafe("</pre>"));
+            message.unsafeAppend("</pre>");
             appendMailHelpText(message, messageContentsURL, currentUser.hasRootPermission(AddUserPermission.class));
 
             User newUser = UserManager.getUser(email);
@@ -2638,8 +2638,8 @@ public class SecurityManager
                 builder.append(" into an email client and send it to the user manually.");
             }
 
-            builder.append(HtmlString.unsafe("</p>"));
-            builder.append(HtmlString.unsafe("<p>For help on fixing your mail server settings, please consult the SMTP section of the "));
+            builder.unsafeAppend("</p>");
+            builder.unsafeAppend("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
             builder.append(new HelpTopic("labkeyxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
             builder.append(".").append(HtmlString.BR);
         }
@@ -2958,7 +2958,7 @@ public class SecurityManager
             catch (ConfigurationException | MessagingException e)
             {
                 String message = "Failed to send email due to: " + e.getMessage();
-                errors.addError(mailErrorHtml.length() != 0 ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
+                errors.addError(!mailErrorHtml.isEmpty() ? new LabKeyErrorWithHtml(message, mailErrorHtml) : new LabKeyError(message));
                 UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
             }
         }

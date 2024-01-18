@@ -1042,9 +1042,9 @@ public class UserController extends SpringActionController
 
             HtmlStringBuilder builder = HtmlStringBuilder.of();
             if (user.hasSiteAdminPermission() && LimitActiveUsersService.get().isUserLimitReached() && userToUpdate.isSystem())
-                builder.append(HtmlString.unsafe("<strong>Warning:</strong> User limit has been reached so the System field can't be cleared.<br><br>"));
+                builder.unsafeAppend("<strong>Warning:</strong> User limit has been reached so the System field can't be cleared.<br><br>");
             if (isOwnRecord)
-                builder.append(HtmlString.unsafe("<div>Please enter your contact information.</div></br>"));
+                builder.unsafeAppend("<div>Please enter your contact information.</div></br>");
 
             if (!builder.isEmpty())
                 view = new VBox(new HtmlView(builder), view);

@@ -162,10 +162,12 @@ public class ReportViewProvider implements DataViewProvider
                 String query = descriptor.getProperty(ReportDescriptor.Prop.queryName);
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
                 String view = descriptor.getProperty(ReportDescriptor.Prop.viewName);
+                String dataRegionName = descriptor.getProperty(ReportDescriptor.Prop.dataRegionName);
 
                 info.setSchemaName(schema);
                 info.setQueryName(query);
                 info.setViewName(view);
+                info.setDataRegionName(dataRegionName);
 
                 ViewCategory category = descriptor.getCategory(c);
 

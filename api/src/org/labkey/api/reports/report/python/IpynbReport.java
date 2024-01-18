@@ -1,6 +1,5 @@
 package org.labkey.api.reports.report.python;
 
-import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -404,7 +403,7 @@ public class IpynbReport extends DockerScriptReport
                         List<File> files = null == listFiles ? List.of() : Arrays.asList(listFiles);
                         for (var file : files)
                         {
-                            ArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
+                            TarArchiveEntry entry = tar.createArchiveEntry(file, file.getName());
                             tar.putArchiveEntry(entry);
                             try(FileInputStream fis = new FileInputStream(file))
                             {

@@ -70,10 +70,10 @@
             <td style="padding-left: 1em;">
                 <strong><label for="customScript">Custom JavaScript Analytics</label></strong>
                 <p>
-                    Add <label for="ff_trackingScript">custom analytics script</label> to the <code>&lt;head&gt;</code> of every page.  Include required <code>&lt;script&gt;</code> tags.
+                    Add <label for="ff_trackingScript">custom analytics script</label> to the <code>&lt;head&gt;</code> of every page. Include required <code>&lt;script&gt;</code> tags. If the server enforces a Content Security Policy, script blocks may need a nonce to function: <code>&lt;script nonce="\${SCRIPT_NONCE:htmlEncode}"&gt;</code>.
                 </p>
                 <p>
-                    <strong>NOTE:</strong> You can mess up your site if you make a mistake here.  You may want to bookmark this page to aid in making corrections, just in case.
+                    <strong>NOTE:</strong> You can mess up your site if you make a mistake here. You may want to bookmark this page to aid in making corrections, just in case.
                 </p>
                 <textarea <%=unsafe(hasAdminOpsPerms?"":"disabled=\"disabled\"")%> style="width:100%; height:15em;" id="ff_trackingScript" name="ff_trackingScript"><%=h(settingsForm.ff_trackingScript)%></textarea>
             </td>

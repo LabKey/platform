@@ -9,8 +9,9 @@ import org.labkey.remoteapi.CommandException;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.domain.CreateDomainCommand;
 import org.labkey.remoteapi.domain.Domain;
+import org.labkey.remoteapi.domain.DomainDetailsResponse;
 import org.labkey.remoteapi.domain.DomainResponse;
-import org.labkey.remoteapi.domain.GetDomainCommand;
+import org.labkey.remoteapi.domain.GetDomainDetailsCommand;
 import org.labkey.remoteapi.domain.PropertyDescriptor;
 import org.labkey.remoteapi.domain.SaveDomainCommand;
 import org.labkey.test.BaseWebDriverTest;
@@ -135,8 +136,8 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         renameColumnName();
 
         log("Test for an expected error when changing type from String to Int");
-        GetDomainCommand getCmd = new GetDomainCommand(STUDY_SCHEMA, STUDY_DATASET_NAME);
-        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(), getContainerPath());
+        GetDomainDetailsCommand getCmd = new GetDomainDetailsCommand(STUDY_SCHEMA, STUDY_DATASET_NAME);
+        DomainDetailsResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(), getContainerPath());
         List<PropertyDescriptor> getDomainCols = getDomainResponse.getDomain().getFields();
         PropertyDescriptor activityCodeCol = getDomainCols.get(3);
 
@@ -163,8 +164,8 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
 
     private void renameColumnName() throws IOException, CommandException
     {
-        GetDomainCommand getCmd = new GetDomainCommand(STUDY_SCHEMA, STUDY_DATASET_NAME);
-        DomainResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(), getContainerPath());
+        GetDomainDetailsCommand getCmd = new GetDomainDetailsCommand(STUDY_SCHEMA, STUDY_DATASET_NAME);
+        DomainDetailsResponse getDomainResponse = getCmd.execute(this.createDefaultConnection(), getContainerPath());
         List<PropertyDescriptor> getDomainCols = getDomainResponse.getDomain().getFields();
         PropertyDescriptor activityCommentsCol = getDomainCols.get(3);
 
