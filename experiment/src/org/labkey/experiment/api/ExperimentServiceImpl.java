@@ -8643,12 +8643,13 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user)
+    public void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable DataTypeForExclusion relatedDataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user)
     {
         if (excludedDataTypeRowIds == null)
             return;
 
         Set<Integer> previousExclusions = _getContainerDataTypeExclusions(dataType, excludedContainerId);
+        Set<Integer> relatedExclusions = relatedDataType != null ? _getContainerDataTypeExclusions(relatedDataType, excludedContainerId) : null;
         Set<Integer> updatedExclusions = new HashSet<>(excludedDataTypeRowIds);
 
         Set<Integer> toAdd = new HashSet<>(updatedExclusions);
@@ -8660,7 +8661,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         if (!toAdd.isEmpty())
         {
             for (Integer add : toAdd)
+            {
                 addDataTypeExclusion(add, dataType, excludedContainerId, user);
+
+                // Prevent "double exclusion" for related exclusion types (i.e. if a sample type is excluded from the
+                // project, then we can delete any "Dashboard Sample Type" exclusions for that same sample type).
+                // Note that "double exclusions" won't cause any harm, they just aren't necessary and can be cleaned up here.
+                if (relatedExclusions != null && relatedExclusions.contains(add))
+                    removeDataTypeExclusion(Collections.singleton(add), relatedDataType, excludedContainerId);
+            }
         }
 
         if (!toRemove.isEmpty())
