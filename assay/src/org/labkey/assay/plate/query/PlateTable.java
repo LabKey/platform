@@ -81,8 +81,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
-        defaultVisibleColumns.add(FieldKey.fromParts("PlateTypeId"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateType"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateSet"));
+        defaultVisibleColumns.add(FieldKey.fromParts("AssayType"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
@@ -197,10 +198,19 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
-            nameExpressionTranslator.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR),
-                    (Supplier) () -> PlateService.get().getPlateNameExpression());
+            if (!nameMap.containsKey("plateId"))
+            {
+                ColumnInfo nameCol = plateTable.getColumn("plateId");
+                nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
+            }
+
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateTable);
-            DataIterator di = LoggingDataIterator.wrap(new NameExpressionDataIterator(builtInColumnsTranslator, context, plateTable, container, null, null, null));
+
+            DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateTable,
+                    container,
+                    "name",
+                    "plateId",
+                    PlateManager.get().getPlateNameExpression()));
 
             ValidatorIterator vi = new ValidatorIterator(di, context, container, user);
             vi.addValidator(nameMap.get("name"), new UniquePlateNameValidator(container));
@@ -234,7 +244,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
             // disallow plate type changes
-            if (row.containsKey("plateTypeId") && ObjectUtils.notEqual(oldRow.get("plateTypeId"), row.get("plateTypeId")))
+            if (row.containsKey("plateType") && ObjectUtils.notEqual(oldRow.get("plateType"), row.get("plateType")))
                 throw new QueryUpdateServiceException("Changing the plate type is not allowed.");
 
             // if the name is changing, check for duplicates

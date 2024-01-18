@@ -29,6 +29,9 @@
       <column columnName="Name">
         <description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</description>
       </column>
+      <column columnName="PlateId">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="PlateSet">
         <description>The Plate Set that this plate is assigned to.</description>
         <fk>
@@ -37,7 +40,7 @@
           <fkDbSchema>assay</fkDbSchema>
         </fk>
       </column>
-      <column columnName="PlateTypeId">
+      <column columnName="PlateType">
         <description>The plate type of this plate.</description>
         <fk>
           <fkColumnName>RowId</fkColumnName>
@@ -91,8 +94,8 @@
         <isUserEditable>false</isUserEditable>
         <description>A unique text identifier (a GUID) for the data file associated with each plate.</description>
       </column>
-      <column columnName="Type">
-        <description>A text label of the plate type ("NAb", for example).</description>
+      <column columnName="AssayType">
+        <description>A text label of the plate assay type ("NAb", for example).</description>
       </column>
     </columns>
   </table>
@@ -178,6 +181,9 @@
     <columns>
       <column columnName="RowId"/>
       <column columnName="Name"/>
+      <column columnName="PlateSetId">
+        <isUserEditable>false</isUserEditable>
+      </column>
       <column columnName="Container"/>
       <column columnName="CreatedBy"/>
       <column columnName="Created"/>
@@ -195,6 +201,7 @@
       <column columnName="Rows"/>
       <column columnName="Columns"/>
       <column columnName="Description"/>
+      <column columnName="Archived"/>
     </columns>
   </table>
 </tables>

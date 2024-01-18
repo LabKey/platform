@@ -40,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.util.Pair;
+import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.query.AssayDbSchema;
@@ -251,6 +252,71 @@ public class AssayUpgradeCode implements UpgradeCode
                 new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
             }
             _log.info("Successfully updated " + plateSets.size() + " plate set names");
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.000-24.001.sql
+     * <p>
+     * The referenced upgrade script creates a new plate set for every plate in the system. We now
+     * want to iterate over each plate set to set the name using the configured name expression.
+     */
+    public static void initializePlateAndPlateSetIDs(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            _log.info("Start initializing Plate IDs");
+            List<PlateImpl> plates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getArrayList(PlateImpl.class);
+
+            NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateNameExpression(), AssayDbSchema.getInstance().getTableInfoPlate(), false, ContainerManager.getSharedContainer(), null, null);
+            NameGenerator.State state = nameGenerator.createState(false);
+            for (PlateImpl plate : plates)
+            {
+                Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateImpl.class).toMap(plate, new ArrayListMap<>());
+                plateRow.put("name", null);
+                String name = nameGenerator.generateName(state, plateRow);
+                state.cleanUp();
+
+                SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "")
+                        .append(" SET PlateId = ?")
+                        .add(name)
+                        .append(" WHERE RowId = ?")
+                        .add(plate.getRowId());
+                new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+            }
+            _log.info("Successfully updated " + plates.size() + " plate IDs");
+
+            _log.info("Start initializing PlateSet IDs");
+            // for plate sets, they should have a valid PlateSetId, but if the name was not generated (or mutated), regenerate a new
+            // plate set id
+            List<PlateSetImpl> plateSets = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getArrayList(PlateSetImpl.class);
+
+            nameGenerator = new NameGenerator(PlateManager.get().getPlateSetNameExpression(), AssayDbSchema.getInstance().getTableInfoPlateSet(), false, null, null, null);
+            state = nameGenerator.createState(false);
+            for (PlateSetImpl plateSet : plateSets)
+            {
+                Map<String, Object> plateSetRow = ObjectFactory.Registry.getFactory(PlateSetImpl.class).toMap(plateSet, new ArrayListMap<>());
+                if (!String.valueOf(plateSetRow.get("name")).startsWith("PLS-"))
+                {
+                    plateSetRow.put("name", null);
+                    String name = nameGenerator.generateName(state, plateSetRow);
+                    state.cleanUp();
+
+                    SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
+                            .append(" SET PlateSetId = ?")
+                            .add(name)
+                            .append(" WHERE RowId = ?")
+                            .add(plateSet.getRowId());
+                    new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+                }
+            }
+            _log.info("Successfully updated " + plateSets.size() + " plate set IDs");
+
             tx.commit();
         }
     }

@@ -26,6 +26,7 @@ public class PlateSetImpl extends Entity implements PlateSet
 {
     private Integer _rowId;
     private String _name;
+    private String _plateSetId;
     private boolean _archived;
     private Container _container;
 
@@ -66,6 +67,17 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setName(String name)
     {
         _name = name;
+    }
+
+    @Override
+    public String getPlateSetId()
+    {
+        return _plateSetId;
+    }
+
+    public void setPlateSetId(String plateSetId)
+    {
+        _plateSetId = plateSetId;
     }
 
     @Override

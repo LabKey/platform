@@ -142,11 +142,18 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 ColumnInfo nameCol = plateSetTable.getColumn("name");
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
-            nameExpressionTranslator.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR),
-                    (Supplier) () -> PlateService.get().getPlateSetNameExpression());
+            if (!nameMap.containsKey("plateSetId"))
+            {
+                ColumnInfo nameCol = plateSetTable.getColumn("plateSetId");
+                nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
+            }
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateSetTable);
-            DataIterator di = LoggingDataIterator.wrap(new NameExpressionDataIterator(builtInColumnsTranslator, context, plateSetTable, container, null, null, null));
 
+            DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateSetTable,
+                    container,
+                    "name",
+                    "plateSetId",
+                    PlateManager.get().getPlateSetNameExpression()));
             DataIteratorBuilder insertBuilder = LoggingDataIterator.wrap(StandardDataIteratorBuilder.forInsert(getDbTable(), di, container, user, context));
             DataIteratorBuilder dib = new TableInsertDataIteratorBuilder(insertBuilder, plateSetTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId"));

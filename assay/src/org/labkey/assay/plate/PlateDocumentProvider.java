@@ -73,7 +73,7 @@ public class PlateDocumentProvider implements SearchService.DocumentProvider
 
         StringBuilder body = new StringBuilder();
 
-        PlateType plateType = plate.getPlateType();
+        PlateType plateType = plate.getPlateTypeObject();
         if (plateType != null)
             append(body, plateType.getDescription());
 

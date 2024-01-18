@@ -59,7 +59,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private String _type;
     private boolean _isTemplate;
     private Integer _plateSetId;
-    private Integer _plateTypeId;
+    private Integer _plateType;
 
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private List<WellGroupImpl> _deletedGroups;
@@ -89,12 +89,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _type = type;
         _container = container;
         _dataFileId = GUID.makeGUID();
-        _plateTypeId = plateType.getRowId();
+        _plateType = plateType.getRowId();
     }
 
     public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        this(plate.getContainer(), plate.getName(), plate.getType(), plate.getPlateType());
+        this(plate.getContainer(), plate.getName(), plate.getType(), plate.getPlateTypeObject());
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
@@ -285,7 +285,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonIgnore
     public int getColumns()
     {
-        return getPlateType().getColumns();
+        return getPlateTypeObject().getColumns();
     }
 
     @Override
@@ -298,7 +298,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonIgnore
     public int getRows()
     {
-        return getPlateType().getRows();
+        return getPlateTypeObject().getRows();
     }
 
     @JsonIgnore
@@ -534,21 +534,21 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         return _plateSetId;
     }
 
-    public Integer getPlateTypeId()
+    public void setPlateType(Integer plateType)
     {
-        return _plateTypeId;
+        _plateType = plateType;
     }
 
-    public void setPlateTypeId(Integer plateTypeId)
+    public Integer getPlateType()
     {
-        _plateTypeId = plateTypeId;
+        return _plateType;
     }
 
     @Override
     @JsonIgnore
-    public @NotNull PlateType getPlateType()
+    public @NotNull PlateType getPlateTypeObject()
     {
-        return PlateManager.get().getPlateType(_plateTypeId);
+        return PlateManager.get().getPlateType(_plateType);
     }
 
     @Override

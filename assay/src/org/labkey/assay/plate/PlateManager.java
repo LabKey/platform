@@ -86,7 +86,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -1220,7 +1219,7 @@ public class PlateManager implements PlateService
     {
         if (plateExists(destContainer, source.getName()))
             throw new PlateService.NameConflictException(source.getName());
-        Plate newPlate = createPlateTemplate(destContainer, source.getType(), source.getPlateType());
+        Plate newPlate = createPlateTemplate(destContainer, source.getType(), source.getPlateTypeObject());
         newPlate.setName(source.getName());
         for (String property : source.getPropertyNames())
             newPlate.setProperty(property, source.getProperty(property));
@@ -1885,7 +1884,7 @@ public class PlateManager implements PlateService
             assertEquals(plateId, savedTemplate.getRowId().intValue());
             assertEquals("bob", savedTemplate.getName());
             assertEquals("yes", savedTemplate.getProperty("friendly")); assertNotNull(savedTemplate.getLSID());
-            assertEquals(plateType, savedTemplate.getPlateType());
+            assertEquals(plateType, savedTemplate.getPlateTypeObject());
 
             List<WellGroup> wellGroups = savedTemplate.getWellGroups();
             assertEquals(3, wellGroups.size());
