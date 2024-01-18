@@ -3,7 +3,7 @@ CREATE TABLE assay.PlateType
     RowId SERIAL,
     Rows INT NOT NULL,
     Columns INT NOT NULL,
-    Description VARCHAR(200) NOT NULL,
+    Description VARCHAR(300) NOT NULL,
     Archived BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT PK_PlateType PRIMARY KEY (RowId),
@@ -24,10 +24,13 @@ ALTER TABLE assay.Plate RENAME COLUMN Type TO AssayType;
 ALTER TABLE assay.Plate ADD COLUMN PlateType INTEGER;
 ALTER TABLE assay.Plate ADD CONSTRAINT FK_Plate_PlateType FOREIGN KEY (PlateType) REFERENCES assay.PlateType (RowId);
 
--- Add ID columns to Plate and PlateSet tables
+-- Add ID and description columns to Plate and PlateSet tables
 ALTER TABLE assay.Plate ADD COLUMN PlateId VARCHAR(200);
+ALTER TABLE assay.Plate ADD COLUMN Description VARCHAR(300);
 ALTER TABLE assay.PlateSet ADD COLUMN PlateSetId VARCHAR(200);
+ALTER TABLE assay.PlateSet ADD COLUMN Description VARCHAR(300);
 
+-- Most existing plate sets will have a generated name, but mutated ones will get fixed up by the java upgrade script
 UPDATE assay.PlateSet SET PlateSetId = Name;
 
 UPDATE assay.Plate

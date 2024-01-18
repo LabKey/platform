@@ -1219,7 +1219,7 @@ public class PlateManager implements PlateService
     {
         if (plateExists(destContainer, source.getName()))
             throw new PlateService.NameConflictException(source.getName());
-        Plate newPlate = createPlateTemplate(destContainer, source.getType(), source.getPlateTypeObject());
+        Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateTypeObject());
         newPlate.setName(source.getName());
         for (String property : source.getPropertyNames())
             newPlate.setProperty(property, source.getProperty(property));

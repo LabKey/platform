@@ -81,6 +81,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Description"));
         defaultVisibleColumns.add(FieldKey.fromParts("PlateType"));
         defaultVisibleColumns.add(FieldKey.fromParts("PlateSet"));
         defaultVisibleColumns.add(FieldKey.fromParts("AssayType"));

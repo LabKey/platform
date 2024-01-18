@@ -132,7 +132,7 @@
 %>
     <tr class="<%=getShadeRowClass(index)%>">
         <td><%= h(template.getName()) %></td>
-        <td><%= h(template.getType()) %></td>
+        <td><%= h(template.getAssayType()) %></td>
         <td><%= h(runCount) %></td>
         <td>
         <%

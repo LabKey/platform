@@ -78,7 +78,7 @@ public interface Plate extends PropertySet, Identifiable
 
     int getWellGroupCount(WellGroup.Type type);
 
-    String getType();
+    String getAssayType();
 
     @Override
     @Nullable ActionURL detailsURL();

@@ -29,6 +29,7 @@
       <column columnName="Name">
         <description>The unique admin-provided name of each plate template (""NAb: 5 specimens in duplicate", for example).</description>
       </column>
+      <column columnName="Description"/>
       <column columnName="PlateId">
         <isUserEditable>false</isUserEditable>
       </column>
@@ -181,6 +182,7 @@
     <columns>
       <column columnName="RowId"/>
       <column columnName="Name"/>
+      <column columnName="Description"/>
       <column columnName="PlateSetId">
         <isUserEditable>false</isUserEditable>
       </column>

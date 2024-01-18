@@ -3,7 +3,7 @@ CREATE TABLE assay.PlateType
     RowId INT IDENTITY(1,1),
     Rows INT NOT NULL,
     Columns INT NOT NULL,
-    Description NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(300) NOT NULL,
     Archived BIT NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_PlateType PRIMARY KEY (RowId),
@@ -25,16 +25,18 @@ ALTER TABLE assay.Plate ADD PlateType INT;
 GO
 ALTER TABLE assay.Plate ADD CONSTRAINT FK_Plate_PlateType FOREIGN KEY (PlateType) REFERENCES assay.PlateType (RowId);
 
--- Add ID columns to Plate and PlateSet tables
+-- Add ID and description columns to Plate and PlateSet tables
 ALTER TABLE assay.Plate ADD PlateId NVARCHAR(200);
-GO
+ALTER TABLE assay.Plate ADD Description NVARCHAR(300);
 ALTER TABLE assay.PlateSet ADD PlateSetId NVARCHAR(200);
+ALTER TABLE assay.PlateSet ADD Description NVARCHAR(300);
 GO
 
+-- Most existing plate sets will have a generated name, but mutated ones will get fixed up by the java upgrade script
 UPDATE assay.PlateSet SET PlateSetId = Name;
 
 UPDATE assay.Plate
-SET PlateTypeId =
+SET PlateType =
         CASE
             WHEN (Rows = 3 AND Columns = 4) THEN (SELECT RowId FROM assay.PlateType WHERE Rows = 3 AND Columns = 4)
             WHEN (Rows = 4 AND Columns = 6) THEN (SELECT RowId FROM assay.PlateType WHERE Rows = 4 AND Columns = 6)
@@ -44,10 +46,18 @@ SET PlateTypeId =
             WHEN (Rows = 32 AND Columns = 48) THEN (SELECT RowId FROM assay.PlateType WHERE Rows = 32 AND Columns = 48)
             ELSE (SELECT RowId FROM assay.PlateType WHERE Rows = 0 AND Columns = 0)
             END
-WHERE PlateTypeId IS NULL;
+WHERE PlateType IS NULL;
 
-ALTER TABLE assay.Plate ALTER COLUMN PlateTypeId INT NOT NULL;
+ALTER TABLE assay.Plate ALTER COLUMN PlateType INT NOT NULL;
 ALTER TABLE assay.Plate DROP COLUMN Rows;
 ALTER TABLE assay.Plate DROP COLUMN Columns;
 
 -- upgrade script to set the plate ID value in assay.Plate
+EXEC core.executeJavaUpgradeCode 'initializePlateAndPlateSetIDs';
+
+-- finalize plate and plateSet ID columns
+ALTER TABLE assay.Plate ALTER COLUMN PlateId NVARCHAR(200) NOT NULL;
+ALTER TABLE assay.Plate ADD CONSTRAINT UQ_Plate_PlateId UNIQUE (PlateId);
+
+ALTER TABLE assay.PlateSet ALTER COLUMN PlateSetId NVARCHAR(200) NOT NULL;
+ALTER TABLE assay.PlateSet ADD CONSTRAINT UQ_PlateSet_PlateSetId UNIQUE (PlateSetId);

@@ -29,6 +29,7 @@ public class PlateSetImpl extends Entity implements PlateSet
     private String _plateSetId;
     private boolean _archived;
     private Container _container;
+    private String _description;
 
     public PlateSetImpl()
     {
@@ -117,5 +118,15 @@ public class PlateSetImpl extends Entity implements PlateSet
                 .add(_rowId);
 
         return new SqlSelector(table.getSchema(), sql).getObject(Integer.class);
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
     }
 }

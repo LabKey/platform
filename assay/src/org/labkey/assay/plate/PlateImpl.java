@@ -56,10 +56,11 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private int _modifiedBy;
     private long _modified;
     private String _dataFileId;
-    private String _type;
+    private String _assayType;
     private boolean _isTemplate;
     private Integer _plateSetId;
     private Integer _plateType;
+    private String _description;
 
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private List<WellGroupImpl> _deletedGroups;
@@ -82,11 +83,11 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _plateNumber = 1;
     }
 
-    public PlateImpl(Container container, String name, String type, @NotNull PlateType plateType)
+    public PlateImpl(Container container, String name, String assayType, @NotNull PlateType plateType)
     {
         super(container);
         _name = name;
-        _type = type;
+        _assayType = assayType;
         _container = container;
         _dataFileId = GUID.makeGUID();
         _plateType = plateType.getRowId();
@@ -94,7 +95,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
     public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        this(plate.getContainer(), plate.getName(), plate.getType(), plate.getPlateTypeObject());
+        this(plate.getContainer(), plate.getName(), plate.getAssayType(), plate.getPlateTypeObject());
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
@@ -411,14 +412,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
-    public String getType()
+    public String getAssayType()
     {
-        return _type;
+        return _assayType;
     }
 
-    public void setType(String type)
+    public void setAssayType(String type)
     {
-        _type = type;
+        _assayType = type;
     }
 
     @JsonIgnore
@@ -542,6 +543,16 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public Integer getPlateType()
     {
         return _plateType;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
     }
 
     @Override
