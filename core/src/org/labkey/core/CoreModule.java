@@ -1356,7 +1356,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
 
-        // Add the "labkey" schema in all module data sources as well... should match labkey.xml
+        // Add the "labkey" schema in all module data sources as well... should match application.properties
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);

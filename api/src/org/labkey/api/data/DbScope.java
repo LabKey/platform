@@ -286,9 +286,9 @@ public class DbScope
      *  <p>Wraps a {@link DataSource}, validating the data source, adding LabKey-specific properties, and
      *  setting an application name that LabKey sends on every connection. With the exception of
      *  {@code ScopeQueryLoggingProfilerListener.TestCase}, there's a one-to-one correspondence between LabKeyDataSource
-     *  and valid data sources defined in labkey.xml. That's not the case with {@link DbScopeLoader} and {@link DbScope}</p>
+     *  and valid data sources defined in application.properties. That's not the case with {@link DbScopeLoader} and {@link DbScope}</p>
      *
-     *  <p>This class handles the special LabKey-specific properties that administrators can add to labkey.xml and
+     *  <p>This class handles the special LabKey-specific properties that administrators can add to application.properties and
      *  associate with a data source. To add support for a new property, simply add a getter & setter to this class and
      *  then do something with the typed value in DbScope.</p>
      *
@@ -302,7 +302,7 @@ public class DbScope
         public static final String CPAS_DATA_SOURCE = "cpasDataSource";
         private static final String DEFAULT_APPLICATION_NAME = "LabKey Server";
 
-        private final String _dsName; // DataSource name from labkey.xml
+        private final String _dsName; // DataSource name from application.properties
         private final DataSource _ds;
         private final DataSourcePropertyReader _dsPropertyReader;
         private final @Nullable Properties _connectionProperties;
@@ -1532,7 +1532,7 @@ public class DbScope
 
     private static String _applicationName = null;
 
-    // Enumerate each jdbc DataSource in labkey.xml and initialize them
+    // Enumerate each jdbc DataSource and initialize them
     public static void initializeDataSources()
     {
         verifyTomcatLibJars();
@@ -1564,8 +1564,8 @@ public class DbScope
                 }
             }
 
-            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists in
-            // labkey.xml / cpas.xml and create the associated database if it doesn't already exist.
+            // Ensure that the labkeyDataSource (or cpasDataSource, for old installations) exists
+            // and create the associated database if it doesn't already exist.
             LabKeyDataSource primaryDS = LabKeyDataSource.setPrimaryDataSource(dataSources);
             labkeyDsName = primaryDS.getDsName();
             // Now that we've tagged the primary datasource we can prepare them all
