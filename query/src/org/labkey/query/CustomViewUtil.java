@@ -181,7 +181,7 @@ public class CustomViewUtil
             }
         }
 
-        Map<String, Object> ret = toMap(view, context.getUser(), includeFieldMeta, columnMetadata);
+        Map<String, Object> ret = toMap(view, context.getUser(), includeFieldMeta, false, columnMetadata);
         if (newView)
             ret.put("doesNotExist", true);
 
@@ -191,10 +191,10 @@ public class CustomViewUtil
     public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta)
     {
         assert user != null;
-        return toMap(view, user, includeFieldMeta, new HashMap<>());
+        return toMap(view, user, includeFieldMeta, false, new HashMap<>());
     }
 
-    public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta, Map<FieldKey, Map<String, Object>> columnMetadata)
+    public static Map<String, Object> toMap(CustomView view, @NotNull User user, boolean includeFieldMeta, boolean compressed, Map<FieldKey, Map<String, Object>> columnMetadata)
     {
         assert user != null;
         Map<String, Object> ret = QueryService.get().getCustomViewProperties(view, user);
@@ -239,14 +239,31 @@ public class CustomViewUtil
             allKeys.add(entry.getKey());
 
             Map<String, Object> colInfo = new LinkedHashMap<>();
-            colInfo.put("name", entry.getKey().getName());
-            colInfo.put("key", entry.getKey().toString());
-            colInfo.put("fieldKey", entry.getKey().toString());
-            if (!entry.getValue().isEmpty())
+            var name = entry.getKey().getName();
+            colInfo.put("name", name);
+            if (compressed)
             {
-                String columnTitle = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
-                if (columnTitle != null)
-                    colInfo.put("title", columnTitle);
+                var fieldkey = entry.getKey().toString();
+                if (!Objects.equals(name, fieldkey))
+                    colInfo.put("fieldkey", fieldkey);
+                if (!entry.getValue().isEmpty())
+                {
+                    String columnTitle = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
+                    if (columnTitle != null && !Objects.equals(columnTitle, name))
+                        colInfo.put("title", columnTitle);
+                }
+            }
+            else
+            {
+                colInfo.put("name", entry.getKey().getName());
+                colInfo.put("key", entry.getKey().toString());
+                colInfo.put("fieldKey", entry.getKey().toString());
+                if (!entry.getValue().isEmpty())
+                {
+                    String columnTitle = entry.getValue().get(CustomViewInfo.ColumnProperty.columnTitle);
+                    if (columnTitle != null)
+                        colInfo.put("title", columnTitle);
+                }
             }
             colInfos.add(colInfo);
         }
