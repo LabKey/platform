@@ -145,7 +145,7 @@ public class PlateManager implements PlateService
 
     // name expressions, currently not configurable
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
-    private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/Name}-:withCounter}";
+    private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
