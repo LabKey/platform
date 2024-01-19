@@ -99,7 +99,7 @@ public class MothershipReportTest extends BaseWebDriverTest implements PostgresO
 
     private String getDeployedDistributionName()
     {
-        File distFile = new File(TestFileUtils.getDefaultDeployDir(), "labkeyWebapp/WEB-INF/classes/distribution");
+        File distFile = new File(TestFileUtils.getDefaultWebAppRoot(), "WEB-INF/classes/distribution");
         if (distFile.exists())
         {
             // Deployed from distribution
