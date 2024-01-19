@@ -610,6 +610,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
             addSampleTypeDeletedAuditEvent(user, c, source, transaction.getAuditId(), auditUserComment);
 
             ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.SampleType);
+            ExperimentService.get().removeDataTypeExclusion(Collections.singleton(rowId), ExperimentService.DataTypeForExclusion.DashboardSampleType);
 
             transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
@@ -691,14 +692,15 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit) throws ExperimentException
     {
-        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null);
+        return createSampleType(c, u, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, aliquotNameExpression, templateInfo, importAliases, labelColor, metricUnit, null, null, null, null, null, null);
     }
 
     @NotNull
     @Override
     public ExpSampleTypeImpl createSampleType(Container c, User u, String name, String description, List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, int idCol1, int idCol2, int idCol3, int parentCol,
                                               String nameExpression, String aliquotNameExpression, @Nullable TemplateInfo templateInfo, @Nullable Map<String, String> importAliases, @Nullable String labelColor, @Nullable String metricUnit,
-                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField, @Nullable List<String> excludedContainerIds)
+                                              @Nullable Container autoLinkTargetContainer, @Nullable String autoLinkCategory, @Nullable String category, @Nullable List<String> disabledSystemField,
+                                              @Nullable List<String> excludedContainerIds, @Nullable List<String> excludedDashboardContainerIds)
         throws ExperimentException
     {
         if (name == null)
@@ -877,6 +879,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
                     DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
                     if (excludedContainerIds != null && !excludedContainerIds.isEmpty())
                         ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, excludedContainerIds, st.getRowId(), u);
+                    if (excludedDashboardContainerIds != null && !excludedDashboardContainerIds.isEmpty())
+                        ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, excludedDashboardContainerIds, st.getRowId(), u);
                     transaction.addCommitTask(() -> clearMaterialSourceCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                     return st;
                 }
@@ -1046,6 +1050,8 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
 
             if (options != null && options.getExcludedContainerIds() != null)
                 ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.SampleType, options.getExcludedContainerIds(), st.getRowId(), user);
+            if (options != null && options.getExcludedDashboardContainerIds() != null)
+                ExperimentService.get().ensureDataTypeContainerExclusions(ExperimentService.DataTypeForExclusion.DashboardSampleType, options.getExcludedDashboardContainerIds(), st.getRowId(), user);
 
             if (!errors.hasErrors())
             {

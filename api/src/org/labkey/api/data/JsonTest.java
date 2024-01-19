@@ -101,12 +101,14 @@ public class JsonTest extends Assert
         obj.put("str", "hello");
         obj.put("arr", new JSONArray(Arrays.asList("one", null, 3, new JSONObject(Collections.singletonMap("four", 4)))));
         obj.put("nul", (Object)null);
+        obj.put("key", "</tricky\tvalue\\");
 //        obj.put("d", d);  //TODO: new JSONObject serializes date-times as ISO
 
         // Verify serializing JSONObject via Jackson is equivalent
         String jacksonToString = mapper.writeValueAsString(obj);
         String jsonOrgToString = obj.toString();
         assertEquals(jsonOrgToString, jacksonToString);
+        assertTrue(jsonOrgToString.contains("<\\/"));
 
         // Verify deserializing JSONObject via Jackson is equivalent
         // NOTE: In both cases, the date value is deserialized as a string because JSON sucks
