@@ -65,6 +65,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
     private Integer parentCol;
     private String category;
     private List<String> excludedContainerIds;
+    private List<String> excludedDashboardContainerIds;
 
     //Ignored on import/save, use Domain.name & Domain.description instead
     private String name;
@@ -235,5 +236,15 @@ public class SampleTypeDomainKindProperties implements Cloneable
     public void setExcludedContainerIds(List<String> excludedContainerIds)
     {
         this.excludedContainerIds = excludedContainerIds;
+    }
+
+    public List<String> getExcludedDashboardContainerIds()
+    {
+        return excludedDashboardContainerIds;
+    }
+
+    public void setExcludedDashboardContainerIds(List<String> excludedDashboardContainerIds)
+    {
+        this.excludedDashboardContainerIds = excludedDashboardContainerIds;
     }
 }

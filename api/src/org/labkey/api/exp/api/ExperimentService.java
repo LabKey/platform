@@ -143,7 +143,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
         SampleType,
         DataClass,
         AssayDesign,
-        StorageLocation
+        StorageLocation,
+        DashboardSampleType
     }
 
     @Nullable
@@ -962,7 +963,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     Set<String> getDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @NotNull Integer dataTypeRowId);
 
-    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
+    void ensureContainerDataTypeExclusions(@NotNull DataTypeForExclusion dataType, @Nullable DataTypeForExclusion relatedDataType, @Nullable Collection<Integer> excludedDataTypeRowIds, @NotNull String excludedContainerId, User user);
 
     void ensureDataTypeContainerExclusions(@NotNull DataTypeForExclusion dataType, @Nullable Collection<String> excludedContainerIds, @NotNull Integer dataTypeId, User user);
 
