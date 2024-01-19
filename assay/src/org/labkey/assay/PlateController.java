@@ -635,16 +635,6 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresAnyOf({ReadPermission.class, DesignAssayPermission.class})
-    public static class GetPlateTypesAction extends ReadOnlyApiAction<Object>
-    {
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            return PlateManager.get().getPlateTypes();
-        }
-    }
-
     @RequiresPermission(ReadPermission.class)
     public static class GetPlateOperationConfirmationDataAction extends ReadOnlyApiAction<DataViewSnapshotSelectionForm>
     {
