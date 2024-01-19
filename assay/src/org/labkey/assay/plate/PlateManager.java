@@ -1278,6 +1278,8 @@ public class PlateManager implements PlateService
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType(), filter, null).getObject(PlateTypeImpl.class);
     }
 
+    public record PlateLayout(String name, PlateType type, String assayType, String description){}
+
     @NotNull
     public List<PlateLayout> getPlateLayouts()
     {

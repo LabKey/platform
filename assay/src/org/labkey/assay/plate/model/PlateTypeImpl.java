@@ -9,23 +9,13 @@ import java.util.Objects;
 public class PlateTypeImpl implements PlateType
 {
     private Integer _rowId;
-    private String _assayType;
+    private Integer _rows;
     private Integer _cols;
     private String _description;
-    private Integer _rows;
-    private String _type;
+    private boolean _archived;
 
     public PlateTypeImpl()
     {
-    }
-
-    public PlateTypeImpl(String assayType, String type, String description, Integer rows, Integer cols)
-    {
-        _assayType = assayType;
-        _type = type;
-        _description = description;
-        _cols = cols;
-        _rows = rows;
     }
 
     @Override
@@ -37,16 +27,6 @@ public class PlateTypeImpl implements PlateType
     public void setRowId(Integer rowId)
     {
         _rowId = rowId;
-    }
-
-    public String getAssayType()
-    {
-        return _assayType;
-    }
-
-    public void setAssayType(String assayType)
-    {
-        _assayType = assayType;
     }
 
     public Integer getCols()
@@ -90,14 +70,14 @@ public class PlateTypeImpl implements PlateType
         _rows = rows;
     }
 
-    public String getType()
+    public boolean isArchived()
     {
-        return _type;
+        return _archived;
     }
 
-    public void setType(String type)
+    public void setArchived(boolean archived)
     {
-        _type = type;
+        _archived = archived;
     }
 
     @Override

@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController" %>
-<%@ page import="org.labkey.assay.plate.PlateLayout" %>
 <%@ page import="org.labkey.assay.plate.PlateManager" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.HashMap" %>
@@ -204,18 +203,18 @@
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
         List<Option> templates = new ArrayList<>();
-        for (PlateLayout layout : PlateManager.get().getPlateLayouts())
+        for (PlateManager.PlateLayout layout : PlateManager.get().getPlateLayouts())
         {
             ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
-            designerURL.addParameter("rowCount", layout.getPlateType().getRows());
-            designerURL.addParameter("colCount", layout.getPlateType().getColumns());
-            designerURL.addParameter("assayType", layout.getAssayType());
+            designerURL.addParameter("rowCount", layout.type().getRows());
+            designerURL.addParameter("colCount", layout.type().getColumns());
+            designerURL.addParameter("assayType", layout.assayType());
 
-            if (layout.getName() != null)
-                designerURL.replaceParameter("templateType", layout.getName());
+            if (layout.name() != null)
+                designerURL.replaceParameter("templateType", layout.name());
 
             templates.add(new Option.OptionBuilder()
-                    .label("new " + layout.getDescription() + " template")
+                    .label("new " + layout.description() + " template")
                     .value(designerURL.toString())
                     .build());
         }
