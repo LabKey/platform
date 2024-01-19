@@ -236,9 +236,9 @@ public interface AuthenticationProvider
     interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
         /**
-         * Bypass authentication from this provider. Might be configured via labkey.xml parameter to
-         * temporarily not require secondary authentication if this has been misconfigured or a 3rd
-         * party service provider is unavailable.
+         * Bypass authentication from this provider. Might be configured via context.bypass2FA=true property in
+         * application.properties to temporarily not require secondary authentication if this has been misconfigured or
+         * a 3rd party service provider is unavailable.
          */
         boolean bypass();
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.pipeline.cluster;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,14 +42,21 @@ import org.springframework.beans.factory.BeanFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
@@ -193,18 +201,18 @@ public class ClusterStartup extends AbstractPipelineStartup
             DummyPipelineJob job = new DummyPipelineJob(JunitUtil.getTestContainer(), TestContext.get().getUser(), DummyPipelineJob.Worker.success);
             String output = executeJobRemote(createArgs(job), 0);
             String jobLog = PageFlowUtil.getFileContentsAsString(job.getLogFile());
-            Assert.assertTrue("Couldn't find logging", jobLog.contains("Successful worker!"));
-            Assert.assertTrue("Couldn't find logging", output.contains("Exploding module archives"));
+            Assert.assertTrue("Couldn't find logging. \nProcess output: " + output + "\nJob log: " + jobLog, jobLog.contains("Successful worker!"));
+            Assert.assertTrue("Couldn't find logging. \nProcess output: " + output + "\nJob log: " + jobLog, output.contains("Exploding module archives"));
         }
 
         @Test
         public void testFailure() throws IOException, InterruptedException
         {
             DummyPipelineJob job = new DummyPipelineJob(JunitUtil.getTestContainer(), TestContext.get().getUser(), DummyPipelineJob.Worker.failure);
-            executeJobRemote(createArgs(job), 1);
+            String output = executeJobRemote(createArgs(job), 1);
             String jobLog = PageFlowUtil.getFileContentsAsString(job.getLogFile());
-            Assert.assertTrue("Couldn't find logging", jobLog.contains("Oopsies"));
-            Assert.assertTrue("Couldn't find logging", jobLog.contains("java.lang.UnsupportedOperationException"));
+            Assert.assertTrue("Couldn't find logging.\nProcess output: " + output + "\nJob log: " + jobLog, jobLog.contains("Oopsies"));
+            Assert.assertTrue("Couldn't find logging.\nProcess output: " + output + "\nJob log: " + jobLog, jobLog.contains("java.lang.UnsupportedOperationException"));
         }
 
         @Test
@@ -212,7 +220,7 @@ public class ClusterStartup extends AbstractPipelineStartup
         {
             List<String> args = createArgs(null);
             String output = executeJobRemote(args, 0);
-            Assert.assertTrue("Couldn't find logging", output.contains("Exploding module archives"));
+            Assert.assertTrue("Couldn't find logging. \nProcess output: " + output, output.contains("Exploding module archives"));
         }
 
         @Test
@@ -223,7 +231,7 @@ public class ClusterStartup extends AbstractPipelineStartup
             // Last argument is supposed to be the URI to the serialized job's file, hack it to something else
             args.set(args.size() - 1, "NotAValidURI.json");
             String output = executeJobRemote(args, 1);
-            Assert.assertTrue("Couldn't find logging", output.contains("Could not find serialized job file"));
+            Assert.assertTrue("Couldn't find logging. \nProcess output: " + output, output.contains("Could not find serialized job file"));
         }
 
         protected String executeJobRemote(List<String> args, int expectedExitCode) throws IOException, InterruptedException
@@ -254,9 +262,9 @@ public class ClusterStartup extends AbstractPipelineStartup
             if (!proc.waitFor(1, TimeUnit.MINUTES))
             {
                 proc.destroy();
-                Assert.fail("Process did not complete. Output:\n" + sb.toString());
+                Assert.fail("Process did not complete. Output:\n" + sb);
             }
-            Assert.assertEquals("Wrong exit code, output: " + sb.toString(), expectedExitCode, proc.exitValue());
+            Assert.assertEquals("Wrong exit code, output: " + sb, expectedExitCode, proc.exitValue());
             return sb.toString();
         }
 
@@ -266,6 +274,15 @@ public class ClusterStartup extends AbstractPipelineStartup
             List<String> args = new ArrayList<>();
             args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
             File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
+
+            if (!labkeyBootstrap.exists())
+            {
+                labkeyBootstrap = extractBootstrapFromEmbedded();
+                if (labkeyBootstrap == null || !labkeyBootstrap.exists())
+                {
+                    throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
+                }
+            }
 
             // Uncomment this line if you want to debug the forked process
 //            args.add("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:5005");
@@ -285,6 +302,36 @@ public class ClusterStartup extends AbstractPipelineStartup
             }
 
             return args;
+        }
+
+        private File extractBootstrapFromEmbedded() throws IOException
+        {
+            // Look through the JAR files in the working directory, which is expected to contain the Spring Boot entrypoint
+            File pwd = new File(".");
+            File[] jars = pwd.listFiles(f -> f.getName().toLowerCase().endsWith(".jar"));
+            for (File jar : jars)
+            {
+                try (JarFile j = new JarFile(jar))
+                {
+                    // Look inside the JAR for a labkeyBootstrap*.jar file
+                    Iterator<JarEntry> entries = j.entries().asIterator();
+                    while (entries.hasNext())
+                    {
+                        JarEntry entry = entries.next();
+                        if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
+                        {
+                            File result = new File("labkeyBootstrap.jar");
+                            try (InputStream in = j.getInputStream(entry);
+                                 OutputStream out = new FileOutputStream(result))
+                            {
+                                IOUtils.copy(in, out);
+                            }
+                            return FileUtil.getAbsoluteCaseSensitiveFile(result);
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }

@@ -469,14 +469,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         }
     }
 
-    // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or ROOT.xml.  Used in some error messages
+    // Get the name of the webapp configuration file, now always application.properties.  Used in some error messages
     //  to provide suggestions to the admin.
     @Override
     public String getWebappConfigurationFilename()
     {
-        String path = getContextPath();
-
-        return "".equals(path) ? "ROOT.xml" : path.substring(1) + ".xml";
+        return "application.properties";
     }
 
     @Override

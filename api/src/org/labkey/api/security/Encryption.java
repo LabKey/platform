@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Easy to use wrappers for common encryption algorithms. Also includes related helper methods for shared operations
- * such as generating salts & keys, and for retrieving & saving the labkey.xml encryption key and standard salt.
+ * such as generating salts & keys, and for retrieving & saving the application.properties encryption key and standard salt.
  * WARNING: Do not change the core algorithms or parameters of existing implementations; changes will likely
  * render existing data irrecoverable.
 */
@@ -416,9 +416,9 @@ public class Encryption
     }
 
     /**
-     * Return standard AES encryption algorithm. Generates a 128-bit key from the labkey.xml encryption key. All other
-     * encryption parameters are documented in AES(). Pass in a registered EncryptionMigrationHandler to prove that you
-     * can migrate your encrypted content.
+     * Return standard AES encryption algorithm. Generates a 128-bit key from the application.properties encryption key.
+     * All other encryption parameters are documented in AES(). Pass in a registered EncryptionMigrationHandler to prove
+     * that you can migrate your encrypted content.
      */
     public static Algorithm getAES128(EncryptionMigrationHandler handler)
     {
