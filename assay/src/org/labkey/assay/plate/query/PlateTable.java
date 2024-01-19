@@ -249,12 +249,15 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 throw new QueryUpdateServiceException("Changing the plate type is not allowed.");
 
             // if the name is changing, check for duplicates
-            String oldName = (String) oldRow.get("Name");
-            String newName = (String) row.get("Name");
-            if (!newName.equals(oldName))
+            if (row.containsKey("Name"))
             {
-                if (PlateManager.get().plateExists(container, newName))
-                    throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists in the folder.");
+                String oldName = (String) oldRow.get("Name");
+                String newName = (String) row.get("Name");
+                if (newName != null && !newName.equals(oldName))
+                {
+                    if (PlateManager.get().plateExists(container, newName))
+                        throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists in the folder.");
+                }
             }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);

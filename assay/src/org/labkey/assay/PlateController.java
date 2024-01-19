@@ -871,7 +871,7 @@ public class PlateController extends SpringActionController
     public static class CreatePlateSetForm
     {
         private String _name;
-        private List<Integer> _plateTypes = new ArrayList<>();
+        private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
 
         public String getName()
         {
@@ -883,38 +883,21 @@ public class PlateController extends SpringActionController
             _name = name;
         }
 
-        public List<Integer> getPlateTypes()
+        public List<PlateManager.CreatePlateSetPlate> getPlates()
         {
-            return _plateTypes;
+            return _plates;
         }
 
-        public void setPlateTypes(List<Integer> plateTypes)
+        public void setPlates(List<PlateManager.CreatePlateSetPlate> plates)
         {
-            _plateTypes = plateTypes;
+            _plates = plates;
         }
     }
 
-    @Marshal(Marshaller.JSONObject)
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(InsertPermission.class)
     public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
     {
-        List<PlateType> _plateTypes = new ArrayList<>();
-
-        @Override
-        public void validateForm(CreatePlateSetForm form, Errors errors)
-        {
-            for (Integer plateTypeId : form.getPlateTypes())
-            {
-                PlateType plateType = PlateManager.get().getPlateType(plateTypeId);
-                if (plateType == null)
-                {
-                    errors.reject(ERROR_REQUIRED, "Plate type id \"" + plateTypeId + "\" is invalid.");
-                    break;
-                }
-                _plateTypes.add(plateType);
-            }
-        }
-
         @Override
         public Object execute(CreatePlateSetForm form, BindException errors) throws Exception
         {
@@ -923,7 +906,7 @@ public class PlateController extends SpringActionController
                 PlateSetImpl plateSet = new PlateSetImpl();
                 plateSet.setName(form.getName());
 
-                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, _plateTypes);
+                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlates());
                 return success(plateSet);
             }
             catch (Exception e)

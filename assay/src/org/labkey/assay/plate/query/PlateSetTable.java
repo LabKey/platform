@@ -2,10 +2,8 @@ package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -19,7 +17,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -80,12 +77,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         var columnInfo = super.wrapColumn(col);
 
-        // the name field is always generated via name expression
-        if (columnInfo.getName().equalsIgnoreCase("Name"))
-        {
-            columnInfo.setUserEditable(false);
-        }
-        else if (columnInfo.getName().equalsIgnoreCase("RowId"))
+        if (columnInfo.getName().equalsIgnoreCase("RowId"))
         {
             // this is necessary in order to use rowId as a name expression token
             columnInfo.setKeyField(true);

@@ -1310,6 +1310,7 @@ public class PlateManager implements PlateService
 
     public PlateType getPlateType(Integer plateTypeId)
     {
+        if (plateTypeId == null) return null;
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getObject(plateTypeId, PlateTypeImpl.class);
     }
 
@@ -1737,7 +1738,9 @@ public class PlateManager implements PlateService
         return PLATE_NAME_EXPRESSION;
     }
 
-    public PlateSetImpl createPlateSet(Container container, User user, @NotNull PlateSetImpl plateSet, @Nullable List<PlateType> plateTypes) throws Exception
+    public record CreatePlateSetPlate(String name, Integer plateType) {}
+
+    public PlateSetImpl createPlateSet(Container container, User user, @NotNull PlateSetImpl plateSet, @Nullable List<CreatePlateSetPlate> plates) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Failed to create plate set. Insufficient permissions.");
@@ -1745,7 +1748,7 @@ public class PlateManager implements PlateService
         if (plateSet.getRowId() != null)
             throw new ValidationException("Failed to create plate set. Cannot create plate set with rowId (" + plateSet.getRowId() + ").");
 
-        if (plateTypes != null && plateTypes.size() > MAX_PLATES)
+        if (plates != null && plates.size() > MAX_PLATES)
             throw new ValidationException(String.format("Failed to create plate set. Plate sets can have a maximum of %d plates.", MAX_PLATES));
 
         try (DbScope.Transaction tx = ensureTransaction())
@@ -1760,13 +1763,16 @@ public class PlateManager implements PlateService
 
             Integer plateSetId = (Integer) rows.get(0).get("RowId");
 
-            if (plateTypes != null)
+            if (plates != null)
             {
-                for (PlateType plateType : plateTypes)
+                for (var plate : plates)
                 {
+                    var plateType = getPlateType(plate.plateType);
+                    if (plateType == null)
+                        throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
+
                     // TODO: Write a cheaper plate create/save for multiple plates
-                    if (plateType != null)
-                        createAndSavePlate(container, user, plateType, null, plateSetId, null, null);
+                    createAndSavePlate(container, user, plateType, plate.name, plateSetId, null, null);
                 }
             }
 
