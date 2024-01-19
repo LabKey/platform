@@ -61,6 +61,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private Integer _plateSetId;
     private Integer _plateType;
     private String _description;
+    private String _plateId;
 
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private List<WellGroupImpl> _deletedGroups;
@@ -632,5 +633,15 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setRunCount(Integer runCount)
     {
         _runCount = runCount;
+    }
+
+    public String getPlateId()
+    {
+        return _plateId;
+    }
+
+    public void setPlateId(String plateId)
+    {
+        _plateId = plateId;
     }
 }

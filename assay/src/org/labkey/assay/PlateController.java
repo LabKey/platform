@@ -860,8 +860,19 @@ public class PlateController extends SpringActionController
 
     public static class CreatePlateSetForm
     {
+        private String _description;
         private String _name;
         private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
 
         public String getName()
         {
@@ -894,6 +905,7 @@ public class PlateController extends SpringActionController
             try
             {
                 PlateSetImpl plateSet = new PlateSetImpl();
+                plateSet.setDescription(form.getDescription());
                 plateSet.setName(form.getName());
 
                 plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlates());
