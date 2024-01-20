@@ -549,6 +549,17 @@ public class PlateManager implements PlateService
 
     protected void populatePlate(PlateImpl plate)
     {
+        // plate type and plate set objects
+        PlateType plateType = getPlateType(plate.getPlateType());
+        if (plateType == null)
+            throw new IllegalStateException("Unable to get Plate Type with id : " + plate.getPlateType());
+        plate.setPlateTypeObject(plateType);
+
+        PlateSet plateSet = getPlateSet(plate.getContainer(), plate.getPlateSet());
+        if (plateSet == null)
+            throw new IllegalStateException("Unable to get Plate Set with id : " + plate.getPlateSet());
+        plate.setPlateSetObject(plateSet);
+
         // set plate properties:
         setProperties(plate.getContainer(), plate);
 
@@ -1892,7 +1903,7 @@ public class PlateManager implements PlateService
             assertEquals(plateId, savedTemplate.getRowId().intValue());
             assertEquals("bob", savedTemplate.getName());
             assertEquals("yes", savedTemplate.getProperty("friendly")); assertNotNull(savedTemplate.getLSID());
-            assertEquals(plateType, savedTemplate.getPlateTypeObject());
+            assertEquals(plateType.getRowId(), savedTemplate.getPlateTypeObject().getRowId());
 
             List<WellGroup> wellGroups = savedTemplate.getWellGroups();
             assertEquals(3, wellGroups.size());
