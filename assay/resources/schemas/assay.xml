@@ -31,6 +31,7 @@
       </column>
       <column columnName="Description"/>
       <column columnName="PlateId">
+        <columnTitle>Plate ID</columnTitle>
         <isUserEditable>false</isUserEditable>
       </column>
       <column columnName="PlateSet">
@@ -184,6 +185,7 @@
       <column columnName="Name"/>
       <column columnName="Description"/>
       <column columnName="PlateSetId">
+        <columnTitle>Plate Set ID</columnTitle>
         <isUserEditable>false</isUserEditable>
       </column>
       <column columnName="Container"/>
