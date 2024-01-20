@@ -30,6 +30,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -52,6 +53,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
@@ -73,6 +75,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Plate";
@@ -85,6 +89,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultVisibleColumns.add(FieldKey.fromParts("PlateType"));
         defaultVisibleColumns.add(FieldKey.fromParts("PlateSet"));
         defaultVisibleColumns.add(FieldKey.fromParts("AssayType"));
+        defaultVisibleColumns.add(FieldKey.fromParts("WellsFilled"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
@@ -102,6 +107,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.addColumns();
         addColumn(createPropertiesColumn());
+        addWellsFilledColumn();
     }
 
     @Override
@@ -134,6 +140,17 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         col.setFk(new PropertyForeignKey(getUserSchema(), getContainerFilter(), map));
 
         return col;
+    }
+
+    private void addWellsFilledColumn()
+    {
+        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsFilled FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
+                .append(" AND sampleId IS NOT NULL)");
+        ExprColumn countCol = new ExprColumn(this, "WellsFilled", sql, JdbcType.INTEGER);
+        countCol.setDescription("The number of wells that have samples for this plate.");
+        addColumn(countCol);
     }
 
     @Override
