@@ -833,6 +833,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public String getDateTimeToDateCast(String expression)
     {
+        // mm/dd/yyyy
+        // should we use 111 instead?:	yyyy/mm/dd
         return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
     }
 
@@ -1096,7 +1098,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         List<String> statements = new ArrayList<>(getDropIndexStatements(change));
 
         //Generate the alter table portion of statement
-        String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
+        String tableIdentifier = makeTableIdentifier(change);
+        String alterTableSegment = String.format("ALTER TABLE %s", tableIdentifier);
 
         //Don't use getSqlColumnSpec as constraints must be dropped and re-applied (exception for NOT NULL)
         for (PropertyStorageSpec column : change.getColumns())
@@ -1104,29 +1107,62 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
             String statement;
 
-            if (column.getJdbcType().isText())
+            String columnName = makeLegalIdentifier(column.getName());
+            if (column.getJdbcType().isDateOrTime())
             {
-                //T-SQL will throw an error for nvarchar sizes >4000
-                //Use the common default max size to make type change to nvarchar(max)/text consistent
-                String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                        "max" :
-                        column.getSize().toString();
+                String tempColumnName = column.getName() + "temp";
+                String addTempColumnStatement = alterTableSegment
+                        + String.format(" ADD %s", getSqlColumnSpec(column, tempColumnName));
 
-                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s(%s) ",
-                        makeLegalIdentifier(column.getName()),
-                        getSqlTypeName(column.getJdbcType()),
-                        size);
+//                String tempColumnStatement = alterTableSegment
+//                        + String.format(" ADD %s AS CAST(%s) AS %s",
+//                        makeLegalIdentifier(column.getName() + "~~temp~~"),
+//                        columnName,
+//                        getSqlTypeName(column.getJdbcType()));
+
+                statements.add(addTempColumnStatement);
+
+                // TODO copy value over
+                String updateColumnValueStatement = "UPDATE " + tableIdentifier
+                        + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, column.getJdbcType());
+                statements.add(updateColumnValueStatement);
+
+                String dropColumnStatement = alterTableSegment
+                        + String.format(" DROP COLUMN %s", columnName);
+                statements.add(dropColumnStatement);
+
+                // EXEC sp_rename 'study.StudyDesignAssays.Target', 'Type', 'COLUMN';
+                String renameColumnStatement = String.format("EXEC sp_rename '%s','%s','COLUMN'",
+                        tableIdentifier + "." + makeLegalIdentifier(tempColumnName), columnName);
+                statements.add(renameColumnStatement);
             }
             else
             {
-                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s ",
-                        makeLegalIdentifier(column.getName()),
-                        getSqlTypeName(column.getJdbcType()));
+                if (column.getJdbcType().isText())
+                {
+                    //T-SQL will throw an error for nvarchar sizes >4000
+                    //Use the common default max size to make type change to nvarchar(max)/text consistent
+                    String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                            "max" :
+                            column.getSize().toString();
+
+                    statement = alterTableSegment + String.format(" ALTER COLUMN %s %s(%s) ",
+                            makeLegalIdentifier(column.getName()),
+                            getSqlTypeName(column.getJdbcType()),
+                            size);
+                }
+                else
+                {
+                    statement = alterTableSegment + String.format(" ALTER COLUMN %s %s ",
+                            makeLegalIdentifier(column.getName()),
+                            getSqlTypeName(column.getJdbcType()));
+                }
+
+                //T-SQL will drop any existing null constraints
+                statement += column.isNullable() ? "NULL;" : "NOT NULL;";
+                statements.add(statement);
             }
 
-            //T-SQL will drop any existing null constraints
-            statement += column.isNullable() ? "NULL;" : "NOT NULL;";
-            statements.add(statement);
         }
         statements.addAll(getCreateIndexStatements(change));
 
@@ -1625,8 +1661,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
+        return getSqlColumnSpec(prop, prop.getName());
+    }
+
+    private String getSqlColumnSpec(PropertyStorageSpec prop, String columnName)
+    {
         List<String> colSpec = new ArrayList<>();
-        colSpec.add(makeLegalIdentifier(prop.getName()));
+        colSpec.add(makeLegalIdentifier(columnName));
         colSpec.add(getSqlTypeName(prop));
 
         if (prop.getJdbcType() == JdbcType.VARCHAR)

@@ -244,9 +244,12 @@
             "</table>";
     String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs;
     String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateFormatDocs;
+    String timeFormatHelp = "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + simpleDateFormatDocs;
 
     String dateParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs;
     String dateTimeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateFormatDocs;
+    String timeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleDateFormatDocs;
+
 %>
 <tr>
     <td colspan=2>Customize date and number display formats (<%=bean.helpLink%>)</td>
@@ -258,6 +261,10 @@
 <tr>
     <td class="labkey-form-label">Default display format for date-times<%=helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
     <td><input type="text" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Default display format for time only value<%=helpPopup("Time format", timeFormatHelp, true, 300)%></td>
+    <td><input type="text" name="<%=defaultTimeFormat%>" size="50" value="<%= h(laf.getDefaultTimeFormat()) %>"></td>
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
@@ -296,6 +303,10 @@
 <tr>
     <td class="labkey-form-label">Additional parsing pattern for date-times<%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
     <td><input type="text" name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Additional parsing pattern for times<%=helpPopup("Extra time parsing pattern", timeParsingHelp, true, 300)%></td>
+    <td><input type="text" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

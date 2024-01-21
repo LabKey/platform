@@ -804,6 +804,11 @@ public class DomainPropertyImpl implements DomainProperty
                         _pd.setFormat(null);
                     }
                 }
+                else if (newType.getJdbcType().isDateOrTime() && oldType.getJdbcType().isDateOrTime())
+                {
+                    changedType = true;
+                    _pd.setFormat(null);
+                }
                 else
                 {
                     throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");

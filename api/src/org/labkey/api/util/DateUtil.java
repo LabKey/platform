@@ -38,11 +38,13 @@ import org.labkey.api.view.ViewContext;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -78,6 +80,7 @@ public class DateUtil
     private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
     private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss";
+    private static final String[] VALID_TIME_FORMATS = {"hh:mm a", "hh:mm:ss a", "HH:mm", "HH:mm:ss"};
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()
@@ -650,7 +653,7 @@ validNum:       {
                     throw new ConversionException(s);
                 break;
             case TimeOnly:
-                if (year >= 0 || mon >= 0 || mday >= 0 || tzoffset >= 0)
+                if (strict && (year >= 0 || mon >= 0 || mday >= 0 || tzoffset != -1))
                     throw new ConversionException(s);
                 break;
         }
@@ -973,6 +976,25 @@ validNum:       {
     }
 
 
+    public static Date parseSimpleTime(Object o)
+    {
+        Date duration = null;
+        ParseException parseException = null;
+        for (int i = 0; i < VALID_TIME_FORMATS.length && duration == null; i++)
+        {
+            try
+            {
+                duration = DateUtil.parseDateTime(o.toString(), VALID_TIME_FORMATS[i]);
+            }
+            catch (ParseException ignore)
+            {
+            }
+        }
+        if (duration == null)
+            throw new ConversionException("Could not convert \"" + o + "\" to duration.", parseException);
+        return duration;
+    }
+
     public static long parseTime(String s)
     {
         return parseDateTimeUS(s, DateTimeOption.TimeOnly, true);
@@ -983,6 +1005,53 @@ validNum:       {
         return parseDateTimeUS(s, DateTimeOption.TimeOnly, strict);
     }
 
+    public static Time fromTimeString(String s, boolean strict)
+    {
+        return fromTimeString(s, getCurrentContainer(), strict);
+    }
+
+    public static Time fromTimeString(String s, Container container, boolean strict)
+    {
+        @Nullable String extraTimeParsingPattern = FolderSettingsCache.getExtraTimeParsingPattern(container);
+
+        // If provided, try the extra parsing pattern first
+        if (null != extraTimeParsingPattern)
+        {
+            try
+            {
+                return new Time(DateUtil.parseDateTime(s, extraTimeParsingPattern).getTime());
+            }
+            catch (ParseException ignored)
+            {
+            }
+        }
+
+        try
+        {
+            return new Time(parseSimpleTime(s).getTime());
+        }
+        catch (ConversionException ignored)
+        {
+        }
+
+        // try parse as a datetime first, if contains more than one spaces, or if contains space not followed by am/pm
+        if  (StringUtils.countMatches(s, " ") > 1
+                || (StringUtils.countMatches(s, " ") > 0
+                && !(s.toLowerCase().endsWith(" am") || s.toLowerCase().endsWith(" pm"))))
+        {
+            try
+            {
+                return new Time(parseDateTime(s));
+            }
+            catch (ConversionException ignored)
+            {
+            }
+        }
+
+
+        int timezoneDiffSec = ZonedDateTime.now().getOffset().getTotalSeconds();
+        return new Time(DateUtil.parseTime(s, strict) - 1000 * timezoneDiffSec);
+    }
 
     public static String getStandardDateFormatString()
     {
@@ -993,6 +1062,11 @@ validNum:       {
     public static String getStandardDateTimeFormatString()
     {
         return ISO_DATE_SHORT_TIME_FORMAT_STRING;
+    }
+
+    public static String getStandardTimeFormatString()
+    {
+        return ISO_SHORT_TIME_FORMAT_STRING;
     }
 
 
@@ -1125,7 +1199,12 @@ validNum:       {
      */
     public static String formatDateInfer(Container c, Date date)
     {
-        return formatDateTime(date, date instanceof java.sql.Date ? getDateFormatString(c) : getDateTimeFormatString(c));
+        String format = getDateTimeFormatString(c);
+        if (date instanceof java.sql.Date)
+            format = getDateFormatString(c);
+        if (date instanceof Time)
+            format = getTimeFormatString(c);
+        return formatDateTime(date, format);
     }
 
 
@@ -1168,7 +1247,7 @@ validNum:       {
 
     public static String getTimeFormatString(Container c)
     {
-        return ISO_LONG_TIME_FORMAT_STRING;
+        return FolderSettingsCache.getDefaultTimeFormat(c);
     }
 
 
@@ -1186,6 +1265,7 @@ validNum:       {
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
     private static final FastDateFormat safariJsonDateFormat = FastDateFormat.getInstance(getSafariJsonDateTimeFormatString());
+    private static final FastDateFormat jsonTimeFormat = FastDateFormat.getInstance(ISO_LONG_TIME_FORMAT_STRING);
 
     public static String formatJsonDateTime(Date date)
     {
@@ -1199,8 +1279,15 @@ validNum:       {
             if (context != null && context.getRequest() != null)
             {
                 isSafari = HttpUtil.isSafari(context.getRequest());
+
+                if (date instanceof Time && context.getContainer() != null)
+                    return FastDateFormat.getInstance(FolderSettingsCache.getDefaultTimeFormat(context.getContainer())).format(date);
             }
         }
+
+        if (date instanceof Time)
+            return jsonTimeFormat.format(date);
+
         return isSafari ? safariJsonDateFormat.format(date) : jsonDateFormat.format(date);
     }
 

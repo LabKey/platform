@@ -95,6 +95,19 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 }
             }
 
+            if (folderXml.isSetDefaultTimeFormat())
+            {
+                try
+                {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Default time format: " + folderXml.getDefaultTimeFormat());
+                    WriteableFolderLookAndFeelProperties.saveDefaultTimeFormat(c, folderXml.getDefaultTimeFormat());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal default time format specified: " + e.getMessage());
+                }
+            }
+
             if (folderXml.isSetRestrictedColumnsEnabled())
             {
                 ctx.getLogger().debug("[" + c.getPath() + "] Restricted columns enabled: " + folderXml.getRestrictedColumnsEnabled());
@@ -137,6 +150,19 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 catch (IllegalArgumentException e)
                 {
                     ctx.getLogger().warn("Illegal default date-time format specified: " + e.getMessage());
+                }
+            }
+
+            if (folderXml.isSetExtraTimeParsingPattern())
+            {
+                try
+                {
+                    ctx.getLogger().debug("[" + c.getPath() + "] Extra time parsing format: " + folderXml.getExtraTimeParsingPattern());
+                    WriteableFolderLookAndFeelProperties.saveExtraTimeParsingPattern(c, folderXml.getExtraTimeParsingPattern());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    ctx.getLogger().warn("Illegal extra time parsing format specified: " + e.getMessage());
                 }
             }
 

@@ -80,10 +80,18 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
                 writeable.setDefaultNumberFormat(value); // Override to validate and use legacy property name
             }
         },
+        defaultTimeFormat("Default display format for time only fields"){
+            @Override
+            public void save(WriteableLookAndFeelProperties writeable, String value)
+            {
+                writeable.setDefaultTimeFormat(value); // Override to validate and use legacy property name
+            }
+        },
 
         dateParsingMode("Date parsing mode. Valid values: " + Arrays.toString(DateParsingMode.values())),
         extraDateParsingPattern("Additional parsing pattern for dates"),
         extraDateTimeParsingPattern("Additional parsing pattern for date-times"),
+        extraTimeParsingPattern("Additional parsing pattern for times"),
 
         restrictedColumnsEnabled("Restrict charting columns by measure and dimension flags"),
 
