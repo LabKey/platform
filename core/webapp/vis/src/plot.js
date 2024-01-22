@@ -2272,7 +2272,8 @@ boxPlot.render();
                     }
                 }
 
-                if (config.properties.showSDLines === true) {
+                // By default show +-1/2 SD Lines
+                if (config.properties.hideSDLines === false || config.properties.hideSDLines === undefined) {
                     config.layers.push(new LABKEY.vis.Layer({
                         geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, width: barWidth}),
                         data: meanStdDevData,
