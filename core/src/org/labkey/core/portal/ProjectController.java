@@ -54,6 +54,7 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
@@ -1843,6 +1844,18 @@ public class ProjectController extends SpringActionController
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
             return form.getReturnURLHelper(beginURL());
+        }
+    }
+
+    @RequiresLogin
+    public static class ContextAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            PageConfig pageConfig = getPageConfig();
+            pageConfig.setIncludePermissions(true);
+            return PageFlowUtil.jsInitObject(getViewContext(), pageConfig, null, false);
         }
     }
 }
