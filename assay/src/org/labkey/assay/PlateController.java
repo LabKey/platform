@@ -64,6 +64,7 @@ import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
 import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
@@ -545,12 +546,18 @@ public class PlateController extends SpringActionController
     public static class CreatePlateForm implements ApiJsonForm
     {
         private String _name;
+        private Integer _plateSetId;
         private PlateType _plateType;
         private List<Map<String, Object>> _data = new ArrayList<>();
 
         public String getName()
         {
             return _name;
+        }
+
+        public Integer getPlateSetId()
+        {
+            return _plateSetId;
         }
 
         public PlateType getPlateType()
@@ -570,6 +577,9 @@ public class PlateController extends SpringActionController
 
             if (json.has("name"))
                 _name = json.getString("name");
+
+            if (json.has("plateSetId"))
+                _plateSetId = json.getInt("plateSetId");
 
             if (json.has("plateType"))
                 _plateType = objectMapper.convertValue(json.getJSONObject("plateType"), PlateType.class);
@@ -599,8 +609,6 @@ public class PlateController extends SpringActionController
         @Override
         public void validateForm(CreatePlateForm form, Errors errors)
         {
-            if (StringUtils.trimToNull(form.getName()) == null)
-                errors.reject(ERROR_REQUIRED, "Plate \"name\" is required.");
             if (form.getPlateType() == null)
                 errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
         }
@@ -610,7 +618,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName(), form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName(), form.getPlateSetId(), form.getData());
                 return success(plate);
             }
             catch (Exception e)
@@ -852,6 +860,125 @@ public class PlateController extends SpringActionController
                 ((PlateImpl) plate).setRunCount(PlateManager.get().getRunCountUsingPlate(plate.getContainer(), getUser(), plate));
 
             return plate;
+        }
+    }
+
+    // TODO: It'd be nice if we could not have to implement ApiJsonForm here and just bind via Jackson
+    public static class CreatePlateSetForm implements ApiJsonForm
+    {
+        private String _name;
+        private List<PlateType> _plateTypes = new ArrayList<>();
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        // TODO: Would be really nice to be able to reference plate types by a single identifier. Maybe we just give
+        // them hard-coded names that can act as a "PK" which we can specify.
+        public List<PlateType> getPlateTypes()
+        {
+            return _plateTypes;
+        }
+
+        @Override
+        public void bindJson(JSONObject json)
+        {
+            ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
+
+            if (json.has("name"))
+                _name = json.getString("name");
+
+            if (json.has("plateTypes"))
+            {
+                JSONArray plateTypes = json.getJSONArray("plateTypes");
+
+                for (int i = 0; i < plateTypes.length(); i++)
+                {
+                    JSONObject jsonObj = plateTypes.getJSONObject(i);
+                    if (jsonObj != null)
+                        _plateTypes.add(objectMapper.convertValue(jsonObj, PlateType.class));
+                }
+            }
+        }
+    }
+
+    @Marshal(Marshaller.JSONObject)
+    @RequiresPermission(InsertPermission.class)
+    public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
+    {
+        @Override
+        public Object execute(CreatePlateSetForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateSetImpl plateSet = new PlateSetImpl();
+                plateSet.setName(form.getName());
+
+                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlateTypes());
+                return success(plateSet);
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to create plate set. An error has occurred.");
+            }
+
+            return null;
+        }
+    }
+
+    public static class ArchiveForm
+    {
+        private List<Integer> _plateSetIds;
+        private boolean _restore;
+
+        public List<Integer> getPlateSetIds()
+        {
+            return _plateSetIds;
+        }
+
+        public void setPlateSetIds(List<Integer> plateSetIds)
+        {
+            _plateSetIds = plateSetIds;
+        }
+
+        public boolean isRestore()
+        {
+            return _restore;
+        }
+
+        public void setRestore(boolean restore)
+        {
+            _restore = restore;
+        }
+    }
+
+    @Marshal(Marshaller.JSONObject)
+    @RequiresPermission(UpdatePermission.class)
+    public static class ArchivePlateSetsAction extends MutatingApiAction<ArchiveForm>
+    {
+        @Override
+        public void validateForm(ArchiveForm form, Errors errors)
+        {
+            if (form.getPlateSetIds() == null)
+                errors.reject(ERROR_GENERIC, "\"plateSetIds\" is a required field.");
+        }
+
+        @Override
+        public Object execute(ArchiveForm form, BindException errors) throws Exception
+        {
+            try
+            {
+                PlateManager.get().archivePlateSets(getContainer(), getUser(), form.getPlateSetIds(), !form.isRestore());
+                return success();
+            }
+            catch (Exception e)
+            {
+                String action = form.isRestore() ? "restore" : "archive";
+                errors.reject(ERROR_GENERIC, e.getMessage() != null ? e.getMessage() : "Failed to " + action + " plate sets. An error has occurred.");
+            }
+
+            return null;
         }
     }
 }

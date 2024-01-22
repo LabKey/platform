@@ -561,7 +561,10 @@ public class JsonUtil
         {
             // just verifying current behavior: JSONObject escapes /, ObjectMapper does not escape /
             assertEquals("{\"key<\\/\":\"<\\/script>\"}", new JSONObject(Map.of("key</","</script>")).toString());
-            assertEquals("{\"key</\":\"</script>\"}", new ObjectMapper().writeValueAsString(Map.of("key</","</script>")));
+            // This is the default ObjectMapper behavior
+            //assertEquals("{\"key</\":\"</script>\"}", new ObjectMapper().writeValueAsString(Map.of("key</","</script>")));
+            // This is the "hacked" ObjectMapper behavior see the fix-up code in CoreModule static
+            assertEquals("{\"key<\\/\":\"<\\/script>\"}", new ObjectMapper().writeValueAsString(Map.of("key</","</script>")));
 
             // our ObjectMapper should act like JSONObject.toString()
             assertEquals("{\"key<\\/\":\"<\\/script>\"}", DEFAULT_MAPPER.writeValueAsString(Map.of("key</","</script>")));

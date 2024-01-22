@@ -219,6 +219,7 @@ public class RReport extends ExternalScriptEngineReport
         return DEFAULT_APP_PATH;
     }
 
+
     public static String toR(String s)
     {
         if (s == null)
@@ -258,6 +259,7 @@ public class RReport extends ExternalScriptEngineReport
         r.append("\"");
         return r.toString();
     }
+
 
     // static for access by RserveScriptEngine with no backing report
     public static void appendParamList(StringBuilder labkey, Map<String, Object> inputParameters)
