@@ -50,8 +50,17 @@ public class MarkdownServiceImpl implements MarkdownService
 
     private static class PoolFactory implements KeyedPoolableObjectFactory<Map<Options, Boolean>, MarkdownInvocable>
     {
-
         public static final String POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY = "polyglot.engine.WarnInterpreterOnly";
+
+        static
+        {
+            // Issue 47679 - suppress stdout logging from GraalJS about compilation mode, due to significant difficulties
+            // in getting the VM configured to use compilation mode
+            if (System.getProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY) == null)
+            {
+                System.setProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY, "false");
+            }
+        }
 
         @Override
         public MarkdownInvocable makeObject(Map<Options, Boolean> options) throws Exception
@@ -60,13 +69,6 @@ public class MarkdownServiceImpl implements MarkdownService
             LabKeyScriptEngineManager svc = LabKeyScriptEngineManager.get();
             if (null == svc)
                 throw new ConfigurationException("LabKeyScriptEngineManager service not found.");
-
-            // Issue 47679 - suppress stdout logging from Graal about compilation mode, due to significant difficulties
-            // in getting the VM configured to use compilation mode
-            if (System.getProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY) == null)
-            {
-                System.setProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY, "false");
-            }
 
             ScriptEngine engine = svc.getEngineByName("graal.js");
             if (null == engine)
