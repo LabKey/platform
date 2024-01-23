@@ -1064,16 +1064,21 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             String dbType;
             if (column.getJdbcType().isDateOrTime())
             {
-                String tempColumnName = column.getName() + "temp"; // TODO do better
+                String tempColumnName = column.getName() + "~~temp~~";
+                // create a temp column
                 String addTempColumnStatement = alterTableSegment + String.format(" ADD COLUMN %s", getSqlColumnSpec(column, tempColumnName));
                 statements.add(addTempColumnStatement);
+
+                // copy casted value to temp column
                 String updateColumnValueStatement = "UPDATE " + tableIdentifier
-                    + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, column.getJdbcType());
+                    + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, getSqlTypeName(column));
                 statements.add(updateColumnValueStatement);
 
+                // drop original column
                 String dropOldColumnStatement = alterTableSegment + " DROP COLUMN " + columnName;
                 statements.add(dropOldColumnStatement);
 
+                // rename temp column to original column name
                 String renameTempColumnValStatement = alterTableSegment + String.format(" RENAME COLUMN %s TO %s", makeLegalIdentifier(tempColumnName), columnName);
                 statements.add(renameTempColumnValStatement);
             }

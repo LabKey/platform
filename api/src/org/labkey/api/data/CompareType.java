@@ -47,6 +47,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -1499,7 +1500,20 @@ public abstract class CompareType
                     throwConversionException(stringValue, colInfo, Boolean.class);
                 }
             }
-            case TIMESTAMP, DATE, TIME -> {
+            case TIME -> {
+                try
+                {
+                    stringValue = StringUtils.trimToNull(stringValue);
+                    if (stringValue == null)
+                        return null;
+                    return ConvertUtils.convert(stringValue, Time.class).toString();
+                }
+                catch (ConversionException e)
+                {
+                    throwConversionException(stringValue, colInfo, Time.class);
+                }
+            }
+            case TIMESTAMP, DATE -> {
                 try
                 {
                     return ConvertUtils.convert(stringValue, Date.class);

@@ -211,12 +211,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             return "ENTITYID";
         }
-        else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
-        {
-            // This is because the jtds driver has a bug where it returns these from the db as strings
-            // TODO: Is this true for the SQL Server JDBC driver?
-            return "DATETIME";
-        }
         else
         {
             return getSqlTypeName(prop.getJdbcType());
@@ -1110,28 +1104,23 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             String columnName = makeLegalIdentifier(column.getName());
             if (column.getJdbcType().isDateOrTime())
             {
-                String tempColumnName = column.getName() + "temp";
+                // create a temp column
+                String tempColumnName = column.getName() + "~~temp~~";
                 String addTempColumnStatement = alterTableSegment
                         + String.format(" ADD %s", getSqlColumnSpec(column, tempColumnName));
-
-//                String tempColumnStatement = alterTableSegment
-//                        + String.format(" ADD %s AS CAST(%s) AS %s",
-//                        makeLegalIdentifier(column.getName() + "~~temp~~"),
-//                        columnName,
-//                        getSqlTypeName(column.getJdbcType()));
-
                 statements.add(addTempColumnStatement);
 
-                // TODO copy value over
+                // copy casted value to temp column
                 String updateColumnValueStatement = "UPDATE " + tableIdentifier
-                        + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, column.getJdbcType());
+                        + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, getSqlTypeName(column));
                 statements.add(updateColumnValueStatement);
 
+                // drop original column
                 String dropColumnStatement = alterTableSegment
                         + String.format(" DROP COLUMN %s", columnName);
                 statements.add(dropColumnStatement);
 
-                // EXEC sp_rename 'study.StudyDesignAssays.Target', 'Type', 'COLUMN';
+                // rename temp column to original column name
                 String renameColumnStatement = String.format("EXEC sp_rename '%s','%s','COLUMN'",
                         tableIdentifier + "." + makeLegalIdentifier(tempColumnName), columnName);
                 statements.add(renameColumnStatement);
@@ -2088,7 +2077,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "                                    2004\n" +
             "                                when c.system_type_id = 40 then -- DATE\n" +  // #27221: SQL Server Date columns return incorrect meta data types
             "                                     " + Types.DATE + "\n" +
-            "                                when c.system_type_id IN (41, 42, 43) then -- TIME/DATETIME2/DATETIMEOFFSET\n" + // Note: These should probably map to real SQL Type values instead of VARCHAR!
+            "                                when c.system_type_id = 41 then -- TIME\n" +
+            "                                     " + Types.TIME + "\n" +
+            "                                when c.system_type_id IN (42, 43) then -- DATETIME2/DATETIMEOFFSET\n" + // Note: These should probably map to real SQL Type values instead of VARCHAR!
             "                                     12\n" +
             "                                when c.system_type_id IN (98, 167, 231) then -- sql_variant, varchar, nvarchar\n" +
             "                                     12\n" +
