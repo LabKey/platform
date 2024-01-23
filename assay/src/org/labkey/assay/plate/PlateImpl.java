@@ -291,6 +291,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonIgnore
     public int getColumns()
     {
+        if (_plateTypeObject == null)
+            return 0;
         return _plateTypeObject.getColumns();
     }
 
@@ -304,6 +306,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonIgnore
     public int getRows()
     {
+        if (_plateTypeObject == null)
+            return 0;
         return _plateTypeObject.getRows();
     }
 
@@ -545,7 +549,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _plateType = plateType;
     }
 
-    @JsonIgnore
+    @JsonIgnore // Ignored for client serialization due to full serialization of "plateType"
     public Integer getPlateType()
     {
         return _plateType;
