@@ -257,7 +257,7 @@ public class AssayUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from assay-24.000-24.001.sql
+     * Called from assay-24.001-24.002.sql
      * <p>
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
      * want to iterate over each plate set to set the name using the configured name expression.
