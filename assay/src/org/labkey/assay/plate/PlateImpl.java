@@ -18,6 +18,7 @@ package org.labkey.assay.plate;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
@@ -544,6 +545,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _plateType = plateType;
     }
 
+    @JsonIgnore
     public Integer getPlateType()
     {
         return _plateType;
@@ -560,7 +562,7 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
-    @JsonIgnore
+    @JsonProperty("plateType")
     public @NotNull PlateType getPlateTypeObject()
     {
         return _plateTypeObject;
