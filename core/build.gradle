@@ -47,20 +47,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "org.graalvm.sdk:graal-sdk:${graalVersion}",
-            "GraalJS",
-            "GraalJS",
-            "https://github.com/graalvm/graaljs",
-            "Universal Permissive License",
-            "https://github.com/graalvm/graaljs/blob/master/LICENSE",
-            "Server-side JavaScript evaluation"
-        )
-    )
-
-    BuildUtils.addExternalDependency(
-        project,
-        new ExternalDependency(
-            "org.graalvm.js:js:${graalVersion}",
+            "org.graalvm.polyglot:js-community:${graalVersion}",
             "GraalJS",
             "GraalJS",
             "https://github.com/graalvm/graaljs",
