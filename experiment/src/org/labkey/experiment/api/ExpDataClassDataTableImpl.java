@@ -817,12 +817,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (perm == ReadPermission.class)
-        {
-            if (_dataClass.isMedia())
-                return getContainer().hasPermission(user, MediaReadPermission.class);
-            return getContainer().hasPermission(user, DataClassReadPermission.class);
-        }
+            return getContainer().hasPermission(user, getReadPermissionClass());
         return super.hasPermission(user, perm);
+    }
+
+    /**
+     * Issue 49452: Apply the appropriate data class read permission to the container filter so that folder filters
+     * do not include unauthorized rows.
+     */
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return filter.createFilterClause(getSchema(), fieldKey, getReadPermissionClass(), null);
+    }
+
+    private @NotNull Class<? extends Permission> getReadPermissionClass()
+    {
+        return _dataClass.isMedia() ? MediaReadPermission.class : DataClassReadPermission.class;
     }
 
     //
