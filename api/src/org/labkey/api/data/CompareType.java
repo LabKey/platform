@@ -1506,7 +1506,7 @@ public abstract class CompareType
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                         return null;
-                    return ConvertUtils.convert(stringValue, Time.class).toString();
+                    return ConvertUtils.convert(stringValue, Time.class);
                 }
                 catch (ConversionException e)
                 {

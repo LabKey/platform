@@ -796,7 +796,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 altFormats    : this.getAltDateFormats(),
                 hidden: typeId === 1,
                 disabled: typeId === 1,
-                emptyText: xType === 'textarea' ? 'Use new line or semicolon to separate entries' : null,
+                emptyText: xType === 'textarea' ? 'Use new line or semicolon to separate entries' : (me.jsonType === 'time' ? 'HH:mm:ss' : undefined),
                 style: { resize: 'none' },
                 validator : function(value) {
 
