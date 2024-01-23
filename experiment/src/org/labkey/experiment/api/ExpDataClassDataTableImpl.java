@@ -833,7 +833,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
     private @NotNull Class<? extends Permission> getReadPermissionClass()
     {
-        return _dataClass.isMedia() ? MediaReadPermission.class : DataClassReadPermission.class;
+        return _dataClass != null && _dataClass.isMedia() ? MediaReadPermission.class : DataClassReadPermission.class;
     }
 
     //
