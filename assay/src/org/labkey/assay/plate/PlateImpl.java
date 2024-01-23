@@ -569,6 +569,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonProperty("plateType")
     public @NotNull PlateType getPlateTypeObject()
     {
+        if (_plateTypeObject == null)
+            _plateTypeObject = PlateManager.get().getPlateType(_plateType);
         return _plateTypeObject;
     }
 
