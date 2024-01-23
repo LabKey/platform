@@ -39,6 +39,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ContextListener implements ServletContextListener
 {
+    public static final String POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY = "polyglot.engine.WarnInterpreterOnly";
+
     // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
 
     // IMPORTANT see also LabKeyBootstrapClassLoader/PipelineBootstrapConfig which duplicates this code, keep them consistent
@@ -59,6 +61,13 @@ public class ContextListener implements ServletContextListener
         }
         // As of log4j2 2.17.2, we must declare languages referenced in log4j2.xml. Our DefaultRolloverStrategy uses rhino.
         System.setProperty("log4j2.Script.enableLanguages", "rhino");
+
+        // Issue 47679 - suppress stdout logging from GraalJS about compilation mode, due to significant difficulties
+        // in getting the VM configured to use compilation mode
+        if (System.getProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY) == null)
+        {
+            System.setProperty(POLYGLOT_ENGINE_WARN_INTERPRETER_ONLY, "false");
+        }
     }
 
     // NOTE: this line of code with LogManager.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)
