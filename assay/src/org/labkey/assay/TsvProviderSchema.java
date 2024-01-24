@@ -49,7 +49,7 @@ public class TsvProviderSchema extends AssayProviderSchema
             setName(PLATE_TEMPLATE_TABLE);
             setTitleColumn("Name");
 
-            addCondition(new SimpleFilter(FieldKey.fromParts("Type"), TsvPlateLayoutHandler.TYPE));
+            addCondition(new SimpleFilter(FieldKey.fromParts("AssayType"), TsvPlateLayoutHandler.TYPE));
         }
 
         @Override
