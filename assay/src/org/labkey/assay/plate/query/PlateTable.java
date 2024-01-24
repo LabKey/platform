@@ -20,9 +20,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -30,6 +28,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -39,7 +38,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -52,6 +50,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
@@ -73,6 +72,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
+import static org.labkey.api.query.ExprColumn.STR_TABLE_ALIAS;
+
 public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 {
     public static final String NAME = "Plate";
@@ -81,9 +82,11 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Rows"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Columns"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Type"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Description"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateType"));
+        defaultVisibleColumns.add(FieldKey.fromParts("PlateSet"));
+        defaultVisibleColumns.add(FieldKey.fromParts("AssayType"));
+        defaultVisibleColumns.add(FieldKey.fromParts("WellsFilled"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
         defaultVisibleColumns.add(FieldKey.fromParts("Modified"));
@@ -101,6 +104,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         super.addColumns();
         addColumn(createPropertiesColumn());
+        addWellsFilledColumn();
     }
 
     @Override
@@ -133,6 +137,17 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         col.setFk(new PropertyForeignKey(getUserSchema(), getContainerFilter(), map));
 
         return col;
+    }
+
+    private void addWellsFilledColumn()
+    {
+        SQLFragment sql = new SQLFragment("(SELECT COUNT(*) AS wellsFilled FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                .append(" WHERE PlateId = " + STR_TABLE_ALIAS + ".RowId")
+                .append(" AND sampleId IS NOT NULL)");
+        ExprColumn countCol = new ExprColumn(this, "WellsFilled", sql, JdbcType.INTEGER);
+        countCol.setDescription("The number of wells that have samples for this plate.");
+        addColumn(countCol);
     }
 
     @Override
@@ -198,10 +213,19 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
 
-            nameExpressionTranslator.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR),
-                    (Supplier) () -> PlateService.get().getPlateNameExpression());
+            if (!nameMap.containsKey("plateId"))
+            {
+                ColumnInfo nameCol = plateTable.getColumn("plateId");
+                nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
+            }
+
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateTable);
-            DataIterator di = LoggingDataIterator.wrap(new NameExpressionDataIterator(builtInColumnsTranslator, context, plateTable, container, null, null, null));
+
+            DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateTable,
+                    container,
+                    "name",
+                    "plateId",
+                    PlateManager.get().getPlateNameExpression()));
 
             ValidatorIterator vi = new ValidatorIterator(di, context, container, user);
             vi.addValidator(nameMap.get("name"), new UniquePlateNameValidator(container));
@@ -234,20 +258,20 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             if (runsInUse > 0)
                 throw new QueryUpdateServiceException(String.format("%s is used by %d runs and cannot be updated", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
 
-            // disallow plate size changes
-            if ((row.containsKey("rows") && ObjectUtils.notEqual(oldRow.get("rows"), row.get("rows"))) ||
-                    (row.containsKey("columns") && ObjectUtils.notEqual(oldRow.get("columns"), row.get("columns"))))
-            {
-                throw new QueryUpdateServiceException("Changing the plate size (rows or columns) is not allowed.");
-            }
+            // disallow plate type changes
+            if (row.containsKey("plateType") && ObjectUtils.notEqual(oldRow.get("plateType"), row.get("plateType")))
+                throw new QueryUpdateServiceException("Changing the plate type is not allowed.");
 
             // if the name is changing, check for duplicates
-            String oldName = (String) oldRow.get("Name");
-            String newName = (String) row.get("Name");
-            if (!newName.equals(oldName))
+            if (row.containsKey("Name"))
             {
-                if (PlateManager.get().plateExists(container, newName))
-                    throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists in the folder.");
+                String oldName = (String) oldRow.get("Name");
+                String newName = (String) row.get("Name");
+                if (newName != null && !newName.equals(oldName))
+                {
+                    if (PlateManager.get().plateExists(container, newName))
+                        throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists in the folder.");
+                }
             }
 
             Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
