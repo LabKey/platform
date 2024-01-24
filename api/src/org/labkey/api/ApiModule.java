@@ -109,6 +109,7 @@ import org.labkey.api.view.FileServlet;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectorServlet;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
@@ -197,6 +198,14 @@ public class ApiModule extends CodeOnlyModule
         // http://host/labkey/filecontent/proj/dir/sendFile.view?file=test.html
         servletCtx.addServlet("FileServlet", new FileServlet()).
             addMapping("/files/*");
+
+        String legacyContextPath = servletCtx.getInitParameter("legacyContextPath");
+        if (legacyContextPath != null)
+        {
+            ServletRegistration.Dynamic redirectorDynamic = servletCtx.addServlet("RedirectorServlet", new RedirectorServlet(legacyContextPath));
+            redirectorDynamic.addMapping(legacyContextPath + "/*");
+            redirectorDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        }
     }
 
     @Override
