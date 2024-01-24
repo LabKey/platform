@@ -233,7 +233,7 @@ public class ExcelColumn extends RenderColumn
     {
         String formatString = super.getFormatString();
 
-        if (_simpleType == TYPE_DATE || _simpleType == TYPE_TIME)
+        if (formatString != null && (_simpleType == TYPE_DATE || _simpleType == TYPE_TIME))
         {
             formatString = formatString.replaceAll("aa", "a").replaceAll("a", "AM/PM");
         }
