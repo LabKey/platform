@@ -13,7 +13,7 @@
     "test-integration": "cross-env NODE_ENV=test jest --ci --runInBand -c test/js/jest.config.integration.js"
   },
   "dependencies": {
-    "@labkey/components": "3.9.0-fb-timeFields.2"
+    "@labkey/components": "3.9.1-fb-timeFields.1"
   },
   "devDependencies": {
     "@labkey/build": "7.0.2",
