@@ -1035,12 +1035,14 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Boolean getAuditCommentsRequired()
     {
         Map<String, String> props = PropertyManager.getProperties(this, AUDIT_SETTINGS_PROPERTY_SET_NAME);
+        if (!AdminConsole.isProductFeatureEnabled(ProductFeature.DataChangeCommentRequirement))
+            return false;
         return Boolean.parseBoolean(props.getOrDefault(REQUIRE_USER_COMMENTS_PROPERTY_NAME, "false"));
     }
 
     /**
      * Sets the default module for a "mixed" type folder. We try not to create
-     * these any more. Instead each folder is "owned" by a module
+     * these anymore. Instead, each folder is "owned" by a module
      */
     public void setDefaultModule(Module module)
     {
