@@ -80,7 +80,7 @@ public class DateUtil
     private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
     private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss";
-    private static final String[] VALID_TIME_FORMATS = {"hh:mm a", "hh:mm:ss a", "HH:mm", "HH:mm:ss"};
+    private static final String[] VALID_TIME_FORMATS = {"hh:mm:ss a", "hh:mm a", "HH:mm:ss", "HH:mm"};
 
     /**
      * GregorianCalendar is expensive because it calls computeTime() in setTimeInMillis()

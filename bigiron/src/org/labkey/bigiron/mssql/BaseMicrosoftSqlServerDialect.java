@@ -218,6 +218,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
+    public void prepare(DbScope.LabKeyDataSource dataSource)
+    {
+        if (dataSource.isPrimary())
+        {
+            dataSource.setConnectionProperty("sendTimeAsDatetime", "false");
+        }
+    }
+
+    @Override
     @Nullable
     public String getSqlCastTypeName(JdbcType type)
     {
