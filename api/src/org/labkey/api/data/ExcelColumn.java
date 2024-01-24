@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import jxl.format.Colour;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
@@ -81,6 +82,7 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,6 +116,8 @@ public class ExcelColumn extends RenderColumn
     private static final double MAX_IMAGE_RATIO = 0.75;
     private static final double MAX_IMAGE_HEIGHT = 400.0;
     private static final double MAX_IMAGE_WIDTH = 300.0;
+
+    private static final Date EXCEL_DATE_0 = (new GregorianCalendar(1900, 1, 1)).getTime();
 
     // CONSIDER: Add support for left/right/center alignment (from DisplayColumn)
     private int _simpleType = TYPE_UNKNOWN;
@@ -359,7 +363,22 @@ public class ExcelColumn extends RenderColumn
                 case(TYPE_DATE):
                     // Careful here... need to make sure we adjust dates for GMT.  This constructor automatically does the conversion, but there seem to be
                     // bugs in other jxl 2.5.7 constructors: DateTime(c, r, d) forces the date to time-only, DateTime(c, r, d, gmt) doesn't adjust for gmt
-                    cell.setCellValue((Date) o);
+                    Date dateVal = (Date) o;
+                    if (dateVal.compareTo(EXCEL_DATE_0) < 0)
+                    {
+                        String format = getFormatString();
+                        if (StringUtils.isEmpty(format))
+                            cell.setCellValue(o.toString());
+                        else
+                        {
+                            // date is invalid for excel, export as formatted string instead
+                            format = format.replaceAll("AM/PM", "a");
+                            Format formatter = FastDateFormat.getInstance(format);
+                            cell.setCellValue(formatter.format(dateVal));
+                        }
+                    }
+                    else
+                        cell.setCellValue((Date) o);
                     cell.setCellStyle(_style);
                     break;
                 case(TYPE_TIME):
