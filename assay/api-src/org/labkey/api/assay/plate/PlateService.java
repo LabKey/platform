@@ -88,23 +88,21 @@ public interface PlateService
      * Creates a new plate
      * @param container The template's container.
      * @param templateType The type of plate, if associated with a particular assay.
-     * @param rowCount The number of columns in the plate.
-     * @param columnCount The number of rows in the plate.
+     * @param plateType Specifies the overall shape of the plate
      * @return A newly created plate instance
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
-    @NotNull Plate createPlate(Container container, String templateType, int rowCount, int columnCount);
+    @NotNull Plate createPlate(Container container, String templateType, @NotNull PlateType plateType);
 
     /**
      * Creates a new plate template.
      * @param container The template's container.
      * @param templateType The type of plate template, if associated with a particular assay.
-     * @param rowCount The number of columns in the plate.
-     * @param columnCount The number of rows in the plate.
+     * @param plateType Specifies the overall shape of the plate
      * @return A newly created plate template instance.
      * @throws IllegalArgumentException Thrown if a template of the specified name already exists in the container.
      */
-    @NotNull Plate createPlateTemplate(Container container, String templateType, int rowCount, int columnCount);
+    @NotNull Plate createPlateTemplate(Container container, String templateType, @NotNull PlateType plateType);
 
     /**
      * Adds a new well group to the plate
@@ -163,6 +161,17 @@ public interface PlateService
      * @return A plate set instance or null if it can't be located
      */
     @Nullable PlateSet getPlateSet(Container container, int plateSetId);
+
+    /**
+     * Returns the list of available plate types.
+     * @return
+     */
+    @NotNull List<? extends PlateType> getPlateTypes();
+
+    /**
+     * Returns the plate type matching the specified shape.
+     */
+    @Nullable PlateType getPlateType(int rows, int columns);
 
     /**
      * Returns the number of assay runs that are linked to the specified plate. Currently, this only works
@@ -235,7 +244,7 @@ public interface PlateService
     /**
      * Registers a handler for a particular type of plate
      */
-    void registerPlateTypeHandler(PlateTypeHandler handler);
+    void registerPlateLayoutHandler(PlateLayoutHandler handler);
 
     /**
      * Calculates a dilution curve for the specified well groups.

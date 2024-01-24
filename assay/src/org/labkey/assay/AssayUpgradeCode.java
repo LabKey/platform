@@ -21,6 +21,7 @@ import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
@@ -83,7 +84,7 @@ public class AssayUpgradeCode implements UpgradeCode
             {
                 AssayProvider provider = AssayService.get().getProvider(protocol);
                 if (provider == null)
-                    continue;;
+                    continue;
 
                 Domain resultsDomain = provider.getResultsDomain(protocol);
                 if (null == resultsDomain || null == resultsDomain.getStorageTableName() || null == resultsDomain.getTypeURI())
@@ -157,7 +158,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
     /**
      * Called from assay-23.002-23.003.sql
-     *
+     * <p>
      * Switch from storing the protocol plate template by name to the plate lsid.
      */
     @DeferredUpgrade
@@ -209,7 +210,7 @@ public class AssayUpgradeCode implements UpgradeCode
 
     /**
      * Called from assay-24.000-24.001.sql
-     *
+     * <p>
      * The referenced upgrade script creates a new plate set for every plate in the system. We now
      * want to iterate over each plate set to set the name using the configured name expression.
      */
@@ -251,6 +252,86 @@ public class AssayUpgradeCode implements UpgradeCode
                 new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
             }
             _log.info("Successfully updated " + plateSets.size() + " plate set names");
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.001-24.002.sql
+     * <p>
+     * Iterate over each plate and plate set to generate a Plate ID and PlateSet ID based on the
+     * configured name expression for each.
+     */
+    public static void initializePlateAndPlateSetIDs(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            _log.info("Start initializing Plate IDs");
+
+            try (Results rs = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getResults())
+            {
+                int platesUpgraded = 0;
+                while (rs.next())
+                {
+                    Map<String, Object> row = rs.getRowMap();
+                    // get the plate container
+                    String containerId = String.valueOf(row.get("container"));
+                    Container c = ContainerManager.getForId(containerId);
+                    if (c != null)
+                    {
+                        row.put("name", null);
+
+                        NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateNameExpression(), AssayDbSchema.getInstance().getTableInfoPlate(), false, c, null, null);
+                        NameGenerator.State state = nameGenerator.createState(false);
+                        String name = nameGenerator.generateName(state, row);
+                        state.cleanUp();
+
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "")
+                                .append(" SET PlateId = ?")
+                                .add(name)
+                                .append(" WHERE RowId = ?")
+                                .add(row.get("rowId"));
+                        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+                        platesUpgraded++;
+                    }
+                    else
+                        _log.error("Container for Plate ID : " + row.get("rowId") + " could not be resolved.");
+                }
+                _log.info("Successfully updated " + platesUpgraded + " plate IDs");
+            }
+
+            _log.info("Start initializing PlateSet IDs");
+            try (Results rs = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSet()).getResults())
+            {
+                NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateSetNameExpression(), AssayDbSchema.getInstance().getTableInfoPlateSet(), false, null, null, null);
+                NameGenerator.State state = nameGenerator.createState(false);
+                int plateSetsUpgraded = 0;
+                while (rs.next())
+                {
+                    Map<String, Object> row = rs.getRowMap();
+                    // for plate sets, they should have a valid PlateSetId, but if the name was not generated (or mutated), regenerate a new
+                    // plate set id
+                    if (!String.valueOf(row.get("name")).startsWith("PLS-"))
+                    {
+                        row.put("name", null);
+                        String name = nameGenerator.generateName(state, row);
+                        state.cleanUp();
+
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
+                                .append(" SET PlateSetId = ?")
+                                .add(name)
+                                .append(" WHERE RowId = ?")
+                                .add(row.get("rowId"));
+                        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+                        plateSetsUpgraded++;
+                    }
+                }
+                _log.info("Successfully updated " + plateSetsUpgraded + " plate set IDs");
+            }
             tx.commit();
         }
     }

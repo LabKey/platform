@@ -16,7 +16,6 @@
 package org.labkey.assay;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -35,6 +34,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.Container;
@@ -66,7 +66,6 @@ import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
-import org.labkey.assay.plate.model.PlateType;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -546,8 +545,8 @@ public class PlateController extends SpringActionController
     public static class CreatePlateForm implements ApiJsonForm
     {
         private String _name;
+        private Integer _plateType;
         private Integer _plateSetId;
-        private PlateType _plateType;
         private List<Map<String, Object>> _data = new ArrayList<>();
 
         public String getName()
@@ -560,7 +559,7 @@ public class PlateController extends SpringActionController
             return _plateSetId;
         }
 
-        public PlateType getPlateType()
+        public Integer getPlateType()
         {
             return _plateType;
         }
@@ -582,7 +581,7 @@ public class PlateController extends SpringActionController
                 _plateSetId = json.getInt("plateSetId");
 
             if (json.has("plateType"))
-                _plateType = objectMapper.convertValue(json.getJSONObject("plateType"), PlateType.class);
+                _plateType = json.getInt("plateType");
 
             if (json.has("data"))
             {
@@ -606,11 +605,17 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public static class CreatePlateAction extends MutatingApiAction<CreatePlateForm>
     {
+        private PlateType _plateType;
+
         @Override
         public void validateForm(CreatePlateForm form, Errors errors)
         {
             if (form.getPlateType() == null)
                 errors.reject(ERROR_REQUIRED, "Plate \"plateType\" is required.");
+
+            _plateType = PlateManager.get().getPlateType(form.getPlateType());
+            if (_plateType == null)
+                errors.reject(ERROR_REQUIRED, "Plate type id \"" + form.getPlateType() + "\" is invalid.");
         }
 
         @Override
@@ -618,7 +623,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), form.getPlateType(), form.getName(), form.getPlateSetId(), form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), null, form.getData());
                 return success(plate);
             }
             catch (Exception e)
@@ -627,16 +632,6 @@ public class PlateController extends SpringActionController
             }
 
             return null;
-        }
-    }
-
-    @RequiresAnyOf({ReadPermission.class, DesignAssayPermission.class})
-    public static class GetPlateTypesAction extends ReadOnlyApiAction<Object>
-    {
-        @Override
-        public Object execute(Object o, BindException errors) throws Exception
-        {
-            return PlateManager.get().getPlateTypes();
         }
     }
 
@@ -863,47 +858,44 @@ public class PlateController extends SpringActionController
         }
     }
 
-    // TODO: It'd be nice if we could not have to implement ApiJsonForm here and just bind via Jackson
-    public static class CreatePlateSetForm implements ApiJsonForm
+    public static class CreatePlateSetForm
     {
+        private String _description;
         private String _name;
-        private List<PlateType> _plateTypes = new ArrayList<>();
+        private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
 
         public String getName()
         {
             return _name;
         }
 
-        // TODO: Would be really nice to be able to reference plate types by a single identifier. Maybe we just give
-        // them hard-coded names that can act as a "PK" which we can specify.
-        public List<PlateType> getPlateTypes()
+        public void setName(String name)
         {
-            return _plateTypes;
+            _name = name;
         }
 
-        @Override
-        public void bindJson(JSONObject json)
+        public List<PlateManager.CreatePlateSetPlate> getPlates()
         {
-            ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
+            return _plates;
+        }
 
-            if (json.has("name"))
-                _name = json.getString("name");
-
-            if (json.has("plateTypes"))
-            {
-                JSONArray plateTypes = json.getJSONArray("plateTypes");
-
-                for (int i = 0; i < plateTypes.length(); i++)
-                {
-                    JSONObject jsonObj = plateTypes.getJSONObject(i);
-                    if (jsonObj != null)
-                        _plateTypes.add(objectMapper.convertValue(jsonObj, PlateType.class));
-                }
-            }
+        public void setPlates(List<PlateManager.CreatePlateSetPlate> plates)
+        {
+            _plates = plates;
         }
     }
 
-    @Marshal(Marshaller.JSONObject)
+    @Marshal(Marshaller.Jackson)
     @RequiresPermission(InsertPermission.class)
     public static class CreatePlateSetAction extends MutatingApiAction<CreatePlateSetForm>
     {
@@ -913,9 +905,10 @@ public class PlateController extends SpringActionController
             try
             {
                 PlateSetImpl plateSet = new PlateSetImpl();
+                plateSet.setDescription(form.getDescription());
                 plateSet.setName(form.getName());
 
-                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlateTypes());
+                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlates());
                 return success(plateSet);
             }
             catch (Exception e)
