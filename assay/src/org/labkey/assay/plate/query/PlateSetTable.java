@@ -2,10 +2,8 @@ package org.labkey.assay.plate.query;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.Plate;
-import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -19,7 +17,6 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
-import org.labkey.api.dataiterator.NameExpressionDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
@@ -54,6 +51,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
         defaultVisibleColumns.add(FieldKey.fromParts("Container"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Description"));
         defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
         defaultVisibleColumns.add(FieldKey.fromParts("CreatedBy"));
@@ -79,12 +77,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         var columnInfo = super.wrapColumn(col);
 
-        // the name field is always generated via name expression
-        if (columnInfo.getName().equalsIgnoreCase("Name"))
-        {
-            columnInfo.setUserEditable(false);
-        }
-        else if (columnInfo.getName().equalsIgnoreCase("RowId"))
+        if (columnInfo.getName().equalsIgnoreCase("RowId"))
         {
             // this is necessary in order to use rowId as a name expression token
             columnInfo.setKeyField(true);
@@ -142,11 +135,18 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 ColumnInfo nameCol = plateSetTable.getColumn("name");
                 nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
             }
-            nameExpressionTranslator.addColumn(new BaseColumnInfo("nameExpression", JdbcType.VARCHAR),
-                    (Supplier) () -> PlateService.get().getPlateSetNameExpression());
+            if (!nameMap.containsKey("plateSetId"))
+            {
+                ColumnInfo nameCol = plateSetTable.getColumn("plateSetId");
+                nameExpressionTranslator.addColumn(nameCol, (Supplier) () -> null);
+            }
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateSetTable);
-            DataIterator di = LoggingDataIterator.wrap(new NameExpressionDataIterator(builtInColumnsTranslator, context, plateSetTable, container, null, null, null));
 
+            DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateSetTable,
+                    container,
+                    "name",
+                    "plateSetId",
+                    PlateManager.get().getPlateSetNameExpression()));
             DataIteratorBuilder insertBuilder = LoggingDataIterator.wrap(StandardDataIteratorBuilder.forInsert(getDbTable(), di, container, user, context));
             DataIteratorBuilder dib = new TableInsertDataIteratorBuilder(insertBuilder, plateSetTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId"));
