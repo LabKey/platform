@@ -1,8 +1,3 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
-
 package org.labkey.api.view;
 
 import java.io.IOException;
@@ -21,7 +16,7 @@ public class RedirectorServlet extends HttpServlet
     {
         if (!legacyContextPath.startsWith("/") || legacyContextPath.length() < 2)
         {
-            throw new IllegalArgumentException("Invalid legacy context path: " + legacyContextPath);
+            throw new IllegalArgumentException("Legacy context path must start with / and cannot be the root context path. Invalid path: " + legacyContextPath + ", specified via context.legacyContextPath in application.properties");
         }
         _legacyContextPath = legacyContextPath;
     }
@@ -29,7 +24,6 @@ public class RedirectorServlet extends HttpServlet
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-
         if ("get".equalsIgnoreCase(request.getMethod()))
         {
             // Send a redirect to let the client know there's a new preferred URL
