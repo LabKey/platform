@@ -274,23 +274,32 @@ public class AssayUpgradeCode implements UpgradeCode
 
             try (Results rs = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate()).getResults())
             {
-                NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateNameExpression(), AssayDbSchema.getInstance().getTableInfoPlate(), false, ContainerManager.getSharedContainer(), null, null);
-                NameGenerator.State state = nameGenerator.createState(false);
                 int platesUpgraded = 0;
                 while (rs.next())
                 {
                     Map<String, Object> row = rs.getRowMap();
-                    row.put("name", null);
-                    String name = nameGenerator.generateName(state, row);
-                    state.cleanUp();
+                    // get the plate container
+                    String containerId = String.valueOf(row.get("container"));
+                    Container c = ContainerManager.getForId(containerId);
+                    if (c != null)
+                    {
+                        row.put("name", null);
 
-                    SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "")
-                            .append(" SET PlateId = ?")
-                            .add(name)
-                            .append(" WHERE RowId = ?")
-                            .add(row.get("rowId"));
-                    new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
-                    platesUpgraded++;
+                        NameGenerator nameGenerator = new NameGenerator(PlateManager.get().getPlateNameExpression(), AssayDbSchema.getInstance().getTableInfoPlate(), false, c, null, null);
+                        NameGenerator.State state = nameGenerator.createState(false);
+                        String name = nameGenerator.generateName(state, row);
+                        state.cleanUp();
+
+                        SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "")
+                                .append(" SET PlateId = ?")
+                                .add(name)
+                                .append(" WHERE RowId = ?")
+                                .add(row.get("rowId"));
+                        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+                        platesUpgraded++;
+                    }
+                    else
+                        _log.error("Container for Plate ID : " + row.get("rowId") + " could not be resolved.");
                 }
                 _log.info("Successfully updated " + platesUpgraded + " plate IDs");
             }
