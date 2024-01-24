@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.admin.AdminBean" %>
 <%@ page import="org.labkey.api.data.DbScope" %>
 <%@ page import="org.labkey.api.data.SqlSelector" %>
+<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
 <%@ page import="org.labkey.api.moduleeditor.api.ModuleEditorService" %>
@@ -27,21 +28,23 @@
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.core.admin.AdminController"%>
+<%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="java.text.DecimalFormat" %>
 <%@ page import="java.time.Duration" %>
 <%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     boolean devMode = AppProps.getInstance().isDevMode();
     int row = 0;
+    DecimalFormat df = Formats.commaf0;
 %>
 <style type="text/css">
     body { overflow-y: scroll; }
@@ -76,10 +79,10 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(AdminBean.scope.getDriverName())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(AdminBean.scope.getDriverVersion())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(AdminBean.scope.getDriverLocation())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(AdminBean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(AdminBean.scope.getDataSourceProperties().getNumActive())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(AdminBean.scope.getDataSourceProperties().getNumIdle())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Max Wait (ms)</td><td id="connectionPoolMaxWait"><%=h(AdminBean.scope.getDataSourceProperties().getMaxWaitMillis())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(df.format(AdminBean.scope.getDataSourceProperties().getMaxTotal()))%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(df.format(AdminBean.scope.getDataSourceProperties().getNumActive()))%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(df.format(AdminBean.scope.getDataSourceProperties().getNumIdle()))%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Max Wait (ms)</td><td id="connectionPoolMaxWait"><%=h(df.format(AdminBean.scope.getDataSourceProperties().getMaxWaitMillis()))%></td></tr>
             </table>
             <br/>
 <%
@@ -101,6 +104,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Mode</td><td><%=h(AdminBean.mode)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Asserts</td><td><%=h(AdminBean.asserts)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Servlet Container</td><td><%=h(AdminBean.servletContainer)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Session Timeout (minutes)</td><td><%=h(AdminBean.sessionTimeout)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Vendor</td><td><%=h(AdminBean.javaVendor)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Name</td><td><%=h(AdminBean.javaRuntimeName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Version</td><td><%=h(AdminBean.javaVersion)%></td></tr>
