@@ -9,7 +9,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
-import org.labkey.assay.plate.TsvPlateTypeHandler;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.Collections;
@@ -49,7 +49,7 @@ public class TsvProviderSchema extends AssayProviderSchema
             setName(PLATE_TEMPLATE_TABLE);
             setTitleColumn("Name");
 
-            addCondition(new SimpleFilter(FieldKey.fromParts("Type"), TsvPlateTypeHandler.TYPE));
+            addCondition(new SimpleFilter(FieldKey.fromParts("AssayType"), TsvPlateLayoutHandler.TYPE));
         }
 
         @Override

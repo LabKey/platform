@@ -27,12 +27,13 @@ import org.junit.Test;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
-import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
+import org.labkey.api.assay.plate.AbstractPlateLayoutHandler;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
+import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
-import org.labkey.api.assay.plate.PlateTypeHandler;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
@@ -85,7 +86,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -98,7 +98,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.TsvAssayProvider;
-import org.labkey.assay.plate.model.PlateType;
+import org.labkey.assay.plate.model.PlateTypeImpl;
 import org.labkey.assay.plate.model.WellGroupBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
@@ -141,11 +141,11 @@ public class PlateManager implements PlateService
 
     private final List<PlateService.PlateDetailsResolver> _detailsLinkResolvers = new ArrayList<>();
     private boolean _lsidHandlersRegistered = false;
-    private final Map<String, PlateTypeHandler> _plateTypeHandlers = new HashMap<>();
+    private final Map<String, PlateLayoutHandler> _plateLayoutHandlers = new HashMap<>();
 
     // name expressions, currently not configurable
     private static final String PLATE_SET_NAME_EXPRESSION = "PLS-${now:date('yyyyMMdd')}-${RowId}";
-    private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/Name}-:withCounter}";
+    private static final String PLATE_NAME_EXPRESSION = "${${PlateSet/PlateSetId}-:withCounter}";
 
     public SearchService.SearchCategory PLATE_CATEGORY = new SearchService.SearchCategory("plate", "Plate") {
         @Override
@@ -162,12 +162,13 @@ public class PlateManager implements PlateService
 
     public PlateManager()
     {
-        registerPlateTypeHandler(new AbstractPlateTypeHandler()
+        registerPlateLayoutHandler(new AbstractPlateLayoutHandler()
         {
             @Override
-            public Plate createTemplate(@Nullable String templateTypeName, Container container, int rowCount, int colCount)
+            public Plate createTemplate(@Nullable String templateTypeName, Container container, @NotNull PlateType plateType)
             {
-                return PlateService.get().createPlateTemplate(container, getAssayType(), rowCount, colCount);
+                validatePlateType(plateType);
+                return PlateService.get().createPlateTemplate(container, getAssayType(), plateType);
             }
 
             @Override
@@ -177,15 +178,16 @@ public class PlateManager implements PlateService
             }
 
             @Override
-            public List<String> getTemplateTypes(Pair<Integer, Integer> size)
+            @NotNull
+            public List<String> getLayoutTypes(PlateType plateType)
             {
                 return new ArrayList<>();
             }
 
             @Override
-            public List<Pair<Integer, Integer>> getSupportedPlateSizes()
+            protected List<Pair<Integer, Integer>> getSupportedPlateSizes()
             {
-                return Collections.singletonList(new Pair<>(8, 12));
+                return List.of(new Pair<>(8, 12));
             }
 
             @Override
@@ -221,14 +223,14 @@ public class PlateManager implements PlateService
         @NotNull PlateType plateType,
         @Nullable String plateName,
         @Nullable Integer plateSetId,
+        @Nullable String assayType,
         @Nullable List<Map<String, Object>> data
     ) throws Exception
     {
         Plate plate = null;
         try (DbScope.Transaction tx = ensureTransaction())
         {
-            PlateTypeHandler plateTypeHandler = getPlateTypeHandler(plateType.getAssayType());
-            Plate plateTemplate = plateTypeHandler.createTemplate(plateType.getType(), container, plateType.getRows(), plateType.getCols());
+            Plate plateTemplate = PlateService.get().createPlateTemplate(container, assayType, plateType);
 
             plate = createPlate(plateTemplate, null, null);
             if (plateSetId != null)
@@ -408,16 +410,16 @@ public class PlateManager implements PlateService
 
     @Override
     @NotNull
-    public Plate createPlate(Container container, String templateType, int rowCount, int colCount)
+    public Plate createPlate(Container container, String templateType, @NotNull PlateType plateType)
     {
-        return new PlateImpl(container, null, templateType, rowCount, colCount);
+        return new PlateImpl(container, null, templateType, plateType);
     }
 
     @Override
     @NotNull
-    public Plate createPlateTemplate(Container container, String templateType, int rowCount, int colCount)
+    public Plate createPlateTemplate(Container container, String templateType, @NotNull PlateType plateType)
     {
-        Plate plate = createPlate(container, templateType, rowCount, colCount);
+        Plate plate = createPlate(container, templateType, plateType);
         ((PlateImpl)plate).setTemplate(true);
 
         return plate;
@@ -547,6 +549,17 @@ public class PlateManager implements PlateService
 
     protected void populatePlate(PlateImpl plate)
     {
+        // plate type and plate set objects
+        PlateType plateType = getPlateType(plate.getPlateType());
+        if (plateType == null)
+            throw new IllegalStateException("Unable to get Plate Type with id : " + plate.getPlateType());
+        plate.setPlateTypeObject(plateType);
+
+        PlateSet plateSet = getPlateSet(plate.getContainer(), plate.getPlateSet());
+        if (plateSet == null)
+            throw new IllegalStateException("Unable to get Plate Set with id : " + plate.getPlateSet());
+        plate.setPlateSetObject(plateSet);
+
         // set plate properties:
         setProperties(plate.getContainer(), plate);
 
@@ -1048,16 +1061,17 @@ public class PlateManager implements PlateService
         return null;
     }
 
-    public List<PlateTypeHandler> getPlateTypeHandlers()
+    public List<PlateLayoutHandler> getPlateLayoutHandlers()
     {
-        List<PlateTypeHandler> result = new ArrayList<>(_plateTypeHandlers.values());
-        result.sort(Comparator.comparing(PlateTypeHandler::getAssayType, String.CASE_INSENSITIVE_ORDER));
+        List<PlateLayoutHandler> result = new ArrayList<>(_plateLayoutHandlers.values());
+        result.sort(Comparator.comparing(PlateLayoutHandler::getAssayType, String.CASE_INSENSITIVE_ORDER));
         return result;
     }
 
-    public PlateTypeHandler getPlateTypeHandler(String plateTypeName)
+    @Nullable
+    public PlateLayoutHandler getPlateLayoutHandler(String plateTypeName)
     {
-        return _plateTypeHandlers.get(plateTypeName);
+        return _plateLayoutHandlers.get(plateTypeName);
     }
     
     private UserSchema getPlateUserSchema(Container container, User user)
@@ -1216,7 +1230,7 @@ public class PlateManager implements PlateService
     {
         if (plateExists(destContainer, source.getName()))
             throw new PlateService.NameConflictException(source.getName());
-        Plate newPlate = createPlateTemplate(destContainer, source.getType(), source.getRows(), source.getColumns());
+        Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateTypeObject());
         newPlate.setName(source.getName());
         for (String property : source.getPropertyNames())
             newPlate.setProperty(property, source.getProperty(property));
@@ -1234,13 +1248,13 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public void registerPlateTypeHandler(PlateTypeHandler handler)
+    public void registerPlateLayoutHandler(PlateLayoutHandler handler)
     {
-        if (_plateTypeHandlers.containsKey(handler.getAssayType()))
+        if (_plateLayoutHandlers.containsKey(handler.getAssayType()))
         {
             throw new IllegalArgumentException(handler.getAssayType());
         }
-        _plateTypeHandlers.put(handler.getAssayType(), handler);
+        _plateLayoutHandlers.put(handler.getAssayType(), handler);
     }
 
     public void clearCache(Container c, Plate plate)
@@ -1259,55 +1273,58 @@ public class PlateManager implements PlateService
         return CurveFitFactory.getCurveImpl(wellGroups, assumeDecreasing, percentCalculator, type);
     }
 
-    public List<PlateType> getPlateTypes()
+    @Override
+    public List<? extends PlateType> getPlateTypes()
     {
-        List<PlateType> plateTypes = new ArrayList<>();
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getArrayList(PlateTypeImpl.class);
+    }
 
-        for (PlateTypeHandler handler : getPlateTypeHandlers())
+    @Override
+    @Nullable
+    public PlateType getPlateType(int rows, int columns)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Rows"), rows);
+        filter.addCondition(FieldKey.fromParts("Columns"), columns);
+
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType(), filter, null).getObject(PlateTypeImpl.class);
+    }
+
+    public record PlateLayout(String name, PlateType type, String assayType, String description){}
+
+    @NotNull
+    public List<PlateLayout> getPlateLayouts()
+    {
+        List<PlateLayout> layouts = new ArrayList<>();
+        for (PlateLayoutHandler handler : getPlateLayoutHandlers())
         {
-            for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
+            for (PlateType type : handler.getSupportedPlateTypes())
             {
-                int rows = size.first;
-                int cols = size.second;
+                int wellCount = type.getRows() * type.getColumns();
+                String sizeDescription = wellCount + " well (" + type.getRows() + "x" + type.getColumns() + ") ";
 
-                int wellCount = rows * cols;
-                String sizeDescription = wellCount + " well (" + rows + "x" + cols + ") ";
-
-                List<String> types = handler.getTemplateTypes(size);
-                if (types == null || types.isEmpty())
+                List<String> layoutTypes = handler.getLayoutTypes(type);
+                if (layoutTypes.isEmpty())
                 {
                     String description = sizeDescription + handler.getAssayType();
-                    plateTypes.add(new PlateType(handler.getAssayType(), null, description, rows, cols));
+                    layouts.add(new PlateLayout(null, type, handler.getAssayType(), description));
                 }
                 else
                 {
-                    for (String type : types)
+                    for (String layoutName : layoutTypes)
                     {
-                        String description = sizeDescription + handler.getAssayType() + " " + type;
-                        plateTypes.add(new PlateType(handler.getAssayType(), type, description, rows, cols));
+                        String description = sizeDescription + handler.getAssayType() + " " + layoutName;
+                        layouts.add(new PlateLayout(layoutName, type, handler.getAssayType(), description));
                     }
                 }
             }
         }
-
-        return plateTypes;
+        return layouts;
     }
 
-    public PlateType getPlateType(@NotNull Plate plate)
+    public PlateType getPlateType(Integer plateTypeId)
     {
-        for (PlateType plateType : getPlateTypes())
-        {
-            if (
-                plateType.getRows() == plate.getRows() &&
-                Objects.equals(plateType.getCols(), plateType.getCols()) &&
-                Objects.equals(plateType.getType(), plate.getType())
-            )
-            {
-                return plateType;
-            }
-        }
-
-        return null;
+        if (plateTypeId == null) return null;
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getObject(plateTypeId, PlateTypeImpl.class);
     }
 
     public @NotNull Map<String, List<Map<String, Object>>> getPlateOperationConfirmationData(
@@ -1734,7 +1751,9 @@ public class PlateManager implements PlateService
         return PLATE_NAME_EXPRESSION;
     }
 
-    public PlateSetImpl createPlateSet(Container container, User user, @NotNull PlateSetImpl plateSet, @Nullable List<PlateType> plateTypes) throws Exception
+    public record CreatePlateSetPlate(String name, Integer plateType) {}
+
+    public PlateSetImpl createPlateSet(Container container, User user, @NotNull PlateSetImpl plateSet, @Nullable List<CreatePlateSetPlate> plates) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Failed to create plate set. Insufficient permissions.");
@@ -1742,7 +1761,7 @@ public class PlateManager implements PlateService
         if (plateSet.getRowId() != null)
             throw new ValidationException("Failed to create plate set. Cannot create plate set with rowId (" + plateSet.getRowId() + ").");
 
-        if (plateTypes != null && plateTypes.size() > MAX_PLATES)
+        if (plates != null && plates.size() > MAX_PLATES)
             throw new ValidationException(String.format("Failed to create plate set. Plate sets can have a maximum of %d plates.", MAX_PLATES));
 
         try (DbScope.Transaction tx = ensureTransaction())
@@ -1757,13 +1776,16 @@ public class PlateManager implements PlateService
 
             Integer plateSetId = (Integer) rows.get(0).get("RowId");
 
-            if (plateTypes != null)
+            if (plates != null)
             {
-                for (PlateType plateType : plateTypes)
+                for (var plate : plates)
                 {
+                    var plateType = getPlateType(plate.plateType);
+                    if (plateType == null)
+                        throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
+
                     // TODO: Write a cheaper plate create/save for multiple plates
-                    if (plateType != null)
-                        createAndSavePlate(container, user, plateType, null, plateSetId, null);
+                    createAndSavePlate(container, user, plateType, plate.name, plateSetId, null, null);
                 }
             }
 
@@ -1852,8 +1874,11 @@ public class PlateManager implements PlateService
             // INSERT
             //
 
-            PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(TsvPlateTypeHandler.TYPE);
-            Plate template = handler.createTemplate("UNUSED", container, 8, 12);
+            PlateLayoutHandler handler = PlateManager.get().getPlateLayoutHandler(TsvPlateLayoutHandler.TYPE);
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
+
+            Plate template = handler.createTemplate("UNUSED", container, plateType);
             template.setName("bob");
             template.setProperty("friendly", "yes");
             assertNull(template.getRowId());
@@ -1878,6 +1903,7 @@ public class PlateManager implements PlateService
             assertEquals(plateId, savedTemplate.getRowId().intValue());
             assertEquals("bob", savedTemplate.getName());
             assertEquals("yes", savedTemplate.getProperty("friendly")); assertNotNull(savedTemplate.getLSID());
+            assertEquals(plateType.getRowId(), savedTemplate.getPlateTypeObject().getRowId());
 
             List<WellGroup> wellGroups = savedTemplate.getWellGroups();
             assertEquals(3, wellGroups.size());
@@ -1947,6 +1973,10 @@ public class PlateManager implements PlateService
             // verify added positions
             assertEquals(2, updatedControlWellGroups.get(0).getPositions().size());
 
+            // verify plate type information
+            assertEquals(plateType.getRows().intValue(), updatedTemplate.getRows());
+            assertEquals(plateType.getColumns().intValue(), updatedTemplate.getColumns());
+
             //
             // DELETE
             //
@@ -1961,10 +1991,11 @@ public class PlateManager implements PlateService
         public void testCreateAndSavePlate() throws Exception
         {
             // Arrange
-            PlateType plateType = new PlateType(TsvPlateTypeHandler.TYPE, TsvPlateTypeHandler.BLANK_PLATE, "Test plate type", 8, 12);
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
 
             // Act
-            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "testCreateAndSavePlate plate", null, null);
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "testCreateAndSavePlate plate", null, null, null);
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
@@ -1981,7 +2012,9 @@ public class PlateManager implements PlateService
         public void testCreatePlateTemplates() throws Exception
         {
             // Verify plate service assumptions about plate templates
-            Plate plate = PlateService.get().createPlateTemplate(container, TsvPlateTypeHandler.TYPE, 16, 24);
+            PlateType plateType = PlateManager.get().getPlateType(16, 24);
+            assertNotNull("384 well plate type was not found", plateType);
+            Plate plate = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
             plate.setName("my plate template");
             int plateId = PlateService.get().save(container, user, plate);
 
@@ -1990,7 +2023,10 @@ public class PlateManager implements PlateService
             assertTrue("Expected saved plate to have the template field set to true", PlateService.get().getPlate(container, plateId).isTemplate());
 
             // Verify only plate templates are returned
-            plate = PlateService.get().createPlate(container, TsvPlateTypeHandler.TYPE, 8, 12);
+            plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
+
+            plate = PlateService.get().createPlate(container, TsvPlateLayoutHandler.TYPE, plateType);
             plate.setName("non plate template");
             PlateService.get().save(container, user, plate);
 
@@ -2005,7 +2041,10 @@ public class PlateManager implements PlateService
         @Test
         public void testCreatePlateMetadata() throws Exception
         {
-            Plate plate = PlateService.get().createPlateTemplate(container, TsvPlateTypeHandler.TYPE, 16, 24);
+            PlateType plateType = PlateManager.get().getPlateType(16, 24);
+            assertNotNull("384 well plate type was not found", plateType);
+
+            Plate plate = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateType);
             plate.setName("new plate with metadata");
             int plateId = PlateService.get().save(container, user, plate);
 
@@ -2111,7 +2150,8 @@ public class PlateManager implements PlateService
         public void testCreateAndSavePlateWithData() throws Exception
         {
             // Arrange
-            PlateType plateType = new PlateType(TsvPlateTypeHandler.TYPE, TsvPlateTypeHandler.BLANK_PLATE, "Standard 96 well plate", 8, 12);
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
 
             // Act
             List<Map<String, Object>> rows = List.of(
@@ -2126,7 +2166,7 @@ public class PlateManager implements PlateService
                             "properties/barcode", "B5678"
                     )
             );
-            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", null, rows);
+            Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", null, null, rows);
             assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
             TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
