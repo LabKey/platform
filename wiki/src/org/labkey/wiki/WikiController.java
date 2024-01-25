@@ -2837,7 +2837,7 @@ public class WikiController extends SpringActionController
 
                 html.unsafeAppend("</td><td>");
                 html.append(linksHtml);
-                html.append("</td></tr>\n");
+                html.unsafeAppend("</td></tr>\n");
             }
 
             if (html.isEmpty())

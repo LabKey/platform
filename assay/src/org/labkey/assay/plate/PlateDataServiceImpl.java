@@ -23,8 +23,9 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.assay.plate.Plate;
+import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTypeHandler;
+import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -60,7 +61,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
         try
         {
             Plate template;
-            PlateTypeHandler handler;
+            PlateLayoutHandler handler;
 
             if (templateName != null)
             {
@@ -69,18 +70,21 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (template == null)
                     throw new Exception("Plate " + templateName + " does not exist.");
 
-                handler = PlateManager.get().getPlateTypeHandler(template.getType());
+                handler = PlateManager.get().getPlateLayoutHandler(template.getAssayType());
                 if (handler == null)
-                    throw new Exception("Plate template type " + template.getType() + " does not exist.");
+                    throw new Exception("Plate template type " + template.getAssayType() + " does not exist.");
             }
             else
             {
                 // new default template
-                handler = PlateManager.get().getPlateTypeHandler(assayTypeName);
+                handler = PlateManager.get().getPlateLayoutHandler(assayTypeName);
                 if (handler == null)
                     throw new Exception("Plate template type " + assayTypeName + " does not exist.");
 
-                template = handler.createTemplate(templateTypeName, getContainer(), rowCount, columnCount);
+                PlateType plateType = PlateService.get().getPlateType(rowCount, columnCount);
+                if (plateType == null)
+                    throw new Exception("The plate type : (" + rowCount + " x " + columnCount + ") does not exist");
+                template = handler.createTemplate(templateTypeName, getContainer(), plateType);
             }
 
             // Translate PlateTemplate to GWTPlate
@@ -107,7 +111,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
 
             int newPlateId = copyTemplate || template.getRowId() == null ? -1 : template.getRowId();
             GWTPlate plate = new GWTPlate(newPlateId,
-                    template.getName(), template.getType(), template.getRows(),
+                    template.getName(), template.getAssayType(), template.getRows(),
                     template.getColumns(), getTypeList(template), handler.showEditorWarningPanel());
             plate.setGroups(translated);
             plate.setTypesToDefaultGroups(handler.getDefaultGroupsForTypes());
@@ -133,7 +137,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 WellGroup.Type.CONTROL, WellGroup.Type.SPECIMEN,
                 WellGroup.Type.REPLICATE, WellGroup.Type.OTHER);
 
-        PlateTypeHandler handler = PlateManager.get().getPlateTypeHandler(template.getType());
+        PlateLayoutHandler handler = PlateManager.get().getPlateLayoutHandler(template.getAssayType());
         if (handler != null)
             wellTypes = handler.getWellGroupTypes();
 
@@ -160,8 +164,8 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 if (PlateManager.get().plateExists(getContainer(), gwtPlate.getName()) && !replaceIfExisting)
                     throw new Exception("A plate template with name '" + gwtPlate.getName() + "' already exists.");
 
-                if (!template.getType().equals(gwtPlate.getType()))
-                    throw new Exception("Plate template type '" + template.getType() + "' cannot be changed for '" + gwtPlate.getName() + "'");
+                if (!template.getAssayType().equals(gwtPlate.getType()))
+                    throw new Exception("Plate template type '" + template.getAssayType() + "' cannot be changed for '" + gwtPlate.getName() + "'");
 
                 if (template.getRows() != gwtPlate.getRows() || template.getColumns() != gwtPlate.getCols())
                     throw new Exception("Plate template dimensions cannot be changed for '" + gwtPlate.getName() + "'");
@@ -183,7 +187,10 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                     PlateService.get().deletePlate(getContainer(), getUser(), other.getRowId());
                 }
 
-                template = PlateManager.get().createPlateTemplate(getContainer(), gwtPlate.getType(), gwtPlate.getRows(), gwtPlate.getCols());
+                PlateType plateType = PlateService.get().getPlateType(gwtPlate.getRows(), gwtPlate.getCols());
+                if (plateType == null)
+                    throw new Exception("The plate type : (" + gwtPlate.getRows() + " x " + gwtPlate.getCols() + ") does not exist");
+                template = PlateManager.get().createPlateTemplate(getContainer(), gwtPlate.getType(), plateType);
             }
 
             template.setName(gwtPlate.getName());
@@ -229,7 +236,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 group.setProperties(gwtGroup.getProperties());
             }
 
-            PlateManager.get().getPlateTypeHandler(template.getType()).validateTemplate(getContainer(), getUser(), template);
+            PlateManager.get().getPlateLayoutHandler(template.getAssayType()).validateTemplate(getContainer(), getUser(), template);
             return PlateService.get().save(getContainer(), getUser(), template);
         }
         catch (BatchValidationException | ValidationException e)

@@ -70,7 +70,7 @@ import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
 import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateManager;
-import org.labkey.assay.plate.TsvPlateTypeHandler;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
@@ -107,7 +107,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 24.001;
+        return 24.002;
     }
 
     @Override
@@ -149,7 +149,7 @@ public class AssayModule extends SpringModule
         ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
         AssayPlateMetadataService.registerService(PlateMetadataDataHandler.DATA_TYPE, new AssayPlateMetadataServiceImpl());
         PropertyService.get().registerDomainKind(new AssayPlateDataDomainKind());
-        PlateService.get().registerPlateTypeHandler(new TsvPlateTypeHandler());
+        PlateService.get().registerPlateLayoutHandler(new TsvPlateLayoutHandler());
 
         PropertyService.get().registerDomainKind(new DefaultAssayDomainKind());
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
