@@ -1108,7 +1108,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
 
         if (nonDateTimeColumns.size() > 0)
-            statements.add(alterTableSegment + " " + StringUtils.join(nonDateTimeColumns));
+            statements.add(alterTableSegment + " " + StringUtils.join(nonDateTimeColumns, ""));
 
         return statements;
     }
