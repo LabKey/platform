@@ -1066,7 +1066,7 @@ validNum:       {
 
     public static String getStandardTimeFormatString()
     {
-        return ISO_SHORT_TIME_FORMAT_STRING;
+        return ISO_LONG_TIME_FORMAT_STRING;
     }
 
 
