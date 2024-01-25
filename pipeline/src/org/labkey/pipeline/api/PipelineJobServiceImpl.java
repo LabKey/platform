@@ -788,7 +788,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
                             relPackageExpected = relPackageExpected.toLowerCase();
                         }
 
-                        return fileName.startsWith(relNameExpected + ".") || fileName.equals(relNameExpected) &&
+                        return (fileName.startsWith(relNameExpected + ".") || fileName.equals(relNameExpected)) &&
                                 parentName.endsWith(relPackageExpected) &&
                                 file1.canExecute();
                     });
