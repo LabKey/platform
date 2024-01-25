@@ -29,6 +29,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Formats;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MothershipReport;
@@ -77,6 +78,7 @@ public class AdminBean
     public static final String serverGuid = AppProps.getInstance().getServerGUID();
     public static final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public static final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
+    public static final String sessionTimeout = Formats.commaf0.format(ModuleLoader.getServletContext().getSessionTimeout());
     @SuppressWarnings("unused") // Available substitution property, not used directly in code
     public static final String buildTime = ModuleLoader.getInstance().getCoreModule().getBuildTime();
     @SuppressWarnings("unused") // Available substitution property, not used directly in code
