@@ -588,7 +588,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     }
 
     @Override
-    //@JsonProperty("plateType")
     public @NotNull PlateType getPlateType()
     {
         return _plateType;
@@ -674,6 +673,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _runCount = runCount;
     }
 
+    @NotNull
+    @Override
     public String getPlateId()
     {
         return _plateId;

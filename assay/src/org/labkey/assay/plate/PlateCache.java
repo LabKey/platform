@@ -68,8 +68,8 @@ public class PlateCache
         {
             if (plate != null)
             {
-                if (plate.getName() == null)
-                    throw new IllegalArgumentException("Plate cannot be cached, name is null");
+                if (plate.getPlateId() == null)
+                    throw new IllegalArgumentException("Plate cannot be cached, plateId is null");
                 if (plate.getRowId() == null)
                     throw new IllegalArgumentException("Plate cannot be cached, rowId is null");
                 if (plate.getLSID() == null)
@@ -80,8 +80,8 @@ public class PlateCache
                     PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getRowId()), plate);
                 if (cacheKey._type != PlateCacheKey.Type.lsid)
                     PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), Lsid.parse(plate.getLSID())), plate);
-                if (cacheKey._type != PlateCacheKey.Type.name)
-                    PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getName()), plate);
+                if (cacheKey._type != PlateCacheKey.Type.plateId)
+                    PLATE_CACHE.put(PlateCacheKey.getCacheKey(plate.getContainer(), plate.getPlateId()), plate);
 
                 _containerPlateMap.computeIfAbsent(cacheKey._container, k -> new ArrayList<>()).add(plate);
             }
@@ -112,6 +112,14 @@ public class PlateCache
         return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, lsid)) : null;
     }
 
+    public static @Nullable Plate getPlate(ContainerFilter cf, String plateId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("plateId"), plateId);
+        Container c = getContainerWithIdentifier(cf, filter);
+
+        return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, plateId)) : null;
+    }
+
     private static @Nullable Container getContainerWithIdentifier(ContainerFilter cf, SimpleFilter filter)
     {
         filter.addClause(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
@@ -129,9 +137,9 @@ public class PlateCache
         return null;
     }
 
-    public static @Nullable Plate getPlate(Container c, String name)
+    public static @Nullable Plate getPlate(Container c, String plateId)
     {
-        Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, name));
+        Plate plate = PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, plateId));
         return plate != null ? plate.copy() : null;
     }
 
@@ -187,14 +195,14 @@ public class PlateCache
     {
         LOG.info(String.format("Un-caching plate \"%s\" for folder %s", plate.getName(), c.getPath()));
 
-        if (plate.getName() == null)
-            throw new IllegalArgumentException("Plate cannot be uncached, name is null");
+        if (plate.getPlateId() == null)
+            throw new IllegalArgumentException("Plate cannot be uncached, plateId is null");
         if (plate.getRowId() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, rowId is null");
         if (plate.getLSID() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, LSID is null");
 
-        PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, plate.getName()));
+        PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, plate.getPlateId()));
         PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, plate.getRowId()));
         PLATE_CACHE.remove(PlateCacheKey.getCacheKey(c, Lsid.parse(plate.getLSID())));
 
@@ -212,7 +220,7 @@ public class PlateCache
         enum Type
         {
             rowId,
-            name,
+            plateId,
             lsid,
         }
         private Type _type;
@@ -228,14 +236,14 @@ public class PlateCache
             _identifier = json.get("identifier");
         }
 
-        public static String getCacheKey(Container c, String name)
+        public static String getCacheKey(Container c, String plateId)
         {
-            return _getCacheKey(c, Type.name, name);
+            return _getCacheKey(c, Type.plateId, plateId);
         }
 
-        public static String getCacheKey(Container c, Integer plateId)
+        public static String getCacheKey(Container c, Integer rowId)
         {
-            return _getCacheKey(c, Type.rowId, plateId);
+            return _getCacheKey(c, Type.rowId, rowId);
         }
 
         public static String getCacheKey(Container c, Lsid lsid)

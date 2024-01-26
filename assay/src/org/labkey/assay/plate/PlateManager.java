@@ -331,9 +331,16 @@ public class PlateManager implements PlateService
      * Use the rowId or lsid variants instead.
      */
     @Deprecated
-    public @Nullable Plate getPlate(Container container, String plateName)
+    public @Nullable Plate getPlateByName(Container container, String plateName)
     {
-        return PlateCache.getPlate(container, plateName);
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("name"), plateName);
+
+        PlateBean bean = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateBean.class);
+        if (bean != null)
+            return populatePlate(bean);
+
+        return null;
     }
 
     @Override
@@ -443,6 +450,18 @@ public class PlateManager implements PlateService
     public @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid)
     {
         return PlateCache.getPlate(cf, lsid);
+    }
+
+    @Override
+    public @Nullable Plate getPlate(Container container, String plateId)
+    {
+        return PlateCache.getPlate(container, plateId);
+    }
+
+    @Override
+    public @Nullable Plate getPlate(ContainerFilter cf, String plateId)
+    {
+        return PlateCache.getPlate(cf, plateId);
     }
 
     /**
@@ -717,7 +736,7 @@ public class PlateManager implements PlateService
                 plateId = (Integer) row.get("RowId");
                 plate.setRowId(plateId);
                 plate.setLsid((String) row.get("Lsid"));
-                plate.setName((String) row.get("Name"));
+                plate.setPlateId((String) row.get("PlateId"));
             }
             savePropertyBag(container, plate.getLSID(), plate.getProperties(), updateExisting);
 
@@ -1896,7 +1915,7 @@ public class PlateManager implements PlateService
 
             assertEquals(1, PlateManager.get().getPlateTemplates(container).size());
 
-            Plate savedTemplate = PlateManager.get().getPlate(container, "bob");
+            Plate savedTemplate = PlateManager.get().getPlateByName(container, "bob");
             assertEquals(plateId, savedTemplate.getRowId().intValue());
             assertEquals("bob", savedTemplate.getName());
             assertEquals("yes", savedTemplate.getProperty("friendly")); assertNotNull(savedTemplate.getLSID());
@@ -1996,9 +2015,15 @@ public class PlateManager implements PlateService
 
             // Assert
             assertTrue("Expected plate to have been persisted and provided with a rowId", plate.getRowId() > 0);
+            assertTrue("Expected plate to have been persisted and provided with a plateId", plate.getPlateId() != null);
+
+            // verify access via plate ID
+            Plate savedPlate = PlateService.get().getPlate(container, plate.getPlateId());
+            assertTrue("Expected plate to be accessible via it's plate ID", savedPlate != null);
+            assertTrue("Plate retrieved by plate ID doesn't match the original plate.", savedPlate.getRowId().equals(plate.getRowId()));
 
             // verify container filter access
-            Plate savedPlate = PlateService.get().getPlate(ContainerManager.getSharedContainer(), plate.getRowId());
+            savedPlate = PlateService.get().getPlate(ContainerManager.getSharedContainer(), plate.getRowId());
             assertTrue("Saved plate should not exist in the shared container", savedPlate == null);
 
             savedPlate = PlateService.get().getPlate(ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user), plate.getRowId());
