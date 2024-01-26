@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.assay.plate.PlateService" %>
 <%@ page import="org.labkey.api.assay.plate.Plate" %>
+<%@ page import="org.labkey.api.assay.plate.PlateService" %>
 <%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
@@ -35,8 +35,6 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.assay.plate.model.PlateType" %>
-<%@ page import="org.labkey.api.assay.plate.Plate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -133,7 +131,7 @@
 %>
     <tr class="<%=getShadeRowClass(index)%>">
         <td><%= h(template.getName()) %></td>
-        <td><%= h(template.getType()) %></td>
+        <td><%= h(template.getAssayType()) %></td>
         <td><%= h(runCount) %></td>
         <td>
         <%
@@ -205,18 +203,18 @@
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
         List<Option> templates = new ArrayList<>();
-        for (PlateType plateType : PlateManager.get().getPlateTypes())
+        for (PlateManager.PlateLayout layout : PlateManager.get().getPlateLayouts())
         {
             ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
-            designerURL.addParameter("rowCount", plateType.getRows());
-            designerURL.addParameter("colCount", plateType.getCols());
-            designerURL.addParameter("assayType", plateType.getAssayType());
+            designerURL.addParameter("rowCount", layout.type().getRows());
+            designerURL.addParameter("colCount", layout.type().getColumns());
+            designerURL.addParameter("assayType", layout.assayType());
 
-            if (plateType.getType() != null)
-                designerURL.replaceParameter("templateType", plateType.getType());
+            if (layout.name() != null)
+                designerURL.replaceParameter("templateType", layout.name());
 
             templates.add(new Option.OptionBuilder()
-                    .label("new " + plateType.getDescription() + " template")
+                    .label("new " + layout.description() + " template")
                     .value(designerURL.toString())
                     .build());
         }

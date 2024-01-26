@@ -15,6 +15,8 @@ public interface PlateSet
 
     String getName();
 
+    String getPlateSetId();
+
     boolean isArchived();
 
     List<Plate> getPlates(User user);

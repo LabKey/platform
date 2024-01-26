@@ -475,6 +475,10 @@ LABKEY.vis.GenericChartHelper = new function(){
             else if (isMeasureXMatch && isNumericType(type)) {
                 scales.x.tickFormat = _getNumberFormatFn(fields[i], defaultFormatFn);
             }
+            else if (isMeasureXMatch && isDateType(type) && fields[i].extFormatFn && window.Ext4) {
+                // Issue 47898: use the Ext4 date format function if available
+                scales.x.tickFormat = fields[i].extFormatFn;
+            }
 
             var yMeasures = ensureMeasuresAsArray(measures.y);
             $.each(yMeasures, function(idx, yMeasure) {

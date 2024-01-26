@@ -63,4 +63,9 @@ public class AssayDbSchema
     {
         return getSchema().getTable("PlateSet");
     }
+
+    public TableInfo getTableInfoPlateType()
+    {
+        return getSchema().getTable("PlateType");
+    }
 }

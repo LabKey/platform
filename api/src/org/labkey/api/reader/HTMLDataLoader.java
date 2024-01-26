@@ -21,6 +21,7 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.JSoupUtil;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -82,12 +83,19 @@ public class HTMLDataLoader extends DataLoader
             String s = new String(header, StringUtilsLabKey.DEFAULT_CHARSET);
 
             List<String> errors = new ArrayList<>();
-            Document doc = JSoupUtil.convertHtmlToDocument(s, true, errors);
-            if (!errors.isEmpty() || doc == null)
-                return false;
+            try
+            {
+                Document doc = JSoupUtil.convertHtmlToDocument(s, true, errors);
+                if (!errors.isEmpty() || doc == null)
+                    return false;
 
-            // Look for a html>body>table element
-            return findTable(doc) != null;
+                // Look for a html>body>table element
+                return findTable(doc) != null;
+            }
+            catch (DOMException e)
+            {
+                return false;
+            }
         }
     };
 
