@@ -364,7 +364,7 @@ public class ProxyServlet extends HttpServlet {
             // Pass the response code. This method with the "reason phrase" is deprecated but it's the
             //   only way to pass the reason along too.
             int statusCode = proxyResponse.getCode(); // LKS override
-            if (statusCode != HttpServletResponse.SC_OK && proxyResponse.getReasonPhrase() != null)
+            if (statusCode != HttpServletResponse.SC_OK && statusCode != HttpServletResponse.SC_MOVED_TEMPORARILY && proxyResponse.getReasonPhrase() != null)
             {
                 servletResponse.sendError(statusCode, proxyResponse.getReasonPhrase());
             }
