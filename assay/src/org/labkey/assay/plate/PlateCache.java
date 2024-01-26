@@ -16,6 +16,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.FieldKey;
+import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.ArrayList;
@@ -46,13 +47,14 @@ public class PlateCache
             SimpleFilter filter = SimpleFilter.createContainerFilter(cacheKey._container);
             filter.addCondition(FieldKey.fromParts(cacheKey._type.name()), cacheKey._identifier);
 
-            List<PlateImpl> plates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getArrayList(PlateImpl.class);
+            List<PlateBean> plates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getArrayList(PlateBean.class);
             assert plates.size() <= 1;
 
             if (plates.size() == 1)
             {
-                PlateImpl plate = plates.get(0);
-                PlateManager.get().populatePlate(plate);
+                PlateBean bean = plates.get(0);
+
+                Plate plate = PlateManager.get().populatePlate(bean);
                 LOG.info(String.format("Caching plate \"%s\" for folder %s", plate.getName(), cacheKey._container.getPath()));
 
                 // add all cache keys for this plate

@@ -45,7 +45,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.assay.TSVProtocolSchema;
-import org.labkey.assay.plate.model.Well;
+import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
@@ -296,11 +296,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (!plate.getCustomFields().isEmpty())
             {
                 // create the map of well locations to the well
-                Map<Position, Well> positionToWell = new HashMap<>();
+                Map<Position, WellBean> positionToWell = new HashMap<>();
 
                 SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
                 filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-                for (Well well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(Well.class))
+                for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
                     positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
 
                 for (Map<String, Object> row : mergedRows)
@@ -503,7 +503,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
         filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-        for (Well well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(Well.class))
+        for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
             positionToWellLsid.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), Lsid.parse(well.getLsid()));
 
         return new PlateMetadataImportHelper(plate.getContainer(), data, Collections.unmodifiableMap(positionToWellLsid));

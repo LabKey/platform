@@ -98,7 +98,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.TsvAssayProvider;
-import org.labkey.assay.plate.model.PlateTypeImpl;
+import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.model.PlateTypeBean;
+import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.model.WellGroupBean;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.plate.query.PlateSetTable;
@@ -238,7 +240,7 @@ public class PlateManager implements PlateService
                 PlateSet plateSet = getPlateSet(container, plateSetId);
                 if (plateSet == null)
                     throw new IllegalArgumentException("Failed to create plate. Plate set with rowId (" + plateSetId + ") is not available in " + container.getPath());
-                ((PlateImpl) plate).setPlateSet(plateSetId);
+                ((PlateImpl) plate).setPlateSet(plateSet);
             }
 
             if (StringUtils.trimToNull(plateName) != null)
@@ -547,18 +549,12 @@ public class PlateManager implements PlateService
         throw new IllegalArgumentException("Only plate instances created by the plate service can be saved.");
     }
 
-    protected void populatePlate(PlateImpl plate)
+    /**
+     * Creates a plate instance from a database row.
+     */
+    protected Plate populatePlate(PlateBean bean)
     {
-        // plate type and plate set objects
-        PlateType plateType = getPlateType(plate.getPlateType());
-        if (plateType == null)
-            throw new IllegalStateException("Unable to get Plate Type with id : " + plate.getPlateType());
-        plate.setPlateTypeObject(plateType);
-
-        PlateSet plateSet = getPlateSet(plate.getContainer(), plate.getPlateSet());
-        if (plateSet == null)
-            throw new IllegalStateException("Unable to get Plate Set with id : " + plate.getPlateSet());
-        plate.setPlateSetObject(plateSet);
+        PlateImpl plate = PlateImpl.from(bean);
 
         // set plate properties:
         setProperties(plate.getContainer(), plate);
@@ -648,6 +644,7 @@ public class PlateManager implements PlateService
                         .map(PlateCustomField::new).toList());
             }
         }
+        return plate;
     }
 
     private WellImpl[] getWells(Plate plate)
@@ -694,10 +691,9 @@ public class PlateManager implements PlateService
             if (!updateExisting && plate.getPlateSet() == null)
             {
                 // ensure a plate set for each new plate
-                Integer plateSetId = ensureDefaultPlateSet(container, user);
-                plate.setPlateSet(plateSetId);
+                plate.setPlateSet(ensureDefaultPlateSet(container, user));
             }
-            Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateImpl.class).toMap(plate, new ArrayListMap<>());
+            Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class).toMap(PlateBean.from(plate), new ArrayListMap<>());
             QueryUpdateService qus = getPlateUpdateService(container, user);
             BatchValidationException errors = new BatchValidationException();
 
@@ -840,7 +836,7 @@ public class PlateManager implements PlateService
     }
 
     // creates a default plate set in the specified container and returns its ID
-    private Integer ensureDefaultPlateSet(Container container, User user) throws Exception
+    private PlateSet ensureDefaultPlateSet(Container container, User user) throws Exception
     {
         BatchValidationException errors = new BatchValidationException();
         QueryUpdateService qus = getPlateSetUpdateService(container, user);
@@ -852,7 +848,8 @@ public class PlateManager implements PlateService
         if (errors.hasErrors())
             throw errors;
 
-        return (Integer)insertedRows.get(0).get("RowId");
+        Integer rowId = (Integer)insertedRows.get(0).get("RowId");
+        return getPlateSet(container, rowId);
     }
 
     // return a list of wellId and wellGroupId pairs
@@ -1230,7 +1227,7 @@ public class PlateManager implements PlateService
     {
         if (plateExists(destContainer, source.getName()))
             throw new PlateService.NameConflictException(source.getName());
-        Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateTypeObject());
+        Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateType());
         newPlate.setName(source.getName());
         for (String property : source.getPropertyNames())
             newPlate.setProperty(property, source.getProperty(property));
@@ -1276,7 +1273,7 @@ public class PlateManager implements PlateService
     @Override
     public List<? extends PlateType> getPlateTypes()
     {
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getArrayList(PlateTypeImpl.class);
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getArrayList(PlateTypeBean.class);
     }
 
     @Override
@@ -1286,7 +1283,7 @@ public class PlateManager implements PlateService
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Rows"), rows);
         filter.addCondition(FieldKey.fromParts("Columns"), columns);
 
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType(), filter, null).getObject(PlateTypeImpl.class);
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType(), filter, null).getObject(PlateTypeBean.class);
     }
 
     public record PlateLayout(String name, PlateType type, String assayType, String description){}
@@ -1324,7 +1321,7 @@ public class PlateManager implements PlateService
     public PlateType getPlateType(Integer plateTypeId)
     {
         if (plateTypeId == null) return null;
-        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getObject(plateTypeId, PlateTypeImpl.class);
+        return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getObject(plateTypeId, PlateTypeBean.class);
     }
 
     public @NotNull Map<String, List<Map<String, Object>>> getPlateOperationConfirmationData(
@@ -1903,7 +1900,7 @@ public class PlateManager implements PlateService
             assertEquals(plateId, savedTemplate.getRowId().intValue());
             assertEquals("bob", savedTemplate.getName());
             assertEquals("yes", savedTemplate.getProperty("friendly")); assertNotNull(savedTemplate.getLSID());
-            assertEquals(plateType.getRowId(), savedTemplate.getPlateTypeObject().getRowId());
+            assertEquals(plateType.getRowId(), savedTemplate.getPlateType().getRowId());
 
             List<WellGroup> wellGroups = savedTemplate.getWellGroups();
             assertEquals(3, wellGroups.size());
@@ -2083,7 +2080,7 @@ public class PlateManager implements PlateService
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addCondition(FieldKey.fromParts("PlateId"), plateId);
             filter.addCondition(FieldKey.fromParts("Row"), 0);
-            List< org.labkey.assay.plate.model.Well> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, new Sort("Col")).getArrayList(org.labkey.assay.plate.model.Well.class);
+            List<WellBean> wells = new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, new Sort("Col")).getArrayList(WellBean.class);
 
             assertEquals("Expected 24 wells to be returned", 24, wells.size());
 
@@ -2094,7 +2091,7 @@ public class PlateManager implements PlateService
             BatchValidationException errors = new BatchValidationException();
 
             // verify metadata update works for Property URI as well as field key
-            org.labkey.assay.plate.model.Well well = wells.get(0);
+            WellBean well = wells.get(0);
             List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of(
                     "rowid", well.getRowId(),
                     fields.get(0).getPropertyURI(), 1.25,       // concentration
