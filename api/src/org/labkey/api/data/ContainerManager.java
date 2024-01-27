@@ -2140,7 +2140,7 @@ public class ContainerManager
                 "SELECT COUNT(*) FROM\n" +
                 "   core.containers c\n" +
                 "       JOIN prop.propertysets ps on c.entityid = ps.objectid\n" +
-                "       JOIN prop.properties p on p.set = ps.set\n" +
+                "       JOIN prop.properties p on p.\"set\" = ps.\"set\"\n" +
                 "WHERE ps.category = '" + AUDIT_SETTINGS_PROPERTY_SET_NAME + "' AND p.name='"+ REQUIRE_USER_COMMENTS_PROPERTY_NAME + "' and p.value='true'");
         return new SqlSelector(CORE.getSchema(), sql).getObject(Long.class);
     }
