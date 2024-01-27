@@ -37,6 +37,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -70,7 +71,7 @@
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
 
     (function($){
-        var datasetMap = <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(datasetMap))%>;
+        var datasetMap = <%=JavaScriptFragment.asJson(datasetMap)%>;
         var selectedDataset = <%=q(!StringUtils.isBlank(settings.getDataset()) ? settings.getDataset() : "")%>;
         var selectedField = <%=q(!StringUtils.isBlank(settings.getFieldName()) ? settings.getFieldName() : "")%>;
 

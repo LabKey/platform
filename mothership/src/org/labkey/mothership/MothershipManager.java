@@ -37,6 +37,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.ReentrantLockWithName;
 import org.labkey.api.util.logging.LogHelper;
@@ -377,7 +378,7 @@ public class MothershipManager
             // Verify the newValue as valid json; if it is, return it. Otherwise, return null.
             try
             {
-                new ObjectMapper().readTree(newValue);
+                JsonUtil.DEFAULT_MAPPER.readTree(newValue);
                 return newValue;
             }
             catch (IOException e)
@@ -388,7 +389,7 @@ public class MothershipManager
         }
 
         // Rather than overwrite the current json map, merge the new with the current.
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtil.createDefaultMapper();
         try
         {
             log.debug("Merging JSON. Old is " + currentValue.length() + " characters, new is " + newValue.length());

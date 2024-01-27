@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.pipeline.trigger.PipelineTriggerRegistry" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -92,10 +93,10 @@
     <div id="<%=h(appId)%>"></div>
 
     <script type="text/javascript" nonce="<%=getScriptNonce()%>">
-        const detailsFormSchema = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(detailsFormSchema))%>);
-        const taskFormSchemas = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(taskFormSchemas))%>);
-        const customFieldFormSchemas = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(customFieldFormSchemas))%>);
-        const tasksHelpText = JSON.parse(<%=q(JsonUtil.DEFAULT_MAPPER.writeValueAsString(tasksHelpText))%>);
+        const detailsFormSchema = JSON.parse(<%=q(JavaScriptFragment.asJson(detailsFormSchema))%>);
+        const taskFormSchemas = JSON.parse(<%=q(JavaScriptFragment.asJson(taskFormSchemas))%>);
+        const customFieldFormSchemas = JSON.parse(<%=q(JavaScriptFragment.asJson(customFieldFormSchemas))%>);
+        const tasksHelpText = JSON.parse(<%=q(JavaScriptFragment.asJson(tasksHelpText))%>);
         const rowId = <%=bean.getRowId()%>;
         const details = {
             "assay provider": <%=q(bean.getAssayProvider())%> || undefined,

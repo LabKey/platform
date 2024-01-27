@@ -25,6 +25,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.util.JsonUtil" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -58,8 +59,8 @@
             new LABKEY.ext4.AssayProgressReport({
                 renderTo        : <%=q(renderId)%>,
                 reportId        : <%=q(form.getId().toString())%>,
-                assays          : <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(assays))%>,
-                legend          : <%=unsafe(JsonUtil.DEFAULT_MAPPER.writeValueAsString(legend))%>
+                assays          : <%=JavaScriptFragment.asJson(assays)%>,
+                legend          : <%=JavaScriptFragment.asJson(legend)%>
             });
         });
     </labkey:loadClientDependencies>

@@ -73,6 +73,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
@@ -132,7 +133,7 @@ public class DomainUtil
             // addition nested properties containing ThawList list settings.
             try
             {
-                Map<String, String> decodedVals = new ObjectMapper().readValue(defaultValue.toString(), Map.class);
+                Map<String, String> decodedVals = JsonUtil.DEFAULT_MAPPER.readValue(defaultValue.toString(), Map.class);
                 String stringValue = decodedVals.get("stringValue");
                 if (stringValue != null)
                     return stringValue;
@@ -640,10 +641,9 @@ public class DomainUtil
         {
             throw new ValidationException(ve);
         }
-        ObjectMapper mapper = new ObjectMapper();
 
         arguments = kind.processArguments(container, user, arguments);
-        Object options = mapper.convertValue(arguments, kind.getTypeClass());
+        Object options = JsonUtil.DEFAULT_MAPPER.convertValue(arguments, kind.getTypeClass());
         Domain created = kind.createDomain(domain, options, container, user, templateInfo);
 
         if (created == null)

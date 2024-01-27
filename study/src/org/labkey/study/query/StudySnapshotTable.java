@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 
@@ -105,10 +106,9 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {
                 Object value = getValue(ctx);
-                ObjectMapper jsonMapper = new ObjectMapper();
-                Object jsonValue = jsonMapper.readValue(String.valueOf(value), Object.class);
+                Object jsonValue = JsonUtil.DEFAULT_MAPPER.readValue(String.valueOf(value), Object.class);
 
-                out.write(PageFlowUtil.filter(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
+                out.write(PageFlowUtil.filter(JsonUtil.DEFAULT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonValue), true, true));
           }
         });
 
