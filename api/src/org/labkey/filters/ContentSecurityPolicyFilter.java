@@ -1,6 +1,7 @@
 package org.labkey.filters;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -116,6 +117,7 @@ public class ContentSecurityPolicyFilter implements Filter
     @Override
     public void init(FilterConfig filterConfig) throws ServletException
     {
+        LogManager.getLogger(ContentSecurityPolicyFilter.class).info("Initializing " + filterConfig.getFilterName());
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
         {
