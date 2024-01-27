@@ -73,6 +73,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -1211,8 +1212,7 @@ public class MothershipController extends SpringActionController
                 try
                 {
                     // Capture the Core module's info to put into mothership.SoftwareRelease
-                    ObjectMapper mapper = new ObjectMapper();
-                    Map<String, Object> parsed = mapper.readValue(getJsonMetrics(), Map.class);
+                    Map<String, Object> parsed = JsonUtil.DEFAULT_MAPPER.readValue(getJsonMetrics(), Map.class);
                     Object modulesObject = parsed.get("modules");
                     if (modulesObject instanceof Map modulesMap)
                     {

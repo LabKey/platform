@@ -47,6 +47,7 @@ import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 
@@ -895,8 +896,7 @@ public class ExperimentJSONConverter
 
         try
         {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(aliases);
+            return JsonUtil.DEFAULT_MAPPER.writeValueAsString(aliases);
         }
         catch (JsonProcessingException e)
         {

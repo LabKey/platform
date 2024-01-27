@@ -301,10 +301,10 @@
                     if (viewName)
                         ruleName += ", view " + viewName;
                     const testUrl = getSelectedURL(viewName ? viewCombo : queryCombo);
-                    const markRequestable = actionCombo.getValue() == '<%= h(RequestabilityManager.MarkType.AVAILABLE.getLabel()) %>';
-                    const ruleData = schemaCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
-                                   queryCombo.getValue() + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
-                                   viewName + "<%= text(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %>" +
+                    const markRequestable = actionCombo.getValue() == <%= qh(RequestabilityManager.MarkType.AVAILABLE.getLabel()) %>;
+                    const ruleData = schemaCombo.getValue() + <%= q(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %> +
+                                   queryCombo.getValue() + <%= q(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %> +
+                                   viewName + <%= q(RequestabilityManager.CUSTOM_QUERY_DATA_SEPARATOR) %> +
                                    markRequestable;
                     if (addRule(grid, type, ruleName, actionCombo.getValue(), testUrl, ruleData))
                         win.close();

@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="static org.labkey.api.util.HtmlString.NDASH" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
     @Override
@@ -482,7 +483,7 @@
             timeout: Ext4.Ajax.timeout,
 
             items: getImportOptions(1).concat([
-                <%=unsafe(extraFormFields)%>
+                <%=JavaScriptFragment.unsafe(extraFormFields)%>
                 {
                     xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                 },
@@ -557,7 +558,7 @@
             timeout: Ext4.Ajax.timeout,
 
             items: getImportOptions(0).concat([
-                    <%=unsafe(extraFormFields)%>
+                    <%=JavaScriptFragment.unsafe(extraFormFields)%>
                     {
                         xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF
                     },
