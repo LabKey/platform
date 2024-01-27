@@ -664,34 +664,50 @@ public class StringExpressionFactory
         {
             // Any null field results in a null eval (good for URLs)
             NullResult(StringExpressionType.ReplaceMissing.NULL_RESULT)
-                    {
-                        @Override
-                        public String handleNull(StringExpressionFactory.StringPart part) throws StopIteratingException
-                        {
-                            throw new StopIteratingException();
-                        }
-                    },
+            {
+                @Override
+                public String handleNull(StringExpressionFactory.StringPart part) throws StopIteratingException
+                {
+                    throw new StopIteratingException();
+                }
+            },
 
-            // Null or missing fields get replaced with blank
+            // Null fields get replaced with blank. Any missing field results in null eval.
             ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
-                    {
-                        @Override
-                        public String handleNull(StringExpressionFactory.StringPart part)
-                        {
-                            return "";
-                        }
-                    },
+            {
+                @Override
+                public String handleNull(StringExpressionFactory.StringPart part)
+                {
+                    return "";
+                }
+            },
 
+            // Null and missing fields get replaced with blank
+            ReplaceNullAndMissingWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
+            {
+                @Override
+                public String handleNull(StringExpressionFactory.StringPart part)
+                {
+                    return "";
+                }
+
+                @Override
+                public String handleUndefined(StringPart part)
+                {
+                    return "";
+                }
+            },
 
             // Insert "null" into the string
             OutputNull(StringExpressionType.ReplaceMissing.NULL_VALUE)
-                    {
-                        @Override
-                        public String handleNull(StringExpressionFactory.StringPart part)
-                        {
-                            return "null";
-                        }
-                    },
+            {
+                @Override
+                public String handleNull(StringExpressionFactory.StringPart part)
+                {
+                    return "null";
+                }
+            },
+
             KeepSubstitution(StringExpressionType.ReplaceMissing.KEEP_SUBSTITUTION)
             {
                 @Override
