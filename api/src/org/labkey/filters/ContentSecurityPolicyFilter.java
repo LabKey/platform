@@ -111,7 +111,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private static String connectionSrc = "";
 
     private StringExpression policyExpression = null;
-    private boolean reportOnly = false;
+    private String header = CONTENT_SECURITY_POLICY_HEADER_NAME;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException
@@ -149,9 +149,12 @@ public class ContentSecurityPolicyFilter implements Filter
                     }
                 }
 
-                // Replace REPORT_PARAMETER_SUBSTITUTION now, since its value is static. Leave other substitutions in place.
-                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
+                // Ideally, we'd replace REPORT_PARAMETER_SUBSTITUTION now, since its value is static. However, this
+                // filter is registered and init() called before modules exist, so can't yet call getReleaseVersion().
+                // TODO: Add our own initialization method and invoke it on each filter instance later in the lifecycle
+                // or initialize lazily (but in a concurrent manner) in doFilter()
+//                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
+//                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
 
                 policyExpression = StringExpressionFactory.create(s, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
             }
@@ -160,7 +163,8 @@ public class ContentSecurityPolicyFilter implements Filter
                 String s = paramValue.trim();
                 if (!"report".equalsIgnoreCase(s) && !"enforce".equalsIgnoreCase(s))
                     throw new ServletException("ContentSecurityPolicyFilter is misconfigured, unexpected disposition value: " + s);
-                reportOnly = "report".equalsIgnoreCase(s);
+                if ("report".equalsIgnoreCase(s))
+                    header = CONTENT_SECURITY_POLICY_REPORT_ONLY_HEADER_NAME;
             }
             else
             {
@@ -181,10 +185,10 @@ public class ContentSecurityPolicyFilter implements Filter
         {
             Map<String, String> map = Map.of(
                 NONCE_SUBST, getScriptNonceHeader(req),
-                ALLOWED_CONNECT_SUBSTITUTION, connectionSrc
+                ALLOWED_CONNECT_SUBSTITUTION, connectionSrc,
+                REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())
             );
             var csp = policyExpression.eval(map);
-            var header = reportOnly ? CONTENT_SECURITY_POLICY_REPORT_ONLY_HEADER_NAME : CONTENT_SECURITY_POLICY_HEADER_NAME;
             resp.setHeader(header, csp);
         }
         chain.doFilter(request, response);
