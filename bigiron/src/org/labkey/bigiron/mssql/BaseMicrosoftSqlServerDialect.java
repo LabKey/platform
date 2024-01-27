@@ -833,9 +833,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public String getDateTimeToDateCast(String expression)
     {
-        // mm/dd/yyyy
-        // should we use 111 instead?:	yyyy/mm/dd
-        return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
+        return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 111))"; // 111: yyyy/mm/dd
     }
 
     @Override

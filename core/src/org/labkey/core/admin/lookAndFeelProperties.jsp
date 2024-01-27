@@ -252,7 +252,7 @@
 
 %>
 <tr>
-    <td colspan=2>Customize date and number display formats (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
@@ -275,7 +275,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize date parsing behavior (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
 </tr>
 <%
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
