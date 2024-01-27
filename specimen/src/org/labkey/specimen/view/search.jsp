@@ -79,7 +79,7 @@ Ext4.onReady(function(){
 
     multi.send(function() {
         if (errorMessages.length > 0)
-            Ext4.get('<%=text(renderTarget)%>').update(errorMessages.join("<br>"));
+            Ext4.get(<%=q(renderTarget)%>).update(errorMessages.join("<br>"));
         else
         {
             Ext4.create('LABKEY.ext.SampleSearchPanel', {

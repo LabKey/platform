@@ -67,6 +67,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.FolderArchiveSource;
 import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
@@ -945,7 +946,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
                 }
                 ParamParser parser = PipelineJobService.get().createParamParser();
                 Map<String, String> params = new HashMap<>();
-                Map<String, Object> parsedMap = new ObjectMapper().readValue(form.getConfigureJson(), new TypeReference<Map<String, Object>>(){});
+                Map<String, Object> parsedMap = JsonUtil.DEFAULT_MAPPER.readValue(form.getConfigureJson(), new TypeReference<Map<String, Object>>(){});
                 for (Map.Entry<String, Object> entry : parsedMap.entrySet())
                 {
                     params.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());

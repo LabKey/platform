@@ -14,6 +14,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.IOException;
@@ -107,12 +108,11 @@ public class ImportAliasesDisplayColumnFactory implements DisplayColumnFactory
                     if (null == value)
                         return HtmlString.EMPTY_STRING;
 
-                    ObjectMapper mapper = new ObjectMapper();
                     DefaultPrettyPrinter pp = new DefaultPrettyPrinter();
                     pp.indentArraysWith(new DefaultIndenter());
 
-                    Object json = mapper.readValue(value.toString(), Object.class);
-                    String strValue = mapper.writer(pp).writeValueAsString(json);
+                    Object json = JsonUtil.DEFAULT_MAPPER.readValue(value.toString(), Object.class);
+                    String strValue = JsonUtil.DEFAULT_MAPPER.writer(pp).writeValueAsString(json);
                     String filteredValue = PageFlowUtil.filter(strValue, true);
                     return HtmlString.unsafe("<div>" + filteredValue + "</div>");
                 }

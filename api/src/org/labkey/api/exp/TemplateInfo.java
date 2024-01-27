@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.util.JsonUtil;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -73,7 +74,7 @@ public class TemplateInfo
         {
             StringWriter sw = new StringWriter();
             JsonGenerator jsonGen = new JsonFactory().createGenerator(sw);
-            jsonGen.setCodec(new ObjectMapper());
+            jsonGen.setCodec(JsonUtil.createDefaultMapper());
             jsonGen.writeObject(this);
             return sw.toString();
         }
@@ -90,8 +91,7 @@ public class TemplateInfo
 
         try
         {
-            ObjectMapper om = new ObjectMapper();
-            HashMap map = om.readValue(json, HashMap.class);
+            HashMap map = JsonUtil.DEFAULT_MAPPER.readValue(json, HashMap.class);
             Double createdModuleVersion = null;
             if (null != map.get("createdModuleVersion"))
                 createdModuleVersion = (Double) JdbcType.DOUBLE.convert(map.get("createdModuleVersion"));

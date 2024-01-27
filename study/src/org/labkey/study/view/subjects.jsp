@@ -47,6 +47,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="static org.labkey.api.util.HtmlString.EMPTY_STRING" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -211,7 +212,7 @@
         }
         %>];
 
-        var hasCohorts = <%=text(hasCohorts?"true":"false")%>;
+        var hasCohorts = <%=JavaScriptFragment.bool(hasCohorts) %>;
 
 <%
         int size = index;
@@ -733,7 +734,7 @@
 })();
 
 
-Ext4.onReady(<%=unsafe(viewObject)%>.render, <%=unsafe(viewObject)%>);
+Ext4.onReady(<%=JavaScriptFragment.unsafe(viewObject)%>.render, <%=JavaScriptFragment.unsafe(viewObject)%>);
 </script>
 
 <div id="<%= h(outerDivId) %>">

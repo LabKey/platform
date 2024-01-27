@@ -335,7 +335,7 @@ public enum UsageReportingLevel implements SafeToRenderEnum
             try
             {
                 @SuppressWarnings({"unchecked"})
-                Map<String, Object> metrics = new ObjectMapper().readValue(Objects.requireNonNull(getReportParams(level)).get("jsonMetrics"), Map.class);
+                Map<String, Object> metrics = JsonUtil.DEFAULT_MAPPER.readValue(Objects.requireNonNull(getReportParams(level)).get("jsonMetrics"), Map.class);
                 return metrics;
             }
             catch (IOException e)
