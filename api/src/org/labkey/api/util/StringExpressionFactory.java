@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -308,7 +309,7 @@ public class StringExpressionFactory
 
     public static class ConstantPart extends StringPart
     {
-        private String _value;
+        private final String _value;
         public ConstantPart(String value)
         {
             _value = value;
@@ -497,25 +498,25 @@ public class StringExpressionFactory
 
     private static DateTimeFormatter createDateFormatter(String format)
     {
-        switch (format)
+        return switch (format)
         {
-            case "BASIC_ISO_DATE":       return DateTimeFormatter.BASIC_ISO_DATE;
-            case "ISO_DATE":             return DateTimeFormatter.ISO_DATE;
-            case "ISO_DATE_TIME":        return DateTimeFormatter.ISO_DATE_TIME;
-            case "ISO_INSTANT":          return DateTimeFormatter.ISO_INSTANT;
-            case "ISO_LOCAL_DATE":       return DateTimeFormatter.ISO_LOCAL_DATE;
-            case "ISO_LOCAL_DATE_TIME":  return DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-            case "ISO_LOCAL_TIME":       return DateTimeFormatter.ISO_LOCAL_TIME;
-            case "ISO_OFFSET_DATE":      return DateTimeFormatter.ISO_OFFSET_DATE;
-            case "ISO_OFFSET_DATE_TIME": return DateTimeFormatter.ISO_OFFSET_DATE_TIME;
-            case "ISO_OFFSET_TIME":      return DateTimeFormatter.ISO_OFFSET_TIME;
-            case "ISO_ORDINAL_DATE":     return DateTimeFormatter.ISO_ORDINAL_DATE;
-            case "ISO_TIME":             return DateTimeFormatter.ISO_TIME;
-            case "ISO_WEEK_DATE":        return DateTimeFormatter.ISO_WEEK_DATE;
-            case "ISO_ZONED_DATE_TIME":  return DateTimeFormatter.ISO_ZONED_DATE_TIME;
-            case "RFC_1123_DATE_TIME":   return DateTimeFormatter.RFC_1123_DATE_TIME;
-            default:                     return DateTimeFormatter.ofPattern(format);
-        }
+            case "BASIC_ISO_DATE" -> DateTimeFormatter.BASIC_ISO_DATE;
+            case "ISO_DATE" -> DateTimeFormatter.ISO_DATE;
+            case "ISO_DATE_TIME" -> DateTimeFormatter.ISO_DATE_TIME;
+            case "ISO_INSTANT" -> DateTimeFormatter.ISO_INSTANT;
+            case "ISO_LOCAL_DATE" -> DateTimeFormatter.ISO_LOCAL_DATE;
+            case "ISO_LOCAL_DATE_TIME" -> DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+            case "ISO_LOCAL_TIME" -> DateTimeFormatter.ISO_LOCAL_TIME;
+            case "ISO_OFFSET_DATE" -> DateTimeFormatter.ISO_OFFSET_DATE;
+            case "ISO_OFFSET_DATE_TIME" -> DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+            case "ISO_OFFSET_TIME" -> DateTimeFormatter.ISO_OFFSET_TIME;
+            case "ISO_ORDINAL_DATE" -> DateTimeFormatter.ISO_ORDINAL_DATE;
+            case "ISO_TIME" -> DateTimeFormatter.ISO_TIME;
+            case "ISO_WEEK_DATE" -> DateTimeFormatter.ISO_WEEK_DATE;
+            case "ISO_ZONED_DATE_TIME" -> DateTimeFormatter.ISO_ZONED_DATE_TIME;
+            case "RFC_1123_DATE_TIME" -> DateTimeFormatter.RFC_1123_DATE_TIME;
+            default -> DateTimeFormatter.ofPattern(format);
+        };
     }
 
     private static class RenderContextPart extends SubstitutePart
@@ -662,7 +663,7 @@ public class StringExpressionFactory
         // FieldParts know the field, so this is hard.
         public enum NullValueBehavior
         {
-            // Any null field results in a null eval (good for URLs)
+            // Any null or missing field results in a null eval of the whole expression (good for URLs)
             NullResult(StringExpressionType.ReplaceMissing.NULL_RESULT)
             {
                 @Override
@@ -672,8 +673,7 @@ public class StringExpressionFactory
                 }
             },
 
-            // Null fields get replaced with blank. Any missing field results in null eval of the whole expression
-
+            // All null fields get replaced with blank. Any missing field results in a null eval of the whole expression.
             ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
             {
                 @Override
@@ -683,7 +683,7 @@ public class StringExpressionFactory
                 }
             },
 
-            // Null and missing fields get replaced with blank
+            // All null and missing fields get replaced with blank
             ReplaceNullAndMissingWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
             {
                 @Override
@@ -699,7 +699,7 @@ public class StringExpressionFactory
                 }
             },
 
-            // Insert "null" into the string
+            // All null fields get replaces with "null". Any missing field results in a null eval of the whole expression.
             OutputNull(StringExpressionType.ReplaceMissing.NULL_VALUE)
             {
                 @Override
@@ -709,6 +709,7 @@ public class StringExpressionFactory
                 }
             },
 
+            // All null and missing fields get skipped (substitution is left in place)
             KeepSubstitution(StringExpressionType.ReplaceMissing.KEEP_SUBSTITUTION)
             {
                 @Override
@@ -775,10 +776,7 @@ public class StringExpressionFactory
         AbstractStringExpression(String source, NullValueBehavior nullValueBehavior, boolean allowSideEffects)
         {
             _source = source;
-            if (nullValueBehavior != null)
-                _nullValueBehavior = nullValueBehavior;
-            else
-                _nullValueBehavior = NullValueBehavior.NullResult;
+            _nullValueBehavior = Objects.requireNonNullElse(nullValueBehavior, NullValueBehavior.NullResult);
             _allowSideEffects = allowSideEffects;
             //MemTracker.getInstance().put(this);
         }
@@ -798,9 +796,8 @@ public class StringExpressionFactory
                 ArrayList<StringPart> parts = new ArrayList<>();
                 for (StringPart part : getParsedExpression())
                 {
-                    if (part instanceof NameGenerator.CounterExpressionPart)
+                    if (part instanceof NameGenerator.CounterExpressionPart counterPart)
                     {
-                        NameGenerator.CounterExpressionPart counterPart = (NameGenerator.CounterExpressionPart) part;
                         parts.addAll(counterPart.getParsedNameExpression().getParsedExpression());
                     }
                     else
