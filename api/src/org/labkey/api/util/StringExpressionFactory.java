@@ -672,7 +672,8 @@ public class StringExpressionFactory
                 }
             },
 
-            // Null fields get replaced with blank. Any missing field results in null eval.
+            // Null fields get replaced with blank. Any missing field results in null eval of the whole expression
+
             ReplaceNullWithBlank(StringExpressionType.ReplaceMissing.BLANK_VALUE)
             {
                 @Override
