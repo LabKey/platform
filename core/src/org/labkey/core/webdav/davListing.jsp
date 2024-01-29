@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -102,7 +103,7 @@
                 actions: [
                     'folderTreeToggle', 'parentFolder', 'refresh',
                     'createDirectory', 'download', 'deletePath', 'renamePath', 'movePath', 'upload',
-                    '->', htmlViewAction, <%=unsafe(getUser().isGuest() ? "loginAction" : "logoutAction")%>
+                    '->', htmlViewAction, <%=JavaScriptFragment.unsafe(getUser().isGuest() ? "loginAction" : "logoutAction")%>
                 ],
                 useServerActions: false
             }],

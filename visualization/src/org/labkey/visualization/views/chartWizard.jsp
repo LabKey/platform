@@ -125,7 +125,7 @@
             canEdit: canEdit,
             canShare: <%=canShare%>,
             isDeveloper: <%=isDeveloper%>,
-            defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
+            defaultNumberFormat: eval(<%=q(numberFormatFn)%>),
             allowEditMode: <%=allowEditMode%>,
             editModeURL: editUrl,
 

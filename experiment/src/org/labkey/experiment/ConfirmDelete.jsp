@@ -73,7 +73,7 @@
 <% if (bean.getObjects().isEmpty())
 {
     %><p>There are no <%= h(numReferencedItems > 0 ? " additional " : "")%>selected objects to delete.</p>
-    <%= text(button("OK").href(successUrl).toString())%><%
+    <%= button("OK").href(successUrl) %><%
 }
 else
 { %>
@@ -217,6 +217,6 @@ else
         { %>
             <%= button("Confirm Delete").submit(true).disableOnClick(true) %>
         <% } %>
-        <%= text(button("Cancel").href(cancelUrl).toString())%>
+        <%= button("Cancel").href(cancelUrl) %>
     </labkey:form>
 <% } %>

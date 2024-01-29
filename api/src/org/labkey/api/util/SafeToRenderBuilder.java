@@ -32,7 +32,7 @@ public class SafeToRenderBuilder implements SafeToRender
 
     public SafeToRender getSafeToRender()
     {
-        return JavaScriptFragment.unsafe(_sb.toString());
+        return HtmlString.unsafe(_sb.toString());
     }
 
     @Override

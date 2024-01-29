@@ -3505,7 +3505,7 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtil.createDefaultMapper();
             mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             JSONObject object = form.getJsonObject();
@@ -4787,12 +4787,18 @@ public class QueryController extends SpringActionController
             JSONObject json = getJsonObject();
             if (json == null)
             {
-                errors.reject(ERROR_MSG, "Empty request");
+                errors.reject(ERROR_GENERIC, "Empty request");
             }
             else
             {
-                String queryName = json.optString(PROP_QUERY_NAME, null);
-                _targetContainer = ContainerManager.getMoveTargetContainer(queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
+                // Since we are moving between containers, we know we have product projects enabled
+                if (getContainer().getProject().getAuditCommentsRequired() && StringUtils.isBlank(json.optString("auditUserComment")))
+                    errors.reject(ERROR_GENERIC, "A reason for the move of data is required.");
+                else
+                {
+                    String queryName = json.optString(PROP_QUERY_NAME, null);
+                    _targetContainer = ContainerManager.getMoveTargetContainer(queryName, getContainer(), getUser(), getTargetContainerProp(), errors);
+                }
             }
         }
 
@@ -7562,10 +7568,9 @@ public class QueryController extends SpringActionController
             PropertyValue schemasProperty = values.getPropertyValue("schemas");
             if (schemasProperty != null && schemasProperty.getValue() != null)
             {
-                ObjectMapper om = new ObjectMapper();
                 try
                 {
-                    _schemas = om.readValue((String)schemasProperty.getValue(), _schemas.getClass());
+                    _schemas = JsonUtil.DEFAULT_MAPPER.readValue((String)schemasProperty.getValue(), _schemas.getClass());
                 }
                 catch (IOException e)
                 {

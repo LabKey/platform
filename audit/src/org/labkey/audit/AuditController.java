@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -66,10 +67,13 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.data.ContainerManager.REQUIRE_USER_COMMENTS_PROPERTY_NAME;
 
 public class AuditController extends SpringActionController
 {
@@ -515,6 +519,54 @@ public class AuditController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             root.addChild(_eventType + " : Audit Log");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class SaveAuditSettingsAction extends MutatingApiAction<AuditSettingsForm>
+    {
+        @Override
+        public void validateForm(AuditSettingsForm form, Errors errors)
+        {
+            if (!getContainer().isAppHomeFolder())
+                errors.reject(ERROR_GENERIC, "This action is not supported for sub-folders of the application.");
+            if (form.getRequireUserComments() == null)
+                errors.reject(ERROR_REQUIRED, "requireUserComments is required to be non-null.");
+        }
+
+        @Override
+        public Object execute(AuditSettingsForm form, BindException errors)
+        {
+            ContainerManager.setRequireAuditComments(getContainer(), getUser(), form.getRequireUserComments());
+            return success();
+        }
+    }
+
+    public static class AuditSettingsForm
+    {
+        private Boolean _requireUserComments;
+
+        public Boolean getRequireUserComments()
+        {
+            return _requireUserComments;
+        }
+
+        public void setRequireUserComments(Boolean requireUserComments)
+        {
+            _requireUserComments = requireUserComments;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class GetAuditSettingsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            Container container = getContainer();
+            if (!container.isAppHomeFolder())
+                container = container.getProject();
+            return container == null ? Collections.emptyMap() : Map.of(REQUIRE_USER_COMMENTS_PROPERTY_NAME, container.getAuditCommentsRequired());
         }
     }
 }

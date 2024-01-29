@@ -2,6 +2,7 @@ package org.labkey.api.exp.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.util.JsonUtil;
 
 import java.util.Map;
 
@@ -23,8 +24,7 @@ public class DomainKindDesign<T>
 
     public Map<String, Object> getOptions()
     {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.convertValue(_options, Map.class);
+        return JsonUtil.DEFAULT_MAPPER.convertValue(_options, Map.class);
     }
 
     public void setOptions(T options)

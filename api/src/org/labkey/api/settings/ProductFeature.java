@@ -7,7 +7,8 @@ public enum ProductFeature
 {
     Assay("assay"),
     AssayQC("premium"),
-    ApiKeys("apiKeys"),
+    ApiKeys("core"),
+    DataChangeCommentRequirement("core"),
     ELN("labbook"),
     FreezerManagement("inventory"),
     Media("recipe"),

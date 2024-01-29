@@ -91,6 +91,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
@@ -1648,7 +1649,7 @@ public class VisualizationController extends SpringActionController
         @Test
         public void testJacksonBinding() throws Exception
         {
-            ObjectReader r = new ObjectMapper().reader(VisDataRequest.class)
+            ObjectReader r = JsonUtil.DEFAULT_MAPPER.reader(VisDataRequest.class)
                     .without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             String measure1 = "{\"allowNullResults\":true, \"aggregate\":\"MAX\", \"alias\":\"table_column\", " +
                     "\"inNotNullSet\":true, \"name\":\"column\", \"nsvalues\":\"whatisthis\"," +

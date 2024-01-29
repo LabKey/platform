@@ -11175,7 +11175,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
     public class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
@@ -11183,22 +11182,25 @@ public class AdminController extends SpringActionController
         private static final Logger _log = LogHelper.getLogger(ContentSecurityPolicyReportAction.class, "CSP warnings");
 
         // recent reports, to help avoid log spam
-        private static final Map<String,Boolean> reports = Collections.synchronizedMap(new LRUMap<>(20));
+        private static final Map<String, Boolean> reports = Collections.synchronizedMap(new LRUMap<>(20));
 
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            var ret = new JSONObject().put("success",true);
+            var ret = new JSONObject().put("success", true);
 
             // fail fast
             if (!_log.isWarnEnabled())
                 return ret;
 
-            var userAgent = getViewContext().getRequest().getHeader("User-Agent");
+            var request = getViewContext().getRequest();
+            assert null != request;
+
+            var userAgent = request.getHeader("User-Agent");
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User will always be "guest".  Seems like a bad design to force the server to accept guest w/o CSRF here.
+            // NOTE User will always be "guest". Seems like a bad design to force the server to accept guest w/o CSRF here.
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
@@ -11213,6 +11215,9 @@ public class AdminController extends SpringActionController
                         {
                             if (isNotBlank(userAgent))
                                 jsonObj.put("user-agent", userAgent);
+                            String labkeyVersion = request.getParameter("labkeyVersion");
+                            if (null != labkeyVersion)
+                                jsonObj.put("labkeyVersion", labkeyVersion);
                             var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
                         }

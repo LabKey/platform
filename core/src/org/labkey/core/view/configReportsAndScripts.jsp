@@ -817,7 +817,7 @@
                         var record = {
                             name: R_ENGINE_NAME,
                             extensions: R_EXTENSIONS,
-                            exeCommand: '<%=text(RReport.DEFAULT_R_CMD)%>',
+                            exeCommand: <%=q(RReport.DEFAULT_R_CMD)%>,
                             <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
                             exePath: <%=q(RReport.getDefaultRPath())%>,
                             <% } %>
@@ -851,9 +851,9 @@
                             var record = {
                                 name: REMOTE_R_ENGINE_NAME,
                                 extensions: R_EXTENSIONS,
-                                machine: '<%=text(RReport.DEFAULT_R_MACHINE)%>',
+                                machine: <%=q(RReport.DEFAULT_R_MACHINE)%>,
                                 port:<%=RReport.DEFAULT_R_PORT%>,
-                                exeCommand: '<%=text(RReport.DEFAULT_RSERVE_CMD)%>',
+                                exeCommand: <%=q(RReport.DEFAULT_RSERVE_CMD)%>,
                                 outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                                 'default': !defaultR,
                                 external: true,
