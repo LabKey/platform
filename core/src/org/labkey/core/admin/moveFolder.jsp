@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.core.admin.AdminController.MoveFolderTreeView" %>
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -113,7 +114,7 @@
                 editable : true,
                 expandable : true,
                 text : <%=q(project.getParent().getName())%>,
-                <%=text(project.equals(c) ? "cls : 'x-tree-node-current'" : "")%>
+                <%=JavaScriptFragment.unsafe(project.equals(c) ? "cls : 'x-tree-node-current'" : "")%>
             }),
             rootVisible: false,
             enableDrag: false,

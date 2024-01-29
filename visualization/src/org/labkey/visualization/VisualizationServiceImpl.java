@@ -35,6 +35,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DatasetTable;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.SQLGenerationException;
@@ -63,8 +64,7 @@ public class VisualizationServiceImpl implements VisualizationService
         ViewContext context = new ViewContext();
         context.setUser(user);
         context.setContainer(c);
-
-        ObjectReader r = new ObjectMapper().reader(VisDataRequest.class).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        ObjectReader r = JsonUtil.DEFAULT_MAPPER.reader(VisDataRequest.class).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         VisDataRequest vdr = r.readValue(json.toString());
         vdr.setMetaDataOnly(true);
 
@@ -85,7 +85,7 @@ public class VisualizationServiceImpl implements VisualizationService
         context.setUser(user);
         context.setContainer(c);
 
-        ObjectReader r = new ObjectMapper().reader(VisDataRequest.class).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        ObjectReader r = JsonUtil.DEFAULT_MAPPER.reader(VisDataRequest.class).without(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         VisDataRequest vdr = r.readValue(json.toString());
         vdr.setMetaDataOnly(true);
 

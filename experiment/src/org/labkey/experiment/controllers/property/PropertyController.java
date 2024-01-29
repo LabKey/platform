@@ -90,6 +90,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JavaScriptFragment;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
@@ -1550,7 +1551,7 @@ public class PropertyController extends SpringActionController
 
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = JsonUtil.createDefaultMapper();
         _propertyService.configureObjectMapper(om, null);
         try
         {
@@ -1562,13 +1563,13 @@ public class PropertyController extends SpringActionController
         }
     }
 
-    public static String convertDomainToJson(@NotNull GWTDomain domain)
+    public static JavaScriptFragment convertDomainToJson(@NotNull GWTDomain domain)
     {
-        ObjectMapper om = new ObjectMapper();
+        ObjectMapper om = JsonUtil.createDefaultMapper();
         _propertyService.configureObjectMapper(om, null);
         try
         {
-            return om.writeValueAsString(domain);
+            return JavaScriptFragment.unsafe(om.writeValueAsString(domain));
         }
         catch (Exception e)
         {

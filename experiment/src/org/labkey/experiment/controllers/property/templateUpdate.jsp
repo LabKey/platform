@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.experiment.controllers.property.PropertyController" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -55,10 +56,10 @@
 {
     var schemaName = <%=  q(model.schemaName) %>;
     var queryName = <%=  q(model.queryName) %>;
-    var domain = <%= text(PropertyController.convertDomainToJson(model.domain)) %>;
+    var domain = <%= PropertyController.convertDomainToJson(model.domain) %>;
     domain.schemaName = schemaName;
     domain.queryName = queryName;
-    var template = <%= text(null==model.template ? "null" : PropertyController.convertDomainToJson(model.template)) %>;
+    var template = <%= null==model.template ? JavaScriptFragment.NULL : PropertyController.convertDomainToJson(model.template) %>;
     <% if (null == model.info) { %>
     var templateInfo = null;
     <% } else { %>

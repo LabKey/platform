@@ -293,7 +293,7 @@ var f = new LABKEY.ext.FormPanel({
         }
     ],
     buttons:[
-        {text:'<%=text(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit},
+        {text:<%=q(bean.isInsert() ? "Create" : "Update")%>, type:'submit', handler:submit},
         <% if (!bean.isInsert()) { %>
         {text:'Delete', handler:function() {document.location = <%=q(bean.getDeleteURL())%>;}},
         <% } %>

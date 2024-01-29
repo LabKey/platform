@@ -347,7 +347,7 @@ for (Module module : allModules)
         LABKEY.requiresExt4Sandbox(function() {
             Ext4.onReady(function() {
                 Ext4.create('Ext.button.Button', {
-                    text: '<%=text(form.isWizard() ? "Next" : "Update Folder")%>',
+                    text: <%=q(form.isWizard() ? "Next" : "Update Folder")%>,
                     renderTo: 'UpdateFolderButtonDiv',
                     handler: function() {
                         if (!validate()) {
@@ -380,7 +380,7 @@ for (Module module : allModules)
                             url: LABKEY.ActionURL.buildURL('core', 'getContainerInfo.api'),
                             method: 'POST',
                             jsonData: {
-                                containerPath: "<%=text(path)%>",
+                                containerPath: <%=q(path)%>,
                                 newFolderType: newFolderType
                             },
                             success: function (resp) {
