@@ -56,6 +56,7 @@ import java.util.Formatter;
 import java.util.Map;
 
 // moved from git, see history at https://github.com/LabKey/docker/commits/release18.1/src/org/mitre/dsmiley/httpproxy/ProxyServlet.java
+// last sync date with remote repo: 01/29/2024
 
 /**
  * An HTTP reverse proxy/gateway servlet. It is designed to be extended for customization
@@ -389,7 +390,7 @@ public class ProxyServlet extends HttpServlet {
         }
     }
 
-    protected void handleRequestException(HttpRequest proxyRequest, HttpResponse proxyResonse, Exception e) throws ServletException, IOException {
+    protected void handleRequestException(HttpRequest proxyRequest, HttpResponse proxyResponse, Exception e) throws ServletException, IOException {
         // LKS override
 
         // Note: We used to "abort" the request, but that doesn't seem possible anymore
@@ -398,8 +399,8 @@ public class ProxyServlet extends HttpServlet {
         // #close is called. If the sending site does not timeout or keeps sending,
         // the connection will be kept open indefinitely. Closing the respone
         // object terminates the stream.
-        if (proxyResonse instanceof Closeable) {
-            ((Closeable) proxyResonse).close();
+        if (proxyResponse instanceof Closeable) {
+            ((Closeable) proxyResponse).close();
         }
         if (e instanceof RuntimeException)
             throw (RuntimeException) e;
