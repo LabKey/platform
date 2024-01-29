@@ -96,6 +96,8 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     @Override
     protected void fixupWrappedColumn(MutableColumnInfo wrap, ColumnInfo col)
     {
+        super.fixupWrappedColumn(wrap, col);
+
         if ("Container".equalsIgnoreCase(col.getName()))
         {
             wrap.setFieldKey(FieldKey.fromParts("Folder"));
