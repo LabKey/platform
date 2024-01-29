@@ -1290,6 +1290,7 @@ public class PlateManager implements PlateService
     }
 
     @Override
+    @NotNull
     public List<? extends PlateType> getPlateTypes()
     {
         return new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateType()).getArrayList(PlateTypeBean.class);
