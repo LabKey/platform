@@ -627,7 +627,6 @@
 
             var values = form.getFieldValues();
 
-            values.remoteUser = values.user;
             // confirm site default R engine modification
             if (values.extensions  === R_EXTENSIONS) {
                 var rowId = values.rowId ? parseInt(values.rowId) : -1;
