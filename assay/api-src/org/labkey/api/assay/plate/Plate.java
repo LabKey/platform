@@ -40,9 +40,11 @@ public interface Plate extends PropertySet, Identifiable
 
     boolean isTemplate();
 
-    @NotNull PlateType getPlateTypeObject();
+    @NotNull PlateType getPlateType();
 
-    @Nullable PlateSet getPlateSetObject();
+    @Nullable PlateSet getPlateSet();
+
+    @NotNull String getPlateId();
 
     /**
      * Returns an existing well, or creates a new well if one

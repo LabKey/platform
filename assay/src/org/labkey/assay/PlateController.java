@@ -282,6 +282,9 @@ public class PlateController extends SpringActionController
 
         public CopyTemplateBean(final Container container, final User user, final Integer plateId, final String selectedDestination)
         {
+            if (plateId == null)
+                throw new IllegalArgumentException("Plate ID cannot be null");
+
             _plate = PlateService.get().getPlate(container, plateId);
             if (_plate == null)
                 throw new IllegalStateException("Could not resolve the plate with ID : " + plateId);
