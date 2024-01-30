@@ -6,6 +6,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
+import org.labkey.api.util.logging.LogHelper;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -116,6 +117,8 @@ public class ContentSecurityPolicyFilter implements Filter
     @Override
     public void init(FilterConfig filterConfig) throws ServletException
     {
+        LogHelper.getLogger(ContentSecurityPolicyFilter.class, "CSP filter initialization").info("Initializing " + filterConfig.getFilterName());
+
         Enumeration<String> paramNames = filterConfig.getInitParameterNames();
         while (paramNames.hasMoreElements())
         {
@@ -149,9 +152,12 @@ public class ContentSecurityPolicyFilter implements Filter
                     }
                 }
 
-                // Replace REPORT_PARAMETER_SUBSTITUTION now, since its value is static. Leave other substitutions in place.
-                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
-                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
+                // Ideally, we'd replace REPORT_PARAMETER_SUBSTITUTION now, since its value is static. However, the
+                // order of filter initialization is non-deterministic, so core module might not exist yet.
+                // TODO: Stop registering ModuleLoader as a Filter OR add our own initialization method and invoke it
+                // on each filter instance later in the lifecycle OR add thread-safe lazy init to doFilter().
+//                s = StringExpressionFactory.create(s, false, NullValueBehavior.KeepSubstitution)
+//                    .eval(Map.of(REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())));
 
                 policyExpression = StringExpressionFactory.create(s, false, NullValueBehavior.ReplaceNullAndMissingWithBlank);
             }
@@ -182,7 +188,8 @@ public class ContentSecurityPolicyFilter implements Filter
         {
             Map<String, String> map = Map.of(
                 NONCE_SUBST, getScriptNonceHeader(req),
-                ALLOWED_CONNECT_SUBSTITUTION, connectionSrc
+                ALLOWED_CONNECT_SUBSTITUTION, connectionSrc,
+                REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())
             );
             var csp = policyExpression.eval(map);
             resp.setHeader(header, csp);
