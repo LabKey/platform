@@ -340,7 +340,7 @@
             if (record.pathMap)
                 pathMapStore.loadData(record.pathMap.paths);
 
-            // standard fiels at the top of the form
+            // standard fields at the top of the form
             var fields = [{
                 fieldLabel: "Name",
                 name: 'name',
@@ -627,6 +627,7 @@
 
             var values = form.getFieldValues();
 
+            values.remoteUser = values.user;
             // confirm site default R engine modification
             if (values.extensions  === R_EXTENSIONS) {
                 var rowId = values.rowId ? parseInt(values.rowId) : -1;
