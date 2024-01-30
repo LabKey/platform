@@ -1060,7 +1060,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         List<String> nonDateTimeColumns = new ArrayList<>();
         for (PropertyStorageSpec column : change.getColumns())
         {
-            String columnName = makeLegalIdentifier(column.getName());
+            String columnName = makePropertyIdentifier(column.getName());
             String dbType;
             if (column.getJdbcType().isDateOrTime())
             {
@@ -1071,7 +1071,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
                 // copy casted value to temp column
                 String updateColumnValueStatement = "UPDATE " + tableIdentifier
-                    + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, getSqlTypeName(column));
+                    + String.format(" SET %s = CAST(%s AS %s)", makePropertyIdentifier(tempColumnName), columnName, getSqlTypeName(column));
                 statements.add(updateColumnValueStatement);
 
                 // drop original column
@@ -1079,7 +1079,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                 statements.add(dropOldColumnStatement);
 
                 // rename temp column to original column name
-                String renameTempColumnValStatement = alterTableSegment + String.format(" RENAME COLUMN %s TO %s", makeLegalIdentifier(tempColumnName), columnName);
+                String renameTempColumnValStatement = alterTableSegment + String.format(" RENAME COLUMN %s TO %s", makePropertyIdentifier(tempColumnName), columnName);
                 statements.add(renameTempColumnValStatement);
             }
             else
