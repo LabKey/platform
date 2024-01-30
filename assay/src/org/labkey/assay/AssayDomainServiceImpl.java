@@ -26,7 +26,6 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
-import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
 import org.labkey.api.assay.plate.Plate;
@@ -58,9 +57,7 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
@@ -484,7 +481,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                     {
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
-                        Plate plate = PlateManager.get().getPlate(getContainer(), assay.getSelectedPlateTemplate());
+                        Plate plate = PlateManager.get().getPlateByName(getContainer(), assay.getSelectedPlateTemplate());
                         if (plate != null)
                             plateProvider.setPlate(getContainer(), protocol, plate);
                         else

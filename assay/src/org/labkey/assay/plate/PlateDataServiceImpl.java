@@ -177,7 +177,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
             else
             {
                 // check another plate of the same name doesn't already exist
-                Plate other = PlateManager.get().getPlate(getContainer(), gwtPlate.getName());
+                Plate other = PlateManager.get().getPlateByName(getContainer(), gwtPlate.getName());
                 if (other != null)
                 {
                     if (!replaceIfExisting)
