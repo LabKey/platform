@@ -80,7 +80,7 @@ public class AmountDataColumn extends DataColumn
         {
             Measurement.Unit storedUnit = Measurement.Unit.valueOf(ctx.get(_unitsField).toString());
             if (storedUnit.isCompatible(sampleTypeUnit))
-                return storedUnit.convertAmount(storedAmount, sampleTypeUnit);
+                return storedUnit.convertAmountForDisplay(storedAmount, sampleTypeUnit);
             else
                 return storedAmount;
         }

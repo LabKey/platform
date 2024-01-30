@@ -1,6 +1,7 @@
 package org.labkey.api.data.measurement;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Precision;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -111,6 +112,15 @@ public class Measurement
                     return unit;
             }
             return null;
+        }
+
+        public Double convertAmountForDisplay(@Nullable Double amount, @Nullable Measurement.Unit targetUnit)
+        {
+            Double converted = convertAmount(amount, targetUnit);
+            if (converted == null)
+                return null;
+
+            return Precision.round(converted, 6);
         }
 
         public Double convertAmount(@Nullable Double amount, @Nullable Measurement.Unit targetUnit)
