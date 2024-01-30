@@ -942,6 +942,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     validateInputField : function(value) {
         var map = {
             'string': 'STRING',
+            'time': 'STRING',
             'int': 'INT',
             'float': 'FLOAT',
             'date': 'DATE',
