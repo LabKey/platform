@@ -1126,7 +1126,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
                 // rename temp column to original column name
                 String renameColumnStatement = String.format("EXEC sp_rename '%s','%s','COLUMN'",
-                        tableIdentifier + "." + makeLegalIdentifier(tempColumnName), columnName);
+                        tableIdentifier + "." + makeLegalIdentifier(tempColumnName), column.getName() /* don't use quote in sp_rename */);
                 statements.add(renameColumnStatement);
             }
             else
