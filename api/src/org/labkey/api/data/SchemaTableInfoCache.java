@@ -96,7 +96,8 @@ public class SchemaTableInfoCache
             {
                 // Log all problems for the admin and report to mothership. Return null for now, but see Issue 49506.
                 LOG.error("Exception while attempting to load schema table \"" + fullName + "\"", t);
-                ExceptionUtil.logExceptionToMothership(null, t);
+                ExceptionUtil.logExceptionToMothership(null, t, false);
+
 
                 return null;
             }
