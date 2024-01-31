@@ -25,7 +25,7 @@ var CloseEventCode = {
     TLS_HANDSHAKE: 1015
 };
 
-if(!LABKEY.WebSocket) {
+if (!LABKEY.WebSocket) {
     LABKEY.WebSocket = {};
 }
 
@@ -37,6 +37,7 @@ LABKEY.WebSocket = new function ()
     var _modalShowing = false;
 
     function openWebsocket() {
+        if (_websocket !== null || !('WebSocket' in window)) return;
         _websocket = new WebSocket((window.location.protocol==="http:"?"ws:":"wss:") + "//" + window.location.host + LABKEY.contextPath + "/_websocket/notifications");
         _websocket.onmessage = websocketOnMessage;
         _websocket.onclose = websocketOnClose;
@@ -62,6 +63,7 @@ LABKEY.WebSocket = new function ()
     }
 
     function websocketOnClose(evt) {
+        _websocket = null;
         if (evt.wasClean) {
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
@@ -222,9 +224,7 @@ LABKEY.WebSocket = new function ()
     // initial call will open the WebSocket to at least handle the logout and session timeout events
     // other apps or code can register their own event listeners as well via addServerEventListener
     var initWebSocket = function() {
-        if ('WebSocket' in window && null === _websocket) {
-            openWebsocket();
-        }
+        openWebsocket();
     };
 
     return {
