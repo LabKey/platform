@@ -1379,6 +1379,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             formats.put("dateFormat", DateUtil.getDateFormatString(this));
             formats.put("dateTimeFormat", props.getDefaultDateTimeFormat());
             formats.put("numberFormat", props.getDefaultNumberFormat());
+            formats.put("timeFormat", DateUtil.getTimeFormatString(this));
             containerProps.put("formats", formats);
         }
 

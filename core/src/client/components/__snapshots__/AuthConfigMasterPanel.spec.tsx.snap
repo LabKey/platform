@@ -803,15 +803,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               >
                  Login Form Configurations 
               </span>
-              <span
-                className="label-help-target"
-                onMouseOut={[Function]}
-                onMouseOver={[Function]}
+              <div
+                className="overlay-trigger"
+                onClick={[Function]}
+                onMouseEnter={[Function]}
+                onMouseLeave={[Function]}
               >
                 <span
-                  className="label-help-icon fa fa-question-circle"
-                />
-              </span>
+                  className="label-help-target"
+                >
+                  <span
+                    className="label-help-icon fa fa-question-circle"
+                  />
+                </span>
+              </div>
             </div>
             <div>
               <div>
@@ -965,15 +970,20 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
               >
                  Single Sign-On Configurations 
               </span>
-              <span
-                className="label-help-target"
-                onMouseOut={[Function]}
-                onMouseOver={[Function]}
+              <div
+                className="overlay-trigger"
+                onClick={[Function]}
+                onMouseEnter={[Function]}
+                onMouseLeave={[Function]}
               >
                 <span
-                  className="label-help-icon fa fa-question-circle"
-                />
-              </span>
+                  className="label-help-target"
+                >
+                  <span
+                    className="label-help-icon fa fa-question-circle"
+                  />
+                </span>
+              </div>
             </div>
             <div>
               <div>

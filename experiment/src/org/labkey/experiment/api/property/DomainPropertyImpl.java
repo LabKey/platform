@@ -804,6 +804,11 @@ public class DomainPropertyImpl implements DomainProperty
                         _pd.setFormat(null);
                     }
                 }
+                else if (newType.getJdbcType().isDateOrTime() && oldType.getJdbcType().isDateOrTime())
+                {
+                    changedType = true;
+                    _pd.setFormat(null);
+                }
                 else
                 {
                     throw new ChangePropertyDescriptorException("Cannot convert an instance of " + oldType.getJdbcType() + " to " + newType.getJdbcType() + ".");
@@ -866,6 +871,10 @@ public class DomainPropertyImpl implements DomainProperty
                                     append(OntologyManager.getTinfoObjectProperty()).
                                     append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
+                }
+                else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
+                {
+                    // TODO support datetime/date conversion
                 }
                 else //noinspection StatementWithEmptyBody
                     if (oldType.getJdbcType().isInteger() && newType.getJdbcType().isReal())

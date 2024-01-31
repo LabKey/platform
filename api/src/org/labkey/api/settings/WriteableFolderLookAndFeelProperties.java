@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 
 import java.text.DecimalFormat;
 
+import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultTimeFormatString;
 import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
 
 import static org.labkey.api.settings.LookAndFeelFolderProperties.defaultDateFormatString;
@@ -75,6 +76,13 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         storeStringValue(defaultDateFormatString, defaultDateFormat);
     }
 
+    public void setDefaultTimeFormat(String defaultTimeFormat) throws IllegalArgumentException
+    {
+        // Check for legal format
+        FastDateFormat.getInstance(defaultTimeFormat);
+        storeStringValue(defaultTimeFormatString, defaultTimeFormat);
+    }
+
     // Validate inside the set method, since this is called from multiple places
     public void setDefaultDateTimeFormat(String defaultDateTimeFormat) throws IllegalArgumentException
     {
@@ -95,6 +103,12 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         remove(defaultDateTimeFormatString);
     }
 
+    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    public void clearDefaultTimeFormat()
+    {
+        remove(defaultTimeFormatString);
+    }
+
     // Convenience method to support import: validate and save just this property
     public static void saveDefaultDateFormat(Container c, String defaultDateFormat) throws IllegalArgumentException
     {
@@ -108,6 +122,14 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
         props.setDefaultDateTimeFormat(defaultDateTimeFormat);
+        props.save();
+    }
+
+    // Convenience method to support import: validate and save just this property
+    public static void saveDefaultTimeFormat(Container c, String defaultTimeFormat) throws IllegalArgumentException
+    {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+        props.setDefaultTimeFormat(defaultTimeFormat);
         props.save();
     }
 
@@ -148,6 +170,14 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
         storeStringValue(extraDateTimeParsingPattern, pattern);
     }
 
+    // Validate inside the set method, since this is called from multiple places
+    public void setExtraTimeParsingPattern(String pattern) throws IllegalArgumentException
+    {
+        // Check for legal format
+        FastDateFormat.getInstance(pattern);
+        storeStringValue(extraTimeParsingPattern, pattern);
+    }
+
     // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
     public void clearExtraDateParsingPattern()
     {
@@ -158,6 +188,12 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     public void clearExtraDateTimeParsingPattern()
     {
         remove(extraDateTimeParsingPattern);
+    }
+
+    // Allows clearing the property to allow inheriting of this property alone. Should make this more obvious and universal, via "inherit/override" checkboxes and highlighting in the UI
+    public void clearExtraTimeParsingPattern()
+    {
+        remove(extraTimeParsingPattern);
     }
 
     // Convenience method to support import: validate and save just this property
@@ -172,9 +208,18 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     public static void saveExtraDateTimeParsingPattern(Container c, String extraDateTimeParsingPattern) throws IllegalArgumentException
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
-        props.setDefaultDateTimeFormat(extraDateTimeParsingPattern);
+        props.setExtraDateTimeParsingPattern(extraDateTimeParsingPattern);
         props.save();
     }
+
+    // Convenience method to support import: validate and save just this property
+    public static void saveExtraTimeParsingPattern(Container c, String extraTimeParsingPattern) throws IllegalArgumentException
+    {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+        props.setExtraTimeParsingPattern(extraTimeParsingPattern);
+        props.save();
+    }
+
 
     public void clearRestrictedColumnsEnabled()
     {
