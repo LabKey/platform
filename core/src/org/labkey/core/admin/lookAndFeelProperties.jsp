@@ -269,7 +269,7 @@
     <td><input type="text" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for time-only value<%=helpPopup("Time format", timeFormatHelp, true, 300)%></td>
+    <td class="labkey-form-label">Default display format for time-only values<%=helpPopup("Time format", timeFormatHelp, true, 300)%></td>
     <td><input type="text" name="<%=defaultTimeFormat%>" size="50" value="<%= h(laf.getDefaultTimeFormat()) %>"></td>
 </tr>
 <tr>

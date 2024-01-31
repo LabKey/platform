@@ -872,6 +872,10 @@ public class DomainPropertyImpl implements DomainProperty
                                     append(" SET StringValue = FloatValue, FloatValue = NULL WHERE PropertyId = ?").
                                     add(_pdOld.getPropertyId()));
                 }
+                else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
+                {
+                    // TODO support datetime/date conversion
+                }
                 else //noinspection StatementWithEmptyBody
                     if (oldType.getJdbcType().isInteger() && newType.getJdbcType().isReal())
                 {
