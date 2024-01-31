@@ -205,7 +205,7 @@ public class AssayUpgradeCode implements UpgradeCode
     {
         // resolve plate by the legacy deprecated plate name method
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + AbstractPlateBasedAssayProvider.PLATE_TEMPLATE_SUFFIX);
-        return prop != null ? PlateManager.get().getPlate(protocol.getContainer(), prop.getStringValue()) : null;
+        return prop != null ? PlateManager.get().getPlateByName(protocol.getContainer(), prop.getStringValue()) : null;
     }
 
     /**

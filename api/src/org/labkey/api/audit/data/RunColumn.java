@@ -69,7 +69,7 @@ public class RunColumn extends ExperimentAuditColumn<ExpRun>
                     protocol = run.getProtocol();
                 AssayProvider provider = null;
                 if (protocol != null)
-                    provider = AssayService.get().getProvider(protocol);
+                    provider = AssayService.get() == null ? null : AssayService.get().getProvider(protocol);
 
                 ActionURL url = null;
                 if (provider != null)

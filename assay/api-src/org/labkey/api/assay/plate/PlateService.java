@@ -131,6 +131,14 @@ public interface PlateService
     @Nullable Plate getPlate(Container container, int rowId);
 
     /**
+     * Gets a plate instance object by plate id.
+     * @param container The plate's container.
+     * @param plateId The plate id of the plate.
+     * @return The requested plate, or null if no plate exists with the specified plate id.
+     */
+    @Nullable Plate getPlate(Container container, String plateId);
+
+    /**
      * Gets a plate instance object by row id.
      * @param cf The container filter to find the plate
      * @param rowId The row id of the plate.
@@ -145,6 +153,14 @@ public interface PlateService
      * @return The requested plate, or null if no plate exists with the specified row id.
      */
     @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid);
+
+    /**
+     * Gets a plate instance object by plate id.
+     * @param cf The container filter to find the plate
+     * @param plateId The plate id of the plate.
+     * @return The requested plate, or null if no plate exists with the specified plate id.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, String plateId);
 
     /**
      * Gets all plate templates for the specified container. Plate templates are Plate instances
