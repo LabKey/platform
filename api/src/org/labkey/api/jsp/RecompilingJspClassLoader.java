@@ -113,13 +113,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     ClassPath cp = new ClassPath();
                     cp.addDirectory(new File(finder.getBuildPath(), "/explodedModule/lib"));
-                    // N.B. Our build references specific tomcat versions (set in the root-level gradle.properties file),
-                    // whereas here we add the tomcat libraries for the local installation to the classpath. This should
-                    // mostly be OK, but if seeing different behavior between the JSPs from the Gradle build and those
-                    // compiled while in dev mode, this may be a culprit.
-                    File tomcatLib = ModuleLoader.getInstance().getTomcatLib();
-                    if (null != tomcatLib)
-                        cp.addDirectory(tomcatLib);
+                    cp.addDirectory(getTomcatClassesDir());
                     // Include api lib directory on the compilation classpath
                     Collection<ResourceFinder> apiResourceFinders = ModuleLoader.getInstance().getResourceFindersForPath("/org/labkey/api/");
                     for (ResourceFinder apiFinder : apiResourceFinders)
@@ -291,5 +285,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private String getModulesApiLib()
     {
         return AppProps.getInstance().getProjectRoot() + "/build/modules-api";
+    }
+
+    private String getTomcatClassesDir()
+    {
+        return AppProps.getInstance().getProjectRoot() + "/build/jspRecompiling";
     }
 }
