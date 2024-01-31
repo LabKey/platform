@@ -84,18 +84,18 @@ public class SchemaTableInfoCache
         @Override
         public SchemaTableInfo load(@NotNull String key, Object argument)
         {
+            SchemaTableOptions options = (SchemaTableOptions)argument;
+            String fullName = options.getSchema().getName() + "." + options.getTableName();
+
             try
             {
-                SchemaTableOptions options = (SchemaTableOptions)argument;
-
-                LOG.debug("loading schema table: " + options.getSchema().getName() + "." + options.getTableName());
+                LOG.debug("loading schema table: " + fullName);
                 return options.getSchema().loadTable(options.getTableName(), options);
             }
             catch (Throwable t)
             {
-                // Log all problems to mothership so admin and LabKey are made aware of the cause of the problem, but return
-                // null so other tables in this schema can load. One previous example: MV indicators on list columns with
-                // very long names used to be a problem, but that was fixed. There may be other scenarios that throw.
+                // Log all problems for the admin and report to mothership. Return null for now, but see Issue 49506.
+                LOG.error("Exception while attempting to load schema table \"" + fullName + "\"", t);
                 ExceptionUtil.logExceptionToMothership(null, t);
 
                 return null;
