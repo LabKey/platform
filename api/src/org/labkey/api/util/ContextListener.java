@@ -15,6 +15,9 @@
  */
 package org.labkey.api.util;
 
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import org.apache.commons.logging.LogFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,19 +28,10 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.springframework.web.context.ContextLoaderListener;
 
-import jakarta.servlet.DispatcherType;
-import jakarta.servlet.FilterRegistration;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static java.util.EnumSet.allOf;
 
 /**
  * @see org.labkey.bootstrap.PipelineBootstrapConfig
@@ -80,9 +74,7 @@ public class ContextListener implements ServletContextListener
     {
         getSpringContextListener().contextInitialized(servletContextEvent);
 
-        ServletContext context = servletContextEvent.getServletContext();
-        addCSPFilter(context, "csp.enforce", "enforce", "EnforceContentSecurityPolicyFilter");
-        addCSPFilter(context, "csp.report", "report", "ReportContentSecurityPolicyFilter");
+        ModuleLoader.getInstance().init(servletContextEvent.getServletContext());
     }
 
     @Override
@@ -101,6 +93,7 @@ public class ContextListener implements ServletContextListener
         org.apache.commons.beanutils.ConvertUtils.deregister();
         java.beans.Introspector.flushCaches();
         LogFactory.releaseAll();       // Might help with PermGen. See 8/02/07 post at http://raibledesigns.com/rd/entry/why_i_like_tomcat_5
+        ModuleLoader.getInstance().destroy();
     }
 
     public static void callShutdownListeners()
@@ -201,17 +194,6 @@ public class ContextListener implements ServletContextListener
             {
                 ExceptionUtil.logExceptionToMothership(null, t);
             }
-        }
-    }
-
-    private void addCSPFilter(ServletContext context, String parameterName, String disposition, String filterName)
-    {
-        String policy = context.getInitParameter(parameterName);
-        if (null != policy)
-        {
-            FilterRegistration registration = context.addFilter(filterName, new ContentSecurityPolicyFilter());
-            registration.addMappingForUrlPatterns(allOf(DispatcherType.class), false, "/*");
-            registration.setInitParameters(Map.of("policy", policy, "disposition", disposition));
         }
     }
 }

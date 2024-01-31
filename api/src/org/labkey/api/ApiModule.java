@@ -15,7 +15,11 @@
  */
 package org.labkey.api;
 
-import com.google.code.kaptcha.servlet.KaptchaServlet;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRegistration;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -38,7 +42,40 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.Aggregate;
+import org.labkey.api.data.AtomicDatabaseInteger;
+import org.labkey.api.data.BooleanFormat;
+import org.labkey.api.data.BuilderObjectFactory;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.ContainerDisplayColumn;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DatabaseCache;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbSequenceManager;
+import org.labkey.api.data.ExcelColumn;
+import org.labkey.api.data.InlineInClauseGenerator;
+import org.labkey.api.data.JsonTest;
+import org.labkey.api.data.MaterializedQueryHelper;
+import org.labkey.api.data.MultiValuedRenderContext;
+import org.labkey.api.data.NameGenerator;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.ResultSetSelectorTestCase;
+import org.labkey.api.data.RowTrackingResultSetWrapper;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlScanner;
+import org.labkey.api.data.SqlSelectorTestCase;
+import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelectorTestCase;
+import org.labkey.api.data.TempTableInClauseGenerator;
+import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.data.dialect.JdbcMetaDataTest;
 import org.labkey.api.data.dialect.ParameterSubstitutionTest;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
@@ -114,17 +151,17 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 
 import javax.management.StandardMBean;
-import jakarta.servlet.MultipartConfigElement;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletRegistration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static java.util.EnumSet.allOf;
 import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
 import static org.labkey.api.settings.SiteSettingsProperties.allowApiKeys;
 import static org.labkey.api.settings.SiteSettingsProperties.allowSessionKeys;
@@ -168,6 +205,24 @@ public class ApiModule extends CodeOnlyModule
         // Handle experimental feature startup properties as late as possible; we want all experimental features to be registered first
         ContextListener.addStartupListener(new ExperimentalFeatureStartupListener());
         ContextListener.addStartupListener(new StartupPropertyStartupListener());
+    }
+
+    @Override
+    public void registerFilters(ServletContext servletCtx)
+    {
+        addCSPFilter(servletCtx, "csp.enforce", "enforce", "EnforceContentSecurityPolicyFilter");
+        addCSPFilter(servletCtx, "csp.report", "report", "ReportContentSecurityPolicyFilter");
+    }
+
+    private void addCSPFilter(ServletContext servletCtx, String parameterName, String disposition, String filterName)
+    {
+        String policy = servletCtx.getInitParameter(parameterName);
+        if (null != policy)
+        {
+            FilterRegistration registration = servletCtx.addFilter(filterName, new ContentSecurityPolicyFilter());
+            registration.addMappingForUrlPatterns(allOf(DispatcherType.class), false, "/*");
+            registration.setInitParameters(Map.of("policy", policy, "disposition", disposition));
+        }
     }
 
     @Override

@@ -16,6 +16,8 @@
 package org.labkey.api.module;
 
 import com.google.common.collect.Maps;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
@@ -33,7 +35,6 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.CopyOnWriteHashMap;
 import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
@@ -97,13 +98,6 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.FilterConfig;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -143,8 +137,9 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 /**
  * Drives the process of initializing all the modules at startup time and otherwise managing their life cycle.
  */
-public class ModuleLoader implements Filter, MemTrackerListener
+public class ModuleLoader implements MemTrackerListener
 {
+    private static final ModuleLoader INSTANCE = new ModuleLoader();
     private static final Logger _log = LogHelper.getLogger(ModuleLoader.class, "Initializes and starts up all modules");
     private static final Map<String, Throwable> _moduleFailures = new CopyOnWriteHashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new CaseInsensitiveHashMap<>();
@@ -158,7 +153,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final Object SCRIPT_RUNNING_LOCK = new Object();
 
-    private static ModuleLoader _instance = null;
     private static Throwable _startupFailure = null;
     private static boolean _newInstall = false;
     private static TomcatVersion _tomcatVersion = null;
@@ -171,6 +165,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_| \s
                               /                 \s""".indent(2);
 
+    private ServletContext _servletContext = null;
     private File _webappDir;
     private UpgradeState _upgradeState;
 
@@ -221,26 +216,20 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private final Set<StartupPropertyHandler<? extends StartupProperty>> _startupPropertyHandlers = new ConcurrentSkipListSet<>(Comparator.comparing((StartupPropertyHandler<?> sph)->sph.getScope(), String.CASE_INSENSITIVE_ORDER).thenComparing(StartupPropertyHandler::getStartupPropertyClassName));
     private final MultiValuedMap<String, StartupPropertyEntry> _startupPropertyMap = new CaseInsensitiveHashSetValuedMap<>();
 
-
-    public ModuleLoader()
+    private ModuleLoader()
     {
-        if (null != _instance)
-            throw new IllegalStateException("Should be only one instance of module loader");
-
-        _instance = this;
-
         MemTracker.getInstance().register(this);
     }
 
     public static ModuleLoader getInstance()
     {
-        //Will be initialized in first line of init
-        return _instance;
+        return INSTANCE;
     }
 
-    @Override
-    public void init(FilterConfig filterConfig)
+    public void init(ServletContext servletCtx)
     {
+        _servletContext = servletCtx;
+
         // terminateAfterStartup flag allows "headless" install/upgrade where Tomcat terminates after all modules are upgraded,
         // started, and initialized. This flag implies synchronousStartup=true.
         boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
@@ -251,14 +240,14 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         try
         {
-            doInit(filterConfig.getServletContext(), execution);
+            doInit(execution);
         }
         catch (Throwable t)
         {
             if (_modules.isEmpty())
             {
                 _log.fatal("Failure occurred during ModuleLoader init.", t);
-                System.err.println("The server cannot start.  Check the server error log.");
+                System.err.println("The server cannot start. Check the server error log.");
                 System.exit(1);
             }
             setStartupFailure(t);
@@ -271,12 +260,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
     }
 
-    ServletContext _servletContext = null;
-
     @Nullable
     public static ServletContext getServletContext()
     {
-        return getInstance() == null ? null : getInstance()._servletContext;
+        return getInstance()._servletContext;
     }
 
     /** Do basic module loading, shared between the web server and remote pipeline deployments */
@@ -471,18 +458,16 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     /** Full web-server initialization */
-    private void doInit(ServletContext servletCtx, Execution execution) throws ServletException
+    private void doInit(Execution execution) throws ServletException
     {
         _log.info(BANNER);
         ErrorLogRotator.init();
-
-        _servletContext = servletCtx;
 
         AppProps.getInstance().setContextPath(_servletContext.getContextPath());
 
         setTomcatVersion();
 
-        _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath("")));
+        _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(_servletContext.getRealPath("")));
 
         // load startup configuration information from properties, side-effect may set _newinstall=true
         // Wiki: https://www.labkey.org/Documentation/wiki-page.view?name=bootstrapProperties#using
@@ -522,11 +507,15 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         for (Module module : modules)
         {
-            module.registerServlets(servletCtx);
+            module.registerFilters(_servletContext);
         }
         for (Module module : modules)
         {
-            module.registerFinalServlets(servletCtx);
+            module.registerServlets(_servletContext);
+        }
+        for (Module module : modules)
+        {
+            module.registerFinalServlets(_servletContext);
         }
 
         // Do this after we've checked to see if we can find the core module. See issue 22797.
@@ -1473,14 +1462,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return _upgradeScriptRunner;
     }
 
-    @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
-    {
-        filterChain.doFilter(servletRequest, servletResponse);
-
-        ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
-    }
-
     // Run scripts using the default upgrade script runner
     public void runUpgradeScripts(Module module, SchemaUpdateType type)
     {
@@ -1918,10 +1899,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         return _newInstall;
     }
 
-    @Override
     public void destroy()
     {
-
         // In the case of a startup failure, _modules may be null. We want to allow a context reload to succeed in this case,
         // since the reload may contain the code change to fix the problem
         var modules = getModules();
