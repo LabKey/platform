@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
@@ -87,5 +88,21 @@ public class UserIdRenderer extends DataColumn
         }
 
         return null;
+    }
+
+    @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        Object displayValue = super.getDisplayValue(ctx);
+
+        // Issue 49440: If user display name isn't available via the core.Users lookup, try to get it from UserManager
+        if (displayValue == null)
+        {
+            Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
+            User displayedUser = displayedUserId != null ? UserManager.getUser(displayedUserId) : null;
+            if (displayedUser != null)
+                displayValue = displayedUser.getDisplayName(ctx.getViewContext().getUser());
+        }
+        return displayValue;
     }
 }
