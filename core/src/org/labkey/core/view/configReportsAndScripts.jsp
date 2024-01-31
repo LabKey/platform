@@ -340,7 +340,7 @@
             if (record.pathMap)
                 pathMapStore.loadData(record.pathMap.paths);
 
-            // standard fiels at the top of the form
+            // standard fields at the top of the form
             var fields = [{
                 fieldLabel: "Name",
                 name: 'name',

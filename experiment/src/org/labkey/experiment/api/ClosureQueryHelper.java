@@ -75,8 +75,8 @@ public class ClosureQueryHelper
         });
     }
 
-
-    static final int MAX_LINEAGE_LOOKUP_DEPTH = 10;
+    // N.B., This should be twice the number of generations we expect as a maximum number of ancestors due to the run nodes.
+    static final int MAX_LINEAGE_LOOKUP_DEPTH = 20;
 
     static String pgClosureCTE = String.format("""
             WITH RECURSIVE CTE_ AS (
