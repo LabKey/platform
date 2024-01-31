@@ -79,7 +79,8 @@ public class DateUtil
     private static final String ISO_DATE_FORMAT_STRING = "yyyy-MM-dd";
     private static final String ISO_SHORT_TIME_FORMAT_STRING = "HH:mm";
     private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
-    private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss";
+    private static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
+    private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
     private static final String[] VALID_TIME_FORMATS = {"hh:mm:ss a", "hh:mm a", "HH:mm:ss", "HH:mm"};
     private static final String[] EXCEL_TIME_FORMATS = {"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm"};
 
@@ -1067,7 +1068,7 @@ validNum:       {
 
     public static String getStandardTimeFormatString()
     {
-        return ISO_LONG_TIME_FORMAT_STRING;
+        return ISO_TIME_FORMAT_STRING;
     }
 
 
@@ -1137,7 +1138,12 @@ validNum:       {
      */
     public static String formatIsoDateLongTime(Date date)
     {
-        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + ISO_LONG_TIME_FORMAT_STRING);
+        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + ISO_TIME_FORMAT_STRING);
+    }
+
+    public static String formatIsoLongTime(Time time)
+    {
+        return formatDateTime(time, ISO_LONG_TIME_FORMAT_STRING);
     }
 
     /**
@@ -1266,7 +1272,7 @@ validNum:       {
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
     private static final FastDateFormat safariJsonDateFormat = FastDateFormat.getInstance(getSafariJsonDateTimeFormatString());
-    private static final FastDateFormat jsonTimeFormat = FastDateFormat.getInstance(ISO_LONG_TIME_FORMAT_STRING);
+    private static final FastDateFormat jsonTimeFormat = FastDateFormat.getInstance(ISO_TIME_FORMAT_STRING);
 
     public static String formatJsonDateTime(Date date)
     {
