@@ -217,13 +217,15 @@
             "<tr valign=top class=\"labkey-row\"><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr>" +
             "</table>";
 
-    String simpleDateFormatDocs = "<br><br>The pattern string must be compatible with the format that the java class " +
+    String simpleDateDocHeader = "<br><br>The pattern string must be compatible with the format that the java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
             "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
             "<colgroup><col><col style=\"width: 100%;\"><col></colgroup>" +
-            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
+            "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>";
+
+    String dateDocs = "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
             "<tr class=\"labkey-row\"><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
@@ -232,24 +234,31 @@
             "<tr class=\"labkey-alternate-row\"><td><code>D</code><td>Day in year<td><code>189</code></td></tr>" +
             "<tr class=\"labkey-row\"><td><code>d</code><td>Day in month<td><code>10</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>F</code><td>Day of week in month<td><code>2</code></tr>" +
-            "<tr class=\"labkey-row\"><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>" +
-            "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
+            "<tr class=\"labkey-row\"><td><code>E</code><td>Day in week<td><code>Tuesday</code>; <code>Tue</code></tr>";
+
+    String timeDocs = "<tr class=\"labkey-alternate-row\"><td><code>a</code><td>Am/pm marker<td><code>PM</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>H</code><td>Hour in day (0-23)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>k</code><td>Hour in day (1-24)<td><code>24</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>K</code><td>Hour in am/pm (0-11)<td><code>0</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>h</code><td>Hour in am/pm (1-12)<td><code>12</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>m</code><td>Minute in hour<td><code>30</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>s</code><td>Second in minute<td><code>55</code></tr>" +
-            "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>" +
-            "</table>";
+            "<tr class=\"labkey-row\"><td><code>S</code><td>Millisecond<td><code>978</code></tr>";
+
+
+    String simpleDateFormatDocs = simpleDateDocHeader + dateDocs + timeDocs + "</table>";
+    String simpleTimeFormatDocs = simpleDateDocHeader + timeDocs + "</table>";
     String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs;
     String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateFormatDocs;
+    String timeFormatHelp = "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + simpleTimeFormatDocs;
 
     String dateParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs;
     String dateTimeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateFormatDocs;
+    String timeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleTimeFormatDocs;
+
 %>
 <tr>
-    <td colspan=2>Customize date and number display formats (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
@@ -260,6 +269,10 @@
     <td><input type="text" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label">Default display format for time-only values<%=helpPopup("Time format", timeFormatHelp, true, 300)%></td>
+    <td><input type="text" name="<%=defaultTimeFormat%>" size="50" value="<%= h(laf.getDefaultTimeFormat()) %>"></td>
+</tr>
+<tr>
     <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
     <td><input type="text" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
@@ -268,7 +281,7 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize date parsing behavior (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize date and time parsing behavior (<%=bean.helpLink%>)</td>
 </tr>
 <%
     // TODO: This check is temporary and should switch to "if (!folder) {}" once the date parsing methods pass Container consistently
@@ -296,6 +309,10 @@
 <tr>
     <td class="labkey-form-label">Additional parsing pattern for date-times<%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
     <td><input type="text" name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Additional parsing pattern for times<%=helpPopup("Extra time parsing pattern", timeParsingHelp, true, 300)%></td>
+    <td><input type="text" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>

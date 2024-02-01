@@ -21,6 +21,7 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonForm;
 import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.HasAllowBindParameter;
 import org.labkey.api.data.Entity;
 import org.labkey.api.docker.DockerService;
 import org.labkey.api.pipeline.file.PathMapper;
@@ -35,12 +36,13 @@ import org.labkey.api.settings.AppProps;
 import org.springframework.beans.MutablePropertyValues;
 
 import java.io.IOException;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.labkey.api.reports.report.r.RScriptEngine.DOCKER_IMAGE_TYPE;
 import static org.labkey.core.reports.ScriptEngineManagerImpl.ENCRYPTION_MIGRATION_HANDLER;
 
-public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, ApiJsonForm
+public class ExternalScriptEngineDefinitionImpl extends Entity implements ExternalScriptEngineDefinition, ApiJsonForm, HasAllowBindParameter
 {
     // Most definitions don't require encryption, so retrieve AES128 lazily
     static final Supplier<Algorithm> AES = () -> {
@@ -543,6 +545,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             json.put(key, value);
     }
 
+    @SuppressWarnings("ThrowableNotThrown")
     @Override
     public void bindJson(JSONObject json)
     {
@@ -594,5 +597,17 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
                 setDockerImageRowId(service.saveDockerImage(user, _dockerImageConfig, "Docker - " + getName(), DOCKER_IMAGE_TYPE, "", null));
             }
         }
+    }
+
+    @Override
+    // Allow user property which is used as the remote user for the engine
+    public Predicate<String> allowBindParameter()
+    {
+        return (name) ->
+        {
+            if (HasAllowBindParameter.getDefaultPredicate().test(name))
+                return true;
+            return name.equalsIgnoreCase("user");
+        };
     }
 }

@@ -756,16 +756,8 @@ public enum JdbcType
             java.sql.Time tb = (java.sql.Time)JdbcType.TIME.convert(new Date(DateUtil.parseISODateTime("2001-02-03 13:14:15")));
             assertEquals(ta.toString(),tb.toString());
 
-            try
-            {
-                // CONSIDER support this
-                JdbcType.TIME.convert("2001-02-03 13:14:15");
-                fail("expected ConversionException");
-            }
-            catch (ConversionException x)
-            {
-                /* pass */
-            }
+            java.sql.Time tc = (java.sql.Time)JdbcType.TIME.convert("2001-02-03 13:14:15");
+            assertEquals(ta.toString(),tc.toString());
 
             java.sql.Date da = (java.sql.Date)JdbcType.DATE.convert("2001-02-03");
             java.sql.Date db = (java.sql.Date)JdbcType.DATE.convert(new Date(DateUtil.parseISODateTime("2001-02-03 13:14:15")));

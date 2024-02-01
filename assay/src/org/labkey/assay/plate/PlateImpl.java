@@ -31,12 +31,14 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Transient;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
+import org.labkey.assay.plate.model.PlateBean;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,12 +61,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     private String _dataFileId;
     private String _assayType;
     private boolean _isTemplate;
-    private Integer _plateSetId;
-    private Integer _plateType;
     private String _description;
     private String _plateId;
-    private PlateType _plateTypeObject;
-    private PlateSet _plateSetObject;
+    private PlateType _plateType;
+    private PlateSet _plateSet;
 
     private Map<WellGroup.Type, Map<String, WellGroupImpl>> _groups;
     private List<WellGroupImpl> _deletedGroups;
@@ -94,13 +94,12 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _assayType = assayType;
         _container = container;
         _dataFileId = GUID.makeGUID();
-        _plateType = plateType.getRowId();
-        _plateTypeObject = plateType;
+        _plateType = plateType;
     }
 
     public PlateImpl(PlateImpl plate, double[][] wellValues, boolean[][] excluded, int runId, int plateNumber)
     {
-        this(plate.getContainer(), plate.getName(), plate.getAssayType(), plate.getPlateTypeObject());
+        this(plate.getContainer(), plate.getName(), plate.getAssayType(), plate.getPlateType());
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
@@ -125,6 +124,42 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
             addWellGroup(new WellGroupImpl(this, (WellGroupImpl) group));
 
         setContainer(plate.getContainer());
+    }
+
+    public static PlateImpl from(PlateBean bean)
+    {
+        PlateImpl plate = new PlateImpl();
+
+        // plate fields
+        plate.setRowId(bean.getRowId());
+        plate.setLsid(bean.getLsid());
+        plate.setName(bean.getName());
+        plate.setTemplate(bean.getTemplate());
+        plate.setDataFileId(bean.getDataFileId());
+        plate.setAssayType(bean.getAssayType());
+        plate.setPlateId(bean.getPlateId());
+        plate.setDescription(bean.getDescription());
+
+        // entity fields
+        Container container = ContainerManager.getForId(bean.getContainerId());
+        plate.setContainer(container);
+        plate.setCreated(bean.getCreated());
+        plate.setCreatedBy(bean.getCreatedBy());
+        plate.setModified(bean.getModified());
+        plate.setModifiedBy(bean.getModifiedBy());
+
+        // plate type and plate set objects
+        PlateType plateType = PlateManager.get().getPlateType(bean.getPlateType());
+        if (plateType == null)
+            throw new IllegalStateException("Unable to get Plate Type with id : " + bean.getPlateType());
+        plate.setPlateType(plateType);
+
+        PlateSet plateSet = PlateManager.get().getPlateSet(container, bean.getPlateSet());
+        if (plateSet == null)
+            throw new IllegalStateException("Unable to get Plate Set with id : " + bean.getPlateSet());
+        plate.setPlateSet(plateSet);
+
+        return plate;
     }
 
     @JsonIgnore
@@ -291,9 +326,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonIgnore
     public int getColumns()
     {
-        if (_plateTypeObject == null)
+        if (_plateType == null)
             return 0;
-        return _plateTypeObject.getColumns();
+        return _plateType.getColumns();
     }
 
     @Override
@@ -306,9 +341,9 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     @JsonIgnore
     public int getRows()
     {
-        if (_plateTypeObject == null)
+        if (_plateType == null)
             return 0;
-        return _plateTypeObject.getRows();
+        return _plateType.getRows();
     }
 
     @JsonIgnore
@@ -534,25 +569,33 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _isTemplate = template;
     }
 
-    public void setPlateSet(Integer plateSetId)
+    @Override
+    @JsonIgnore
+    public @Nullable PlateSet getPlateSet()
     {
-        _plateSetId = plateSetId;
+        return _plateSet;
     }
 
-    public Integer getPlateSet()
+    public void setPlateSet(PlateSet plateSet)
     {
-        return _plateSetId;
+        _plateSet = plateSet;
     }
 
-    public void setPlateType(Integer plateType)
+    @JsonProperty("plateSet")
+    public Integer getPlateSetId()
     {
-        _plateType = plateType;
+        return _plateSet.getRowId();
     }
 
-    @JsonIgnore // Ignored for client serialization due to full serialization of "plateType"
-    public Integer getPlateType()
+    @Override
+    public @NotNull PlateType getPlateType()
     {
         return _plateType;
+    }
+
+    public void setPlateType(PlateType plateType)
+    {
+        _plateType = plateType;
     }
 
     public String getDescription()
@@ -563,32 +606,6 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setDescription(String description)
     {
         _description = description;
-    }
-
-    @Override
-    @JsonProperty("plateType")
-    public @NotNull PlateType getPlateTypeObject()
-    {
-        if (_plateTypeObject == null)
-            _plateTypeObject = PlateManager.get().getPlateType(_plateType);
-        return _plateTypeObject;
-    }
-
-    public void setPlateTypeObject(PlateType plateTypeObject)
-    {
-        _plateTypeObject = plateTypeObject;
-    }
-
-    @Override
-    @JsonIgnore
-    public @Nullable PlateSet getPlateSetObject()
-    {
-        return _plateSetObject;
-    }
-
-    public void setPlateSetObject(PlateSet plateSetObject)
-    {
-        _plateSetObject = plateSetObject;
     }
 
     @JsonIgnore
@@ -656,6 +673,8 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
         _runCount = runCount;
     }
 
+    @NotNull
+    @Override
     public String getPlateId()
     {
         return _plateId;

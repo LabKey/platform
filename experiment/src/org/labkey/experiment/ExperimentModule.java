@@ -681,6 +681,24 @@ public class ExperimentModule extends SpringModule
 
                 results.put("textChoiceColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.propertydescriptor WHERE concepturi = ?", TEXT_CHOICE_CONCEPT_URI).getObject(Long.class));
 
+                results.put("domainsWithDateTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE D.rangeURI = ?", PropertyType.DATE_TIME.getTypeUri()).getObject(Long.class));
+
+                results.put("domainsWithDateColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE D.rangeURI = ?", PropertyType.DATE.getTypeUri()).getObject(Long.class));
+
+                results.put("domainsWithTimeColumnCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(DISTINCT(DD.DomainURI)) FROM\n" +
+                        "     exp.PropertyDescriptor D \n" +
+                        "         JOIN exp.PropertyDomain PD ON D.propertyId = PD.propertyid\n" +
+                        "         JOIN exp.DomainDescriptor DD on PD.domainID = DD.domainId\n" +
+                        "WHERE D.rangeURI = ?", PropertyType.TIME.getTypeUri()).getObject(Long.class));
+
                 results.put("maxObjectObjectId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(ObjectId) FROM exp.Object").getObject(Long.class));
                 results.put("maxMaterialRowId", new SqlSelector(ExperimentService.get().getSchema(), "SELECT MAX(RowId) FROM exp.Material").getObject(Long.class));
 

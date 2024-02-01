@@ -108,6 +108,18 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
+    protected void fixupWrappedColumn(MutableColumnInfo wrap, ColumnInfo col)
+    {
+        super.fixupWrappedColumn(wrap, col);
+
+        if ("Container".equalsIgnoreCase(col.getName()))
+        {
+            wrap.setFieldKey(FieldKey.fromParts("Folder"));
+            wrap.setLabel(getContainer().hasProductProjects() ? "Project" : "Folder");
+        }
+    }
+
+    @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return defaultVisibleColumns;

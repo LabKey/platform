@@ -6,7 +6,7 @@ import org.labkey.api.assay.plate.PlateType;
 import java.util.Objects;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PlateTypeImpl implements PlateType
+public class PlateTypeBean implements PlateType
 {
     private Integer _rowId;
     private Integer _rows;
@@ -14,7 +14,7 @@ public class PlateTypeImpl implements PlateType
     private String _description;
     private boolean _archived;
 
-    public PlateTypeImpl()
+    public PlateTypeBean()
     {
     }
 
@@ -92,7 +92,7 @@ public class PlateTypeImpl implements PlateType
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
 
-        if (!Objects.equals(_rows, ((PlateTypeImpl) obj)._rows)) return false;
-        return Objects.equals(_cols, ((PlateTypeImpl) obj)._cols);
+        if (!Objects.equals(_rows, ((PlateTypeBean) obj)._rows)) return false;
+        return Objects.equals(_cols, ((PlateTypeBean) obj)._cols);
     }
 }
