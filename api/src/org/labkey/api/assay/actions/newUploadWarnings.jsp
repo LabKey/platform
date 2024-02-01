@@ -43,7 +43,7 @@
     if (bean.getTransformResult().getWarnings() != null)
     {
 %>
-        <div class="labkey-error"><%= text(bean.getTransformResult().getWarnings()) %></div>
+        <div class="labkey-error"><%= bean.getTransformResult().getWarnings() %></div>
 <%
         if (!bean.getTransformResult().getFiles().isEmpty())
         {

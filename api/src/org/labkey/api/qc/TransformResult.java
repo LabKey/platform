@@ -18,6 +18,7 @@ package org.labkey.api.qc;
 
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.util.HtmlString;
 
 import java.io.File;
 import java.util.List;
@@ -52,7 +53,7 @@ public interface TransformResult
      *
      * @return      the string containing the error message
      */
-    String getWarnings();
+    HtmlString getWarnings();
 
     /**
      * Set transform script warnings. If severity level in run properties level is set to WARN, then these warnings
@@ -62,7 +63,7 @@ public interface TransformResult
      *
      * @param   warnings    String containing warnings
      */
-    void setWarnings(String warnings);
+    void setWarnings(HtmlString warnings);
 
     /**
      * Get transform script output files.  These files are collected from the transform scripts operating directory and
