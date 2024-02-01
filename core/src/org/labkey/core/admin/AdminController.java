@@ -1455,6 +1455,11 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultDateTimeFormat(String defaultDateTimeFormat);
 
+        String getDefaultTimeFormat();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setDefaultTimeFormat(String defaultTimeFormat);
+
         String getDefaultNumberFormat();
 
         @SuppressWarnings("UnusedDeclaration")
@@ -1469,6 +1474,11 @@ public class AdminController extends SpringActionController
 
         @SuppressWarnings("UnusedDeclaration")
         void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern);
+
+        String getExtraTimeParsingPattern();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setExtraTimeParsingPattern(String extraTimeParsingPattern);
 
         boolean areRestrictedColumnsEnabled();
 
@@ -1528,6 +1538,8 @@ public class AdminController extends SpringActionController
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
+        private String _defaultTimeFormat;
+        private String _extraTimeParsingPattern;
 
         public boolean getShouldInherit()
         {
@@ -1745,6 +1757,18 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public String getDefaultTimeFormat()
+        {
+            return _defaultTimeFormat;
+        }
+
+        @Override
+        public void setDefaultTimeFormat(String defaultTimeFormat)
+        {
+            _defaultTimeFormat = defaultTimeFormat;
+        }
+
+        @Override
         public String getDefaultNumberFormat()
         {
             return _defaultNumberFormat;
@@ -1782,6 +1806,18 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public String getExtraTimeParsingPattern()
+        {
+            return _extraTimeParsingPattern;
+        }
+
+        @Override
+        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
+        {
+            _extraTimeParsingPattern = extraTimeParsingPattern;
+        }
+
+        @Override
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
@@ -1803,10 +1839,12 @@ public class AdminController extends SpringActionController
             json.put("dateParsingMode", getDateParsingMode());
             json.put("defaultDateFormat", getDefaultDateFormat());
             json.put("defaultDateTimeFormat", getDefaultDateTimeFormat());
+            json.put("defaultTimeFormat", getDefaultTimeFormat());
             json.put("defaultNumberFormat", getDefaultNumberFormat());
             json.put("discussionEnabled", isDiscussionEnabled());
             json.put("extraDateParsingPattern", getExtraDateParsingPattern());
             json.put("extraDateTimeParsingPattern", getExtraDateTimeParsingPattern());
+            json.put("extraTimeParsingPattern", getExtraTimeParsingPattern());
             json.put("folderDisplayMode", getFolderDisplayMode());
             json.put("helpMenuEnabled", isHelpMenuEnabled());
             json.put("logoHref", getLogoHref());
@@ -5082,9 +5120,11 @@ public class AdminController extends SpringActionController
     {
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
+        private String _defaultTimeFormat;
         private String _defaultNumberFormat;
         private String _extraDateParsingPattern;
         private String _extraDateTimeParsingPattern;
+        private String _extraTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
 
         @Override
@@ -5109,6 +5149,19 @@ public class AdminController extends SpringActionController
         public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
         {
             _defaultDateTimeFormat = defaultDateTimeFormat;
+        }
+
+        @Override
+        public String getDefaultTimeFormat()
+        {
+            return _defaultTimeFormat;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        @Override
+        public void setDefaultTimeFormat(String defaultTimeFormat)
+        {
+            _defaultTimeFormat = defaultTimeFormat;
         }
 
         @Override
@@ -5145,6 +5198,19 @@ public class AdminController extends SpringActionController
         public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
         {
             _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
+        }
+
+        @Override
+        public String getExtraTimeParsingPattern()
+        {
+            return _extraTimeParsingPattern;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        @Override
+        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
+        {
+            _extraTimeParsingPattern = extraTimeParsingPattern;
         }
 
         @Override
@@ -10699,11 +10765,15 @@ public class AdminController extends SpringActionController
             return false;
         if (json.has("defaultDateTimeFormat") && !validateAndSaveFormat(json.optString("defaultDateTimeFormat"), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
             return false;
+        if (json.has("defaultTimeFormat") && !validateAndSaveFormat(json.optString("defaultTimeFormat"), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+            return false;
         if (json.has("defaultNumberFormat") && !validateAndSaveFormat(json.optString("defaultNumberFormat"), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
             return false;
         if (json.has("extraDateParsingPattern") && !validateAndSaveFormat(json.optString("extraDateParsingPattern"), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
             return false;
         if (json.has("extraDateTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraDateTimeParsingPattern"), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+        if (json.has("extraTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraTimeParsingPattern"), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
             return false;
 
         if (json.has("restrictedColumnsEnabled"))
@@ -10929,11 +10999,15 @@ public class AdminController extends SpringActionController
             return false;
         if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
             return false;
+        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+            return false;
         if (!validateAndSaveFormat(form.getDefaultNumberFormat(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
             return false;
         if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
             return false;
         if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
             return false;
 
         try
@@ -11101,7 +11175,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-
     @RequiresNoPermission
     @CSRF(CSRF.Method.NONE)
     public class ContentSecurityPolicyReportAction extends ReadOnlyApiAction<SimpleApiJsonForm>
@@ -11109,22 +11182,25 @@ public class AdminController extends SpringActionController
         private static final Logger _log = LogHelper.getLogger(ContentSecurityPolicyReportAction.class, "CSP warnings");
 
         // recent reports, to help avoid log spam
-        private static final Map<String,Boolean> reports = Collections.synchronizedMap(new LRUMap<>(20));
+        private static final Map<String, Boolean> reports = Collections.synchronizedMap(new LRUMap<>(20));
 
         @Override
         public Object execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
-            var ret = new JSONObject().put("success",true);
+            var ret = new JSONObject().put("success", true);
 
             // fail fast
             if (!_log.isWarnEnabled())
                 return ret;
 
-            var userAgent = getViewContext().getRequest().getHeader("User-Agent");
+            var request = getViewContext().getRequest();
+            assert null != request;
+
+            var userAgent = request.getHeader("User-Agent");
             if (PageFlowUtil.isRobotUserAgent(userAgent) && !_log.isDebugEnabled())
                 return ret;
 
-            // NOTE User will always be "guest".  Seems like a bad design to force the server to accept guest w/o CSRF here.
+            // NOTE User will always be "guest". Seems like a bad design to force the server to accept guest w/o CSRF here.
             var jsonObj = form.getJsonObject();
             if (null != jsonObj)
             {
@@ -11139,6 +11215,9 @@ public class AdminController extends SpringActionController
                         {
                             if (isNotBlank(userAgent))
                                 jsonObj.put("user-agent", userAgent);
+                            String labkeyVersion = request.getParameter("labkeyVersion");
+                            if (null != labkeyVersion)
+                                jsonObj.put("labkeyVersion", labkeyVersion);
                             var jsonStr = jsonObj.toString(2);
                             _log.warn("ContentSecurityPolicy warning on page: " + urlString + "\n" + jsonStr);
                         }

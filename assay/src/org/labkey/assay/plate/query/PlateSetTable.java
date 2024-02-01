@@ -50,7 +50,7 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
     static
     {
         defaultVisibleColumns.add(FieldKey.fromParts("Name"));
-        defaultVisibleColumns.add(FieldKey.fromParts("Container"));
+        defaultVisibleColumns.add(FieldKey.fromParts("Folder"));
         defaultVisibleColumns.add(FieldKey.fromParts("Description"));
         defaultVisibleColumns.add(FieldKey.fromParts("PlateCount"));
         defaultVisibleColumns.add(FieldKey.fromParts("Created"));
@@ -91,6 +91,18 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
             columnInfo.setIsRootDbSequence(true);
         }
         return columnInfo;
+    }
+
+    @Override
+    protected void fixupWrappedColumn(MutableColumnInfo wrap, ColumnInfo col)
+    {
+        super.fixupWrappedColumn(wrap, col);
+
+        if ("Container".equalsIgnoreCase(col.getName()))
+        {
+            wrap.setFieldKey(FieldKey.fromParts("Folder"));
+            wrap.setLabel(getContainer().hasProductProjects() ? "Project" : "Folder");
+        }
     }
 
     private void addPlateCountColumn()

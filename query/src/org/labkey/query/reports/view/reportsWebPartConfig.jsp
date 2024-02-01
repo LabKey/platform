@@ -133,7 +133,7 @@
         {
             var url = "<%=h(urlProvider(ReportUrls.class).urlReportSections(c).addParameter(sectionName, pm.get(sectionName)))%>";
 
-            url = url.concat("&<%=unsafe(PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name()))%>=");
+            url = url.concat(<%=q("&" + PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name()) + "=")%>);
             url = url.concat(element.value);
 
             LABKEY.Ajax.request({

@@ -512,10 +512,9 @@ public class MothershipReport implements Runnable
         if (metrics.size() > 0)
         {
             String serializedMetrics;
-            ObjectMapper mapper = new ObjectMapper();
             try
             {
-                serializedMetrics = mapper.writeValueAsString(metrics);
+                serializedMetrics = JsonUtil.DEFAULT_MAPPER.writeValueAsString(metrics);
                 addParam(JSON_METRICS_KEY, serializedMetrics);
             }
             catch (JsonProcessingException e)

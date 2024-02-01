@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.portal.CollaborationFolderType" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -82,7 +83,7 @@
         var moduleTypesMap = {};
         var templateFolders = [];
         var selectedModules = <%=modulesOut%>;
-        var hasLoaded = <%=text(form.getHasLoaded()?"true":"false")%>;
+        var hasLoaded = <%=JavaScriptFragment.bool(form.getHasLoaded())%>;
         var defaultTab = <%=q(form.getDefaultModule())%>;
         var selectedTemplateFolder = <%=q(form.getTemplateSourceId())%>;
         var selectedTemplateWriters = <%=templateWriterTypes%>;

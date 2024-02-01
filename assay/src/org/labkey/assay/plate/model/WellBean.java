@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * Represents a row in the plate.well table
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class Well
+public class WellBean
 {
     private Integer _rowId;
     private String _lsid;

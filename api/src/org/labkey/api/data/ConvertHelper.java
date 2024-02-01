@@ -158,7 +158,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new NullSafeConverter(new _IntegerConverter()), Integer.class);
         _register(new _IntegerConverter(), Integer.TYPE);
         _register(new NullSafeConverter(new LenientSqlDateConverter()), java.sql.Date.class);
-        _register(new NullSafeConverter(new SqlTimeConverter()), java.sql.Time.class);
+        _register(new NullSafeConverter(new LenientTimeConverter()), java.sql.Time.class);
         _register(new LenientTimestampConverter(), java.sql.Timestamp.class);
         _register(new LenientDateConverter(), java.util.Date.class);
         _register(new NullSafeConverter(new _LongConverter()), Long.class);
@@ -253,14 +253,12 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
-
     /**
      * This converter converts dates with a time portion only.
      * A duration is a date without year, month, or day components (e.g., 2:01 or 2:01:32).
      */
     public static class LenientTimeOnlyConverter implements Converter
     {
-        private static final String[] VALID_FORMATS = {"H:mm", "H:mm:ss"};
 
         @Override
         public Object convert(Class clss, Object o)
@@ -271,23 +269,22 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (o instanceof Time || o instanceof TimeOnlyDate)
                 return o;
 
-            Date duration = null;
-            ParseException parseException = null;
-            for (int i = 0; i < VALID_FORMATS.length && duration == null; i++)
-            {
-                try
-                {
-                    duration = DateUtil.parseDateTime(o.toString(), VALID_FORMATS[i]);
-                }
-                catch (ParseException e)
-                {
-                    parseException = e;
-                }
-            }
-            if (duration == null)
-                throw new ConversionException("Could not convert \"" + o.toString() + "\" to duration.", parseException);
-            else
-                return new TimeOnlyDate(duration.getTime());
+            return new TimeOnlyDate(DateUtil.parseSimpleTime(o).getTime());
+        }
+    }
+
+    public static class LenientTimeConverter implements Converter
+    {
+        @Override
+        public Object convert(Class clss, Object o)
+        {
+            if (null == o || "".equals(o))
+                return null;
+
+            if (o instanceof java.sql.Time)
+                return o;
+
+            return DateUtil.fromTimeString(o.toString(), false);
         }
     }
 
@@ -378,6 +375,11 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
             if (o instanceof Container)
                 return ((Container)o).getId();
+
+            if (o instanceof Time)
+            {
+                return o.toString();
+            }
 
             if (o instanceof Date)
             {

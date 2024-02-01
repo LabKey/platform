@@ -262,12 +262,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     final protected JavaScriptFragment q(String str)
     {
-        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(str));
+        return JavaScriptFragment.asString(str);
     }
 
     final protected JavaScriptFragment q(HtmlString hs)
     {
-        return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(hs.toString()));
+        return null == hs ? JavaScriptFragment.NULL : JavaScriptFragment.asString(hs.toString());
     }
 
     /**
@@ -282,7 +282,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     final protected JavaScriptFragment q(SafeToRender str)
     {
-        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.unsafe(PageFlowUtil.jsString(str.toString()));
+        return null == str ? JavaScriptFragment.NULL : JavaScriptFragment.asString(str.toString());
     }
 
     protected HtmlString hq(String str)

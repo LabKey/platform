@@ -28,6 +28,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.InsertView;
 
@@ -79,7 +80,7 @@ public interface ParticipantVisitResolverType
         {
             try
             {
-                Map<String, String> decodedVals = new ObjectMapper().readValue(stringValue, Map.class);
+                Map<String, String> decodedVals = JsonUtil.DEFAULT_MAPPER.readValue(stringValue, Map.class);
                 formDefaults.put(propName, decodedVals.remove(STRING_VALUE_PROPERTY_NAME));
                 formDefaults.putAll(decodedVals);
             }
@@ -106,7 +107,7 @@ public interface ParticipantVisitResolverType
             try
             {
                 // Prevent double encoding; if the resolverType string is already a json map, return it.
-                new ObjectMapper().readValue(resolverType, Map.class);
+                JsonUtil.DEFAULT_MAPPER.readValue(resolverType, Map.class);
                 return resolverType;
             }
             catch (IOException e)
@@ -140,7 +141,7 @@ public interface ParticipantVisitResolverType
 
             try
             {
-                return new ObjectMapper().writeValueAsString(jsonValues);
+                return JsonUtil.DEFAULT_MAPPER.writeValueAsString(jsonValues);
             }
             catch (JsonProcessingException e)
             {

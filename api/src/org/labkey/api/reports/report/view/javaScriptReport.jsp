@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.util.JavaScriptFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JavaScriptReportBean bean = (JavaScriptReportBean)getModelBean();
@@ -28,7 +29,7 @@
     (function()
     {
         // ========== Begin report writer's script ==========
-        <%=text(bean.script)%>
+        <%=JavaScriptFragment.unsafe(bean.script)%>
         // ========== End report writer's script ==========
         if (render && (typeof render === 'function'))
         {
@@ -68,15 +69,15 @@
             }
 
             %>
-            render(getDataConfig, document.getElementById("<%=text(uniqueDivName)%>"));
+            render(getDataConfig, document.getElementById(<%=q(uniqueDivName)%>));
             <%
                 }
                 else
                 {
             %>
             render({
-                <%=text(bean.model.getStandardJavaScriptParameters(16, false))%>
-            }, document.getElementById("<%=text(uniqueDivName)%>"));
+                <%=JavaScriptFragment.unsafe(bean.model.getStandardJavaScriptParameters(16, false))%>
+            }, document.getElementById(<%=q(uniqueDivName)%>));
             <%
                 }
             %>

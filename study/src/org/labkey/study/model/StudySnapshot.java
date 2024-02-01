@@ -32,6 +32,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.study.writer.StudyExportContext;
 
 import java.io.IOException;
@@ -161,10 +162,9 @@ public class StudySnapshot
 
     public String getSettings()
     {
-        ObjectMapper mapper = new ObjectMapper();
         try
         {
-            return mapper.writeValueAsString(_settings);
+            return JsonUtil.DEFAULT_MAPPER.writeValueAsString(_settings);
         }
         catch (JsonProcessingException e)
         {
@@ -176,10 +176,9 @@ public class StudySnapshot
 
     public void setSettings(String settings)
     {
-        ObjectMapper mapper = new ObjectMapper();
         try
         {
-            _settings = mapper.readValue(settings, SnapshotSettings.class);
+            _settings = JsonUtil.DEFAULT_MAPPER.readValue(settings, SnapshotSettings.class);
         }
         catch (IOException e)
         {

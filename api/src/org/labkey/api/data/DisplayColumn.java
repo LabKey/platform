@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
+import java.sql.Time;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.Format;
@@ -601,6 +602,8 @@ public abstract class DisplayColumn extends RenderColumn
                 || Float.class.isAssignableFrom(valueClass) || float.class.isAssignableFrom(valueClass)
                 || BigDecimal.class.isAssignableFrom(valueClass))
             return "float";
+        else if (Time.class.isAssignableFrom(valueClass))
+            return "time";
         else if (Date.class.isAssignableFrom(valueClass))
             return "date";
         return "string";
@@ -1427,7 +1430,12 @@ public abstract class DisplayColumn extends RenderColumn
                 if (null == formatString)
                 {
                     // No display format on this column, so apply the appropriate default display format based on underlying type
-                    setFormatString(col.getJdbcType() == JdbcType.DATE ? DateUtil.getDateFormatString(c) : DateUtil.getDateTimeFormatString(c));
+                    String format = DateUtil.getDateTimeFormatString(c);
+                    if (col.getJdbcType() == JdbcType.DATE)
+                        format = DateUtil.getDateFormatString(c);
+                    else if (col.getJdbcType() == JdbcType.TIME)
+                        format = DateUtil.getTimeFormatString(c);
+                    setFormatString(format);
                 }
                 else
                 {

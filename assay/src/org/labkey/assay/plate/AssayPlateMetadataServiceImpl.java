@@ -44,8 +44,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.assay.TSVProtocolSchema;
-import org.labkey.assay.plate.model.Well;
+import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
@@ -296,11 +297,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             if (!plate.getCustomFields().isEmpty())
             {
                 // create the map of well locations to the well
-                Map<Position, Well> positionToWell = new HashMap<>();
+                Map<Position, WellBean> positionToWell = new HashMap<>();
 
                 SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
                 filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-                for (Well well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(Well.class))
+                for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
                     positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
 
                 for (Map<String, Object> row : mergedRows)
@@ -412,11 +413,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     {
         try
         {
-            ObjectMapper mapper = new ObjectMapper();
             if (json == null)
                 throw new ExperimentException("No plate metadata was uploaded");
 
-            return _parsePlateMetadata(mapper.readTree(json.toString()));
+            return _parsePlateMetadata(JsonUtil.DEFAULT_MAPPER.readTree(json.toString()));
         }
         catch (Exception e)
         {
@@ -429,11 +429,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     {
         try
         {
-            ObjectMapper mapper = new ObjectMapper();
             if (jsonData == null)
                 throw new ExperimentException("No plate metadata was uploaded");
 
-            return _parsePlateMetadata(mapper.readTree(jsonData));
+            return _parsePlateMetadata(JsonUtil.DEFAULT_MAPPER.readTree(jsonData));
         }
         catch (Exception e)
         {
@@ -503,7 +502,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
         filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-        for (Well well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(Well.class))
+        for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
             positionToWellLsid.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), Lsid.parse(well.getLsid()));
 
         return new PlateMetadataImportHelper(plate.getContainer(), data, Collections.unmodifiableMap(positionToWellLsid));

@@ -707,8 +707,7 @@ public class SurveyManager
      */
     public static String validateSurveyMetadata(String metadata) throws IOException
     {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.readTree(metadata);
+        JsonUtil.DEFAULT_MAPPER.readTree(metadata);
         StringBuilder sb = new StringBuilder();
 
         try
