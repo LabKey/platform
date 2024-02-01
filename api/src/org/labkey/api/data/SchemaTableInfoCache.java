@@ -107,7 +107,7 @@ public class SchemaTableInfoCache
     {
         String comment = "SchemaTableInfos for " + (provisioned ? "provisioned" : "non-provisioned") + " schemas in scope " + scope.getDisplayName();
 
-        // We modify provisioned tables inside of transactions, so use a DatabaseCache to help with proper invalidation. See #46951.
+        // We modify provisioned tables inside of transactions, so use a DatabaseCache to help with proper invalidation. Issue 46951.
         return provisioned ?
             DatabaseCache.get(scope, 10000, CacheManager.UNLIMITED, comment, new SchemaTableLoader()) :
             new BlockingCache<>(CacheManager.getStringKeyCache(10000, CacheManager.UNLIMITED, comment), new SchemaTableLoader());
