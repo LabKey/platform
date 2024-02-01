@@ -269,9 +269,9 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRegistration;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletRegistration;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -1356,7 +1356,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         Set<DbSchema> result = new LinkedHashSet<>(super.getSchemasToTest());
 
-        // Add the "labkey" schema in all module data sources as well... should match labkey.xml
+        // Add the "labkey" schema in all module data sources as well... should match application.properties
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSourceNames())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);

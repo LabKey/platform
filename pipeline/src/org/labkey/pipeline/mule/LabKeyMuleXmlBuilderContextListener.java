@@ -5,9 +5,9 @@ import org.mule.MuleManager;
 import org.mule.config.ConfigurationException;
 import org.mule.util.StringUtils;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 /** Forked into our codebase to support transition from javax.servlet to jakarta.servlet */
 public class LabKeyMuleXmlBuilderContextListener implements ServletContextListener

@@ -44,7 +44,7 @@ import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;

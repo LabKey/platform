@@ -32,8 +32,8 @@ import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.URLHelper;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;

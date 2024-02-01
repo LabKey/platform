@@ -24,7 +24,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -194,7 +194,7 @@ public interface AppProps
 
     String getBLASTServerBaseURL();
 
-    /** @return the name of the Tomcat XML deployment descriptor based on the context path for this install - typically ROOT.xml or labkey.xml */
+    /** @return the name of the Tomcat XML deployment descriptor based on the context path for this install - now always application.properties */
     String getWebappConfigurationFilename();
 
     /**

@@ -234,7 +234,7 @@ public class CoreWarningProvider implements WarningProvider
 
             if (null == maxTotal)
             {
-                warnings.add(HtmlString.of("Could not determine the connection pool size for the labkeyDataSource; verify that the connection pool is properly configured in labkey.xml"));
+                warnings.add(HtmlString.of("Could not determine the connection pool size for the labkeyDataSource; verify that the connection pool is properly configured in application.properties"));
             }
             else if (showAllWarnings || maxTotal < 20)
             {

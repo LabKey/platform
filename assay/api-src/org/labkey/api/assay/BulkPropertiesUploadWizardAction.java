@@ -27,7 +27,7 @@ import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;

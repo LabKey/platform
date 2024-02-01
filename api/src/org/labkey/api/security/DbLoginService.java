@@ -7,7 +7,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface DbLoginService
 {

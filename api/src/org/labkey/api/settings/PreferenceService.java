@@ -22,7 +22,7 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.view.HttpView;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

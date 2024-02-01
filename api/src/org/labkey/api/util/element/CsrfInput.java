@@ -7,7 +7,7 @@ import org.labkey.api.util.SafeToRender;
 import org.labkey.api.util.element.Input.InputBuilder;
 import org.labkey.api.view.ViewContext;
 
-import javax.servlet.jsp.JspContext;
+import jakarta.servlet.jsp.JspContext;
 
 public class CsrfInput implements HasHtmlString, SafeToRender
 {

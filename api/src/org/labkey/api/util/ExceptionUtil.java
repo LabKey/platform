@@ -57,13 +57,13 @@ import org.labkey.api.webdav.DavException;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.dao.DataAccessResourceFailureException;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -921,10 +921,7 @@ public class ExceptionUtil
                 response.setContentType(request.getContentType());
                 response.setCharacterEncoding("utf-8");
 
-                if (null == responseStatusMessage)
-                    response.setStatus(responseStatus);
-                else
-                    response.setStatus(responseStatus, responseStatusMessage);
+                response.setStatus(responseStatus);
 
                 for (Map.Entry<String, String> entry : headers.entrySet())
                     response.addHeader(entry.getKey(), entry.getValue());
@@ -932,7 +929,7 @@ public class ExceptionUtil
                 ApiSimpleResponse errorResponse = new ApiSimpleResponse("success", false);
 
                 if (responseStatusMessage != null || message != null)
-                    errorResponse.put("exception", StringUtils.defaultString(message,responseStatusMessage));
+                    errorResponse.put("exception", StringUtils.defaultString(message, responseStatusMessage));
 
                 ApiResponseWriter writer = responseFormat.createWriter(response, null, null);
 
@@ -1457,18 +1454,6 @@ public class ExceptionUtil
         }
 
         @Override
-        public String encodeUrl(String s)
-        {
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public String encodeRedirectUrl(String s)
-        {
-            throw new IllegalStateException();
-        }
-
-        @Override
         public void sendError(int i, String s)
         {
             status = i;
@@ -1548,12 +1533,6 @@ public class ExceptionUtil
             status = i;
         }
 
-        @Override
-        public void setStatus(int i, String s)
-        {
-            status = i;
-            message = s;
-        }
 
     //    @Override
     //    public int getStatus()

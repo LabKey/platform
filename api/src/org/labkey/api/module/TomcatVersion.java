@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public enum TomcatVersion
 {
     TOMCAT_UNSUPPORTED(-1, true),
-    TOMCAT_9_0(90, false),
+    TOMCAT_10_1(101, false),
     TOMCAT_FUTURE(Integer.MAX_VALUE, true);
 
     private final int _version;
@@ -82,7 +82,7 @@ public enum TomcatVersion
             }
         }
 
-        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 9.0.x.");
+        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 10.1.x.");
     }
 
     private static @NotNull TomcatVersion get(int version)
@@ -104,14 +104,15 @@ public enum TomcatVersion
         public void test()
         {
             // Good
-            test(90, TOMCAT_9_0);
+            test(101, TOMCAT_10_1);
 
             // Future
-            test(100, TOMCAT_FUTURE);
             test(110, TOMCAT_FUTURE);
             test(120, TOMCAT_FUTURE);
 
             // Bad
+            test(100, TOMCAT_UNSUPPORTED);
+            test(90, TOMCAT_UNSUPPORTED);
             test(85, TOMCAT_UNSUPPORTED);
             test(80, TOMCAT_UNSUPPORTED);
             test(70, TOMCAT_UNSUPPORTED);
