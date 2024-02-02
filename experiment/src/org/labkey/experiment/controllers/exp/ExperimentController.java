@@ -3971,8 +3971,6 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public static class ImportSamplesAction extends AbstractExpDataImportAction
     {
-        DataIteratorContext _context;
-
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
