@@ -4020,7 +4020,7 @@ public class ExperimentController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
         {
-            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null, getContainer());
+            initContext(dl, errors, auditBehaviorType);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
@@ -4030,21 +4030,6 @@ public class ExperimentController extends SpringActionController
                 updateService = tInfo.getUpdateService();
             }
 
-            if (_context.isCrossFolderImport() && !_context.getInsertOption().updateOnly)
-            {
-                ColumnDescriptor[] dataColumns = dl.getColumns();
-                boolean hasContainerColumn = false;
-                for (ColumnDescriptor dataColumn : dataColumns)
-                {
-                    if (dataColumn.getColumnName().equalsIgnoreCase("container"))
-                    {
-                        hasContainerColumn = true;
-                        break;
-                    }
-                }
-                if (!hasContainerColumn)
-                    _context.setCrossFolderImport(false);
-            }
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
@@ -4090,6 +4075,7 @@ public class ExperimentController extends SpringActionController
     public abstract static class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
     {
         protected QueryForm _form;
+        protected DataIteratorContext _context;
 
         @Override
         public void validateForm(QueryForm form, Errors errors)
@@ -4138,6 +4124,39 @@ public class ExperimentController extends SpringActionController
             }
 
             return renameColumns;
+        }
+
+        protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+        {
+            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null, getContainer());
+
+            if (_context.isCrossFolderImport())
+            {
+                if (!getContainer().hasProductProjects())
+                    _context.setCrossFolderImport(false);
+                else if (!_context.getInsertOption().updateOnly)
+                {
+                    ColumnDescriptor[] dataColumns = dl.getColumns();
+                    boolean hasContainerColumn = false;
+                    for (ColumnDescriptor dataColumn : dataColumns)
+                    {
+                        if (dataColumn.getColumnName().equalsIgnoreCase("container") || dataColumn.getColumnName().equalsIgnoreCase("folder"))
+                        {
+                            hasContainerColumn = true;
+                            break;
+                        }
+                    }
+                    if (!hasContainerColumn)
+                        _context.setCrossFolderImport(false);
+                }
+            }
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+        {
+            initContext(dl, errors, auditBehaviorType);
+            return importData(dl, _target, _updateService, _context, auditEvent, getUser(), getContainer());
         }
 
         @Override
