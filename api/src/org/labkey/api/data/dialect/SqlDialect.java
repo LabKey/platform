@@ -42,7 +42,7 @@ import org.labkey.api.view.template.Warnings;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

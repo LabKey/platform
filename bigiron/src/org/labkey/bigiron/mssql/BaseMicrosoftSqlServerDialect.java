@@ -44,7 +44,7 @@ import org.labkey.bigiron.mssql.synonym.SynonymTableResolver;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.support.CustomSQLExceptionTranslatorRegistry;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -211,16 +211,16 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         {
             return "ENTITYID";
         }
-        else if (JdbcType.DATE == prop.getJdbcType() || JdbcType.TIME == prop.getJdbcType())
-        {
-            // This is because the jtds driver has a bug where it returns these from the db as strings
-            // TODO: Is this true for the SQL Server JDBC driver?
-            return "DATETIME";
-        }
         else
         {
             return getSqlTypeName(prop.getJdbcType());
         }
+    }
+
+    @Override
+    public void prepare(DbScope.LabKeyDataSource dataSource)
+    {
+        dataSource.setConnectionProperty("sendTimeAsDatetime", "false");
     }
 
     @Override
@@ -833,7 +833,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public String getDateTimeToDateCast(String expression)
     {
-        return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 101))";
+        return "CONVERT(DATETIME, CONVERT(VARCHAR, (" + expression + "), 111))"; // 111: yyyy/mm/dd
     }
 
     @Override
@@ -1096,7 +1096,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         List<String> statements = new ArrayList<>(getDropIndexStatements(change));
 
         //Generate the alter table portion of statement
-        String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
+        String tableIdentifier = makeTableIdentifier(change);
+        String alterTableSegment = String.format("ALTER TABLE %s", tableIdentifier);
 
         //Don't use getSqlColumnSpec as constraints must be dropped and re-applied (exception for NOT NULL)
         for (PropertyStorageSpec column : change.getColumns())
@@ -1104,29 +1105,57 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             //T-SQL only allows 1 ALTER COLUMN clause per ALTER TABLE statement
             String statement;
 
-            if (column.getJdbcType().isText())
+            String columnName = makeLegalIdentifier(column.getName());
+            if (column.getJdbcType().isDateOrTime())
             {
-                //T-SQL will throw an error for nvarchar sizes >4000
-                //Use the common default max size to make type change to nvarchar(max)/text consistent
-                String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                        "max" :
-                        column.getSize().toString();
+                // create a temp column
+                String tempColumnName = column.getName() + "~~temp~~";
+                String addTempColumnStatement = alterTableSegment
+                        + String.format(" ADD %s", getSqlColumnSpec(column, tempColumnName));
+                statements.add(addTempColumnStatement);
 
-                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s(%s) ",
-                        makeLegalIdentifier(column.getName()),
-                        getSqlTypeName(column.getJdbcType()),
-                        size);
+                // copy casted value to temp column
+                String updateColumnValueStatement = "UPDATE " + tableIdentifier
+                        + String.format(" SET %s = CAST(%s AS %s)", makeLegalIdentifier(tempColumnName), columnName, getSqlTypeName(column));
+                statements.add(updateColumnValueStatement);
+
+                // drop original column
+                String dropColumnStatement = alterTableSegment
+                        + String.format(" DROP COLUMN %s", columnName);
+                statements.add(dropColumnStatement);
+
+                // rename temp column to original column name
+                String renameColumnStatement = String.format("EXEC sp_rename '%s','%s','COLUMN'",
+                        tableIdentifier + "." + makeLegalIdentifier(tempColumnName), column.getName() /* don't use quote in sp_rename */);
+                statements.add(renameColumnStatement);
             }
             else
             {
-                statement = alterTableSegment + String.format(" ALTER COLUMN %s %s ",
-                        makeLegalIdentifier(column.getName()),
-                        getSqlTypeName(column.getJdbcType()));
+                if (column.getJdbcType().isText())
+                {
+                    //T-SQL will throw an error for nvarchar sizes >4000
+                    //Use the common default max size to make type change to nvarchar(max)/text consistent
+                    String size = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                            "max" :
+                            column.getSize().toString();
+
+                    statement = alterTableSegment + String.format(" ALTER COLUMN %s %s(%s) ",
+                            makeLegalIdentifier(column.getName()),
+                            getSqlTypeName(column.getJdbcType()),
+                            size);
+                }
+                else
+                {
+                    statement = alterTableSegment + String.format(" ALTER COLUMN %s %s ",
+                            makeLegalIdentifier(column.getName()),
+                            getSqlTypeName(column.getJdbcType()));
+                }
+
+                //T-SQL will drop any existing null constraints
+                statement += column.isNullable() ? "NULL;" : "NOT NULL;";
+                statements.add(statement);
             }
 
-            //T-SQL will drop any existing null constraints
-            statement += column.isNullable() ? "NULL;" : "NOT NULL;";
-            statements.add(statement);
         }
         statements.addAll(getCreateIndexStatements(change));
 
@@ -1625,8 +1654,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
+        return getSqlColumnSpec(prop, prop.getName());
+    }
+
+    private String getSqlColumnSpec(PropertyStorageSpec prop, String columnName)
+    {
         List<String> colSpec = new ArrayList<>();
-        colSpec.add(makeLegalIdentifier(prop.getName()));
+        colSpec.add(makeLegalIdentifier(columnName));
         colSpec.add(getSqlTypeName(prop));
 
         if (prop.getJdbcType() == JdbcType.VARCHAR)
@@ -2047,7 +2081,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             "                                    2004\n" +
             "                                when c.system_type_id = 40 then -- DATE\n" +  // #27221: SQL Server Date columns return incorrect meta data types
             "                                     " + Types.DATE + "\n" +
-            "                                when c.system_type_id IN (41, 42, 43) then -- TIME/DATETIME2/DATETIMEOFFSET\n" + // Note: These should probably map to real SQL Type values instead of VARCHAR!
+            "                                when c.system_type_id = 41 then -- TIME\n" +
+            "                                     " + Types.TIME + "\n" +
+            "                                when c.system_type_id IN (42, 43) then -- DATETIME2/DATETIMEOFFSET\n" + // Note: These should probably map to real SQL Type values instead of VARCHAR!
             "                                     12\n" +
             "                                when c.system_type_id IN (98, 167, 231) then -- sql_variant, varchar, nvarchar\n" +
             "                                     12\n" +

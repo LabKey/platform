@@ -41,7 +41,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.core.login.DbLoginManager.Key;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.EmptyStackException;
 import java.util.LinkedList;

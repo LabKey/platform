@@ -31,7 +31,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.persist.QueryManager;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

@@ -78,9 +78,12 @@ dependencies {
             "Part of Mondrian distribution"
         ),
             {
-                // exclude these because they cause interference with the tomcat versions
-                exclude group: "javax.servlet", module:"jsp-api"
-                exclude group: "javax.servlet", module:"servlet-api"
+                // Include these because Mondrian depends on the old javax.servlet package, which no longer
+                // conflicts with the jakarta.servlet package that Tomcat 10 uses. If we adopt a jakarta-based
+                // Mondrian update in the future, we should resume excluding the Jakarta version of these JARs
+                // exclude group: "javax.servlet", module:"jsp-api"
+                // exclude group: "javax.servlet", module:"servlet-api"
+
                 // exclude this because it brings older version of log4j
                 exclude group: "log4j", module:"log4j"
                 // Avoid classloader conflicts with Tomcat's copy

@@ -96,7 +96,7 @@ public enum PropertyEncryption
                 return "Test";
             }
         },
-    /** No encryption key was specified in labkey.xml, so throw ConfigurationException */
+    /** No encryption key was specified in application.properties, so throw ConfigurationException */
     NoKey
         {
             @Override

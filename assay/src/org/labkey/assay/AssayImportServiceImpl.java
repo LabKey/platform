@@ -49,7 +49,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.assay.actions.ImportAction;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

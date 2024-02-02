@@ -65,8 +65,8 @@ import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DataspaceQuerySchema;
 import org.labkey.study.query.StudyQuerySchema;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;

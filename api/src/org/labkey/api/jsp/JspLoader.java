@@ -24,9 +24,9 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.jsp.HttpJspPage;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.jsp.HttpJspPage;
 import java.util.Enumeration;
 
 public class JspLoader

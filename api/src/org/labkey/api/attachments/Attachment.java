@@ -27,7 +27,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.WebdavResolver;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;

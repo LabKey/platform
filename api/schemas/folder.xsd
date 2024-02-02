@@ -139,6 +139,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:attribute>
+            <xs:attribute name="defaultTimeFormat" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the default time format. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
             <xs:attribute name="defaultNumberFormat" type="xs:string">
                 <xs:annotation>
                     <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
@@ -159,6 +167,14 @@
                 <xs:annotation>
                     <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
                         Indicates the extra date-time parsing pattern. See
+                        <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="extraTimeParsingPattern" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation xmlns="http://www.w3.org/1999/xhtml">
+                        Indicates the extra time parsing pattern. See
                         <a href="https://www.labkey.org/Documentation/wiki-page.view?name=dateFormats" target="_top">Date and Number Formats</a>.
                     </xs:documentation>
                 </xs:annotation>

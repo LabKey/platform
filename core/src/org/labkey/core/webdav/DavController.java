@@ -20,7 +20,6 @@ package org.labkey.core.webdav;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.fileupload.InvalidFileNameException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
@@ -112,12 +111,12 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -1221,14 +1220,7 @@ public class DavController extends SpringActionController
                     MultipartFile file = entry.getValue();
                     if (null == filename)
                     {
-                        try
-                        {
-                            filename = file.getOriginalFilename();
-                        }
-                        catch (InvalidFileNameException ex)
-                        {
-                            return WebdavStatus.SC_BAD_REQUEST;
-                        }
+                        filename = file.getOriginalFilename();
                     }
                     stream = new SpringAttachmentFile(file);
                 }

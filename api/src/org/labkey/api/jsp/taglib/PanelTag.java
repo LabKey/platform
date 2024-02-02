@@ -19,7 +19,7 @@ import org.labkey.api.util.DOM;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UnexpectedException;
 
-import javax.servlet.jsp.tagext.BodyTagSupport;
+import jakarta.servlet.jsp.tagext.BodyTagSupport;
 import java.io.IOException;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;

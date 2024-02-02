@@ -32,7 +32,7 @@ import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.InsertView;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;

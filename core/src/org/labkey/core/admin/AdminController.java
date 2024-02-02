@@ -189,9 +189,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.mail.MessagingException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.beans.Introspector;
 import java.io.File;
@@ -1455,6 +1455,11 @@ public class AdminController extends SpringActionController
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultDateTimeFormat(String defaultDateTimeFormat);
 
+        String getDefaultTimeFormat();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setDefaultTimeFormat(String defaultTimeFormat);
+
         String getDefaultNumberFormat();
 
         @SuppressWarnings("UnusedDeclaration")
@@ -1469,6 +1474,11 @@ public class AdminController extends SpringActionController
 
         @SuppressWarnings("UnusedDeclaration")
         void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern);
+
+        String getExtraTimeParsingPattern();
+
+        @SuppressWarnings("UnusedDeclaration")
+        void setExtraTimeParsingPattern(String extraTimeParsingPattern);
 
         boolean areRestrictedColumnsEnabled();
 
@@ -1528,6 +1538,8 @@ public class AdminController extends SpringActionController
         private boolean _restrictedColumnsEnabled;
         private String _customLogin;
         private String _customWelcome;
+        private String _defaultTimeFormat;
+        private String _extraTimeParsingPattern;
 
         public boolean getShouldInherit()
         {
@@ -1745,6 +1757,18 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public String getDefaultTimeFormat()
+        {
+            return _defaultTimeFormat;
+        }
+
+        @Override
+        public void setDefaultTimeFormat(String defaultTimeFormat)
+        {
+            _defaultTimeFormat = defaultTimeFormat;
+        }
+
+        @Override
         public String getDefaultNumberFormat()
         {
             return _defaultNumberFormat;
@@ -1782,6 +1806,18 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public String getExtraTimeParsingPattern()
+        {
+            return _extraTimeParsingPattern;
+        }
+
+        @Override
+        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
+        {
+            _extraTimeParsingPattern = extraTimeParsingPattern;
+        }
+
+        @Override
         public boolean areRestrictedColumnsEnabled()
         {
             return _restrictedColumnsEnabled;
@@ -1803,10 +1839,12 @@ public class AdminController extends SpringActionController
             json.put("dateParsingMode", getDateParsingMode());
             json.put("defaultDateFormat", getDefaultDateFormat());
             json.put("defaultDateTimeFormat", getDefaultDateTimeFormat());
+            json.put("defaultTimeFormat", getDefaultTimeFormat());
             json.put("defaultNumberFormat", getDefaultNumberFormat());
             json.put("discussionEnabled", isDiscussionEnabled());
             json.put("extraDateParsingPattern", getExtraDateParsingPattern());
             json.put("extraDateTimeParsingPattern", getExtraDateTimeParsingPattern());
+            json.put("extraTimeParsingPattern", getExtraTimeParsingPattern());
             json.put("folderDisplayMode", getFolderDisplayMode());
             json.put("helpMenuEnabled", isHelpMenuEnabled());
             json.put("logoHref", getLogoHref());
@@ -5082,9 +5120,11 @@ public class AdminController extends SpringActionController
     {
         private String _defaultDateFormat;
         private String _defaultDateTimeFormat;
+        private String _defaultTimeFormat;
         private String _defaultNumberFormat;
         private String _extraDateParsingPattern;
         private String _extraDateTimeParsingPattern;
+        private String _extraTimeParsingPattern;
         private boolean _restrictedColumnsEnabled;
 
         @Override
@@ -5109,6 +5149,19 @@ public class AdminController extends SpringActionController
         public void setDefaultDateTimeFormat(String defaultDateTimeFormat)
         {
             _defaultDateTimeFormat = defaultDateTimeFormat;
+        }
+
+        @Override
+        public String getDefaultTimeFormat()
+        {
+            return _defaultTimeFormat;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        @Override
+        public void setDefaultTimeFormat(String defaultTimeFormat)
+        {
+            _defaultTimeFormat = defaultTimeFormat;
         }
 
         @Override
@@ -5145,6 +5198,19 @@ public class AdminController extends SpringActionController
         public void setExtraDateTimeParsingPattern(String extraDateTimeParsingPattern)
         {
             _extraDateTimeParsingPattern = extraDateTimeParsingPattern;
+        }
+
+        @Override
+        public String getExtraTimeParsingPattern()
+        {
+            return _extraTimeParsingPattern;
+        }
+
+        @SuppressWarnings("UnusedDeclaration")
+        @Override
+        public void setExtraTimeParsingPattern(String extraTimeParsingPattern)
+        {
+            _extraTimeParsingPattern = extraTimeParsingPattern;
         }
 
         @Override
@@ -10699,11 +10765,15 @@ public class AdminController extends SpringActionController
             return false;
         if (json.has("defaultDateTimeFormat") && !validateAndSaveFormat(json.optString("defaultDateTimeFormat"), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
             return false;
+        if (json.has("defaultTimeFormat") && !validateAndSaveFormat(json.optString("defaultTimeFormat"), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+            return false;
         if (json.has("defaultNumberFormat") && !validateAndSaveFormat(json.optString("defaultNumberFormat"), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
             return false;
         if (json.has("extraDateParsingPattern") && !validateAndSaveFormat(json.optString("extraDateParsingPattern"), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
             return false;
         if (json.has("extraDateTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraDateTimeParsingPattern"), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+        if (json.has("extraTimeParsingPattern") && !validateAndSaveFormat(json.optString("extraTimeParsingPattern"), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
             return false;
 
         if (json.has("restrictedColumnsEnabled"))
@@ -10929,11 +10999,15 @@ public class AdminController extends SpringActionController
             return false;
         if (!validateAndSaveFormat(form.getDefaultDateTimeFormat(), props::clearDefaultDateTimeFormat, props::setDefaultDateTimeFormat, errors, "date-time"))
             return false;
+        if (!validateAndSaveFormat(form.getDefaultTimeFormat(), props::clearDefaultTimeFormat, props::setDefaultTimeFormat, errors, "time"))
+            return false;
         if (!validateAndSaveFormat(form.getDefaultNumberFormat(), props::clearDefaultNumberFormat, props::setDefaultNumberFormat, errors, "number"))
             return false;
         if (!validateAndSaveFormat(form.getExtraDateParsingPattern(), props::clearExtraDateParsingPattern, props::setExtraDateParsingPattern, errors, "date"))
             return false;
         if (!validateAndSaveFormat(form.getExtraDateTimeParsingPattern(), props::clearExtraDateTimeParsingPattern, props::setExtraDateTimeParsingPattern, errors, "date-time"))
+            return false;
+        if (!validateAndSaveFormat(form.getExtraTimeParsingPattern(), props::clearExtraTimeParsingPattern, props::setExtraTimeParsingPattern, errors, "time"))
             return false;
 
         try

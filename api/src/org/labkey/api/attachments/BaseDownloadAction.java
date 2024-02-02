@@ -22,7 +22,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 // Abstract action that downloads an attachment associated with an AttachmentParent. Modules need an action in their own controller
 // that extends this class and handles security, creates the correct attachment parent, and specifies the attachment filename.

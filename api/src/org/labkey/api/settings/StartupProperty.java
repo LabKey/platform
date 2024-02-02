@@ -1,6 +1,6 @@
 package org.labkey.api.settings;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public interface StartupProperty
 {

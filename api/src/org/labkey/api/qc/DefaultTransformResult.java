@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.util.HtmlString;
 
 import java.io.File;
 import java.util.Collections;
@@ -38,7 +39,7 @@ public class DefaultTransformResult implements TransformResult
     private List<File> _uploadedFiles;
     private String _assayId;
     private String _comments;
-    private String _warnings;
+    private HtmlString _warnings;
     private List<File> _files;
     private static final Logger LOG = LogManager.getLogger(DefaultTransformResult.class);
 
@@ -55,13 +56,13 @@ public class DefaultTransformResult implements TransformResult
     }
 
     @Override
-    public String getWarnings()
+    public HtmlString getWarnings()
     {
         return _warnings;
     }
 
     @Override
-    public void setWarnings(String warnings)
+    public void setWarnings(HtmlString warnings)
     {
         _warnings = warnings;
     }

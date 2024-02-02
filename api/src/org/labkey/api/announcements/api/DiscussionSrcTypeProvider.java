@@ -1,10 +1,10 @@
 package org.labkey.api.announcements.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
-import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 

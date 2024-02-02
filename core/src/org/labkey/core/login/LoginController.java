@@ -80,6 +80,7 @@ import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
@@ -95,11 +96,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -427,7 +428,7 @@ public class LoginController extends SpringActionController
                 }
             }
 
-            String expectedKatpcha = (String)getViewContext().getRequest().getSession(true).getAttribute("KAPTCHA_SESSION_KEY");
+            String expectedKatpcha = (String)getViewContext().getRequest().getSession(true).getAttribute(LabKeyKaptchaServlet.SESSION_KEY_VALUE);
             if (expectedKatpcha == null)
             {
                 logger.error("Captcha not initialized for self-registration attempt");

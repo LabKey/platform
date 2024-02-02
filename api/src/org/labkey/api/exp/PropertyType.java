@@ -34,6 +34,7 @@ import org.labkey.api.util.DateUtil;
 import java.io.File;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.Time;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -640,7 +641,7 @@ public enum PropertyType
             return NameGenerator.PREVIEW_DATE_VALUE;
         }
     },
-    TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, CellType.NUMERIC, Date.class)
+    TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, CellType.NUMERIC, java.sql.Time.class)
     {
         @Override
         protected Object convertExcelValue(Cell cell) throws ConversionException
@@ -669,7 +670,10 @@ public enum PropertyType
         @Override
         protected void setValue(ObjectProperty property, Object value)
         {
-            throw new UnsupportedOperationException();
+            if (value instanceof Time)
+                property.dateTimeValue = (Time) value;
+            else if (null != value)
+                property.dateTimeValue = (Time) ConvertUtils.convert(value.toString(), Time.class);
         }
 
         @Override

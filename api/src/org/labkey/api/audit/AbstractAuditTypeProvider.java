@@ -57,6 +57,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.sql.Time;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -403,7 +404,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 entry.getKey().equals(ExperimentService.ALIASCOLUMNALIAS))
                 continue;
             Object value = entry.getValue();
-            if (value instanceof Date)
+            if (value instanceof Time)
+            {
+                String formatted = DateUtil.formatIsoLongTime((Time)value);
+                stringMap.put(entry.getKey(), formatted);
+            }
+            else if (value instanceof Date)
             {
                 // issue: 35002 - normalize Date values to avoid Timestamp/Date toString differences
                 // issue: 36472 - use iso format to show date-time values

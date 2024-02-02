@@ -33,6 +33,7 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     protected static final String defaultDateFormatString = "defaultDateFormatString";
     protected static final String defaultDateTimeFormatString = "defaultDateTimeFormatString";
     protected static final String defaultNumberFormatString = "defaultNumberFormatString";
+    protected static final String defaultTimeFormatString = "defaultTimeFormatString";
 
 
     protected final Container _c;
@@ -99,6 +100,12 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return lookupStringValue(_c, defaultDateTimeFormatString, DateUtil.getStandardDateTimeFormatString());
     }
 
+    public String getDefaultTimeFormat()
+    {
+        // Look up this value starting from the current container (unlike most look & feel settings)
+        return lookupStringValue(_c, defaultTimeFormatString, DateUtil.getStandardTimeFormatString());
+    }
+
     public String getDefaultNumberFormat()
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
@@ -115,6 +122,12 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     {
         // Look up this value starting from the current container (unlike most look & feel settings)
         return lookupStringValue(_c, extraDateTimeParsingPattern, null);
+    }
+
+    public String getExtraTimeParsingPattern()
+    {
+        // Look up this value starting from the current container (unlike most look & feel settings)
+        return lookupStringValue(_c, extraTimeParsingPattern, null);
     }
 
     public boolean areRestrictedColumnsEnabled()
@@ -141,6 +154,13 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     }
 
     // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    public String getDefaultTimeFormatStored()
+    {
+        return super.lookupStringValue(_c, defaultTimeFormatString, null);
+    }
+
+
+    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
     public String getExtraDateParsingPatternStored()
     {
         return super.lookupStringValue(_c, extraDateParsingPattern, null);
@@ -150,5 +170,11 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     public String getExtraDateTimeParsingPatternStored()
     {
         return super.lookupStringValue(_c, extraDateTimeParsingPattern, null);
+    }
+
+    // Get the value that's actually stored in this container; don't look up the hierarchy. This is useful only for export.
+    public String getExtraTimeParsingPatternStored()
+    {
+        return super.lookupStringValue(_c, extraTimeParsingPattern, null);
     }
 }

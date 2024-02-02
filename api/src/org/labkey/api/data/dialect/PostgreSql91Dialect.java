@@ -38,7 +38,7 @@ import org.labkey.api.view.template.Warnings;
 import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.springframework.jdbc.BadSqlGrammarException;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -1008,7 +1008,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             case DropIndicesByName -> sql.addAll(getDropIndexByNameStatements(change));
             case DropIndices -> sql.addAll(getDropIndexStatements(change));
             case AddIndices -> sql.addAll(getCreateIndexStatements(change));
-            case ResizeColumns, ChangeColumnTypes -> sql.add(getChangeColumnTypeStatement(change));
+            case ResizeColumns, ChangeColumnTypes -> sql.addAll(getChangeColumnTypeStatement(change));
             case DropConstraints -> sql.addAll(getDropConstraintsStatement(change));
             case AddConstraints -> sql.addAll(getAddConstraintsStatement(change));
             default -> throw new IllegalArgumentException("Unsupported change type: " + change.getType());
@@ -1048,40 +1048,69 @@ public abstract class PostgreSql91Dialect extends SqlDialect
      * NOTE: expects data size check to be done prior,
      *       will throw a SQL exception if not able to change size due to existing data
      */
-    private String getChangeColumnTypeStatement(TableChange change)
+    private List<String> getChangeColumnTypeStatement(TableChange change)
     {
-        StringBuilder sb = new StringBuilder();
+        List<String> statements = new ArrayList<>();
         String comma = "";
 
         //Postgres allows executing multiple Alter Column statements under one Alter Table
         //  Reducing column size may cause a rebuild of the data so it can be expensive
-        sb.append( String.format("ALTER TABLE %s ", makeTableIdentifier(change)));
+        String tableIdentifier = makeTableIdentifier(change);
+        String alterTableSegment = String.format("ALTER TABLE %s ", tableIdentifier);
+        List<String> nonDateTimeColumns = new ArrayList<>();
         for (PropertyStorageSpec column : change.getColumns())
         {
+            String columnName = makePropertyIdentifier(column.getName());
             String dbType;
-            if (column.getJdbcType().isText())
+            if (column.getJdbcType().isDateOrTime())
             {
-                //Using the common default max size to make type change to text
-                dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
-                        getSqlTypeName(JdbcType.LONGVARCHAR) :
-                        getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
-            }
-            else if (column.getJdbcType().isDecimal())
-            {
-                dbType = getSqlTypeName(column.getJdbcType()) + DEFAULT_DECIMAL_SCALE_PRECISION;
+                String tempColumnName = column.getName() + "~~temp~~";
+                // create a temp column
+                String addTempColumnStatement = alterTableSegment + String.format(" ADD COLUMN %s", getSqlColumnSpec(column, tempColumnName));
+                statements.add(addTempColumnStatement);
+
+                // copy casted value to temp column
+                String updateColumnValueStatement = "UPDATE " + tableIdentifier
+                    + String.format(" SET %s = CAST(%s AS %s)", makePropertyIdentifier(tempColumnName), columnName, getSqlTypeName(column));
+                statements.add(updateColumnValueStatement);
+
+                // drop original column
+                String dropOldColumnStatement = alterTableSegment + " DROP COLUMN " + columnName;
+                statements.add(dropOldColumnStatement);
+
+                // rename temp column to original column name
+                String renameTempColumnValStatement = alterTableSegment + String.format(" RENAME COLUMN %s TO %s", makePropertyIdentifier(tempColumnName), columnName);
+                statements.add(renameTempColumnValStatement);
             }
             else
             {
-                dbType = getSqlTypeName(column.getJdbcType());
+                if (column.getJdbcType().isText())
+                {
+                    //Using the common default max size to make type change to text
+                    dbType = column.getSize() == -1 || column.getSize() > SqlDialect.MAX_VARCHAR_SIZE ?
+                            getSqlTypeName(JdbcType.LONGVARCHAR) :
+                            getSqlTypeName(column.getJdbcType()) + "(" + column.getSize().toString() + ")";
+                }
+                else if (column.getJdbcType().isDecimal())
+                {
+                    dbType = getSqlTypeName(column.getJdbcType()) + DEFAULT_DECIMAL_SCALE_PRECISION;
+                }
+                else
+                {
+                    dbType = getSqlTypeName(column.getJdbcType());
 
+                }
+
+                //Postgres retains the existing null behavior
+                nonDateTimeColumns.add(comma + String.format("ALTER COLUMN %s TYPE %s", columnName, dbType));
+                comma = ", ";
             }
-
-            sb.append(comma);
-            comma = ", ";
-            //Postgres retains the existing null behavior
-            sb.append(String.format("ALTER COLUMN %s TYPE %s", makePropertyIdentifier(column.getName()), dbType));
         }
-        return sb.append(";").toString();
+
+        if (nonDateTimeColumns.size() > 0)
+            statements.add(alterTableSegment + " " + StringUtils.join(nonDateTimeColumns, ""));
+
+        return statements;
     }
 
     private List<String> getRenameColumnsStatement(TableChange change)
@@ -1306,8 +1335,13 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private String getSqlColumnSpec(PropertyStorageSpec prop)
     {
+        return getSqlColumnSpec(prop, prop.getName());
+    }
+
+    private String getSqlColumnSpec(PropertyStorageSpec prop, String columnName)
+    {
         List<String> colSpec = new ArrayList<>();
-        colSpec.add(makePropertyIdentifier(prop.getName()));
+        colSpec.add(makePropertyIdentifier(columnName));
         colSpec.add(getSqlTypeName(prop));
 
         //Apply size and precision to varchar and Decimal types

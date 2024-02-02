@@ -513,7 +513,8 @@ public class PlateManager implements PlateService
      */
     public boolean plateExists(Container c, String name)
     {
-        return PlateCache.getPlate(c, name) != null;
+        Plate plate = PlateCache.getPlate(c, name);
+        return plate != null && plate.getName().equals(name);
     }
 
     private Collection<Plate> getPlates(Container c)

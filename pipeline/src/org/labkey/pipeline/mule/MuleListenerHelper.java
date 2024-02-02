@@ -28,16 +28,15 @@ import org.mule.config.ThreadingProfile;
 import org.mule.providers.service.TransportFactory;
 import org.mule.umo.UMOException;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterRegistration;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
-import javax.servlet.SessionCookieConfig;
-import javax.servlet.SessionTrackingMode;
-import javax.servlet.descriptor.JspConfigDescriptor;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRegistration;
+import jakarta.servlet.SessionCookieConfig;
+import jakarta.servlet.SessionTrackingMode;
+import jakarta.servlet.descriptor.JspConfigDescriptor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -246,33 +245,9 @@ public class MuleListenerHelper implements ServletContext
     }
 
     @Override
-    public Servlet getServlet(String string) throws ServletException
-    {
-        return _parentContext.getServlet(string);
-    }
-
-    @Override
-    public Enumeration<Servlet> getServlets()
-    {
-        return _parentContext.getServlets();
-    }
-
-    @Override
-    public Enumeration<String> getServletNames()
-    {
-        return _parentContext.getServletNames();
-    }
-
-    @Override
     public void log(String string)
     {
         _log.info(string);
-    }
-
-    @Override
-    public void log(Exception exception, String string)
-    {
-        _log.error(string, exception);
     }
 
     @Override

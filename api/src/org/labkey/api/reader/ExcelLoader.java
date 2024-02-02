@@ -1056,10 +1056,13 @@ public class ExcelLoader extends DataLoader
                     case NUMBER:
                         boolean isDateFormat = null!=this.formatString && org.apache.poi.ss.usermodel.DateUtil.isADateFormat(this.formatIndex, this.formatString);
                         boolean isNumberFormat = null != this.formatString && !isDateFormat && !this.formatString.equals("General") && !this.formatString.equals("@"); // i18n???
+                        boolean isTimeFormat = false;
+                        if (isDateFormat)
+                            isTimeFormat = DateUtil.isExcelTimeFormat(this.formatString);
 
                         if (StringUtils.isBlank(value))
                             thisValue = "";
-                        else if (this.formatString != null && useFormats)
+                        else if (this.formatString != null && (useFormats || isTimeFormat))
                         {
                             thisValue = formatter.formatRawCellContents(Double.parseDouble(value.toString()), this.formatIndex, this.formatString, this.isStartDate1904);
                         }
