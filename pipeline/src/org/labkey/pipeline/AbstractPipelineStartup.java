@@ -59,7 +59,7 @@ public abstract class AbstractPipelineStartup
         LoggerUtil.initLogging(name, log4JConfigPath);
 
         //load the modules and sort them by dependencies
-        ModuleLoader moduleLoader = new ModuleLoader();
+        ModuleLoader moduleLoader = ModuleLoader.getInstance();
         List<Module> modules = moduleLoader.doInit(moduleFiles);
         moduleLoader.setWebappDir(webappDir);
         ModuleDependencySorter sorter = new ModuleDependencySorter();

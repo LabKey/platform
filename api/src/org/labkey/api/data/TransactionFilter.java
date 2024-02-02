@@ -16,14 +16,14 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.util.FileUtil;
-
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.FilterConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import org.labkey.api.util.FileUtil;
+
 import java.io.IOException;
 
 public class TransactionFilter implements Filter
@@ -44,6 +44,7 @@ public class TransactionFilter implements Filter
         }
         finally
         {
+            ConnectionWrapper.dumpLeaksForThread(Thread.currentThread());
             DbScope.closeAllConnectionsForCurrentThread();
         }
         FileUtil.stopRequest();

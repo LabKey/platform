@@ -17,6 +17,10 @@
 package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,10 +42,6 @@ import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,8 +56,6 @@ import java.util.stream.Collectors;
  * Modules are the basic unit of deployment for code and resources within LabKey Server. Modules are deployable
  * independently of one another. They can have dependencies on services or other resources provided by other modules,
  * but should declare these dependencies.
- * User: migra
- * Date: Jul 14, 2005
  */
 public interface Module
 {
@@ -65,6 +63,8 @@ public interface Module
     default void registerServlets(ServletContext servletCtx) {}
     /** Register any final servlet mappings after the main mappings are in place */
     default void registerFinalServlets(ServletContext servletCtx) {}
+    /** Register filters and their mappings. */
+    default void registerFilters(ServletContext servletCtx) {}
 
     enum TabDisplayMode
     {
