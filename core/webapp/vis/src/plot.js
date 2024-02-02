@@ -2271,27 +2271,6 @@ boxPlot.render();
                         config.layers.push(upperBoundLayer);
                     }
                 }
-
-                // By default show +-1/2 SD Lines
-                if (config.properties.hideSDLines === false || config.properties.hideSDLines === undefined) {
-                    config.layers.push(new LABKEY.vis.Layer({
-                        geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, width: barWidth}),
-                        data: meanStdDevData,
-                        aes: {
-                            error: function(row){return row[config.properties.stdDev] * 2;},
-                            yLeft: config.properties.mean
-                        }
-                    }));
-
-                    config.layers.push(new LABKEY.vis.Layer({
-                        geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, width: barWidth}),
-                        data: meanStdDevData,
-                        aes: {
-                            error: function(row){return row[config.properties.stdDev];},
-                            yLeft: config.properties.mean
-                        }
-                    }));
-                }
             }
             else if (config.qcPlotType === LABKEY.vis.TrendingLinePlotType.CUSUM) {
                 var range = new LABKEY.vis.Layer({
