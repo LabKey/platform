@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +38,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
@@ -59,7 +59,7 @@ import java.util.Set;
 
 public class DbSchema
 {
-    private static final Logger _log = LogManager.getLogger(DbSchema.class);
+    private static final Logger _log = LogHelper.getLogger(DbSchema.class, "Database schema loading problems");
 
     public static final String TEMP_SCHEMA_NAME = "temp";
 
@@ -302,6 +302,11 @@ public class DbSchema
     public SchemaTableInfo createTableFromDatabaseMetaData(final String requestedTableName) throws SQLException
     {
         SchemaTableInfoFactory factory = _tableInfoFactoryMap.get(requestedTableName);
+
+        if (null == factory && isModuleSchema())
+        {
+            throw new RuntimeException("SchemaTableInfoFactory for table \"" + getName() + "." + requestedTableName + "\" was null! This could indicate a problem with DbSchema.loadTableMetaData().");
+        }
 
         return null != factory ? factory.getSchemaTableInfo(this) : null;
     }
