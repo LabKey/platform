@@ -23,7 +23,7 @@ import org.labkey.api.util.HttpUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 

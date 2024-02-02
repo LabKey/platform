@@ -35,9 +35,9 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 
-import javax.mail.internet.ContentType;
+import jakarta.mail.internet.ContentType;
 import javax.net.ssl.HttpsURLConnection;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;

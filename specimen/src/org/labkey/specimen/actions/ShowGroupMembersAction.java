@@ -43,7 +43,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -97,13 +97,13 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 import org.springframework.web.servlet.mvc.Controller;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -1838,7 +1838,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         verifyRequiredModules();
     }
 
-    // If the "requiredModules" parameter is present in labkey.xml then fail startup if any specified module is missing.
+    // If the "requiredModules" parameter is present in application.properties then fail startup if any specified module is missing.
     // Particularly interesting for compliant deployments, e.g., <Parameter name="requiredModules" value="Compliance"/>
     private void verifyRequiredModules()
     {
@@ -1987,7 +1987,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     // Returns a set of data source names representing all external data sources that are required for module schemas.
-    // These are just the names that modules advertise; there's no guarantee that they're defined in labkey.xml or
+    // These are just the names that modules advertise; there's no guarantee that they're defined or
     // valid. Be sure to null check after attempting to resolve each to a DbScope.
     public Set<String> getAllModuleDataSourceNames()
     {

@@ -16,7 +16,7 @@
 
 package org.labkey.api.data.dialect;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 
 public interface JdbcHelper
 {

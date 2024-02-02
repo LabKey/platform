@@ -2,7 +2,7 @@ package org.mitre.dsmiley.httpproxy;
 
 import org.springframework.web.servlet.mvc.ServletWrappingController;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.util.Properties;
 
 public class ProxyServletUtils

@@ -51,6 +51,8 @@ List runtime = [
 configurations {
     // Exclude the bundled org.json library from com.fasterxml.jackson.datatype:jackson-datatype-json-org dependency
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
+    // Avoid pulling in the Activation API because we don't want to conflict with one loaded from $CATALINA_HOME/lib
+    all*.exclude group: "jakarta.activation", module: "jakarta.activation-api"
 
     creditable {
         canBeConsumed = false
@@ -102,8 +104,21 @@ dependencies {
     BuildUtils.addTomcatBuildDependencies(project, "implementation")
     // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
     // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
-    api "javax.servlet:javax.servlet-api:${servletApiVersion}"
+    api "jakarta.servlet:jakarta.servlet-api:${servletApiVersion}"
     api "com.sun.mail:jakarta.mail:${javaMailVersion}"
+
+    BuildUtils.addExternalDependency(
+        project,
+        new ExternalDependency(
+            "org.eclipse.angus:angus-activation:${angusActivationVersion}",
+            "Eclipse Angus Activation",
+            "Eclipse Foundation",
+            "https://projects.eclipse.org/projects/ee4j.angus",
+            "Eclipse Public License 2.0",
+            "https://projects.eclipse.org/license/epl-2.0",
+            "Implementation of the Jakarta Activation API",
+        )
+    )
 
     BuildUtils.addExternalDependency(
         project,
@@ -116,19 +131,6 @@ dependencies {
             ExternalDependency.APACHE_2_LICENSE_URL,
             "Annotations to enable compile-time checking for null",
         )
-    )
-
-    BuildUtils.addExternalDependency(
-            project,
-            new ExternalDependency(
-                    "commons-fileupload:commons-fileupload:${commonsFileuploadVersion}",
-                    "Commons File Upload",
-                    "Apache",
-                    "http://jakarta.apache.org/commons/fileupload/",
-                    ExternalDependency.APACHE_2_LICENSE_NAME,
-                    ExternalDependency.APACHE_2_LICENSE_URL,
-                    "Parses HTTP multipart/form-data POSTs"
-            )
     )
 
     BuildUtils.addExternalDependency(
@@ -368,7 +370,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "com.google.gwt:gwt-servlet:${gwtServletVersion}",
+            "org.gwtproject:gwt-servlet-jakarta:${gwtServletJakartaVersion}",
             "Server Support for Google Web Toolkit",
             "Google",
             "http://code.google.com/webtoolkit/",
@@ -969,7 +971,7 @@ dependencies {
     BuildUtils.addExternalDependency(
         project,
         new ExternalDependency(
-            "javax.validation:validation-api:${validationApiVersion}",
+            "jakarta.validation:jakarta.validation-api:${validationJakartaApiVersion}",
             "Bean Validation API (JSR 303)",
             "JCP",
             "http://jcp.org/en/jsr/detail?id=303",

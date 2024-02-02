@@ -40,7 +40,7 @@ import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * User: brittp

@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * When thrown in the context of an HTTP request, sends the client a *temporary* redirect in the HTTP response. Not

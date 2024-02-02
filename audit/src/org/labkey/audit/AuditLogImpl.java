@@ -48,7 +48,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.audit.model.LogManager;
 import org.labkey.audit.query.AuditQuerySchema;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;

@@ -16,7 +16,7 @@
 
 package org.labkey.specimen.notifications;
 
-import javax.mail.Address;
+import jakarta.mail.Address;
 
 /**
  * User: brittp

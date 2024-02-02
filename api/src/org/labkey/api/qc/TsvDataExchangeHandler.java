@@ -58,6 +58,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -65,7 +66,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.DateFormat;
@@ -610,9 +611,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             }
 
             if(null != warning)
-                result.setWarnings(warning);
+                result.setWarnings(HtmlString.unsafe(warning)); // Issue 49370
             else
-                result.setWarnings("Warnings found in transform script!");
+                result.setWarnings(HtmlString.unsafe("Warnings found in transform script!"));
 
             if(null != files && !files.isEmpty())
                 result.setFiles(files);

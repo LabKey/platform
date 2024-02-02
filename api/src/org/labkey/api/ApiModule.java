@@ -107,16 +107,18 @@ import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FileServlet;
 import org.labkey.api.view.JspTemplate;
+import org.labkey.api.view.LabKeyKaptchaServlet;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.RedirectorServlet;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.writer.ContainerUser;
 
 import javax.management.StandardMBean;
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRegistration;
+import jakarta.servlet.MultipartConfigElement;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletRegistration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -183,7 +185,7 @@ public class ApiModule extends CodeOnlyModule
         servletCtx.addServlet("ImageServlet", new ImageServlet()).
                 addMapping("*.image");
 
-        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new KaptchaServlet());
+        ServletRegistration.Dynamic kaptchaDynamic = servletCtx.addServlet("Kaptcha", new LabKeyKaptchaServlet());
         kaptchaDynamic.setInitParameter("kaptcha.textproducer.char.length", "6");
         kaptchaDynamic.addMapping("/kaptcha.jpg");
 
@@ -196,6 +198,14 @@ public class ApiModule extends CodeOnlyModule
         // http://host/labkey/filecontent/proj/dir/sendFile.view?file=test.html
         servletCtx.addServlet("FileServlet", new FileServlet()).
             addMapping("/files/*");
+
+        String legacyContextPath = servletCtx.getInitParameter("legacyContextPath");
+        if (legacyContextPath != null)
+        {
+            ServletRegistration.Dynamic redirectorDynamic = servletCtx.addServlet("RedirectorServlet", new RedirectorServlet(legacyContextPath));
+            redirectorDynamic.addMapping(legacyContextPath + "/*");
+            redirectorDynamic.setMultipartConfig(new MultipartConfigElement(SpringActionController.getTempUploadDir().getPath()));
+        }
     }
 
     @Override

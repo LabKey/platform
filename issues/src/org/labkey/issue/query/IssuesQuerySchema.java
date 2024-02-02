@@ -53,7 +53,7 @@ import org.labkey.issue.model.IssueManager;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
