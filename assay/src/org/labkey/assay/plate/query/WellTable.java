@@ -1,19 +1,21 @@
 package org.labkey.assay.plate.query;
 
+import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -24,24 +26,28 @@ import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -53,14 +59,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.labkey.api.data.UpdateableTableInfo.ObjectUriType.schemaColumn;
-
-public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
+public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 {
     public static final String NAME = "Well";
+    public static final String WELL_PROPERTIES_TABLE = "WellProperties";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
     private Map<FieldKey, DomainProperty> _vocabularyFieldMap = new HashMap<>();
+    private Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
 
     static
     {
@@ -100,7 +106,74 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         positionCol.setUserEditable(false);
         addColumn(positionCol);
 
-        addVocabularyDomains();
+        //addVocabularyDomains();
+        addWellProperties();
+        //addWellProperties2();
+    }
+
+    private void addWellProperties()
+    {
+        Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
+        ColumnInfo lsidCol = getColumn("Lsid");
+        if (domain != null && lsidCol != null)
+        {
+            BaseColumnInfo col = new AliasedColumn("Properties", lsidCol);
+            col.setFk(QueryForeignKey
+                    .from(getUserSchema(), getContainerFilter())
+                    .to(WELL_PROPERTIES_TABLE, "Lsid", null)
+            );
+            col.setLabel("Plate Metadata");
+            col.setDescription("Custom properties associated with the plate well");
+            col.setUserEditable(false);
+            col.setCalculated(true);
+            addColumn(col);
+
+            // add fields from the virtual well properties table
+            TableInfo tableInfo = getUserSchema().getTable(WELL_PROPERTIES_TABLE);
+            //TableInfo tableInfo = StorageProvisioner.createTableInfo(domain);
+            if (tableInfo != null)
+            {
+                for (var column : tableInfo.getColumns())
+                {
+                    if (column.getName().equalsIgnoreCase("lsid"))
+                        continue;
+
+                    FieldKey fieldKey = FieldKey.fromParts("Properties", column.getName());
+                    defaultVisibleColumns.add(fieldKey);
+                    _provisionedFieldMap.put(fieldKey, column);
+                }
+            }
+        }
+    }
+
+    private void addWellProperties2()
+    {
+        Domain wellDomain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
+        FieldKey lsidFieldKey = FieldKey.fromParts("lsid");
+        Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
+
+        for (ColumnInfo col : PlateManager.get().getPlateMetadataTable(getContainer(), _userSchema.getUser()).getColumns())
+        {
+            if (col.getFieldKey().equals(lsidFieldKey))
+                continue;
+
+            var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
+            if (col.isHidden())
+                wrapped.setHidden(true);
+
+            // Copy the property descriptor settings to the wrapped column.
+            String propertyURI = col.getPropertyURI();
+            DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
+            PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
+            if (dp != null && pd != null)
+            {
+                defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                wrapped.setFieldKey(FieldKey.fromParts("Properties", dp.getName()));
+            }
+
+            addColumn(wrapped);
+            defaultVisibleColumns.add(col.getFieldKey());
+        }
     }
 
     private void addVocabularyDomains()
@@ -151,6 +224,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
      * Override to resolve Property URIs for vocabulary columns during update. Consider adding the
      * capability to resolve vocabulary columns by field key or name.
      */
+/*
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
@@ -178,6 +252,43 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
         return super.resolveColumn(name);
     }
+*/
+
+    /**
+     * Override to resolve Property URIs for vocabulary columns during update. Consider adding the
+     * capability to resolve vocabulary columns by field key or name.
+     */
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        FieldKey fieldKey = FieldKey.decode(name);
+        if (_provisionedFieldMap.containsKey(fieldKey))
+        {
+            return _provisionedFieldMap.get(fieldKey);
+/*
+            ColumnInfo col = _provisionedFieldMap.get(fieldKey);
+            Domain wellDomain = PlateManager.get().getPlateMetadataDomain(getContainer(), _userSchema.getUser());
+            Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
+            FieldKey lsidFieldKey = FieldKey.fromParts("lsid");
+
+            var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
+            if (col.isHidden())
+                wrapped.setHidden(true);
+
+            // Copy the property descriptor settings to the wrapped column.
+            String propertyURI = col.getPropertyURI();
+            DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
+            PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
+            if (dp != null && pd != null)
+            {
+                defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                wrapped.setFieldKey(FieldKey.fromParts("Properties", dp.getName()));
+            }
+            return wrapped;
+*/
+        }
+        return super.resolveColumn(name);
+    }
 
     @Override
     public MutableColumnInfo wrapColumn(ColumnInfo col)
@@ -194,6 +305,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return columnInfo;
     }
 
+/*
     @Override
     public ObjectUriType getObjectUriType()
     {
@@ -205,6 +317,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         return "lsid";
     }
+*/
 
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
@@ -212,17 +325,103 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return defaultVisibleColumns;
     }
 
+/*
+    @NotNull
+    @Override
+    public SQLFragment getFromSQL(String alias)
+    {
+        return getFromSQL(alias, null);
+    }
+
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> selectedColumns)
+    {
+        TableInfo wellProperties = PlateManager.get().getPlateMetadataTable(getContainer(), _userSchema.getUser());
+        // join the base assay.well table to the provisioned table
+        checkReadBeforeExecute();
+
+        Set<String> baseColumns = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
+
+        // all columns from provisioned table except lsid
+        Set<String> provisionedColumns = new CaseInsensitiveHashSet(wellProperties.getColumnNameSet());
+        provisionedColumns.remove("lsid");
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT * FROM (SELECT ");
+        String delim = "";
+        for (String col : baseColumns)
+        {
+            sql.append(delim).append("d.").append(col);
+            delim = ", ";
+        }
+
+        for (String col : provisionedColumns)
+        {
+            sql.append(delim).append(wellProperties.getColumn(col).getValueSql("p"));
+        }
+
+        sql.append(" FROM ")
+                .append(_rootTable, "d")
+                .append(" INNER JOIN ")
+                .append(wellProperties, "p").append(" ON d.lsid = p.lsid");
+        String subAlias = alias + "_wp_sub";
+        sql.append(") ").append(subAlias);
+        sql.append("\n");
+
+        // add the WHERE clause
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), subAlias, columnMap);
+        sql.append("\n").append(filterFrag).append(") ").append(alias);
+
+        return sql;
+    }
+*/
+
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new WellUpdateService(this, AssayDbSchema.getInstance().getTableInfoWell());
+        TableInfo provisionedTable = null;
+        Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
+        if (domain != null)
+            provisionedTable = StorageProvisioner.createTableInfo(domain);
+
+        return new WellUpdateService(this, AssayDbSchema.getInstance().getTableInfoWell(), provisionedTable);
+    }
+
+    protected static class WellPropertiesTable extends FilteredTable<PlateSchema>
+    {
+        public WellPropertiesTable(@NotNull Domain domain, @NotNull PlateSchema schema, @Nullable ContainerFilter cf)
+        {
+            super(StorageProvisioner.createTableInfo(domain), schema, cf);
+
+            for (ColumnInfo col : getRealTable().getColumns())
+            {
+                var columnInfo = wrapColumn(col);
+                if (col.getName().equals("Lsid"))
+                {
+                    columnInfo.setHidden(true);
+                    columnInfo.setKeyField(true);
+                }
+
+                addWrapColumn(col);
+//                addColumn(columnInfo);
+            }
+        }
+
+        @Override
+        public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+        {
+            return _userSchema.getContainer().hasPermission(user, perm);
+        }
     }
 
     protected static class WellUpdateService extends DefaultQueryUpdateService
     {
-        public WellUpdateService(TableInfo queryTable, TableInfo dbTable)
+        private TableInfo _provisionedTable;
+        public WellUpdateService(TableInfo queryTable, TableInfo dbTable, TableInfo provisionedTable)
         {
             super(queryTable, dbTable);
+            _provisionedTable = provisionedTable;
         }
 
         @Override
@@ -262,8 +461,13 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(wellTable, lsidGenerator, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, wellTable, container)
-                    .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"))
-                    .setVocabularyProperties(PropertyService.get().findVocabularyProperties(container, nameMap.keySet()));
+                    .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
+                    //.setVocabularyProperties(PropertyService.get().findVocabularyProperties(container, nameMap.keySet()));
+            if (_provisionedTable != null)
+            {
+                dib = new TableInsertDataIteratorBuilder(dib, _provisionedTable, container)
+                        .setKeyColumns(new CaseInsensitiveHashSet("Lsid"));
+            }
             dib = LoggingDataIterator.wrap(dib);
             dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption(), user, container);
 
@@ -291,6 +495,39 @@ public class WellTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 }
             }
             return super.updateRow(user, container, row, oldRow);
+        }
+
+        @Override
+        protected Map<String, Object> _update(User user, Container c, Map<String, Object> row, Map<String, Object> oldRow, Object[] keys) throws SQLException, ValidationException
+        {
+            // LSID was stripped by super.updateRows() and is needed to insert into the well provisioned table
+            String lsid = (String)oldRow.get("lsid");
+            if (lsid == null)
+                throw new ValidationException("lsid required to update row");
+
+            // update assay.well
+            Map<String, Object> ret = new CaseInsensitiveHashMap<>(super._update(user, c, row, oldRow, keys));
+
+            // update provisioned table
+            if (_provisionedTable != null)
+            {
+                keys = new Object[] {lsid};
+                ret.putAll(Table.update(user, _provisionedTable, row, _provisionedTable.getColumn("lsid"), keys, null, Level.DEBUG));
+            }
+
+            ret.put("lsid", lsid);
+            return ret;
+        }
+
+        @Override
+        protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
+        {
+            Object[] keys = getKeys(row, c);
+            Table.delete(getDbTable(), keys);
+
+            // delete the provisioned table row
+            if (_provisionedTable != null)
+                Table.delete(_provisionedTable, keys);
         }
     }
 }

@@ -30,6 +30,7 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
+import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.data.Container;
@@ -163,6 +164,8 @@ public class AssayModule extends SpringModule
 
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayDesigns, new AssayDesignGenerator.Driver());
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayRunData, new AssayRunDataGenerator.Driver());
+
+        PropertyService.get().registerDomainKind(new PlateMetadataDomainKind());
     }
 
     @Override

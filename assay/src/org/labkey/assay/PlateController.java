@@ -45,6 +45,8 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -60,7 +62,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
@@ -671,7 +672,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignVocabularyPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
     {
         @Override
@@ -714,7 +715,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignVocabularyPermission.class)
+    @RequiresPermission(AdminPermission.class)
     public static class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
     {
         @Override
@@ -786,7 +787,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignVocabularyPermission.class)
+    @RequiresPermission(AddUserPermission.class)
     public static class EnsurePlateMetadataDomainAction extends MutatingApiAction<Object>
     {
         @Override
