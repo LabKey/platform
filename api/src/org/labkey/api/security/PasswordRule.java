@@ -24,7 +24,6 @@ import java.util.Collection;
 
 public enum PasswordRule
 {
-    Weak(new WeakPasswordValidator()),
     Good(new GoodPasswordValidator()),
     Strong(new StrongPasswordValidator());
 
