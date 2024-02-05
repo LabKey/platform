@@ -25,8 +25,6 @@ import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -39,7 +37,6 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -65,7 +62,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     public static final String WELL_PROPERTIES_TABLE = "WellProperties";
     private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
     private static final Set<String> ignoredColumns = new CaseInsensitiveHashSet();
-    private Map<FieldKey, DomainProperty> _vocabularyFieldMap = new HashMap<>();
     private Map<FieldKey, ColumnInfo> _provisionedFieldMap = new HashMap<>();
 
     static
@@ -106,11 +102,13 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         positionCol.setUserEditable(false);
         addColumn(positionCol);
 
-        //addVocabularyDomains();
         addWellProperties();
-        //addWellProperties2();
     }
 
+    /**
+     * Adds a FK to the provisioned properties table, this is done in order to expose the fields in a similar
+     * way that vocabulary domain properties were exposed in the table.
+     */
     private void addWellProperties()
     {
         Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
@@ -130,7 +128,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
 
             // add fields from the virtual well properties table
             TableInfo tableInfo = getUserSchema().getTable(WELL_PROPERTIES_TABLE);
-            //TableInfo tableInfo = StorageProvisioner.createTableInfo(domain);
             if (tableInfo != null)
             {
                 for (var column : tableInfo.getColumns())
@@ -146,7 +143,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
     }
 
-    private void addWellProperties2()
+    /**
+     * Alternatively, if we wish to join the provisioned fields into the well table without introducing another hierarchy
+     * level we just wrap the fields. This also requires the code : getFromSql to be uncommented to handle the join.
+     */
+    private void addWellPropertiesFlattened()
     {
         Domain wellDomain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
         FieldKey lsidFieldKey = FieldKey.fromParts("lsid");
@@ -166,52 +167,11 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
             PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
             if (dp != null && pd != null)
-            {
                 defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
-                wrapped.setFieldKey(FieldKey.fromParts("Properties", dp.getName()));
-            }
 
             addColumn(wrapped);
             defaultVisibleColumns.add(col.getFieldKey());
         }
-    }
-
-    private void addVocabularyDomains()
-    {
-        // for now there is just a single domain supported
-        Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
-        if (domain != null)
-        {
-            String colName = "Properties";
-            var col = addVocabularyDomainColumns(domain, colName);
-            if (col != null)
-            {
-                col.setLabel("Plate Metadata");
-                col.setDescription("Custom properties associated with the plate well");
-            }
-
-            for (DomainProperty field : domain.getProperties())
-            {
-                // resolve vocabulary fields by property URI and field key
-                _vocabularyFieldMap.put(FieldKey.fromParts("properties", field.getName()), field);
-                _vocabularyFieldMap.put(FieldKey.fromParts(field.getPropertyURI()), field);
-            }
-        }
-    }
-
-    private MutableColumnInfo addVocabularyDomainColumns(Domain domain, @NotNull String lookupColName)
-    {
-        var lsidColumn = _rootTable.getColumn(FieldKey.fromParts("lsid"));
-        if (lsidColumn == null)
-            return null;
-
-        var colProperty = wrapColumn(lookupColName, lsidColumn);
-        colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
-        colProperty.setUserEditable(false);
-        colProperty.setIsUnselectable(true);
-        colProperty.setCalculated(true);
-
-        return addColumn(colProperty);
     }
 
     @Override
@@ -221,42 +181,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
     }
 
     /**
-     * Override to resolve Property URIs for vocabulary columns during update. Consider adding the
-     * capability to resolve vocabulary columns by field key or name.
-     */
-/*
-    @Override
-    protected ColumnInfo resolveColumn(String name)
-    {
-        ColumnInfo lsidCol = getColumn("LSID", false);
-        if (lsidCol != null)
-        {
-            // Attempt to resolve the column name as a property URI if it looks like a URI
-            FieldKey fieldKey = FieldKey.decode(name);
-            if (_vocabularyFieldMap.containsKey(fieldKey))
-            {
-                DomainProperty field = _vocabularyFieldMap.get(fieldKey);
-
-                // mark vocab propURI col as Voc column
-                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(field.getPropertyURI(), getContainer());
-                if (pd != null)
-                {
-                    PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
-                    String label = pc.getLabel();
-                    pc.setFieldKey(fieldKey);
-                    pc.setLabel(label);
-
-                    return pc;
-                }
-            }
-        }
-        return super.resolveColumn(name);
-    }
-*/
-
-    /**
-     * Override to resolve Property URIs for vocabulary columns during update. Consider adding the
-     * capability to resolve vocabulary columns by field key or name.
+     * Override to resolve Properties/name FieldKeys for the well properties columns.
      */
     @Override
     protected ColumnInfo resolveColumn(String name)
@@ -265,27 +190,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         if (_provisionedFieldMap.containsKey(fieldKey))
         {
             return _provisionedFieldMap.get(fieldKey);
-/*
-            ColumnInfo col = _provisionedFieldMap.get(fieldKey);
-            Domain wellDomain = PlateManager.get().getPlateMetadataDomain(getContainer(), _userSchema.getUser());
-            Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
-            FieldKey lsidFieldKey = FieldKey.fromParts("lsid");
-
-            var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
-            if (col.isHidden())
-                wrapped.setHidden(true);
-
-            // Copy the property descriptor settings to the wrapped column.
-            String propertyURI = col.getPropertyURI();
-            DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
-            PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
-            if (dp != null && pd != null)
-            {
-                defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
-                wrapped.setFieldKey(FieldKey.fromParts("Properties", dp.getName()));
-            }
-            return wrapped;
-*/
         }
         return super.resolveColumn(name);
     }
@@ -304,20 +208,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
         return columnInfo;
     }
-
-/*
-    @Override
-    public ObjectUriType getObjectUriType()
-    {
-        return schemaColumn;
-    }
-
-    @Override
-    public @Nullable String getObjectURIColumnName()
-    {
-        return "lsid";
-    }
-*/
 
     @Override
     public List<FieldKey> getDefaultVisibleColumns()
@@ -388,12 +278,14 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         return new WellUpdateService(this, AssayDbSchema.getInstance().getTableInfoWell(), provisionedTable);
     }
 
+    /**
+     * Virtual table which wraps the well properties provisioned table
+     */
     protected static class WellPropertiesTable extends FilteredTable<PlateSchema>
     {
         public WellPropertiesTable(@NotNull Domain domain, @NotNull PlateSchema schema, @Nullable ContainerFilter cf)
         {
             super(StorageProvisioner.createTableInfo(domain), schema, cf);
-
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 var columnInfo = wrapColumn(col);
@@ -404,7 +296,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                 }
 
                 addWrapColumn(col);
-//                addColumn(columnInfo);
             }
         }
 
@@ -462,7 +353,6 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(wellTable, lsidGenerator, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, wellTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
-                    //.setVocabularyProperties(PropertyService.get().findVocabularyProperties(container, nameMap.keySet()));
             if (_provisionedTable != null)
             {
                 dib = new TableInsertDataIteratorBuilder(dib, _provisionedTable, container)
