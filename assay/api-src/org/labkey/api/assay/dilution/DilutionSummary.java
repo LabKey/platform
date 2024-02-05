@@ -16,18 +16,18 @@
 
 package org.labkey.api.assay.dilution;
 
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.nab.Luc5Assay;
+import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.WellData;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.WellData;
-import org.labkey.api.assay.plate.WellGroup;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * User: brittp
@@ -46,7 +47,7 @@ public class DilutionSummary implements Serializable
 {
     private final List<WellGroup> _sampleGroups;
     private final WellGroup _firstGroup;
-    private final Map<StatsService.CurveFitType, DilutionCurve> _dilutionCurve = new HashMap<>() ;
+    private final Map<StatsService.CurveFitType, DilutionCurve> _dilutionCurve = new ConcurrentHashMap<>() ;
     private final Luc5Assay _assay;
     private final String _lsid;
     private final StatsService.CurveFitType _curveFitType;
@@ -169,7 +170,7 @@ public class DilutionSummary implements Serializable
         return _assay.getPercent(getDataToSampleMap().get(data), data);
     }
 
-    private DilutionCurve getDilutionCurve(StatsService.CurveFitType type) throws FitFailedException
+    private synchronized DilutionCurve getDilutionCurve(StatsService.CurveFitType type) throws FitFailedException
     {
         if (!_dilutionCurve.containsKey(type))
         {
