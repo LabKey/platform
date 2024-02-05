@@ -15,8 +15,7 @@
  */
 package org.labkey.api.security.impersonation;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
@@ -33,12 +32,11 @@ public abstract class AbstractImpersonationContext implements ImpersonationConte
 {
     private final User _adminUser;
     private final @Nullable Container _project;
+    @JsonIgnore // Can't be handled by remote pipelines
     private final ActionURL _returnURL;
     private final ImpersonationContextFactory _factory;
 
-    @JsonCreator
-    protected AbstractImpersonationContext(@JsonProperty("_adminUser") User adminUser, @JsonProperty("_project") @Nullable Container project,
-                                           @JsonProperty("_returnURL") ActionURL returnURL, @JsonProperty("_factory") ImpersonationContextFactory factory)
+    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, ActionURL returnURL, ImpersonationContextFactory factory)
     {
         _adminUser = adminUser;
         _project = project;
