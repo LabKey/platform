@@ -1833,7 +1833,7 @@ public class PlateManager implements PlateService
                         throw new ValidationException("Failed to create plate set. Plate Type (" + plate.plateType + ") is invalid.");
 
                     // TODO: Write a cheaper plate create/save for multiple plates
-                    createAndSavePlate(container, user, plateType, plate.name, plateSetId, null, null);
+                    createAndSavePlate(container, user, plateType, plate.name, plateSetId, TsvPlateLayoutHandler.TYPE, null);
                 }
             }
 
