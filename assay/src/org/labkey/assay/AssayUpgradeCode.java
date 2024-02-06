@@ -26,11 +26,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -331,6 +333,45 @@ public class AssayUpgradeCode implements UpgradeCode
                     }
                 }
                 _log.info("Successfully updated " + plateSetsUpgraded + " plate set IDs");
+            }
+            tx.commit();
+        }
+    }
+
+    /**
+     * Called from assay-24.002-24.003.sql to delete the vocabulary domains associated with
+     * plate metadata. This upgrade transitions to using a provisioned table approach. Since the plate features are
+     * still under an experimental flag we won't worry about upgrading the domains.
+     */
+    public static void deletePlateVocabDomains(ModuleContext ctx) throws Exception
+    {
+        if (ctx.isNewInstall())
+            return;
+
+        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
+        {
+            // just truncate the plate to custom property mappings
+            Table.truncate(AssayDbSchema.getInstance().getTableInfoPlateProperty());
+
+            for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
+            {
+                if (container != null)
+                {
+                    Domain domain = PlateManager.get().getPlateMetadataVocabDomain(container, User.getAdminServiceUser());
+                    if (domain != null)
+                    {
+                        // delete the plate metadata values
+                        SQLFragment sql = new SQLFragment("SELECT Lsid FROM ")
+                                .append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                                .append(" WHERE Container = ?")
+                                .add(container);
+                        OntologyManager.deleteOntologyObjects(AssayDbSchema.getInstance().getSchema(), sql, container);
+
+                        // delete the domain
+                        domain.delete(User.getAdminServiceUser());
+                    }
+                }
             }
             tx.commit();
         }

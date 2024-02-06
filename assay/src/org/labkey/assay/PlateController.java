@@ -67,6 +67,7 @@ import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -552,6 +553,7 @@ public class PlateController extends SpringActionController
         private Integer _plateType;
         private Integer _plateSetId;
         private List<Map<String, Object>> _data = new ArrayList<>();
+        private String _assayType = TsvPlateLayoutHandler.TYPE;
 
         public String getName()
         {
@@ -573,11 +575,14 @@ public class PlateController extends SpringActionController
             return _data;
         }
 
+        public String getAssayType()
+        {
+            return _assayType;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
-            ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
-
             if (json.has("name"))
                 _name = json.getString("name");
 
@@ -586,6 +591,9 @@ public class PlateController extends SpringActionController
 
             if (json.has("plateType"))
                 _plateType = json.getInt("plateType");
+
+            if (json.has("assayType"))
+                _assayType = json.getString("assayType");
 
             if (json.has("data"))
             {
@@ -627,7 +635,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), null, form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), form.getAssayType(), form.getData());
                 return success(plate);
             }
             catch (Exception e)
