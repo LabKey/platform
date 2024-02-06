@@ -327,6 +327,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     if (f < lineFields[0].length)
                     {
                         String name = lineFields[0][f];
+                        name = name.replaceAll("[\\t\\n\\r]+"," ");
                         if (_columnInfoMap.containsKey(name))
                         {
                             //preferentially use this class if it matches
@@ -411,7 +412,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             String[] headers = lineFields[_skipLines - 1];
             for (int f = 0; f < nCols; f++)
-                colDescs[f].name = (f >= headers.length || StringUtils.isBlank(headers[f])) ? getDefaultColumnName(f) : headers[f].trim();
+                colDescs[f].name = (f >= headers.length || StringUtils.isBlank(headers[f])) ? getDefaultColumnName(f) : headers[f].trim().replaceAll("[\\t\\n\\r]+"," ");
         }
         else
         {
