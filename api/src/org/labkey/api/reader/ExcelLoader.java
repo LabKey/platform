@@ -766,6 +766,7 @@ public class ExcelLoader extends DataLoader
 
             Map<String, Object> firstRow = data.get(0);
             assertEquals(96, firstRow.get("scan"));
+            assertEquals(92, firstRow.get("scan First"));
             assertFalse((boolean)firstRow.get("accurateMZ"));
             assertEquals("description", firstRow.get("description"));
         }

@@ -266,7 +266,7 @@ public class CoreWarningProvider implements WarningProvider
                     {
                         if (!domain.equals("Catalina"))
                             continue;
-                        final var instances = server.queryNames(new ObjectName("Catalina:j2eeType=WebModule,*"), null);
+                        final var instances = server.queryNames(new ObjectName("Tomcat:j2eeType=WebModule,*"), null);
                         for (ObjectName each : instances)
                             result.add(substringAfterLast(each.getKeyProperty("name"), '/'));
                     }
