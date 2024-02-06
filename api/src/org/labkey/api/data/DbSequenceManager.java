@@ -257,8 +257,7 @@ public class DbSequenceManager
         if (null != rowId)
         {
             TableInfo tinfo = getTableInfo();
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ? AND RowId = ?");
-            sql.add(c);
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE RowId = ?");
             sql.add(rowId);
 
             execute(tinfo, sql);
@@ -272,9 +271,7 @@ public class DbSequenceManager
         if (!rowIds.isEmpty())
         {
             TableInfo tinfo = getTableInfo();
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE Container = ?");
-            sql.add(c);
-            sql.append(" AND RowId");
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(tinfo.getSelectName()).append(" WHERE RowId");
             sql = dialect.appendInClauseSql(sql, rowIds);
 
             execute(tinfo, sql);
@@ -328,9 +325,8 @@ public class DbSequenceManager
 
         addValueSql(sql, tinfo, sequence);
 
-        sql.append(") + ? WHERE Container = ? AND RowId = ?");
+        sql.append(") + ? WHERE RowId = ?");
         sql.add(count);
-        sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
         // Reselect the current value
@@ -359,8 +355,7 @@ public class DbSequenceManager
         if (dialect.isPostgreSQL())
         {
             // SELECT with FOR UPDATE locks the row to ensure a true atomic update
-            SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE Container = ? AND RowId = ? FOR UPDATE");
-            selectForUpdate.add(sequence.getContainer());
+            SQLFragment selectForUpdate = new SQLFragment("SELECT Value FROM ").append(tinfo, "seq").append(" WHERE RowId = ? FOR UPDATE");
             selectForUpdate.add(sequence.getRowId());
             sql.append("(").append(selectForUpdate).append(")");
         }
@@ -376,9 +371,8 @@ public class DbSequenceManager
     {
         TableInfo tinfo = getTableInfo();
 
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ? AND Value < ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE RowId = ? AND Value < ?");
         sql.add(minimum);
-        sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
         sql.add(minimum);
 
@@ -396,9 +390,8 @@ public class DbSequenceManager
     {
         TableInfo tinfo = getTableInfo();
 
-        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE Container = ? AND RowId = ?");
+        SQLFragment sql = new SQLFragment("UPDATE ").append(tinfo.getSelectName()).append(" SET Value = ? WHERE RowId = ?");
         sql.add(value);
-        sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
         // Add locking appropriate to this dialect

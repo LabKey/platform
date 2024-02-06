@@ -18,7 +18,9 @@ package org.labkey.core;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveArrayListValuedMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -29,6 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.module.ModuleContext;
@@ -48,6 +51,7 @@ import org.labkey.core.login.DbLoginManager;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -200,5 +204,98 @@ public class CoreUpgradeCode implements UpgradeCode
         UpgradeUtils.uniquifyValues(name, ownerId, new SimpleFilter(type.getFieldKey(), "g"), new Sort("UserId"), false, false);
         UpgradeUtils.uniquifyValues(name, ownerId, new SimpleFilter(type.getFieldKey(), "u"), new Sort("UserId"), false, false);
         UpgradeUtils.uniquifyValues(name, ownerId, new SimpleFilter(type.getFieldKey(), "m"), new Sort("UserId"), false, false);
+    }
+
+    /**
+     * Remove WithCounter (SampleNameGenCounter-) core.DBSequences records with case-insensitive names, keep the one with the largest Value
+     */
+    private static void removeDuplicateWithCountSeqs(Container container)
+    {
+        TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
+
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT RowId, Name, Value \n")
+                .append("FROM ").append(tableInfo, "seq")
+                .append(" WHERE seq.NAME LIKE 'SampleNameGenCounter-%' AND seq.Container = ?").add(container)
+                .append(" ORDER BY Value DESC");
+
+        @NotNull Map<String, Object>[] results = new SqlSelector(tableInfo.getSchema(), sql).getMapArray();
+        if (results.length > 0)
+        {
+            Set<String> seqs = new CaseInsensitiveHashSet();
+            Set<Integer> toRemove = new HashSet<>();
+            for (Map<String, Object> result : results)
+            {
+                String seqName = (String) result.get("Name");
+                Long seqValue = (Long) result.get("Value");
+                Integer seqRowId = (Integer) result.get("RowId");
+
+                if (seqs.contains(seqName)) // case-insensitive duplicates found
+                {
+                    LOG.warn("A duplicate withCounter sequence '" + seqName + "' with value '" + seqValue + "' is removed.");
+                    toRemove.add(seqRowId);
+                }
+                else
+                    seqs.add(seqName);
+
+            }
+
+            if (!toRemove.isEmpty())
+            {
+                SQLFragment deleteSql = new SQLFragment("DELETE FROM ").append(tableInfo).append(" WHERE RowId");
+                deleteSql = tableInfo.getSqlDialect().appendInClauseSql(deleteSql, toRemove);
+                new SqlExecutor(tableInfo.getSchema()).execute(deleteSql);
+            }
+        }
+    }
+
+    private static void toLowerCaseWithCountSeqs(Container container)
+    {
+        TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
+        SQLFragment toLowerSql = new SQLFragment("UPDATE ").append(tableInfo)
+                .append(" SET Name = LOWER(Name) ")
+                .append(" WHERE Container = ? AND NAME LIKE 'SampleNameGenCounter-%'")
+                .add(container);
+        new SqlExecutor(tableInfo.getSchema()).execute(toLowerSql);
+    }
+
+    /**
+     * Called from core-24.000-24.001.sql to make withCounter naming pattern case-insensitive
+     * - For existing duplicate, only the one with the largest 'Value' is retained, to minimize naming conflict.
+     * - All withCounter sequence name is then updated to lower case
+     */
+    public static void makeWithCounterCaseInsensitive(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
+
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT DISTINCT Container\n")
+                .append("FROM ").append(tableInfo, "seq")
+                .append(" WHERE seq.NAME LIKE 'SampleNameGenCounter-%'");
+
+        @NotNull List<String> containers = new SqlSelector(tableInfo.getSchema(), sql).getArrayList(String.class);
+        if (containers.isEmpty())
+            return;
+
+        for (String containerId : containers)
+        {
+            Container container = ContainerManager.getForId(containerId);
+            if (container == null)
+            {
+                LOG.warn("Container doesn't exist: " + containerId);
+                continue;
+            }
+
+            LOG.info("** starting upgrade withCounter DBSequences in container: " + container.getPath());
+
+            removeDuplicateWithCountSeqs(container);
+
+            toLowerCaseWithCountSeqs(container);
+
+            LOG.info("** finished upgrade withCounter DBSequences for container: " + container.getPath());
+        }
     }
 }

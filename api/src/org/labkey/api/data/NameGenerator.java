@@ -2295,7 +2295,7 @@ public class NameGenerator
                 {
                     if (part instanceof CounterExpressionPart counterExpressionPart)
                     {
-                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix,  (s) -> new HashMap<>());
+                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix,  (s) -> new CaseInsensitiveHashMap<>());
                         return nullFilter(counterExpressionPart.getValue(context, counterSequences), part);
                     }
                     return nullFilter(part.getValue(context), part);
@@ -2314,7 +2314,7 @@ public class NameGenerator
                     String value;
                     if (part instanceof CounterExpressionPart counterExpressionPart)
                     {
-                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix, (s) -> new HashMap<>());
+                        Map<String, DbSequence> counterSequences = prefixCounterSequences == null ? null : prefixCounterSequences.computeIfAbsent(_counterSeqPrefix, (s) -> new CaseInsensitiveHashMap<>());
                         value = nullFilter(counterExpressionPart.getValue(context, counterSequences), part);
                     }
                     else
@@ -2384,6 +2384,52 @@ public class NameGenerator
             return this.getValue(map, null);
         }
 
+        private DbSequence getCounterSeq(String prefixRaw, @Nullable Map<String, DbSequence> counterSequences, boolean noCache)
+        {
+            String prefix = prefixRaw.trim().toLowerCase(); // Issue 49338: withCounter should be case-insensitive
+            DbSequence counterSeq = null;
+            if (noCache || !counterSequences.containsKey(prefix) || _strictIncremental)
+            {
+                long existingCount = -1;
+
+                if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                {
+                    // TODO: use DbSequence.ReclaimableDbSequence for 23.3 and investigate enabling ReclaimablePreallocateSequence in develop
+                    counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
+//                        if (_strictIncremental)
+//                            counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
+//                        else
+//                        {
+//                            // use PreallocatingSequence to handle generating multiple aliquots from the same sample
+//                            // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
+//                            counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
+//                        }
+                }
+                else
+                {
+                    if (noCache)
+                        counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
+                    else
+                        counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
+                }
+
+                long currentSeqMax = counterSeq.current();
+
+                if (_getNonConflictCountFn != null)
+                    existingCount = _getNonConflictCountFn.apply(prefix);
+
+                if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
+                    counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
+
+                if (!noCache)
+                    counterSequences.put(prefix, counterSeq);
+            }
+            else
+                counterSeq = counterSequences.get(prefix);
+
+            return counterSeq;
+        }
+
         public String getValue(Map map, @Nullable Map<String, DbSequence> counterSequences)
         {
             String prefix = _parsedNameExpression.eval(map);
@@ -2398,46 +2444,20 @@ public class NameGenerator
                 if (StringUtils.isEmpty(prefix))
                     return null;
 
-                DbSequence counterSeq = null;
+
                 boolean noCache = counterSequences == null;
-                if (noCache || !counterSequences.containsKey(prefix) || _strictIncremental)
+                DbSequence counterSeq = null;
+
+                if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
                 {
-                    long existingCount = -1;
-
-                    if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
+                    synchronized (this)
                     {
-                        // TODO: use DbSequence.ReclaimableDbSequence for 23.3 and investigate enabling ReclaimablePreallocateSequence in develop
-                        counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
-//                        if (_strictIncremental)
-//                            counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
-//                        else
-//                        {
-//                            // use PreallocatingSequence to handle generating multiple aliquots from the same sample
-//                            // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
-//                            counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
-//                        }
+                        counterSeq = getCounterSeq(prefix, counterSequences, noCache);
                     }
-                    else
-                    {
-                        if (noCache)
-                            counterSeq = DbSequenceManager.get(_container, _counterSeqPrefix + prefix, 0);
-                        else
-                            counterSeq = DbSequenceManager.getPreallocatingSequence(_container, _counterSeqPrefix + prefix, 0, 100);
-                    }
-
-                    long currentSeqMax = counterSeq.current();
-
-                    if (_getNonConflictCountFn != null)
-                        existingCount = _getNonConflictCountFn.apply(prefix);
-
-                    if (existingCount > currentSeqMax || (_startIndex - 1) > currentSeqMax)
-                        counterSeq.ensureMinimum(existingCount > (_startIndex - 1) ? existingCount : (_startIndex - 1));
-
-                    if (!noCache)
-                        counterSequences.put(prefix, counterSeq);
                 }
                 else
-                    counterSeq = counterSequences.get(prefix);
+                    counterSeq = getCounterSeq(prefix, counterSequences, noCache);
+
 
                 count = counterSeq.next();
 
