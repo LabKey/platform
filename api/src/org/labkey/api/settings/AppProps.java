@@ -135,6 +135,8 @@ public interface AppProps
 
     String getServerName();
 
+    boolean isEmbeddedTomcat();
+
     /**
      * Save the current request URL if the base server URL property is not set
      */

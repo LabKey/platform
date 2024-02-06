@@ -104,6 +104,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Mode</td><td><%=h(AdminBean.mode)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Asserts</td><td><%=h(AdminBean.asserts)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Servlet Container</td><td><%=h(AdminBean.servletContainer)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Embedded Tomcat</td><td><%=h(AppProps.getInstance().isEmbeddedTomcat())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Session Timeout (minutes)</td><td><%=h(AdminBean.sessionTimeout)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Vendor</td><td><%=h(AdminBean.javaVendor)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Name</td><td><%=h(AdminBean.javaRuntimeName)%></td></tr>
