@@ -313,15 +313,17 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
                     }
 
-                    PositionImpl well = new PositionImpl(null, String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
-                    // need to adjust the column value to be 0 based to match the template locations
-                    well.setColumn(well.getColumn()-1);
-
-                    if (positionToWell.containsKey(well))
+                    String wellLocationStr = (String) row.getOrDefault(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, null);
+                    if (wellLocationStr != null)
                     {
-                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, positionToWell.get(well).getRowId()))
+                        PositionImpl well = new PositionImpl(null, wellLocationStr);
+                        // need to adjust the column value to be 0 based to match the template locations
+                        well.setColumn(well.getColumn() - 1);
+
+                        if (positionToWell.containsKey(well))
                         {
-                            row.put(customField.getName(), customField.getValue());
+                            for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, positionToWell.get(well).getRowId()))
+                                row.put(customField.getName(), customField.getValue());
                         }
                     }
                 }
@@ -557,9 +559,10 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
             // to join plate based metadata to assay results we need to line up the incoming assay results with the
             // corresponding well on the plate used in the import
-            if (map.containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
+            String wellLocationStr = (String) map.getOrDefault(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, null);
+            if (wellLocationStr != null)
             {
-                PositionImpl pos = new PositionImpl(_container, String.valueOf(map.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
+                PositionImpl pos = new PositionImpl(_container, wellLocationStr);
                 // need to adjust the column value to be 0 based to match the template locations
                 pos.setCol(pos.getColumn() - 1);
                 if (positionToWellLsid.containsKey(pos))

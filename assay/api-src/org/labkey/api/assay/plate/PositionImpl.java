@@ -51,7 +51,7 @@ public class PositionImpl implements Position
     {
         if (rowChar < minChar || rowChar > maxChar)
         {
-            throw new IllegalArgumentException(String.format("The well row character must be between %s and %s but was %s", maxChar, maxChar, rowChar));
+            throw new IllegalArgumentException(String.format("The well row character must be between %s and %s but was %s", minChar, maxChar, rowChar));
         }
         return rowChar - 'A';
     }
