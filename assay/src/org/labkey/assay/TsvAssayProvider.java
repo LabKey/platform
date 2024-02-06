@@ -79,6 +79,9 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.PlateSetTable;
+import org.labkey.assay.plate.query.PlateTable;
 import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
 import org.labkey.assay.view.PlateMetadataDataCollector;
 import org.springframework.web.servlet.mvc.Controller;
@@ -424,10 +427,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
         if (isPlateMetadataEnabled(protocol))
         {
+            Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
+
             // for plate metadata support we need to ensure specific fields on both the run and result domains
             Domain runDomain = getRunDomain(protocol);
             if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
             {
+                ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
+
                 Optional<GWTPropertyDescriptor> plateTemplateColumn = update.getFields().stream().filter(field -> field.getName().equals(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME)).findFirst();
                 if (plateTemplateColumn.isPresent())
                 {
@@ -445,10 +452,24 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     plateTemplate.setRequired(!AssayPlateMetadataService.isExperimentalAppPlateEnabled());
                     plateTemplate.setShownInUpdateView(false);
 
-                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
                     newFields.add(plateTemplate);
-                    newFields.addAll(update.getFields());
+                }
 
+                if (!existingFields.contains(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor plateSet = new GWTPropertyDescriptor(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    plateSet.setLookupSchema(PlateSchema.SCHEMA_NAME);
+                    plateSet.setLookupQuery(PlateSetTable.NAME);
+                    plateSet.setLookupContainer(null);
+                    plateSet.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled());
+                    plateSet.setShownInUpdateView(false);
+
+                    newFields.add(plateSet);
+                }
+
+                if (!newFields.isEmpty())
+                {
+                    newFields.addAll(update.getFields());
                     update.setFields(newFields);
                 }
             }
@@ -457,7 +478,18 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
             {
                 ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
-                Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
+
+                if (!existingFields.contains(AssayResultDomainKind.PLATE_COLUMN_NAME))
+                {
+                    GWTPropertyDescriptor plate = new GWTPropertyDescriptor(AssayResultDomainKind.PLATE_COLUMN_NAME, PropertyType.INTEGER.getTypeUri());
+                    plate.setLookupSchema(PlateSchema.SCHEMA_NAME);
+                    plate.setLookupQuery(PlateTable.NAME);
+                    plate.setLookupContainer(null);
+                    plate.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled());
+                    plate.setShownInUpdateView(false);
+
+                    newFields.add(plate);
+                }
 
                 if (!existingFields.contains(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
                 {

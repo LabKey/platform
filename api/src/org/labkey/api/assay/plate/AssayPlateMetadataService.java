@@ -24,6 +24,7 @@ import java.util.Map;
 public interface AssayPlateMetadataService
 {
     String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
+    String PLATE_SET_COLUMN_NAME = "PlateSet";
     Map<AssayDataType, AssayPlateMetadataService> _handlers = new HashMap<>();
     String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
 
