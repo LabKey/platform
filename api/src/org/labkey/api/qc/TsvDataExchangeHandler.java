@@ -318,7 +318,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 if (property != null)
                 {
                     Object lsid = context.getRunProperties().get(property);
-                    rawData = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), rawData, rawPlateMetadata, protocol);
+                    rawData = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), null, rawData, rawPlateMetadata, protocol);
                 }
             }
             addToMergedMap(mergedDataMap, Map.of(dataType, rawData));

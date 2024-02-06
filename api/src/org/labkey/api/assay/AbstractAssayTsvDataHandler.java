@@ -234,9 +234,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
                     if (propertyPlateTemplate != null || propertyPlateSet != null)
                     {
-                        Object lsid = ((AssayUploadXarContext)context).getContext().getRunProperties().getOrDefault(propertyPlateTemplate, null);
+                        Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
+                        Object lsid = runProps.getOrDefault(propertyPlateTemplate, null);
                         Lsid templateLsid = lsid != null && !StringUtils.isEmpty(String.valueOf(lsid)) ? Lsid.parse(String.valueOf(lsid)) : null;
-                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, dataRows, plateMetadata, protocol);
+                        Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
+                        Integer plateSetId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, protocol);
                     }
                 }
             }

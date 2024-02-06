@@ -464,6 +464,66 @@ public class PlateManager implements PlateService
         return PlateCache.getPlate(cf, plateId);
     }
 
+    @Override
+    public @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier)
+    {
+        if (plateSetId == null)
+            throw new IllegalArgumentException("Plate set is required.");
+
+        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
+        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
+        PlateSet plateSet = getPlateSet(c, plateSetId);
+        if (plateSet == null)
+            throw new IllegalArgumentException("Plate set " + plateSetId + " not found.");
+
+        Plate plate = null;
+        if (plateIdentifier != null)
+        {
+            // first check by RowId (if the identifier is a number), then check by plateId, and finally by plate name
+            if (StringUtils.isNumeric(plateIdentifier.toString()))
+                plate = getPlate(c, Integer.parseInt(plateIdentifier.toString()));
+            if (plate == null)
+                plate = getPlate(c, plateIdentifier.toString());
+            if (plate == null)
+            {
+                Collection<Plate> plates = getPlatesForPlateSet(c, plateSetId);
+                List<Plate> matchingPlates = plates.stream().filter(p -> p.getName().equals(plateIdentifier.toString())).toList();
+                if (matchingPlates.size() == 1)
+                    plate = matchingPlates.get(0);
+                else if (matchingPlates.size() > 1)
+                    throw new IllegalArgumentException("More than one plate found with name " + plateIdentifier + " in plate set " + plateSet.getName() + ".");
+            }
+        }
+
+        if (plate != null && plate.getPlateSet() != null && !plate.getPlateSet().getRowId().equals(plateSetId))
+            throw new IllegalArgumentException("Plate " + plateIdentifier + " is not part of plate set " + plateSet.getName() + ".");
+        return plate;
+    }
+
+    public static @Nullable Container getContainerWithPlateIdentifier(ContainerFilter cf, SimpleFilter filter)
+    {
+        return _getContainerWithIdentifier(AssayDbSchema.getInstance().getTableInfoPlate(), cf, filter);
+    }
+
+    public static @Nullable Container getContainerWithPlateSetIdentifier(ContainerFilter cf, SimpleFilter filter)
+    {
+        return _getContainerWithIdentifier(AssayDbSchema.getInstance().getTableInfoPlateSet(), cf, filter);
+    }
+
+    private static @Nullable Container _getContainerWithIdentifier(TableInfo tableInfo, ContainerFilter cf, SimpleFilter filter)
+    {
+        filter.addClause(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
+        List<String> containers = new TableSelector(tableInfo, Collections.singleton("Container"), filter, null).getArrayList(String.class);
+
+        if (containers.size() > 1)
+            throw new IllegalStateException("More than one " + tableInfo.getName() + " found that matches the filter.");
+
+        if (containers.size() == 1)
+            return ContainerManager.getForId(containers.get(0));
+
+        return null;
+    }
+
     /**
      * Helper to create container filters to support assay import using cross folder
      * plates
@@ -520,6 +580,11 @@ public class PlateManager implements PlateService
     private Collection<Plate> getPlates(Container c)
     {
         return PlateCache.getPlates(c);
+    }
+
+    private Collection<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    {
+        return PlateCache.getPlatesForPlateSet(c, plateSetId);
     }
 
     @Override

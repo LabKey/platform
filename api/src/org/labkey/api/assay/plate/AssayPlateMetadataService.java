@@ -73,7 +73,8 @@ public interface AssayPlateMetadataService
      *
      * @return the merged rows
      */
-    List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
+    List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, Integer plateSetId,
+                                                 List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
                                                  ExpProtocol protocol) throws ExperimentException;
 
     /**
