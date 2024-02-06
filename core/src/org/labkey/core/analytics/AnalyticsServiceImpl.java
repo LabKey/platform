@@ -34,6 +34,7 @@ import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,6 +45,9 @@ import java.util.Set;
 public class AnalyticsServiceImpl implements AnalyticsService
 {
     private static final String SEPARATOR = ",";
+    private static final String GOOGLE_TAG_MANAGER_URL = "https://www.googletagmanager.com";
+    private static final String ANALYTICS_CSP_KEY_1 = AnalyticsServiceImpl.class.getName() + "_1";
+    private static final String ANALYTICS_CSP_KEY_2 = AnalyticsServiceImpl.class.getName() + "_2";
 
     public static AnalyticsServiceImpl get()
     {
@@ -109,6 +113,18 @@ public class AnalyticsServiceImpl implements AnalyticsService
         }
     }
 
+    public void resetCSP()
+    {
+        ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(ANALYTICS_CSP_KEY_1);
+        ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(ANALYTICS_CSP_KEY_2);
+
+        if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
+        {
+            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY_1, GOOGLE_TAG_MANAGER_URL);
+            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY_2, "https://www.google-analytics.com");
+        }
+    }
+
     private String getProperty(AnalyticsProperty property)
     {
         Map<String, String> properties = PropertyManager.getProperties(PROP_CATEGORY);
@@ -151,6 +167,8 @@ public class AnalyticsServiceImpl implements AnalyticsService
             storeStringValue(AnalyticsProperty.trackingStatus.toString(), statusString);
             storeStringValue(AnalyticsProperty.measurementId.toString(), StringUtils.trimToNull(measurementId));
             storeStringValue(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
+
+            get().resetCSP();
 
             save();
             writeAuditLogEvent(c, user);
@@ -231,7 +249,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         if (null == url)
             return "";
 
-        String ga4JS = "https://www.googletagmanager.com/gtag/js?id=" + getMeasurementId();
+        String ga4JS = GOOGLE_TAG_MANAGER_URL + "/gtag/js?id=" + getMeasurementId();
         String controller = url.getController();
         String action = url.getAction();
         Boolean sendPageView = true;
