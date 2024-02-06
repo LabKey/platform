@@ -1111,6 +1111,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             String labkeyContextPath = AppProps.getInstance().getContextPath();
             results.put("webappContextPath", labkeyContextPath);
+            results.put("embeddedTomcat", AppProps.getInstance().isEmbeddedTomcat());
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
             if (labkeyContextPath.startsWith("/"))
