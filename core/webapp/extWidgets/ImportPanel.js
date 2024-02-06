@@ -4,9 +4,9 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresScript("/extWidgets/ExcelUploadPanel.js");
-LABKEY.requiresScript("/extWidgets/Ext4FormPanel.js");
-
+/*
+ * NOTE: ExcelUploadPanel.js and Ext4FormPanel.js are required for this component
+ */
 Ext4.define('LABKEY.ext.ImportPanel', {
     extend: 'Ext.tab.Panel',
     initComponent: function(){
