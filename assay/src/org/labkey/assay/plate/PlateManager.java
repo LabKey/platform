@@ -978,7 +978,7 @@ public class PlateManager implements PlateService
         new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
 
         // delete any plate metadata values from the provisioned table
-        TableInfo provisionedTable = getPlateMetadataTable(container, User.getSearchUser());
+        TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
         if (provisionedTable != null)
         {
             SQLFragment sql2 = new SQLFragment("DELETE FROM ").append(provisionedTable, "")
@@ -1044,7 +1044,7 @@ public class PlateManager implements PlateService
         new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
 
         // delete any plate metadata values from the provisioned table
-        TableInfo provisionedTable = getPlateMetadataTable(container, User.getSearchUser());
+        TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
         if (provisionedTable != null)
         {
             SQLFragment sql2 = new SQLFragment("DELETE FROM ").append(provisionedTable, "")

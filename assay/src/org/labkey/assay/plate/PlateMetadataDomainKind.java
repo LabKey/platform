@@ -43,7 +43,14 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
                 "created",
                 "createdBy",
                 "modified",
-                "modifiedBy"
+                "modifiedBy",
+                "container",
+                "value",
+                "dilution",
+                "plateId",
+                "row",
+                "col",
+                "sampleId"
         ));
     }
 
