@@ -260,7 +260,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from core-24.000-24.001.sql to make withCounter naming pattern case-insensitive
+     * Called from core-24.001-24.002.sql to make withCounter naming pattern case-insensitive
      * - For existing duplicate, only the one with the largest 'Value' is retained, to minimize naming conflict.
      * - All withCounter sequence name is then updated to lower case
      */
