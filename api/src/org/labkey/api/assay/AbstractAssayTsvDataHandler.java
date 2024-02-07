@@ -229,9 +229,16 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                 ? svc.parsePlateMetadata(plateMetadataFile)
                                 : rawPlateMetadata;
                     }
+
                     Domain runDomain = provider.getRunDomain(protocol);
                     DomainProperty propertyPlateTemplate = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
                     DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
+
+                    if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && propertyPlateSet == null)
+                    {
+                        throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
+                    }
+
                     if (propertyPlateTemplate != null || propertyPlateSet != null)
                     {
                         Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
