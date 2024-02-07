@@ -2231,7 +2231,25 @@ boxPlot.render();
                                 yLeft: config.properties.mean
                             }
                         }));
-                        // Are we OK suppressing the 1x and 2x bars for all use cases?
+                        if (config.properties.hideSDLines !== true) {
+                            config.layers.push(new LABKEY.vis.Layer({
+                                geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, width: barWidth}),
+                                data: meanStdDevData,
+                                aes: {
+                                    error: function(row){return row[config.properties.stdDev] * 2;},
+                                    yLeft: config.properties.mean
+                                }
+                            }));
+
+                            config.layers.push(new LABKEY.vis.Layer({
+                                geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, width: barWidth}),
+                                data: meanStdDevData,
+                                aes: {
+                                    error: function(row){return row[config.properties.stdDev];},
+                                    yLeft: config.properties.mean
+                                }
+                            }));
+                        }
                     }
                     config.layers.push(new LABKEY.vis.Layer({
                         geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'darkgrey', width: barWidth, topOnly: true}),
