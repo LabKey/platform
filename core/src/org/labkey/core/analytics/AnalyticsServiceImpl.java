@@ -46,8 +46,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 {
     private static final String SEPARATOR = ",";
     private static final String GOOGLE_TAG_MANAGER_URL = "https://www.googletagmanager.com";
-    private static final String ANALYTICS_CSP_KEY_1 = AnalyticsServiceImpl.class.getName() + "_1";
-    private static final String ANALYTICS_CSP_KEY_2 = AnalyticsServiceImpl.class.getName() + "_2";
+    private static final String ANALYTICS_CSP_KEY = AnalyticsServiceImpl.class.getName();
 
     public static AnalyticsServiceImpl get()
     {
@@ -115,13 +114,11 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
     public void resetCSP()
     {
-        ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(ANALYTICS_CSP_KEY_1);
-        ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(ANALYTICS_CSP_KEY_2);
+        ContentSecurityPolicyFilter.unregisterAllowedConnectionSource(ANALYTICS_CSP_KEY);
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
-            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY_1, GOOGLE_TAG_MANAGER_URL);
-            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY_2, "https://www.google-analytics.com");
+            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY, GOOGLE_TAG_MANAGER_URL, "https://www.google-analytics.com");
         }
     }
 
