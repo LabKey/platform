@@ -55,8 +55,6 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 /**
  * Gets the sample-specific values from user-provided information when creating child samples from an existing set
  * of parents.
- * User: jeckels
- * Date: Oct 3, 2007
  */
 public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
@@ -255,5 +253,4 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
             return Collections.singletonList(_domainProperties.get(0));
         }
     }
-
 }
