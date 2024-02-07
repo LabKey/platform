@@ -128,9 +128,10 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from prop-23.008-23.009.sql to explicitly set the default database authentication properties to the old
-     * defaults (Strength = Weak, Expiration = Never) on servers where the strength property has never been saved. This
-     * ensures that these existing servers don't switch to the new default, Strength = Strong, on upgrade to 23.11.
+     * Called from prop-23.008-23.009.sql to explicitly set the default database authentication properties to
+     * Strength = Good, Expiration = Never on existing servers where the strength property has never been saved
+     * (and therefore would have defaulted to Strength = Weak, which no longer exists). This ensures that these
+     * servers don't switch to the new default, Strength = Strong, on upgrade.
      */
     @SuppressWarnings("unused")
     public static void saveNullStrengthAsWeak(ModuleContext context)
@@ -143,9 +144,9 @@ public class CoreUpgradeCode implements UpgradeCode
         String strength = properties.get(DbLoginManager.Key.Strength.toString());
         if (null == strength)
         {
-            LOG.info("Password strength has not been saved; setting to Weak, the previous default value.");
+            LOG.info("Password strength has not been saved; setting to Good.");
             SaveDbLoginPropertiesForm form = new SaveDbLoginPropertiesForm();
-            form.setStrength(PasswordRule.Weak.toString());
+            form.setStrength(PasswordRule.Good.toString());
             form.setExpiration(properties.getOrDefault(DbLoginManager.Key.Expiration.toString(), PasswordExpiration.Never.toString()));
             DbLoginManager.saveProperties(context.getUpgradeUser(), form);
         }

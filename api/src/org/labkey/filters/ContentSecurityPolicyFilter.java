@@ -18,8 +18,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -108,7 +111,7 @@ public class ContentSecurityPolicyFilter implements Filter
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
     private static final String CONTENT_SECURITY_POLICY_HEADER_NAME = "Content-Security-Policy";
     private static final String CONTENT_SECURITY_POLICY_REPORT_ONLY_HEADER_NAME = "Content-Security-Policy-Report-Only";
-    private static final Map<String, String> allowedConnectionSources = new ConcurrentHashMap<>();
+    private static final Map<String, List<String>> allowedConnectionSources = new ConcurrentHashMap<>();
     private static String connectionSrc = "";
 
     private StringExpression policyExpression = null;
@@ -200,13 +203,13 @@ public class ContentSecurityPolicyFilter implements Filter
     /**
      * Return concatenated list of allowed connection hosts
      */
-    private static String getAllowedConnectionsHeader(Collection<String> allowedConnectionSources)
+    private static String getAllowedConnectionsHeader(Collection<List<String>> allowedConnectionSources)
     {
         //Remove substitution parameter if no sources are registered
         if (allowedConnectionSources.isEmpty())
             return "";
 
-        return allowedConnectionSources.stream().distinct().collect(Collectors.joining(" "));
+        return allowedConnectionSources.stream().flatMap(Collection::stream).distinct().collect(Collectors.joining(" "));
     }
 
     public static String getScriptNonceHeader(HttpServletRequest request)
@@ -224,9 +227,9 @@ public class ContentSecurityPolicyFilter implements Filter
 
     private static final SecureRandom rand = new SecureRandom();
 
-    public static void registerAllowedConnectionSource(String key, String allowedUrl)
+    public static void registerAllowedConnectionSource(String key, String... allowedUrls)
     {
-        allowedConnectionSources.put(key, allowedUrl);
+        allowedConnectionSources.put(key, Collections.unmodifiableList(Arrays.asList(allowedUrls)));
         connectionSrc = getAllowedConnectionsHeader(allowedConnectionSources.values());
     }
 

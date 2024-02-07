@@ -874,6 +874,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
+        AnalyticsServiceImpl.get().resetCSP();
+
         if (moduleContext.isNewInstall())
         {
             // In order to initialize the portal layout correctly, we need to add the web parts after the folder
@@ -1111,6 +1113,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             results.put("analyticsTrackingStatus", AnalyticsServiceImpl.get().getTrackingStatus().toString());
             String labkeyContextPath = AppProps.getInstance().getContextPath();
             results.put("webappContextPath", labkeyContextPath);
+            results.put("embeddedTomcat", AppProps.getInstance().isEmbeddedTomcat());
             Set<String> deployedApps = new HashSet<>(CoreWarningProvider.collectAllDeployedApps());
             deployedApps.remove(labkeyContextPath);
             if (labkeyContextPath.startsWith("/"))

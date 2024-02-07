@@ -59,7 +59,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql_11_Dialect() : null;
+        return "org.postgresql.Driver".equals(driverClassName) ? getOldestSupportedDialect() : null;
     }
 
     final static String JDBC_PREFIX = "jdbc:postgresql:";
@@ -129,16 +129,21 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        // PostgreSQL dialects are nearly identical, so just test 11.x
-        PostgreSql_11_Dialect conforming = new PostgreSql_11_Dialect();
+        // PostgreSQL dialects are nearly identical, so just test 12.x
+        PostgreSql_12_Dialect conforming = getOldestSupportedDialect();
         conforming.setStandardConformingStrings(true);
-        PostgreSql_11_Dialect nonconforming = new PostgreSql_11_Dialect();
+        PostgreSql_12_Dialect nonconforming = getOldestSupportedDialect();
         nonconforming.setStandardConformingStrings(false);
 
         return PageFlowUtil.set(
             conforming,
             nonconforming
         );
+    }
+
+    public static PostgreSql_12_Dialect getOldestSupportedDialect()
+    {
+        return new PostgreSql_12_Dialect();
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -148,11 +153,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             final String connectionUrl = "jdbc:postgresql:";
 
-            // < 11.0 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 11.0, null, connectionUrl);
+            // < 12.0 should result in bad version number exception
+            badVersion("PostgreSQL", 0.0, 12.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 11.0, 12.0, "", connectionUrl, null, PostgreSql_11_Dialect.class);
             good("PostgreSQL", 12.0, 13.0, "", connectionUrl, null, PostgreSql_12_Dialect.class);
             good("PostgreSQL", 13.0, 14.0, "", connectionUrl, null, PostgreSql_13_Dialect.class);
             good("PostgreSQL", 14.0, 15.0, "", connectionUrl, null, PostgreSql_14_Dialect.class);
@@ -185,7 +189,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                 "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql_11_Dialect();
+            SqlDialect dialect = getOldestSupportedDialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(5, good.getCounter());
@@ -206,7 +210,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql_11_Dialect();
+                    return getOldestSupportedDialect();
                 }
 
                 @NotNull

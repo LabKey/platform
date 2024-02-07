@@ -136,6 +136,12 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
+    public boolean isEmbeddedTomcat()
+    {
+        return ModuleLoader.getServletContext() != null && "true".equals(ModuleLoader.getServletContext().getInitParameter("embeddedTomcat"));
+    }
+
+    @Override
     public void ensureBaseServerUrl(HttpServletRequest request)
     {
         String baseServerUrl = getBaseServerUrl();

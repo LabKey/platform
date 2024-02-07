@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.collections4.CollectionUtils;
 import org.jetbrains.annotations.Nullable;
@@ -55,6 +56,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
     private final int _adminUserId;
     private final Set<String> _roleNames;
     private final Set<String> _previousRoleNames;
+    @JsonIgnore // Can't be handled by remote pipelines
     private final ActionURL _returnURL;
     private final String _cacheKey;
 
@@ -64,16 +66,14 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
             @JsonProperty("_adminUserId") int adminUserId,
             @JsonProperty("_roleNames") Set<String> roleNames,
             @JsonProperty("_previousRoleNames") Set<String> previousRoleNames,
-            @JsonProperty("_returnURL") ActionURL returnURL,
             @JsonProperty("_cacheKey") String cacheKey
     )
     {
-        super();
         _projectId = projectId;
         _adminUserId = adminUserId;
         _roleNames = roleNames;
         _previousRoleNames = previousRoleNames;
-        _returnURL = returnURL;
+        _returnURL = null;
         _cacheKey = cacheKey;
     }
     
@@ -215,9 +215,19 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
                 @JsonProperty("_project") @Nullable Container project,
                 @JsonProperty("_adminUser") User adminUser,
                 @JsonProperty("_roleNames") Set<String> roleNames,
-                @JsonProperty("_returnURL") ActionURL returnURL,
                 @JsonProperty("_factory") ImpersonationContextFactory factory,
                 @JsonProperty("_cacheKey") String cacheKey)
+        {
+            this(project, adminUser, roleNames, null, factory, cacheKey);
+        }
+
+        private RoleImpersonationContext(
+                @Nullable Container project,
+                User adminUser,
+                Set<String> roleNames,
+                ActionURL returnURL,
+                ImpersonationContextFactory factory,
+                String cacheKey)
         {
             super(adminUser, project, returnURL, factory);
             _roleNames = roleNames;

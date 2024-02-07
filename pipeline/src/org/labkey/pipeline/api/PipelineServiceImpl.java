@@ -17,7 +17,6 @@
 package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -463,7 +462,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     @Override
     public void queueJob(PipelineJob job, @Nullable String jobNotificationProvider) throws PipelineValidationException
     {
-        // Test serialization by serializing and deserializating every job
+        // Test serialization by serializing and deserializing every job
         PipelineJob deserializedJob = PipelineJob.deserializeJob(job.serializeJob(false));
         getPipelineQueue().addJob(deserializedJob);
 
@@ -710,7 +709,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     private List<String> parseArray(String dbPaths)
     {
         if(dbPaths == null) return null;
-        if(dbPaths.length() == 0) return new ArrayList<>();
+        if(dbPaths.isEmpty()) return new ArrayList<>();
         String[] tokens = dbPaths.split("\\|");
         return new ArrayList<>(Arrays.asList(tokens));
     }
@@ -721,7 +720,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         StringBuilder temp = new StringBuilder();
         for(String path:sequenceDbPathsList)
         {
-            if(temp.length() > 0)
+            if(!temp.isEmpty())
                 temp.append("|");
             temp.append(path);
         }
@@ -803,6 +802,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
         }
         catch (PipelineValidationException e)
         {
+            LOG.error("Queuing FolderImportJob failed", e);
             return false;
         }
     }
@@ -992,7 +992,7 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
             protocol.saveInstance(fileParameters, context.getContainer());
         }
 
-        Boolean allowNonExistentFiles = form.isAllowNonExistentFiles() != null ? form.isAllowNonExistentFiles() : false;
+        boolean allowNonExistentFiles = form.isAllowNonExistentFiles() != null ? form.isAllowNonExistentFiles() : false;
         List<Path> filesInputList = form.getValidatedPaths(context.getContainer(), allowNonExistentFiles);
 
         if (form.isActiveJobs())
