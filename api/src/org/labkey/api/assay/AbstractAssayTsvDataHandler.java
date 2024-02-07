@@ -246,7 +246,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         Lsid templateLsid = lsid != null && !StringUtils.isEmpty(String.valueOf(lsid)) ? Lsid.parse(String.valueOf(lsid)) : null;
                         Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
                         Integer plateSetId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
-                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, protocol);
+                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, provider, protocol);
                     }
                 }
             }

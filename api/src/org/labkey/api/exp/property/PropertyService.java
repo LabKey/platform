@@ -139,4 +139,8 @@ public interface PropertyService
     void registerConceptUriVocabularyDomainProvider(String conceptUri, ConceptURIVocabularyDomainProvider provider);
 
     ConceptURIVocabularyDomainProvider getConceptUriVocabularyDomainProvider(String conceptUri);
+
+    Object getDomainPropertyValueFromRow(DomainProperty property, Map<String, Object> row);
+
+    void replaceDomainPropertyValue(DomainProperty property, Map<String, Object> row, Object value);
 }

@@ -428,6 +428,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         if (isPlateMetadataEnabled(protocol))
         {
             Set<String> existingFields = update.getFields().stream().map(GWTPropertyDescriptor::getName).collect(Collectors.toSet());
+            boolean hasRuns = !protocol.getExpRuns().isEmpty();
 
             // for plate metadata support we need to ensure specific fields on both the run and result domains
             Domain runDomain = getRunDomain(protocol);
@@ -461,7 +462,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     plateSet.setLookupSchema(PlateSchema.SCHEMA_NAME);
                     plateSet.setLookupQuery(PlateSetTable.NAME);
                     plateSet.setLookupContainer(null);
-                    plateSet.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled());
+                    plateSet.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled() && !hasRuns);
                     plateSet.setShownInUpdateView(false);
 
                     newFields.add(plateSet);
@@ -485,7 +486,8 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     plate.setLookupSchema(PlateSchema.SCHEMA_NAME);
                     plate.setLookupQuery(PlateTable.NAME);
                     plate.setLookupContainer(null);
-                    plate.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled());
+                    plate.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled() && !hasRuns);
+                    plate.setImportAliases("PlateID,\"Plate ID\"");
                     plate.setShownInUpdateView(false);
 
                     newFields.add(plate);
@@ -494,6 +496,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 if (!existingFields.contains(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
                 {
                     GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLocation.setImportAliases("Well,\"Well Location\"");
                     wellLocation.setShownInUpdateView(false);
 
                     newFields.add(wellLocation);

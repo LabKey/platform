@@ -75,7 +75,7 @@ public interface AssayPlateMetadataService
      */
     List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, Integer plateSetId,
                                                  List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
-                                                 ExpProtocol protocol) throws ExperimentException;
+                                                 AssayProvider provider, ExpProtocol protocol) throws ExperimentException;
 
     /**
      * Methods to create the metadata model from either a JSON object or a file object

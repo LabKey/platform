@@ -685,6 +685,55 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
         return _conceptUriVocabularyProvider.get(conceptUri);
     }
 
+    @Override
+    public Object getDomainPropertyValueFromRow(DomainProperty property, Map<String, Object> row)
+    {
+        if (property == null || row == null)
+            return null;
+
+        if (row.containsKey(property.getName()))
+            return row.get(property.getName());
+        else if (property.getLabel() != null && row.containsKey(property.getLabel()))
+            return row.get(property.getLabel());
+        else if (row.containsKey(property.getName().toLowerCase()))
+            return row.get(property.getName().toLowerCase());
+        else if (!property.getImportAliasSet().isEmpty())
+        {
+            for (String alias : property.getImportAliasSet())
+            {
+                if (row.containsKey(alias))
+                    return row.get(alias);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public void replaceDomainPropertyValue(DomainProperty property, Map<String, Object> row, Object value)
+    {
+        if (property == null || row == null)
+            return;
+
+        if (row.containsKey(property.getName()))
+            row.put(property.getName(), value);
+        else if (property.getLabel() != null && row.containsKey(property.getLabel()))
+            row.put(property.getLabel(), value);
+        else if (row.containsKey(property.getName().toLowerCase()))
+            row.put(property.getName().toLowerCase(), value);
+        else if (!property.getImportAliasSet().isEmpty())
+        {
+            for (String alias : property.getImportAliasSet())
+            {
+                if (row.containsKey(alias))
+                {
+                    row.put(alias, value);
+                    return;
+                }
+            }
+        }
+    }
+
     public static class TestCase extends Assert
     {
         @Test
