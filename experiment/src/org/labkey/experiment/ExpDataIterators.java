@@ -2583,12 +2583,8 @@ public class ExpDataIterators
                         }
                     }
 
-                    if (_context.isCrossFolderImport())
-                    {
-                        _context.setCrossFolderImport(false);
-                        if (!_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
-                            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
-                    }
+                    if (_isCrossFolder && !_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
+                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
 
                     _context.setCrossTypeImport(_isCrossType);
                     _context.setCrossFolderImport(_isCrossFolder);
