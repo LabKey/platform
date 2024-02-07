@@ -2394,16 +2394,7 @@ public class NameGenerator
 
                 if (_strictIncremental || AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_WITH_COUNTER))
                 {
-                    // TODO: use DbSequence.ReclaimableDbSequence for 23.3 and investigate enabling ReclaimablePreallocateSequence in develop
                     counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
-//                        if (_strictIncremental)
-//                            counterSeq = DbSequenceManager.getReclaimable(_container, _counterSeqPrefix + prefix, 0);
-//                        else
-//                        {
-//                            // use PreallocatingSequence to handle generating multiple aliquots from the same sample
-//                            // PreallocatingSequences opened by CounterExpressionPart are cleaned up by State.close()
-//                            counterSeq = DbSequenceManager.getReclaimablePreallocateSequence(_container, _counterSeqPrefix + prefix, 0, noCache ? 1 : 100);
-//                        }
                 }
                 else
                 {

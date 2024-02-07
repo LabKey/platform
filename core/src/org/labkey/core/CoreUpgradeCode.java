@@ -209,7 +209,7 @@ public class CoreUpgradeCode implements UpgradeCode
     /**
      * Remove WithCounter (SampleNameGenCounter-) core.DBSequences records with case-insensitive names, keep the one with the largest Value
      */
-    private static void removeDuplicateWithCountSeqs(Container container)
+    private static void removeDuplicateWithCounterSeqs(Container container)
     {
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
 
@@ -249,7 +249,7 @@ public class CoreUpgradeCode implements UpgradeCode
         }
     }
 
-    private static void toLowerCaseWithCountSeqs(Container container)
+    private static void toLowerCaseWithCounterSeqs(Container container)
     {
         TableInfo tableInfo = CoreSchema.getInstance().getTableInfoDbSequences();
         SQLFragment toLowerSql = new SQLFragment("UPDATE ").append(tableInfo)
@@ -291,9 +291,9 @@ public class CoreUpgradeCode implements UpgradeCode
 
             LOG.info("** starting upgrade withCounter DBSequences in container: " + container.getPath());
 
-            removeDuplicateWithCountSeqs(container);
+            removeDuplicateWithCounterSeqs(container);
 
-            toLowerCaseWithCountSeqs(container);
+            toLowerCaseWithCounterSeqs(container);
 
             LOG.info("** finished upgrade withCounter DBSequences for container: " + container.getPath());
         }
