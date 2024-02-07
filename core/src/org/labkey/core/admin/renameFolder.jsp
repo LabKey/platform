@@ -101,12 +101,12 @@
         <%=formatMissedErrors("form")%>
         <ul class="name-setings-form">
             <li>
-                <label for="name"><%= text(containerType)%> Name</label>
+                <label for="name"><%= unsafe(containerType)%> Name</label>
                 <input type="text" id="name" name="name" value="<%=h(name)%>">
             </li>
             <li>
                 <label for="title">
-                    <%= text(containerType)%> Title
+                    <%= unsafe(containerType)%> Title
                     <span class="change-title-cb">
                         <input type="checkbox" id="titleSameAsName" name="titleSameAsName" <%=h(checked)%>>same as name
                     </span>

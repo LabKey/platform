@@ -79,7 +79,7 @@
     <% } %>
     <tr>
         <td colspan="2"><label>Column headers:<%=helpPopup("Column Header Options", sb.toString(), true)%></label>
-            <select id="<%=text(headerGUID)%>" name="<%=text(headerType)%>">
+            <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
@@ -88,11 +88,11 @@
     <tr><td colspan="2"></td></tr>
     <tr>
         <td valign="center">
-            <input <%=text(hasSelected ? "" : "disabled=\"\"")%> type="checkbox" id="<%=h(exportSelectedId)%>"
-                                                                 value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
+            <input <%=unsafe(hasSelected ? "" : "disabled=\"\"")%> type="checkbox" id="<%=h(exportSelectedId)%>"
+                                                                   value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
         </td>
         <td valign="center">
-            <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>"
+            <label class="<%=unsafe(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>"
                    for="<%=h(exportSelectedId)%>"> <%=h(model.isIncludeSignButton() ? "Export/Sign selected rows" : "Export selected rows")%>
             </label>
         </td>

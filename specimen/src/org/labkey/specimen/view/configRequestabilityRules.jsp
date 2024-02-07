@@ -450,7 +450,7 @@
                     ActionURL defaultTestURL = type.getDefaultTestURL(c);
                     RequestabilityManager.MarkType defaultMarkType = type.getDefaultMarkType();
                 %>
-                    <%= text(!first ? "," : "") %>new Ext4.menu.Item({
+                    <%= unsafe(!first ? "," : "") %>new Ext4.menu.Item({
                         id: 'add_<%= h(type.name()) %>',
                         text:'<%= h(type.getName()) %>',
                         listeners:{
@@ -518,7 +518,7 @@
         for (RequestabilityManager.RequestableRule rule : RequestabilityManager.getInstance().getRules(c))
         {
         %>
-            <%= text(!first ? "," : "") %>
+            <%= unsafe(!first ? "," : "") %>
             ['<%= h(rule.getType().name()) %>', '<%= h(rule.getRuleData()) %>', '<%= h(rule.getName()) %>',
                 '<%= h(rule.getMarkType().getLabel()) %>',
             '<%= h(null != rule.getTestURL(getUser()) ? rule.getTestURL(getUser()).getLocalURIString() : "") %>'

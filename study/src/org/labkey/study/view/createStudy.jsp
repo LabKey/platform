@@ -75,12 +75,12 @@
                         <labkey:input type="radio" name="timepointType" formGroup="false" id="continuousTimepointType" value="<%=TimepointType.CONTINUOUS%>" checked="<%=(form.getTimepointType() == TimepointType.CONTINUOUS)%>" onChange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none'; document.getElementById('defaultDateRow').style.display = document.getElementById('continuousTimepointType').checked ? 'none' : 'table-row';" /> Continuous
                     </td>
                 </tr>
-                <tr id="defaultDateRow" style="display: <%= text(form.getTimepointType() == TimepointType.CONTINUOUS ? "none" : "table-row") %>">
+                <tr id="defaultDateRow" style="display: <%= unsafe(form.getTimepointType() == TimepointType.CONTINUOUS ? "none" : "table-row") %>">
                     <td class="lk-study-property">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></td>
                     <td align="left"><input type="text" name="startDate" value="<%=formatDate(form.getStartDate())%>">
                     </td>
                 </tr>
-                <tr id="defaultDurationRow" style="display: <%= text(form.getTimepointType() != null && !form.getTimepointType().isVisitBased() ? "table-row" : "none") %>">
+                <tr id="defaultDurationRow" style="display: <%= unsafe(form.getTimepointType() != null && !form.getTimepointType().isVisitBased() ? "table-row" : "none") %>">
                     <td class="lk-study-property">Default Timepoint Duration<%=helpPopup("Default Timepoint Duration", "The default timepoint duration will determine the number of days included in automatically created timepoints.")%></td>
                     <td align="left"><input type="text" name="defaultTimepointDuration" value="<%=form.getDefaultTimepointDuration()%>">
                     </td>

@@ -96,9 +96,9 @@
         <%
             }
         %>
-        <tr><td class="labkey-form-label">Demographic Data</td><td><%= text(dataset.isDemographicData() ? "true" : "false") %></td></tr>
+        <tr><td class="labkey-form-label">Demographic Data</td><td><%= unsafe(dataset.isDemographicData() ? "true" : "false") %></td></tr>
         <tr>
-            <td class="labkey-form-label">Show In Overview</td><td><%= text(dataset.isShowByDefault() ? "true" : "false") %></td>
+            <td class="labkey-form-label">Show In Overview</td><td><%= unsafe(dataset.isShowByDefault() ? "true" : "false") %></td>
         </tr>
         <tr>
             <td class="labkey-form-label">Description</td>

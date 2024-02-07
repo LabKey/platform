@@ -112,7 +112,7 @@
                         {
                             rowNumber++;
                     %>
-                        <tr <%=text(rowNumber % 2 == 1 ? "class=\"labkey-alternate-row\"" : "class=\"labkey-row\"")%>>
+                        <tr <%=unsafe(rowNumber % 2 == 1 ? "class=\"labkey-alternate-row\"" : "class=\"labkey-row\"")%>>
                     <%
                         for (Map.Entry<PropertyDescriptor, Object> entry : row.entrySet())
                         {

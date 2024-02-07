@@ -41,7 +41,7 @@
 //    ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 
-Summary of notifications of files at <%=text(form.getContainer().getPath())%>.
+Summary of notifications of files at <%=unsafe(form.getContainer().getPath())%>.
 
     <%
         for (Map.Entry<Path, List<FileSystemAuditProvider.FileSystemAuditEvent>> record : form.getRecords().entrySet())
@@ -50,13 +50,13 @@ Summary of notifications of files at <%=text(form.getContainer().getPath())%>.
             WebdavResource resource = WebdavService.get().getResolver().lookup(path);
 
     %>
-<%=text(resource.isCollection() ? "Folder: " : " File: ")%><%=text(resource.getName())%>
+<%=unsafe(resource.isCollection() ? "Folder: " : " File: ")%><%=unsafe(resource.getName())%>
         <%
             for (FileSystemAuditProvider.FileSystemAuditEvent event : record.getValue())
             {
                 User user = event.getCreatedBy();
         %>
-    <%=text(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%>, <%=text(user.getDisplayName(user))%>, <%=text(event.getComment())%> <%
+    <%=unsafe(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%>, <%=unsafe(user.getDisplayName(user))%>, <%=unsafe(event.getComment())%> <%
             }
         }
     %>
@@ -65,7 +65,7 @@ You have received this email because <%
         switch(pref)
         {
             case NOT_SET:
-            case FILES_INDIVIDUAL: %>you are signed up to receive notifications about updates to files at <%=text(form.getContainer().getPath())%>.
-If you no longer wish to receive these notifications you can change your email preferences here: <%=text(emailPrefs.getURIString())%>.<%
+            case FILES_INDIVIDUAL: %>you are signed up to receive notifications about updates to files at <%=unsafe(form.getContainer().getPath())%>.
+If you no longer wish to receive these notifications you can change your email preferences here: <%=unsafe(emailPrefs.getURIString())%>.<%
             break;
         } %>

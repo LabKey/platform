@@ -112,7 +112,7 @@
     <input type="hidden" name="<%=ActionURL.Param.returnUrl%>" value="<%= h(getViewContext().getActionURL())%>" />
     <table>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
-            when a pipeline job succeeds and/or fails.<br/><%=text(c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration.")%>
+            when a pipeline job succeeds and/or fails.<br/><%=unsafe(c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration.")%>
         </td></tr>
     </table>
     <table>

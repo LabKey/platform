@@ -96,7 +96,7 @@
     <div class="row">
         <div class="col-md-12 lk-body-title">
             <% /* NOTE: If this generated DOM is changed make concurrent change to LABKEY.NavTrail.setTrail */ %>
-            <% if (trail != null) { %><%= text(trail) %><% } %>
+            <% if (trail != null) { %><%= unsafe(trail) %><% } %>
             <% if (pageTitle != null) { %>
                 <h3 style="display: inline-block;">
                     <%= h(pageTitle) %>

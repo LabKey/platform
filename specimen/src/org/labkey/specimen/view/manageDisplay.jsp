@@ -74,11 +74,11 @@
             <th align="right">Display one available vial warning:</th>
             <td>
                 <select name="lastVial">
-                    <option value="<%= text(DisplaySettings.DisplayOption.NONE.name()) %>"
+                    <option value="<%= unsafe(DisplaySettings.DisplayOption.NONE.name()) %>"
                             <%=selected(bean.getLastVialEnum() == DisplaySettings.DisplayOption.NONE)%>>Never</option>
-                    <option value="<%= text(DisplaySettings.DisplayOption.ALL_USERS.name()) %>"
+                    <option value="<%= unsafe(DisplaySettings.DisplayOption.ALL_USERS.name()) %>"
                             <%=selected(bean.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS)%>>For all users</option>
-                    <option value="<%= text(DisplaySettings.DisplayOption.ADMINS_ONLY.name()) %>"
+                    <option value="<%= unsafe(DisplaySettings.DisplayOption.ADMINS_ONLY.name()) %>"
                             <%=selected(bean.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY)%>>For administrators only</option>
                 </select>
             </td>
@@ -87,11 +87,11 @@
             <th align="right">Display zero available vials warning:</th>
             <td>
                 <select name="zeroVials">
-                    <option value="<%= text(DisplaySettings.DisplayOption.NONE.name()) %>"
+                    <option value="<%= unsafe(DisplaySettings.DisplayOption.NONE.name()) %>"
                             <%=selected(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.NONE)%>>Never</option>
-                    <option value="<%= text(DisplaySettings.DisplayOption.ALL_USERS.name()) %>"
+                    <option value="<%= unsafe(DisplaySettings.DisplayOption.ALL_USERS.name()) %>"
                             <%=selected(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ALL_USERS)%>>For all users</option>
-                    <option value="<%= text(DisplaySettings.DisplayOption.ADMINS_ONLY.name()) %>"
+                    <option value="<%= unsafe(DisplaySettings.DisplayOption.ADMINS_ONLY.name()) %>"
                             <%=selected(bean.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY)%>>For administrators only</option>
                 </select>
             </td>

@@ -57,7 +57,7 @@
 %>
     <span class="labkey-error">
         The cloud config for this web part is invalid. It may not exist or may have been configured incorrectly.<br>
-        <%=text("Contact your administrator to address this problem.")%>
+        <%=unsafe("Contact your administrator to address this problem.")%>
     </span>
 <%
         }
@@ -66,7 +66,7 @@
 %>
     <span class="labkey-error">
         The file root for this folder is invalid. It may not exist or may have been configured incorrectly.<br>
-        <%=text(c.hasPermission(getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
+        <%=unsafe(c.hasPermission(getUser(), AdminPermission.class) ? "File roots can be configured from the <a href=\"" + projConfig + "\">project settings</a> view." : "Contact your administrator to address this problem.")%>
     </span>
 <%
         }
@@ -77,7 +77,7 @@
 <div id="<%=h(bean.getContentId())%>"></div>
 <script type="text/javascript" nonce="<%=getScriptNonce()%>">
     Ext4.onReady(function() {
-        var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=text(sep)%><%=q(action.name())%><% sep = ","; }%>];
+        var buttonActions = [<% String sep = ""; for(FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {%><%=unsafe(sep)%><%=q(action.name())%><% sep = ","; }%>];
         var startDirectory;
 
         <% if (bean.getDirectory() != null) { %>

@@ -540,7 +540,7 @@
         row++;
         className = getShadeRowClass(row);
 %>
-<tr class="<%=className%> labkey-participant-view-row" style="<%=text(expanded ? "" : "display:none")%>">
+<tr class="<%=className%> labkey-participant-view-row" style="<%=unsafe(expanded ? "" : "display:none")%>">
     <td align="left" nowrap>QC State</td>
     <td>&nbsp;</td>
     <%
@@ -593,7 +593,7 @@
         className = getShadeRowClass(row);
         String labelName = StringUtils.defaultString(col.getLabel(), col.getName());
 %>
-<tr class="<%=className%> labkey-participant-view-row" style="<%=text(expanded ? "" : "display:none")%>">
+<tr class="<%=className%> labkey-participant-view-row" style="<%=unsafe(expanded ? "" : "display:none")%>">
     <td align="left" nowrap><%=h(labelName)%></td>
     <td>&nbsp;</td>
     <%
@@ -636,7 +636,7 @@
         row++;
         className = getShadeRowClass(row);
 %>
-<tr class="<%=className%>" style="<%=text(expanded ? "" : "display:none")%>">
+<tr class="<%=className%>" style="<%=unsafe(expanded ? "" : "display:none")%>">
     <td align="left" nowrap>Details</td>
     <td>&nbsp;</td>
     <%
@@ -661,7 +661,7 @@
                             link = "[<a href=\"" + sourceURL.getLocalURIString() + "\">details</a>]";
                         }
     %>
-    <td><%= text(link)%>
+    <td><%= unsafe(link)%>
     </td>
     <%
                 countTD++;
@@ -712,7 +712,7 @@
             reportIdWithNames.put(reportId, name);
     }
 %>
-        <tr style="<%=text(expanded ? "" : "display:none")%>">
+        <tr style="<%=unsafe(expanded ? "" : "display:none")%>">
             <td colspan="<%=totalSeqKeyCount+1%>">
 <%
                     for (String reportId: reportsToRender.keySet())
@@ -739,7 +739,7 @@
         {
             String anchorId = makeId("a_");
 %>
-            <tr style="<%=text(expanded ? "" : "display:none")%>">
+            <tr style="<%=unsafe(expanded ? "" : "display:none")%>">
                 <td colspan="<%=totalSeqKeyCount+1%>">
                     <a id=<%=unsafe(anchorId)%> class="labkey-text-link labkey-ptid-add" dataset-id="<%=datasetId%>">Add Chart</a>
                     <% addHandler(anchorId, "click", "LABKEY.ParticipantViewUnhideSelect(this)"); %>

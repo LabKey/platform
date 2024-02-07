@@ -52,7 +52,7 @@
             %>
             <tr>
                 <td align="center"><input type="checkbox" name="delete" value="<%=h(member)%>"></td>
-                <td><%= text(member.isActive() ? "" : "<del>")%><%=h(member.getAutocompleteName(getContainer(), getUser()))%><%=text(member.isActive() ? "" : "</del> (inactive)") %></td>
+                <td><%= unsafe(member.isActive() ? "" : "<del>")%><%=h(member.getAutocompleteName(getContainer(), getUser()))%><%=unsafe(member.isActive() ? "" : "</del> (inactive)") %></td>
             </tr>
             <%
                 }

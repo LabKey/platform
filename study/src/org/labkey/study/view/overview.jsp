@@ -123,7 +123,7 @@
     }
 %>
 <labkey:form action="<%=urlFor(OverviewAction.class)%>" name="changeFilterForm" method="GET">
-    <input type="hidden" name="showAll" value="<%= text(bean.showAll ? "1" : "0") %>">
+    <input type="hidden" name="showAll" value="<%= unsafe(bean.showAll ? "1" : "0") %>">
     <br><br>
     <%
         if (showCohorts)
@@ -173,7 +173,7 @@
             boolean checked = bean.stats.contains(stat);
             var id = makeId("visitStatistic");
             addHandler(id, "click", "document.changeFilterForm.submit();" );
-            out.print(text("<label><input id=\"" + id + "\" name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + ">" + h(stat.getDisplayString(study)) + "</label>\n"));
+            out.print(unsafe("<label><input id=\"" + id + "\" name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + ">" + h(stat.getDisplayString(study)) + "</label>\n"));
         }
     %>
 </labkey:form>
@@ -185,7 +185,7 @@
             String slash = "";
             for (VisitStatistic v : statisticsToDisplay)
             {
-        %><%=text(slash)%><%
+        %><%=unsafe(slash)%><%
             if (v == VisitStatistic.ParticipantCount)
             {
         %>All <%=h(visitsLabel)%><%
@@ -316,12 +316,12 @@
                     defaultReportURL = getQCStateFilteredURL(defaultReportURL, PRIVATE_STATES_LABEL, "Dataset", container);
                 defaultReportURL.addParameter("skipDataVisibility", 1);
 
-        %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=text(innerHtml)%>
+        %><a href="<%= h(defaultReportURL.getLocalURIString()) %>"><%=unsafe(innerHtml)%>
         </a><%
         }
         else
         {
-        %><%=text(innerHtml)%><%
+        %><%=unsafe(innerHtml)%><%
             }
         %></td>
         <%
@@ -364,7 +364,7 @@
                 }
 
         %>
-        <td align="center" nowrap="true"><%=text(innerHtml)%>
+        <td align="center" nowrap="true"><%=unsafe(innerHtml)%>
         </td>
         <%
             }

@@ -48,7 +48,7 @@
     if (null != form.getMessage())
     {
         // UNDONE: do we have a message style?
-        %><div style="color:green;"><%=text(form.getMessage())%></div><%
+        %><div style="color:green;"><%=unsafe(form.getMessage())%></div><%
     }
 
     if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
@@ -136,11 +136,11 @@ If, for example, you set the content root for the Home project to<br>
 </pre>
 <br>and that directory contained test.html, the link<br>
 <pre>
-http://<%=text(request.getServerName())%><%=text(request.getContextPath())%>/files/home/test.html
+http://<%=unsafe(request.getServerName())%><%=unsafe(request.getContextPath())%>/files/home/test.html
 </pre>
     will return the file. You could also use links like this
 <pre>
-    http://<%=text(request.getServerName())%><%=text(request.getContextPath())%>/files/home/subdir/other.html
+    http://<%=unsafe(request.getServerName())%><%=unsafe(request.getContextPath())%>/files/home/subdir/other.html
 </pre>
 to serve the file<br>
 <pre>

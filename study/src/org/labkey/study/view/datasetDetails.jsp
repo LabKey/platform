@@ -97,7 +97,7 @@ if (!shadowed.isEmpty())
         comma = ", ";
     }
     sb.append(".");
-    %><%=text(sb.toString())%><br><%
+    %><%=unsafe(sb.toString())%><br><%
 }
 
 List<Button.ButtonBuilder> buttons = new ArrayList<>();
@@ -204,18 +204,18 @@ if (!pipelineSet)
                     Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
                             StudyService.get().getSubjectNounSingular(c).toLowerCase() +
                             " in the study.")%></td>
-                <td><%=text(dataset.isDemographicData() ? "true" : "false")%></td>
+                <td><%=unsafe(dataset.isDemographicData() ? "true" : "false")%></td>
 
                 <td rowspan="2" class=labkey-form-label>Description</td>
                 <td rowspan="2"><%= h(dataset.getDescription()) %></td>
             </tr>
             <tr>
                 <td class=labkey-form-label>Show In Overview</td>
-                <td><%=text(dataset.isShowByDefault() ? "true" : "false")%></td>
+                <td><%=unsafe(dataset.isShowByDefault() ? "true" : "false")%></td>
             </tr>
             <tr>
                 <td class=labkey-form-label>Share Data</td>
-                <td><%=text(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
+                <td><%=unsafe(dataset.getDataSharingEnum()== DatasetDefinition.DataSharing.NONE ? "No" : "Share by Participants")%></td>
             </tr>
         </table>
     </labkey:panel>
