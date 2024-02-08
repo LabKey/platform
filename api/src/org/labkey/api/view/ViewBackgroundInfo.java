@@ -26,8 +26,6 @@ import java.io.Serializable;
 
 /**
  * For use inside background threads with no request object, to scope them to a {@link Container}, {@link User}, etc.
- * Created: Oct 4, 2005
- * @author bmaclean
  */
 public class ViewBackgroundInfo implements Serializable, ContainerUser
 {
@@ -40,8 +38,8 @@ public class ViewBackgroundInfo implements Serializable, ContainerUser
 
     // Not supported outside the LabKey Server context
     private transient Container _container;
-    private transient User _user;
     private transient ActionURL _url;
+    private User _user; // non-transient for LabKey Server case -- need to round-trip the impersonation context, Issue 49513
 
     // Default constructor for serialization
     protected ViewBackgroundInfo()
