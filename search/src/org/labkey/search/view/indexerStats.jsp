@@ -54,7 +54,7 @@ else
             if (v instanceof Integer || v instanceof Long)
                 v = Formats.commaf0.format(((Number)v).longValue());
             v = null==v ? "" : String.valueOf(v);
-            out.print(text("<tr><td valign=\"top\">" + h(l) + "&nbsp;&nbsp;</td><td>" + v + "</td></tr>\n"));
+            out.print(unsafe("<tr><td valign=\"top\">" + h(l) + "&nbsp;&nbsp;</td><td>" + v + "</td></tr>\n"));
         }
     }
 %>

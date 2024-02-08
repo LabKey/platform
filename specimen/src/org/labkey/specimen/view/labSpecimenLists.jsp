@@ -52,7 +52,7 @@
             }
         %>
     <tr>
-        <th align="left"><%= text(originating ? "Originating" : "Providing") %> Location</th>
+        <th align="left"><%= unsafe(originating ? "Originating" : "Providing") %> Location</th>
         <th align="left">Download options</th>
         <th align="left">Specimen IDs</th>
         <th align="left">Email Recipients</th>
@@ -121,8 +121,8 @@
                         <%=possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses, getActionURL())%>
                     </td>
                     <td valign="middle">
-                        <%= text(notifyLocation != null && notifyLocation.getRowId() == bean.getSpecimenRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>
-                        <%= text(notifyLocation != null && notifyLocation.getRowId() == location.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "") %>
+                        <%= unsafe(notifyLocation != null && notifyLocation.getRowId() == bean.getSpecimenRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>
+                        <%= unsafe(notifyLocation != null && notifyLocation.getRowId() == location.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "") %>
                     </td>
                 </tr>
                 <%

@@ -43,7 +43,7 @@ var decl = [
         Object value = null==values?null:values.get(p.getName());
         if (null == value)
             value = p.getDefault();
-        %><%=text(COMMA)%><%
+        %><%=unsafe(COMMA)%><%
         %>{name:<%=q(p.getName())%><%
         %>,jdbctype:<%=q(p.getJdbcType().name())%><%
         %>,jsontype:<%=q(p.getJdbcType().json)%><%

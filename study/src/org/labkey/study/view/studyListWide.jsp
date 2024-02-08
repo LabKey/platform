@@ -36,7 +36,7 @@
     Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(c, getUser());
     if (studies.isEmpty())
     {
-        out.print(text("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + h(c.getName()) + " or child folders."));
+        out.print(unsafe("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + h(c.getName()) + " or child folders."));
     }
     FolderType studyFolderType = FolderTypeManager.get().getFolderType("Study");
 %>

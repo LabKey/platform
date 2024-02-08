@@ -54,7 +54,7 @@ for (Thread t : bean.threads)
     try
     {
         %><a name="<%= h(t.getName()) %>"></a><%
-        %><pre><%= h(t.getName()) %> (<%=h(t.getState())%>)<%=text("\n")%><%
+        %><pre><%= h(t.getName()) %> (<%=h(t.getState())%>)<%=unsafe("\n")%><%
         Set<Integer> values = bean.spids.get(t);
         if (values.size() > 0)
         {

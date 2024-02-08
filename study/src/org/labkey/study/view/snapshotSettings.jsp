@@ -31,7 +31,7 @@
     assert null != study;
 %>
 <labkey:form action="" method="post">
-    <p>This page displays some of the settings associated with <%=text(study.isAncillaryStudy() ? "this ancillary" : "the publication of this")%> study.</p>
+    <p>This page displays some of the settings associated with <%=unsafe(study.isAncillaryStudy() ? "this ancillary" : "the publication of this")%> study.</p>
 <%
     if (snapshot.isRefresh())
     {

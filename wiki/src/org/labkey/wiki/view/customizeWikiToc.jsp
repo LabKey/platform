@@ -52,11 +52,11 @@
             {
                 if (c.equals(currentContainer) && webPart.getPropertyMap().get("webPartContainer") == null)
                 {%>
-                    <option selected value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
+                    <option selected value="<%=unsafe(c.getId())%>"><%=h(c.getPath())%></option>
                 <%}
                 else
                 {%>
-                    <option<%=selected(c.getId().equals(webPart.getPropertyMap().get("webPartContainer")))%> value="<%=text(c.getId())%>"><%=h(c.getPath())%></option>
+                    <option<%=selected(c.getId().equals(webPart.getPropertyMap().get("webPartContainer")))%> value="<%=unsafe(c.getId())%>"><%=h(c.getPath())%></option>
                 <%}
             }
             %>

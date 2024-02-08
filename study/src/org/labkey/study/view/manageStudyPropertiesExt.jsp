@@ -401,7 +401,7 @@ function renderFormPanel(data, editable){
                     String comma = "";
                     for (WikiRendererType type : getRendererTypes())
                     {
-                        %><%=text(comma)%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
+                        %><%=unsafe(comma)%>[<%=q(type.name())%>,<%=q(type.getDisplayName())%>]<%
                         comma = ",";
                     }
 %>

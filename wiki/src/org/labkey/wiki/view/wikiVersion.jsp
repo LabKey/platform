@@ -117,7 +117,7 @@ else
             </td>
             <td align="right">
     <%
-        out.print(text("[versions:"));
+        out.print(unsafe("[versions:"));
 
         for (WikiVersion v : versions)
         {
@@ -131,7 +131,7 @@ else
                 <a href="<%=h(bean.versionLink + "&version=" + n)%>"><%=n%></a><%
             }
         }
-        out.print(text("]"));
+        out.print(unsafe("]"));
     }%>
             </td>
         </tr>

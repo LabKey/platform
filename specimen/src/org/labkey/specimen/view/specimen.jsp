@@ -93,7 +93,7 @@ if (comment != null)
     {
 %>
     <br><strong>NOTE</strong>: Quality control state for this vial was set manually; it will remain
-    <%= text(comment.isQualityControlFlag() ? "flagged" : "unflagged") %> until manually changed.<br>
+    <%= unsafe(comment.isQualityControlFlag() ? "flagged" : "unflagged") %> until manually changed.<br>
 <%
     }
 }

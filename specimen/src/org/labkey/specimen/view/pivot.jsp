@@ -477,21 +477,21 @@ var starttime;
     }
 </style>
 <button onclick="run()">RUN</button>
-<table id="<%=text(pivotDesignerId)%>">
+<table id="<%=unsafe(pivotDesignerId)%>">
 <tr>
-    <td rowspan="2"><fieldset style="height:100%"><legend>pages (NYI)</legend><div class="drop" id="<%=text(pivotDesignerId)%>.pages" data-axis="pages" style="min-height:200pt; min-width:100pt;">&nbsp;</div></fieldset></td>
-    <td><fieldset height=100%><legend>filters</legend><div class="drop" id="<%=text(pivotDesignerId)%>.filter" data-axis="filter" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td>
-    <td><fieldset height=100%><legend>columns</legend><div class="drop" id="<%=text(pivotDesignerId)%>.columns" data-axis="onColumns" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td>
+    <td rowspan="2"><fieldset style="height:100%"><legend>pages (NYI)</legend><div class="drop" id="<%=unsafe(pivotDesignerId)%>.pages" data-axis="pages" style="min-height:200pt; min-width:100pt;">&nbsp;</div></fieldset></td>
+    <td><fieldset height=100%><legend>filters</legend><div class="drop" id="<%=unsafe(pivotDesignerId)%>.filter" data-axis="filter" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td>
+    <td><fieldset height=100%><legend>columns</legend><div class="drop" id="<%=unsafe(pivotDesignerId)%>.columns" data-axis="onColumns" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td>
 </tr>
 <tr>
-    <td><fieldset height=100%><legend>rows</legend><div class="drop" id="<%=text(pivotDesignerId)%>.rows" data-axis="onRows" style="min-height:100pt; min-width:100pt;"></div></fieldset></td>
-    <td><fieldset height=100%><legend>measures</legend><div id="<%=text(pivotDesignerId)%>.measures" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td></tr>
+    <td><fieldset height=100%><legend>rows</legend><div class="drop" id="<%=unsafe(pivotDesignerId)%>.rows" data-axis="onRows" style="min-height:100pt; min-width:100pt;"></div></fieldset></td>
+    <td><fieldset height=100%><legend>measures</legend><div id="<%=unsafe(pivotDesignerId)%>.measures" style="min-height:100pt; min-width:100pt;">&nbsp;</div></fieldset></td></tr>
 </table>
 
 
 <select><option>filter me</option></select>
 <hr>
-<div id="<%=text(pivotDesignerId)%>.filterArea"></div>
+<div id="<%=unsafe(pivotDesignerId)%>.filterArea"></div>
 <h3>I'm a page header</h3>
-<div id="<%=text(cellsetId)%>">
+<div id="<%=unsafe(cellsetId)%>">
 </div>

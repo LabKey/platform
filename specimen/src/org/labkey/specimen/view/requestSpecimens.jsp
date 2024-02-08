@@ -166,7 +166,7 @@ function setDefaults()
         <tr>
             <th align="left">
                 <input type="hidden" name="required" value="<%= input.isRequired() %>">
-                <br><%= h(input.getTitle()) %> <%= text(input.isRequired() ? "(Required)" : "(Optional)") %>:
+                <br><%= h(input.getTitle()) %> <%= unsafe(input.isRequired() ? "(Required)" : "(Optional)") %>:
             </th>
         </tr>
         <tr>
@@ -219,7 +219,7 @@ function setDefaults()
                 <%
                     }
                 %>
-                <%= text(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(new ActionURL(ViewRequestsAction.class, getContainer())).toString()) %>
+                <%= unsafe(hasReturnURL ? button("Cancel").href(bean.getReturnUrl()).toString() : button("Cancel").href(new ActionURL(ViewRequestsAction.class, getContainer())).toString()) %>
             </td>
         </tr>
 

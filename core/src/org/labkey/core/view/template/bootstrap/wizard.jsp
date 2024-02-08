@@ -36,7 +36,7 @@
                 <div class="col-xs-12">
                     <ul class="nav nav-pills list-inline">
                         <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                            <li <%=text(pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : "")%>>
+                            <li <%=unsafe(pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : "")%>>
                                 <a><span class="list-group-item-heading"><%=h(navTree.getText())%></span></a>
                             </li>
                         <%}%>
@@ -47,7 +47,7 @@
                 <div class="col-md-3 hidden-xs hidden-sm">
                     <ul class="nav nav-stacked labkey-wizard-pills">
                         <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                            <li <%=text(pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : "")%>>
+                            <li <%=unsafe(pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : "")%>>
                                 <a><%=h(navTree.getText())%></a>
                             </li>
                         <% } %>

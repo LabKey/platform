@@ -114,8 +114,8 @@ is uploaded along with the data. This form allows you to define a range of seque
         %></td>
         <td>
             <select name="sequenceNumHandling">
-              <option selected value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
-              <option value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
+              <option selected value="<%=unsafe(Visit.SequenceHandling.normal.name())%>">Normal</option>
+              <option value="<%=unsafe(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
             </select>
         </td>
     </tr>

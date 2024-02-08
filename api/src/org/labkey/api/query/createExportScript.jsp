@@ -18,4 +18,4 @@
     JspView<ExportScriptModel> me = (JspView<ExportScriptModel>) HttpView.currentView();
     ExportScriptModel model = me.getModelBean();
     getViewContext().getResponse().setContentType("text/plain");
-%><%=text(model.getExportText())%>
+%><%=unsafe(model.getExportText())%>

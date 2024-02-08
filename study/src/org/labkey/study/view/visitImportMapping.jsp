@@ -48,7 +48,7 @@
         %>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td colspan="2"><%= button((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping").href(StudyController.ImportVisitAliasesAction.class, getContainer()) %><%=text(hasCustomMapping ? "&nbsp;" + button("Clear Custom Mapping").href(StudyController.ClearVisitAliasesAction.class, getContainer()) : "")%></td>
+            <td colspan="2"><%= button((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping").href(StudyController.ImportVisitAliasesAction.class, getContainer()) %><%=unsafe(hasCustomMapping ? "&nbsp;" + button("Clear Custom Mapping").href(StudyController.ClearVisitAliasesAction.class, getContainer()) : "")%></td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr><th colspan="2" align="left">Standard Mapping</th></tr>
@@ -82,9 +82,9 @@
                 {
         %>
             <tr>
-                <td<%=text(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getName())%></td>
-                <td<%=text(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getSequenceNumString())%></td>
-                <td<%=text(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getSequenceString())%></td>
+                <td<%=unsafe(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getName())%></td>
+                <td<%=unsafe(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getSequenceNumString())%></td>
+                <td<%=unsafe(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getSequenceString())%></td>
             </tr><%
                 }
             }

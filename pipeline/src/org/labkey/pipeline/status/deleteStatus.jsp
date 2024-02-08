@@ -143,7 +143,7 @@
 
 <ul>
 <% for (PipelineStatusFileImpl file : files) { %>
-    <%=text(renderStatusFile(root, file, allRuns))%>
+    <%=unsafe(renderStatusFile(root, file, allRuns))%>
 <% } %>
 </ul>
 
@@ -193,5 +193,5 @@
 <% } %>
 
 <%= button("Confirm Delete").submit(true) %>
-<%= text(button("Cancel").href(cancelUrl).toString()) %>
+<%= unsafe(button("Cancel").href(cancelUrl).toString()) %>
 </labkey:form>
