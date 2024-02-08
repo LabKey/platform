@@ -489,6 +489,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                     plate.setRequired(AssayPlateMetadataService.isExperimentalAppPlateEnabled() && !hasRuns);
                     plate.setImportAliases("PlateID,\"Plate ID\"");
                     plate.setShownInUpdateView(false);
+                    plate.setHidden(true);
 
                     newFields.add(plate);
                 }
