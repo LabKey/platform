@@ -2,6 +2,7 @@ package org.labkey.filters;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -102,17 +103,34 @@ import java.util.stream.Collectors;
 
 public class ContentSecurityPolicyFilter implements Filter
 {
+    public static final String FEATURE_FLAG_DISABLE_ENFORCE_CSP = "disableEnforceCsp";
+
     private static final String NONCE_SUBST = "REQUEST.SCRIPT.NONCE";
     private static final String ALLOWED_CONNECT_SUBSTITUTION = "LABKEY.ALLOWED.CONNECTIONS";
     private static final String REPORT_PARAMETER_SUBSTITUTION = "CSP.REPORT.PARAMS";
     private static final String HEADER_NONCE = "org.labkey.filters.ContentSecurityPolicyFilter#NONCE";  // needs to match PageConfig.HEADER_NONCE
-    private static final String CONTENT_SECURITY_POLICY_HEADER_NAME = "Content-Security-Policy";
-    private static final String CONTENT_SECURITY_POLICY_REPORT_ONLY_HEADER_NAME = "Content-Security-Policy-Report-Only";
     private static final Map<String, String> allowedConnectionSources = new ConcurrentHashMap<>();
     private static String connectionSrc = "";
 
     private StringExpression policyExpression = null;
-    private String header = CONTENT_SECURITY_POLICY_HEADER_NAME;
+    private ContentSecurityPolicyType type = ContentSecurityPolicyType.Enforce;
+
+    public enum ContentSecurityPolicyType
+    {
+        Report("Content-Security-Policy-Report-Only"), Enforce("Content-Security-Policy");
+
+        private final String _headerName;
+
+        ContentSecurityPolicyType(String headerName)
+        {
+            _headerName = headerName;
+        }
+
+        public String getHeaderName()
+        {
+            return _headerName;
+        }
+    }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException
@@ -167,7 +185,7 @@ public class ContentSecurityPolicyFilter implements Filter
                 if (!"report".equalsIgnoreCase(s) && !"enforce".equalsIgnoreCase(s))
                     throw new ServletException("ContentSecurityPolicyFilter is misconfigured, unexpected disposition value: " + s);
                 if ("report".equalsIgnoreCase(s))
-                    header = CONTENT_SECURITY_POLICY_REPORT_ONLY_HEADER_NAME;
+                    type = ContentSecurityPolicyType.Report;
             }
             else
             {
@@ -186,13 +204,16 @@ public class ContentSecurityPolicyFilter implements Filter
     {
         if (request instanceof HttpServletRequest req && response instanceof HttpServletResponse resp && null != policyExpression)
         {
-            Map<String, String> map = Map.of(
-                NONCE_SUBST, getScriptNonceHeader(req),
-                ALLOWED_CONNECT_SUBSTITUTION, connectionSrc,
-                REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())
-            );
-            var csp = policyExpression.eval(map);
-            resp.setHeader(header, csp);
+            if (type != ContentSecurityPolicyType.Enforce || !ExperimentalFeatureService.get().isFeatureEnabled(FEATURE_FLAG_DISABLE_ENFORCE_CSP))
+            {
+                Map<String, String> map = Map.of(
+                    NONCE_SUBST, getScriptNonceHeader(req),
+                    ALLOWED_CONNECT_SUBSTITUTION, connectionSrc,
+                    REPORT_PARAMETER_SUBSTITUTION, "labkeyVersion=" + PageFlowUtil.encodeURIComponent(AppProps.getInstance().getReleaseVersion())
+                );
+                var csp = policyExpression.eval(map);
+                resp.setHeader(type.getHeaderName(), csp);
+            }
         }
         chain.doFilter(request, response);
     }

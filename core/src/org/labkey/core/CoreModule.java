@@ -265,6 +265,7 @@ import org.labkey.core.wiki.WikiRenderingServiceImpl;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
+import org.labkey.filters.ContentSecurityPolicyFilter;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
@@ -299,6 +300,7 @@ import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmai
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailMessage;
 import static org.labkey.api.settings.StashedStartupProperties.siteAvailableEmailSubject;
 import static org.labkey.api.util.MothershipReport.EXPERIMENTAL_LOCAL_MARKETING_UPDATE;
+import static org.labkey.filters.ContentSecurityPolicyFilter.FEATURE_FLAG_DISABLE_ENFORCE_CSP;
 
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
@@ -445,7 +447,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(SQLFragment.FEATUREFLAG_DISABLE_STRICT_CHECKS, "Disable SQLFragment strict checks",
                 "SQLFragment now has very strict usage validation, these checks may cause errors in code that has not been updated. Turn on this feature to disable checks.", false);
         AdminConsole.addExperimentalFeatureFlag(LoginController.FEATUREFLAG_DISABLE_LOGIN_XFRAME, "Disable Login X-FRAME-OPTIONS=DENY",
-                "By default LabKey disables all framing of login related actions.  Disabling this feature will revert to using the standard site settings.", false);
+                "By default LabKey disables all framing of login related actions. Disabling this feature will revert to using the standard site settings.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -543,7 +545,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
         // For audit purposes, we use the first user as the originator of the message.
         // Would be better to have this be a site admin, but we aren't guaranteed to have such a user
-        // for hosted sites.  Another option is to use the guest user here, but that's strange.
+        // for hosted sites. Another option is to use the guest user here, but that's strange.
         svc.sendMessages(messages, users.get(0), ContainerManager.getRoot());
     }
 
@@ -1066,7 +1068,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_BLOCKER,
                 "Block malicious clients",
-                "Reject requests from clients that appear malicious.  Turn this feature off if you want to run a security scanner.",
+                "Reject requests from clients that appear malicious. Turn this feature off if you want to run a security scanner.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_DESERIALIZE_BEANS,
                 "Deserialize objects from update forms",
@@ -1074,6 +1076,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
         AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_LOCAL_MARKETING_UPDATE,
                 "Self test marketing updates", "Test marketing updates from this local server (requires the mothership module).", false, true));
+        AdminConsole.addExperimentalFeatureFlag(FEATURE_FLAG_DISABLE_ENFORCE_CSP,
+                "Disable enforce Content Security Policy",
+                "Stop sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Enforce.getHeaderName() + " header to browsers, " +
+                "but continue sending the " + ContentSecurityPolicyFilter.ContentSecurityPolicyType.Report.getHeaderName() + " header. " +
+                "This turns off an important layer of security for the entire site, so use it as a last resort only on a temporary basis " +
+                "(e.g., if an enforce CSP breaks critical functionality).",
+                false);
 
         ExperimentalFeatureService.get().addFeatureListener(EXPERIMENTAL_LOCAL_MARKETING_UPDATE, (feature, enabled) -> {
             // update the timer task when this setting changes
