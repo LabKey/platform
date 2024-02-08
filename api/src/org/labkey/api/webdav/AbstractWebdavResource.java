@@ -726,6 +726,8 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
                     list.addAll(provider.getExpDataByPath(path, container));
                 }
             }
+
+            //Sort the results by creation date so the original is used for metadata display
             _data = list.stream().sorted(Comparator.comparing(ExpObject::getCreated)).toList();
         }
         return _data;
