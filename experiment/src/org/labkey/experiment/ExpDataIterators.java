@@ -71,6 +71,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleTypeService;
 import org.labkey.api.exp.api.SimpleRunRecord;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.query.AbstractExpSchema;
+import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -2298,7 +2300,7 @@ public class ExpDataIterators
         }
     }
 
-    public static class MultiSampleTypeCrossProjectDataIterator extends WrapperDataIterator
+    public static class MultiDataTypeCrossProjectDataIterator extends WrapperDataIterator
     {
         private static final Set<String> IGNORED_FIELD_NAMES = Set.of("lsid", "genid");
         private static final Set<String> SAMPLE_TYPE_FIELD_NAMES = Set.of("SampleType", "Sample Type");
@@ -2306,30 +2308,30 @@ public class ExpDataIterators
         private static final int BATCH_SIZE = 1000;
         record TypeData(
                 Container container,
-                ExpSampleTypeImpl sampleType,
+                ExpObject dataType,
                 TableInfo tableInfo,
                 File dataFile,
                 List<Integer> fieldIndexes,
                 Map<Integer, String> dependencyIndexes,
                 List<String> dataRows,
-                List<String> sampleIds
+                List<String> dataIds
         ) { }
 
         private final DataIteratorContext _context;
         private final boolean _isCrossType;
         private final boolean _isCrossFolder;
-        private final ExpSampleType _sampleType;
+        private final boolean _isSamples;
+        private final ExpObject _dataType;
         private final Container _container;
         private final User _user;
         private Integer _typeColIndex = null;
         private String _typeColName = null;
         private Integer _folderColIndex = null;
-        private String _folderColName = null;
         // want to process the sample types in the order given in the original file, unless we have dependencies
         private final Map<String, Map<String, TypeData>> _typeFolderDataMap = new TreeMap<>();
-        private final Map<String, TypeData> _updateOnlyFileDataMap = new TreeMap<>();
+        private final Map<String, TypeData> _updateOnlyFileDataMap = new LinkedHashMap<>();
         private final Map<String, Set<String>> _orderDependencies = new HashMap<>();
-        private final int _sampleIdIndex;
+        private final int _dataIdIndex;
         private final Map<String, Set<String>> _idsPerType = new HashMap<>();
         private final Map<String, Set<String>> _parentIdsPerType = new HashMap<>();
 
@@ -2337,22 +2339,23 @@ public class ExpDataIterators
 
         private final boolean _isCrossFolderUpdate;
 
-        public MultiSampleTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
+        public MultiDataTypeCrossProjectDataIterator(DataIterator di, DataIteratorContext context, Container container, User user, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
         {
             super(di);
             _context = context;
             _container = container;
-            _sampleType = sampleType;
+            _isSamples = isSamples;
+            _dataType = dataType;
             _user = user;
             _isCrossType = isCrossType;
             _isCrossFolder = isCrossFolder;
             Map<String, Integer> map = DataIteratorUtil.createColumnNameMap(di);
 
-            _sampleIdIndex = map.getOrDefault("Name", -1);
+            _dataIdIndex = map.getOrDefault("Name", -1);
 
             _isCrossFolderUpdate = isCrossFolder && context.getInsertOption().updateOnly;
 
-            if (_isCrossType)
+            if (_isCrossType && _isSamples) //cross type only supported for samples
             {
                 SAMPLE_TYPE_FIELD_NAMES.forEach(name -> {
                     if (map.get(name) != null)
@@ -2375,7 +2378,6 @@ public class ExpDataIterators
                         if (_folderColIndex != null)
                             _context.getErrors().addRowError(new ValidationException("Only one of [" + CONTAINER_FIELD_NAMES.stream().sorted().collect(Collectors.joining(", ")) + "] allowed for import."));
                         _folderColIndex = map.get(name);
-                        _folderColName = di.getColumnInfo(_folderColIndex).getName();
                     }
                 });
 
@@ -2412,7 +2414,7 @@ public class ExpDataIterators
             var updateService = typeData.tableInfo.getUpdateService();
             if (updateService == null)
             {
-                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.sampleType.getName() + "'."));
+                _context.getErrors().addRowError(new ValidationException("No update service available for sample type '" + typeData.dataType.getName() + "'."));
             }
             else
             {
@@ -2424,7 +2426,7 @@ public class ExpDataIterators
                 }
                 catch (SQLException | IOException e)
                 {
-                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                    String msg = "Problem importing data for sample type '" + typeData.dataType.getName() + "'. ";
                     LOG.error(msg, e);
                     _context.getErrors().addRowError(new ValidationException(msg));
                 }
@@ -2434,27 +2436,40 @@ public class ExpDataIterators
         /**
          *
          * @param typeData
-         * @return true if has data from multiple containers, or from a container different from current container
+         * @return true if it has data from multiple containers, or from a container different from current container
          */
         private boolean handleCrossFolderUpdate(TypeData typeData)
         {
             String headerRow = typeData.dataRows.get(0);
             String dataFileName = typeData.dataFile.getName();
 
-            ExpSampleTypeImpl sampleType = typeData.sampleType;
-
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), sampleType.getRowId());
-            filter.addCondition(FieldKey.fromParts("Name"), typeData.sampleIds, CompareType.IN);
+            ExpObject dataType = typeData.dataType;
 
             Map<String, List<Integer>> containerRows = new HashMap<>();
-            TableInfo tableInfo = ExperimentService.get().getTinfoMaterial();
-            Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
             boolean hasCrossFolderData = false;
+
+            TableInfo tableInfo = null;
+            SimpleFilter filter = null;
+
+            if (_isSamples)
+            {
+                filter = new SimpleFilter(FieldKey.fromParts("MaterialSourceId"), dataType.getRowId());
+                filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
+                tableInfo = ExperimentService.get().getTinfoMaterial();
+            }
+            else
+            {
+                filter = new SimpleFilter(FieldKey.fromParts("ClassId"), dataType.getRowId());
+                filter.addCondition(FieldKey.fromParts("Name"), typeData.dataIds, CompareType.IN);
+                tableInfo = ExperimentService.get().getTinfoData();
+            }
+
+            Map<String, Object>[] rows = new TableSelector(tableInfo, Set.of("name", "container"), filter, null).getMapArray();
             for (Map<String, Object> row : rows)
             {
                 String name = (String) row.get("name");
                 String dataContainer = (String) row.get("container");
-                int sampleRowId = typeData.sampleIds.indexOf(name) + 1 /* header row */;
+                int sampleRowId = typeData.dataIds.indexOf(name) + 1 /* header row */;
 
                 if (!containerRows.containsKey(dataContainer))
                 {
@@ -2476,15 +2491,17 @@ public class ExpDataIterators
                 if (container == null)
                 {
                     Container folder = ContainerManager.getForId(containerId);
-                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update samples in the container: " + (folder != null ? folder.getName() : containerId)));
+                    _context.getErrors().addRowError(new ValidationException("You don't have the required permission to update " + (_isSamples ? "samples" : "data") + " in the container: " + (folder != null ? folder.getName() : containerId)));
                     return false;
                 }
-                SamplesSchema schema = new SamplesSchema(_user, container);
-                QueryDefinition qDef = schema.getQueryDefForTable(sampleType.getName());
-                TableInfo samplesTable = qDef.getTable(schema, new ArrayList<>(), true);
-                if (samplesTable == null)
+
+                AbstractExpSchema schema = _isSamples ? new SamplesSchema(_user, container) : new DataClassUserSchema(container, _user);
+                QueryDefinition qDef = schema.getQueryDefForTable(dataType.getName());
+                TableInfo dataTable = qDef.getTable(schema, new ArrayList<>(), true);
+
+                if (dataTable == null)
                 {
-                    _context.getErrors().addRowError(new ValidationException("Table for sample type '" + sampleType.getName() + "' not found."));
+                    _context.getErrors().addRowError(new ValidationException("Table for " + (_isSamples ? "sample type" : "dataclass") + " '" + dataType.getName() + "' not found."));
                     return false;
                 }
 
@@ -2498,7 +2515,7 @@ public class ExpDataIterators
                 }
                 catch (IOException e)
                 {
-                    String msg = "Problem importing data for sample type '" + typeData.sampleType.getName() + "'. ";
+                    String msg = "Problem importing data for " + (_isSamples ? "sample type" : "dataclass") + " '" + typeData.dataType.getName() + "'. ";
                     LOG.error(msg, e);
                     _context.getErrors().addRowError(new ValidationException(msg));
                     return false;
@@ -2509,19 +2526,19 @@ public class ExpDataIterators
                 for (Integer dataRowIndex : dataRowIndexes)
                     dataRows.add(typeData.dataRows.get(dataRowIndex));
 
-                TypeData containerTypeData = new TypeData(container, sampleType, samplesTable, dataFile, typeData.fieldIndexes, typeData.dependencyIndexes, dataRows, new ArrayList<>());
+                TypeData containerTypeData = new TypeData(container, dataType, dataTable, dataFile, typeData.fieldIndexes, typeData.dependencyIndexes, dataRows, new ArrayList<>());
                 containerTypeDatas.put(containerId, containerTypeData);
             }
 
             List<String> orderedContainer = new ArrayList<>(containerRows.keySet());
-            orderedContainer.sort(Comparator.comparing(containerIndexes::get)); // respect original row ordering so rows with lower indexes generally gets a smaller rowId
+            orderedContainer.sort(Comparator.comparing(containerIndexes::get)); // respect original row ordering
             for (String containerId : orderedContainer)
             {
                 if (_context.getErrors().hasErrors())
                     return false;
 
                 TypeData containerTypeData = containerTypeDatas.get(containerId);
-                _updateOnlyFileDataMap.put(containerId + "-" + sampleType.getRowId(), containerTypeData);
+                _updateOnlyFileDataMap.put(containerId + "-" + dataType.getRowId(), containerTypeData);
                 _importPartition(containerTypeData);
             }
 
@@ -2542,17 +2559,15 @@ public class ExpDataIterators
                 if (!_context.getErrors().hasErrors())
                 {
                     _context.setCrossTypeImport(false);
+                    _context.setCrossFolderImport(false);
 
-                    if (_context.isCrossFolderImport())
+                    boolean hasCrossFolderImport = false;
+
+                      // process the individual files
+                    for (String key : importOrderKeys)
                     {
-                        _context.setCrossFolderImport(false);
-                        if (!_context.getInsertOption().updateOnly && importOrderKeys.size() > 1) // all updates are cross-folder due to lack of Container column
-                            SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "sampleImport", "multiFolderImport");
-                    }
-
-                    // process the individual files
-                    importOrderKeys.forEach(key -> {
                         Map<String, TypeData> typeFolderData = _typeFolderDataMap.get(key);
+                        hasCrossFolderImport = hasCrossFolderImport || typeFolderData.keySet().size() > 1;
                         for (TypeData typeData : typeFolderData.values())
                         {
                             if (!_context.getErrors().hasErrors()) // Issue 48402: Stop early since the transaction may have been aborted
@@ -2566,7 +2581,11 @@ public class ExpDataIterators
                                     _importPartition(typeData);
                             }
                         }
-                    });
+                    }
+
+                    if (_isCrossFolder && !_context.getInsertOption().updateOnly && hasCrossFolderImport) // all updates are cross-folder due to lack of Container column
+                        SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, _isSamples ? "sampleImport" : "dataClassImport", "multiFolderImport");
+
                     _context.setCrossTypeImport(_isCrossType);
                     _context.setCrossFolderImport(_isCrossFolder);
                 }
@@ -2576,7 +2595,7 @@ public class ExpDataIterators
             else
             {
                 TypeData typeFolderData = null;
-                String typeName = _typeColIndex != null ? StringUtils.trim((String) get(_typeColIndex)) : _sampleType.getName();
+                String typeName = _typeColIndex != null ? StringUtils.trim((String) get(_typeColIndex)) : _dataType.getName();
                 Container targetContainer = _container; // default to context container
 
                 if (StringUtils.isEmpty(typeName) && _isCrossType)
@@ -2597,24 +2616,40 @@ public class ExpDataIterators
                         }
                     }
 
-                    Map<String, TypeData> typeFolderMap = _typeFolderDataMap.computeIfAbsent(typeName, k -> new TreeMap<>());
+                    Map<String, TypeData> typeFolderMap = _typeFolderDataMap.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
                     typeFolderData = typeFolderMap.get(targetContainer.getId());
                     if (typeFolderData == null)
                     {
-                        ExpSampleTypeImpl sampleType = _typeColIndex != null ? (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, _user, typeName) : (ExpSampleTypeImpl) _sampleType;
-                        if (sampleType == null)
-                            _context.getErrors().addRowError(new ValidationException(_typeColName + " '" + typeName + "' not found.") );
+                        if (_isSamples)
+                        {
+                            ExpSampleTypeImpl sampleType = _typeColIndex != null ? (ExpSampleTypeImpl) SampleTypeService.get().getSampleType(targetContainer, _user, typeName) : (ExpSampleTypeImpl) _dataType;
+                            if (sampleType == null)
+                                _context.getErrors().addRowError(new ValidationException(_typeColName + " '" + typeName + "' not found.") );
+                            else
+                            {
+                                try
+                                {
+                                    typeFolderData = createSampleHeaderRow(sampleType, targetContainer);
+                                    if (typeFolderData != null)
+                                        typeFolderMap.put(targetContainer.getId(), typeFolderData);
+                                }
+                                catch (IOException e)
+                                {
+                                    _context.getErrors().addRowError(new ValidationException("Error writing file for '" + sampleType.getName() + "'."));
+                                }
+                            }
+                        }
                         else
                         {
                             try
                             {
-                                typeFolderData = createHeaderRow(sampleType, targetContainer);
+                                typeFolderData = createDataClassHeaderRow((ExpDataClass) _dataType, targetContainer);
                                 if (typeFolderData != null)
                                     typeFolderMap.put(targetContainer.getId(), typeFolderData);
                             }
                             catch (IOException e)
                             {
-                                _context.getErrors().addRowError(new ValidationException("Error writing file for '" + sampleType.getName() + "'."));
+                                _context.getErrors().addRowError(new ValidationException("Error writing file for '" + _dataType.getName() + "'."));
                             }
                         }
                     }
@@ -2647,6 +2682,9 @@ public class ExpDataIterators
 
         private Collection<String> getImportOrderTypeKeys()
         {
+            if (!_isSamples)
+                return _typeFolderDataMap.keySet(); // dataclass cross type not supported
+
             List<String> keys = new ArrayList<>();
             Set<String> allKeys = _typeFolderDataMap.keySet();
             // if the parents referenced in the file are not samples that are potentially being created in this file, there is no dependency
@@ -2696,7 +2734,38 @@ public class ExpDataIterators
             return keys;
         }
 
-        private TypeData createHeaderRow(ExpSampleTypeImpl sampleType, Container container) throws IOException
+        private TypeData createDataClassHeaderRow(ExpDataClass dataClass, Container container) throws IOException
+        {
+            List<QueryException> qpe = new ArrayList<>();
+            DataClassUserSchema schema = new DataClassUserSchema(container, _user);
+            QueryDefinition qDef = schema.getQueryDefForTable(dataClass.getName());
+            TableInfo dataTable = qDef.getTable(schema, qpe, true);
+            if (dataTable == null)
+            {
+                _context.getErrors().addRowError(new ValidationException("Table for dataclass '" + dataClass.getName() + "' not found."));
+                return null;
+            }
+
+            List<Integer> fieldIndexes = new ArrayList<>();
+            List<String> header = new ArrayList<>();
+
+            for (int i = 1; i <= getColumnCount(); i++)
+            {
+                ColumnInfo colInfo = getColumnInfo(i);
+                String name = colInfo.getName();
+
+                fieldIndexes.add(i);
+                header.add(name);
+            }
+
+            File dataFile = FileUtil.createTempFile("~importSplit-", container.getRowId() + dataClass.getName() + ".tsv");
+
+            List<String> dataRows = new ArrayList<String>();
+            dataRows.add(StringUtils.join(header, "\t"));
+            return new TypeData(container, _dataType, dataTable, dataFile, fieldIndexes, Collections.emptyMap(), dataRows, new ArrayList<>());
+        }
+
+        private TypeData createSampleHeaderRow(ExpSampleTypeImpl sampleType, Container container) throws IOException
         {
             List<QueryException> qpe = new ArrayList<>();
             SamplesSchema schema = new SamplesSchema(_user, container);
@@ -2743,7 +2812,7 @@ public class ExpDataIterators
                     fieldIndexes.add(i);
                     header.add(name);
                     // no dependencies to register if the names of samples are not being provided in the file.
-                    if (_sampleIdIndex != -1)
+                    if (_dataIdIndex != -1)
                     {
                         String typeName = name.replaceAll("(?i)" + MATERIAL_INPUTS_PREFIX_LC, "");
                         if (!sampleType.getName().equals(typeName))
@@ -2759,10 +2828,10 @@ public class ExpDataIterators
                 {
                     fieldIndexes.add(i);
                     header.add(name);
-                    if (_sampleIdIndex != -1)
+                    if (_dataIdIndex != -1)
                         dependencyIndexes.put(i, name.replaceAll("(?i)" + INPUTS_PREFIX_LC, ""));
                 }
-                else if (aliasMap.containsKey(name) && _sampleIdIndex != -1)
+                else if (aliasMap.containsKey(name) && _dataIdIndex != -1)
                 {
                     String aliasTarget = aliasMap.get(name);
                     if (aliasTarget.toLowerCase().startsWith(MATERIAL_INPUTS_PREFIX_LC))
@@ -2794,19 +2863,19 @@ public class ExpDataIterators
                 dataRow.add(data);
                 if (data != null)
                 {
-                    if (index == _sampleIdIndex)
+                    if (index == _dataIdIndex)
                     {
-                        _idsPerType.computeIfAbsent(typeData.sampleType.getName(), k -> new HashSet<>()).add(data.toString());
+                        _idsPerType.computeIfAbsent(typeData.dataType.getName(), k -> new HashSet<>()).add(data.toString());
                         if (_isCrossFolderUpdate)
-                            typeData.sampleIds.add(data.toString());
+                            typeData.dataIds.add(data.toString());
                     }
 
                     // if the data represents a derivation dependency between types, and we're creating ids within the file,
                     // capture a dependency map, so we can try to figure out a good ordering to use for importing the data.
-                    if (typeData.dependencyIndexes.containsKey(index) && _sampleIdIndex >= 0)
+                    if (typeData.dependencyIndexes.containsKey(index) && _dataIdIndex >= 0)
                     {
                         String parentTypeName = typeData.dependencyIndexes.get(index);
-                        _orderDependencies.computeIfAbsent(typeData.sampleType.getName(), i -> new HashSet<>()).add(parentTypeName);
+                        _orderDependencies.computeIfAbsent(typeData.dataType.getName(), i -> new HashSet<>()).add(parentTypeName);
                         _parentIdsPerType.computeIfAbsent(parentTypeName, k -> new HashSet<>()).add(data.toString());
                     }
                 }
@@ -2827,35 +2896,38 @@ public class ExpDataIterators
             }
             catch (IOException e)
             {
-                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.sampleType.getName() + "'."));
+                _context.getErrors().addRowError(new ValidationException("Unable to write data for '" + typeData.dataType.getName() + "'."));
             }
         }
     }
 
-    public static class MultiSampleTypeCrossProjectDataIteratorBuilder implements DataIteratorBuilder
+    public static class MultiDataTypeCrossProjectDataIteratorBuilder implements DataIteratorBuilder
     {
         private final DataIteratorBuilder _in;
         private final Container _container;
         private final User _user;
         private final boolean _isCrossType;
         private final boolean _isCrossFolder;
-        private final ExpSampleType _sampleType;
+        private final ExpObject _dataType;
+        private final boolean _isSamples;
 
-        public MultiSampleTypeCrossProjectDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in, boolean isCrossType, boolean isCrossFolder, ExpSampleType sampleType)
+        public MultiDataTypeCrossProjectDataIteratorBuilder(@NotNull User user, @NotNull Container container, @NotNull DataIteratorBuilder in, boolean isCrossType, boolean isCrossFolder, ExpObject dataType, boolean isSamples)
         {
             _in = in;
             _container = container;
             _user = user;
             _isCrossType = isCrossType;
             _isCrossFolder = isCrossFolder;
-            _sampleType = sampleType;
+            _dataType = dataType;
+            _isSamples = isSamples;
+
         }
 
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
             DataIterator pre = _in.getDataIterator(context);
-            return LoggingDataIterator.wrap(new MultiSampleTypeCrossProjectDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _sampleType));
+            return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _dataType, _isSamples));
         }
     }
 }
