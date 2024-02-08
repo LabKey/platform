@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
@@ -359,7 +360,7 @@ public class PlateManager implements PlateService
     @Override
     public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, user, plate);
+        SqlSelector se = selectRunUsingPlateTemplate(c, user, plate);
         if (se == null)
             return emptyList();
 
@@ -370,27 +371,72 @@ public class PlateManager implements PlateService
     @Override
     public int getRunCountUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, user, plate);
-        if (se == null)
-            return 0;
+        int count = 0;
+        SqlSelector se = selectRunUsingPlateTemplate(c, user, plate);
+        if (se != null)
+            count += (int) se.getRowCount();
 
-        return (int) se.getRowCount();
+        List<Integer> runIds = getRunIdsUsingPlateInResults(c, user, plate);
+        if (runIds != null)
+            count += runIds.size();
+
+        return count;
     }
 
-    private @Nullable SqlSelector selectRunUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
+    private List<Integer> getRunIdsUsingPlateInResults(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
         // first, get the list of GPAT protocols in the container
-        AssayProvider gpat = AssayService.get().getProvider(TsvAssayProvider.NAME);
-        if (gpat == null)
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
+        if (provider == null)
             return null;
 
-        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, gpat);
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider)
+                .stream().filter(provider::isPlateMetadataEnabled).toList();
+
+        // get the runIds for each protocol, query against its assayresults table
+        List<Integer> runIds = new ArrayList<>();
+        for (ExpProtocol protocol : protocols)
+        {
+            AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
+            if (assayDataTable != null)
+            {
+                ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
+                if (dataIdCol != null)
+                {
+                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT dataid FROM ")
+                            .append(assayDataTable)
+                            .append(" WHERE plate = ?")
+                            .add(plate.getRowId());
+
+                    SQLFragment sql = new SQLFragment("SELECT DISTINCT runid FROM ")
+                            .append(ExperimentService.get().getTinfoData())
+                            .append(" WHERE rowid IN (").append(subSelectSql).append(")");
+
+                    Collection<Integer> assayRunIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(Integer.class);
+                    if (!assayRunIds.isEmpty())
+                        runIds.addAll(assayRunIds);
+                }
+            }
+        }
+
+        return runIds;
+    }
+
+    private @Nullable SqlSelector selectRunUsingPlateTemplate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
+    {
+        // first, get the list of GPAT protocols in the container
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
+        if (provider == null)
+            return null;
+
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
 
         // next, for the plate metadata enabled assays,
         // get the set of "PlateTemplate" PropertyDescriptors from the RunDomains of those assays
         List<PropertyDescriptor> plateTemplateProps = protocols.stream()
-                .filter(gpat::isPlateMetadataEnabled)
-                .map(gpat::getRunDomain)
+                .filter(provider::isPlateMetadataEnabled)
+                .map(provider::getRunDomain)
                 .filter(Objects::nonNull)
                 .map(r -> r.getPropertyByName(TsvAssayProvider.PLATE_TEMPLATE_PROPERTY_NAME))
                 .filter(Objects::nonNull)
