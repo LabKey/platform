@@ -156,18 +156,6 @@ public abstract class JspBase extends JspContext implements HasViewContext
     }
 
     /**
-     * No-op encoding
-     * Indicate that you explicitly want to include a string in the page WITHOUT encoding
-     * TODO: HtmlString - Eventually, remove this method and all usages.
-     * Use HtmlString.unsafe() instead, or even better use h() if possible
-     */
-    @Deprecated
-    public HtmlString text(String s)
-    {
-        return HtmlString.unsafe(s);
-    }
-
-    /**
      * Convenience method for asserting that a String contains valid, properly encoded HTML.
      *
      * @param s Valid, properly encoded HTML
