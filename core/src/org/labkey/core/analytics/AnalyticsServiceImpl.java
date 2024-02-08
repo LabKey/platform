@@ -118,7 +118,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
 
         if (getTrackingStatus().contains(TrackingStatus.ga4FullUrl))
         {
-            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY, GOOGLE_TAG_MANAGER_URL, "https://www.google-analytics.com");
+            ContentSecurityPolicyFilter.registerAllowedConnectionSource(ANALYTICS_CSP_KEY, "https://*.googletagmanager.com", "https://*.google-analytics.com", "https://*.analytics.google.com");
         }
     }
 
