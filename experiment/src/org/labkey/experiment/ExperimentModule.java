@@ -226,7 +226,7 @@ public class ExperimentModule extends SpringModule
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
         AdminConsole.addExperimentalFeatureFlag(NameGenerator.EXPERIMENTAL_WITH_COUNTER, "Use strict incremental withCounter and rootSampleCount expression",
-                "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", false);
+                "When withCounter or rootSampleCount is used in name expression, make sure the count increments one-by-one and does not jump.", true);
         AdminConsole.addExperimentalFeatureFlag(ExpMaterialTable.USE_MATERIALIZED_SAMPLETYPE, "Use materialized views for sample type tables",
                 "PROTOTYPE: possible approach for improving query performance.", false);
 
