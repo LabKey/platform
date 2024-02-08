@@ -589,8 +589,18 @@ public class ExperimentModule extends SpringModule
                         assayMetrics.put(assayProvider.getName(), protocolMetrics);
                     }
                     assayMetrics.put("autoLinkedAssayCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.propertyuri = 'terms.labkey.org#AutoCopyTargetContainer'").getObject(Long.class));
-                    assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
                     assayMetrics.put("protocolsWithTransformScriptCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'TransformScript' AND status = 'Active'").getObject(Long.class));
+
+                    assayMetrics.put("standardAssayWithPlateSupportCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.protocol EP JOIN exp.objectPropertiesView OP ON EP.lsid = OP.objecturi WHERE OP.name = 'PlateMetadata' AND floatValue = 1").getObject(Long.class));
+                    SQLFragment runsWithPlateSQL = new SQLFragment("""
+                        SELECT COUNT(*) FROM exp.experimentrun r
+                            INNER JOIN exp.object o ON o.objectUri = r.lsid
+                            INNER JOIN exp.objectproperty op ON op.objectId = o.objectId
+                        WHERE op.propertyid IN (
+                            SELECT propertyid FROM exp.propertydescriptor WHERE name = ? AND lookupquery = ?
+                    )""");
+                    assayMetrics.put("standardAssayRunsWithPlateTemplate", new SqlSelector(ExperimentService.get().getSchema(), new SQLFragment(runsWithPlateSQL).add("PlateTemplate").add("PlateTemplate")).getObject(Long.class));
+                    assayMetrics.put("standardAssayRunsWithPlateSet", new SqlSelector(ExperimentService.get().getSchema(), new SQLFragment(runsWithPlateSQL).add("PlateSet").add("PlateSet")).getObject(Long.class));
 
                     Map<String, Object> sampleLookupCountMetrics = new HashMap<>();
                     SQLFragment baseAssaySampleLookupSQL = new SQLFragment("SELECT COUNT(*) FROM exp.propertydescriptor WHERE (lookupschema = 'samples' OR (lookupschema = 'exp' AND lookupquery =  'Materials')) AND propertyuri LIKE ?");
