@@ -153,24 +153,28 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         FieldKey lsidFieldKey = FieldKey.fromParts("lsid");
         Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
 
-        for (ColumnInfo col : PlateManager.get().getPlateMetadataTable(getContainer(), _userSchema.getUser()).getColumns())
+        TableInfo metadataTable = PlateManager.get().getPlateMetadataTable(getContainer(), _userSchema.getUser());
+        if (metadataTable != null)
         {
-            if (col.getFieldKey().equals(lsidFieldKey))
-                continue;
+            for (ColumnInfo col : metadataTable.getColumns())
+            {
+                if (col.getFieldKey().equals(lsidFieldKey))
+                    continue;
 
-            var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
-            if (col.isHidden())
-                wrapped.setHidden(true);
+                var wrapped = wrapColumnFromJoinedTable(col.getName(), col);
+                if (col.isHidden())
+                    wrapped.setHidden(true);
 
-            // Copy the property descriptor settings to the wrapped column.
-            String propertyURI = col.getPropertyURI();
-            DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
-            PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
-            if (dp != null && pd != null)
-                defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
+                // Copy the property descriptor settings to the wrapped column.
+                String propertyURI = col.getPropertyURI();
+                DomainProperty dp = propertyURI != null ? wellDomain.getPropertyByURI(propertyURI) : null;
+                PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
+                if (dp != null && pd != null)
+                    defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrapped, dp, getContainer(), lsidFieldKey, getContainerFilter(), defaultsSupplier);
 
-            addColumn(wrapped);
-            defaultVisibleColumns.add(col.getFieldKey());
+                addColumn(wrapped);
+                defaultVisibleColumns.add(col.getFieldKey());
+            }
         }
     }
 

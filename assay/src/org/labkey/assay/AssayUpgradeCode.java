@@ -371,6 +371,12 @@ public class AssayUpgradeCode implements UpgradeCode
                         // delete the domain
                         domain.delete(User.getAdminServiceUser());
                     }
+
+                    // ensure the plate metadata domain for the top level biologics projects
+                    if (container.isProject() && "Biologics".equals(ContainerManager.getFolderTypeName(container)))
+                    {
+                        PlateManager.get().ensurePlateMetadataDomain(container, User.getAdminServiceUser());
+                    }
                 }
             }
             tx.commit();

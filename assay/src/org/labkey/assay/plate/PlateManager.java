@@ -954,7 +954,8 @@ public class PlateManager implements PlateService
     {
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         DbScope scope = schema.getSchema().getScope();
-        assert scope.isTransactionActive();
+        if (!scope.isTransactionActive())
+            throw new IllegalStateException("This method must be called from within a transaction");
 
         Plate plate = PlateCache.getPlate(container, plateId);
         List<String> lsids = new ArrayList<>();
@@ -1052,6 +1053,7 @@ public class PlateManager implements PlateService
                     .append(" SELECT Lsid FROM ").append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                     .append(" WHERE Container = ?)")
                     .add(container);
+            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
         }
 
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
