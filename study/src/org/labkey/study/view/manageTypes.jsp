@@ -146,13 +146,13 @@
         boolean isShared = def.isShared();
     %><tr class="<%=getShadeRowClass(i++)%>">
         <td align=right><a href="<%=h(details)%>"><%=def.getDatasetId()%></a></td>
-        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(!isShared?"": def.getDataSharingEnum()== DatasetDefinition.DataSharing.PTID?" (shared data)":" (shared)")%></a></td>
+        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=unsafe(!isShared?"": def.getDataSharingEnum()== DatasetDefinition.DataSharing.PTID?" (shared data)":" (shared)")%></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>
         <td><%=h(def.getType())%>&nbsp;</td>
         <td><%=h(cohort != null ? cohort.getLabel() : "All")%></td>
-        <td><%=text(def.isShowByDefault() ? "" : "hidden")%></td>
-        <td><%=text(def.isDemographicData() ? "demographic" : "")%></td>
+        <td><%=unsafe(def.isShowByDefault() ? "" : "hidden")%></td>
+        <td><%=unsafe(def.isDemographicData() ? "demographic" : "")%></td>
         <td><%=h(def.getKeyTypeDescription())%></td>
         <td><%=h(def.getPublishSource() != null ? def.getPublishSource().getLabel(def.getPublishSourceId()) : "")%></td>
     </tr><%

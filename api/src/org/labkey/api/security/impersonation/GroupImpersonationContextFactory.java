@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
@@ -49,6 +50,7 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 {
     private final @Nullable GUID _projectId;
     private final int _groupId;
+    @JsonIgnore // Can't be handled by remote pipelines
     private final ActionURL _returnURL;
     private final int _adminUserId;
 
@@ -56,15 +58,13 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
     protected GroupImpersonationContextFactory(
             @JsonProperty("_projectId") @Nullable GUID projectId,
             @JsonProperty("_adminUserId") int adminUserId,
-            @JsonProperty("_groupId") int groupId,
-            @JsonProperty("_returnURL") ActionURL returnURL
+            @JsonProperty("_groupId") int groupId
     )
     {
-        super();
         _projectId = projectId;
         _groupId = groupId;
         _adminUserId = adminUserId;
-        _returnURL = returnURL;
+        _returnURL = null;
     }
 
     public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, ActionURL returnURL)
@@ -83,7 +83,6 @@ public class GroupImpersonationContextFactory extends AbstractImpersonationConte
 
         return new GroupImpersonationContext(project, getAdminUser(), group, _returnURL, this);
     }
-
 
     @Override
     public void startImpersonating(ViewContext context)

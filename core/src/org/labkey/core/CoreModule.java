@@ -874,6 +874,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
         FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
 
+        AnalyticsServiceImpl.get().resetCSP();
+
         if (moduleContext.isNewInstall())
         {
             // In order to initialize the portal layout correctly, we need to add the web parts after the folder

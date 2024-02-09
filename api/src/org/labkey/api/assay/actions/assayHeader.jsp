@@ -46,7 +46,7 @@
             String url = link.getHref();
             boolean active = current.getLocalURIString().equals(url);
 %>
-            <%= text(active ? "<strong>" : "") %><%= link(link.getText()).href(url) %><%= text(active ? "</strong>" : "") %>
+            <%= unsafe(active ? "<strong>" : "") %><%= link(link.getText()).href(url) %><%= unsafe(active ? "</strong>" : "") %>
 <%
         }
         else

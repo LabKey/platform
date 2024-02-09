@@ -126,7 +126,7 @@
                         <td><input <%=h(canChangeFileSettings && hasAdminOpsPerm ? "" : " disabled ")%>
                                 type="radio" name="fileRootOption" id="optionProjectSpecified" value="<%=FileRootProp.folderOverride%>"
                                 <%=checked(FileRootProp.folderOverride.name().equals(bean.getFileRootOption()))%>>
-                            Use a <%=text(getContainer().getContainerNoun())%>-level file root
+                            Use a <%=unsafe(getContainer().getContainerNoun())%>-level file root
                             <labkey:input type="text" id="folderRootPath" name="folderRootPath" size="64" onChange="onRootChange()" value="<%=h(bean.getFolderRootPath())%>" /></td>
                         <% addHandler("optionProjectSpecified", "click", "return updateSelection(" + !FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) + ");"); %>
                     </tr>
@@ -213,7 +213,7 @@
                     String id = "cloudStore_" + getRequestScopedUID();
         %>
         <tr>
-            <td <%=text(storeInfo.isEnabled() ? "" : "class='labkey-disabled'")%>>
+            <td <%=unsafe(storeInfo.isEnabled() ? "" : "class='labkey-disabled'")%>>
                 <input type="checkbox" id="<%=h(id)%>" name="enabledCloudStore" value="<%=h(storeInfo.getName())%>" <%=checked((storeInfo.isEnabledInContainer()))%> <%=disabled(!storeInfo.isEnabled())%>>
                 <label for="<%=h(id)%>"><%=h(storeInfo.getName())%></label>
             </td>

@@ -28,10 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Oct 3, 2007
- */
 public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
 {
     protected List<String> _sampleNames;

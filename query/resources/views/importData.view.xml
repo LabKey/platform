@@ -4,6 +4,8 @@
     </permissions>
     <dependencies>
         <dependency path="Ext4ClientApi"/>
+        <dependency path="/extWidgets/ExcelUploadPanel.js"/>
+        <dependency path="/extWidgets/Ext4FormPanel.js"/>
         <dependency path="/extWidgets/ImportPanel.js"/>
     </dependencies>
 </view>

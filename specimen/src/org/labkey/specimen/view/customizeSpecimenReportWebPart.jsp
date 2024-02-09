@@ -41,7 +41,7 @@
         <td>
             Type
             <label>
-                <select name="<%=text(SpecimenReportWebPartFactory.REPORT_TYPE_PARAMETER_NAME)%>"><%
+                <select name="<%=unsafe(SpecimenReportWebPartFactory.REPORT_TYPE_PARAMETER_NAME)%>"><%
                     for (String category : bean.getCategories())
                     {
                         for (SpecimenVisitReportParameters factory : bean.getFactories(category))

@@ -102,7 +102,7 @@ public class ExpSampleTypeImpl extends ExpIdentifiableEntityImpl<MaterialSource>
     };
 
     public static final String ALIQUOT_NAME_EXPRESSION = "${" + ALIQUOTED_FROM_EXPRESSION + "-:withCounter}";
-    public static final String SAMPLE_COUNTER_SEQ_PREFIX = "SampleNameGenCounter-";
+    public static final String SAMPLE_COUNTER_SEQ_PREFIX = "samplenamegencounter-";
 
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
 

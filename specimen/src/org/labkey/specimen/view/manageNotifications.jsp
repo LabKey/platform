@@ -120,7 +120,7 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <input type="text" size="40" name="replyTo"
                        id='replyTo' value="<%= h(bean.getReplyTo()) %>"
-                       style="display:<%= text(replyToCurrentUser ? "none" : "") %>">
+                       style="display:<%= unsafe(replyToCurrentUser ? "none" : "") %>">
             </td>
         </tr>
 
@@ -156,7 +156,7 @@ function setElementDisplayByCheckbox(checkbox, element)
                 </label>
             </td>
         </tr>
-        <tr id="newRequestNotifyArea" style="display:<%= text(newRequestNotifyChecked ? "" : "none")%>">
+        <tr id="newRequestNotifyArea" style="display:<%= unsafe(newRequestNotifyChecked ? "" : "none")%>">
             <th align="right" class="labkey-form-label local-left-label-width-th">Notify of new requests<br>(one per line):</th>
             <td>
                 <labkey:autoCompleteTextArea name="newRequestNotify"
@@ -182,7 +182,7 @@ function setElementDisplayByCheckbox(checkbox, element)
 
         </tr>
 
-        <tr id="ccArea" style="display:<%= text(ccChecked ? "" : "none")%>">
+        <tr id="ccArea" style="display:<%= unsafe(ccChecked ? "" : "none")%>">
             <th align="right" class="labkey-form-label local-left-label-width-th">Always CC<br>(one per line):</th>
             <td>
                 <labkey:autoCompleteTextArea name="cc"

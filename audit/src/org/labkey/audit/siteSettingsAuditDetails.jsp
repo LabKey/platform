@@ -31,4 +31,4 @@
         the site settings were modified in the following way:
     <% } %>
 </p>
-<%=text(model.getDiff())%>
+<%=unsafe(model.getDiff())%>

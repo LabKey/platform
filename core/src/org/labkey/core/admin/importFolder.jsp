@@ -116,7 +116,7 @@
         <td>
             <%=h(mainDescription)%>
             <br/><br/>
-            <%=text(helpLinkTxt)%>
+            <%=unsafe(helpLinkTxt)%>
         </td>
     </tr>
     <tr>

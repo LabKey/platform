@@ -145,7 +145,6 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         {
             throw UnexpectedException.wrap(e);
         }
-
     }
 
     @Override

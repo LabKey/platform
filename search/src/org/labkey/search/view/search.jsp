@@ -280,7 +280,7 @@
         }
     }
 %>
-<div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
+<div<%=unsafe(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
         <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
             <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=value%>"/>
@@ -289,7 +289,7 @@
             <small>
                 <a class="search-advanced-toggle">advanced options</a>
                 <% if (form.getIncludeHelpLink()) { %>
-                | <a target="_blank" href="<%=text(SearchUtils.getHelpTopic().getHelpTopicHref())%>" rel="noopener noreferrer">help</a>
+                | <a target="_blank" href="<%=unsafe(SearchUtils.getHelpTopic().getHelpTopicHref())%>" rel="noopener noreferrer">help</a>
                 <% } %>
             </small>
             <% } %>
@@ -314,7 +314,7 @@
         </labkey:form>
     </div>
 </div>
-<div id="<%=h(advFormCt)%>" class="col-md-12" <%=text(form.isShowAdvanced() ? "" : "style=\"display:none;\"")%>>
+<div id="<%=h(advFormCt)%>" class="col-md-12" <%=unsafe(form.isShowAdvanced() ? "" : "style=\"display:none;\"")%>>
     <div class="panel panel-default">
         <div class="panel-body">
             <labkey:form id="<%=advFormId%>">
@@ -410,22 +410,22 @@
                         <div style="padding-top: 1px;">
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=text("score")%>" <%=checked(sortField == null || "score".equals(sortField))%>> Relevance
+                                    <input type="radio" name="sortField" value="<%=unsafe("score")%>" <%=checked(sortField == null || "score".equals(sortField))%>> Relevance
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=text("created")%>" <%=checked("created".equals(sortField))%>> Created
+                                    <input type="radio" name="sortField" value="<%=unsafe("created")%>" <%=checked("created".equals(sortField))%>> Created
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=text("modified")%>" <%=checked("modified".equals(sortField))%>> Modified
+                                    <input type="radio" name="sortField" value="<%=unsafe("modified")%>" <%=checked("modified".equals(sortField))%>> Modified
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="sortField" value="<%=text("container")%>" <%=checked("container".equals(sortField))%>> Folder Path
+                                    <input type="radio" name="sortField" value="<%=unsafe("container")%>" <%=checked("container".equals(sortField))%>> Folder Path
                                 </label>
                             </div>
                             <div class="checkbox">
@@ -450,7 +450,7 @@
     }
 %>
 <% if (result != null) { %>
-<div class="<%=text(hasNavResults ? "col-md-9" : "col-md-12")%>">
+<div class="<%=unsafe(hasNavResults ? "col-md-9" : "col-md-12")%>">
     <div class="panel panel-portal labkey-search-results">
         <div class="panel-body">
             <%
@@ -458,8 +458,8 @@
                 int pageCount = (int)Math.ceil((double)hits / hitsPerPage);
             %>
             <div class="labkey-search-results-counts">
-                <div class="pull-left"><%=text(getResultsSummary(hits, template))%></div>
-                <div class="pull-right"><%=text(getPageSummary(hits, template, hitsPerPage, pageNo, pageCount))%></div>
+                <div class="pull-left"><%=unsafe(getResultsSummary(hits, template))%></div>
+                <div class="pull-right"><%=unsafe(getPageSummary(hits, template, hitsPerPage, pageNo, pageCount))%></div>
             </div>
             <%
                 for (SearchService.SearchHit hit : result.hits)
@@ -491,12 +491,12 @@
 
                         if (!StringUtils.isEmpty(hit.navtrail))
                         {
-                    %>&nbsp;<%=text(formatNavTrail(parseNavTrail(hit.navtrail)))%><%
+                    %>&nbsp;<%=unsafe(formatNavTrail(parseNavTrail(hit.navtrail)))%><%
                         }
                         Collection<NavTree> actions = getActions(hit);
                         if (null != actions && !actions.isEmpty())
                         {
-                    %>&nbsp;<%=text(formatNavTrail(actions))%><%
+                    %>&nbsp;<%=unsafe(formatNavTrail(actions))%><%
                         }
                     %>
                     </div>

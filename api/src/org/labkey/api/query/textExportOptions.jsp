@@ -74,17 +74,17 @@
 %>
 <table class="lk-fields-table">
     <tr>
-        <td><label for="<%=text(delimGUID)%>">Separator:</label></td>
+        <td><label for="<%=unsafe(delimGUID)%>">Separator:</label></td>
         <td>
-            <select id="<%=text(delimGUID)%>" name="<%=text(delim)%>">
+            <select id="<%=unsafe(delimGUID)%>" name="<%=unsafe(delim)%>">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
             </select>
         </td>
     </tr>
     <tr>
-        <td><label for="<%=text(quoteGUID)%>">Quote:</label></td>
+        <td><label for="<%=unsafe(quoteGUID)%>">Quote:</label></td>
         <td>
-            <select id="<%=text(quoteGUID)%>" name="<%=text(quote)%>">
+            <select id="<%=unsafe(quoteGUID)%>" name="<%=unsafe(quote)%>">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
             </select>
         </td>
@@ -92,7 +92,7 @@
     <tr>
         <td><label>Column headers:<%=helpPopup("Column Header Options", sb.toString(), true)%></label></td>
         <td>
-            <select id="<%=text(headerGUID)%>" name="<%=text(headerType)%>">
+            <select id="<%=unsafe(headerGUID)%>" name="<%=unsafe(headerType)%>">
                 <labkey:options value="<%=model.getHeaderType()%>" map="<%=headerMap%>" />
             </select>
         </td>
@@ -102,7 +102,7 @@
         <tr>
             <td valign="center" colspan="2">
                 <input type="checkbox" id="<%=h(exportSelectedId)%>" value="exportSelected" <%=checked(hasSelected)%> <%=disabled(!hasSelected)%>/>
-                <label class="<%=text(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>"
+                <label class="<%=unsafe(hasSelected ? "" : "labkey-disabled")%>" id="<%=h(exportSelectedId + "_label")%>"
                        for="<%=h(exportSelectedId)%>"> <%=h(model.isIncludeSignButton() ? "Export/Sign selected rows" : "Export selected rows")%>
                 </label>
             </td>

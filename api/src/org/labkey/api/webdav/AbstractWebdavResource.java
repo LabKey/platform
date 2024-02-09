@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.resource.AbstractResource;
@@ -59,6 +60,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -157,21 +159,30 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     public User getCreatedBy()
     {
         List<ExpData> data = getExpData();
-        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : null;
+        if (data == null || data.isEmpty())
+            return null;
+
+        return data.get(0).getCreatedBy();
     }
 
     @Override
     public String getDescription()
     {
         List<ExpData> data = getExpData();
-        return data != null && data.size() == 1 ? data.get(0).getComment() : null;
+        if (data == null || data.isEmpty())
+            return null;
+
+        return data.get(0).getComment();
     }
 
     @Override
     public User getModifiedBy()
     {
         List<ExpData> data = getExpData();
-        return data != null && data.size() == 1 ? data.get(0).getCreatedBy() : null;
+        if (data == null || data.isEmpty())
+            return null;
+
+        return data.get(0).getModifiedBy();
     }
 
 
@@ -715,7 +726,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
                     list.addAll(provider.getExpDataByPath(path, container));
                 }
             }
-            _data = list;
+
+            //Sort the results by creation date so the original is used for metadata display
+            _data = list.stream().sorted(Comparator.comparing(ExpObject::getCreated)).toList();
         }
         return _data;
     }

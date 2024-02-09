@@ -121,7 +121,7 @@
                             else
                             {
                                 String checkboxDisabled = hasAdminOpsPerms ? "" : "disabled";
-                    %><tr><td><input name="enable" <%=text(checkboxDisabled)%> value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=description%></td></tr><%
+                    %><tr><td><input name="enable" <%=unsafe(checkboxDisabled)%> value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=description%></td></tr><%
                             }
                         }
                     %>

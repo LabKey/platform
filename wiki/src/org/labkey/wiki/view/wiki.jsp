@@ -64,7 +64,7 @@ if (!view.hasContent)
         if (view.hasAdminPermission && !view.isEmbedded())
         {%>
             The Wiki web part displays a single wiki page.
-            <%=text(view.folderHasWikis ? "Currently there is no page selected to display. You can:<br>" : "This folder does not currently contain any wiki pages to display. You can:<br>")%>
+            <%=unsafe(view.folderHasWikis ? "Currently there is no page selected to display. You can:<br>" : "This folder does not currently contain any wiki pages to display. You can:<br>")%>
             <ul>
                 <li><a href="<%=h(view.customizeURL)%>">Choose an existing page to display</a> from this project or a different project.</li>
                 <li><a href="<%=h(view.insertURL)%>">Create a new wiki page</a> to display in this web part.</li>

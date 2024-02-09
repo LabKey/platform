@@ -86,11 +86,11 @@
 <%
     if (!bean.showUserCol())
     {
-        out.print(text("        <th>Container</th>"));
+        out.print(unsafe("        <th>Container</th>"));
     }
     else
     {
-        out.print(text("        <th>User</th>"));
+        out.print(unsafe("        <th>User</th>"));
     }
 %>
         <th>Current Access</th>
@@ -170,13 +170,13 @@
 
                                         if (group.isGuests() || group.isUsers())
                                         {
-                                            %><%= text(!first ? ", " : "") %><span data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></span><%
+                                            %><%= unsafe(!first ? ", " : "") %><span data-qtip="<%=unsafe(hoverExplanation)%>"><%=h(displayName)%></span><%
                                         }
                                         else
                                         {
                                             String groupName = group.isProjectGroup() ? groupContainer.getPath() + "/" + group.getName() : group.getName();
                                             ActionURL groupURL = urlProvider(SecurityUrls.class).getManageGroupURL(groupContainer, groupName);
-                                            %><%= text(!first ? ", " : "") %><a href="<%=h(groupURL)%>" data-qtip="<%=text(hoverExplanation)%>"><%=h(displayName)%></a><%
+                                            %><%= unsafe(!first ? ", " : "") %><a href="<%=h(groupURL)%>" data-qtip="<%=unsafe(hoverExplanation)%>"><%=h(displayName)%></a><%
                                         }
                                         first = false;
                                     }

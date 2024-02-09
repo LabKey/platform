@@ -91,7 +91,7 @@
                 <table class="lk-fields-table">
                     <tr>
                         <td class="lk-study-prop-label">Repository Type</td>
-                        <td class="lk-study-prop-desc">This study uses the <%=text(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
+                        <td class="lk-study-prop-desc">This study uses the <%=unsafe(SettingsManager.get().getRepositorySettings(study.getContainer()).isSimple() ? "standard" : "advanced")%> specimen repository</td>
                         <td><%=link("Change Repository Type", ManageRepositorySettingsAction.class)%></td>
                     </tr>
                     <tr>
@@ -152,7 +152,7 @@
         {
             String childStudyType = study.getStudySnapshotType().getTitle().toLowerCase();
         %>
-        <p><em>Note: specimen repository and request settings are not available for <%=text(childStudyType)%> studies.</em></p>
+        <p><em>Note: specimen repository and request settings are not available for <%=unsafe(childStudyType)%> studies.</em></p>
         <%
         }
     } // admin permission

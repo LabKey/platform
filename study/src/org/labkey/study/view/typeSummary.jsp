@@ -117,7 +117,7 @@
         boolean isKeyColumn = (StringUtils.equalsIgnoreCase(col.getName(), dataset.getKeyPropertyName()));
 %>
         <tr class="<%=getShadeRowClass(rowIndex)%>">
-            <td><%=text(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=text(isKeyColumn ? "</b>" : "")%></td>
+            <td><%=unsafe(isKeyColumn ? "<b>" : "")%><%=h(col.getName())%><%=unsafe(isKeyColumn ? "</b>" : "")%></td>
             <td><%=h(col.getLabel())%></td>
             <td><%=h(col.getFriendlyTypeName())%></td>
             <td><%=h(col.getFormat())%></td>

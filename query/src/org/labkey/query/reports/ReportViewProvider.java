@@ -226,11 +226,14 @@ public class ReportViewProvider implements DataViewProvider
                     {
                         reportPermUrl = urls.getManageReportPermissions(c)
                             .addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
-                    }
 
-                    URLHelper returnUrl = context.getActionURL().getReturnURL();
-                    if (returnUrl != null)
-                        reportPermUrl.addReturnURL(returnUrl);
+                        if (reportPermUrl != null)
+                        {
+                            URLHelper returnUrl = context.getActionURL().getReturnURL();
+                            if (returnUrl != null)
+                                reportPermUrl.addReturnURL(returnUrl);
+                        }
+                    }
                 }
                 info.setAccess(access, reportPermUrl);
 

@@ -938,7 +938,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             for (int i = 1; i <= input.getColumnCount(); i++)
             {
                 String name = input.getColumnInfo(i).getName();
-                if (isReservedHeader(name))
+
+                boolean isContainerField = name.equalsIgnoreCase("Container") || name.equalsIgnoreCase("Folder");
+                if (isContainerField)
+                {
+                    if (context.getInsertOption().updateOnly || !context.isCrossFolderImport())
+                        drop.add(name);
+                }
+                else if (isReservedHeader(name))
                     drop.add(name);
                 else if (Column.ClassId.name().equalsIgnoreCase(name))
                     drop.add(name);
@@ -1427,6 +1434,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public DataIteratorBuilder createImportDIB(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
         {
+            if (context.isCrossFolderImport())
+                return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _dataClass, false);
+
             StandardDataIteratorBuilder standard = StandardDataIteratorBuilder.forInsert(getQueryTable(), data, container, user, context);
             DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(standard, context);
             dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null,

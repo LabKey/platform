@@ -104,7 +104,7 @@
                 !materialProtocolOutputs.isEmpty() || !dataProtocolOutputs.isEmpty();
     }
 %>
-    <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
+    <tr class="<%=unsafe(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
         <td valign="top">
             <%=actionSequence%>
         </td>
@@ -128,7 +128,7 @@
     </tr>
 
         <% if (debug && hasExtraInfo) { %>
-    <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
+    <tr class="<%=unsafe(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
         <td valign="top"></td>
         <td valign="top" colspan="8" style="padding: 5px;">
             <% if (!parentProtocols.isEmpty()) { %>

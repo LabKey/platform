@@ -44,7 +44,7 @@
     <tr>
         <td><%= h(pd.getName()) %></td>
         <td><%= h(ColumnRenderProperties.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())) %></td>
-        <td><%= text(pd.isRequired() ? "yes" : "no") %></td>
+        <td><%= unsafe(pd.isRequired() ? "yes" : "no") %></td>
         <td><%=h(pd.getDescription())%></td></tr>
     <% } %>
     </table>

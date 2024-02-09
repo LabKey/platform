@@ -84,7 +84,7 @@
                 </tr>
                 <tr>
                     <th align="left">Description</th>
-                    <td><%= text(requirement.getDescription()) %></td>
+                    <td><%= unsafe(requirement.getDescription()) %></td>
                 </tr>
                 <%
                     if (!bean.isRequestManager())
@@ -93,8 +93,8 @@
                 <tr>
                     <th align="left">Status</th>
                     <td>
-                        <span class="<%= text(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
-                            <%= text(requirement.isComplete() ? "Complete" : "Incomplete") %>
+                        <span class="<%= unsafe(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
+                            <%= unsafe(requirement.isComplete() ? "Complete" : "Incomplete") %>
                         </span>
                     </td>
                 </tr>
@@ -157,7 +157,7 @@
                             %>
                             <input type="checkbox"
                                    name="notificationIdPairs"
-                                   value="<%= text(possibleNotification.getFormValue()) %>" <%=disabled(!hasEmailAddresses) %>
+                                   value="<%= unsafe(possibleNotification.getFormValue()) %>" <%=disabled(!hasEmailAddresses) %>
                                    <%=checked(hasEmailAddresses && bean.isDefaultNotification(possibleNotification)) %>>
                             <%=possibleNotification.getHtmlDescriptionAndLink(hasEmailAddresses, getActionURL())%><br>
                             <%

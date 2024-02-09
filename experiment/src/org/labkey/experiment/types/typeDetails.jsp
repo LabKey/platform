@@ -136,7 +136,7 @@
             i++;
             PropertyType t = pd.getPropertyType();
     %>
-    <tr class="<%=text(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>">
+    <tr class="<%=unsafe(i % 2 == 0 ? "labkey-row" : "labkey-alternate-row")%>">
         <td><%=h(pd.getPropertyId())%></td>
         <td><%=h(pd.getName())%></td>
         <td><%=h(pd.getPropertyType().getXmlName())%></td>
