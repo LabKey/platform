@@ -252,8 +252,8 @@ public class AssayModule extends SpringModule
 
         ExperimentService.get().addExperimentListener(new AssayExperimentListener());
 
-        AdminConsole.addExperimentalFeatureFlag(new AdminConsole.ExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
-                "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false, true));
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_APP_PLATE_SUPPORT,
+                "Plate samples in Biologics", "Plate samples in Biologics for import and analysis.", false);
     }
 
     @Override
