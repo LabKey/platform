@@ -89,12 +89,6 @@ public class PlateMetadataDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public DbSchemaType getSchemaType()
-    {
-        return DbSchemaType.Provisioned;
-    }
-
-    @Override
     public String getStorageSchemaName()
     {
         return PROVISIONED_SCHEMA_NAME;

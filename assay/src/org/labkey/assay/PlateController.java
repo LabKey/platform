@@ -51,6 +51,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
@@ -680,7 +681,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
     {
         @Override
@@ -723,7 +724,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
     {
         @Override
@@ -795,7 +796,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AddUserPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class EnsurePlateMetadataDomainAction extends MutatingApiAction<Object>
     {
         @Override

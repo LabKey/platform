@@ -286,16 +286,30 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         public WellPropertiesTable(@NotNull Domain domain, @NotNull PlateSchema schema, @Nullable ContainerFilter cf)
         {
             super(StorageProvisioner.createTableInfo(domain), schema, cf);
+            Domain wellDomain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUserSchema().getUser());
+            Supplier<Map<DomainProperty, Object>> defaultsSupplier = null;
+
             for (ColumnInfo col : getRealTable().getColumns())
             {
-                var columnInfo = wrapColumn(col);
+                var wrappedCol = wrapColumn(col);
                 if (col.getName().equals("Lsid"))
                 {
-                    columnInfo.setHidden(true);
-                    columnInfo.setKeyField(true);
+                    wrappedCol.setHidden(true);
+                    wrappedCol.setKeyField(true);
+                    wrappedCol.setUserEditable(false);
+                    wrappedCol.setShownInUpdateView(false);
+                    wrappedCol.setShownInInsertView(false);
                 }
 
-                addWrapColumn(col);
+                // copy the property descriptor settings to the wrapped column
+                DomainProperty dp = wellDomain.getPropertyByName(col.getName());
+                PropertyDescriptor pd = (null == dp) ? null : dp.getPropertyDescriptor();
+                if (dp != null && pd != null)
+                {
+                    defaultsSupplier = PropertyColumn.copyAttributes(getUserSchema().getUser(), wrappedCol, dp, getContainer(), null, getContainerFilter(), defaultsSupplier);
+                    wrappedCol.setFieldKey(FieldKey.fromParts(dp.getName()));
+                }
+                addColumn(wrappedCol);
             }
         }
 
