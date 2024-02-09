@@ -319,40 +319,37 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 if (plate == null)
                     throw new ExperimentException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
 
-                if (!plateIdentifierMap.containsKey(plateIdentifier))
-                    plateIdentifierMap.put(plateIdentifier, new Pair<>(plate, new HashMap<>()));
+                plateIdentifierMap.putIfAbsent(plateIdentifier, new Pair<>(plate, new HashMap<>()));
 
                 // if the plate identifier is the plate name, we need to make sure it resolves during importRows
                 // so replace it with the plateId (which will be unique)
                 if (!StringUtils.isNumeric(plateIdentifier.toString()))
                     PropertyService.get().replaceDomainPropertyValue(plateProperty, row, plate.getPlateId());
 
-                // if there are metadata fields configured for this plate
-                if (!plate.getCustomFields().isEmpty())
+                // create the map of well locations to the well for the given plate
+                Map<Position, WellBean> positionToWell = plateIdentifierMap.get(plateIdentifier).second;
+                if (positionToWell.isEmpty())
                 {
-                    // create the map of well locations to the well
-                    Map<Position, WellBean> positionToWell = plateIdentifierMap.get(plateIdentifier).second;
-                    if (positionToWell.isEmpty())
-                    {
-                        SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
-                        filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
-                        for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
-                            positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
-                    }
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(plate.getContainer());
+                    filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
+                    for (WellBean well : new TableSelector(AssayDbSchema.getInstance().getTableInfoWell(), filter, null).getArrayList(WellBean.class))
+                        positionToWell.put(new PositionImpl(plate.getContainer(), well.getRow(), well.getCol()), well);
+                }
 
-                    Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
-                    if (wellLocation != null)
-                    {
-                        PositionImpl well = new PositionImpl(null, String.valueOf(wellLocation));
-                        // need to adjust the column value to be 0 based to match the template locations
-                        well.setColumn(well.getColumn() - 1);
+                Object wellLocation = PropertyService.get().getDomainPropertyValueFromRow(wellLocationProperty, row);
+                if (wellLocation != null)
+                {
+                    PositionImpl well = new PositionImpl(null, String.valueOf(wellLocation));
+                    // need to adjust the column value to be 0 based to match the template locations
+                    well.setColumn(well.getColumn() - 1);
 
-                        if (positionToWell.containsKey(well))
-                        {
-                            for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, positionToWell.get(well).getRowId()))
-                                row.put(customField.getName(), customField.getValue());
-                        }
+                    if (positionToWell.containsKey(well))
+                    {
+                        for (WellCustomField customField : PlateManager.get().getWellCustomFields(user, plate, positionToWell.get(well).getRowId()))
+                            row.put(customField.getName(), customField.getValue());
                     }
+                    else
+                        throw new ExperimentException("Unable to resolve well \"" + wellLocation + "\" for plate \"" + plate.getName() + "\".");
                 }
             }
         }
