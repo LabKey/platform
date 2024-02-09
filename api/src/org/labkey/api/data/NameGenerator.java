@@ -136,7 +136,9 @@ public class NameGenerator
     public static final Pattern ANCESTOR_INPUT_PATTERN = Pattern.compile(ANCESTOR_INPUT_REGEX);
 
     public static Date PREVIEW_DATE_VALUE;
+    public static final String PREVIEW_DATE_VALUE_STR = "2021/04/28";
     public static Date PREVIEW_MODIFIED_DATE_VALUE;
+    public static final String PREVIEW_TIME_VALUE_STR = "08:30";
 
     static
     {

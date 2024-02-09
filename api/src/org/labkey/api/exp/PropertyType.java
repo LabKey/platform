@@ -591,7 +591,7 @@ public enum PropertyType
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            return NameGenerator.PREVIEW_DATE_VALUE;
+            return NameGenerator.PREVIEW_DATE_VALUE_STR;
         }
     },
     DATE("http://www.w3.org/2001/XMLSchema#date", "Date", 'd', JdbcType.DATE, 100, null, CellType.NUMERIC, Date.class)
@@ -638,7 +638,7 @@ public enum PropertyType
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            return NameGenerator.PREVIEW_DATE_VALUE;
+            return NameGenerator.PREVIEW_DATE_VALUE_STR;
         }
     },
     TIME("http://www.w3.org/2001/XMLSchema#time", "Time", 'd', JdbcType.TIME, 100, null, CellType.NUMERIC, java.sql.Time.class)
@@ -685,7 +685,7 @@ public enum PropertyType
         @Override
         public Object getPreviewValue(@Nullable String prefix)
         {
-            return NameGenerator.PREVIEW_DATE_VALUE;
+            return NameGenerator.PREVIEW_TIME_VALUE_STR;
         }
     },
     DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, CellType.NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)
