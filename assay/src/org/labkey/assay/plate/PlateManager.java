@@ -536,8 +536,10 @@ public class PlateManager implements PlateService
                 List<Plate> matchingPlates = plates.stream().filter(p -> p.getName().equals(plateIdentifier.toString())).toList();
                 if (matchingPlates.size() == 1)
                     plate = matchingPlates.get(0);
-                else if (matchingPlates.size() > 1)
-                    throw new IllegalArgumentException("More than one plate found with name " + plateIdentifier + " in plate set " + plateSet.getName() + ".");
+                else if (matchingPlates.isEmpty())
+                    throw new IllegalArgumentException("No plate found with the name \"" + plateIdentifier + "\" in plate set \"" + plateSet.getName() + "\".");
+                else
+                    throw new IllegalArgumentException("More than one plate found with name \"" + plateIdentifier + "\" in plate set " + plateSet.getName() + ". Please use the \"Plate ID\" to identify the plate instead.");
             }
         }
 

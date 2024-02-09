@@ -686,6 +686,7 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
     }
 
     @Override
+    @Nullable
     public Object getDomainPropertyValueFromRow(DomainProperty property, Map<String, Object> row)
     {
         if (property == null || row == null)

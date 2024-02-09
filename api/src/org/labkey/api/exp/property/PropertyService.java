@@ -140,6 +140,7 @@ public interface PropertyService
 
     ConceptURIVocabularyDomainProvider getConceptUriVocabularyDomainProvider(String conceptUri);
 
+    @Nullable
     Object getDomainPropertyValueFromRow(DomainProperty property, Map<String, Object> row);
 
     void replaceDomainPropertyValue(DomainProperty property, Map<String, Object> row, Object value);

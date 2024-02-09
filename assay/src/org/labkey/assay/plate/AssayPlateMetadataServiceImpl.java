@@ -22,6 +22,7 @@ import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveLinkedHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMapStatement;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -52,7 +53,6 @@ import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -268,9 +268,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             AssayProvider provider,
             ExpProtocol protocol) throws ExperimentException
     {
-        Domain runDomain = provider.getRunDomain(protocol);
         Domain resultDomain = provider.getResultsDomain(protocol);
-        DomainProperty plateSetProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
         DomainProperty plateProperty = resultDomain.getPropertyByName(AssayResultDomainKind.PLATE_COLUMN_NAME);
         DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
 
@@ -305,15 +303,23 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         if (AssayPlateMetadataService.isExperimentalAppPlateEnabled())
         {
             Map<Object, Pair<Plate, Map<Position, WellBean>>> plateIdentifierMap = new HashMap<>();
+            ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
+            int rowCounter = 0;
 
+            // include metadata that may have been applied directly to the plate
             for (Map<String, Object> row : mergedRows)
             {
-                // include metadata that may have been applied directly to the plate
+                rowCounter++;
+
                 Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, row);
-                Plate plate = plateIdentifier != null ? PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(protocol, container, user), plateSetId, plateIdentifier) : null;
+                if (plateIdentifier == null)
+                    throw new ExperimentException("Unable to resolve plate identifier for results row (" + rowCounter + ").");
+
+                Plate plate = PlateService.get().getPlate(cf, plateSetId, plateIdentifier);
                 if (plate == null)
-                    throw new ExperimentException("Unable to resolve the plate " + plateIdentifier + " for the results row.");
-                else if (!plateIdentifierMap.containsKey(plateIdentifier))
+                    throw new ExperimentException("Unable to resolve the plate \"" + plateIdentifier + "\" for the results row (" + rowCounter + ").");
+
+                if (!plateIdentifierMap.containsKey(plateIdentifier))
                     plateIdentifierMap.put(plateIdentifier, new Pair<>(plate, new HashMap<>()));
 
                 // if the plate identifier is the plate name, we need to make sure it resolves during importRows
@@ -520,12 +526,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
-        private Map<Integer, Map<Position, Lsid>> _wellPositionMap;
-        private Container _container;
-        private User _user;
-        private ExpRun _run;
-        private ExpProtocol _protocol;
-        private AssayProvider _provider;
+        private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;
+        private final Container _container;
+        private final User _user;
+        private final ExpRun _run;
+        private final ExpProtocol _protocol;
+        private final AssayProvider _provider;
 
         public PlateMetadataImportHelper(ExpData data, Container container, User user, ExpRun run, ExpProtocol protocol, AssayProvider provider)
         {
