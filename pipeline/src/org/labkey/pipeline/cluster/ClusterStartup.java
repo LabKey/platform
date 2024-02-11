@@ -33,6 +33,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.bootstrap.ClusterBootstrap;
 import org.labkey.pipeline.AbstractPipelineStartup;
@@ -57,6 +58,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 /**
  * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
@@ -67,7 +69,7 @@ import java.util.jar.JarFile;
 public class ClusterStartup extends AbstractPipelineStartup
 {
     /**
-     * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap 
+     * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, PipelineJobException
     {
@@ -274,13 +276,20 @@ public class ClusterStartup extends AbstractPipelineStartup
             List<String> args = new ArrayList<>();
             args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
             File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
+            File servletApi = null;
 
             if (!labkeyBootstrap.exists())
             {
-                labkeyBootstrap = extractBootstrapFromEmbedded();
+                Pair<File, File> extracted = extractBootstrapFromEmbedded();
+                labkeyBootstrap = extracted.first;
                 if (labkeyBootstrap == null || !labkeyBootstrap.exists())
                 {
                     throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
+                }
+                servletApi = extracted.second;
+                if (servletApi == null || !servletApi.exists())
+                {
+                    throw new IllegalStateException("Couldn't find servletApi.jar");
                 }
             }
 
@@ -290,6 +299,10 @@ public class ClusterStartup extends AbstractPipelineStartup
             args.add(labkeyBootstrap.getPath());
             args.add(ClusterBootstrap.class.getName());
             args.add("-webappdir=" + ModuleLoader.getServletContext().getRealPath(""));
+            if (servletApi != null)
+            {
+                args.add("-pipelinelibdir=" + servletApi.getParent());
+            }
 
             if (job != null)
             {
@@ -304,9 +317,13 @@ public class ClusterStartup extends AbstractPipelineStartup
             return args;
         }
 
-        private File extractBootstrapFromEmbedded() throws IOException
+        /** @return first is labkeyBootstrap.jar, second is servletApi.jar */
+        private Pair<File, File> extractBootstrapFromEmbedded() throws IOException
         {
-            // Look through the JAR files in the working directory, which is expected to contain the Spring Boot entrypoint
+            File bootstrap = null;
+            File servlet = null;
+            // Look through the JAR files in the working directory, which is expected to contain the Spring Boot
+            // entrypoint and the Servlet API
             File pwd = new File(".");
             File[] jars = pwd.listFiles(f -> f.getName().toLowerCase().endsWith(".jar"));
             for (File jar : jars)
@@ -320,18 +337,27 @@ public class ClusterStartup extends AbstractPipelineStartup
                         JarEntry entry = entries.next();
                         if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
                         {
-                            File result = new File("labkeyBootstrap.jar");
-                            try (InputStream in = j.getInputStream(entry);
-                                 OutputStream out = new FileOutputStream(result))
-                            {
-                                IOUtils.copy(in, out);
-                            }
-                            return FileUtil.getAbsoluteCaseSensitiveFile(result);
+                            bootstrap = extractEntry(j, entry, "labkeyBootstrap.jar");
+                        }
+                        if (entry.getName().contains("tomcat-servlet-api") && entry.getName().toLowerCase().endsWith(".jar"))
+                        {
+                            servlet = extractEntry(j, entry, "servletApi.jar");
                         }
                     }
                 }
             }
-            return null;
+            return Pair.of(bootstrap, servlet);
+        }
+
+        private File extractEntry(JarFile jar, ZipEntry entry, String name) throws IOException
+        {
+            File result = FileUtil.getAbsoluteCaseSensitiveFile(new File(name));
+            try (InputStream in = jar.getInputStream(entry);
+                 OutputStream out = new FileOutputStream(result))
+            {
+                IOUtils.copy(in, out);
+            }
+            return result;
         }
     }
 }
