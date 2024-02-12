@@ -16,6 +16,8 @@
 
 package org.labkey.api.security;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
@@ -24,6 +26,7 @@ import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -37,6 +40,7 @@ import org.labkey.api.security.roles.SubmitterRole;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -73,13 +77,29 @@ public class LimitedUser extends ClonedUser
         {
             return _roles;
         }
-
     }
 
     @SafeVarargs
     public LimitedUser(User user, Class<? extends Role>... roleClasses)
     {
         super(user, new LimitedUserImpersonatingContext(getRoles(roleClasses)));
+    }
+
+    @JsonCreator
+    private LimitedUser(
+        @JsonProperty("_name") String name,
+        @JsonProperty("_userId") int userId,
+        @JsonProperty("_displayName") String displayName,
+        @JsonProperty("_firstName") String firstName,
+        @JsonProperty("_lastName") String lastName,
+        @JsonProperty("_active") boolean active,
+        @JsonProperty("_lastLogin") Date lastLogin,
+        @JsonProperty("_phone") String phone,
+        @JsonProperty("_lastActivity") Date lastActivity,
+        @JsonProperty("_impersonationContext") ImpersonationContext ctx
+    )
+    {
+        super(name, userId, displayName, firstName, lastName, active, lastLogin, phone, lastActivity, ctx);
     }
 
     public static class TestCase extends Assert
@@ -140,13 +160,21 @@ public class LimitedUser extends ClonedUser
         @Test
         public void testSerialization() throws JsonProcessingException
         {
-            SecurityPolicy rootPolicy = ContainerManager.getRoot().getPolicy();
+            // Serialize/deserialize admin service user
             User admin = User.getAdminServiceUser();
             ObjectMapper mapper = PipelineJob.createObjectMapper();
             String serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(admin);
             User reconstitutedAdmin = mapper.readValue(serialized, User.class);
             assertEquals(admin, reconstitutedAdmin);
+            SecurityPolicy rootPolicy = ContainerManager.getRoot().getPolicy();
             assertEquals(admin.getAssignedRoles(rootPolicy), reconstitutedAdmin.getAssignedRoles(rootPolicy));
+
+            // Serialize/deserialize search user
+            User user = User.getSearchUser();
+            String json = mapper.writeValueAsString(user);
+            User limitedUser = mapper.readValue(json, LimitedUser.class);
+            assertEquals(user, limitedUser);
+            assertEquals(user.getEmail(), limitedUser.getEmail());
         }
     }
 }
