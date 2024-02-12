@@ -334,9 +334,10 @@ public class PlateManager implements PlateService
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("name"), plateName);
 
-        PlateBean bean = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateBean.class);
-        if (bean != null)
-            return populatePlate(bean);
+        List<PlateBean> plates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getArrayList(PlateBean.class);
+        // this should be 1 or 0, but don't blow up if there are more than one
+        if (!plates.isEmpty())
+            return populatePlate(plates.get(0));
 
         return null;
     }
@@ -511,7 +512,7 @@ public class PlateManager implements PlateService
      */
     public boolean plateExists(Container c, String name)
     {
-        Plate plate = PlateCache.getPlate(c, name);
+        Plate plate = getPlateByName(c, name);
         return plate != null && plate.getName().equals(name);
     }
 
