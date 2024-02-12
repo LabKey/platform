@@ -2613,6 +2613,12 @@ public class NameGenerator
             }
 
             {
+                StringExpression se = NameGenerationExpression.create("${t:date('HH:mm')}", false);
+                String s = se.eval(m);
+                assertEquals("08:30", s);
+            }
+
+            {
                 // parse a non date value
                 StringExpression se = NameGenerationExpression.create("${d:date('yyy-MM-dd')}", false);
                 Map<Object, Object> m2 = new HashMap<>();
