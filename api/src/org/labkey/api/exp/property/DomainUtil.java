@@ -15,7 +15,6 @@
  */
 package org.labkey.api.exp.property;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -202,7 +201,16 @@ public class DomainUtil
             return false;
 
         // Only checking names here to avoid creating tableinfo each time. Avoids potential infinite loop.
-        CaseInsensitiveHashSet tableNames = new CaseInsensitiveHashSet(schema.getTableNames());
+        CaseInsensitiveHashSet tableNames;
+        if (schema instanceof UserSchema us)
+        {
+            // Issue 49511: Valid lookups for custom queries
+            tableNames = new CaseInsensitiveHashSet(us.getTableAndQueryNames(true));
+        }
+        else
+        {
+            tableNames = new CaseInsensitiveHashSet(schema.getTableNames());
+        }
 
         if (tableNames.contains(p.getLookupQuery()))
             return true;
