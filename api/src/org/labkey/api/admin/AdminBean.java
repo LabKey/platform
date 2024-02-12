@@ -78,7 +78,8 @@ public class AdminBean
     public static final String serverGuid = AppProps.getInstance().getServerGUID();
     public static final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
     public static final String servletContainer = ModuleLoader.getServletContext().getServerInfo();
-    public static final String sessionTimeout = Formats.commaf0.format(ModuleLoader.getServletContext().getSessionTimeout());
+    public static final String servletConfiguration = AppProps.getInstance().isEmbeddedTomcat() ? "Embedded" : "Standalone";
+    public static final String sessionTimeout = Formats.commaf2.format(ModuleLoader.getServletContext().getSessionTimeout()/60.0);
     @SuppressWarnings("unused") // Available substitution property, not used directly in code
     public static final String buildTime = ModuleLoader.getInstance().getCoreModule().getBuildTime();
     @SuppressWarnings("unused") // Available substitution property, not used directly in code
@@ -96,11 +97,15 @@ public class AdminBean
     {
         Map<String, String> propertyMap = new TreeMap<>();
 
+        // Using reflection, all static members of this class (see above) with type String are added to PROPERTY_MAP
+        // and available for substitutions
         Arrays.stream(AdminBean.class.getDeclaredFields())
             .filter(f -> Modifier.isStatic(f.getModifiers()))
             .filter(f -> f.getType().equals(String.class))
             .forEach(f -> propertyMap.put(f.getName(), getValue(f)));
 
+        // Using reflection, all primary DbScope public getters that return type String are added to PROPERTY_MAP and
+        // available for substitutions
         Arrays.stream(scope.getClass().getMethods())
             .filter(m -> m.getReturnType().equals(String.class))
             .filter(m -> m.getName().startsWith("get"))
