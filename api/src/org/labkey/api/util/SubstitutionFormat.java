@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.api.SampleTypeService;
 
+import java.sql.Time;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -387,6 +388,9 @@ public class SubstitutionFormat
         {
             if (value == null)
                 return null;
+
+            if (value instanceof java.sql.Date || value instanceof Time)
+                value = new Date(((Date)value).getTime());
 
             TemporalAccessor temporal;
             if (value instanceof TemporalAccessor)
