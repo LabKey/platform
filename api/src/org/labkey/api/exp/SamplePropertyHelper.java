@@ -56,8 +56,6 @@ import static java.util.Collections.emptySet;
 
 /**
  * Helper for mapping user-specified property values to the desired {@link DomainProperty} collection.
- * User: jeckels
- * Date: Oct 3, 2007
  */
 public abstract class SamplePropertyHelper<ObjectType>
 {

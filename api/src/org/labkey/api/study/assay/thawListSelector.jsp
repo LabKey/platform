@@ -52,24 +52,24 @@
     { %>
         <tr>
             <% addHandler("textTypeId", "click", "document.getElementById('SQVPicker').style.display='none'; document.getElementById('ThawListDiv-TextArea').style.display='block'; toggleDisableResetDefault(true);"); %>
-            <td><input type="radio" id="<%= text(textTypeId)%>" name="<%= text(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>" <%=checked(textType)%> value="<%= text(ThawListResolverType.TEXT_NAMESPACE_SUFFIX) %>"></td>
+            <td><input type="radio" id="<%= unsafe(textTypeId)%>" name="<%= unsafe(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>" <%=checked(textType)%> value="<%= unsafe(ThawListResolverType.TEXT_NAMESPACE_SUFFIX) %>"></td>
             <td>Paste a sample list as a TSV (tab-separated values)<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The format is a tab-separated values (TSV), requiring the columns 'Index' and using the values of the columns 'SpecimenID', 'ParticipantID', and 'VisitID', and 'Date'. All columns headers are required, even if the fields are not populated.<p>To use the template, fill in the values, select the entire spreadsheet (Ctrl-A), copy it to the clipboard, and paste it into the text area below.", true) %> <%=link("download template").href(request.getContextPath()+"/study/assay/SampleLookupTemplate.xls")%></td>
         </tr>
         <tr>
             <td></td>
-            <td><div id="ThawListDiv-TextArea" style="display:<%= text(textType ? "block" : "none") %>;"><textarea id="<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>" name="<%= text(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>" rows="4" cols="50"><%= h(ctx.get(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME)) %></textarea></div></td>
+            <td><div id="ThawListDiv-TextArea" style="display:<%= unsafe(textType ? "block" : "none") %>;"><textarea id="<%= unsafe(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>" name="<%= unsafe(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME) %>" rows="4" cols="50"><%= h(ctx.get(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME)) %></textarea></div></td>
         </tr>
     <%
     } %>
     <tr>
         <% addHandler(listTypeId, "click", "showChooseList(); toggleDisableResetDefault(false);" ); %>
-        <td ><input type="radio" id="<%= text(listTypeId)%>" name="<%= text(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>"<%=checked(listType || !renderAll)%> value="<%= text(ThawListResolverType.LIST_NAMESPACE_SUFFIX) %>"></td>
+        <td ><input type="radio" id="<%= unsafe(listTypeId)%>" name="<%= unsafe(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>"<%=checked(listType || !renderAll)%> value="<%= unsafe(ThawListResolverType.LIST_NAMESPACE_SUFFIX) %>"></td>
         <td>Use an existing sample list<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The target list must have your own specimen identifier as its primary key, and uses the values of the 'SpecimenID', 'ParticipantID', 'Date', and 'VisitID' columns. All columns are required, even if they are not populated in the list.") %></td>
     </tr>
     <tr>
         <td></td>
         <td>
-            <div id="SQVPicker" style="display:<%= text(listType ? "block" : "none") %>;"></div>
+            <div id="SQVPicker" style="display:<%= unsafe(listType ? "block" : "none") %>;"></div>
         </td>
     </tr>
 </table>

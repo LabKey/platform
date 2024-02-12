@@ -347,7 +347,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
     {
         assert context.isCrossTypeImport() || _sampleType != null : "SampleType required for insert/update, but not required for read/delete";
         if (context.isCrossTypeImport() || context.isCrossFolderImport())
-            return new ExpDataIterators.MultiSampleTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType);
+            return new ExpDataIterators.MultiDataTypeCrossProjectDataIteratorBuilder(user, container, data, context.isCrossTypeImport(), context.isCrossFolderImport(), _sampleType, true);
 
         DataIteratorBuilder dib = new ExpDataIterators.ExpMaterialDataIteratorBuilder(getQueryTable(), data, container, user);
 

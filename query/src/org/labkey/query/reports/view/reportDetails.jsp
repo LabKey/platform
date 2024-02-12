@@ -155,7 +155,7 @@
             Shared:
         </td>
         <td>
-            <%=text(isShared ? "Yes" : "No")%>
+            <%=unsafe(isShared ? "Yes" : "No")%>
         </td>
     </tr>
 
@@ -164,7 +164,7 @@
             Visibility:
         </td>
         <td>
-            <%=text(reportDescriptor.isHidden() ? "Hidden" : "Visible")%>
+            <%=unsafe(reportDescriptor.isHidden() ? "Hidden" : "Visible")%>
         </td>
     </tr>
 

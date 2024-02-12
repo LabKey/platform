@@ -128,7 +128,7 @@
                             for (Pair<String, Portal.WebPart> pair : menus)
                             {
 %>
-                            <li class="mobiledrop" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
+                            <li class="mobiledrop" data-webpart="<%=unsafe(getSafeName(pair.second))%>" data-name="<%=unsafe(pair.second.getName())%>">
                                 <a data-target="#" class="mobiledrop-toggle" data-toggle="mobiledrop">
                                     <span><%=h(pair.first)%></span>
                                 </a>
@@ -148,7 +148,7 @@
                     <ul class="dropdown-menu"></ul>
                 </li>
                 <% } for (Pair<String, Portal.WebPart> pair : menus) { %>
-                <li class="dropdown" data-webpart="<%=text(getSafeName(pair.second))%>" data-name="<%=text(pair.second.getName())%>">
+                <li class="dropdown" data-webpart="<%=unsafe(getSafeName(pair.second))%>" data-name="<%=unsafe(pair.second.getName())%>">
                     <a data-target="#" class="dropdown-toggle" data-toggle="dropdown"><%=h(pair.first)%><i style="margin-left: 5px" class="fa fa-chevron-down"></i></a>
                     <ul class="dropdown-menu lk-custom-dropdown-menu"></ul>
                 </li>
@@ -167,7 +167,7 @@
                             if (show && null != tab.getText() && !tab.getText().isEmpty())
                             {
                 %>
-                <li role="presentation" class="<%= text(tab.isSelected() ? "active" : "") %>">
+                <li role="presentation" class="<%= unsafe(tab.isSelected() ? "active" : "") %>">
                     <a href="<%=h(tab.getHref())%>" id="<%=h(tab.getText().replace(" ", ""))%>Tab">
                         <% if (tab.isDisabled()) { %>
                         <i class="fa fa-eye-slash"></i>

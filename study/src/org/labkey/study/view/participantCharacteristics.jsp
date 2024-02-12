@@ -164,7 +164,7 @@
         if (datasetTable.hasPermission(user, UpdatePermission.class))
         {
     %>
-    <tr class="labkey-alternate-row" style="<%=text(expanded ? "" : "display:none")%>">
+    <tr class="labkey-alternate-row" style="<%=unsafe(expanded ? "" : "display:none")%>">
         <td colspan="2"><%
 
             ActionURL editAction = new ActionURL(DatasetController.UpdateAction.class, getContainer());
@@ -185,7 +185,7 @@
             if (StringUtils.isEmpty(labelName))
                 labelName = pd.getName();
     %>
-    <tr class="<%=getShadeRowClass(row)%>" style="<%=text(expanded ? "" : "display:none")%>">
+    <tr class="<%=getShadeRowClass(row)%>" style="<%=unsafe(expanded ? "" : "display:none")%>">
         <td align="left" nowrap><%=h(labelName)%>
         </td>
         <%

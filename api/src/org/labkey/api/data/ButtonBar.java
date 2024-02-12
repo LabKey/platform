@@ -42,8 +42,9 @@ public class ButtonBar extends DisplayElement
         separateButtons
     }
 
+    private final List<String> _missingOriginalCaptions = new ArrayList<>();
+
     private List<DisplayElement> _elementList = new ArrayList<>();
-    private List<String> _missingOriginalCaptions = new ArrayList<>();
     private Style _style = Style.toolbar;
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
     // that's partially overridden by a
@@ -109,7 +110,7 @@ public class ButtonBar extends DisplayElement
     @Override
     public boolean shouldRender(RenderContext ctx)
     {
-        return getList().size() > 0 && super.shouldRender(ctx);
+        return !getList().isEmpty() && super.shouldRender(ctx);
     }
 
     @Override

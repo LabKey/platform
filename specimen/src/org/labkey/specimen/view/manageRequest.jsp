@@ -426,7 +426,7 @@
                             <th align=left>Actor</th>
                             <th align=left>Location</th>
                             <th align=left>Description</th>
-                            <th align=left><%= text(requirements.length > 0 ? "Status" : "") %></th>
+                            <th align=left><%= unsafe(requirements.length > 0 ? "Status" : "") %></th>
                             <th align=left>&nbsp;</th>
                         </tr>
                     <%
@@ -446,8 +446,8 @@
                                 <td><%= h(siteLabel) %></td>
                                 <td><%= requirement.getDescription() != null ? h(requirement.getDescription()) : HtmlString.NBSP %></td>
                                 <td>
-                                    <span class="<%= text(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
-                                        <%= text(requirement.isComplete() ? "Complete" : "Incomplete") %>
+                                    <span class="<%= unsafe(requirement.isComplete() ? "labkey-message" : "labkey-error")%>" style="font-weight:bold;">
+                                        <%= unsafe(requirement.isComplete() ? "Complete" : "Incomplete") %>
                                     </span>
                                 </td>
                                 <td>

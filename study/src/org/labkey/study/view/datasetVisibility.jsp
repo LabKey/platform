@@ -206,7 +206,7 @@
             String comma="";
             for (int id:emptyDatasets)
             {
-                %><%=text(comma)%>"<%=id%>":true<%
+                %><%=unsafe(comma)%>"<%=id%>":true<%
                 comma = ",";
             }
             %>

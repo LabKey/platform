@@ -98,7 +98,7 @@
         Set<Pair<String, String>> provenance = Collections.emptySet();
         provenance = pvs.getProvenanceObjectUris(protocolApplication.getRowId());
     %>
-        <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
+        <tr class="<%=unsafe(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top">
                 <%=protocolApplication.getActionSequence()%>
             </td>
@@ -122,7 +122,7 @@
         </tr>
 
         <% if (!materialRunInputs.isEmpty() || !dataRunInputs.isEmpty() || !materialRunOutputs.isEmpty() || !dataRunOutputs.isEmpty() || !provenance.isEmpty()) { %>
-        <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
+        <tr class="<%=unsafe(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top"></td>
             <td valign="top" colspan="8" style="padding: 5px;">
                 <% if (!materialRunInputs.isEmpty() || !dataRunInputs.isEmpty()) { %>
@@ -250,7 +250,7 @@
     {
         rowCount++;
     %>
-        <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
+        <tr class="<%=unsafe(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top">
                 <a href="<%=h(ExperimentController.getShowApplicationURL(c, protocolApplication.getRowId()))%>"><%= h(protocolApplication.getName()) %></a>
             </td>

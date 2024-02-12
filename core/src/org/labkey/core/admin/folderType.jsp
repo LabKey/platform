@@ -82,12 +82,12 @@ var defaultModules = {};  <% // This is used... Java code below generates JavaSc
             {
                 if (null != m) //FIX: 4612: active module might not be present in the build
                 {
-                    out.print(text(arraySep + "\"" + h(m.getName()) + "\""));
+                    out.print(unsafe(arraySep + "\"" + h(m.getName()) + "\""));
                     arraySep = ",";
                 }
             } %>];<%
             if (null != ft.getDefaultModule())
-                out.print(text("defaultModules[\"" + h(ft.getName()) + "\"] = \"" + h(ft.getDefaultModule().getName()) + "\";\n"));
+                out.print(unsafe("defaultModules[\"" + h(ft.getName()) + "\"] = \"" + h(ft.getDefaultModule().getName()) + "\";\n"));
         }
     }
 %>

@@ -356,7 +356,7 @@
                 </table>
             </td>
             <td valign="top" rowspan="<%=rowSpan%>"><table class="lk-fields-table" style="width: 100%;">
-                <tr><%=bean.renderLabel(bean.getLabel("Closed", false))%><td><%=h(bean.writeDate(issue.getClosed()))%><%=text(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
+                <tr><%=bean.renderLabel(bean.getLabel("Closed", false))%><td><%=h(bean.writeDate(issue.getClosed()))%><%=unsafe(issue.getClosedBy() != null ? " by " : "")%><%=h(issue.getClosedByName(user))%></td></tr><%
             if (bean.isVisible("notifyList"))
             {%>
                 <tr>

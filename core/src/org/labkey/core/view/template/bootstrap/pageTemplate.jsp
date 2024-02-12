@@ -58,9 +58,9 @@
            {
                if (null != getContainer() && getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
                {
-                    %><!-- see <%= text(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
+                    %><!-- see <%= unsafe(new ActionURL("analytics", "begin", ContainerManager.getRoot()).getURIString())%> --><%
                }
-               %><%=text(script)%><%
+               %><%=unsafe(script)%><%
            }
        }
 %>

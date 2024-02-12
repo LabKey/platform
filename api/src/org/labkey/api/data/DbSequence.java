@@ -87,7 +87,7 @@ public class DbSequence
         return false;
     }
 
-    protected static class ReclaimableDbSequence extends DbSequence
+    public static class ReclaimableDbSequence extends DbSequence
     {
         ReclaimableDbSequence(Container c, String name, int rowId)
         {
@@ -177,19 +177,4 @@ public class DbSequence
         }
     }
 
-    // For scenarios where continuity of sequence is important
-    // A sequence should either use Preallocate or ReclaimablePreallocate, but never both
-    protected static class ReclaimablePreallocate extends Preallocate
-    {
-        ReclaimablePreallocate(Container c, String name, int rowId, int batchSize)
-        {
-            super(c, name, rowId, batchSize);
-        }
-
-        @Override
-        public boolean useCurrentTransaction()
-        {
-            return true;
-        }
-    }
 }

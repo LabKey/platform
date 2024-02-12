@@ -44,7 +44,7 @@
 
     if (null == datasets || datasets.isEmpty())
     {
-        out.print(text("No datasets defined<br><br>"));
+        out.print(unsafe("No datasets defined<br><br>"));
         if (container.hasPermission(user, AdminPermission.class))
         {
             out.print(link("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, container)));

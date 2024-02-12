@@ -160,7 +160,7 @@
             boolean checked = reportPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             %><tr class="labkey-row">
-                <td><font color=<%=text(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td>
+                <td><font color=<%=unsafe(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td>
                 <td height="22" width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
             </tr><%
         }
@@ -179,7 +179,7 @@
                 boolean checked = reportPolicy.hasPermission(g, ReadPermission.class);
                 boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class);
                 %><tr class="labkey-row">
-                    <td><font color=<%=text(disabled?"gray":"black")%>><%=h(g.getName())%></font></td>
+                    <td><font color=<%=unsafe(disabled?"gray":"black")%>><%=h(g.getName())%></font></td>
                     <td height=22 width="20" align="center"><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
                 </tr><%
             }
@@ -199,7 +199,7 @@
                 boolean checked = reportPolicy.hasPermission(u, ReadPermission.class);
                 boolean disabled = !containerPolicy.hasPermission(u, ReadPermission.class);
                 %><tr class="labkey-row">
-                    <td><font color=<%=text(disabled?"gray":"black")%>><%=h(u.getName())%></font></td>
+                    <td><font color=<%=unsafe(disabled?"gray":"black")%>><%=h(u.getName())%></font></td>
                     <td height=22 width="20" align="center"><input name=user value="<%=u.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td>
                 </tr><%
             }

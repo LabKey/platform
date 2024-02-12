@@ -17,25 +17,20 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-
-import static org.labkey.api.data.CompareType.STARTS_WITH;
 
 /**
  * User: jeckels
@@ -184,13 +179,20 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
             // Here we don't apply a container filter and instead rely on the "CpasType" of the associated data.
             // This allows for us to process max counter from all matching results within the provided type.
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("CpasType"), dataTypeLsid);
-            filter.addCondition(FieldKey.fromParts("Name"), namePrefix, STARTS_WITH);
+            String prefixLike = namePrefix.toLowerCase() + "%"; // case insensitive
+            SQLFragment sql = new SQLFragment()
+                    .append("SELECT Name\n")
+                    .append("FROM ").append(tableInfo, "i")
+                    .append(" WHERE i.CpasType = ? AND LOWER(i.NAME) LIKE ?")
+                    .add(dataTypeLsid)
+                    .add(prefixLike);
 
-            TableSelector selector = new TableSelector(tableInfo, Collections.singleton("Name"), filter, null);
+            List<String> names = new SqlSelector(tableInfo.getSchema(), sql).getArrayList(String.class);
+
             final List<String> nameSuffixes = new ArrayList<>();
-            selector.forEach(String.class, fullname -> nameSuffixes.add(fullname.replace(namePrefix, "")));
+            int prefixLength = namePrefix.length();
+            for(String fullName : names)
+                nameSuffixes.add(fullName.substring(prefixLength));
 
             for (String nameSuffix : nameSuffixes)
             {

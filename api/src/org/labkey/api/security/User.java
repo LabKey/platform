@@ -113,6 +113,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable, JSON
         AdminServiceUser()
         {
             super(new User("@serviceUserAdmin", User.guest.getUserId()), SiteAdminRole.class);
+            setActive(true);
             setPrincipalType(PrincipalType.SERVICE);
         }
 

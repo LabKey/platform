@@ -132,7 +132,7 @@ The request has produced no records.
                         continue;
                     String className="";
                     String style=col<width-1 ? "background:#FFFFFF" : "";
-                    %><td class="<%=text(className)%>" style="<%=text(style)%>" rowspan="<%=rowspan%>" nowrap>
+                    %><td class="<%=unsafe(className)%>" style="<%=unsafe(style)%>" rowspan="<%=rowspan%>" nowrap>
                         <%= h(title) %>
                     </td><%
                 }
@@ -141,7 +141,7 @@ The request has produced no records.
                 for (Visit visit : visits)
                 {
                     %><td align="center"><%
-                        %><%= text(row.getCellHtml(visit)) %><%
+                        %><%= unsafe(row.getCellHtml(visit)) %><%
                     %></td><%
                 }
                 %></tr><%

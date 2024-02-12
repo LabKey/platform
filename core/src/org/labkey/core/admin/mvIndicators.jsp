@@ -112,7 +112,7 @@
         </tr>
         <tr>
             <td>
-                <div id="mvIndicatorsDiv" style="display: <%=text(inherited ? "none" : "block")%>;">
+                <div id="mvIndicatorsDiv" style="display: <%=unsafe(inherited ? "none" : "block")%>;">
                     <table id="mvTable" class="table-condensed">
                         <tr>
                             <th>&nbsp;</th>

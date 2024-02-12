@@ -23,11 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.JsonpCharacterEscapes;
 import com.fasterxml.jackson.core.io.CharacterEscapes;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MappingJsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -42,7 +38,6 @@ import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,90 +58,12 @@ public class JsonUtil
     // The ObjectMapper is thread-safe and can be shared across requests
     // but shouldn't be mutated. If you need to reconfigure the ObjectMapper,
     // create a new instance by calling <code>ObjectMapper.copy()</code>.
-    public static final ObjectMapper DEFAULT_MAPPER = createDefaultMapper();
+    public static final ObjectMapper DEFAULT_MAPPER = new LabKeyObjectMapper(true);
 
     public static ObjectMapper createDefaultMapper()
     {
-        ObjectMapper result = new LabKeyObjectMapper();
-        // Allow org.json classes to be serialized by Jackson
-        result.registerModule(new JsonOrgModule());
-        // We must register JavaTimeModule in order to serialize LocalDate, etc.
-        result.registerModule(new JavaTimeModule());
-        result.setDateFormat(new SimpleDateFormat(DateUtil.getJsonDateTimeFormatString()));
-        return result;
+        return new LabKeyObjectMapper(false);
     }
-
-
-    private static final int[] labkeyAsciiEscapes;
-    static
-    {
-        labkeyAsciiEscapes = CharacterEscapes.standardAsciiEscapesForJSON().clone();
-        labkeyAsciiEscapes['/'] = '/';
-    }
-
-
-    static class LabKeyCharacterEscapes extends JsonpCharacterEscapes
-    {
-        private static final LabKeyCharacterEscapes sInstance = new LabKeyCharacterEscapes();
-        @Override
-        public int[] getEscapeCodesForAscii()
-        {
-            return labkeyAsciiEscapes;
-        }
-    }
-
-    static class LabKeyJsonFactory extends MappingJsonFactory
-    {
-        LabKeyJsonFactory()
-        {
-            setCharacterEscapes(LabKeyCharacterEscapes.sInstance);
-        }
-
-        LabKeyJsonFactory(LabKeyJsonFactory src, ObjectMapper mapper)
-        {
-            super(src, mapper);
-        }
-
-        @Override
-        public JsonFactory copy()
-        {
-            _checkInvalidCopy(LabKeyJsonFactory.class);
-            return new LabKeyJsonFactory(this, null);
-        }
-    }
-
-    static class LabKeyObjectMapper extends ObjectMapper
-    {
-        LabKeyObjectMapper()
-        {
-            super(new LabKeyJsonFactory());
-        }
-
-        LabKeyObjectMapper(LabKeyObjectMapper src)
-        {
-            this(src, null);
-        }
-
-        LabKeyObjectMapper(LabKeyObjectMapper src, JsonFactory factory)
-        {
-            super(src, factory);
-        }
-
-        @Override
-        public ObjectMapper copy()
-        {
-            _checkInvalidCopy(LabKeyObjectMapper.class);
-            return new LabKeyObjectMapper(this);
-        }
-
-        @Override
-        public ObjectMapper copyWith(JsonFactory factory)
-        {
-            _checkInvalidCopy(LabKeyObjectMapper.class);
-            return new LabKeyObjectMapper(this, factory);
-        }
-    }
-
 
     public static JsonLocation expectObjectStart(JsonParser p) throws IOException
     {

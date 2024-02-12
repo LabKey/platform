@@ -59,6 +59,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataViewSnapshotSelectionForm;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -273,59 +274,58 @@ public class PlateController extends SpringActionController
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
-
     }
 
     public static class CopyTemplateBean
     {
-        private final HtmlString _treeHtml;
-        private final Plate _plate;
-        private final String _selectedDestination;
+        private HtmlString _treeHtml;
+        private Plate _plate;
+        private String _selectedDestination;
         private List<Plate> _destinationTemplates;
 
         public CopyTemplateBean(final Container container, final User user, final Integer plateId, final String selectedDestination)
         {
-            if (plateId == null)
-                throw new IllegalArgumentException("Plate ID cannot be null");
-
-            _plate = PlateService.get().getPlate(container, plateId);
-            if (_plate == null)
-                throw new IllegalStateException("Could not resolve the plate with ID : " + plateId);
-
-            _selectedDestination = selectedDestination;
-
-            //Copy and Add to another folder requires InsertPermissions
-            ContainerTree tree = new ContainerTree("/", user, InsertPermission.class, null)
+            if (plateId != null)
             {
-                @Override
-                protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
+                _plate = PlateService.get().getPlate(container, plateId);
+                if (_plate != null)
                 {
-                    ActionURL copyURL = new ActionURL(CopyTemplateAction.class, container);
-                    copyURL.addParameter("plateId", _plate.getRowId());
-                    copyURL.addParameter("destination", c.getPath());
-                    boolean selected = c.getPath().equals(selectedDestination);
-                    if (selected)
-                        html.append("<span class=\"labkey-nav-tree-selected\">");
-                    html.append("<a href=\"");
-                    html.append(copyURL.getEncodedLocalURIString());
-                    html.append("\">");
-                    html.append(PageFlowUtil.filter(c.getName()));
-                    html.append("</a>");
-                    if (selected)
-                        html.append("</span>");
-                }
-            };
+                    _selectedDestination = selectedDestination;
 
-            if (_selectedDestination != null)
-            {
-                Container dest = ContainerManager.getForPath(_selectedDestination);
-                if (dest != null)
-                {
-                    _destinationTemplates = PlateService.get().getPlateTemplates(dest);
+                    //Copy and Add to another folder requires InsertPermissions
+                    ContainerTree tree = new ContainerTree("/", user, InsertPermission.class, null)
+                    {
+                        @Override
+                        protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
+                        {
+                            ActionURL copyURL = new ActionURL(CopyTemplateAction.class, container);
+                            copyURL.addParameter("plateId", _plate.getRowId());
+                            copyURL.addParameter("destination", c.getPath());
+                            boolean selected = c.getPath().equals(selectedDestination);
+                            if (selected)
+                                html.append("<span class=\"labkey-nav-tree-selected\">");
+                            html.append("<a href=\"");
+                            html.append(copyURL.getEncodedLocalURIString());
+                            html.append("\">");
+                            html.append(PageFlowUtil.filter(c.getName()));
+                            html.append("</a>");
+                            if (selected)
+                                html.append("</span>");
+                        }
+                    };
+
+                    if (_selectedDestination != null)
+                    {
+                        Container dest = ContainerManager.getForPath(_selectedDestination);
+                        if (dest != null)
+                        {
+                            _destinationTemplates = PlateService.get().getPlateTemplates(dest);
+                        }
+                    }
+
+                    _treeHtml = tree.getHtmlString();
                 }
             }
-
-            _treeHtml = tree.getHtmlString();
         }
 
         public String getSelectedDestination()
@@ -362,8 +362,11 @@ public class PlateController extends SpringActionController
         @Override
         public ModelAndView getView(CopyForm form, boolean reshow, BindException errors)
         {
-            return new JspView<>("/org/labkey/assay/plate/view/copyTemplate.jsp",
-                    new CopyTemplateBean(getContainer(), getUser(), form.getPlateId(), form.getDestination()), errors);
+            CopyTemplateBean bean = new CopyTemplateBean(getContainer(), getUser(), form.getPlateId(), form.getDestination());
+            if (bean.getPlate() != null)
+                return new JspView<>("/org/labkey/assay/plate/view/copyTemplate.jsp", bean, errors);
+            else
+                return HtmlView.err("Source Plate does not exist.");
         }
 
         @Override
