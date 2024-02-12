@@ -2146,6 +2146,62 @@ public class PlateManager implements PlateService
         }
 
         @Test
+        public void testAccessPlateByIdentifiers() throws Exception
+        {
+            // Arrange
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
+            PlateSetImpl plateSetImpl = new PlateSetImpl();
+            plateSetImpl.setName("testAccessPlateByIdentifiersPlateSet");
+            ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+
+            // Act
+            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId()),
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSame", plateType.getRowId()),
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSame", plateType.getRowId())
+            ));
+
+            // Assert
+            assertTrue("Expected plateSet to have been persisted and provided with a rowId", plateSet.getRowId() > 0);
+            List<Plate> plates = plateSet.getPlates(user);
+            assertEquals("Expected plateSet to have 3 plates", 3, plates.size());
+
+            // verify access via plate rowId
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getRowId()));
+
+            // verify access via plate ID
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getPlateId()));
+
+            // verify access via plate name
+            assertNotNull("Expected plate to be accessible via it's name", PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersFirst"));
+            // verify error when trying to access non-unique plate name
+            try
+            {
+                PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersSame");
+                fail("Expected a validation error when accessing plates by non-unique name");
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Expected validation exception", "More than one plate found with name \"testAccessPlateByIdentifiersSame\" in plate set testAccessPlateByIdentifiersPlateSet. Please use the \"Plate ID\" to identify the plate instead.", e.getMessage());
+            }
+            // verify error when trying to access non-existing plate name
+            try
+            {
+                PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersBogus");
+                fail("Expected a validation error when accessing plates by non-existing name");
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Expected validation exception", "No plate found with the name \"testAccessPlateByIdentifiersBogus\" in plate set \"testAccessPlateByIdentifiersPlateSet\".", e.getMessage());
+            }
+        }
+
+        @Test
         public void testCreatePlateTemplates() throws Exception
         {
             // Verify plate service assumptions about plate templates

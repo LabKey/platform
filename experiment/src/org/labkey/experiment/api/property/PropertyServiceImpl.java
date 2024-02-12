@@ -769,5 +769,84 @@ public class PropertyServiceImpl implements PropertyService, UsageMetricsProvide
             choices = service.getTextChoiceValidatorOptions(instance);
             Assert.assertEquals(Arrays.asList("a", "b", "c", "d"), choices);
         }
+
+        @Test
+        public void testTetDomainPropertyValueFromRow()
+        {
+            PropertyServiceImpl service = new PropertyServiceImpl();
+            PropertyDescriptor pd = new PropertyDescriptor();
+            pd.setName("MyName");
+            pd.setLabel("MyLabel");
+            pd.setImportAliases("Alias1,\"Alias 2\"");
+            DomainPropertyImpl dp = new DomainPropertyImpl(null, pd);
+
+            // null checks
+            Assert.assertNull(service.getDomainPropertyValueFromRow(null, null));
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, null));
+            Assert.assertNull(service.getDomainPropertyValueFromRow(null, Map.of("name", "MyName")));
+
+            // no match in row
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, Map.of("Bogus", "test")));
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, Map.of("Name", "test")));
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, Map.of("MyNamE", "test")));
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, Map.of("Alias2", "test")));
+
+            // has match in row
+            Assert.assertEquals("test", service.getDomainPropertyValueFromRow(dp, Map.of("MyName", "test")));
+            Assert.assertEquals("test", service.getDomainPropertyValueFromRow(dp, Map.of("myname", "test")));
+            Assert.assertEquals("test", service.getDomainPropertyValueFromRow(dp, Map.of("MyLabel", "test")));
+            Assert.assertEquals("test", service.getDomainPropertyValueFromRow(dp, Map.of("Alias1", "test")));
+            Assert.assertEquals("test", service.getDomainPropertyValueFromRow(dp, Map.of("Alias 2", "test")));
+
+            // check order of precedence
+            Map<String, Object> row = new HashMap<>(Map.of("MyName", "name", "MyLabel", "label", "Alias1", "a1", "Alias 2", "a2"));
+            Assert.assertEquals("name", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("MyName");
+            Assert.assertEquals("label", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("MyLabel");
+            Assert.assertEquals("a1", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("Alias1");
+            Assert.assertEquals("a2", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("Alias 2");
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, row));
+        }
+
+        @Test
+        public void replaceDomainPropertyValue()
+        {
+            PropertyServiceImpl service = new PropertyServiceImpl();
+            PropertyDescriptor pd = new PropertyDescriptor();
+            pd.setName("MyName");
+            pd.setLabel("MyLabel");
+            pd.setImportAliases("Alias1,\"Alias 2\"");
+            DomainPropertyImpl dp = new DomainPropertyImpl(null, pd);
+            Map<String, Object> row = new HashMap<>(Map.of("MyName", "name", "MyLabel", "label", "Alias1", "a1", "Alias 2", "a2"));
+
+            Assert.assertEquals("name", service.getDomainPropertyValueFromRow(dp, row));
+            service.replaceDomainPropertyValue(dp, row, "newName");
+            Assert.assertEquals("newName", row.get("MyName"));
+            Assert.assertEquals("newName", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("MyName");
+
+            Assert.assertEquals("label", service.getDomainPropertyValueFromRow(dp, row));
+            service.replaceDomainPropertyValue(dp, row, "newLabel");
+            Assert.assertEquals("newLabel", row.get("MyLabel"));
+            Assert.assertEquals("newLabel", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("MyLabel");
+
+            Assert.assertEquals("a1", service.getDomainPropertyValueFromRow(dp, row));
+            service.replaceDomainPropertyValue(dp, row, "newA1");
+            Assert.assertEquals("newA1", row.get("Alias1"));
+            Assert.assertEquals("newA1", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("Alias1");
+
+            Assert.assertEquals("a2", service.getDomainPropertyValueFromRow(dp, row));
+            service.replaceDomainPropertyValue(dp, row, "newA2");
+            Assert.assertEquals("newA2", row.get("Alias 2"));
+            Assert.assertEquals("newA2", service.getDomainPropertyValueFromRow(dp, row));
+            row.remove("Alias 2");
+
+            Assert.assertNull(service.getDomainPropertyValueFromRow(dp, row));
+        }
     }
 }
