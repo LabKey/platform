@@ -357,7 +357,7 @@ Click the Save button at any time to accept the current settings and continue.</
     for (int days : new int[]{7, 30, 90, 180, 365})
         expirationOptions.put(days * SECONDS_PER_DAY, days + " days");
 
-    // If current expiration is non-standard (perhaps set by a startup property) then add, formatting label as a duration
+    // If current expiration is non-standard (perhaps set by a startup property) then add it, formatting label as a duration
     if (!expirationOptions.containsKey(currentExpiration))
         expirationOptions.put(currentExpiration, DateUtil.formatDuration(1000L * currentExpiration));
 %>
