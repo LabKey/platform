@@ -10640,7 +10640,7 @@ public class AdminController extends SpringActionController
             String themName = json.optString("themeName");
             try
             {
-                if (themName == null)
+                if (themName.isBlank())
                 {
                     if (!c.isRoot())
                         props.clearThemeName();
