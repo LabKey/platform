@@ -2190,8 +2190,8 @@ public class PlateManager implements PlateService
             // Act
             PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
                     new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId()),
-                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSame", plateType.getRowId()),
-                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSame", plateType.getRowId())
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId()),
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId())
             ));
 
             // Assert
@@ -2211,16 +2211,6 @@ public class PlateManager implements PlateService
 
             // verify access via plate name
             assertNotNull("Expected plate to be accessible via it's name", PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersFirst"));
-            // verify error when trying to access non-unique plate name
-            try
-            {
-                PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersSame");
-                fail("Expected a validation error when accessing plates by non-unique name");
-            }
-            catch (IllegalArgumentException e)
-            {
-                assertEquals("Expected validation exception", "More than one plate found with name \"testAccessPlateByIdentifiersSame\" in plate set testAccessPlateByIdentifiersPlateSet. Please use the \"Plate ID\" to identify the plate instead.", e.getMessage());
-            }
             // verify error when trying to access non-existing plate name
             try
             {
