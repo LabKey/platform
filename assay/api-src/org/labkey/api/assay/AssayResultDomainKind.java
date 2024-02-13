@@ -44,6 +44,7 @@ import static org.labkey.api.data.Table.MODIFIED_COLUMN_NAME;
  */
 public class AssayResultDomainKind extends AssayDomainKind
 {
+    public static final String PLATE_COLUMN_NAME = "Plate";
     public static final String WELL_LOCATION_COLUMN_NAME = "WellLocation";
     public static final String WELL_LSID_COLUMN_NAME = "WellLsid";
 
@@ -137,6 +138,7 @@ public class AssayResultDomainKind extends AssayDomainKind
             {
                 if (provider.isPlateMetadataEnabled(protocol))
                 {
+                    mandatoryNames.add(PLATE_COLUMN_NAME);
                     mandatoryNames.add(WELL_LOCATION_COLUMN_NAME);
                     mandatoryNames.add(WELL_LSID_COLUMN_NAME);
                 }

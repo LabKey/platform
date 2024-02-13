@@ -327,6 +327,7 @@ LABKEY.vis.Geom.ControlRange.prototype.render = function(renderer, grid, scales,
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
  * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 2.
  * @param {Boolean} [config.dashed] (Optional) Whether or not to use dashed lines for top and bottom bars. Defaults to false.
+ * @param {Boolean} [config.topOnly] (Optional) Whether or not to only render the top line of the error bar. Defaults to false. Allows optimizing bars that will have an error of zero to not double-render.
  */
 LABKEY.vis.Geom.ErrorBar = function(config){
     this.type = "ErrorBar";
@@ -338,6 +339,7 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
     this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
     this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 6;
+    this.topOnly = ('topOnly' in config && config.topOnly != null && config.topOnly != undefined) ? config.topOnly : false;
 
     return this;
 };

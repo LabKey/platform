@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
@@ -357,7 +358,7 @@ public class PlateManager implements PlateService
     @Override
     public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, user, plate);
+        SqlSelector se = selectRunUsingPlateTemplate(c, user, plate);
         if (se == null)
             return emptyList();
 
@@ -368,27 +369,72 @@ public class PlateManager implements PlateService
     @Override
     public int getRunCountUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
-        SqlSelector se = selectRunUsingPlate(c, user, plate);
-        if (se == null)
-            return 0;
+        int count = 0;
+        SqlSelector se = selectRunUsingPlateTemplate(c, user, plate);
+        if (se != null)
+            count += (int) se.getRowCount();
 
-        return (int) se.getRowCount();
+        List<Integer> runIds = getRunIdsUsingPlateInResults(c, user, plate);
+        if (runIds != null)
+            count += runIds.size();
+
+        return count;
     }
 
-    private @Nullable SqlSelector selectRunUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
+    private List<Integer> getRunIdsUsingPlateInResults(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
         // first, get the list of GPAT protocols in the container
-        AssayProvider gpat = AssayService.get().getProvider(TsvAssayProvider.NAME);
-        if (gpat == null)
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
+        if (provider == null)
             return null;
 
-        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, gpat);
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider)
+                .stream().filter(provider::isPlateMetadataEnabled).toList();
+
+        // get the runIds for each protocol, query against its assayresults table
+        List<Integer> runIds = new ArrayList<>();
+        for (ExpProtocol protocol : protocols)
+        {
+            AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
+            if (assayDataTable != null)
+            {
+                ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
+                if (dataIdCol != null)
+                {
+                    SQLFragment subSelectSql = new SQLFragment("SELECT DISTINCT dataid FROM ")
+                            .append(assayDataTable)
+                            .append(" WHERE plate = ?")
+                            .add(plate.getRowId());
+
+                    SQLFragment sql = new SQLFragment("SELECT DISTINCT runid FROM ")
+                            .append(ExperimentService.get().getTinfoData())
+                            .append(" WHERE rowid IN (").append(subSelectSql).append(")");
+
+                    Collection<Integer> assayRunIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getCollection(Integer.class);
+                    if (!assayRunIds.isEmpty())
+                        runIds.addAll(assayRunIds);
+                }
+            }
+        }
+
+        return runIds;
+    }
+
+    private @Nullable SqlSelector selectRunUsingPlateTemplate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
+    {
+        // first, get the list of GPAT protocols in the container
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
+        if (provider == null)
+            return null;
+
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
 
         // next, for the plate metadata enabled assays,
         // get the set of "PlateTemplate" PropertyDescriptors from the RunDomains of those assays
         List<PropertyDescriptor> plateTemplateProps = protocols.stream()
-                .filter(gpat::isPlateMetadataEnabled)
-                .map(gpat::getRunDomain)
+                .filter(provider::isPlateMetadataEnabled)
+                .map(provider::getRunDomain)
                 .filter(Objects::nonNull)
                 .map(r -> r.getPropertyByName(TsvAssayProvider.PLATE_TEMPLATE_PROPERTY_NAME))
                 .filter(Objects::nonNull)
@@ -462,6 +508,68 @@ public class PlateManager implements PlateService
         return PlateCache.getPlate(cf, plateId);
     }
 
+    @Override
+    public @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier)
+    {
+        if (plateSetId == null)
+            throw new IllegalArgumentException("Plate set is required.");
+
+        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
+        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
+        PlateSet plateSet = getPlateSet(c, plateSetId);
+        if (plateSet == null)
+            throw new IllegalArgumentException("Plate set " + plateSetId + " not found.");
+
+        Plate plate = null;
+        if (plateIdentifier != null)
+        {
+            // first check by RowId (if the identifier is a number), then check by plateId, and finally by plate name
+            if (StringUtils.isNumeric(plateIdentifier.toString()))
+                plate = getPlate(c, Integer.parseInt(plateIdentifier.toString()));
+            if (plate == null)
+                plate = getPlate(c, plateIdentifier.toString());
+            if (plate == null)
+            {
+                Collection<Plate> plates = getPlatesForPlateSet(c, plateSetId);
+                List<Plate> matchingPlates = plates.stream().filter(p -> p.getName().equals(plateIdentifier.toString())).toList();
+                if (matchingPlates.size() == 1)
+                    plate = matchingPlates.get(0);
+                else if (matchingPlates.isEmpty())
+                    throw new IllegalArgumentException("No plate found with the name \"" + plateIdentifier + "\" in plate set \"" + plateSet.getName() + "\".");
+                else
+                    throw new IllegalArgumentException("More than one plate found with name \"" + plateIdentifier + "\" in plate set " + plateSet.getName() + ". Please use the \"Plate ID\" to identify the plate instead.");
+            }
+        }
+
+        if (plate != null && plate.getPlateSet() != null && !plate.getPlateSet().getRowId().equals(plateSetId))
+            throw new IllegalArgumentException("Plate " + plateIdentifier + " is not part of plate set " + plateSet.getName() + ".");
+        return plate;
+    }
+
+    public static @Nullable Container getContainerWithPlateIdentifier(ContainerFilter cf, SimpleFilter filter)
+    {
+        return _getContainerWithIdentifier(AssayDbSchema.getInstance().getTableInfoPlate(), cf, filter);
+    }
+
+    public static @Nullable Container getContainerWithPlateSetIdentifier(ContainerFilter cf, SimpleFilter filter)
+    {
+        return _getContainerWithIdentifier(AssayDbSchema.getInstance().getTableInfoPlateSet(), cf, filter);
+    }
+
+    private static @Nullable Container _getContainerWithIdentifier(TableInfo tableInfo, ContainerFilter cf, SimpleFilter filter)
+    {
+        filter.addClause(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
+        List<String> containers = new TableSelector(tableInfo, Collections.singleton("Container"), filter, null).getArrayList(String.class);
+
+        if (containers.size() > 1)
+            throw new IllegalStateException("More than one " + tableInfo.getName() + " found that matches the filter.");
+
+        if (containers.size() == 1)
+            return ContainerManager.getForId(containers.get(0));
+
+        return null;
+    }
+
     /**
      * Helper to create container filters to support assay import using cross folder
      * plates
@@ -518,6 +626,11 @@ public class PlateManager implements PlateService
     private Collection<Plate> getPlates(Container c)
     {
         return PlateCache.getPlates(c);
+    }
+
+    private Collection<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    {
+        return PlateCache.getPlatesForPlateSet(c, plateSetId);
     }
 
     @Override
@@ -2062,6 +2175,62 @@ public class PlateManager implements PlateService
 
             savedPlate = PlateService.get().getPlate(ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user), plate.getRowId());
             assertTrue("Expected plate to be accessible via a container filter", plate.getRowId().equals(savedPlate.getRowId()));
+        }
+
+        @Test
+        public void testAccessPlateByIdentifiers() throws Exception
+        {
+            // Arrange
+            PlateType plateType = PlateManager.get().getPlateType(8, 12);
+            assertNotNull("96 well plate type was not found", plateType);
+            PlateSetImpl plateSetImpl = new PlateSetImpl();
+            plateSetImpl.setName("testAccessPlateByIdentifiersPlateSet");
+            ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(ContainerManager.getSharedContainer(), user);
+
+            // Act
+            PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId()),
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSame", plateType.getRowId()),
+                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSame", plateType.getRowId())
+            ));
+
+            // Assert
+            assertTrue("Expected plateSet to have been persisted and provided with a rowId", plateSet.getRowId() > 0);
+            List<Plate> plates = plateSet.getPlates(user);
+            assertEquals("Expected plateSet to have 3 plates", 3, plates.size());
+
+            // verify access via plate rowId
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getRowId()));
+            assertNotNull("Expected plate to be accessible via it's rowId", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getRowId()));
+
+            // verify access via plate ID
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(0).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(1).getPlateId()));
+            assertNotNull("Expected plate to be accessible via it's plate ID", PlateService.get().getPlate(cf, plateSet.getRowId(), plates.get(2).getPlateId()));
+
+            // verify access via plate name
+            assertNotNull("Expected plate to be accessible via it's name", PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersFirst"));
+            // verify error when trying to access non-unique plate name
+            try
+            {
+                PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersSame");
+                fail("Expected a validation error when accessing plates by non-unique name");
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Expected validation exception", "More than one plate found with name \"testAccessPlateByIdentifiersSame\" in plate set testAccessPlateByIdentifiersPlateSet. Please use the \"Plate ID\" to identify the plate instead.", e.getMessage());
+            }
+            // verify error when trying to access non-existing plate name
+            try
+            {
+                PlateService.get().getPlate(cf, plateSet.getRowId(), "testAccessPlateByIdentifiersBogus");
+                fail("Expected a validation error when accessing plates by non-existing name");
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Expected validation exception", "No plate found with the name \"testAccessPlateByIdentifiersBogus\" in plate set \"testAccessPlateByIdentifiersPlateSet\".", e.getMessage());
+            }
         }
 
         @Test
