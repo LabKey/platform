@@ -163,6 +163,15 @@ public interface PlateService
     @Nullable Plate getPlate(ContainerFilter cf, String plateId);
 
     /**
+     * Gets a plate instance object by plate identifier within a given plate set.
+     * @param cf The container filter to find the plate
+     * @param plateSetId The plate set id.
+     * @param plateIdentifier The plate rowId, plateId, or name (checked in that order).
+     * @return The requested plate, or null if no plate exists with the specified plate identifier.
+     */
+    @Nullable Plate getPlate(ContainerFilter cf, Integer plateSetId, Object plateIdentifier);
+
+    /**
      * Gets all plate templates for the specified container. Plate templates are Plate instances
      * which have their template field set to TRUE.
      *

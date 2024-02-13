@@ -24,6 +24,7 @@ import java.util.Map;
 public interface AssayPlateMetadataService
 {
     String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
+    String PLATE_SET_COLUMN_NAME = "PlateSet";
     Map<AssayDataType, AssayPlateMetadataService> _handlers = new HashMap<>();
     String EXPERIMENTAL_APP_PLATE_SUPPORT = "experimental-app-plate-support";
 
@@ -72,8 +73,9 @@ public interface AssayPlateMetadataService
      *
      * @return the merged rows
      */
-    List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
-                                                 ExpProtocol protocol) throws ExperimentException;
+    List<Map<String, Object>> mergePlateMetadata(Container container, User user, Lsid plateLsid, Integer plateSetId,
+                                                 List<Map<String, Object>> rows, @Nullable Map<String, MetadataLayer> plateMetadata,
+                                                 AssayProvider provider, ExpProtocol protocol) throws ExperimentException;
 
     /**
      * Methods to create the metadata model from either a JSON object or a file object
