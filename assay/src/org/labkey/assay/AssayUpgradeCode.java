@@ -353,6 +353,7 @@ public class AssayUpgradeCode implements UpgradeCode
         {
             // just truncate the plate to custom property mappings
             Table.truncate(AssayDbSchema.getInstance().getTableInfoPlateProperty());
+            List<Container> biologicsFolders = new ArrayList<>();
 
             for (Container container : ContainerManager.getAllChildren(ContainerManager.getRoot()))
             {
@@ -372,11 +373,28 @@ public class AssayUpgradeCode implements UpgradeCode
                         domain.delete(User.getAdminServiceUser());
                     }
 
-                    // ensure the plate metadata domain for the top level biologics projects
-                    if (container.isProject() && "Biologics".equals(ContainerManager.getFolderTypeName(container)))
+                    if (container.getProject() != null && "Biologics".equals(ContainerManager.getFolderTypeName(container.getProject())))
                     {
-                        PlateManager.get().ensurePlateMetadataDomain(container, User.getAdminServiceUser());
+                        // ensure the plate metadata domain for the top level biologics projects
+                        if (container.isProject())
+                            PlateManager.get().ensurePlateMetadataDomain(container, User.getAdminServiceUser());
+                        biologicsFolders.add(container);
                     }
+                }
+            }
+
+            // for existing plates we also need to populate the new provisioned tables so that wells can be joined
+            // to the metadata properly
+            for (Container container : biologicsFolders)
+            {
+                TableInfo tinfo = PlateManager.get().getPlateMetadataTable(container, User.getAdminServiceUser());
+                if (tinfo != null)
+                {
+                    SQLFragment sql = new SQLFragment("INSERT INTO ").append(tinfo, "")
+                            .append(" (Lsid) SELECT Lsid FROM ").append(AssayDbSchema.getInstance().getTableInfoWell(), "")
+                            .append(" WHERE Container = ?").add(container);
+
+                    new SqlExecutor(AssayDbSchema.getInstance().getScope()).execute(sql);
                 }
             }
             tx.commit();
