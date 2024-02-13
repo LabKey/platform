@@ -32,6 +32,13 @@
 <%@ page import="static org.labkey.api.security.SecurityManager.SECONDS_PER_DAY" %>
 <%@ page import="static org.labkey.api.util.ExceptionReportingLevel.*" %>
 <%@ page import="static org.labkey.api.settings.SiteSettingsProperties.*" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.TreeMap" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -341,19 +348,29 @@ Click the Save button at any time to accept the current settings and continue.</
     <td class="labkey-form-label">Expire API keys</td>
 <%
     final int currentExpiration = AppProps.getInstance().getApiKeyExpirationSeconds();
-%>
-    <td><select name="<%=apiKeyExpirationSeconds%>" id="<%=apiKeyExpirationSeconds%>">
-        <option value=-1 <%=selectedEq(-1, currentExpiration)%>>Never</option>
-<%
+    Map<Integer, String> expirationOptions = new TreeMap<>(Comparator.comparing(key -> key));
+    expirationOptions.put(-1, "Never");
     if (AppProps.getInstance().isDevMode())
-    { %>
-        <option value=10 <%=selectedEq(10, currentExpiration)%>>10 seconds - for testing purposes only</option>
-<%  } %>
-        <option value=<%=7*SECONDS_PER_DAY%> <%=selectedEq(7*SECONDS_PER_DAY, currentExpiration)%>>7 days</option>
-        <option value=<%=30*SECONDS_PER_DAY%> <%=selectedEq(30*SECONDS_PER_DAY, currentExpiration)%>>30 days</option>
-        <option value=<%=90*SECONDS_PER_DAY%> <%=selectedEq(90*SECONDS_PER_DAY, currentExpiration)%>>90 days</option>
-        <option value=<%=365*SECONDS_PER_DAY%> <%=selectedEq(365*SECONDS_PER_DAY, currentExpiration)%>>365 days</option>
-    </select></td>
+    {
+        expirationOptions.put(10, "10 seconds - for testing purposes only");
+    }
+    for (int days : new int[]{7, 30, 90, 180, 365})
+        expirationOptions.put(days * SECONDS_PER_DAY, days + " days");
+
+    // If current expiration is non-standard (perhaps set by a startup property) then add, formatting label as a duration
+    if (!expirationOptions.containsKey(currentExpiration))
+        expirationOptions.put(currentExpiration, DateUtil.formatDuration(1000L * currentExpiration));
+%>
+    <td>
+    <%=
+        select()
+            .name(apiKeyExpirationSeconds.name())
+            .id(apiKeyExpirationSeconds.name())
+            .addOptions(expirationOptions)
+            .selected(currentExpiration)
+            .className(null)
+    %>
+    </td>
 </tr>
 <tr>
     <td class="labkey-form-label">Let users create session keys</td>
