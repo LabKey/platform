@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.api.SampleTypeService;
 
+import java.sql.Time;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -77,6 +78,13 @@ public class SubstitutionFormat
         @Override
         public Object format(Object value)
         {
+            if (value instanceof Time)
+                return defaultTimeFormat.format(value);
+            else if (value instanceof java.sql.Date)
+                return date.format(value);
+            else if (value instanceof Date)
+                return defaultDateTimeFormat.format(value);
+
             return value;
         }
 
@@ -388,6 +396,9 @@ public class SubstitutionFormat
             if (value == null)
                 return null;
 
+            if (value instanceof java.sql.Date || value instanceof Time)
+                value = new Date(((Date)value).getTime());
+
             TemporalAccessor temporal;
             if (value instanceof TemporalAccessor)
                 temporal = (TemporalAccessor) value;
@@ -404,6 +415,8 @@ public class SubstitutionFormat
     }
 
     static final SubstitutionFormat date = new DateSubstitutionFormat(DateTimeFormatter.BASIC_ISO_DATE.withZone(ZoneId.systemDefault()));
+    static final DateSubstitutionFormat defaultDateTimeFormat = new SubstitutionFormat.DateSubstitutionFormat(DateTimeFormatter.ISO_DATE_TIME);
+    static final DateSubstitutionFormat defaultTimeFormat = new SubstitutionFormat.DateSubstitutionFormat(DateTimeFormatter.ISO_TIME);
 
     public static class NumberSubstitutionFormat extends SubstitutionFormat
     {
