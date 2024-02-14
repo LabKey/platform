@@ -258,6 +258,11 @@ public class PlateManager implements PlateService
                 BatchValidationException errors = new BatchValidationException();
                 Set<PlateCustomField> customFields = new HashSet<>();
 
+                TableInfo metadataTable = getPlateMetadataTable(container, user);
+                Set<FieldKey> metadataFields = Collections.emptySet();
+                if (metadataTable != null)
+                    metadataFields = metadataTable.getColumns().stream().map(ColumnInfo::getFieldKey).collect(Collectors.toSet());
+
                 // resolve columns and set any custom fields associated with the plate
                 List<Map<String, Object>> rows = new ArrayList<>();
                 for (Map<String, Object> dataRow : data)
@@ -275,7 +280,7 @@ public class PlateManager implements PlateService
                             for (String colName : dataRow.keySet())
                             {
                                 ColumnInfo col = wellTable.getColumn(FieldKey.fromParts(colName));
-                                if (col != null)
+                                if (col != null && metadataFields.contains(col.getFieldKey()))
                                 {
                                     PlateCustomField customField = new PlateCustomField(col.getPropertyURI());
                                     customFields.add(customField);
