@@ -623,6 +623,8 @@ public class Query
 
     static RuntimeException wrapRuntimeException(RuntimeException ex, String sql)
     {
+        if (ex instanceof UnauthorizedException)
+            throw ex;
         if (ex instanceof ConfigurationException)
             return ex;
         if (ex instanceof QueryInternalException)
