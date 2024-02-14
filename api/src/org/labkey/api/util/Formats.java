@@ -41,6 +41,7 @@ public class Formats
     public static DecimalFormat percent1 = new DecimalFormat("0.0%");
     public static DecimalFormat percent2 = new DecimalFormat("0.00%");
     public static DecimalFormat commaf0 = new DecimalFormat("#,##0");
+    public static DecimalFormat commaf2 = new DecimalFormat("#,##0.##");
     public static DecimalFormat commaf3 = new DecimalFormat("#,##0.###");
     public static DecimalFormat chargeFilter = new DecimalFormat("0.#");
 
