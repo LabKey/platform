@@ -16,7 +16,6 @@
 package org.labkey.filecontent;
 
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
@@ -27,7 +26,6 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.writer.VirtualFile;
 
@@ -36,8 +34,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,7 +41,6 @@ import static org.labkey.filecontent.FileWriter.DIR_NAME;
 
 /**
  * Imports into the webdav file root for the folder.
- * Created by Josh on 11/1/2016.
  */
 public class FileImporter implements FolderImporter
 {
@@ -72,20 +67,27 @@ public class FileImporter implements FolderImporter
         {
             FileContentService service = FileContentService.get();
             Path rootFile = service.getFileRootPath(ctx.getContainer(), FileContentService.ContentType.files);
-            if (!Files.exists(rootFile))
-                FileUtil.createDirectories(rootFile);
-            if (Files.isDirectory(rootFile))
+            if (null == rootFile)
             {
-                ctx.getLogger().info("Starting to copy files");
-                AtomicInteger count = new AtomicInteger();
-                copy(filesVF, rootFile, ctx.getLogger(), System.currentTimeMillis() + LOG_INTERVAL, count);
+                ctx.getLogger().warn("Files were not imported due to a problem with the file root configuration in the target folder");
+            }
+            else
+            {
+                if (!Files.exists(rootFile))
+                    FileUtil.createDirectories(rootFile);
+                if (Files.isDirectory(rootFile))
+                {
+                    ctx.getLogger().info("Starting to copy files");
+                    AtomicInteger count = new AtomicInteger();
+                    copy(filesVF, rootFile, ctx.getLogger(), System.currentTimeMillis() + LOG_INTERVAL, count);
 
-                ctx.getLogger().info("Copied " + count.get() + " files");
+                    ctx.getLogger().info("Copied " + count.get() + " files");
 
-                ctx.getLogger().info("Ensuring exp.data rows exist for imported files");
-                // Ensure that we have an exp.data row for each file
-                ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(ctx.getUser(), ctx.getContainer()), null);
-                service.ensureFileData(table);
+                    ctx.getLogger().info("Ensuring exp.data rows exist for imported files");
+                    // Ensure that we have an exp.data row for each file
+                    ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(ctx.getUser(), ctx.getContainer()), null);
+                    service.ensureFileData(table);
+                }
             }
         }
     }
