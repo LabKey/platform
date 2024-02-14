@@ -837,6 +837,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
+    public String getDateTimeToTimeCast(String columnName)
+    {
+        return String.format("DATEADD(day, DATEDIFF(day, %s, '19700101'), %s )", columnName, columnName);
+    }
+
+    @Override
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
