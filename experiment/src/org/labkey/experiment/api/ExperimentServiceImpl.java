@@ -818,27 +818,34 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public void indexDeleted()
     {
-        List<TableInfo> indexedTables = List.of(getTinfoSampleType(),
-                getTinfoDataClass(),
-                getTinfoMaterial(),
-                getTinfoData());
-
         // Clear the last indexed value on all tables that back a search document
-        for (TableInfo indexedTable : indexedTables)
+        for (TableInfo indexedTable : List.of(getTinfoSampleType(), getTinfoDataClass()))
         {
             new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + indexedTable +
                     " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+        }
+
+        for (TableInfo indexedTable : List.of(getTinfoMaterialIndexed(), getTinfoDataIndexed()))
+        {
+            new SqlExecutor(ExperimentService.get().getSchema()).execute("TRUNCATE " + indexedTable);
         }
     }
 
     private void indexMaterials(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince, int minRowId)
     {
+        final String materialAlias = "_m_";
+        final String materialIndexedAlias = "_mi_";
         // Big hack to prevent indexing study specimens and bogus samples created from some plate assays (Issue 46037). Also in ExpMaterialImpl.index()
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " _m_  WHERE Container = ? AND LSID NOT LIKE '%:"
-                + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
+        SQLFragment sql = new SQLFragment("SELECT ").append(materialAlias).append(".* FROM ").
+                append(getTinfoMaterial(), "_m_").
+                append(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
+                append(" ON ").append(materialAlias).append(".RowId = ").
+                append(materialIndexedAlias).append(".MaterialId WHERE Container = ? AND LSID NOT LIKE '%:").
+                append(StudyService.SPECIMEN_NAMESPACE_PREFIX).
+                append("%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, "_m_").toSQLFragment(null, null);
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, materialAlias, getTinfoMaterialIndexed(), materialIndexedAlias).toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
@@ -862,10 +869,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void indexData(final @NotNull SearchService.IndexTask task, final @NotNull Container container, final Date modifiedSince, int minRowId)
     {
-        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoData() + " _d_ WHERE Container = ? AND classId IS NOT NULL AND RowId > ?");
+        final String dataAlias = "_d_";
+        final String dataIndexedAlias = "_di_";
+
+        SQLFragment sql = new SQLFragment("SELECT ").append(dataAlias).append(".* FROM ").
+                append(getTinfoData(), dataAlias).
+                append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), dataIndexedAlias).
+                append(" ON ").append(dataAlias).append(".RowId = ").append(dataIndexedAlias).append(".DataId ").
+                append(" WHERE Container = ? AND classId IS NOT NULL AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
-        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, "_d_").toSQLFragment(null, null);
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoData(), modifiedSince, dataAlias, getTinfoDataIndexed(), dataIndexedAlias).toSQLFragment(null, null);
         if (!modifiedSQL.isEmpty())
             sql.append(" AND ").append(modifiedSQL);
         sql.append(" ORDER BY RowId");
@@ -908,17 +922,21 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void setDataLastIndexed(int rowId, long ms)
     {
-        setLastIndexed(getTinfoData(), rowId, ms);
+        Date d = new Date(ms);
+        SQLFragment sql = new SQLFragment("UPDATE " + getTinfoDataIndexed() + " SET LastIndexed = ? WHERE DataId = ?").appendEOS().
+                append("INSERT INTO " + getTinfoDataIndexed() + " (DataId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT DataId FROM " +
+                getTinfoDataIndexed() + " WHERE DataId = ?)");
+        sql.add(d);
+        sql.add(rowId);
+        sql.add(rowId);
+        sql.add(d);
+        sql.add(rowId);
+        new SqlExecutor(getSchema()).execute(sql);
     }
 
     public void setDataClassLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoDataClass(), rowId, ms);
-    }
-
-    public void setMaterialLastIndexed(int rowId, long ms)
-    {
-        setLastIndexed(getTinfoMaterial(), rowId, ms);
     }
 
     public void setMaterialLastIndexed(List<Pair<Integer,Long>> updates)
@@ -928,10 +946,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbScope dbscope = getSchema().getScope();
         try (Connection c = dbscope.getConnection())
         {
-            Parameter rowid = new Parameter("rowid", JdbcType.INTEGER);
+            Parameter materialId = new Parameter("materialid", JdbcType.INTEGER);
             Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
             try (ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
-                    new SQLFragment("UPDATE " + getTinfoMaterial() + " SET LastIndexed = ? WHERE RowId = ?", ts, rowid), null))
+                    new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?;" +
+                            "INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)", ts, materialId, materialId, ts, materialId), null))
             {
                 ListUtils.partition(updates, 1000).forEach(sublist ->
                 {
@@ -939,7 +958,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         for (Pair<Integer, Long> p : sublist)
                         {
-                            rowid.setValue(p.first);
+                            materialId.setValue(p.first);
                             ts.setValue(new Timestamp(p.second));
                             pm.addBatch();
                         }
@@ -3783,6 +3802,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return getExpSchema().getTable("Material");
     }
 
+    public TableInfo getTinfoMaterialIndexed()
+    {
+        return getExpSchema().getTable("MaterialIndexed");
+    }
+
     @Override
     public TableInfo getTinfoMaterialInput()
     {
@@ -3800,6 +3824,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     {
         return getExpSchema().getTable("Data");
     }
+    public TableInfo getTinfoDataIndexed()
+    {
+        return getExpSchema().getTable("DataIndexed");
+    }
+
 
     @Override
     public TableInfo getTinfoDataClass()
@@ -4833,6 +4862,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 executor.execute(deleteAliasSql);
             }
 
+            try (Timing ignored = MiniProfiler.step("exp.materialIndexed"))
+            {
+                SQLFragment deleteIndexed = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialIndexed())).
+                        append(" WHERE MaterialId IN (SELECT RowId FROM ").append(getTinfoMaterial(), "m").append(" WHERE ")
+                        .append(materialFilterSQL).append(")");
+                executor.execute(deleteIndexed);
+            }
+
             // Stash the ObjectIds that we're going to delete after we delete from exp.material
             final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
             final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectId" + suffix;
@@ -5299,6 +5336,10 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             SQLFragment dataInputSQL = new SQLFragment("DELETE FROM ").append(getTinfoDataInput()).append(" WHERE DataId ");
             dialect.appendInClauseSql(dataInputSQL, selectedDataIds);
             executor.execute(dataInputSQL);
+
+            SQLFragment dataIndexed = new SQLFragment("DELETE FROM ").append(getTinfoDataIndexed()).append(" WHERE DataId ");
+            dialect.appendInClauseSql(dataIndexed, selectedDataIds);
+            executor.execute(dataIndexed);
 
             // DELETE FROM provisioned dataclass tables
             for (Integer classId : lsidsByClass.keySet())
