@@ -105,7 +105,7 @@
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Asserts</td><td><%=h(AdminBean.asserts)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Servlet Container</td><td><%=h(AdminBean.servletContainer)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Servlet Configuration</td><td><%=h(AdminBean.servletConfiguration)%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Session Timeout (hours)</td><td><%=h(AdminBean.sessionTimeout)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Session Timeout (minutes)</td><td><%=h(AdminBean.sessionTimeout)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Vendor</td><td><%=h(AdminBean.javaVendor)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Name</td><td><%=h(AdminBean.javaRuntimeName)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Java Runtime Version</td><td><%=h(AdminBean.javaVersion)%></td></tr>
