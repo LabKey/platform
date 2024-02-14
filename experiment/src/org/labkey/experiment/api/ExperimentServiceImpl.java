@@ -827,7 +827,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         for (TableInfo indexedTable : List.of(getTinfoMaterialIndexed(), getTinfoDataIndexed()))
         {
-            new SqlExecutor(ExperimentService.get().getSchema()).execute("TRUNCATE " + indexedTable);
+            new SqlExecutor(ExperimentService.get().getSchema()).execute("TRUNCATE TABLE " + indexedTable);
         }
     }
 
@@ -840,9 +840,8 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 append(getTinfoMaterial(), "_m_").
                 append(" LEFT OUTER JOIN ").append(getTinfoMaterialIndexed(), "_mi_").
                 append(" ON ").append(materialAlias).append(".RowId = ").
-                append(materialIndexedAlias).append(".MaterialId WHERE Container = ? AND LSID NOT LIKE '%:").
-                append(StudyService.SPECIMEN_NAMESPACE_PREFIX).
-                append("%' AND cpastype != 'Material' AND RowId > ?");
+                append(materialIndexedAlias).append(".MaterialId WHERE Container = ? AND LSID NOT LIKE '%:" +
+                        StudyService.SPECIMEN_NAMESPACE_PREFIX + "%' AND cpastype != 'Material' AND RowId > ?");
         sql.add(container.getId());
         sql.add(minRowId);
         SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, materialAlias, getTinfoMaterialIndexed(), materialIndexedAlias).toSQLFragment(null, null);
@@ -948,9 +947,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         {
             Parameter materialId = new Parameter("materialid", JdbcType.INTEGER);
             Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
-            try (ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c,
-                    new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?;" +
-                            "INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)", ts, materialId, materialId, ts, materialId), null))
+            SQLFragment sql = new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?").
+                    appendEOS().
+                    append("INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)");
+            sql.add(ts);
+            sql.add(materialId);
+            sql.add(materialId);
+            sql.add(ts);
+            sql.add(materialId);
+
+            try (ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c, sql, null))
             {
                 ListUtils.partition(updates, 1000).forEach(sublist ->
                 {
@@ -1022,10 +1028,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
         SQLFragment sql = new SQLFragment()
             .append("SELECT * FROM ").append(getTinfoData(), "d")
-            .append(", ").append(table, "t")
-            .append(" WHERE t.lsid = d.lsid")
-            .append(" AND d.classId = ?").add(dataClass.getRowId())
-            .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
+            .append(" INNER JOIN ").append(table, "t")
+            .append(" ON t.lsid = d.lsid")
+            .append(" LEFT OUTER JOIN ").append(getTinfoDataIndexed(), "di")
+            .append(" ON d.RowId = di.DataId")
+            .append(" WHERE d.classId = ?").add(dataClass.getRowId())
+            .append(" AND (di.lastIndexed IS NULL OR di.lastIndexed < ? OR (d.modified IS NOT NULL AND di.lastIndexed < d.modified))")
             .add(dataClass.getModified());
 
         new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(Data.class, 1000, batch ->
