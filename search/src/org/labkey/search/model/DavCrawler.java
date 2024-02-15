@@ -313,7 +313,10 @@ public class DavCrawler implements ShutdownListener
 
             _indexTime = new Date(System.currentTimeMillis());
             long changeInterval = (_directory instanceof WebdavResolver.WebFolder) ? CacheManager.DAY / 2 : CacheManager.DAY;
-            long nextCrawl = _indexTime.getTime() + (long)(changeInterval * (0.5 + 0.5 * Math.random()));
+            // Set next crawl time to now + changeInterval *on average*, but varying by +/- 10% to avoid clumping
+            // (e.g., all docs aggressively crawled at startup, then exactly 12 hours later, then exactly 24 hours
+            // later, etc.)
+            long nextCrawl = _indexTime.getTime() + (long)(changeInterval * (0.9 + 0.2 * Math.random()));
             _nextCrawl = new Date(nextCrawl);
 
             // if this is a web folder, call enumerate documents
