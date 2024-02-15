@@ -4870,14 +4870,6 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 executor.execute(deleteAliasSql);
             }
 
-            try (Timing ignored = MiniProfiler.step("exp.materialIndexed"))
-            {
-                SQLFragment deleteIndexed = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialIndexed())).
-                        append(" WHERE MaterialId IN (SELECT RowId FROM ").append(getTinfoMaterial(), "m").append(" WHERE ")
-                        .append(materialFilterSQL).append(")");
-                executor.execute(deleteIndexed);
-            }
-
             // Stash the ObjectIds that we're going to delete after we delete from exp.material
             final String suffix = StringUtilsLabKey.getPaddedUniquifier(9);
             final String objectTempTableName = getSchema().getSqlDialect().getTempTablePrefix() + "ObjectId" + suffix;
@@ -4922,6 +4914,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         .append(" WHERE mi.materialId IN ")
                         .append(materialIdSql);
                 OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
+            }
+
+            try (Timing ignored = MiniProfiler.step("exp.materialIndexed"))
+            {
+                SQLFragment deleteIndexed = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialIndexed())).
+                        append(" WHERE MaterialId IN ").
+                        append(materialIdSql);
+                executor.execute(deleteIndexed);
             }
 
             // delete exp.MaterialInput
