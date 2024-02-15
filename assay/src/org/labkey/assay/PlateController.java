@@ -45,10 +45,13 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AddUserPermission;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
@@ -61,12 +64,12 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.assay.plate.PlateDataServiceImpl;
 import org.labkey.assay.plate.PlateImpl;
 import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.plate.PlateSetImpl;
 import org.labkey.assay.plate.PlateUrls;
+import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -554,6 +557,7 @@ public class PlateController extends SpringActionController
         private Integer _plateType;
         private Integer _plateSetId;
         private List<Map<String, Object>> _data = new ArrayList<>();
+        private String _assayType = TsvPlateLayoutHandler.TYPE;
 
         public String getName()
         {
@@ -575,11 +579,14 @@ public class PlateController extends SpringActionController
             return _data;
         }
 
+        public String getAssayType()
+        {
+            return _assayType;
+        }
+
         @Override
         public void bindJson(JSONObject json)
         {
-            ObjectMapper objectMapper = JsonUtil.DEFAULT_MAPPER;
-
             if (json.has("name"))
                 _name = json.getString("name");
 
@@ -588,6 +595,9 @@ public class PlateController extends SpringActionController
 
             if (json.has("plateType"))
                 _plateType = json.getInt("plateType");
+
+            if (json.has("assayType"))
+                _assayType = json.getString("assayType");
 
             if (json.has("data"))
             {
@@ -629,7 +639,7 @@ public class PlateController extends SpringActionController
         {
             try
             {
-                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), null, form.getData());
+                Plate plate = PlateManager.get().createAndSavePlate(getContainer(), getUser(), _plateType, form.getName(), form.getPlateSetId(), form.getAssayType(), form.getData());
                 return success(plate);
             }
             catch (Exception e)
@@ -674,7 +684,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignVocabularyPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class CreatePlateMetadataFields extends MutatingApiAction<CreatePlateMetadataFieldsForm>
     {
         @Override
@@ -717,7 +727,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignVocabularyPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class DeletePlateMetadataFields extends MutatingApiAction<DeletePlateMetadataFieldsForm>
     {
         @Override
@@ -789,7 +799,7 @@ public class PlateController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignVocabularyPermission.class)
+    @RequiresPermission(UpdatePermission.class)
     public static class EnsurePlateMetadataDomainAction extends MutatingApiAction<Object>
     {
         @Override
