@@ -16,6 +16,7 @@
 
 package org.labkey.assay;
 
+import jakarta.servlet.ServletContext;
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,9 +31,9 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
-import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
@@ -69,8 +70,10 @@ import org.labkey.assay.data.generator.AssayRunDataGenerator;
 import org.labkey.assay.pipeline.AssayImportRunTask;
 import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
+import org.labkey.assay.plate.PlateCache;
 import org.labkey.assay.plate.PlateDocumentProvider;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.PlateMetadataDomainKind;
 import org.labkey.assay.plate.TsvPlateLayoutHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.query.AssayDbSchema;
@@ -83,7 +86,6 @@ import org.labkey.assay.view.AssayResultsWebPartFactory;
 import org.labkey.assay.view.AssayRunsWebPartFactory;
 import org.labkey.pipeline.xml.AssayImportRunTaskType;
 
-import jakarta.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -166,6 +168,7 @@ public class AssayModule extends SpringModule
         DataGeneratorRegistry.registerGenerator(DataGeneratorRegistry.DataType.AssayRunData, new AssayRunDataGenerator.Driver());
 
         PropertyService.get().registerDomainKind(new PlateMetadataDomainKind());
+        CacheManager.addListener(PlateCache::clearCache);
     }
 
     @Override
