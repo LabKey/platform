@@ -2080,11 +2080,11 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
                                                 2005
                                             when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)
                                                 2004
-                                            when c.system_type_id = 40 then -- DATE
+                                            when c.system_type_id = 40 then -- DATE // #27221: SQL Server Date columns return incorrect meta data types
                                                 91
                                             when c.system_type_id = 41 then -- TIME
                                                 92
-                                            when c.system_type_id IN (42, 43) then -- DATETIME2/DATETIMEOFFSET
+                                            when c.system_type_id IN (42, 43) then -- DATETIME2/DATETIMEOFFSET // Note: These should probably map to real SQL Type values instead of VARCHAR!
                                                 12
                                             when c.system_type_id IN (98, 167, 231) then -- sql_variant, varchar, nvarchar
                                                 12
