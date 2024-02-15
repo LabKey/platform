@@ -31,11 +31,6 @@ public class PlateSetImpl extends Entity implements PlateSet
     private Container _container;
     private String _description;
 
-    public PlateSetImpl()
-    {
-        // no-param constructor for reflection
-    }
-
     @Override
     public Integer getRowId()
     {

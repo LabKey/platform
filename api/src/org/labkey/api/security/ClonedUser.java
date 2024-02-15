@@ -16,7 +16,7 @@ public abstract class ClonedUser extends User
 {
     protected ClonedUser(User user, ImpersonationContext ctx)
     {
-        this(user.getEmail(), user.getUserId(), user.getFirstName(), user.getLastName(), user.getFriendlyName(), user.isActive(), user.getLastLogin(), user.getPhone(), user.getLastActivity(), ctx);
+        this(user.getEmail(), user.getUserId(), user.getFriendlyName(), user.getFirstName(), user.getLastName(), user.isActive(), user.getLastLogin(), user.getPhone(), user.getLastActivity(), ctx);
     }
 
     protected ClonedUser(String email, int userId, String displayName, String firstName, String lastName, boolean active,

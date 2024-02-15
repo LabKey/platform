@@ -63,6 +63,7 @@ import org.labkey.api.util.Tuple3;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -135,19 +136,25 @@ public class NameGenerator
     public static final String ANCESTOR_INPUT_REGEX = "\\.\\.\\[((Material|Data)Inputs(/|::)?(.*))]";
     public static final Pattern ANCESTOR_INPUT_PATTERN = Pattern.compile(ANCESTOR_INPUT_REGEX);
 
-    public static Date PREVIEW_DATE_VALUE;
+    public static Date PREVIEW_DATETIME_VALUE;
+    public static java.sql.Date PREVIEW_DATE_VALUE;
+    public static java.sql.Time PREVIEW_TIME_VALUE;
     public static Date PREVIEW_MODIFIED_DATE_VALUE;
 
     static
     {
         try
         {
-            PREVIEW_DATE_VALUE = new SimpleDateFormat("yyyy/MM/dd").parse("2021/04/28");
+            PREVIEW_DATETIME_VALUE = new SimpleDateFormat("yyyy/MM/dd HH:mm").parse("2021/04/28 08:30");
+            PREVIEW_DATE_VALUE = new java.sql.Date(PREVIEW_DATETIME_VALUE.getTime());
+            PREVIEW_TIME_VALUE = new java.sql.Time(PREVIEW_DATETIME_VALUE.getTime());
             PREVIEW_MODIFIED_DATE_VALUE = new SimpleDateFormat("yyyy/MM/dd").parse("2021/05/11");
         }
         catch (ParseException e)
         {
             PREVIEW_DATE_VALUE = null;
+            PREVIEW_DATETIME_VALUE = null;
+            PREVIEW_TIME_VALUE = null;
             PREVIEW_MODIFIED_DATE_VALUE = null;
         }
     }
@@ -181,7 +188,7 @@ public class NameGenerator
                     @Override
                     public Object getPreviewValue()
                     {
-                        return PREVIEW_DATE_VALUE;
+                        return PREVIEW_DATETIME_VALUE;
                     }
                 },
         queryName("queryNameValue"),
@@ -780,7 +787,7 @@ public class NameGenerator
             case "description":
                 return (isAncestor ? "ancestor" : "parent") + lookupField;
             case "created":
-                return PREVIEW_DATE_VALUE;
+                return PREVIEW_DATETIME_VALUE;
             case "modified":
                 return PREVIEW_MODIFIED_DATE_VALUE;
         }
@@ -2530,9 +2537,19 @@ public class NameGenerator
         @Test
         public void testDateFormats()
         {
-            Date d = new GregorianCalendar(2011, 11, 3).getTime();
+            Date d = new GregorianCalendar(2011, 11, 3, 8, 30, 15).getTime();
+            java.sql.Date donly = new java.sql.Date(d.getTime());
+            Time t = new Time(d.getTime());
             Map<Object, Object> m = new HashMap<>();
             m.put("d", d);
+            m.put("donly", donly);
+            m.put("t", t);
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d}", false);
+                String s = se.eval(m);
+                assertEquals("2011-12-03 08:30:15", s);
+            }
 
             {
                 StringExpression se = NameGenerationExpression.create("${d:date}", false);
@@ -2563,6 +2580,42 @@ public class NameGenerator
                 StringExpression se = NameGenerationExpression.create("${d:date('yyy-MMMMM-dd')}", false);
                 String s = se.eval(m);
                 assertEquals("2011-D-03", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${donly}", false);
+                String s = se.eval(m);
+                assertEquals("20111203", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${donly:date('yy-MM-dd')}", false);
+                String s = se.eval(m);
+                assertEquals("11-12-03", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${d:date('HHmm')}", false);
+                String s = se.eval(m);
+                assertEquals("0830", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${t}", false);
+                String s = se.eval(m);
+                assertEquals("08:30:15", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${t:date('HHmm')}", false);
+                String s = se.eval(m);
+                assertEquals("0830", s);
+            }
+
+            {
+                StringExpression se = NameGenerationExpression.create("${t:date('HH:mm')}", false);
+                String s = se.eval(m);
+                assertEquals("08:30", s);
             }
 
             {

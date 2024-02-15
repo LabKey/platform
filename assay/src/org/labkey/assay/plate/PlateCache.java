@@ -99,7 +99,7 @@ public class PlateCache
     public static @Nullable Plate getPlate(ContainerFilter cf, int rowId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowId);
-        Container c = getContainerWithIdentifier(cf, filter);
+        Container c = PlateManager.getContainerWithPlateIdentifier(cf, filter);
 
         return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, rowId)) : null;
     }
@@ -107,7 +107,7 @@ public class PlateCache
     public static @Nullable Plate getPlate(ContainerFilter cf, Lsid lsid)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Lsid"), lsid);
-        Container c = getContainerWithIdentifier(cf, filter);
+        Container c = PlateManager.getContainerWithPlateIdentifier(cf, filter);
 
         return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, lsid)) : null;
     }
@@ -115,26 +115,9 @@ public class PlateCache
     public static @Nullable Plate getPlate(ContainerFilter cf, String plateId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("plateId"), plateId);
-        Container c = getContainerWithIdentifier(cf, filter);
+        Container c = PlateManager.getContainerWithPlateIdentifier(cf, filter);
 
         return c != null ? PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, plateId)) : null;
-    }
-
-    private static @Nullable Container getContainerWithIdentifier(ContainerFilter cf, SimpleFilter filter)
-    {
-        filter.addClause(cf.createFilterClause(AssayDbSchema.getInstance().getSchema(), FieldKey.fromParts("Container")));
-        List<String> containers = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
-                Collections.singleton("Container"),
-                filter, null).getArrayList(String.class);
-
-        if (containers.size() > 1)
-            throw new IllegalStateException("More than one Plate found that matches that filter");
-
-        if (containers.size() == 1)
-        {
-            return ContainerManager.getForId(containers.get(0));
-        }
-        return null;
     }
 
     public static @Nullable Plate getPlate(Container c, String plateId)
@@ -159,6 +142,20 @@ public class PlateCache
         {
             plates.add(PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id)));
         }
+        return plates;
+    }
+
+    public static @NotNull Collection<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    {
+        List<Plate> plates = new ArrayList<>();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(FieldKey.fromParts("PlateSet"), plateSetId);
+        List<Integer> ids = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
+                Collections.singleton("RowId"), filter, null)
+                .getArrayList(Integer.class);
+
+        for (Integer id : ids)
+            plates.add(PLATE_CACHE.get(PlateCacheKey.getCacheKey(c, id)));
         return plates;
     }
 
@@ -213,6 +210,7 @@ public class PlateCache
     public static void clearCache()
     {
         PLATE_CACHE.clear();
+        _loader._containerPlateMap.clear();
     }
 
     private static class PlateCacheKey

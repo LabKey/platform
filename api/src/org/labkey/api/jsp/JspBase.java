@@ -161,7 +161,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      * TODO: HtmlString - Eventually, remove this method and all usages.
      * Use HtmlString.unsafe() instead, or even better use h() if possible
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public HtmlString text(String s)
     {
         return HtmlString.unsafe(s);

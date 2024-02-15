@@ -353,6 +353,18 @@ public class StringExpressionFactory
                 // TODO: Use a real expression parser
                 SubstitutionFormat format;
                 String rest = value.substring(colon + 1);
+
+                // if rest contains unenclosed quote, skip: ${Time:date('hh:mm')}
+                while (rest.endsWith("')") && !rest.contains("('"))
+                {
+                    colon = value.substring(0, colon).lastIndexOf(':');
+                    if (colon == -1)
+                        break;
+                    rest = value.substring(colon + 1);
+                }
+                if (colon == -1)
+                    break;
+
                 if (rest.startsWith("defaultValue('") && rest.endsWith("')"))
                 {
                     String param = rest.substring("defaultValue('".length(), rest.length() - "')".length());
