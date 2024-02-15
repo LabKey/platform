@@ -2548,7 +2548,7 @@ public class NameGenerator
             {
                 StringExpression se = NameGenerationExpression.create("${d}", false);
                 String s = se.eval(m);
-                assertEquals("2011-12-03T08:30:15", s);
+                assertEquals("2011-12-03 08:30:15", s);
             }
 
             {

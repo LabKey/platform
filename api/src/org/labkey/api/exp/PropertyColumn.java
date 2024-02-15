@@ -264,6 +264,10 @@ public class PropertyColumn extends LookupColumn
         PropertyType pt = _pd.getPropertyType();
         if (PropertyType.DOUBLE == pt || PropertyType.DATE_TIME == pt)
             return null;
+        else if (PropertyType.TIME == pt)
+            return "TIME";
+        else if (PropertyType.DATE == pt)
+            return "DATE";
         else if (PropertyType.INTEGER == pt)
             return "INT";
         else if (PropertyType.BOOLEAN == pt)
