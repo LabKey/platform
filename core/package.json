@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.20.4-fb-jobTimeFields.1",
+    "@labkey/components": "3.21.1-fb-jobTimeFields.2",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
