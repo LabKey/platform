@@ -924,11 +924,12 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         Date d = new Date(ms);
         SQLFragment sql = new SQLFragment("UPDATE " + getTinfoDataIndexed() + " SET LastIndexed = ? WHERE DataId = ?").appendEOS().
                 append("INSERT INTO " + getTinfoDataIndexed() + " (DataId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT DataId FROM " +
-                getTinfoDataIndexed() + " WHERE DataId = ?)");
+                getTinfoDataIndexed() + " WHERE DataId = ?) AND EXISTS (SELECT RowId FROM " + getTinfoData() + " WHERE RowId = ?)");
         sql.add(d);
         sql.add(rowId);
         sql.add(rowId);
         sql.add(d);
+        sql.add(rowId);
         sql.add(rowId);
         new SqlExecutor(getSchema()).execute(sql);
     }
@@ -945,18 +946,24 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         DbScope dbscope = getSchema().getScope();
         try (Connection c = dbscope.getConnection())
         {
-            Parameter materialId = new Parameter("materialid", JdbcType.INTEGER);
-            Parameter ts = new Parameter("ts", JdbcType.TIMESTAMP);
-            SQLFragment sql = new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?").
-                    appendEOS().
-                    append("INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) SELECT ?, ? WHERE NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)");
-            sql.add(ts);
-            sql.add(materialId);
-            sql.add(materialId);
-            sql.add(ts);
-            sql.add(materialId);
+            Parameter updateMaterialId = new Parameter("materialid", JdbcType.INTEGER);
+            Parameter updateTS = new Parameter("ts", JdbcType.TIMESTAMP);
+            SQLFragment updateSql = new SQLFragment("UPDATE " + getTinfoMaterialIndexed() + " SET LastIndexed = ? WHERE MaterialId = ?");
+            updateSql.add(updateTS);
+            updateSql.add(updateMaterialId);
 
-            try (ParameterMapStatement pm = new ParameterMapStatement(getSchema().getScope(), c, sql, null))
+            Parameter insertTS = new Parameter("ts", JdbcType.TIMESTAMP);
+            Parameter insertRowId = new Parameter("rowid", JdbcType.INTEGER);
+            Parameter insertMaterialId = new Parameter("materialid", JdbcType.INTEGER);
+            SQLFragment insertSql = new SQLFragment("INSERT INTO " + getTinfoMaterialIndexed() + " (MaterialId, LastIndexed) " +
+                    "SELECT RowId, ? FROM " + getTinfoMaterial() + " WHERE RowId = ? AND " +
+                            " NOT EXISTS (SELECT MaterialId FROM " + getTinfoMaterialIndexed() + " WHERE MaterialId = ?)");
+            insertSql.add(insertTS);
+            insertSql.add(insertRowId);
+            insertSql.add(insertMaterialId);
+
+            try (ParameterMapStatement insertPM = new ParameterMapStatement(getSchema().getScope(), c, insertSql, null);
+                 ParameterMapStatement updatePM = new ParameterMapStatement(getSchema().getScope(), c, updateSql, null))
             {
                 ListUtils.partition(updates, 1000).forEach(sublist ->
                 {
@@ -964,11 +971,17 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                     {
                         for (Pair<Integer, Long> p : sublist)
                         {
-                            materialId.setValue(p.first);
-                            ts.setValue(new Timestamp(p.second));
-                            pm.addBatch();
+                            insertMaterialId.setValue(p.first);
+                            insertTS.setValue(new Timestamp(p.second));
+                            insertRowId.setValue(p.first);
+                            insertPM.addBatch();
+
+                            updateMaterialId.setValue(p.first);
+                            updateTS.setValue(new Timestamp(p.second));
+                            updatePM.addBatch();
                         }
-                        pm.executeBatch();
+                        insertPM.executeBatch();
+                        updatePM.executeBatch();
                     }
                     catch (DeadlockLoserDataAccessException dldae)
                     {
@@ -4916,13 +4929,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                 OntologyManager.deleteOntologyObjects(getSchema(), inputObjects, container);
             }
 
-            try (Timing ignored = MiniProfiler.step("exp.materialIndexed"))
-            {
-                SQLFragment deleteIndexed = new SQLFragment("DELETE FROM ").append(String.valueOf(getTinfoMaterialIndexed())).
-                        append(" WHERE MaterialId IN ").
-                        append(materialIdSql);
-                executor.execute(deleteIndexed);
-            }
+            // exp.MaterialIndexed handled via a ON DELETE CASCADE foreign key
 
             // delete exp.MaterialInput
             try (Timing ignored = MiniProfiler.step("exp.MaterialInput"))
@@ -5345,9 +5352,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             dialect.appendInClauseSql(dataInputSQL, selectedDataIds);
             executor.execute(dataInputSQL);
 
-            SQLFragment dataIndexed = new SQLFragment("DELETE FROM ").append(getTinfoDataIndexed()).append(" WHERE DataId ");
-            dialect.appendInClauseSql(dataIndexed, selectedDataIds);
-            executor.execute(dataIndexed);
+            // exp.DataIndexed handled via a ON DELETE CASCADE foreign key
 
             // DELETE FROM provisioned dataclass tables
             for (Integer classId : lsidsByClass.keySet())

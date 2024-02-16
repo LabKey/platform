@@ -4,7 +4,7 @@ CREATE TABLE exp.MaterialIndexed
     LastIndexed TIMESTAMP NOT NULL,
 
     CONSTRAINT PK_MaterialIndexing PRIMARY KEY (MaterialId),
-    CONSTRAINT FK_MaterialId FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId)
+    CONSTRAINT FK_MaterialId FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId) ON DELETE CASCADE
 );
 
 INSERT INTO exp.MaterialIndexed (MaterialId, LastIndexed) SELECT RowId, LastIndexed FROM exp.Material WHERE LastIndexed IS NOT NULL;
@@ -18,7 +18,7 @@ CREATE TABLE exp.DataIndexed
     LastIndexed TIMESTAMP NOT NULL,
 
     CONSTRAINT PK_DataIndexing PRIMARY KEY (DataId),
-    CONSTRAINT FK_DataId FOREIGN KEY (DataId) REFERENCES exp.Data (RowId)
+    CONSTRAINT FK_DataId FOREIGN KEY (DataId) REFERENCES exp.Data (RowId) ON DELETE CASCADE
 );
 
 INSERT INTO exp.DataIndexed (DataId, LastIndexed) SELECT RowId, LastIndexed FROM exp.Data WHERE LastIndexed IS NOT NULL;
