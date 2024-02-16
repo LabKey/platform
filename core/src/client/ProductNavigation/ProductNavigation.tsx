@@ -1,4 +1,4 @@
-import React, { FC, memo } from 'react';
+import React, { FC, memo, useRef } from 'react';
 import { ProductNavigationMenu } from '@labkey/components';
 
 import './productNavigation.scss';
@@ -12,8 +12,9 @@ interface Props {
 }
 
 export const ProductNavigation: FC<Props> = memo(props => {
+    const menuRef = useRef();
     if (props.context.show) {
-        return <ProductNavigationMenu disableLKSContainerLink />;
+        return <ProductNavigationMenu menuRef={menuRef} disableLKSContainerLink />;
     } else {
         return null;
     }

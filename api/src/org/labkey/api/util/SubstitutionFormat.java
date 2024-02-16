@@ -83,7 +83,7 @@ public class SubstitutionFormat
             else if (value instanceof java.sql.Date)
                 return date.format(value);
             else if (value instanceof Date)
-                return defaultDateTimeFormat.format(value);
+                return defaultDateTimeFormat.format(value).replace('T', ' '); // replace T with whitespace for human readability
 
             return value;
         }

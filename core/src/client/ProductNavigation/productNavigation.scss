@@ -2,10 +2,15 @@
 @import "../../../node_modules/@labkey/components/dist/assets/scss/theme/navbar";
 @import "../../../node_modules/@labkey/components/dist/assets/scss/theme/product-navigation";
 
-#headerProductDropdown .dropdown-menu-right {
-  padding: 0;
-
+#headerProductDropdown {
+  // We render the ProductNavigation within a bootstrap dropdown button in LKS, which makes the navbar-icon-connector
+  // a redundant element that we need to hide.
   .navbar-icon-connector {
-    right: 6px;
+    display: none;
+  }
+
+  .navbar-menu__content {
+    top: 0;
+    margin: 0;
   }
 }

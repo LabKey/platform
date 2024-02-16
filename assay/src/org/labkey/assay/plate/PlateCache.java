@@ -210,6 +210,7 @@ public class PlateCache
     public static void clearCache()
     {
         PLATE_CACHE.clear();
+        _loader._containerPlateMap.clear();
     }
 
     private static class PlateCacheKey

@@ -31,6 +31,7 @@ import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -874,7 +875,18 @@ public class DomainPropertyImpl implements DomainProperty
                 }
                 else if (oldType.getJdbcType().isDateOrTime() && newType.getJdbcType().isDateOrTime())
                 {
-                    // TODO support datetime/date conversion
+                    SqlDialect dialect = OntologyManager.getExpSchema().getSqlDialect();
+                    String sqlTypeName = dialect.getSqlTypeName(newType.getJdbcType());
+                    String update = String.format("CAST(DateTimeValue AS %s)", sqlTypeName);
+                    if (newType.getJdbcType() == JdbcType.TIME)
+                        update = dialect.getDateTimeToTimeCast("DateTimeValue");
+                    SQLFragment sqlFragment = new SQLFragment("UPDATE ")
+                            .append(OntologyManager.getTinfoObjectProperty())
+                            .append(" SET DateTimeValue = ")
+                            .append(update)
+                            .append(" WHERE PropertyId = ?")
+                            .add(_pdOld.getPropertyId());
+                    new SqlExecutor(OntologyManager.getExpSchema()).execute(sqlFragment);
                 }
                 else //noinspection StatementWithEmptyBody
                     if (oldType.getJdbcType().isInteger() && newType.getJdbcType().isReal())
