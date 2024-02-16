@@ -26,7 +26,7 @@ const DETAILS_SUB_INSTRUCTION = (
             </a>{' '}
             subscription, please use your support portal or contact your account manager for assistance. If you are
             using the free Community Edition, you may find help by posting on the{' '}
-            <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
+            <a href="https://www.labkey.org/home/Support/project-begin.view" rel="noopener noreferrer" target="_blank">
                 LabKey support forum.
             </a>
         </p>
@@ -49,7 +49,7 @@ const NOTFOUND_INSTRUCTION = (errorDetails: ErrorDetails) => (
     <>
         <div className="labkey-error-instruction">
             Please contact your admin or reference the{' '}
-            <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
+            <a href="https://www.labkey.org/home/Support/project-begin.view" rel="noopener noreferrer" target="_blank">
                 LabKey support forum.
             </a>
         </div>
@@ -57,7 +57,7 @@ const NOTFOUND_INSTRUCTION = (errorDetails: ErrorDetails) => (
             <div className="labkey-error-instruction">
                 If you would like to file a{' '}
                 <a
-                    href="https://www.labkey.org/project/home/Support/begin.view?"
+                    href="https://www.labkey.org/home/Support/project-begin.view"
                     rel="noopener noreferrer"
                     target="_blank"
                 >
@@ -233,7 +233,7 @@ const EXECUTION_INSTRUCTION = (errorDetails: ErrorDetails) => (
     <>
         <div className="labkey-error-instruction">
             Please report this bug to{' '}
-            <a href="https://www.labkey.org/project/home/Support/begin.view?" rel="noopener noreferrer" target="_blank">
+            <a href="https://www.labkey.org/home/Support/project-begin.view" rel="noopener noreferrer" target="_blank">
                 {' '}
                 LabKey Support{' '}
             </a>{' '}
