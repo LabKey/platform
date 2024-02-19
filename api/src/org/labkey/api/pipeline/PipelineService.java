@@ -132,6 +132,9 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
 
     boolean isEnterprisePipeline();
 
+    /** Generate command-line arguments to launch org.labkey.pipeline.cluster.ClusterStartup. Intended for automated tests */
+    List<String> getClusterStartupArguments() throws IOException;
+
     enum JmsType { none, inProcess, external, unknown }
     @NotNull
     JmsType getJmsType();

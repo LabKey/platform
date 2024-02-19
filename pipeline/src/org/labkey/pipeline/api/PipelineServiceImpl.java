@@ -18,7 +18,9 @@ package org.labkey.pipeline.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +41,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AnalyzeForm;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
@@ -68,6 +71,7 @@ import org.labkey.api.trigger.TriggerConfiguration;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.NetworkDrive;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
@@ -77,6 +81,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.bootstrap.ClusterBootstrap;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.analysis.ProtocolManagementAuditProvider;
 import org.labkey.pipeline.importer.FolderImportJob;
@@ -95,7 +100,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -113,6 +121,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 import static org.labkey.api.pipeline.PipelineJobNotificationProvider.DefaultPipelineJobNotificationProvider.DEFAULT_PIPELINE_JOB_NOTIFICATION_PROVIDER;
 import static org.labkey.api.pipeline.file.AbstractFileAnalysisJob.ANALYSIS_PARAMETERS_ROLE_NAME;
@@ -444,6 +455,96 @@ public class PipelineServiceImpl implements PipelineService, PipelineMXBean
     public boolean isEnterprisePipeline()
     {
         return (getPipelineQueue() instanceof EPipelineQueueImpl);
+    }
+
+    /** @return first is labkeyBootstrap.jar, second is servletApi.jar */
+    private Pair<File, File> extractBootstrapFromEmbedded() throws IOException
+    {
+        File bootstrap = null;
+        File servlet = null;
+        // Look through the JAR files in the working directory, which is expected to contain the Spring Boot
+        // entrypoint and the Servlet API
+        File pwd = new File(".");
+        File[] jars = pwd.listFiles(f -> f.getName().toLowerCase().endsWith(".jar"));
+        for (File jar : jars)
+        {
+            try (JarFile j = new JarFile(jar))
+            {
+                // Look inside the JAR for a labkeyBootstrap*.jar file
+                Iterator<JarEntry> entries = j.entries().asIterator();
+                while (entries.hasNext())
+                {
+                    JarEntry entry = entries.next();
+                    if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
+                    {
+                        bootstrap = extractEntry(j, entry, "labkeyBootstrap.jar");
+                    }
+                    if (entry.getName().contains("tomcat-servlet-api") && entry.getName().toLowerCase().endsWith(".jar"))
+                    {
+                        servlet = extractEntry(j, entry, "servletApi.jar");
+                    }
+                }
+            }
+        }
+        return Pair.of(bootstrap, servlet);
+    }
+
+    private File extractEntry(JarFile jar, ZipEntry entry, String name) throws IOException
+    {
+        File result = FileUtil.getAbsoluteCaseSensitiveFile(new File(name));
+        try (InputStream in = jar.getInputStream(entry);
+             OutputStream out = new FileOutputStream(result))
+        {
+            IOUtils.copy(in, out);
+        }
+        return result;
+    }
+
+
+    @Override
+    public List<String> getClusterStartupArguments() throws IOException
+    {
+        List<String> args = new ArrayList<>();
+        args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
+        File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
+        File servletApi = null;
+
+        if (!labkeyBootstrap.exists())
+        {
+            Pair<File, File> extracted = extractBootstrapFromEmbedded();
+            labkeyBootstrap = extracted.first;
+            if (labkeyBootstrap == null || !labkeyBootstrap.exists())
+            {
+                throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
+            }
+            servletApi = extracted.second;
+            if (servletApi == null || !servletApi.exists())
+            {
+                throw new IllegalStateException("Couldn't find servletApi.jar");
+            }
+        }
+
+        // Uncomment this line if you want to debug the forked process
+//            args.add("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:5005");
+        args.add("-cp");
+        args.add(labkeyBootstrap.getPath());
+        args.add(ClusterBootstrap.class.getName());
+
+        for (String sysProp : new String[]{"labkey.externalModulesDir", "labkey.modulesDir", "cpas.modulesDir"})
+        {
+            String sysPropValue = StringUtils.trimToNull(System.getProperty(sysProp));
+            if (sysPropValue != null)
+            {
+                args.add("-D" + sysProp +"=" + sysPropValue);
+            }
+        }
+
+        args.add("-webappdir=" + ModuleLoader.getServletContext().getRealPath(""));
+        if (servletApi != null)
+        {
+            args.add("-pipelinelibdir=" + servletApi.getParent());
+        }
+        return args;
     }
 
     @Override
