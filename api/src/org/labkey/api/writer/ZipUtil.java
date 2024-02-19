@@ -78,8 +78,10 @@ public class ZipUtil
     // Unzip an archive to the specified directory; log each file if Logger is non-null
     public static List<Path> unzipToDirectory(Path zipFile, Path unzipDir, @Nullable Logger log, boolean includeFolder) throws IOException
     {
-        InputStream is = Files.newInputStream(zipFile);
-        return unzipToDirectory(is, unzipDir, log, includeFolder);
+        try (InputStream is = Files.newInputStream(zipFile))
+        {
+            return unzipToDirectory(is, unzipDir, log, includeFolder);
+        }
     }
 
     // Unzip a zipped input stream to the specified directory
