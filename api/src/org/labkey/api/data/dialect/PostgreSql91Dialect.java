@@ -700,6 +700,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public String getDateTimeToTimeCast(String columnName)
+    {
+        return String.format("(%s::date + %s::time)", "'1970-01-01'", columnName);
+    }
+
+    @Override
     public String getRoundFunction(String valueToRound)
     {
         return "ROUND(" + valueToRound + "::double precision)";

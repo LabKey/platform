@@ -229,12 +229,24 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                 ? svc.parsePlateMetadata(plateMetadataFile)
                                 : rawPlateMetadata;
                     }
+
                     Domain runDomain = provider.getRunDomain(protocol);
-                    DomainProperty property = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
-                    if (property != null)
+                    DomainProperty propertyPlateTemplate = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+                    DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
+
+                    if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && propertyPlateSet == null)
                     {
-                        Object lsid = ((AssayUploadXarContext)context).getContext().getRunProperties().get(property);
-                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), Lsid.parse(String.valueOf(lsid)), dataRows, plateMetadata, protocol);
+                        throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
+                    }
+
+                    if (propertyPlateTemplate != null || propertyPlateSet != null)
+                    {
+                        Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
+                        Object lsid = runProps.getOrDefault(propertyPlateTemplate, null);
+                        Lsid templateLsid = lsid != null && !StringUtils.isEmpty(String.valueOf(lsid)) ? Lsid.parse(String.valueOf(lsid)) : null;
+                        Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
+                        Integer plateSetId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, provider, protocol);
                     }
                 }
             }

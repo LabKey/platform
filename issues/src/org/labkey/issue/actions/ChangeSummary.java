@@ -68,6 +68,8 @@ import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.AddressException;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -358,7 +360,7 @@ public class ChangeSummary
             if (provider != null)
             {
                 // don't send notification emails if the user does not have access
-                if (!provider.hasPermission(recipient, _issue, Collections.emptyList(), Collections.emptyList()))
+                if (!provider.hasPermission(recipient, _issue, Collections.emptyList(), new ArrayList<>()))
                     continue;
             }
 
