@@ -273,7 +273,11 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             case Description:
                 return wrapColumn(alias, _rootTable.getColumn("Description"));
             case LastIndexed:
-                var lastIndexed = wrapColumn(alias, _rootTable.getColumn("LastIndexed"));
+                SQLFragment lastIndexedSql = new SQLFragment("(SELECT LastIndexed FROM ").
+                        append(ExperimentServiceImpl.get().getTinfoDataIndexed(), "di").
+                        append(" WHERE di.DataId = ").
+                        append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+                var lastIndexed = new ExprColumn(this, "LastIndexed", lastIndexedSql, JdbcType.TIMESTAMP);
                 lastIndexed.setUserEditable(false);
                 return lastIndexed;
             case DataClass:
