@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Entity;
@@ -24,12 +25,13 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateSetImpl extends Entity implements PlateSet
 {
-    private Integer _rowId;
-    private String _name;
-    private String _plateSetId;
     private boolean _archived;
     private Container _container;
     private String _description;
+    private String _name;
+    private String _plateSetId;
+    private Integer _rowId;
+    private PlateSetType _type;
 
     @Override
     public Integer getRowId()
@@ -123,5 +125,23 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    @Override
+    public PlateSetType getType()
+    {
+        return _type;
+    }
+
+    public void setType(PlateSetType type)
+    {
+        _type = type;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isPrimary()
+    {
+        return _type == PlateSetType.primary;
     }
 }

@@ -194,6 +194,7 @@
       <column columnName="ModifiedBy"/>
       <column columnName="Modified"/>
       <column columnName="Archived"/>
+      <column columnName="Type"/>
     </columns>
   </table>
   <table tableName="PlateType" tableDbType="TABLE">
