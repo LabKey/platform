@@ -762,6 +762,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
 
+    ExpProtocol updateProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
+
     ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
     /**
