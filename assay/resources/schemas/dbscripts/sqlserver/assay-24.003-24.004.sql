@@ -1,0 +1,2 @@
+ALTER TABLE assay.PlateSet ADD Type NVARCHAR(300);
+GO

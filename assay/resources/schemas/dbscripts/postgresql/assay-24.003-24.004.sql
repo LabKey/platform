@@ -1,0 +1,1 @@
+ALTER TABLE assay.PlateSet ADD COLUMN Type VARCHAR(300);
