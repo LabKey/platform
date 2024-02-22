@@ -24,9 +24,10 @@ import org.labkey.api.query.ValidationException;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Created by klum on 3/11/2015.
@@ -71,7 +72,7 @@ public class PlateUtils
     private static Map<String, double[][]> _parseGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows,
                                                        int expectedCols, boolean parseAllGrids, @Nullable PlateReader reader)
     {
-        Map<String, double[][]> gridMap = new HashMap<>();
+        Map<String, double[][]> gridMap = new LinkedHashMap<>(); // use LinkedHashMap to keep the order of the grids found / inserted
         double[][] matrix;
 
         // try to find the top-left cell of the plate
@@ -93,7 +94,7 @@ public class PlateUtils
                     if (matrix != null)
                     {
                         LOG.debug(String.format("found labeled grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
-                        gridMap.put(getGridAnnotation(rows, loc.getRow() - 1), matrix);
+                        addToPlateGridData(gridMap, rows, loc.getRow() - 1, matrix);
                         if (!parseAllGrids)
                             return gridMap;
                         rowIdx += expectedRows;
@@ -110,7 +111,7 @@ public class PlateUtils
                         if (matrix != null)
                         {
                             LOG.debug(String.format("found SpectraMax grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
-                            gridMap.put(getGridAnnotation(rows, loc.getRow() - 1), matrix);
+                            addToPlateGridData(gridMap, rows, loc.getRow() - 1, matrix);
                             if (!parseAllGrids)
                                 return gridMap;
                             rowIdx += expectedRows;
@@ -148,6 +149,16 @@ public class PlateUtils
             }
         }
         return gridMap;
+    }
+
+    private static void addToPlateGridData(Map<String, double[][]> gridMap, List<Map<String, Object>> rows, int dataRow, double[][] matrix)
+    {
+        String origKey = getGridAnnotation(rows, dataRow);
+        String key = origKey;
+        int i = 1;
+        while (gridMap.containsKey(key))
+            key = origKey + "_" + i++;
+        gridMap.put(key, matrix);
     }
 
     /**
@@ -320,19 +331,16 @@ public class PlateUtils
      */
     private static String getGridAnnotation(List<Map<String, Object>> rows, int dataRow)
     {
-        if (dataRow > 1)
+        if (dataRow > 0)
         {
             Map<String, Object> row = rows.get(dataRow-1);
             if (row instanceof RowMap)
             {
                 RowMap<Object> rowMap = (RowMap<Object>)row;
-
-                for (Object value : rowMap.values())
+                List<Object> values = rowMap.values().stream().filter(Objects::nonNull).toList();
+                if (values.size() == 1 && values.get(0) instanceof String)
                 {
-                    if (value != null && value instanceof String)
-                    {
-                        return (String)value;
-                    }
+                    return (String)values.get(0);
                 }
             }
         }

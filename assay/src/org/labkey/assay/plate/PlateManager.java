@@ -535,7 +535,7 @@ public class PlateManager implements PlateService
                 plate = getPlate(c, plateIdentifier.toString());
             if (plate == null)
             {
-                Collection<Plate> plates = getPlatesForPlateSet(c, plateSetId);
+                List<Plate> plates = getPlatesForPlateSet(c, plateSetId);
                 List<Plate> matchingPlates = plates.stream().filter(p -> p.getName().equals(plateIdentifier.toString())).toList();
                 if (matchingPlates.size() == 1)
                     plate = matchingPlates.get(0);
@@ -634,7 +634,7 @@ public class PlateManager implements PlateService
         return PlateCache.getPlates(c);
     }
 
-    private Collection<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    public List<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
     {
         return PlateCache.getPlatesForPlateSet(c, plateSetId);
     }

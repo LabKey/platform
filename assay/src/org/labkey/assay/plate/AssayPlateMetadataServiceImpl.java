@@ -12,10 +12,14 @@ import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateType;
+import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
@@ -56,9 +60,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
@@ -506,6 +512,87 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             });
         });
         return layers;
+    }
+
+    @Override
+    public List<Map<String, Object>> parsePlateGrids(Container container, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException
+    {
+        // NOTE: currently only supporting single measure assay protocols
+        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
+        String measureName = !measureProperties.isEmpty() ? measureProperties.get(0).getName() : "Value";
+
+        // get the ordered list of plates for the plate set
+        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(container, plateSetId);
+        if (plateSetId == null || plates.isEmpty())
+            throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
+
+        // parse the data file for each distinct plate type found in the set of plates for the plateSetId
+        ExcelPlateReader plateReader = new ExcelPlateReader();
+        Map<PlateType, Map<String, double[][]>> plateTypeGrids = new HashMap<>();
+        for (Plate plate : plates)
+        {
+            if (!plateTypeGrids.containsKey(plate.getPlateType()))
+            {
+                Plate template = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
+                plateTypeGrids.put(plate.getPlateType(), plateReader.loadMultiGridFile(template, dataFile));
+            }
+        }
+
+        // Search through the data grids found to see if any have plate identifiers
+        boolean hasPlateIdentifiers = plateTypeGrids.values().stream().anyMatch(plateGrids -> plateGrids.keySet().stream().anyMatch(key -> !isDefaultPlateIdentifier(key)));
+
+        // if any of the plateGrids keys have plate identifiers, just parse / include those in the dataRows map
+        List<Map<String, Object>> dataRows = new ArrayList<>();
+        if (hasPlateIdentifiers)
+        {
+            for (Map.Entry<PlateType, Map<String, double[][]>> plateTypeMapEntry : plateTypeGrids.entrySet())
+            {
+                Plate template = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateTypeMapEntry.getKey());
+                for (Map.Entry<String, double[][]> entry : plateTypeMapEntry.getValue().entrySet())
+                {
+                    if (!isDefaultPlateIdentifier(entry.getKey()))
+                    {
+                        Plate dataForPlate = PlateService.get().createPlate(template, entry.getValue(), null);
+                        for (Well well : dataForPlate.getWells())
+                            dataRows.add(getDataRowFromWell(entry.getKey(), well, measureName));
+                    }
+                }
+            }
+        }
+        // else if only one plateType was parsed (i.e. all 96-well plate grids), use plateGrids ordering to match plate set order
+        else if (plateTypeGrids.keySet().size() == 1)
+        {
+            for (Map.Entry<PlateType, Map<String, double[][]>> entry : plateTypeGrids.entrySet())
+            {
+                if (entry.getValue().size() > plates.size())
+                    throw new ExperimentException("The number of plate grids parsed from the file exceeds the number of plates in the plate set.");
+
+                int plateIndex = 0;
+                for (double[][] plateGrid : entry.getValue().values())
+                {
+                    Plate targetPlate = plates.get(plateIndex++);
+                    Plate dataForPlate = PlateService.get().createPlate(targetPlate, plateGrid, null);
+                    for (Well well : dataForPlate.getWells())
+                        dataRows.add(getDataRowFromWell(targetPlate.getPlateId(), well, measureName));
+                }
+            }
+        }
+
+        return dataRows;
+    }
+
+    private boolean isDefaultPlateIdentifier(String id)
+    {
+        return id.equals(PlateUtils.DEFAULT_GRID_NAME) || id.startsWith(PlateUtils.DEFAULT_GRID_NAME + "_");
+    }
+
+    private Map<String, Object> getDataRowFromWell(String plateId, Well well, String measure)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateId);
+        row.put(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, well.getDescription());
+        row.put(measure, well.getValue());
+        return row;
     }
 
     @Override

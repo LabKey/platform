@@ -554,6 +554,14 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     {
         if (_wellMap != null)
             return _wellMap.values().stream().toList();
+        else if (_wells != null)
+        {
+            List<Well> wells = new ArrayList<>();
+            for (int row = 0; row < getRows(); row++)
+                for (int col = 0; col < getColumns(); col++)
+                    wells.add(getWell(row, col));
+            return wells;
+        }
         else
             return Collections.emptyList();
     }
