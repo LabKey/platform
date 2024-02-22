@@ -581,8 +581,9 @@ public class PlateManager implements PlateService
      */
     public ContainerFilter getPlateContainerFilter(@Nullable ExpProtocol protocol, Container container, User user)
     {
-        ContainerFilter defaultCf = ContainerFilter.Type.Current.create(protocol != null ? protocol.getContainer() : container, user);
-        return QueryService.get().getProductContainerFilterForLookups(container, user, defaultCf);
+        ContainerFilter lookupCf = QueryService.get().getContainerFilterForLookups(container, user);
+        ContainerFilter currentCf = ContainerFilter.Type.Current.create(protocol != null ? protocol.getContainer() : container, user);
+        return lookupCf != null ? lookupCf : currentCf;
     }
 
     @Override

@@ -277,11 +277,13 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     private void indexSampleTypeMaterials(ExpSampleType sampleType, SearchService.IndexTask task)
     {
         // Index all ExpMaterial that have never been indexed OR where either the ExpSampleType definition or ExpMaterial itself has changed since last indexed
-        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+        SQLFragment sql = new SQLFragment("SELECT m.* FROM ")
                 .append(getTinfoMaterial(), "m")
-                .append(" WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
+                .append(" LEFT OUTER JOIN ")
+                .append(ExperimentServiceImpl.get().getTinfoMaterialIndexed(), "mi")
+                .append(" ON m.RowId = mi.MaterialId WHERE m.LSID NOT LIKE ").appendValue("%:" + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%", getExpSchema().getSqlDialect())
                 .append(" AND m.cpasType = ?").add(sampleType.getLSID())
-                .append(" AND (m.lastIndexed IS NULL OR m.lastIndexed < ? OR (m.modified IS NOT NULL AND m.lastIndexed < m.modified))")
+                .append(" AND (mi.lastIndexed IS NULL OR mi.lastIndexed < ? OR (m.modified IS NOT NULL AND mi.lastIndexed < m.modified))")
                 .add(sampleType.getModified());
 
         new SqlSelector(getExpSchema().getScope(), sql).forEachBatch(Material.class, 1000, batch -> {
