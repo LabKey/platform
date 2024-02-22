@@ -8199,9 +8199,15 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public ExpProtocol updateProtocol(@NotNull ExpProtocol wrappedProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException
     {
-        Protocol baseProtocol = ((ExpProtocolImpl) wrappedProtocol).getDataObject();
-        insertProtocolSteps(baseProtocol, steps, predecessors, user, true);
-        return getExpProtocol(baseProtocol.getRowId());
+        try (DbScope.Transaction tx = getSchema().getScope().ensureTransaction(getProtocolImportLock()))
+        {
+            Protocol baseProtocol = ((ExpProtocolImpl) wrappedProtocol).getDataObject();
+            insertProtocolSteps(baseProtocol, steps, predecessors, user, true);
+
+            tx.commit();
+
+            return getExpProtocol(baseProtocol.getRowId());
+        }
     }
 
     @Override
