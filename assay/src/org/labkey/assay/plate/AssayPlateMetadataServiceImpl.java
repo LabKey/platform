@@ -548,12 +548,14 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             for (Map.Entry<PlateType, Map<String, double[][]>> plateTypeMapEntry : plateTypeGrids.entrySet())
             {
-                Plate template = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plateTypeMapEntry.getKey());
                 for (Map.Entry<String, double[][]> entry : plateTypeMapEntry.getValue().entrySet())
                 {
-                    if (!isDefaultPlateIdentifier(entry.getKey()))
+                    // find the plate set plate for this identifier so we can skip those that don't match the expected plate type
+                    Plate matchingPlate = plates.stream().filter(p -> p.isIdentifierMatch(entry.getKey())).findFirst().orElse(null);
+                    double[][] plateGrid = entry.getValue();
+                    if (matchingPlate != null && matchingPlate.isPlateSizeMatch(plateGrid.length, plateGrid[0].length))
                     {
-                        Plate dataForPlate = PlateService.get().createPlate(template, entry.getValue(), null);
+                        Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
                         for (Well well : dataForPlate.getWells())
                             dataRows.add(getDataRowFromWell(entry.getKey(), well, measureName));
                     }

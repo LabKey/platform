@@ -103,10 +103,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
-        else if (wellValues.length != plate.getRows() && wellValues[0].length != plate.getColumns())
+        else if (!isPlateSizeMatch(wellValues.length, wellValues[0].length))
             throw new IllegalArgumentException("Well values array size must match the plate size");
 
-        if (excluded != null && (excluded.length != plate.getRows() && excluded[0].length != plate.getColumns()))
+        if (excluded != null && !isPlateSizeMatch(excluded.length, excluded[0].length))
             throw new IllegalArgumentException("Excluded values array size must match the plate size");
 
         _wells = new WellImpl[plate.getRows()][plate.getColumns()];
@@ -691,5 +691,17 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public void setPlateId(String plateId)
     {
         _plateId = plateId;
+    }
+
+    @Override
+    public boolean isIdentifierMatch(String id)
+    {
+        return id != null && !id.isEmpty() && (id.equals(getRowId() + "") || id.equalsIgnoreCase(getPlateId()) || id.equalsIgnoreCase(getName()));
+    }
+
+    @Override
+    public boolean isPlateSizeMatch(int rows, int cols)
+    {
+        return rows == getRows() && cols == getColumns();
     }
 }

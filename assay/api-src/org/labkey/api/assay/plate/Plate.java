@@ -98,4 +98,8 @@ public interface Plate extends PropertySet, Identifiable
     @Nullable Integer getMetadataDomainId();
 
     @Nullable Integer getRunCount();
+
+    boolean isIdentifierMatch(String id);
+
+    boolean isPlateSizeMatch(int rows, int cols);
 }
