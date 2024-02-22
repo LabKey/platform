@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.util;
+package org.labkey.api.util.logging;
 
 import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.appender.rolling.action.AbstractPathAction;
@@ -37,33 +37,58 @@ import java.io.IOException;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A modified version of log4j2 DeleteAction that doesn't require any conditions; files to delete are determined
  * by Java code.
+ *
+ * We will retain up to three error log files of 100 MB (as configured in log4j2.xml). We'll keep the first log from a given
+ * webapp startup, moving it to labkey-errors-yyyy-MM-dd.log for archive purposes.
+ *
+ * Keep in sync with org.labkey.embedded.LabKeyDeleteAction until we're embedded-only and can consolidate.
+ *
+ * See issue 43686.
  */
 @Plugin(name = "LabKeyDelete", category = Core.CATEGORY_NAME, printObject = true)
 public class LabKeyDeleteAction extends AbstractPathAction
 {
+    public static final int MAX_RETAINED = 3;
+    /**
+     * Don't retain more than one file per session
+     */
+    private static boolean _copiedOriginal = false;
+
+    /**
+     * Remember when we started up so we can compare file timestamps against it
+     */
+    private static final Date _startup = new Date();
+
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+
     private final PathSorter pathSorter;
     private final boolean testMode;
 
     /**
      * Creates a new DeleteAction that starts scanning for files to delete from the specified base path.
      *
-     * @param basePath base path from where to start scanning for files to delete.
+     * @param basePath            base path from where to start scanning for files to delete.
      * @param followSymbolicLinks whether to follow symbolic links. Default is false.
-     * @param maxDepth The maxDepth parameter is the maximum number of levels of directories to visit. A value of 0
-     *            means that only the starting file is visited, unless denied by the security manager. A value of
-     *            MAX_VALUE may be used to indicate that all levels should be visited.
-     * @param testMode if true, files are not deleted but instead a message is printed to the <a
-     *            href="http://logging.apache.org/log4j/2.x/manual/configuration.html#StatusMessages">status logger</a>
-     *            at INFO level. Users can use this to do a dry run to test if their configuration works as expected.
-     * @param sorter sorts
-     * @param pathConditions an array of path filters (if more than one, they all need to accept a path before it is
-     *            deleted).
+     * @param maxDepth            The maxDepth parameter is the maximum number of levels of directories to visit. A value of 0
+     *                            means that only the starting file is visited, unless denied by the security manager. A value of
+     *                            MAX_VALUE may be used to indicate that all levels should be visited.
+     * @param testMode            if true, files are not deleted but instead a message is printed to the <a
+     *                            href="http://logging.apache.org/log4j/2.x/manual/configuration.html#StatusMessages">status logger</a>
+     *                            at INFO level. Users can use this to do a dry run to test if their configuration works as expected.
+     * @param sorter              sorts
+     * @param pathConditions      an array of path filters (if more than one, they all need to accept a path before it is
+     *                            deleted).
      */
     LabKeyDeleteAction(
             final String basePath,
@@ -104,9 +129,51 @@ public class LabKeyDeleteAction extends AbstractPathAction
         return selectFilesToDelete(getBasePath(), sortedPaths);
     }
 
-    private List<PathWithAttributes> selectFilesToDelete(Path basePath, List<PathWithAttributes> sortedPaths)
+    private List<PathWithAttributes> selectFilesToDelete(Path basePath, List<PathWithAttributes> paths)
     {
-        return List.of(); // TODO: Fill in logic from ErrorLogRotator
+        // Narrow to just the error log files
+        paths = paths.stream().filter(p -> p.getPath().toString().contains("labkey-errors.log")).collect(Collectors.toList());
+
+        List<PathWithAttributes> result = new ArrayList<>();
+
+        // Look for the first file from the current set of logging to move it away instead of rotating it
+        PathWithAttributes logToRetain = null;
+        long bestTimeVersusStartup = Long.MAX_VALUE;
+
+        // Per Log4J specs, paths are sorted with most recently modified files first
+        for (int i = MAX_RETAINED; i < paths.size(); i++)
+        {
+            PathWithAttributes path = paths.get(i);
+            long timeVersusStartup = Math.abs(path.getAttributes().creationTime().toMillis() - _startup.getTime());
+            // Look for a file that's the closest to the time we started up, and within 20 seconds of startup
+            if (timeVersusStartup < bestTimeVersusStartup && timeVersusStartup < 20_000)
+            {
+                bestTimeVersusStartup = timeVersusStartup;
+                logToRetain = path;
+            }
+
+            result.add(path);
+        }
+
+        if (logToRetain != null && !_copiedOriginal && logToRetain.getAttributes().size() > 0)
+        {
+            Path target = logToRetain.getPath().getParent().resolve("labkey-errors-" + DATE_FORMAT.format(new Date()) + ".log");
+            LOGGER.info("Retaining labkey-errors.log file before it gets deleted by rotation. Copying to " + target);
+
+            try
+            {
+                Files.move(logToRetain.getPath(), target);
+                // Don't need to mark it for deletion, as it's already been moved
+                result.remove(logToRetain);
+            }
+            catch (IOException e)
+            {
+                LOGGER.warn("Failed to retain error log file " + logToRetain.getPath(), e);
+            }
+            _copiedOriginal = true;
+        }
+
+        return result;
     }
 
     private void deleteSelectedFiles(final List<PathWithAttributes> selectedForDeletion) throws IOException {
@@ -191,19 +258,19 @@ public class LabKeyDeleteAction extends AbstractPathAction
     /**
      * Create a DeleteAction.
      *
-     * @param basePath base path from where to start scanning for files to delete.
-     * @param followLinks whether to follow symbolic links. Default is false.
-     * @param maxDepth The maxDepth parameter is the maximum number of levels of directories to visit. A value of 0
-     *            means that only the starting file is visited, unless denied by the security manager. A value of
-     *            MAX_VALUE may be used to indicate that all levels should be visited.
-     * @param testMode if true, files are not deleted but instead a message is printed to the <a
-     *            href="http://logging.apache.org/log4j/2.x/manual/configuration.html#StatusMessages">status logger</a>
-     *            at INFO level. Users can use this to do a dry run to test if their configuration works as expected.
-     *            Default is false.
+     * @param basePath        base path from where to start scanning for files to delete.
+     * @param followLinks     whether to follow symbolic links. Default is false.
+     * @param maxDepth        The maxDepth parameter is the maximum number of levels of directories to visit. A value of 0
+     *                        means that only the starting file is visited, unless denied by the security manager. A value of
+     *                        MAX_VALUE may be used to indicate that all levels should be visited.
+     * @param testMode        if true, files are not deleted but instead a message is printed to the <a
+     *                        href="http://logging.apache.org/log4j/2.x/manual/configuration.html#StatusMessages">status logger</a>
+     *                        at INFO level. Users can use this to do a dry run to test if their configuration works as expected.
+     *                        Default is false.
      * @param sorterParameter a plugin implementing the {@link PathSorter} interface
-     * @param pathConditions an array of path conditions (if more than one, they all need to accept a path before it is
-     *            deleted).
-     * @param config The Configuration.
+     * @param pathConditions  an array of path conditions (if more than one, they all need to accept a path before it is
+     *                        deleted).
+     * @param config          The Configuration.
      * @return A DeleteAction.
      */
     @PluginFactory
