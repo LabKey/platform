@@ -27,6 +27,8 @@ import org.labkey.api.data.DbScope.SchemaTableOptions;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.logging.LogHelper;
 
+import java.sql.SQLException;
+
 public class SchemaTableInfoCache
 {
     private static final Logger LOG = LogHelper.getLogger(SchemaTableInfoCache.class, "Loading of schema and table metadata from database schemas");
@@ -92,13 +94,13 @@ public class SchemaTableInfoCache
                 LOG.debug("loading schema table: " + fullName);
                 return options.getSchema().loadTable(options.getTableName(), options);
             }
-            catch (Throwable t)
+            catch (SQLException e)
             {
-                // Log all problems for the admin and report to mothership. Return null for now, but see Issue 49506.
-                LOG.warn("Exception while attempting to load schema table \"" + fullName + "\"", t);
-                ExceptionUtil.logExceptionToMothership(null, t, false);
+                // Issue 49506: Log all problems for the admin and report to mothership and throw instead of returning null.
+                LOG.warn("Exception while attempting to load schema table \"" + fullName + "\"", e);
+                ExceptionUtil.logExceptionToMothership(null, e, false);
 
-                return null;
+                throw new RuntimeSQLException(e);
             }
         }
     }

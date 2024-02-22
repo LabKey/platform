@@ -762,6 +762,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
      */
     ExpProtocol insertProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
 
+    ExpProtocol updateProtocol(@NotNull ExpProtocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException;
+
     ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
     /**
@@ -773,7 +775,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param inputDatas      map from input role name to input data
      * @param outputMaterials map from output role name to output material
      * @param outputDatas     map from output role name to output data
-     * @param transformedDatas map of output rolw name to transformed output data
+     * @param transformedDatas map of output role name to transformed output data
      * @param info            context information, including the user
      * @param log             output log target
      * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
