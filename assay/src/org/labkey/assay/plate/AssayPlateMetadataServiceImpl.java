@@ -515,14 +515,15 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
-    public List<Map<String, Object>> parsePlateGrids(Container container, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException
+    public List<Map<String, Object>> parsePlateGrids(Container container, User user, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException
     {
         // NOTE: currently only supporting single measure assay protocols
         List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
         String measureName = !measureProperties.isEmpty() ? measureProperties.get(0).getName() : "Value";
 
         // get the ordered list of plates for the plate set
-        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(container, plateSetId);
+        ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
+        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(cf, plateSetId);
         if (plateSetId == null || plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 

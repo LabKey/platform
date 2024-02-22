@@ -240,7 +240,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && dataRows.isEmpty() && svc != null)
         {
             Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
-            dataRows = svc.parsePlateGrids(context.getContainer(), provider, protocol, plateSetId, dataFile);
+            dataRows = svc.parsePlateGrids(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile);
         }
         return dataRows;
     }
