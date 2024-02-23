@@ -1715,8 +1715,31 @@ public class DbScope
         throw new ConfigurationException("Can't connect to data source \"" + ds.getDsName() + "\".", "Make sure that your LabKey Server configuration file includes the correct user name, password, url, port, etc. for your database and that the database server is running.", lastException);
     }
 
+    // Set to true to test detection of unexpected connections
+    private static final boolean MOCK_EXISTING_CONNECTIONS = false;
+
     // Called on primary data source only
     private static void detectOtherLabKeyInstances(DbScope primaryScope)
+    {
+        if (MOCK_EXISTING_CONNECTIONS)
+        {
+            // For testing purposes only - create a couple unexpected connections
+            try (Connection ignored1 = primaryScope.getPooledConnection(); Connection ignored2 = primaryScope.getPooledConnection())
+            {
+                detectUnexpectedConnections(primaryScope);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        else
+        {
+            detectUnexpectedConnections(primaryScope);
+        }
+    }
+
+    private static void detectUnexpectedConnections(DbScope primaryScope)
     {
         assert _applicationName != null;
 
