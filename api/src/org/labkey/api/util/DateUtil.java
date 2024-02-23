@@ -2095,7 +2095,7 @@ Parse:
         @Test
         public void testDateTimeFormat()
         {
-            long longDate = 1556883120123L; // 2019-05-03 04:32:00.123
+            long longDate = parseDateTime("2019-05-03 04:32:00.123");
             Date date = new Date(longDate);
             Time time = new Time(longDate);
 
