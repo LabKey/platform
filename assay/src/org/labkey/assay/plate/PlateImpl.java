@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
@@ -48,6 +49,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
@@ -697,5 +701,30 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public boolean isIdentifierMatch(String id)
     {
         return id != null && !id.isEmpty() && (id.equals(getRowId() + "") || id.equalsIgnoreCase(getPlateId()) || id.equalsIgnoreCase(getName()));
+    }
+
+    public static final class TestCase
+    {
+        @Test
+        public void testIdentifierMatch()
+        {
+            PlateImpl plate = new PlateImpl();
+            plate.setRowId(1);
+            plate.setPlateId("test-id");
+            plate.setName("Test Name");
+            
+            assertTrue("Expected plate to be accessible via rowId", plate.isIdentifierMatch("1"));
+            assertFalse("Expected plate to not match invalid rowId", plate.isIdentifierMatch("2"));
+
+            assertTrue("Expected plate to be accessible via plateId", plate.isIdentifierMatch("test-id"));
+            assertTrue("Expected plate to be accessible via plateId", plate.isIdentifierMatch("TEST-ID"));
+            assertFalse("Expected plate to not match invalid plateId", plate.isIdentifierMatch("test id"));
+
+            assertTrue("Expected plate to be accessible via name", plate.isIdentifierMatch("Test Name"));
+            assertTrue("Expected plate to be accessible via name", plate.isIdentifierMatch("test name"));
+            assertFalse("Expected plate to not match invalid name", plate.isIdentifierMatch("TestName"));
+            assertFalse("Expected plate to not match invalid name", plate.isIdentifierMatch(""));
+            assertFalse("Expected plate to not match invalid name", plate.isIdentifierMatch(null));
+        }
     }
 }
