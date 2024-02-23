@@ -16,6 +16,8 @@
 package org.labkey.pipeline.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -44,6 +46,7 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.pipeline.query.TriggerConfigurationsTable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -209,12 +212,11 @@ public class PipelineQuerySchema extends UserSchema
     /** Show the position in the job queue (only available when using the JMS queue-based pipeline) */
     private static class QueuePositionDisplayColumn extends DataColumn
     {
-        private final Map<String, Integer> _positions;
+        private Map<String, Integer> _positions;
 
         public QueuePositionDisplayColumn(ColumnInfo col)
         {
             super(col);
-            _positions = PipelineService.get().getPipelineQueue().getQueuePositions();
         }
 
         @Override
@@ -233,6 +235,10 @@ public class PipelineQuerySchema extends UserSchema
         public Object getValue(RenderContext ctx)
         {
             Object value = super.getValue(ctx);
+            if (_positions == null)
+            {
+                _positions = PipelineService.get().getPipelineQueue().getQueuePositions();
+            }
             //noinspection SuspiciousMethodCalls
             return _positions.get(value);
         }

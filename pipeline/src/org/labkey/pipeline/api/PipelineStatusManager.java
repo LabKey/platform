@@ -59,11 +59,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * <code>PipelineStatusManager</code> provides access to the StatusFiles table
@@ -76,7 +76,7 @@ public class PipelineStatusManager
 {
     public static final DbScope.TransactionKind TRANSACTION_KIND = () -> "PIPELINESTATUS";
 
-    private static PipelineSchema _schema = PipelineSchema.getInstance();
+    private static final PipelineSchema _schema = PipelineSchema.getInstance();
     private static final Logger LOG = LogManager.getLogger(PipelineStatusManager.class);
 
     public static TableInfo getTableInfo()
@@ -552,27 +552,35 @@ public class PipelineStatusManager
 
         List<PipelineStatusFileImpl> result = new ArrayList<>();
         TaskPipelineRegistry registry = PipelineJobService.get();
-        for (TaskFactory taskFactory : registry.getTaskFactories(null))
+        Set<TaskId> taskIds = new HashSet<>();
+        for (TaskFactory<?> taskFactory : registry.getTaskFactories(null))
         {
             if (taskFactory.getExecutionLocation().equals(location))
             {
                 TaskId id = taskFactory.getId();
-                for (PipelineStatusFileImpl statusFile : getQueuedStatusFilesForActiveTaskId(id.toString()))
+                taskIds.add(id);
+            }
+        }
+
+        if (!taskIds.isEmpty())
+        {
+            for (PipelineStatusFileImpl statusFile : getQueuedStatusFilesForActiveTaskId(taskIds))
+            {
+                if (!ignorableIds.contains(statusFile.getJobId()))
                 {
-                    if (!ignorableIds.contains(statusFile.getJobId()))
-                    {
-                        result.add(statusFile);
-                    }
+                    result.add(statusFile);
                 }
             }
         }
+
         return result;
     }
 
-    public static List<PipelineStatusFileImpl> getQueuedStatusFilesForActiveTaskId(String activeTaskId)
+    public static List<PipelineStatusFileImpl> getQueuedStatusFilesForActiveTaskId(Collection<TaskId> taskIds)
     {
         SimpleFilter filter = createQueueFilter();
-        filter.addCondition(FieldKey.fromParts("ActiveTaskId"), activeTaskId, CompareType.EQUAL);
+        Set<String> stringIds = taskIds.stream().map(TaskId::toString).collect(Collectors.toSet());
+        filter.addCondition(FieldKey.fromParts("ActiveTaskId"), stringIds, CompareType.IN);
 
         return getStatusFiles(filter);
     }
