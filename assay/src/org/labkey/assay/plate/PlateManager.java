@@ -621,11 +621,14 @@ public class PlateManager implements PlateService
     }
 
     /**
-     * Checks to see if there is a plate with the same name in the folder, or for
+     * Issue 49665 : Checks to see if there is a plate with the same name in the folder, or for
      * Biologics folders if there is a duplicate plate name in the plate set.
      */
     public boolean isDuplicatePlate(Container c, User user, String name, @Nullable PlateSet plateSet)
     {
+        // Identifying the "Biologics" folder type as the logic we pivot this behavior on is not intended to be
+        // a long-term solution. We will be looking to introduce plating as a ProductFeature which we can then
+        // leverage instead.
         boolean isBiologicsProject = c.getProject() != null && "Biologics".equals(ContainerManager.getFolderTypeName(c.getProject()));
         if (isBiologicsProject && plateSet != null)
         {
