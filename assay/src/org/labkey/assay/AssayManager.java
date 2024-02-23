@@ -654,7 +654,7 @@ public class AssayManager implements AssayService
     {
         AssayProvider provider = getProvider(protocol);
 
-        if (null == provider)
+        if (null == provider || null == c)
             return;
 
         String name = protocol.getName();
