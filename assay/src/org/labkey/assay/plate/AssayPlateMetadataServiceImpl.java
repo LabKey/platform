@@ -53,7 +53,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.TSVProtocolSchema;
-import org.labkey.assay.plate.model.PlateTypeBean;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -558,7 +557,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     // find the plate set plate for this identifier so we can skip those that don't match the expected plate type
                     Plate matchingPlate = plates.stream().filter(p -> p.isIdentifierMatch(entry.getKey())).findFirst().orElse(null);
                     double[][] plateGrid = entry.getValue();
-                    if (matchingPlate != null && matchingPlate.getPlateType().equals(new PlateTypeBean(plateGrid.length, plateGrid[0].length)))
+                    PlateType plateGridType = PlateManager.get().getPlateType(plateGrid.length, plateGrid[0].length);
+                    if (matchingPlate != null && matchingPlate.getPlateType().equals(plateGridType))
                     {
                         Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
                         for (Well well : dataForPlate.getWells())

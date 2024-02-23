@@ -39,7 +39,6 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.plate.model.PlateBean;
-import org.labkey.assay.plate.model.PlateTypeBean;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,10 +103,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
-        else if (!getPlateType().equals(new PlateTypeBean(wellValues.length, wellValues[0].length)))
+        else if (wellValues.length != plate.getRows() && wellValues[0].length != plate.getColumns())
             throw new IllegalArgumentException("Well values array size must match the plate size");
 
-        if (excluded != null && !getPlateType().equals(new PlateTypeBean(excluded.length, excluded[0].length)))
+        if (excluded != null && (excluded.length != plate.getRows() && excluded[0].length != plate.getColumns()))
             throw new IllegalArgumentException("Excluded values array size must match the plate size");
 
         _wells = new WellImpl[plate.getRows()][plate.getColumns()];
