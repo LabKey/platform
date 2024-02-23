@@ -536,22 +536,14 @@ public class PlateManager implements PlateService
         Plate plate = null;
         if (plateIdentifier != null)
         {
-            // first check by RowId (if the identifier is a number), then check by plateId, and finally by plate name
-            if (StringUtils.isNumeric(plateIdentifier.toString()))
-                plate = getPlate(c, Integer.parseInt(plateIdentifier.toString()));
-            if (plate == null)
-                plate = getPlate(c, plateIdentifier.toString());
-            if (plate == null)
-            {
-                List<Plate> plates = getPlatesForPlateSet(plateSet);
-                List<Plate> matchingPlates = plates.stream().filter(p -> p.getName().equals(plateIdentifier.toString())).toList();
-                if (matchingPlates.size() == 1)
-                    plate = matchingPlates.get(0);
-                else if (matchingPlates.isEmpty())
-                    throw new IllegalArgumentException("No plate found with the name \"" + plateIdentifier + "\" in plate set \"" + plateSet.getName() + "\".");
-                else
-                    throw new IllegalArgumentException("More than one plate found with name \"" + plateIdentifier + "\" in plate set " + plateSet.getName() + ". Please use the \"Plate ID\" to identify the plate instead.");
-            }
+            List<Plate> plates = getPlatesForPlateSet(plateSet);
+            List<Plate> matchingPlates = plates.stream().filter(p -> p.isIdentifierMatch(plateIdentifier.toString())).toList();
+            if (matchingPlates.size() == 1)
+                plate = matchingPlates.get(0);
+            else if (matchingPlates.isEmpty())
+                throw new IllegalArgumentException("The plate identifier \"" + plateIdentifier + "\" does not match any plate in the plate set \"" + plateSet.getName() + "\".");
+            else
+                throw new IllegalArgumentException("More than one plate found with name \"" + plateIdentifier + "\" in plate set " + plateSet.getName() + ". Please use the \"Plate ID\" to identify the plate instead.");
         }
 
         if (plate != null && plate.getPlateSet() != null && !plate.getPlateSet().getRowId().equals(plateSetId))

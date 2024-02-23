@@ -518,9 +518,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     @Override
     public List<Map<String, Object>> parsePlateGrids(Container container, User user, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException
     {
-        // NOTE: currently only supporting single measure assay protocols
+        // NOTE: currently only supporting single measure assay protocols (this will change soon to support multiple measures)
         List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
-        String measureName = !measureProperties.isEmpty() ? measureProperties.get(0).getName() : "Value";
+        if (measureProperties.size() != 1)
+            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
+        String measureName = measureProperties.get(0).getName();
 
         // get the ordered list of plates for the plate set
         ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
@@ -544,21 +546,31 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         }
 
         // Search through the data grids found to see if any have plate identifiers
-        boolean hasPlateIdentifiers = plateTypeGrids.values().stream().anyMatch(plateGrids -> plateGrids.keySet().stream().anyMatch(key -> !isDefaultPlateIdentifier(key)));
+        List<String> plateKeys = new ArrayList<>();
+        for (Map<String, double[][]> plateGrids : plateTypeGrids.values())
+            plateKeys.addAll(plateGrids.keySet());
+        boolean hasPlateIdentifiers = plateKeys.stream().anyMatch(key -> !isDefaultPlateIdentifier(key));
+        boolean missingPlateIdentifiers = plateKeys.stream().anyMatch(this::isDefaultPlateIdentifier);
 
-        // if any of the plateGrids keys have plate identifiers, just parse / include those in the dataRows map
+        // if any of the plateGrids keys have plate identifiers, import using those identifiers
         List<Map<String, Object>> dataRows = new ArrayList<>();
         if (hasPlateIdentifiers)
         {
+            if (missingPlateIdentifiers)
+                throw new ExperimentException("Some plate grids parsed from the file are missing plate identifiers.");
+
             for (Map.Entry<PlateType, Map<String, double[][]>> plateTypeMapEntry : plateTypeGrids.entrySet())
             {
                 for (Map.Entry<String, double[][]> entry : plateTypeMapEntry.getValue().entrySet())
                 {
-                    // find the plate set plate for this identifier so we can skip those that don't match the expected plate type
+                    // find the plate set plate for this identifier
                     Plate matchingPlate = plates.stream().filter(p -> p.isIdentifierMatch(entry.getKey())).findFirst().orElse(null);
+                    if (matchingPlate == null)
+                        throw new ExperimentException("The plate identifier \"" + entry.getKey() + "\" does not match any plate in the plate set \"" + plateSet.getName() + "\".");
+
                     double[][] plateGrid = entry.getValue();
                     PlateType plateGridType = PlateManager.get().getPlateType(plateGrid.length, plateGrid[0].length);
-                    if (matchingPlate != null && matchingPlate.getPlateType().equals(plateGridType))
+                    if (matchingPlate.getPlateType().equals(plateGridType))
                     {
                         Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
                         for (Well well : dataForPlate.getWells())
@@ -585,6 +597,8 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 }
             }
         }
+        else if (plateTypeGrids.keySet().size() > 1)
+            throw new ExperimentException("Unable to match the plate grids parsed from the file to the plates in the plate set. Please include plate identifiers for the plate grids.");
 
         return dataRows;
     }

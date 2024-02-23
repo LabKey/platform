@@ -324,27 +324,37 @@ public class PlateUtils
 
     /**
      * Tries to look for an identifying annotation to associate with the grid matrix, useful for data files that
-     * contain data for multiple measurements (Fluorospot). Fairly simplistic, just searches the row above the row header
-     * for any string values.
+     * contain data for multiple measurements (Fluorospot) or multiple plates.
+     * Searches the row above the row header for a string value or the first cell of the dataRow.
      *
      * @return the annotation found, else DEFAULT_GRID_NAME
      */
     private static String getGridAnnotation(List<Map<String, Object>> rows, int dataRow)
     {
-        if (dataRow > 0)
+        String annotation = null;
+
+        // check the row above the row header first for a string value
+        Map<String, Object> row = dataRow > 0 ? rows.get(dataRow-1) : null;
+        if (row instanceof RowMap<Object> rowMap)
         {
-            Map<String, Object> row = rows.get(dataRow-1);
-            if (row instanceof RowMap)
+            List<Object> values = rowMap.values().stream().filter(Objects::nonNull).toList();
+            if (values.size() == 1 && values.get(0) instanceof String)
+                annotation = (String)values.get(0);
+        }
+
+        // if no annotation was found, check the first cell of the row header
+        if (annotation == null)
+        {
+            row = rows.get(dataRow);
+            if (row instanceof RowMap<Object> rowMap)
             {
-                RowMap<Object> rowMap = (RowMap<Object>)row;
-                List<Object> values = rowMap.values().stream().filter(Objects::nonNull).toList();
-                if (values.size() == 1 && values.get(0) instanceof String)
-                {
-                    return (String)values.get(0);
-                }
+                Object value = !rowMap.isEmpty() ? rowMap.get(0) : null;
+                if (value instanceof String)
+                    annotation = (String)value;
             }
         }
-        return DEFAULT_GRID_NAME;
+
+        return annotation != null ? annotation : DEFAULT_GRID_NAME;
     }
 
     /**
