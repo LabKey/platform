@@ -633,6 +633,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
         private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;
+        private final Map<Object, Plate> _plateIdentifierMap;
         private final Container _container;
         private final User _user;
         private final ExpRun _run;
@@ -643,6 +644,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             super(data);
             _wellPositionMap = new HashMap<>();
+            _plateIdentifierMap = new HashMap<>();
             _container = container;
             _user = user;
             _run = run;
@@ -663,19 +665,22 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
 
             // get the plate associated with this row (checking the results domain field first)
-            Plate plate = null;
             Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, map);
-
-            if (plateSetProperty != null && plateIdentifier != null)
+            Plate plate = _plateIdentifierMap.get(plateIdentifier);
+            if (plate == null)
             {
-                Object plateSetVal = _run.getProperty(plateSetProperty);
-                Integer plateSetRowId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
-                plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateSetRowId, plateIdentifier);
-            }
-            else if (templateProperty != null)
-            {
-                Lsid plateLsid = Lsid.parse(String.valueOf(_run.getProperty(templateProperty)));
-                plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateLsid);
+                if (plateSetProperty != null && plateIdentifier != null)
+                {
+                    Object plateSetVal = _run.getProperty(plateSetProperty);
+                    Integer plateSetRowId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+                    plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateSetRowId, plateIdentifier);
+                }
+                else if (templateProperty != null)
+                {
+                    Lsid plateLsid = Lsid.parse(String.valueOf(_run.getProperty(templateProperty)));
+                    plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateLsid);
+                }
+                _plateIdentifierMap.put(plateIdentifier, plate);
             }
 
             if (plate == null)
