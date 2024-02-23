@@ -53,7 +53,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.data.xml.TablesDocument;
-import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -863,7 +863,7 @@ public class DbScope
 
     public interface RetryFn<ReturnType>
     {
-        ReturnType exec(Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
+        ReturnType exec(Transaction tx) throws PessimisticLockingFailureException, RuntimeSQLException;
     }
 
     /** Can be used to conveniently throw a typed exception out of executeWithRetry */
@@ -942,9 +942,9 @@ public class DbScope
                         break;
                     }
                 }
-                catch (DeadlockLoserDataAccessException dldae)
+                catch (PessimisticLockingFailureException e)
                 {
-                    lastException = dldae;
+                    lastException = e;
                 }
                 catch (RuntimeSQLException e)
                 {
@@ -3183,7 +3183,7 @@ public class DbScope
 
             Pair<Throwable, Throwable> throwables = attemptToDeadlock(lockUser, lockHome, (x) -> {});
 
-            assertTrue("Unexpected exceptions: " + throwables.first + "\n" + throwables.second, throwables.first instanceof DeadlockLoserDataAccessException || throwables.second instanceof DeadlockLoserDataAccessException );
+            assertTrue("Unexpected exceptions: " + throwables.first + "\n" + throwables.second, throwables.first instanceof PessimisticLockingFailureException || throwables.second instanceof PessimisticLockingFailureException );
         }
 
         /**
@@ -3274,7 +3274,7 @@ public class DbScope
         {
             // test ServerLock failures
 
-            Lock failServerLock = (ServerLock) () -> { throw new DeadlockLoserDataAccessException("test",null); };
+            Lock failServerLock = (ServerLock) () -> { throw new PessimisticLockingFailureException("test",null); };
 
             try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
             {
@@ -3283,7 +3283,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                assertTrue(x instanceof DeadlockLoserDataAccessException);
+                assertTrue(x instanceof PessimisticLockingFailureException);
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
 
@@ -3300,7 +3300,7 @@ public class DbScope
             }
             catch (Exception x)
             {
-                assertTrue(x instanceof DeadlockLoserDataAccessException);
+                assertTrue(x instanceof PessimisticLockingFailureException);
             }
             new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
 

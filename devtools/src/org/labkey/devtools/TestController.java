@@ -51,7 +51,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
-import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -771,7 +771,7 @@ public class TestController extends SpringActionController
         {
             if (getViewContext().getRequest().getParameterMap().containsKey("_retry_"))
                 return new HtmlView(HtmlString.of("Second time's a charm"));
-            throw new DeadlockLoserDataAccessException("Try again", null);
+            throw new PessimisticLockingFailureException("Try again", null);
         }
 
         @Override
