@@ -1035,6 +1035,26 @@ validNum:       {
             }
         }
 
+        if  (StringUtils.countMatches(s, "T") == 1) // ISO datetime
+        {
+            try
+            {
+                return new Time(parseDateTime(s));
+            }
+            catch (ConversionException ignored)
+            {
+            }
+        }
+
+        if (StringUtils.countMatches(s, " ") == 0 && StringUtils.countMatches(s, ":") == 0) { // try date-only format
+            try
+            {
+                return new Time(parseDate(s));
+            }
+            catch (ConversionException ignored)
+            {
+            }
+        }
 
         int timezoneDiffSec = ZonedDateTime.now().getOffset().getTotalSeconds();
         return new Time(DateUtil.parseTime(s, strict) - 1000 * timezoneDiffSec);
