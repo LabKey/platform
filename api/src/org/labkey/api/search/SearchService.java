@@ -542,7 +542,12 @@ public interface SearchService extends SearchMXBean
          */
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
-            tableAliasProvidedInConstructor = null != tableAlias && !ExprColumn.STR_TABLE_ALIAS.equals(tableAlias);
+            this(info, modifiedSince, tableAlias, info, tableAlias);
+        }
+
+        public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String modifiedTableAlias, TableInfo lastIndexedTable, String lastIndexedTableAlias)
+        {
+            tableAliasProvidedInConstructor = null != modifiedTableAlias && !ExprColumn.STR_TABLE_ALIAS.equals(modifiedTableAlias);
 
             // Incremental if modifiedSince is set and is more recent than 1967-10-04
             boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
@@ -552,14 +557,16 @@ public interface SearchService extends SearchMXBean
                 return;
 
             ColumnInfo modified = info.getColumn("modified");
-            ColumnInfo lastIndexed = info.getColumn("lastIndexed");
-            if (null == tableAlias)
-                tableAlias = ExprColumn.STR_TABLE_ALIAS;
+            ColumnInfo lastIndexed = lastIndexedTable.getColumn("lastIndexed");
+            if (null == modifiedTableAlias)
+                modifiedTableAlias = ExprColumn.STR_TABLE_ALIAS;
+            if (null == lastIndexedTableAlias)
+                lastIndexedTableAlias = ExprColumn.STR_TABLE_ALIAS;
 
             String or = "";
             if (null != lastIndexed)
             {
-                _sqlf.append(lastIndexed.getValueSql(tableAlias)).append(" IS NULL");
+                _sqlf.append(lastIndexed.getValueSql(lastIndexedTableAlias)).append(" IS NULL");
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
@@ -567,7 +574,7 @@ public interface SearchService extends SearchMXBean
             if (null != modified && null != lastIndexed)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(tableAlias)).append(">").append(lastIndexed.getValueSql(tableAlias));
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append(">").append(lastIndexed.getValueSql(lastIndexedTableAlias));
                 _fieldKeys.add(modified.getFieldKey());
                 _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
@@ -576,7 +583,7 @@ public interface SearchService extends SearchMXBean
             if (null != modifiedSince && null != modified)
             {
                 _sqlf.append(or);
-                _sqlf.append(modified.getValueSql(tableAlias)).append("> ?");
+                _sqlf.append(modified.getValueSql(modifiedTableAlias)).append("> ?");
                 _sqlf.add(modifiedSince);
                 _fieldKeys.add(modified.getFieldKey());
             }

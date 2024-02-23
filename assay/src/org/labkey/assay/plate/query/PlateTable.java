@@ -36,6 +36,7 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
@@ -232,15 +233,15 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
             }
 
             DataIterator builtInColumnsTranslator = SimpleTranslator.wrapBuiltInColumns(nameExpressionTranslator, context, container, user, plateTable);
-
             DataIterator di = LoggingDataIterator.wrap(new NamePlusIdDataIterator(builtInColumnsTranslator, context, plateTable,
                     container,
                     "name",
                     "plateId",
                     PlateManager.get().getPlateNameExpression()));
 
+            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(builtInColumnsTranslator);
             ValidatorIterator vi = new ValidatorIterator(di, context, container, user);
-            vi.addValidator(nameMap.get("name"), new UniquePlateNameValidator(container));
+            vi.addValidator(columnNameMap.get("name"), new UniquePlateNameValidator(container));
 
             DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, vi, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, plateTable, container)

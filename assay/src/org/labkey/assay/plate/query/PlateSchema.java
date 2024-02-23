@@ -20,11 +20,13 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.User;
+import org.labkey.assay.plate.PlateManager;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.List;
@@ -73,6 +75,12 @@ public class PlateSchema extends SimpleUserSchema
             return new PlateSetTable(this, cf).init();
         if (name.equalsIgnoreCase(PlateTypeTable.NAME))
             return new PlateTypeTable(this, cf).init();
+        if (name.equalsIgnoreCase(WellTable.WELL_PROPERTIES_TABLE))
+        {
+            Domain domain = PlateManager.get().getPlateMetadataDomain(getContainer(), getUser());
+            if (domain != null)
+                return new WellTable.WellPropertiesTable(domain,this, cf);
+        }
 
         return null;
     }

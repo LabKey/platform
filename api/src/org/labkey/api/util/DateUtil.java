@@ -58,7 +58,6 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 
@@ -95,7 +94,6 @@ public class DateUtil
             super(tz, locale);
         }
 
-
         _Calendar(TimeZone tz, Locale locale, int year, int mon, int mday, int hour, int min, int sec, int ms)
         {
             super(tz, locale);
@@ -118,7 +116,6 @@ public class DateUtil
         }
     }
 
-
     // when strict=true, disallow date overflow arithmetic
     private static Calendar newCalendar(TimeZone tz, int year, int mon, int mday, int hour, int min, int sec, int ms, boolean strict)
     {
@@ -134,24 +131,20 @@ public class DateUtil
         return cal;
     }
 
-
     public static Calendar newCalendar(long l)
     {
         return new _Calendar(_timezoneDefault, _localeDefault, l);
     }
-
 
     public static Calendar now()
     {
         return new _Calendar(_timezoneDefault, _localeDefault);
     }
 
-
     public static String nowISO()
     {
         return toISO(System.currentTimeMillis());
     }
-
 
     public static String toISO(long l, boolean fFullISO)
     {
@@ -319,7 +312,6 @@ public class DateUtil
         return tz;
     }
 
-
     private enum DateTimeOption
     {
         DateTime,
@@ -327,19 +319,16 @@ public class DateUtil
         TimeOnly
     }
 
-
     public enum MonthDayOption
     {
         MONTH_DAY,
         DAY_MONTH
     }
 
-
     private static long parseDateTimeUS(String s, DateTimeOption option, boolean strict)
     {
         return parseDateTimeEN(s, option, MonthDayOption.MONTH_DAY,  strict);
     }
-
 
     private static long parseDateTimeEN(String s, DateTimeOption option, MonthDayOption md, boolean strict)
     {
@@ -717,7 +706,6 @@ validNum:       {
         }
     }
 
-
     public static long parseISODateTime(String s)
     {
         try
@@ -743,7 +731,6 @@ validNum:       {
         catch (Exception ignored) {}
         throw new ConversionException(s);
     }
-
 
     // These parsers aren't affected by the MDY/DMY setting
     private static long parseSpecialFormats(String s)
@@ -843,7 +830,6 @@ validNum:       {
         return parseDateTime(getCurrentContainer(), s);
     }
 
-
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(Container c, String s)
     {
@@ -881,14 +867,12 @@ validNum:       {
         return parseSpecialFormats(s);
     }
 
-
     // Lenient parsing using a variety of standard formats
     @Deprecated  // Use version that takes a Container instead
     public static long parseDate(String s)
     {
         return parseDate(getCurrentContainer(), s);
     }
-
 
     // Lenient parsing using a variety of standard formats
     public static long parseDate(Container c, String s)
@@ -898,7 +882,6 @@ validNum:       {
 
         return parseDate(s, monthDayOption, extraDateParsingPattern);
     }
-
 
     private static long parseDate(String s, MonthDayOption md, @Nullable String extraParsingPattern)
     {
@@ -957,7 +940,6 @@ validNum:       {
         }
     }
 
-
     private static long parseYYYYMMDD(String s) throws ParseException
     {
         if (s.length() == 8)
@@ -976,7 +958,6 @@ validNum:       {
         }
         throw new ParseException("Not a date: " + s, 0);
     }
-
 
     public static Date parseSimpleTime(Object o)
     {
@@ -1060,7 +1041,6 @@ validNum:       {
         return ISO_DATE_FORMAT_STRING;
     }
 
-
     public static String getStandardDateTimeFormatString()
     {
         return ISO_DATE_SHORT_TIME_FORMAT_STRING;
@@ -1070,7 +1050,6 @@ validNum:       {
     {
         return ISO_TIME_FORMAT_STRING;
     }
-
 
     public static String getJsonDateTimeFormatString()
     {
@@ -1138,7 +1117,19 @@ validNum:       {
      */
     public static String formatIsoDateLongTime(Date date)
     {
-        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + ISO_TIME_FORMAT_STRING);
+        return formatIsoDateLongTime(date, false);
+    }
+
+    /**
+     * Format date and time using ISO 8601 pattern including seconds. Optionally, the time component can be formatted
+     * using the long format of the time which includes milliseconds. This is appropriate only for persisting dates in
+     * machine-readable form, for example, for export or in filenames. Most callers should use
+     * formatDateTime(Container c, Date d) instead.
+     */
+    public static String formatIsoDateLongTime(Date date, boolean longTimeFormat)
+    {
+        String timeFormat = longTimeFormat ? ISO_LONG_TIME_FORMAT_STRING : ISO_TIME_FORMAT_STRING;
+        return formatDateTime(date, ISO_DATE_FORMAT_STRING + " " + timeFormat);
     }
 
     public static String formatIsoLongTime(Time time)
@@ -1148,7 +1139,6 @@ validNum:       {
 
     /**
      * Format current date using folder-specified default pattern
-     *
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDate(Container c)
@@ -1156,10 +1146,8 @@ validNum:       {
         return formatDate(c, new Date());
     }
 
-
     /**
      * Format specific date using folder-specified default pattern
-     *
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDate(Container c, Date date)
@@ -1169,7 +1157,6 @@ validNum:       {
 
     /**
      * Format specific LocalDate using folder-specified default pattern
-     *
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDate(Container c, LocalDate date)
@@ -1179,7 +1166,6 @@ validNum:       {
 
     /**
      * Format current date & time using folder-specified default date/time pattern
-     *
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDateTime(Container c)
@@ -1187,10 +1173,8 @@ validNum:       {
         return formatDateTime(c, new Date());
     }
 
-
     /**
      * Format date & time using folder-specified default date pattern plus standard time format
-     *
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDateTime(Container c, Date date)
@@ -1198,10 +1182,8 @@ validNum:       {
         return formatDateTime(date, getDateTimeFormatString(c));
     }
 
-
     /**
      * Format date, inferring the appropriate folder-specified default pattern (date vs. date-time) based on class of date
-     *
      * Warning: Return value is unsafe and must be HTML filtered, if rendered to an HTML page
      */
     public static String formatDateInfer(Container c, Date date)
@@ -1213,7 +1195,6 @@ validNum:       {
             format = getTimeFormatString(c);
         return formatDateTime(date, format);
     }
-
 
     /**
      * Format date & time using specified pattern
@@ -1227,10 +1208,8 @@ validNum:       {
             return FastDateFormat.getInstance(pattern).format(date);
     }
 
-
     /**
      * Get the default date format string to use in this Container
-     *
      * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
      * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
      */
@@ -1239,10 +1218,8 @@ validNum:       {
         return FolderSettingsCache.getDefaultDateFormat(c);
     }
 
-
     /**
      * Get the default date/time format string set in this Container (or one of its parents)
-     *
      * Note: The display format is specified by an admin; it could contain any characters, hence, it may not be safe.
      * Any value formatted by this pattern must be HTML filtered, if rendered to an HTML page.
      */
@@ -1251,12 +1228,10 @@ validNum:       {
         return FolderSettingsCache.getDefaultDateTimeFormat(c);
     }
 
-
     public static String getTimeFormatString(Container c)
     {
         return FolderSettingsCache.getDefaultTimeFormat(c);
     }
-
 
     /**
      * Test a date format string to determine if it matches one of LabKey's special named date formats (Date, DateTime, Time)
@@ -1267,8 +1242,6 @@ validNum:       {
     {
         return "Date".equals(dateFormat) || "DateTime".equals(dateFormat) || "Time".equals(dateFormat);
     }
-
-    private static final Pattern chromePattern = Pattern.compile("\\bchrome\\b");
 
     private static final FastDateFormat jsonDateFormat = FastDateFormat.getInstance(getJsonDateTimeFormatString());
     private static final FastDateFormat safariJsonDateFormat = FastDateFormat.getInstance(getSafariJsonDateTimeFormatString());
@@ -1297,7 +1270,6 @@ validNum:       {
 
         return isSafari ? safariJsonDateFormat.format(date) : jsonDateFormat.format(date);
     }
-
 
     private static class _duration
     {
@@ -1681,7 +1653,6 @@ Parse:
             }
         }
 
-
         @Test
         public void testDateTimeUS() throws ParseException
         {
@@ -1828,7 +1799,6 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDate("03$FEB$2001", MonthDayOption.MONTH_DAY, "dd$MMM$yyyy"));
         }
 
-
         @Test
         public void testDateTimeIntl()
         {
@@ -1843,7 +1813,6 @@ Parse:
             assertEquals(dateExpected, parseDateTime("2/3/01"));
             assertEquals(dateExpected, parseDateTime("2/3/2001"));
         }
-
 
         @Test
         public void testDateTimeGB() throws ParseException
@@ -1942,7 +1911,6 @@ Parse:
             assertEquals(datetimeUTC, parseDateTimeEN("2001-02-03T04:05:06Z", DateTimeOption.DateTime, MonthDayOption.DAY_MONTH, true));
         }
 
-
         @Test
         public void testDateTimeCH()
         {
@@ -1965,7 +1933,6 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("3.2.2001", MonthDayOption.DAY_MONTH));
         }
 
-
         private void assertXmlDateMatches(long millis)
         {
             Calendar parsedXml = new GregorianCalendar();
@@ -1975,7 +1942,6 @@ Parse:
             // Depending on your local time zone, you will get different days
             assertTrue(parsedXml.get(Calendar.DAY_OF_MONTH) == 3 || parsedXml.get(Calendar.DAY_OF_MONTH) == 2);
         }
-
 
         @Test
         public void testDate()
@@ -2017,7 +1983,6 @@ Parse:
             assertIllegalDate("9/30/2008 45:41:77");  // #19541
         }
 
-
         @Test  // Test parsing of dates whose interpretation changes based on US vs. non-US setting
         public void testDateIntl()
         {
@@ -2038,7 +2003,6 @@ Parse:
             for (String illegalFormat : mode.getIllegalFormats())
                 assertIllegalDate(illegalFormat);
         }
-
 
         @Test
         public void testTime()
@@ -2096,13 +2060,11 @@ Parse:
             assertIllegalTime("4.0");
         }
 
-
         @Test
         public void testTimezone()
         {
             // UNDONE
         }
-
 
         @Test
         public void testFormat()
@@ -2130,6 +2092,24 @@ Parse:
             assertEquals(toISO(l, false).length(), "1999-12-31".length());
         }
 
+        @Test
+        public void testDateTimeFormat()
+        {
+            long longDate = parseDateTime("2019-05-03 04:32:00.123");
+            Date date = new Date(longDate);
+            Time time = new Time(longDate);
+
+            // formatIsoDateShortTime
+            assertEquals("2019-05-03 04:32", formatIsoDateShortTime(date));
+
+            // formatIsoDateLongTime
+            assertEquals("2019-05-03 04:32:00", formatIsoDateLongTime(date));
+            assertEquals("2019-05-03 04:32:00", formatIsoDateLongTime(date, false));
+            assertEquals("2019-05-03 04:32:00.123", formatIsoDateLongTime(date, true));
+
+            // formatIsoLongTime
+            assertEquals("04:32:00.123", formatIsoLongTime(time));
+        }
 
         @Test
         public void testDuration()
@@ -2198,7 +2178,6 @@ Parse:
             assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"PT1m"));
             assertEquals(parseDateTime("2010-01-30 23:59:59"), subtractDuration(start,"1s"));
         }
-
 
         @Test
         public void testJSON()

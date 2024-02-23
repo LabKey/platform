@@ -715,6 +715,8 @@ public abstract class SqlDialect
     /** @param expression The expression with datetime value for which a date value is desired */
     public abstract String getDateTimeToDateCast(String expression);
 
+    public abstract String getDateTimeToTimeCast(String expression);
+
     /** @param expression The expression with datetime value for which a date value is desired */
     public SQLFragment getDateTimeToDateCast(SQLFragment expression)
     {

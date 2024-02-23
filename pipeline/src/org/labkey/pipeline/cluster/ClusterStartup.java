@@ -16,25 +16,23 @@
 
 package org.labkey.pipeline.cluster;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
-import org.labkey.bootstrap.ClusterBootstrap;
 import org.labkey.pipeline.AbstractPipelineStartup;
 import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.mule.umo.manager.UMOManager;
@@ -42,21 +40,13 @@ import org.springframework.beans.factory.BeanFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 /**
  * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
@@ -67,7 +57,7 @@ import java.util.jar.JarFile;
 public class ClusterStartup extends AbstractPipelineStartup
 {
     /**
-     * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap 
+     * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap
      */
     public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, PipelineJobException
     {
@@ -271,67 +261,18 @@ public class ClusterStartup extends AbstractPipelineStartup
         @NotNull
         private List<String> createArgs(@Nullable PipelineJob job) throws IOException
         {
-            List<String> args = new ArrayList<>();
-            args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
-            File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
-
-            if (!labkeyBootstrap.exists())
-            {
-                labkeyBootstrap = extractBootstrapFromEmbedded();
-                if (labkeyBootstrap == null || !labkeyBootstrap.exists())
-                {
-                    throw new IllegalStateException("Couldn't find labkeyBootstrap.jar");
-                }
-            }
-
-            // Uncomment this line if you want to debug the forked process
-//            args.add("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:5005");
-            args.add("-cp");
-            args.add(labkeyBootstrap.getPath());
-            args.add(ClusterBootstrap.class.getName());
-            args.add("-webappdir=" + ModuleLoader.getServletContext().getRealPath(""));
-
+            List<String> args = PipelineService.get().getClusterStartupArguments();
             if (job != null)
             {
                 // Serialize to a file
                 File serializedJob = new File(_tempDir, "job.json");
                 File log = new File(_tempDir, "job.log");
-                job.setLogFile(log);
+                job.setLogFile(log.toPath());
                 job.writeToFile(serializedJob);
                 args.add(serializedJob.toURI().toString());
             }
 
             return args;
-        }
-
-        private File extractBootstrapFromEmbedded() throws IOException
-        {
-            // Look through the JAR files in the working directory, which is expected to contain the Spring Boot entrypoint
-            File pwd = new File(".");
-            File[] jars = pwd.listFiles(f -> f.getName().toLowerCase().endsWith(".jar"));
-            for (File jar : jars)
-            {
-                try (JarFile j = new JarFile(jar))
-                {
-                    // Look inside the JAR for a labkeyBootstrap*.jar file
-                    Iterator<JarEntry> entries = j.entries().asIterator();
-                    while (entries.hasNext())
-                    {
-                        JarEntry entry = entries.next();
-                        if (entry.getName().contains("labkeyBootstrap") && entry.getName().toLowerCase().endsWith(".jar"))
-                        {
-                            File result = new File("labkeyBootstrap.jar");
-                            try (InputStream in = j.getInputStream(entry);
-                                 OutputStream out = new FileOutputStream(result))
-                            {
-                                IOUtils.copy(in, out);
-                            }
-                            return FileUtil.getAbsoluteCaseSensitiveFile(result);
-                        }
-                    }
-                }
-            }
-            return null;
         }
     }
 }

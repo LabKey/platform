@@ -837,6 +837,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
+    public String getDateTimeToTimeCast(String columnName)
+    {
+        return String.format("DATEADD(day, DATEDIFF(day, %s, '19700101'), %s )", columnName, columnName);
+    }
+
+    @Override
     public SQLFragment getNumericCast(SQLFragment expression)
     {
         SQLFragment cast = new SQLFragment(expression);
@@ -2065,110 +2071,112 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         which is used by sp_columns. It has been simplified for only the return columns and object types of interest,
         and the DATA_TYPEs have the mappings to jdbc types that are normally performed by the driver getColumns() call.
       */
-    private static final String ALL_TABLE_COLUMNS_SQL = "SELECT\n" +
-            "        COLUMN_NAME         = convert(sysname,c.name),\n" +
-            "        DATA_TYPE        = convert(smallint,\n" +
-            "                                case\n" +
-            "                                when (c.system_type_id = 240) then -- CLR UDT, unknown if this is correct type\n" +
-            "                                    -4 \n" +
-            "                                when (c.system_type_id = 241) then -- XML\n" +
-            "                                    2005\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)\n" +
-            "                                    2005\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)\n" +
-            "                                    2005\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)\n" +
-            "                                    2004\n" +
-            "                                when c.system_type_id = 40 then -- DATE\n" +  // #27221: SQL Server Date columns return incorrect meta data types
-            "                                     " + Types.DATE + "\n" +
-            "                                when c.system_type_id = 41 then -- TIME\n" +
-            "                                     " + Types.TIME + "\n" +
-            "                                when c.system_type_id IN (42, 43) then -- DATETIME2/DATETIMEOFFSET\n" + // Note: These should probably map to real SQL Type values instead of VARCHAR!
-            "                                     12\n" +
-            "                                when c.system_type_id IN (98, 167, 231) then -- sql_variant, varchar, nvarchar\n" +
-            "                                     12\n" +
-            "                                when c.system_type_id  = 34 then -- image\n" +
-            "                                     2004\n" +
-            "                when c.system_type_id IN (35, 99) then -- text, ntext\n" +
-            "         2005 \n" +
-            "        when c.system_type_id IN (58, 61) then -- smalldatetime, datetime\n" +
-            "         93\n" +
-            "                                when c.system_type_id  = 104 then -- bit\n" +
-            "         -7\n" +
-            "                                when c.system_type_id  = 48 then -- tinyint\n" +
-            "         -6\n" +
-            "                                when c.system_type_id  = 127 then -- bigint\n" +
-            "         -5\n" +
-            "                                when c.system_type_id  = 165 then -- varbinary\n" +
-            "         -3\n" +
-            "        when c.system_type_id IN (173, 189) then -- binary, timestamp (rowversion)\n" +
-            "         -2                                              \n" +
-            "        when c.system_type_id IN (36, 175, 239) then -- uniqueidentifier, char, nchar\n" +
-            "         1\n" +
-            "                                when c.system_type_id  = 108 then -- numeric\n" +
-            "         2\n" +
-            "        when c.system_type_id IN (60, 106, 122) then -- money, decimal, smallmoney\n" +
-            "         3 \n" +
-            "                                when c.system_type_id  = 56 then -- int\n" +
-            "         4\n" +
-            "                                when c.system_type_id  = 52 then -- smallint\n" +
-            "         5\n" +
-            "                                when c.system_type_id  = 59 then -- real\n" +
-            "         7\n" +
-            "                                when c.system_type_id  = 62 then -- float\n" +
-            "         8\n" +
-            "                                end),\n" +
-            "        TYPE_NAME         = convert(sysname,\n" +
-            "                                case\n" +
-            "                                when (t.system_type_id = 240 or t.user_type_id > 255) then -- CLR UDTs\n" +
-            "                                    t.name\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)\n" +
-            "                                    N'text'\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)\n" +
-            "                                    N'ntext'\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)\n" +
-            "                                    N'image'\n" +
-            "                                else\n" +
-            "                                    t.name\n" +
-            "                                end) + CASE WHEN c.is_identity = 1 THEN ' identity' ELSE '' END,\n" +
-            "        COLUMN_SIZE        = convert(int,\n" +
-            "                                case\n" +
-            "                                when c.system_type_id in (59,62) then -- FLOAT/REAL\n" +
-            "                                    t.precision\n" +
-            "                                when c.system_type_id = 241 then -- XML\n" +
-            "                                    1073741823\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)\n" +
-            "                                    2147483647\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)\n" +
-            "                                    1073741823\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)\n" +
-            "                                    2147483647\n" +
-            "                                when (c.max_length = -1 and c.system_type_id = 240) then -- Large UDT => image for non-SNAC clients\n" +
-            "                                    2147483647\n" +
-            "                                else\n" +
-            "                                    OdbcPrec(c.system_type_id,c.max_length,c.precision)\n" +
-            "                                end),\n" +
-            "        NULLABLE            = convert(int, c.is_nullable),\n" +
-            "        DECIMAL_DIGITS      = convert(int, OdbcScale(c.system_type_id,c.scale)),\n" +
-            "        REMARKS             = convert(varchar(254),NULL),\n" +
-            "        COLUMN_DEF          = convert(nvarchar(4000), object_definition(ColumnProperty(c.object_id, c.name, 'default'))),\n" +
-            "        ORDINAL_POSITION    = ROW_NUMBER() OVER (ORDER BY c.column_id),\n" +
-            "        IS_NULLABLE         = CASE WHEN c.is_nullable = 1 THEN 'YES' ELSE 'NO' END,\n" +
-            "        IS_GENERATED        = CASE WHEN c.is_computed = 1 THEN 'YES' ELSE 'NO' END\n" +
-            "    FROM\n" +
-            "        sys.all_columns c inner join\n" +
-            "        sys.all_objects o on\n" +
-            "            (\n" +
-            "                o.object_id = c.object_id and\n" +
-            "                o.type in ('S','U','V', 'TF', 'IF') -- limit columns to tables, views, table-valued functions\n" +
-            "            ) inner join\n" +
-            "        sys.schemas s on \n" +
-            "   s.schema_id = o.schema_id inner join\n" +
-            "  sys.types t on\n" +
-            "            (\n" +
-            "                t.user_type_id = c.user_type_id\n" +
-            "            ) \n" +
-            " WHERE s.name LIKE ? ESCAPE '\\' AND o.name LIKE ? ESCAPE '\\'";
+    private static final String ALL_TABLE_COLUMNS_SQL = """
+            SELECT
+                    COLUMN_NAME         = convert(sysname,c.name),
+                    DATA_TYPE           = convert(smallint,
+                                            case
+                                            when (c.system_type_id = 240) then -- CLR UDT, unknown if this is correct type
+                                                -4
+                                            when (c.system_type_id = 241) then -- XML
+                                                2005
+                                            when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)
+                                                2005
+                                            when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)
+                                                2005
+                                            when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)
+                                                2004
+                                            when c.system_type_id = 40 then -- DATE // #27221: SQL Server Date columns return incorrect meta data types
+                                                91
+                                            when c.system_type_id = 41 then -- TIME
+                                                92
+                                            when c.system_type_id IN (42, 43) then -- DATETIME2/DATETIMEOFFSET // Note: These should probably map to real SQL Type values instead of VARCHAR!
+                                                12
+                                            when c.system_type_id IN (98, 167, 231) then -- sql_variant, varchar, nvarchar
+                                                12
+                                            when c.system_type_id  = 34 then -- image
+                                                2004
+                                            when c.system_type_id IN (35, 99) then -- text, ntext
+                                                2005
+                                            when c.system_type_id IN (58, 61) then -- smalldatetime, datetime
+                                                93
+                                            when c.system_type_id  = 104 then -- bit
+                                                -7
+                                            when c.system_type_id  = 48 then -- tinyint
+                                                -6
+                                            when c.system_type_id  = 127 then -- bigint
+                                                -5
+                                            when c.system_type_id  = 165 then -- varbinary
+                                                -3
+                                            when c.system_type_id IN (173, 189) then -- binary, timestamp (rowversion)
+                                                -2
+                                            when c.system_type_id IN (36, 175, 239) then -- uniqueidentifier, char, nchar
+                                                1
+                                            when c.system_type_id  = 108 then -- numeric
+                                                2
+                                            when c.system_type_id IN (60, 106, 122) then -- money, decimal, smallmoney
+                                                 3
+                                            when c.system_type_id  = 56 then -- int
+                                                 4
+                                            when c.system_type_id  = 52 then -- smallint
+                                                 5
+                                            when c.system_type_id  = 59 then -- real
+                                                 7
+                                            when c.system_type_id  = 62 then -- float
+                                                 8
+                                            end),
+                    TYPE_NAME         = convert(sysname,
+                                            case
+                                            when (t.system_type_id = 240 or t.user_type_id > 255) then -- CLR UDTs
+                                                t.name
+                                            when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)
+                                                N'text'
+                                            when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)
+                                                N'ntext'
+                                            when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)
+                                                N'image'
+                                            else
+                                                t.name
+                                            end) + CASE WHEN c.is_identity = 1 THEN ' identity' ELSE '' END,
+                    COLUMN_SIZE        = convert(int,
+                                            case
+                                            when c.system_type_id in (59,62) then -- FLOAT/REAL
+                                                t.precision
+                                            when c.system_type_id = 241 then -- XML
+                                                1073741823
+                                            when (c.max_length = -1 and c.system_type_id = 167) then -- varchar(max)
+                                                2147483647
+                                            when (c.max_length = -1 and c.system_type_id = 231) then -- nvarchar(max)
+                                                1073741823
+                                            when (c.max_length = -1 and c.system_type_id = 165) then -- varbinary(max)
+                                                2147483647
+                                            when (c.max_length = -1 and c.system_type_id = 240) then -- Large UDT => image for non-SNAC clients
+                                                2147483647
+                                            else
+                                                OdbcPrec(c.system_type_id,c.max_length,c.precision)
+                                            end),
+                    NULLABLE            = convert(int, c.is_nullable),
+                    DECIMAL_DIGITS      = convert(int, OdbcScale(c.system_type_id,c.scale)),
+                    REMARKS             = convert(varchar(254),NULL),
+                    COLUMN_DEF          = convert(nvarchar(4000), object_definition(ColumnProperty(c.object_id, c.name, 'default'))),
+                    ORDINAL_POSITION    = ROW_NUMBER() OVER (ORDER BY c.column_id),
+                    IS_NULLABLE         = CASE WHEN c.is_nullable = 1 THEN 'YES' ELSE 'NO' END,
+                    IS_GENERATED        = CASE WHEN c.is_computed = 1 THEN 'YES' ELSE 'NO' END
+            FROM
+                    sys.all_columns c inner join
+                    sys.all_objects o on
+                        (
+                            o.object_id = c.object_id and
+                            o.type in ('S','U','V', 'TF', 'IF') -- limit columns to tables, views, table-valued functions
+                        ) inner join
+                    sys.schemas s on
+                        s.schema_id = o.schema_id inner join
+                    sys.types t on
+                        (
+                            t.user_type_id = c.user_type_id
+                        )
+            WHERE s.name LIKE ? ESCAPE '\\' AND o.name LIKE ? ESCAPE '\\'
+            """;
 
     @Override
     public DatabaseMetaData wrapDatabaseMetaData(DatabaseMetaData md, DbScope scope)

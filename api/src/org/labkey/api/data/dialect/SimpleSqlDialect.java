@@ -370,6 +370,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public String getDateTimeToTimeCast(String expression)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public String getRoundFunction(String valueToRound)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

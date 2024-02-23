@@ -6,6 +6,7 @@ import org.labkey.api.security.roles.RoleManager;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,21 +16,26 @@ public abstract class ClonedUser extends User
 {
     protected ClonedUser(User user, ImpersonationContext ctx)
     {
-        super(user.getEmail(), user.getUserId());
-        setFirstName(user.getFirstName());
-        setLastName(user.getLastName());
-        setActive(user.isActive());
-        setDisplayName(user.getFriendlyName());
-        setLastLogin(user.getLastLogin());
-        setPhone(user.getPhone());
-        setLastLogin(user.getLastLogin());
-        setLastActivity(user.getLastActivity());
+        this(user.getEmail(), user.getUserId(), user.getFriendlyName(), user.getFirstName(), user.getLastName(), user.isActive(), user.getLastLogin(), user.getPhone(), user.getLastActivity(), ctx);
+    }
+
+    protected ClonedUser(String email, int userId, String displayName, String firstName, String lastName, boolean active,
+                         Date lastLogin, String phone, Date lastActivity, ImpersonationContext ctx)
+    {
+        super(email, userId);
+        setDisplayName(displayName);
+        setFirstName(firstName);
+        setLastName(lastName);
+        setActive(active);
+        setLastLogin(lastLogin);
+        setPhone(phone);
+        setLastActivity(lastActivity);
 
         setImpersonationContext(ctx);
     }
 
     // Map a stream of role classes to a set of roles
-    protected static Set<Role> getRoles(Stream<Class<? extends Role>> roleClassStream)
+    private static Set<Role> getRoles(Stream<Class<? extends Role>> roleClassStream)
     {
         return roleClassStream
             .filter(Objects::nonNull)
