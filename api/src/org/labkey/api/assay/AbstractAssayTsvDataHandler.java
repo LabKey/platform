@@ -275,6 +275,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return dataRows;
     }
 
+    @Nullable
     private Integer getPlateSetValueFromRunProps(XarContext context, AssayProvider provider, ExpProtocol protocol) throws ExperimentException
     {
         Domain runDomain = provider.getRunDomain(protocol);

@@ -18,6 +18,12 @@ public class PlateTypeBean implements PlateType
     {
     }
 
+    public PlateTypeBean(Integer rows, Integer cols)
+    {
+        _rows = rows;
+        _cols = cols;
+    }
+
     @Override
     public Integer getRowId()
     {

@@ -361,6 +361,14 @@ public class PlateManager implements PlateService
     }
 
     @Override
+    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
+    {
+        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
+        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
+        return getPlateSet(c, plateSetId);
+    }
+
+    @Override
     public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
         SqlSelector se = selectRunUsingPlateTemplate(c, user, plate);
@@ -637,13 +645,6 @@ public class PlateManager implements PlateService
     public List<Plate> getPlatesForPlateSet(PlateSet plateSet)
     {
         return PlateCache.getPlatesForPlateSet(plateSet.getContainer(), plateSet.getRowId());
-    }
-
-    public List<Plate> getPlatesForPlateSet(ContainerFilter cf, Integer plateSetId)
-    {
-        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
-        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
-        return PlateCache.getPlatesForPlateSet(c, plateSetId);
     }
 
     @Override

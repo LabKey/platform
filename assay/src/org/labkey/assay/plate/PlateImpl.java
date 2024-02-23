@@ -39,6 +39,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.PlateController;
 import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.model.PlateTypeBean;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -103,10 +104,10 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
 
         if (wellValues == null)
             wellValues = new double[plate.getRows()][plate.getColumns()];
-        else if (!isPlateSizeMatch(wellValues.length, wellValues[0].length))
+        else if (!getPlateType().equals(new PlateTypeBean(wellValues.length, wellValues[0].length)))
             throw new IllegalArgumentException("Well values array size must match the plate size");
 
-        if (excluded != null && !isPlateSizeMatch(excluded.length, excluded[0].length))
+        if (excluded != null && !getPlateType().equals(new PlateTypeBean(excluded.length, excluded[0].length)))
             throw new IllegalArgumentException("Excluded values array size must match the plate size");
 
         _wells = new WellImpl[plate.getRows()][plate.getColumns()];
@@ -697,11 +698,5 @@ public class PlateImpl extends PropertySetImpl implements Plate, Cloneable
     public boolean isIdentifierMatch(String id)
     {
         return id != null && !id.isEmpty() && (id.equals(getRowId() + "") || id.equalsIgnoreCase(getPlateId()) || id.equalsIgnoreCase(getName()));
-    }
-
-    @Override
-    public boolean isPlateSizeMatch(int rows, int cols)
-    {
-        return rows == getRows() && cols == getColumns();
     }
 }

@@ -15,6 +15,7 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
@@ -52,6 +53,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.assay.TSVProtocolSchema;
+import org.labkey.assay.plate.model.PlateTypeBean;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -523,8 +525,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
         // get the ordered list of plates for the plate set
         ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
-        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(cf, plateSetId);
-        if (plateSetId == null || plates.isEmpty())
+        PlateSet plateSet = PlateManager.get().getPlateSet(cf, plateSetId);
+        if (plateSet == null)
+            throw new ExperimentException("Plate set " + plateSetId + " not found.");
+        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
+        if (plates.isEmpty())
             throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
 
         // parse the data file for each distinct plate type found in the set of plates for the plateSetId
@@ -553,7 +558,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                     // find the plate set plate for this identifier so we can skip those that don't match the expected plate type
                     Plate matchingPlate = plates.stream().filter(p -> p.isIdentifierMatch(entry.getKey())).findFirst().orElse(null);
                     double[][] plateGrid = entry.getValue();
-                    if (matchingPlate != null && matchingPlate.isPlateSizeMatch(plateGrid.length, plateGrid[0].length))
+                    if (matchingPlate != null && matchingPlate.getPlateType().equals(new PlateTypeBean(plateGrid.length, plateGrid[0].length)))
                     {
                         Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
                         for (Well well : dataForPlate.getWells())
