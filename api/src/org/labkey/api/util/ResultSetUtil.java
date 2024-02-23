@@ -16,8 +16,6 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -28,6 +26,7 @@ import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ResultSetMetaDataImpl;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.logging.LogHelper;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -36,16 +35,16 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class ResultSetUtil
 {
-    private static final Logger _log = LogManager.getLogger(ResultSetUtil.class);
+    private static final Logger _log = LogHelper.getLogger(ResultSetUtil.class, "ResultSet metadata and data");
     public static final boolean STRICT_CHECKING = false;  // If true, throws when ResultSets are closed more than once. Clean up ResultSet closing for #34406.
 
     private ResultSetUtil()
@@ -110,7 +109,8 @@ public class ResultSetUtil
     }
 
 
-    // Just for testing purposes... splats ResultSet meta data to log
+    // Just for testing purposes... splats ResultSet metadata to log
+    @SuppressWarnings("unused")
     public static void logMetaData(ResultSet rs)
     {
         try
@@ -156,11 +156,13 @@ public class ResultSetUtil
         }
         finally
         {
-            close(rs); // TODO: Callers should close
+            close(rs);
         }
     }
 
-    // Callers are expected to close the ResultSet
+    private static final String SEPARATOR = "\t";
+
+    // Callers must close the ResultSet
     public static StringBuilder getData(ResultSet rs)
     {
         try
@@ -174,7 +176,7 @@ public class ResultSetUtil
 
             for (int i = 1; i <= columnCount; i++)
             {
-                sb.append(md.getColumnName(i)).append(" ");
+                sb.append(md.getColumnName(i)).append(SEPARATOR);
             }
 
             sb.append('\n');
@@ -184,7 +186,7 @@ public class ResultSetUtil
                 for (int i = 1; i <= columnCount; i++)
                 {
                     Object value = rs.getObject(i);
-                    sb.append(null == value ? "-" : value.toString().trim()).append(" ");
+                    sb.append(null == value ? "-" : value.toString().trim()).append(SEPARATOR);
                 }
 
                 sb.append('\n');
@@ -210,14 +212,14 @@ public class ResultSetUtil
             {
                 buf = new StringBuilder(str.length());
             }
-            buf.append(str.substring(buf.length(), i));
+            buf.append(str, buf.length(), i);
             buf.append("_");
         }
 
         if (buf == null)
             return str;
 
-        buf.append(str.substring(buf.length(), str.length()));
+        buf.append(str.substring(buf.length()));
         return buf.toString();
     }
 
@@ -251,8 +253,6 @@ public class ResultSetUtil
 
         ExportResultSet export = new ExportResultSet()
         {
-            SimpleDateFormat formatTZ = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
-            
             @Override
             void writeNull() throws IOException
             {
@@ -305,8 +305,8 @@ public class ResultSetUtil
     /** Writer should be UTF-8 */
     public static void exportAsXML(Writer out, ResultSet rs, String collectionName, String typeName) throws SQLException, IOException
     {
-        collectionName = StringUtils.defaultString(collectionName, "rowset");
-        typeName = StringUtils.defaultString(typeName, "row");
+        collectionName = Objects.toString(collectionName, "rowset");
+        typeName = Objects.toString(typeName, "row");
 
         ResultSetMetaData md = rs.getMetaData();
         int columnCount = md.getColumnCount();
@@ -490,7 +490,7 @@ public class ResultSetUtil
             }
         }
         
-        private class TestMetaData extends ResultSetMetaDataImpl
+        private static class TestMetaData extends ResultSetMetaDataImpl
         {
             TestMetaData()
             {
