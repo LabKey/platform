@@ -26,6 +26,7 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.data.CachedResultSets;
 import org.labkey.api.data.ResultSetMetaDataImpl;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.AliasManager;
 
 import java.io.IOException;
@@ -150,44 +151,52 @@ public class ResultSetUtil
         {
             if (log.isInfoEnabled())
             {
-                StringBuilder sb = new StringBuilder();
-
-                ResultSetMetaData md = rs.getMetaData();
-                int columnCount = md.getColumnCount();
-
-                sb.append('\n');
-
-                for (int i = 1; i <= columnCount; i++)
-                {
-                    sb.append(md.getColumnName(i)).append(" ");
-                }
-
-                sb.append('\n');
-
-                while (rs.next())
-                {
-                    for (int i = 1; i <= columnCount; i++)
-                    {
-                        Object value = rs.getObject(i);
-                        sb.append(null == value ? "-" : value.toString()).append(" ");
-                    }
-
-                    sb.append('\n');
-                }
-
-                log.info(sb);
+                log.info(getData(rs));
             }
-        }
-        catch (SQLException e)
-        {
-            log.error("logMetaData: " + e);
         }
         finally
         {
-            close(rs);
+            close(rs); // TODO: Callers should close
         }
     }
 
+    // Callers are expected to close the ResultSet
+    public static StringBuilder getData(ResultSet rs)
+    {
+        try
+        {
+            StringBuilder sb = new StringBuilder();
+
+            ResultSetMetaData md = rs.getMetaData();
+            int columnCount = md.getColumnCount();
+
+            sb.append('\n');
+
+            for (int i = 1; i <= columnCount; i++)
+            {
+                sb.append(md.getColumnName(i)).append(" ");
+            }
+
+            sb.append('\n');
+
+            while (rs.next())
+            {
+                for (int i = 1; i <= columnCount; i++)
+                {
+                    Object value = rs.getObject(i);
+                    sb.append(null == value ? "-" : value.toString().trim()).append(" ");
+                }
+
+                sb.append('\n');
+            }
+
+            return sb;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public static String legalNameFromName(String str)
     {

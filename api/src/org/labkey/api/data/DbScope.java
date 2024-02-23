@@ -47,6 +47,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.LoggerWriter;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleLoggerWriter;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
@@ -1721,30 +1722,39 @@ public class DbScope
 
         SqlDialect dialect = primaryScope.getSqlDialect();
         String databaseName = primaryScope.getDatabaseName();
-        String sql = dialect.getApplicationConnectionCountSql();
+        String sql = dialect.getApplicationConnectionsSql();
         assert sql != null : "Need to implement both getApplicationName() and getApplicationConnectionCountSql() (or neither of them)";
-        int count;
 
-        try
+        int count;
+        ConfigurationException exception = null;
+        SqlSelector selector = new SqlSelector(primaryScope, new SQLFragment(sql, databaseName, _applicationName));
+
+        // This creates the first pooled connection on the primary scope
+        try (TableResultSet rs = selector.getResultSet())
         {
-            // This creates the first pooled connection on the primary scope. Application name should be set on this
-            // connection in both the default and custom cases.
-            SqlSelector selector = new SqlSelector(primaryScope, new SQLFragment(sql, databaseName, _applicationName));
-            count = selector.getObject(Integer.class) - 1; // Exclude this connection from the count
+            count = rs.getSize();
+            if (count != 0)
+            {
+                String message = "There " + (1 == count ? "is " : "are ") + StringUtilsLabKey.pluralize(count, "other connection") +
+                    " to database \"" + databaseName + "\" with the application name \"" + _applicationName +
+                    "\"! This likely means another LabKey Server instance is already using this database.";
+                LOG.fatal(message + " Information about existing connections:\n" + ResultSetUtil.getData(rs));
+                boolean terminate = Boolean.valueOf(Objects.toString(System.getProperty("terminateOnExistingConnections"), "true"));
+                if (terminate)
+                {
+                    exception = new ConfigurationException(message);
+                }
+            }
         }
         catch (Exception e)
         {
             LOG.warn("Attempt to detect other LabKey Server instances using this database failed", e);
-            return;
         }
 
-        if (count > 0)
-            throw new ConfigurationException("There " + (1 == count ? "is " : "are ") +
-                StringUtilsLabKey.pluralize(count, "other connection") + " to database \"" +
-                databaseName + "\" with the application name \"" + _applicationName +
-                "\"! This likely means another LabKey Server instance is already using this database.");
-        else if (count < 0)
-            LOG.warn("Expected one connection with the application name \"" + _applicationName + "\", but saw " + count + 1 + ".");
+        if (exception != null)
+        {
+            throw exception;
+        }
     }
 
     // It's too early to use SqlSelector since DbScopes haven't been set up yet, so use vanilla JDBC
