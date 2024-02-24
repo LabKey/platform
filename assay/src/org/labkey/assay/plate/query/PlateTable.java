@@ -32,22 +32,18 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StandardDataIteratorBuilder;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
-import org.labkey.api.dataiterator.ValidatorIterator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
@@ -239,11 +235,9 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     "plateId",
                     PlateManager.get().getPlateNameExpression()));
 
-            Map<String, Integer> columnNameMap = DataIteratorUtil.createColumnNameMap(builtInColumnsTranslator);
-            ValidatorIterator vi = new ValidatorIterator(di, context, container, user);
-            vi.addValidator(columnNameMap.get("name"), new UniquePlateNameValidator(container));
+            di = LoggingDataIterator.wrap(new DuplicatePlateValidator(di, context, container, user));
 
-            DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, vi, container, user, context);
+            DataIteratorBuilder dib = StandardDataIteratorBuilder.forInsert(plateTable, di, container, user, context);
             dib = new TableInsertDataIteratorBuilder(dib, plateTable, container)
                     .setKeyColumns(new CaseInsensitiveHashSet("RowId", "Lsid"));
             dib = LoggingDataIterator.wrap(dib);
@@ -282,8 +276,8 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 String newName = (String) row.get("Name");
                 if (newName != null && !newName.equals(oldName))
                 {
-                    if (PlateManager.get().plateExists(container, newName))
-                        throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists in the folder.");
+                    if (PlateManager.get().isDuplicatePlate(container, user, newName, plate.getPlateSet()))
+                        throw new QueryUpdateServiceException("Plate with name : " + newName + " already exists.");
                 }
             }
 
@@ -314,36 +308,6 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
                 return returnMap;
             }
-        }
-    }
-
-    private static class UniquePlateNameValidator implements ColumnValidator
-    {
-        private Container _container;
-
-        public UniquePlateNameValidator(Container container)
-        {
-            _container = container;
-        }
-
-        @Override
-        public String validate(int rowNum, Object value)
-        {
-            return validate(String.valueOf(value));
-        }
-
-        @Override
-        public String validate(int rowNum, Object value, ValidatorContext validatorContext)
-        {
-            return validate(String.valueOf(value));
-        }
-
-        private String validate(String name)
-        {
-            if (PlateManager.get().plateExists(_container, name))
-                return "Plate with name : " + name + " already exists in the folder.";
-            else
-                return null;
         }
     }
 }
