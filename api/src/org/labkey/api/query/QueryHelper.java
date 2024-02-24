@@ -158,7 +158,7 @@ public class QueryHelper
         }
     }
 
-    protected CustomView getCustomView()
+    public CustomView getCustomView()
     {
         return QueryService.get().getCustomView(_user, _c, _user, _schemaName, _queryName, _viewName);
     }
