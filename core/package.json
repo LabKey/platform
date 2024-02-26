@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.22.2-fb-modals.8",
+    "@labkey/components": "3.23.0-fb-modals.0",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
