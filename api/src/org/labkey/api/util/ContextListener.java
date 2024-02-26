@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.NullConfiguration;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
@@ -48,21 +49,12 @@ public class ContextListener implements ServletContextListener
         String headless = "java.awt.headless";
         if (System.getProperty(headless) == null)
             System.setProperty(headless, "true");
-        // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
-        // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc directories
-        // Thus, we want to use catalina.base for our place to find log files. http://www.jguru.com/faq/view.jsp?EID=1121565
-        //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
-        if (LogHelper.getLabKeyLogDir() == null)
-        {
-            // Only set this if the user hasn't overridden it
-            System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
-        }
+
         // As of log4j2 2.17.2, we must declare languages referenced in log4j2.xml. Our DefaultRolloverStrategy uses rhino.
         System.setProperty("log4j2.Script.enableLanguages", "rhino");
     }
 
-    // NOTE: this line of code with LogManager.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)
-    private static final Logger _log = LogManager.getLogger(ContextListener.class);
+    // NOTE: do not configure a Logger at this point since log4j2 needs to be reconfigured first
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
@@ -72,6 +64,25 @@ public class ContextListener implements ServletContextListener
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
+        boolean isEmbedded = "true".equals(servletContextEvent.getServletContext().getInitParameter("embeddedTomcat"));
+        if (!isEmbedded)
+        {
+            // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
+            // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc. directories
+            // Thus, we want to use catalina.base for our place to find log files. http://www.jguru.com/faq/view.jsp?EID=1121565
+            //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
+            if (LogHelper.getLabKeyLogDir() == null)
+            {
+                // Only set this if the user hasn't overridden it
+                System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
+            }
+        }
+        else
+        {
+            // Hack... reload log4j2.xml now that LabKey classes are visible (e.g., rhino)
+            Configurator.reconfigure();
+        }
+
         getSpringContextListener().contextInitialized(servletContextEvent);
 
         ModuleLoader.getInstance().init(servletContextEvent.getServletContext());
@@ -98,6 +109,8 @@ public class ContextListener implements ServletContextListener
 
     public static void callShutdownListeners()
     {
+        Logger _log = LogManager.getLogger(ContextListener.class);
+
         // Make a copy so we use exact same list for shutdownPre() and shutdownStarted()
         List<ShutdownListener> shutdownListeners = _shutdownListeners;
 

@@ -305,7 +305,7 @@ public class DbSchema
 
         if (null == factory && isModuleSchema())
         {
-            throw new RuntimeException("SchemaTableInfoFactory for table \"" + getName() + "." + requestedTableName + "\" was null! This could indicate a problem with DbSchema.loadTableMetaData().");
+            _log.warn("SchemaTableInfoFactory for table \"" + getName() + "." + requestedTableName + "\" was null! This could indicate a problem with DbSchema.loadTableMetaData().");
         }
 
         return null != factory ? factory.getSchemaTableInfo(this) : null;

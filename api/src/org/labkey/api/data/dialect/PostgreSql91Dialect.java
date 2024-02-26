@@ -1958,8 +1958,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
-    public @Nullable String getApplicationConnectionCountSql()
+    public @NotNull String getApplicationConnectionsSql()
     {
-        return "SELECT COUNT(*) FROM pg_stat_activity WHERE datname = ? AND application_name = ?";
+        return "SELECT pid, usename, client_addr, client_hostname, xact_start, query_start, state, query FROM pg_stat_activity WHERE pid <> pg_backend_pid() AND datname = ? AND application_name = ?";
     }
 }

@@ -151,7 +151,8 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
-import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -931,7 +932,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.add(d);
         sql.add(rowId);
         sql.add(rowId);
-        new SqlExecutor(getSchema()).execute(sql);
+        try
+        {
+            new SqlExecutor(getSchema()).execute(sql);
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            // if we're not in a transaction just keep going...
+            if (getSchema().getScope().isTransactionActive())
+                throw e;
+        }
     }
 
     public void setDataClassLastIndexed(int rowId, long ms)
@@ -983,11 +993,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         insertPM.executeBatch();
                         updatePM.executeBatch();
                     }
-                    catch (DeadlockLoserDataAccessException dldae)
+                    catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
                     {
                         // if we're not in a transaction just keep going...
                         if (dbscope.isTransactionActive())
-                            throw dldae;
+                            throw e;
                     }
                 });
             }
@@ -1432,7 +1442,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(Container container, Class<? extends ExpObject> clazz)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz)
     {
         return generateLSIDWithDBSeq(container, getNamespacePrefix(clazz));
     }
@@ -1444,7 +1454,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, DataType type)
     {
         return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
@@ -2685,7 +2695,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
-        assert options.isUseObjectIds() == false;
+        assert !options.isUseObjectIds();
         String comma="";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
@@ -2698,7 +2708,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
-        assert options.isUseObjectIds() == true;
+        assert options.isUseObjectIds();
         String comma="";
         SQLFragment sqlf = new SQLFragment("VALUES ");
         for (Integer objectId : objectIds)
@@ -8197,6 +8207,20 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
+    public ExpProtocol updateProtocol(@NotNull ExpProtocol wrappedProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException
+    {
+        try (DbScope.Transaction tx = getSchema().getScope().ensureTransaction(getProtocolImportLock()))
+        {
+            Protocol baseProtocol = ((ExpProtocolImpl) wrappedProtocol).getDataObject();
+            insertProtocolSteps(baseProtocol, steps, predecessors, user, true);
+
+            tx.commit();
+
+            return getExpProtocol(baseProtocol.getRowId());
+        }
+    }
+
+    @Override
     public ExpProtocol insertProtocol(@NotNull ExpProtocol wrappedProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user) throws ExperimentException
     {
         if (wrappedProtocol == null)
@@ -8213,72 +8237,84 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
             Protocol baseProtocol = insertProtocol(wrappedProtocol, user);
 
-            List<Protocol> stepProtocols = new ArrayList<>();
-            if (steps != null)
-            {
-                for (ExpProtocol wrappedStepProtocol : steps)
-                {
-                    if (wrappedStepProtocol == null)
-                    {
-                        throw new ExperimentException("Cannot insert a \"null\" protocol step");
-                    }
-
-                    stepProtocols.add(insertProtocol(wrappedStepProtocol, user));
-                }
-            }
-
-            // all protocols are now inserted, now link them together
-            int actionSequence = 1;
-            Map<String, ProtocolAction> stepActions = new HashMap<>();
-
-            // insert base ProtocolAction prior to inserting steps
-            ProtocolAction previousAction = insertProtocolAction(baseProtocol, baseProtocol, actionSequence, user);
-            insertProtocolPredecessor(user, previousAction.getRowId(), previousAction.getRowId());
-            stepActions.put(baseProtocol.getLSID(), previousAction);
-            actionSequence = 10;
-
-            // insert ProtocolAction for each step prior to mapping actionSequence
-            for (Protocol stepProtocol : stepProtocols)
-            {
-                ProtocolAction stepAction = insertProtocolAction(baseProtocol, stepProtocol, actionSequence, user);
-                stepActions.put(stepProtocol.getLSID(), stepAction);
-                actionSequence += 10;
-            }
-
-            // map actionSequences
-            for (Protocol stepProtocol : stepProtocols)
-            {
-                String LSID = stepProtocol.getLSID();
-                ProtocolAction stepAction = stepActions.get(LSID);
-
-                if (predecessors != null)
-                {
-                    List<String> stepPredecessors = predecessors.get(LSID);
-
-                    if (stepPredecessors == null)
-                        throw new ExperimentException("Invalid predecessor map provided. Unable to find entry for \"" + LSID + "\". Each step protocol must have an entry.");
-
-                    for (String predecessorLSID : stepPredecessors)
-                    {
-                        ProtocolAction predecessorAction = stepActions.get(predecessorLSID);
-
-                        if (predecessorAction == null)
-                            throw new ExperimentException("Invalid predecessor map provided. Unable to find \"" + predecessorLSID + "\" in set of steps.");
-
-                        insertProtocolPredecessor(user, stepAction.getRowId(), predecessorAction.getRowId());
-                        previousAction = stepAction;
-                    }
-                }
-                else
-                {
-                    insertProtocolPredecessor(user, stepAction.getRowId(), previousAction.getRowId());
-                    previousAction = stepAction;
-                }
-            }
+            insertProtocolSteps(baseProtocol, steps, predecessors, user, false);
 
             tx.commit();
 
             return getExpProtocol(baseProtocol.getRowId());
+        }
+    }
+
+    private void insertProtocolSteps(Protocol baseProtocol, @Nullable List<ExpProtocol> steps, @Nullable Map<String, List<String>> predecessors, User user, boolean isUpdate) throws ExperimentException
+    {
+        List<Protocol> stepProtocols = new ArrayList<>();
+        if (steps != null)
+        {
+            for (ExpProtocol wrappedStepProtocol : steps)
+            {
+                if (wrappedStepProtocol == null)
+                {
+                    throw new ExperimentException("Cannot insert a \"null\" protocol step");
+                }
+
+                stepProtocols.add(insertProtocol(wrappedStepProtocol, user));
+            }
+        }
+
+        // all protocols are now inserted, now link them together
+        int actionSequence = 1;
+        Map<String, ProtocolAction> stepActions = new HashMap<>();
+
+        // insert base ProtocolAction prior to inserting steps
+        ProtocolAction previousAction;
+        if (isUpdate)
+            previousAction = getProtocolActions(baseProtocol.getRowId()).get(0);
+        else
+        {
+            previousAction = insertProtocolAction(baseProtocol, baseProtocol, actionSequence, user);
+            insertProtocolPredecessor(user, previousAction.getRowId(), previousAction.getRowId());
+        }
+        stepActions.put(baseProtocol.getLSID(), previousAction);
+        actionSequence = 10;
+
+        // insert ProtocolAction for each step prior to mapping actionSequence
+        for (Protocol stepProtocol : stepProtocols)
+        {
+            ProtocolAction stepAction = insertProtocolAction(baseProtocol, stepProtocol, actionSequence, user);
+            stepActions.put(stepProtocol.getLSID(), stepAction);
+            actionSequence += 10;
+        }
+
+        // map actionSequences
+        for (Protocol stepProtocol : stepProtocols)
+        {
+            String LSID = stepProtocol.getLSID();
+            ProtocolAction stepAction = stepActions.get(LSID);
+
+            if (predecessors != null)
+            {
+                List<String> stepPredecessors = predecessors.get(LSID);
+
+                if (stepPredecessors == null)
+                    throw new ExperimentException("Invalid predecessor map provided. Unable to find entry for \"" + LSID + "\". Each step protocol must have an entry.");
+
+                for (String predecessorLSID : stepPredecessors)
+                {
+                    ProtocolAction predecessorAction = stepActions.get(predecessorLSID);
+
+                    if (predecessorAction == null)
+                        throw new ExperimentException("Invalid predecessor map provided. Unable to find \"" + predecessorLSID + "\" in set of steps.");
+
+                    insertProtocolPredecessor(user, stepAction.getRowId(), predecessorAction.getRowId());
+                    previousAction = stepAction;
+                }
+            }
+            else
+            {
+                if (previousAction != null)
+                    insertProtocolPredecessor(user, stepAction.getRowId(), previousAction.getRowId());
+                previousAction = stepAction;
+            }
         }
     }
 
@@ -8291,7 +8327,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
         if (protocol.getApplicationType() == null)
         {
-            throw new ExperimentException("Protocol '" + protocol.getLSID() + "' needs to declare it's applicationType before being inserted");
+            throw new ExperimentException("Protocol '" + protocol.getLSID() + "' needs to declare its applicationType before being inserted");
         }
 
         if (baseProtocol.getOutputDataType() == null)
