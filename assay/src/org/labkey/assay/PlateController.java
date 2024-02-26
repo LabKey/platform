@@ -15,7 +15,6 @@
  */
 package org.labkey.assay;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
@@ -45,13 +44,10 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresAnyOf;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AddUserPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
@@ -405,7 +401,7 @@ public class PlateController extends SpringActionController
             if (_plate == null)
                 errors.reject(ERROR_REQUIRED, "Unable to retrieve source plate with ID : " + form.getPlateId());
 
-            if (PlateManager.get().plateExists(_destination, _plate.getName()))
+            if (PlateManager.get().isDuplicatePlate(_destination, getUser(), _plate.getName(), null))
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
         }
 

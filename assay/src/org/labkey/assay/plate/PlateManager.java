@@ -621,12 +621,29 @@ public class PlateManager implements PlateService
     }
 
     /**
-     * Checks to see if there is a plate with the same name in the folder
+     * Issue 49665 : Checks to see if there is a plate with the same name in the folder, or for
+     * Biologics folders if there is a duplicate plate name in the plate set.
      */
-    public boolean plateExists(Container c, String name)
+    public boolean isDuplicatePlate(Container c, User user, String name, @Nullable PlateSet plateSet)
     {
-        Plate plate = getPlateByName(c, name);
-        return plate != null && plate.getName().equals(name);
+        // Identifying the "Biologics" folder type as the logic we pivot this behavior on is not intended to be
+        // a long-term solution. We will be looking to introduce plating as a ProductFeature which we can then
+        // leverage instead.
+        boolean isBiologicsProject = c.getProject() != null && "Biologics".equals(ContainerManager.getFolderTypeName(c.getProject()));
+        if (isBiologicsProject && plateSet != null)
+        {
+            for (Plate plate : plateSet.getPlates(user))
+            {
+                if (plate.getName().equalsIgnoreCase(name))
+                    return true;
+            }
+            return false;
+        }
+        else
+        {
+            Plate plate = getPlateByName(c, name);
+            return plate != null && plate.getName().equals(name);
+        }
     }
 
     private Collection<Plate> getPlates(Container c)
@@ -1375,7 +1392,7 @@ public class PlateManager implements PlateService
     public Plate copyPlate(Plate source, User user, Container destContainer)
             throws Exception
     {
-        if (plateExists(destContainer, source.getName()))
+        if (isDuplicatePlate(destContainer, user, source.getName(), null))
             throw new PlateService.NameConflictException(source.getName());
         Plate newPlate = createPlateTemplate(destContainer, source.getAssayType(), source.getPlateType());
         newPlate.setName(source.getName());
