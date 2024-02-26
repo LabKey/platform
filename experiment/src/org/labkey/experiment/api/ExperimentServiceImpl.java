@@ -151,7 +151,8 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
-import org.springframework.dao.DeadlockLoserDataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -931,7 +932,16 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         sql.add(d);
         sql.add(rowId);
         sql.add(rowId);
-        new SqlExecutor(getSchema()).execute(sql);
+        try
+        {
+            new SqlExecutor(getSchema()).execute(sql);
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            // if we're not in a transaction just keep going...
+            if (getSchema().getScope().isTransactionActive())
+                throw e;
+        }
     }
 
     public void setDataClassLastIndexed(int rowId, long ms)
@@ -983,11 +993,11 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
                         insertPM.executeBatch();
                         updatePM.executeBatch();
                     }
-                    catch (DeadlockLoserDataAccessException dldae)
+                    catch (PessimisticLockingFailureException | DataIntegrityViolationException e)
                     {
                         // if we're not in a transaction just keep going...
                         if (dbscope.isTransactionActive())
-                            throw dldae;
+                            throw e;
                     }
                 });
             }
@@ -1432,7 +1442,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(Container container, Class<? extends ExpObject> clazz)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, Class<? extends ExpObject> clazz)
     {
         return generateLSIDWithDBSeq(container, getNamespacePrefix(clazz));
     }
@@ -1444,7 +1454,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public Pair<String, String> generateLSIDWithDBSeq(Container container, DataType type)
+    public Pair<String, String> generateLSIDWithDBSeq(@NotNull Container container, DataType type)
     {
         return generateLSIDWithDBSeq(container, type.getNamespacePrefix());
     }
@@ -2685,7 +2695,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     @Override
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
-        assert options.isUseObjectIds() == false;
+        assert !options.isUseObjectIds();
         String comma="";
         SQLFragment sqlf = new SQLFragment();
         for (String lsid : lsids)
@@ -2698,7 +2708,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public SQLFragment generateExperimentTreeSQLObjectIdsSeeds(Collection<Integer> objectIds, ExpLineageOptions options)
     {
-        assert options.isUseObjectIds() == true;
+        assert options.isUseObjectIds();
         String comma="";
         SQLFragment sqlf = new SQLFragment("VALUES ");
         for (Integer objectId : objectIds)
