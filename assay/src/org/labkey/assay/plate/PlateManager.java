@@ -2242,7 +2242,7 @@ public class PlateManager implements PlateService
             }
             catch (IllegalArgumentException e)
             {
-                assertEquals("Expected validation exception", "No plate found with the name \"testAccessPlateByIdentifiersBogus\" in plate set \"testAccessPlateByIdentifiersPlateSet\".", e.getMessage());
+                assertEquals("Expected validation exception", "The plate identifier \"testAccessPlateByIdentifiersBogus\" does not match any plate in the plate set \"testAccessPlateByIdentifiersPlateSet\".", e.getMessage());
             }
         }
 
