@@ -32,6 +32,7 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
@@ -319,7 +320,8 @@ public class AssayModule extends SpringModule
             AssayProviderSchema.TestCase.class,
             PlateManager.TestCase.class,
             PositionImpl.TestCase.class,
-            PlateImpl.TestCase.class
+            PlateImpl.TestCase.class,
+            PlateUtils.TestCase.class
         );
     }
 

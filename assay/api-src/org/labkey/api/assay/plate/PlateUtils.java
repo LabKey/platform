@@ -19,7 +19,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.query.ValidationException;
 
 import java.io.File;
@@ -28,6 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by klum on 3/11/2015.
@@ -349,7 +353,7 @@ public class PlateUtils
             if (row instanceof RowMap<Object> rowMap)
             {
                 Object value = !rowMap.isEmpty() ? rowMap.get(0) : null;
-                if (value instanceof String)
+                if (value instanceof String && !((String)value).isEmpty())
                     annotation = (String)value;
             }
         }
@@ -385,6 +389,38 @@ public class PlateUtils
         public int getCol()
         {
             return _col;
+        }
+    }
+
+    public static final class TestCase
+    {
+        @Test
+        public void testGetGridAnnotation()
+        {
+            RowMapFactory<Object> factory = new RowMapFactory<>(List.of("column0", "column1"));
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of())), 0));
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 0));
+
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "H", "column1", "1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
+
+            assertEquals("Default grid annotation expected", "Plate1", getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "Plate1", "column1", "1"))), 0));
+
+            assertEquals("Default grid annotation expected", "Plate1", getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "Plate1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
+
+            assertEquals("Default grid annotation expected", "Plate1", getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column1", "Plate1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
+
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "Plate1", "column1", "Measure1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
         }
     }
 }
