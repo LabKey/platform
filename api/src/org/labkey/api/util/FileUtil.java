@@ -1261,10 +1261,12 @@ quickScan:
                     name.charAt(idx - 1) == ' ')
             {
                 int i = idx + 1;
+                // Skip through as many consecutive '-' as there might be
                 while (i < name.length() && name.charAt(i) == '-')
                 {
                     i++;
                 }
+                // If the next character after the '-' isn't a space, transform the leading '-' in the sequence
                 if (i < name.length() && name.charAt(i) != ' ')
                 {
                     ch = '_';
