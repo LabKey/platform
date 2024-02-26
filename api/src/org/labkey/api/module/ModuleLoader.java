@@ -83,7 +83,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.logging.ErrorLogRotator;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.UnauthorizedException;
@@ -461,7 +460,6 @@ public class ModuleLoader implements MemTrackerListener
     private void doInit(Execution execution) throws ServletException
     {
         _log.info(BANNER);
-        ErrorLogRotator.init();
 
         AppProps.getInstance().setContextPath(_servletContext.getContextPath());
 

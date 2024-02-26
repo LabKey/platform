@@ -2486,8 +2486,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    public @Nullable String getApplicationConnectionCountSql()
+    public @NotNull String getApplicationConnectionsSql()
     {
-        return "SELECT COUNT(*) FROM sys.sysprocesses WHERE DB_NAME(dbid) = ? AND program_name = ?";
+        return "SELECT spid, loginame, hostname, net_address, last_batch, status, cmd FROM sys.sysprocesses WHERE spid <> @@SPID AND DB_NAME(dbid) = ? AND program_name = ?";
     }
 }
