@@ -1229,17 +1229,19 @@ quickScan:
         return !StringUtils.containsAny(name, ILLEGAL_CHARS);
     }
 
-    public static String makeLegalName(String name)
+    public static String makeLegalName(String originalName)
     {
-        if (name == null)
+        if (originalName == null)
         {
             return "__null__";
         }
 
-        if (name.isEmpty())
+        if (originalName.isEmpty())
         {
             return "__empty__";
         }
+
+        String name = originalName;
 
         //limit to 255 chars (FAT and OS X)
         //replace illegal chars
@@ -1247,9 +1249,26 @@ quickScan:
         for(int idx = 0; idx < ret.length; ++idx)
         {
             char ch = name.charAt(idx);
-            if (StringUtils.contains(ILLEGAL_CHARS_STRING, ch))
+            // Reject characters that are illegal anywhere
+            if (StringUtils.contains(ILLEGAL_CHARS_STRING, ch) ||
+                    // Or characters that are illegal starts to a file name
+                    (idx == 0 && (ch == '-' || ch == '$')))
             {
                 ch = '_';
+            }
+            else if (ch == '-' &&
+                    idx > 0 &&
+                    name.charAt(idx - 1) == ' ')
+            {
+                int i = idx + 1;
+                while (i < name.length() && name.charAt(i) == '-')
+                {
+                    i++;
+                }
+                if (i < name.length() && name.charAt(i) != ' ')
+                {
+                    ch = '_';
+                }
             }
 
             ret[idx] = ch;
@@ -1261,6 +1280,11 @@ quickScan:
         char ch = ret[lastIndex];
         if (ch == ' ' || ch == '.')
             ret[lastIndex] = '_';
+
+        String result = new String(ret);
+
+        assert !AppProps.getWriteableInstance().isInvalidFilenameBlocked() || isAllowedFileName(result) == null :
+                "Failed to make filename safe. Original: " + originalName + ", transformed: " + result + ", error: " + isAllowedFileName(result);
 
         return new String(ret);
     }
@@ -1848,6 +1872,29 @@ quickScan:
             assertEquals("foo", makeLegalName("foo"));
             assertEquals("foo_", makeLegalName("foo "));
             assertEquals("foo_", makeLegalName("foo."));
+            assertEquals("foo -", makeLegalName("foo -"));
+            assertEquals("foo _arg", makeLegalName("foo -arg"));
+            assertEquals("foo _arg-arg", makeLegalName("foo -arg-arg"));
+            assertEquals("foo _arg _arg2", makeLegalName("foo -arg -arg2"));
+
+            // These are allowed. Verify they don't get changed
+            assertEquals("a", makeLegalName("a"));
+            assertEquals("a-b", makeLegalName("a-b"));
+            assertEquals("a - b", makeLegalName("a - b"));
+            assertEquals("a- b", makeLegalName("a- b"));
+            assertEquals("a--b", makeLegalName("a--b"));
+            assertEquals("a -- b", makeLegalName("a -- b"));
+            assertEquals("a-- b", makeLegalName("a-- b"));
+
+            // These aren't allowed. Make sure they get changed
+            assertEquals("_a", makeLegalName("-a"));
+            assertEquals(" _a", makeLegalName(" -a"));
+            assertEquals("a _b", makeLegalName("a -b"));
+            assertEquals("_-a", makeLegalName("--a"));
+            assertEquals(" _-a", makeLegalName(" --a"));
+            assertEquals("a _-b", makeLegalName("a --b"));
+            assertEquals("a _--b", makeLegalName("a ---b"));
+
             assertEquals(StringUtils.repeat('_', ILLEGAL_CHARS.length), makeLegalName(new String(ILLEGAL_CHARS)));
             assertEquals(StringUtils.repeat('_', 255), makeLegalName(StringUtils.repeat(new String(ILLEGAL_CHARS), 50)));
             assertEquals(StringUtils.repeat('.', 254) + "_", makeLegalName(StringUtils.repeat('.', 500)));
@@ -1864,7 +1911,6 @@ quickScan:
             assertNull(isAllowedFileName("a--b"));
             assertNull(isAllowedFileName("a -- b"));
             assertNull(isAllowedFileName("a-- b"));
-            assertNull(isAllowedFileName("a -- b"));
             assertNull(isAllowedFileName("a b"));
             assertNull(isAllowedFileName("a%b"));
             assertNull(isAllowedFileName("a$b"));
