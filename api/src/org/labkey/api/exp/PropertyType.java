@@ -652,6 +652,23 @@ public enum PropertyType
         @Override
         public Object convert(Object value) throws ConversionException
         {
+            if (null == value)
+                return null;
+
+            if (value instanceof Time)
+                return value;
+
+            if (value instanceof Date)
+                return DateUtil.getTimeOnly((Date) value);
+
+            try
+            {
+                return ConvertUtils.convert(value, Time.class);
+            }
+            catch (Exception ignore)
+            {
+            }
+
             return DateUtil.getTimeOnly((Date)DATE_TIME.convert(value));
         }
 
