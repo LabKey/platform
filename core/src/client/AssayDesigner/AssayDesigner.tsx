@@ -27,6 +27,10 @@ import {
     ServerContext,
     ServerContextProvider,
     withAppUser,
+    inferDomainFromFile,
+    setDomainFields,
+    getWebDavUrl,
+    GENERAL_ASSAY_PROVIDER_NAME,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -70,7 +74,7 @@ export class App extends React.Component<any, State> {
         };
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         const { protocolId, providerName, copy } = this.state;
 
         // query to find out if the user has permission to save assay designs
@@ -87,15 +91,44 @@ export class App extends React.Component<any, State> {
 
         // if URL has a protocol RowId, look up the assay design info. otherwise use the providerName to get the template
         if (protocolId || providerName) {
-            getProtocol({ protocolId, providerName, copy })
-                .then(model => {
-                    this.setState({ isLoadingModel: false, model });
-                })
-                .catch(error => {
-                    this.setState({ isLoadingModel: false, message: error.exception });
-                });
+            try {
+                let model = await getProtocol({ protocolId, providerName, copy });
+                if (this.shouldInferDomainFromFile()) {
+                    model = await this.resetDataDomainFromFile(model);
+                }
+
+                this.setState({ isLoadingModel: false, model });
+            } catch (error) {
+                this.setState({ isLoadingModel: false, message: error.exception });
+            }
         } else {
             this.setState({ isLoadingModel: false, message: 'Missing required parameter: rowId or providerName' });
+        }
+    }
+
+    shouldInferDomainFromFile = (): boolean => {
+        const { protocolId, providerName } = this.state;
+        const { path, file } = ActionURL.getParameters();
+        return path !== undefined && file && !protocolId && providerName === GENERAL_ASSAY_PROVIDER_NAME;
+    };
+
+    // Issue 45315: Support inferring the assay results domain from a file system file
+    async resetDataDomainFromFile(model: AssayProtocolModel): Promise<AssayProtocolModel> {
+        const { serverContext } = this.state;
+        const { path, file } = ActionURL.getParameters();
+        const webdavUrl = getWebDavUrl(serverContext.container.path, path + '/' + file);
+
+        try {
+            const response = await inferDomainFromFile(webdavUrl, 3);
+            if (response.fields?.size > 0) {
+                const domain = model.getDomainByNameSuffix('Data');
+                const updatedDomain = setDomainFields(domain, response.fields);
+                const domains = model.domains.map(d => (d.name === updatedDomain.name ? updatedDomain : d));
+                return model.merge({ domains }) as AssayProtocolModel;
+            }
+        } catch (error) {
+            // no-op, file wasn't found or the domain couldn't be inferred so stick to the domain template from the assay protocol
+            return model;
         }
     }
 
@@ -116,7 +149,12 @@ export class App extends React.Component<any, State> {
     };
 
     onComplete = (model: AssayProtocolModel): void => {
-        this.navigate(ActionURL.buildURL('assay', 'assayBegin', undefined, { rowId: model.protocolId }));
+        if (this.shouldInferDomainFromFile()) {
+            const { path, file } = ActionURL.getParameters();
+            this.navigate(ActionURL.buildURL('assay', 'pipelineDataCollectorRedirect', undefined, { protocolId: model.protocolId, path, file }));
+        } else {
+            this.navigate(ActionURL.buildURL('assay', 'assayBegin', undefined, { rowId: model.protocolId }));
+        }
     };
 
     onChange = (model: AssayProtocolModel): void => {

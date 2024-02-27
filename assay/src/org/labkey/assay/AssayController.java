@@ -115,7 +115,6 @@ import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1181,7 +1180,7 @@ public class AssayController extends SpringActionController
             {
                 return null;
             }
-            ActionURL url = new ActionURL(provider.getDataImportAction(), container);
+            ActionURL url = new ActionURL(provider.getDesignerAction(), container);
             url.addParameter("providerName", provider.getName());
 
             if (path != null)
