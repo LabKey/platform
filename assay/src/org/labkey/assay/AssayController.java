@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -87,7 +86,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
@@ -716,16 +714,6 @@ public class AssayController extends SpringActionController
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
             setHelpTopic("defineAssaySchema");
-        }
-    }
-
-    @RequiresPermission(DesignAssayPermission.class)
-    public static class ServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new AssayDomainServiceImpl(getViewContext());
         }
     }
 
