@@ -112,7 +112,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -182,7 +181,6 @@ public class AssayController extends SpringActionController
         GetAssayRunAction.class,
         GetAssayRunsAction.class,
         GetProtocolAction.class,
-        ImportAction.class,
         ImportRunApiAction.class,
         PipelineDataCollectorRedirectAction.class,
         ReimportRedirectAction.class,
@@ -194,7 +192,6 @@ public class AssayController extends SpringActionController
         ShowSelectedRunsAction.class,
         TemplateAction.class,
         TransformResultsAction.class,
-        TsvImportAction.class,
         UploadWizardAction.class
     );
 
@@ -1277,17 +1274,6 @@ public class AssayController extends SpringActionController
         public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider, ExpProtocol protocol)
         {
             return provider.getPlateMetadataTemplateURL(container, protocol);
-        }
-    }
-
-    @RequiresPermission(DesignAssayPermission.class)
-    public static class AssayImportServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            SimpleMetricsService.get().increment(AssayModule.NAME, "AssayImportServiceAction", "GWTServiceCreation");
-            return new AssayImportServiceImpl(getViewContext());
         }
     }
 

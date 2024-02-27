@@ -41,7 +41,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -83,8 +82,6 @@ public interface AssayService
     @NotNull Collection<AssayProvider> getAssayProviders();
 
     WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
-
-    ModelAndView createAssayImportView(Map<String, String> properties);
 
     ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container, ContainerFilter cf);
 
