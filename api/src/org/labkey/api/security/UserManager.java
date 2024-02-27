@@ -948,7 +948,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try (Transaction transaction = CORE.getScope().beginTransaction())
+        try (Transaction transaction = CORE.getScope().ensureTransaction())
         {
             boolean needToEnsureRootAdmins = SecurityManager.isRootAdmin(user);
 
@@ -1017,7 +1017,7 @@ public class UserManager
                 throw new RuntimeException(first);
         }
 
-        try (Transaction transaction = CoreSchema.getInstance().getScope().beginTransaction())
+        try (Transaction transaction = CoreSchema.getInstance().getScope().ensureTransaction())
         {
             Table.update(currentUser, CoreSchema.getInstance().getTableInfoPrincipals(),
                     Collections.singletonMap("Active", active), userId);

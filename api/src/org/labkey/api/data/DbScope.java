@@ -709,7 +709,9 @@ public class DbScope
     }
 
     /**
-     * Starts a new transaction using a new Connection.
+     * Starts a new transaction using a new Connection. Most callers should use ensureTransaction() to join an existing
+     * transaction in the same database.
+     *
      * The preferred usage pattern is:
      * <pre>
      *     try (DbScope.Transaction transaction = scope.beginTransaction()) {
@@ -731,7 +733,9 @@ public class DbScope
     }
 
     /**
-     * Starts a new transaction using a new Connection.
+     * Starts a new transaction using a new Connection. Most callers should use ensureTransaction() to join an existing
+     * transaction in the same database.
+     *
      * The preferred usage pattern is:
      * <pre>
      *     try (DbScope.Transaction transaction = scope.beginTransaction()) {
