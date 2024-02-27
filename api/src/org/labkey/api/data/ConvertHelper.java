@@ -433,7 +433,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 return o;
 
             String str = o.toString().trim();
-            if ("".equals(str))
+            if (str.isEmpty())
                 return null;
 
             Container c;
@@ -452,6 +452,12 @@ public class ConvertHelper implements PropertyEditorRegistrar
             else
             {
                 c = ContainerManager.getForId(str);
+            }
+
+            if (c == null && !str.startsWith("/"))
+            {
+                // Try once more, as it might be a path without the leading slash. See issue 49470
+                c = ContainerManager.getForPath(str);
             }
 
             if (null == c)
