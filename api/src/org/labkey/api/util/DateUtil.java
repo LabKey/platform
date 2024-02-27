@@ -80,7 +80,8 @@ public class DateUtil
     private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
     private static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
-    private static final String[] VALID_TIME_FORMATS = {"hh:mm:ss a", "hh:mm a", "HH:mm:ss", "HH:mm"};
+    private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss a", "hh:mm a"};
+    private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss", "HH:mm"};
     private static final String[] EXCEL_TIME_FORMATS = {"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm"};
 
     /**
@@ -959,15 +960,18 @@ validNum:       {
         throw new ParseException("Not a date: " + s, 0);
     }
 
-    public static Date parseSimpleTime(Object o)
+    public static Date parseSimpleTime(@NotNull Object o)
     {
         Date duration = null;
         ParseException parseException = null;
-        for (int i = 0; i < VALID_TIME_FORMATS.length && duration == null; i++)
+        String s = (String) o;
+        boolean hasAMPM = s.toLowerCase().endsWith(" am") || s.toLowerCase().endsWith(" pm");
+        String[] validFormats = hasAMPM ? SIMPLE_TIME_FORMATS_WITH_AMPM : SIMPLE_TIME_FORMATS_NO_AMPM;
+        for (int i = 0; i < validFormats.length && duration == null; i++)
         {
             try
             {
-                duration = DateUtil.parseDateTime(o.toString(), VALID_TIME_FORMATS[i]);
+                duration = DateUtil.parseDateTime(o.toString(), validFormats[i]);
             }
             catch (ParseException ignore)
             {
@@ -988,12 +992,12 @@ validNum:       {
         return parseDateTimeUS(s, DateTimeOption.TimeOnly, strict);
     }
 
-    public static Time fromTimeString(String s, boolean strict)
+    public static Time fromTimeString(@NotNull String s, boolean strict)
     {
         return fromTimeString(s, getCurrentContainer(), strict);
     }
 
-    public static Time fromTimeString(String s, Container container, boolean strict)
+    public static Time fromTimeString(@NotNull String s, Container container, boolean strict)
     {
         @Nullable String extraTimeParsingPattern = FolderSettingsCache.getExtraTimeParsingPattern(container);
 
@@ -1031,6 +1035,26 @@ validNum:       {
             }
         }
 
+        if  (StringUtils.countMatches(s, "T") == 1) // ISO datetime
+        {
+            try
+            {
+                return new Time(parseDateTime(s));
+            }
+            catch (ConversionException ignored)
+            {
+            }
+        }
+
+        if (StringUtils.countMatches(s, " ") == 0 && StringUtils.countMatches(s, ":") == 0) { // try date-only format
+            try
+            {
+                return new Time(parseDate(s));
+            }
+            catch (ConversionException ignored)
+            {
+            }
+        }
 
         int timezoneDiffSec = ZonedDateTime.now().getOffset().getTotalSeconds();
         return new Time(DateUtil.parseTime(s, strict) - 1000 * timezoneDiffSec);

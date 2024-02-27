@@ -20,7 +20,6 @@ import { ActionURL, getServerContext } from '@labkey/api';
 import {
     LoadingSpinner,
     Alert,
-    ConfirmModal,
     DomainForm,
     DomainDesign,
     fetchDomain,
@@ -29,6 +28,7 @@ import {
     BeforeUnload,
     resolveErrorMessage,
     DomainException,
+    Modal,
 } from '@labkey/components';
 
 import '../DomainDesigner.scss';
@@ -187,18 +187,18 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         );
 
         return (
-            <ConfirmModal
+            <Modal
                 title="Save without resolving issues?"
-                confirmVariant="primary"
+                confirmClass="btn-primary"
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
-                cancelButtonText="No, edit and resolve issues"
-                confirmButtonText="Yes, save changes"
+                cancelText="No, edit and resolve issues"
+                confirmText="Yes, save changes"
             >
                 {question}
                 <ul>{warnings}</ul>
                 {suggestion}
-            </ConfirmModal>
+            </Modal>
         );
     }
 
@@ -214,17 +214,17 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 <div className="domain-designer">
                     {showConfirm && (
-                        <ConfirmModal
+                        <Modal
                             title="Keep unsaved changes?"
-                            confirmVariant="primary"
+                            confirmClass="btn-primary"
                             onConfirm={this.submitAndNavigate}
                             onCancel={this.navigate}
-                            cancelButtonText="No, Discard Changes"
-                            confirmButtonText="Yes, Save Changes"
+                            cancelText="No, Discard Changes"
+                            confirmText="Yes, Save Changes"
                         >
                             You have made changes to this domain that have not yet been saved. Do you want to save these
                             changes before leaving?
-                        </ConfirmModal>
+                        </Modal>
                     )}
                     {showWarnings && this.renderWarningConfirm()}
                     {domain && domain.instructions && (

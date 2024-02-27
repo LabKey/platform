@@ -19,12 +19,12 @@ import React, { PureComponent } from 'react';
 import {
     Alert,
     BeforeUnload,
-    ConfirmModal,
     DomainDesign,
     DomainField,
     DomainForm,
     IBannerMessage,
     LoadingSpinner,
+    Modal,
 } from '@labkey/components';
 import { ActionURL, getServerContext } from '@labkey/api';
 
@@ -325,16 +325,16 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         cancelButtonText: string
     ) {
         return (
-            <ConfirmModal
+            <Modal
                 title={title}
                 onConfirm={onConfirm}
                 onCancel={onCancel}
-                confirmVariant="danger"
-                confirmButtonText={confirmButtonText}
-                cancelButtonText={cancelButtonText}
+                confirmClass="btn-danger"
+                confirmText={confirmButtonText}
+                cancelText={cancelButtonText}
             >
                 {msg}
-            </ConfirmModal>
+            </Modal>
         );
     }
 
