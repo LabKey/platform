@@ -245,7 +245,7 @@
 
     // exceptions for display
     HtmlParseException parseException = null;
-    boolean hasSearchException = false;
+    String searchExceptionMessage = null;
 
     if (null != StringUtils.trimToNull(queryString))
     {
@@ -264,7 +264,7 @@
                 options.sortField = sortField;
 
                 navResult = SearchService.get().search(options.build());
-                hasNavResults = navResult != null && navResult.hits.size() > 0;
+                hasNavResults = navResult != null && !navResult.hits.isEmpty();
             }
         }
         catch (HtmlParseException html)
@@ -276,7 +276,7 @@
         }
         catch (SearchMisconfiguredException e)
         {
-            hasSearchException = true;
+            searchExceptionMessage = e.getMessage();
         }
     }
 %>
@@ -597,13 +597,13 @@
 <% } else if (parseException != null) { %>
 <div class="col-md-12">
     <div class="alert alert-warning">
-        <% SearchUtils.renderError(out, parseException.getMessage(), parseException.includesSpecialSymbol(), parseException.includesBooleanOperator(), true); %>
+        <% SearchUtils.renderError(out, parseException.getHtmlMessage(), parseException.includesSpecialSymbol(), parseException.includesBooleanOperator(), true); %>
     </div>
 </div>
-<% } else if (hasSearchException) { %>
+<% } else if (null != searchExceptionMessage) { %>
 <div class="col-md-12">
     <div class="alert alert-warning">
-        <% SearchUtils.renderError(out, "Search is disabled because the search index is misconfigured. Contact the system administrator of this server.", false, false, false); %>
+        <% SearchUtils.renderError(out, h(searchExceptionMessage), false, false, false); %>
     </div>
 </div>
 <% } %>
