@@ -16,18 +16,16 @@
 
 package org.labkey.api.search;
 
-/**
- * Indicates that something about the full-text search engine or indexer is messed up.
- * User: adam
- * Date: Mar 10, 2011
+/*
+  Indicates that something about the full-text search engine or indexer is messed up.
  */
 
 import org.labkey.api.util.MinorConfigurationException;
 
 public class SearchMisconfiguredException extends MinorConfigurationException
 {
-    public SearchMisconfiguredException()
+    public SearchMisconfiguredException(String message)
     {
-        super("The search index is misconfigured. An administrator will need to correct this via the full-text search configuration page.");
+        super(message);
     }
 }

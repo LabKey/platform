@@ -15,6 +15,7 @@
  */
 package org.labkey.api.search;
 
+import jakarta.servlet.jsp.JspWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
@@ -22,19 +23,11 @@ import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 
-import jakarta.servlet.jsp.JspWriter;
 import java.io.IOException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.labkey.api.util.HtmlString.unsafe;
-
-/**
- * User: adam
- * Date: Oct 12, 2010
- * Time: 2:19:15 PM
- */
 public class SearchUtils
 {
     public static HelpTopic getHelpTopic()
@@ -42,28 +35,28 @@ public class SearchUtils
         return new HelpTopic("luceneSearch");
     }
 
-    public static void renderError(JspWriter out, String htmlMessage, boolean includeSpecialSymbolsMessage, boolean includeBooleanOperatorMessage, boolean includeMoreInformationMessage) throws IOException
+    public static void renderError(JspWriter out, HtmlString message, boolean includeSpecialSymbolsMessage, boolean includeBooleanOperatorMessage, boolean includeMoreInformationMessage) throws IOException
     {
         out.write("<table>\n");
-        out.write("  <tr><td><span class=\"labkey-error\">Error: " + htmlMessage + "</span></td></tr>\n");
-        out.write("  <tr><td>&nbsp;</td></tr>\n");
+        out.write("  <tr><td><span class=\"labkey-error\">Error: " + message + "</span></td></tr>\n");
 
         if (includeSpecialSymbolsMessage)
         {
+            out.write("  <tr><td>&nbsp;</td></tr>\n");
             out.write("  <tr><td>These characters have special meaning within search queries: " + PageFlowUtil.filter(SPECIAL_SYMBOLS) + "\n");
             out.write("  <tr><td>&nbsp;</td></tr>\n");
             out.write("  <tr><td>You can escape special characters using \\ before the character or you can enclose the query string in double quotes.</td></tr>\n");
-            out.write("  <tr><td>&nbsp;</td></tr>\n");
         }
 
         if (includeBooleanOperatorMessage)
         {
-            out.write("  <tr><td>Boolean operators AND, OR, and NOT have special meaning within search queries.  To search for these words you can enclose the query string in double quotes.</td></tr>\n");
             out.write("  <tr><td>&nbsp;</td></tr>\n");
+            out.write("  <tr><td>Boolean operators AND, OR, and NOT have special meaning within search queries.  To search for these words you can enclose the query string in double quotes.</td></tr>\n");
         }
 
         if (includeMoreInformationMessage)
         {
+            out.write("  <tr><td>&nbsp;</td></tr>\n");
             out.write("  <tr><td>For more information, visit the " + getHelpTopic().getSimpleLinkHtml("search syntax documentation.") + "</td></tr>\n");
         }
 
@@ -198,6 +191,11 @@ public class SearchUtils
         public boolean includesBooleanOperator()
         {
             return _includesBooleanOperator;
+        }
+
+        public HtmlString getHtmlMessage()
+        {
+            return HtmlString.unsafe(getMessage());
         }
     }
 

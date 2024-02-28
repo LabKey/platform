@@ -83,6 +83,8 @@ public interface AssayPlateMetadataService
     Map<String, MetadataLayer> parsePlateMetadata(JSONObject json) throws ExperimentException;
     Map<String, MetadataLayer> parsePlateMetadata(File jsonData) throws ExperimentException;
 
+    List<Map<String, Object>> parsePlateGrids(Container container, User user, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException;
+
     /**
      * Returns an import helper to help join assay results data to well data and metadata that is associated
      * with the plate used in the assay run import

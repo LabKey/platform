@@ -182,6 +182,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     {
         ExpProtocol protocol = data.getRun().getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
+        Domain dataDomain = provider.getResultsDomain(protocol);
         boolean plateMetadataEnabled = provider.isPlateMetadataEnabled(protocol);
         File plateMetadataFile = null;
         Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata = null;
@@ -202,54 +203,27 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
         }
-        Domain dataDomain = provider.getResultsDomain(protocol);
 
         try (DataLoader loader = createLoaderForImport(dataFile, dataDomain, settings, true))
         {
             Map<DataType, List<Map<String, Object>>> datas = new HashMap<>();
             List<Map<String, Object>> dataRows = loader.load();
+            boolean loaderDataRowsEmpty = dataRows.isEmpty();
+
+            if (plateMetadataEnabled)
+                dataRows = parsePlateFormats(context, provider, protocol, dataRows, dataFile);
 
             // loader did not parse any rows
-            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && dataDomain.getProperties().size() > 0)
+            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && !dataDomain.getProperties().isEmpty())
                 throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
-            if (!dataRows.isEmpty())
+
+            if (!loaderDataRowsEmpty)
                 adjustFirstRowOrder(dataRows, loader);
 
             // assays with plate metadata support will merge the plate metadata with the data rows to make it easier for
             // transform scripts to perform metadata related calculations
-            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
-            if (svc != null)
-            {
-                if (plateMetadataEnabled)
-                {
-                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = null;
-                    if (plateMetadataFile != null || rawPlateMetadata != null)
-                    {
-                        plateMetadata = plateMetadataFile != null
-                                ? svc.parsePlateMetadata(plateMetadataFile)
-                                : rawPlateMetadata;
-                    }
-
-                    Domain runDomain = provider.getRunDomain(protocol);
-                    DomainProperty propertyPlateTemplate = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
-                    DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
-
-                    if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && propertyPlateSet == null)
-                    {
-                        throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
-                    }
-
-                    if (propertyPlateTemplate != null || propertyPlateSet != null)
-                    {
-                        Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
-                        Object lsid = runProps.getOrDefault(propertyPlateTemplate, null);
-                        Lsid templateLsid = lsid != null && !StringUtils.isEmpty(String.valueOf(lsid)) ? Lsid.parse(String.valueOf(lsid)) : null;
-                        Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
-                        Integer plateSetId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
-                        dataRows = svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, provider, protocol);
-                    }
-                }
-            }
+            if (plateMetadataEnabled)
+                dataRows = mergePlateMetadata(context, provider, protocol, dataRows, rawPlateMetadata, plateMetadataFile);
 
             datas.put(getDataType(), dataRows);
             return datas;
@@ -258,6 +232,62 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         {
             throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
         }
+    }
+
+    private List<Map<String, Object>> parsePlateFormats(XarContext context, AssayProvider provider, ExpProtocol protocol, List<Map<String, Object>> dataRows, File dataFile) throws ExperimentException
+    {
+        AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+        if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && dataRows.isEmpty() && svc != null)
+        {
+            Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
+            dataRows = svc.parsePlateGrids(context.getContainer(), context.getUser(), provider, protocol, plateSetId, dataFile);
+        }
+        return dataRows;
+    }
+
+    private List<Map<String, Object>> mergePlateMetadata(XarContext context, AssayProvider provider, ExpProtocol protocol, List<Map<String, Object>> dataRows,
+                                                         Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata, File plateMetadataFile)
+            throws ExperimentException
+    {
+        AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+        if (svc != null)
+        {
+            Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata = null;
+            if (plateMetadataFile != null || rawPlateMetadata != null)
+            {
+                plateMetadata = plateMetadataFile != null
+                        ? svc.parsePlateMetadata(plateMetadataFile)
+                        : rawPlateMetadata;
+            }
+
+            Domain runDomain = provider.getRunDomain(protocol);
+            DomainProperty propertyPlateTemplate = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+            DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
+            if (propertyPlateTemplate != null || propertyPlateSet != null)
+            {
+                Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
+                Object lsid = runProps.getOrDefault(propertyPlateTemplate, null);
+                Lsid templateLsid = lsid != null && !StringUtils.isEmpty(String.valueOf(lsid)) ? Lsid.parse(String.valueOf(lsid)) : null;
+                Integer plateSetId = getPlateSetValueFromRunProps(context, provider, protocol);
+                return svc.mergePlateMetadata(context.getContainer(), context.getUser(), templateLsid, plateSetId, dataRows, plateMetadata, provider, protocol);
+            }
+        }
+        return dataRows;
+    }
+
+    @Nullable
+    private Integer getPlateSetValueFromRunProps(XarContext context, AssayProvider provider, ExpProtocol protocol) throws ExperimentException
+    {
+        Domain runDomain = provider.getRunDomain(protocol);
+        DomainProperty propertyPlateSet = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
+        if (AssayPlateMetadataService.isExperimentalAppPlateEnabled() && propertyPlateSet == null)
+        {
+            throw new ExperimentException("The assay run domain for the assay '" + protocol.getName() + "' does not contain a plate set property.");
+        }
+
+        Map<DomainProperty, String> runProps = ((AssayUploadXarContext)context).getContext().getRunProperties();
+        Object plateSetVal = runProps.getOrDefault(propertyPlateSet, null);
+        return plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
     }
 
     /**

@@ -39,9 +39,8 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.StandardStartupPropertyHandler;
 import org.labkey.api.settings.StartupPropertyEntry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement;
@@ -58,7 +57,6 @@ import org.labkey.search.model.SearchStartupProperties;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.management.StandardMBean;
-import jakarta.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -153,7 +151,7 @@ public class SearchModule extends DefaultModule
                         properties.forEach((ssp, sp) -> {
                             try
                             {
-                                ssp.setProperty(ss, _searchStartupListener, sp.getValue());
+                                ssp.setProperty(ss, _searchIndexStartupHandler, sp.getValue());
                             }
                             catch (Exception e)
                             {
@@ -195,8 +193,6 @@ public class SearchModule extends DefaultModule
             long count = new TableSelector(auditTable).getRowCount();
             return Collections.singletonMap("fullTextSearches", count);
         });
-
-        ContextListener.addStartupListener(_searchStartupListener);
     }
 
     @Override
@@ -204,16 +200,20 @@ public class SearchModule extends DefaultModule
     {
         SearchService ss = SearchService.get();
 
-        if (null != (ss))
+        if (null != ss)
         {
-            ss.start();
-            DavCrawler.getInstance().start();
+            // Execute any reindexing operations in the background to not block startup, Issue #48960
+            JobRunner.getDefault().execute(() -> {
+                _searchIndexStartupHandler.reindexIfNeeded(ss);
+                ss.start();
+                DavCrawler.getInstance().start();
+            });
         }
     }
 
-    private final SearchStartupListener _searchStartupListener = new SearchStartupListener();
+    private final SearchIndexStartupHandler _searchIndexStartupHandler = new SearchIndexStartupHandler();
 
-    public static class SearchStartupListener implements StartupListener
+    public static class SearchIndexStartupHandler
     {
         private volatile boolean _deleteIndex = false;
         private volatile boolean _indexFull = false;
@@ -233,29 +233,17 @@ public class SearchModule extends DefaultModule
             _indexFullReasons.add(reason);
         }
 
-        @Override
-        public String getName()
+        public void reindexIfNeeded(@NotNull SearchService ss)
         {
-            return "Search Service: delete index if requested";
-        }
-
-        @Override
-        public void moduleStartupComplete(ServletContext servletContext)
-        {
-            SearchService ss = SearchService.get();
-
-            if (null != ss)
+            if (_deleteIndex)
             {
-                if (_deleteIndex)
-                {
-                    LOG.info("Deleting full-text search index and clearing last indexed because: " + _deleteIndexReasons);
-                    ss.deleteIndex();
-                }
-                if (_indexFull)
-                {
-                    LOG.info("Initiating an aggressive full-text search reindex because: " + _indexFullReasons);
-                    ss.indexFull(true);
-                }
+                LOG.info("Deleting full-text search index and clearing last indexed because: " + _deleteIndexReasons);
+                ss.deleteIndex();
+            }
+            if (_indexFull)
+            {
+                LOG.info("Initiating an aggressive full-text search reindex because: " + _indexFullReasons);
+                ss.indexFull(true);
             }
         }
     };
@@ -264,11 +252,11 @@ public class SearchModule extends DefaultModule
     public void afterUpdate(ModuleContext moduleContext)
     {
         // After every search module upgrade, delete the index and clear the last indexed time on all documents
-        // to rebuild the entire index, #35674 & #42617
+        // to rebuild the entire index, Issue #35674 & Issue #42617
         if (!moduleContext.isNewInstall() && moduleContext.needsUpgrade(getSchemaVersion()))
         {
-            _searchStartupListener.setDeleteIndex("Search schema upgrade");
-            _searchStartupListener.setIndexFull("Search schema upgrade");
+            _searchIndexStartupHandler.setDeleteIndex("Search schema upgrade");
+            _searchIndexStartupHandler.setIndexFull("Search schema upgrade");
         }
     }
 

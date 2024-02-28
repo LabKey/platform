@@ -12,10 +12,15 @@ import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.SimpleAssayDataImportHelper;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.ExcelPlateReader;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.PlateType;
+import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
+import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellCustomField;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.security.DesignAssayPermission;
@@ -56,9 +61,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.assay.AssayResultDomainKind.WELL_LSID_COLUMN_NAME;
 
@@ -509,6 +516,108 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     }
 
     @Override
+    public List<Map<String, Object>> parsePlateGrids(Container container, User user, AssayProvider provider, ExpProtocol protocol, Integer plateSetId, File dataFile) throws ExperimentException
+    {
+        // NOTE: currently only supporting single measure assay protocols (this will change soon to support multiple measures)
+        List<DomainProperty> measureProperties = provider.getResultsDomain(protocol).getProperties().stream().filter(DomainProperty::isMeasure).collect(Collectors.toList());
+        if (measureProperties.size() != 1)
+            throw new ExperimentException("The assay protocol must have exactly one measure property to support graphical plate layout file parsing.");
+        String measureName = measureProperties.get(0).getName();
+
+        // get the ordered list of plates for the plate set
+        ContainerFilter cf = PlateManager.get().getPlateContainerFilter(protocol, container, user);
+        PlateSet plateSet = PlateManager.get().getPlateSet(cf, plateSetId);
+        if (plateSet == null)
+            throw new ExperimentException("Plate set " + plateSetId + " not found.");
+        List<Plate> plates = PlateManager.get().getPlatesForPlateSet(plateSet);
+        if (plates.isEmpty())
+            throw new ExperimentException("No plates were found for the plate set (" + plateSetId + ").");
+
+        // parse the data file for each distinct plate type found in the set of plates for the plateSetId
+        ExcelPlateReader plateReader = new ExcelPlateReader();
+        Map<PlateType, Map<String, double[][]>> plateTypeGrids = new HashMap<>();
+        for (Plate plate : plates)
+        {
+            if (!plateTypeGrids.containsKey(plate.getPlateType()))
+            {
+                Plate template = PlateService.get().createPlateTemplate(container, TsvPlateLayoutHandler.TYPE, plate.getPlateType());
+                plateTypeGrids.put(plate.getPlateType(), plateReader.loadMultiGridFile(template, dataFile));
+            }
+        }
+
+        // Search through the data grids found to see if any have plate identifiers
+        List<String> plateKeys = new ArrayList<>();
+        for (Map<String, double[][]> plateGrids : plateTypeGrids.values())
+            plateKeys.addAll(plateGrids.keySet());
+        boolean hasPlateIdentifiers = plateKeys.stream().anyMatch(key -> !isDefaultPlateIdentifier(key));
+        boolean missingPlateIdentifiers = plateKeys.stream().anyMatch(this::isDefaultPlateIdentifier);
+
+        // if any of the plateGrids keys have plate identifiers, import using those identifiers
+        List<Map<String, Object>> dataRows = new ArrayList<>();
+        if (hasPlateIdentifiers)
+        {
+            if (missingPlateIdentifiers)
+                throw new ExperimentException("Some plate grids parsed from the file are missing plate identifiers.");
+
+            for (Map.Entry<PlateType, Map<String, double[][]>> plateTypeMapEntry : plateTypeGrids.entrySet())
+            {
+                for (Map.Entry<String, double[][]> entry : plateTypeMapEntry.getValue().entrySet())
+                {
+                    // find the plate set plate for this identifier
+                    Plate matchingPlate = plates.stream().filter(p -> p.isIdentifierMatch(entry.getKey())).findFirst().orElse(null);
+                    if (matchingPlate == null)
+                        throw new ExperimentException("The plate identifier \"" + entry.getKey() + "\" does not match any plate in the plate set \"" + plateSet.getName() + "\".");
+
+                    double[][] plateGrid = entry.getValue();
+                    PlateType plateGridType = PlateManager.get().getPlateType(plateGrid.length, plateGrid[0].length);
+                    if (matchingPlate.getPlateType().equals(plateGridType))
+                    {
+                        Plate dataForPlate = PlateService.get().createPlate(matchingPlate, plateGrid, null);
+                        for (Well well : dataForPlate.getWells())
+                            dataRows.add(getDataRowFromWell(entry.getKey(), well, measureName));
+                    }
+                }
+            }
+        }
+        // else if only one plateType was parsed (i.e. all 96-well plate grids), use plateGrids ordering to match plate set order
+        else if (plateTypeGrids.keySet().size() == 1)
+        {
+            for (Map.Entry<PlateType, Map<String, double[][]>> entry : plateTypeGrids.entrySet())
+            {
+                if (entry.getValue().size() > plates.size())
+                    throw new ExperimentException("The number of plate grids parsed from the file exceeds the number of plates in the plate set.");
+
+                int plateIndex = 0;
+                for (double[][] plateGrid : entry.getValue().values())
+                {
+                    Plate targetPlate = plates.get(plateIndex++);
+                    Plate dataForPlate = PlateService.get().createPlate(targetPlate, plateGrid, null);
+                    for (Well well : dataForPlate.getWells())
+                        dataRows.add(getDataRowFromWell(targetPlate.getPlateId(), well, measureName));
+                }
+            }
+        }
+        else if (plateTypeGrids.keySet().size() > 1)
+            throw new ExperimentException("Unable to match the plate grids parsed from the file to the plates in the plate set. Please include plate identifiers for the plate grids.");
+
+        return dataRows;
+    }
+
+    private boolean isDefaultPlateIdentifier(String id)
+    {
+        return id.equals(PlateUtils.DEFAULT_GRID_NAME) || id.startsWith(PlateUtils.DEFAULT_GRID_NAME + "_");
+    }
+
+    private Map<String, Object> getDataRowFromWell(String plateId, Well well, String measure)
+    {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put(AssayResultDomainKind.PLATE_COLUMN_NAME, plateId);
+        row.put(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, well.getDescription());
+        row.put(measure, well.getValue());
+        return row;
+    }
+
+    @Override
     @NotNull
     public OntologyManager.UpdateableTableImportHelper getImportHelper(
             Container container,
@@ -524,6 +633,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private static class PlateMetadataImportHelper extends SimpleAssayDataImportHelper
     {
         private final Map<Integer, Map<Position, Lsid>> _wellPositionMap;
+        private final Map<Object, Plate> _plateIdentifierMap;
         private final Container _container;
         private final User _user;
         private final ExpRun _run;
@@ -534,6 +644,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             super(data);
             _wellPositionMap = new HashMap<>();
+            _plateIdentifierMap = new HashMap<>();
             _container = container;
             _user = user;
             _run = run;
@@ -554,19 +665,22 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
 
             // get the plate associated with this row (checking the results domain field first)
-            Plate plate = null;
             Object plateIdentifier = PropertyService.get().getDomainPropertyValueFromRow(plateProperty, map);
-
-            if (plateSetProperty != null && plateIdentifier != null)
+            Plate plate = _plateIdentifierMap.get(plateIdentifier);
+            if (plate == null)
             {
-                Object plateSetVal = _run.getProperty(plateSetProperty);
-                Integer plateSetRowId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
-                plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateSetRowId, plateIdentifier);
-            }
-            else if (templateProperty != null)
-            {
-                Lsid plateLsid = Lsid.parse(String.valueOf(_run.getProperty(templateProperty)));
-                plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateLsid);
+                if (plateSetProperty != null && plateIdentifier != null)
+                {
+                    Object plateSetVal = _run.getProperty(plateSetProperty);
+                    Integer plateSetRowId = plateSetVal != null ? Integer.parseInt(String.valueOf(plateSetVal)) : null;
+                    plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateSetRowId, plateIdentifier);
+                }
+                else if (templateProperty != null)
+                {
+                    Lsid plateLsid = Lsid.parse(String.valueOf(_run.getProperty(templateProperty)));
+                    plate = PlateService.get().getPlate(PlateManager.get().getPlateContainerFilter(_protocol, _container, _user), plateLsid);
+                }
+                _plateIdentifierMap.put(plateIdentifier, plate);
             }
 
             if (plate == null)
