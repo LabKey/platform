@@ -1419,7 +1419,7 @@ public class SecurityManager
                 groupId == Group.groupDevelopers)
             throw new IllegalArgumentException("The global groups cannot be deleted.");
 
-        try (Transaction transaction = core.getScope().beginTransaction())
+        try (Transaction transaction = core.getScope().ensureTransaction())
         {
             Group group = getGroup(groupId);
             if (null == group)
@@ -1516,7 +1516,7 @@ public class SecurityManager
             }
             core.getSqlDialect().appendInClauseSql(sql, userIds);
 
-            try (Transaction transaction = core.getScope().beginTransaction())
+            try (Transaction transaction = core.getScope().ensureTransaction())
             {
                 new SqlExecutor(core.getSchema()).execute(sql);
 
