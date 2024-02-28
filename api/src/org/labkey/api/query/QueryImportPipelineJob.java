@@ -55,6 +55,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
         QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
         AuditBehaviorType _auditBehaviorType = null;
+        String _auditUserComment = null;
         boolean _hasLineageColumns = false;
         Map<AbstractQueryImportAction.Params, Boolean> _optionParamsMap = new HashMap<>();
 
@@ -105,6 +106,11 @@ public class QueryImportPipelineJob extends PipelineJob
         public AuditBehaviorType getAuditBehaviorType()
         {
             return _auditBehaviorType;
+        }
+
+        public String getAuditUserComment()
+        {
+            return _auditUserComment;
         }
 
         public Map<AbstractQueryImportAction.Params, Boolean> getOptionParamsMap()
@@ -177,6 +183,12 @@ public class QueryImportPipelineJob extends PipelineJob
         public QueryImportAsyncContextBuilder setAuditBehaviorType(AuditBehaviorType auditBehaviorType)
         {
             _auditBehaviorType = auditBehaviorType;
+            return this;
+        }
+
+        public QueryImportAsyncContextBuilder setAuditUserComment(String auditUserComment)
+        {
+            _auditUserComment = auditUserComment;
             return this;
         }
 
@@ -313,7 +325,7 @@ public class QueryImportPipelineJob extends PipelineJob
 
     private DataIteratorContext createDataIteratorContext(BatchValidationException errors, Container container)
     {
-        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), errors, getLogger(), container);
+        return AbstractQueryImportAction.createDataIteratorContext(_importContextBuilder.getInsertOption(), _importContextBuilder.getOptionParamsMap(), _importContextBuilder.getAuditBehaviorType(), _importContextBuilder.getAuditUserComment(), errors, getLogger(), container);
     }
 
     @Override

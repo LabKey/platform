@@ -69,7 +69,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -2507,7 +2506,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable  TransactionAuditProvider.TransactionAuditEvent auditEvent)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable  TransactionAuditProvider.TransactionAuditEvent auditEvent, @Nullable String auditUserComment)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -7277,7 +7276,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
         {
             if (null == _study)
                 return 0;

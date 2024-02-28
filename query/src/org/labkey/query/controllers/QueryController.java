@@ -4040,6 +4040,7 @@ public class QueryController extends SpringActionController
             if (null != t)
                 setTarget(t);
             _auditBehaviorType = form.getAuditBehavior();
+            _auditUserComment = form.getAuditUserComment();
         }
 
         @Override

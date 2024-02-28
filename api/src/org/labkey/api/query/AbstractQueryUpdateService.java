@@ -365,7 +365,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         else
         {
             AuditBehaviorType auditType = (AuditBehaviorType) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior);
-            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, null);
+            String auditUserComment = (String) context.getConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
+            getQueryTable().getAuditHandler(auditType).addSummaryAuditEvent(user, container, getQueryTable(), context.getInsertOption().auditAction, count, auditType, auditUserComment);
             return count;
         }
     }

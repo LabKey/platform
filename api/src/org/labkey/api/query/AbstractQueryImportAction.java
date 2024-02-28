@@ -125,6 +125,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
     protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
     protected AuditBehaviorType _auditBehaviorType = null;
+    protected String _auditUserComment = null;
     public boolean _useAsync = false; // if true, do import using a background thread
 
     Map<Params, Boolean> _optionParamsMap; // map of the boolean option parameters (importIdentity, importLookupByAlternateKey, crossTypeImport, allowCreateStorage)
@@ -567,6 +568,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                                 .setRenamedColumns(getRenamedColumns())
                                 .setInsertOption(_insertOption)
                                 .setAuditBehaviorType(behaviorType)
+                                .setAuditUserComment(_auditUserComment)
                                 .setOptionParamsMap(getOptionParamsMap())
                                 .setHasLineageColumns(hasLineageColumns())
                                 .setJobDescription(getQueryImportDescription())
@@ -603,7 +605,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (behaviorType != null && behaviorType != AuditBehaviorType.NONE)
                 auditEvent = createTransactionAuditEvent(getContainer(), QueryService.AuditAction.INSERT);
 
-            int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent);
+            int rowCount = importData(loader, file, originalName, ve, behaviorType, auditEvent, _auditUserComment);
 
             if (ve.hasErrors())
                 throw ve;
@@ -776,12 +778,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     }
 
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
-    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
     {
-        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, getUser(), getContainer(), null);
+        return importData(dl, _target, _updateService, _insertOption, getOptionParamsMap(), errors, auditBehaviorType, auditEvent, auditUserComment, getUser(), getContainer(), null);
     }
 
-    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
+    public static DataIteratorContext createDataIteratorContext(QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment, BatchValidationException errors, @Nullable Logger logger, @Nullable Container container)
     {
         boolean importLookupByAlternateKey = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importLookupByAlternateKey, false);
         boolean importIdentity = optionParamsMap.getOrDefault(AbstractQueryImportAction.Params.importIdentity, false);
@@ -796,6 +798,10 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         {
             context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
         }
+        if (auditUserComment != null)
+        {
+            context.putConfigParameter(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment, auditUserComment);
+        }
         if (importIdentity)
         {
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);
@@ -808,9 +814,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return context;
     }
 
-    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container, @Nullable Logger logger) throws IOException
+    public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, QueryUpdateService.InsertOption insertOption, Map<Params, Boolean> optionParamsMap, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment, User user, Container container, @Nullable Logger logger) throws IOException
     {
-        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, errors, logger, container), auditEvent, user, container);
+        return importData(dl, target, updateService, createDataIteratorContext(insertOption, optionParamsMap, auditBehaviorType, auditUserComment, errors, logger, container), auditEvent, user, container);
     }
 
     public static int importData(DataLoader dl, TableInfo target, QueryUpdateService updateService, @NotNull DataIteratorContext context, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, User user, Container container) throws IOException

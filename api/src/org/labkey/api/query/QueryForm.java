@@ -57,6 +57,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
 
     private AuditBehaviorType _auditBehavior = null;
+    private String _auditUserComment = null;
 
     // Allow URL parameters to bind schemaName, queryName, viewName, and dataRegionName.
     // If a derived class explicitly sets a schemaName and/or queryName (e.g. ListQueryForm or ChooseRunsToAnalyzeForm)
@@ -141,6 +142,16 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setAuditBehavior(AuditBehaviorType auditBehavior)
     {
         _auditBehavior = auditBehavior;
+    }
+
+    public String getAuditUserComment()
+    {
+        return _auditUserComment;
+    }
+
+    public void setAuditUserComment(String auditUserComment)
+    {
+        _auditUserComment = auditUserComment;
     }
 
     @Override
