@@ -19,14 +19,19 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Test;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.query.ValidationException;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by klum on 3/11/2015.
@@ -71,7 +76,7 @@ public class PlateUtils
     private static Map<String, double[][]> _parseGrids(File dataFile, List<Map<String, Object>> rows, int expectedRows,
                                                        int expectedCols, boolean parseAllGrids, @Nullable PlateReader reader)
     {
-        Map<String, double[][]> gridMap = new HashMap<>();
+        Map<String, double[][]> gridMap = new LinkedHashMap<>(); // use LinkedHashMap to keep the order of the grids found / inserted
         double[][] matrix;
 
         // try to find the top-left cell of the plate
@@ -93,7 +98,7 @@ public class PlateUtils
                     if (matrix != null)
                     {
                         LOG.debug(String.format("found labeled grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
-                        gridMap.put(getGridAnnotation(rows, loc.getRow() - 1), matrix);
+                        addToPlateGridData(gridMap, rows, loc.getRow() - 1, matrix);
                         if (!parseAllGrids)
                             return gridMap;
                         rowIdx += expectedRows;
@@ -110,7 +115,7 @@ public class PlateUtils
                         if (matrix != null)
                         {
                             LOG.debug(String.format("found SpectraMax grid style plate data at (%d,%d) in %s", rowIdx+1, colIdx+1, dataFile.getName()));
-                            gridMap.put(getGridAnnotation(rows, loc.getRow() - 1), matrix);
+                            addToPlateGridData(gridMap, rows, loc.getRow() - 1, matrix);
                             if (!parseAllGrids)
                                 return gridMap;
                             rowIdx += expectedRows;
@@ -148,6 +153,16 @@ public class PlateUtils
             }
         }
         return gridMap;
+    }
+
+    private static void addToPlateGridData(Map<String, double[][]> gridMap, List<Map<String, Object>> rows, int dataRow, double[][] matrix)
+    {
+        String origKey = getGridAnnotation(rows, dataRow);
+        String key = origKey;
+        int i = 1;
+        while (gridMap.containsKey(key))
+            key = origKey + "_" + i++;
+        gridMap.put(key, matrix);
     }
 
     /**
@@ -313,30 +328,37 @@ public class PlateUtils
 
     /**
      * Tries to look for an identifying annotation to associate with the grid matrix, useful for data files that
-     * contain data for multiple measurements (Fluorospot). Fairly simplistic, just searches the row above the row header
-     * for any string values.
+     * contain data for multiple measurements (Fluorospot) or multiple plates.
+     * Searches the row above the row header for a string value or the first cell of the dataRow.
      *
      * @return the annotation found, else DEFAULT_GRID_NAME
      */
     private static String getGridAnnotation(List<Map<String, Object>> rows, int dataRow)
     {
-        if (dataRow > 1)
-        {
-            Map<String, Object> row = rows.get(dataRow-1);
-            if (row instanceof RowMap)
-            {
-                RowMap<Object> rowMap = (RowMap<Object>)row;
+        String annotation = null;
 
-                for (Object value : rowMap.values())
-                {
-                    if (value != null && value instanceof String)
-                    {
-                        return (String)value;
-                    }
-                }
+        // check the row above the row header first for a string value
+        Map<String, Object> row = dataRow > 0 ? rows.get(dataRow-1) : null;
+        if (row instanceof RowMap<Object> rowMap)
+        {
+            List<Object> values = rowMap.values().stream().filter(Objects::nonNull).toList();
+            if (values.size() == 1 && values.get(0) instanceof String)
+                annotation = (String)values.get(0);
+        }
+
+        // if no annotation was found, check the first cell of the row header
+        if (annotation == null)
+        {
+            row = rows.get(dataRow);
+            if (row instanceof RowMap<Object> rowMap)
+            {
+                Object value = !rowMap.isEmpty() ? rowMap.get(0) : null;
+                if (value instanceof String && !((String)value).isEmpty())
+                    annotation = (String)value;
             }
         }
-        return DEFAULT_GRID_NAME;
+
+        return annotation != null ? annotation : DEFAULT_GRID_NAME;
     }
 
     /**
@@ -367,6 +389,38 @@ public class PlateUtils
         public int getCol()
         {
             return _col;
+        }
+    }
+
+    public static final class TestCase
+    {
+        @Test
+        public void testGetGridAnnotation()
+        {
+            RowMapFactory<Object> factory = new RowMapFactory<>(List.of("column0", "column1"));
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of())), 0));
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 0));
+
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "H", "column1", "1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
+
+            assertEquals("Default grid annotation expected", "Plate1", getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "Plate1", "column1", "1"))), 0));
+
+            assertEquals("Default grid annotation expected", "Plate1", getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "Plate1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
+
+            assertEquals("Default grid annotation expected", "Plate1", getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column1", "Plate1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
+
+            assertEquals("Default grid annotation expected", DEFAULT_GRID_NAME, getGridAnnotation(List.of(
+                    factory.getRowMap(Map.of("column0", "Plate1", "column1", "Measure1")),
+                    factory.getRowMap(Map.of("column0", "", "column1", "1"))), 1));
         }
     }
 }

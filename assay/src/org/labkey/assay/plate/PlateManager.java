@@ -361,6 +361,14 @@ public class PlateManager implements PlateService
     }
 
     @Override
+    public @Nullable PlateSet getPlateSet(ContainerFilter cf, int plateSetId)
+    {
+        SimpleFilter filterPlateSet = new SimpleFilter(FieldKey.fromParts("RowId"), plateSetId);
+        Container c = getContainerWithPlateSetIdentifier(cf, filterPlateSet);
+        return getPlateSet(c, plateSetId);
+    }
+
+    @Override
     public List<? extends ExpRun> getRunsUsingPlate(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
         SqlSelector se = selectRunUsingPlateTemplate(c, user, plate);
@@ -528,22 +536,14 @@ public class PlateManager implements PlateService
         Plate plate = null;
         if (plateIdentifier != null)
         {
-            // first check by RowId (if the identifier is a number), then check by plateId, and finally by plate name
-            if (StringUtils.isNumeric(plateIdentifier.toString()))
-                plate = getPlate(c, Integer.parseInt(plateIdentifier.toString()));
-            if (plate == null)
-                plate = getPlate(c, plateIdentifier.toString());
-            if (plate == null)
-            {
-                Collection<Plate> plates = getPlatesForPlateSet(c, plateSetId);
-                List<Plate> matchingPlates = plates.stream().filter(p -> p.getName().equals(plateIdentifier.toString())).toList();
-                if (matchingPlates.size() == 1)
-                    plate = matchingPlates.get(0);
-                else if (matchingPlates.isEmpty())
-                    throw new IllegalArgumentException("No plate found with the name \"" + plateIdentifier + "\" in plate set \"" + plateSet.getName() + "\".");
-                else
-                    throw new IllegalArgumentException("More than one plate found with name \"" + plateIdentifier + "\" in plate set " + plateSet.getName() + ". Please use the \"Plate ID\" to identify the plate instead.");
-            }
+            List<Plate> plates = getPlatesForPlateSet(plateSet);
+            List<Plate> matchingPlates = plates.stream().filter(p -> p.isIdentifierMatch(plateIdentifier.toString())).toList();
+            if (matchingPlates.size() == 1)
+                plate = matchingPlates.get(0);
+            else if (matchingPlates.isEmpty())
+                throw new IllegalArgumentException("The plate identifier \"" + plateIdentifier + "\" does not match any plate in the plate set \"" + plateSet.getName() + "\".");
+            else
+                throw new IllegalArgumentException("More than one plate found with name \"" + plateIdentifier + "\" in plate set " + plateSet.getName() + ". Please use the \"Plate ID\" to identify the plate instead.");
         }
 
         if (plate != null && plate.getPlateSet() != null && !plate.getPlateSet().getRowId().equals(plateSetId))
@@ -651,9 +651,9 @@ public class PlateManager implements PlateService
         return PlateCache.getPlates(c);
     }
 
-    private Collection<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    public List<Plate> getPlatesForPlateSet(PlateSet plateSet)
     {
-        return PlateCache.getPlatesForPlateSet(c, plateSetId);
+        return PlateCache.getPlatesForPlateSet(plateSet.getContainer(), plateSet.getRowId());
     }
 
     @Override
@@ -2242,7 +2242,7 @@ public class PlateManager implements PlateService
             }
             catch (IllegalArgumentException e)
             {
-                assertEquals("Expected validation exception", "No plate found with the name \"testAccessPlateByIdentifiersBogus\" in plate set \"testAccessPlateByIdentifiersPlateSet\".", e.getMessage());
+                assertEquals("Expected validation exception", "The plate identifier \"testAccessPlateByIdentifiersBogus\" does not match any plate in the plate set \"testAccessPlateByIdentifiersPlateSet\".", e.getMessage());
             }
         }
 
