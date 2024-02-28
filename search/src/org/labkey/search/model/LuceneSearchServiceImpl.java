@@ -160,7 +160,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
     // is initialized).
-    private static final WritableIndexManager NOOP_WRITABLE_INDEX = new NoopWritableIndex("the indexer has not been started", _log);
+    private static final WritableIndexManager NOOP_WRITABLE_INDEX = new NoopWritableIndex("the search service is in the process of starting up.", _log);
     private volatile WritableIndexManager _indexManager = NOOP_WRITABLE_INDEX;
 
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
@@ -285,7 +285,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService implements Se
         else
             _log.error(logMessage);
 
-        String statusMessage = "the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.";
+        String statusMessage = "the search index is misconfigured. Contact the system administrator of this server.";
         _indexManager = new NoopWritableIndex(statusMessage, _log);
     }
 

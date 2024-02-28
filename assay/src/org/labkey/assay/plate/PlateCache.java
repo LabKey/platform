@@ -13,6 +13,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.FieldKey;
@@ -145,13 +146,13 @@ public class PlateCache
         return plates;
     }
 
-    public static @NotNull Collection<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
+    public static @NotNull List<Plate> getPlatesForPlateSet(Container c, Integer plateSetId)
     {
         List<Plate> plates = new ArrayList<>();
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("PlateSet"), plateSetId);
         List<Integer> ids = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
-                Collections.singleton("RowId"), filter, null)
+                Collections.singleton("RowId"), filter, new Sort("RowId"))
                 .getArrayList(Integer.class);
 
         for (Integer id : ids)

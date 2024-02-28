@@ -1369,7 +1369,14 @@ public class ProjectController extends SpringActionController
             MutablePropertyValues mpvs = new MutablePropertyValues(pvs);
             if (pvs.contains("container"))
                 mpvs.addPropertyValue("containers", pvs.getPropertyValue("container").getValue());
-            return BaseViewAction.springBindParameters(this, "form", mpvs);
+            BindException result = BaseViewAction.springBindParameters(this, "form", mpvs);
+
+            // Return a 404 if someone requests a bogus container. See issue 49470
+            if (mpvs.contains("containers") && _container == null)
+            {
+                throw new NotFoundException("Could not find requested container");
+            }
+            return result;
         }
     }
 

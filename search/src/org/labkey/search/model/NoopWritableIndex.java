@@ -28,11 +28,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-/*
-* User: adam
-* Date: Mar 9, 2011
-* Time: 10:39:44 PM
-*/
 public class NoopWritableIndex implements WritableIndexManager
 {
     private final Logger _log;
@@ -60,7 +55,7 @@ public class NoopWritableIndex implements WritableIndexManager
     @Override
     public IndexSearcher getSearcher()
     {
-        throw new SearchMisconfiguredException();
+        throw new SearchMisconfiguredException("Search is unavailable because " + _statusMessage);
     }
 
     @Override
@@ -99,7 +94,7 @@ public class NoopWritableIndex implements WritableIndexManager
     @Override
     public Directory getCurrentDirectory()
     {
-        throw new SearchMisconfiguredException();
+        throw new SearchMisconfiguredException("Search is unavailable because " + _statusMessage);
     }
 
     @Override
