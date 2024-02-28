@@ -18,6 +18,7 @@ package org.labkey.search.model;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -63,7 +64,17 @@ public class SearchPropertyManager
         String path = getProperty(INDEX_PATH);
 
         // Use path if set, otherwise fall back to temp directory.
-        return null != path ? path : new File(FileUtil.getTempDirectory(), "labkey_full_text_index").getPath();
+        if (path != null)
+        {
+            return path;
+        }
+        else
+        {
+            File indexParent = FileContentService.get() != null
+                    ? FileContentService.get().getSiteDefaultRoot()
+                    : FileUtil.getTempDirectory();
+            return new File(indexParent, ".labkey_full_text_index").getPath();
+        }
     }
 
     public static void setIndexPath(User user, String path)
