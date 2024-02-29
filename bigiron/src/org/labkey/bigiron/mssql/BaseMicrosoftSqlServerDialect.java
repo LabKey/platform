@@ -68,6 +68,9 @@ import java.util.Stack;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.sql.Types.NVARCHAR;
+import static java.sql.Types.TIMESTAMP_WITH_TIMEZONE;
+
 // Dialect specifics for Microsoft SQL Server
 abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 {
@@ -164,10 +167,13 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         sqlTypeNameMap.put("INT IDENTITY", Types.INTEGER);
         sqlTypeNameMap.put("BIGINT IDENTITY", Types.BIGINT);
         sqlTypeNameMap.put("DATETIME", Types.TIMESTAMP);
+        sqlTypeNameMap.put("DATETIME2", Types.TIMESTAMP);
         sqlTypeNameMap.put("NTEXT", Types.LONGVARCHAR);
         sqlTypeNameMap.put("NVARCHAR", Types.VARCHAR);
         sqlTypeNameMap.put("UNIQUEIDENTIFIER", Types.VARCHAR);
         sqlTypeNameMap.put("TIMESTAMP", Types.BINARY);
+        // NOTE we don't handle DATETIMEOFFSET (datetime with timezoe)
+        sqlTypeNameMap.put("DATETIMEOFFSET", Types.VARCHAR);
 
         // LabKey custom data types
         sqlTypeNameMap.put("ENTITYID", Types.VARCHAR);
@@ -1799,6 +1805,16 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
             _nullableKey = "NULLABLE";
             _postionKey = "ORDINAL_POSITION";
             _generatedKey = "IS_GENERATEDCOLUMN";
+        }
+
+        @Override
+        public int getSqlType() throws SQLException
+        {
+            // We don't support DATETIMEOFFSET but onprc uses it (???)
+            int sqlType = super.getSqlType();
+            if ((sqlType == -155 || sqlType == TIMESTAMP_WITH_TIMEZONE) && "datetimeoffset".equalsIgnoreCase(getSqlTypeName()))
+                return NVARCHAR;
+            return sqlType;
         }
 
         @Override
