@@ -477,7 +477,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Integer pkVal = (Integer)oldRow.get("UserId");
             User userToUpdate = pkVal != null ? UserManager.getUser(pkVal) : null;
@@ -494,7 +494,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
             SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
             validateAvatarFile(avatarFile);
 
-            Map<String, Object> ret = super.updateRow(user, container, row, oldRow);
+            Map<String, Object> ret = super.updateRow(user, container, row, oldRow, configParameters);
             updateAvatarFile(userToUpdate, avatarFile, row);
 
             if (row.containsKey(EXPIRATION_DATE_KEY))

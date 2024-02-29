@@ -192,7 +192,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws ValidationException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException
         {
             String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
             Container workbook = null;

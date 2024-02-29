@@ -67,7 +67,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException, QueryUpdateServiceException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException, QueryUpdateServiceException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (null == study)
@@ -183,6 +183,6 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws ValidationException, QueryUpdateServiceException
     {
-        return updateRow(user, container, row, null);
+        return updateRow(user, container, row, null, null);
     }
 }

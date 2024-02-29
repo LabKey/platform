@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ObjectFactory;
@@ -124,7 +125,7 @@ public abstract class AbstractBeanQueryUpdateService<T,K> extends AbstractQueryU
 
     @Override
     protected final Map<String, Object> updateRow(User user, Container container,
-                                                  Map<String, Object> row, Map<String, Object> oldRow)
+                                                  Map<String, Object> row, Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         K oldKey = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);

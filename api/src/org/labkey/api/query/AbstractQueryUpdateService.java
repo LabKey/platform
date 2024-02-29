@@ -694,7 +694,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+    protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
 
@@ -702,7 +702,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     Function<Map<String,Object>,Map<String,Object>> updateTransform = Function.identity();
 
     /* Do standard AQUS stuff here, then call the subclass specific implementation of updateRow() */
-    final protected Map<String, Object> updateOneRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+    final protected Map<String, Object> updateOneRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         if (firstUpdateRow)
@@ -716,7 +716,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
         }
         row = updateTransform.apply(row);
-        return updateRow(user, container, row, oldRow);
+        return updateRow(user, container, row, oldRow, configParameters);
     }
 
     // used by updateRows to check if all rows have the same set of keys
@@ -781,7 +781,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 }
 
                 getQueryTable().fireRowTrigger(container, user, TableInfo.TriggerType.UPDATE, true, i, row, oldRow, extraScriptContext);
-                Map<String, Object> updatedRow = updateOneRow(user, container, row, oldRow);
+                Map<String, Object> updatedRow = updateOneRow(user, container, row, oldRow, configParameters);
                 if (!streaming && updatedRow == null)
                     continue;
 
