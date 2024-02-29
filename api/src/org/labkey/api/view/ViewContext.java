@@ -69,7 +69,9 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     private String _scopePrefix = "";
     private Container _c = null;
 
+
     private final Set<Role> _contextualRoles = new HashSet<>();
+    private boolean _isAppView = false;
 
     transient protected HashMap<String, Object> _map = new HashMap<>();
     PropertyValues _pvsBind = null;              // may be set by SpringActionController, representing values used to bind command object
@@ -481,5 +483,15 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     public HttpUtil.Method getMethod()
     {
         return HttpUtil.Method.valueOf(getRequest());
+    }
+
+    public boolean isAppView()
+    {
+        return _isAppView;
+    }
+
+    public void setAppView(boolean appView)
+    {
+        _isAppView = appView;
     }
 }

@@ -20,6 +20,7 @@
         <xsd:attribute name="title" type="xsd:string"/>
         <xsd:attribute name="frame" type="vw:frameType"/>
         <xsd:attribute name="template" type="vw:templateType"/>
+        <xsd:attribute name="isAppView" type="xsd:boolean" />
     </xsd:complexType>
 
     <xsd:complexType name="dependenciesType">
