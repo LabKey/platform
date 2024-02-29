@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.labkey.api.util.logging;
+package org.labkey.api.util;
 
 import org.apache.logging.log4j.core.Core;
 import org.apache.logging.log4j.core.appender.rolling.action.AbstractPathAction;
