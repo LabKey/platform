@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.24.3-fb-assayInferFromFile45315.2",
+    "@labkey/components": "3.24.3-fb-assayInferFromFile45315.3",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {

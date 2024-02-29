@@ -116,7 +116,7 @@ export class App extends React.Component<any, State> {
     async resetDataDomainFromFile(model: AssayProtocolModel): Promise<AssayProtocolModel> {
         const { serverContext } = this.state;
         const { path, file } = ActionURL.getParameters();
-        const webdavUrl = getWebDavUrl(serverContext.container.path, path + '/' + file);
+        const webdavUrl = getWebDavUrl(serverContext.container.path, path + (path ? '/' : '') + file);
 
         try {
             const response = await inferDomainFromFile(webdavUrl, 3);
@@ -128,7 +128,6 @@ export class App extends React.Component<any, State> {
             }
         } catch (error) {
             // no-op, file wasn't found or the domain couldn't be inferred so stick to the domain template from the assay protocol
-            this.setState({ isLoadingModel: false, model, message: error });
             return model;
         }
     }
@@ -181,7 +180,6 @@ export class App extends React.Component<any, State> {
     render() {
         const { isLoadingModel, hasDesignAssayPerm, message, model, serverContext } = this.state;
 
-        console.log('message', message);
         if (message) {
             return <Alert>{message}</Alert>;
         }
