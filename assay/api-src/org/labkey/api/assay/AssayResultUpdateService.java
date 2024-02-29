@@ -103,7 +103,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
         }
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), (String) configParameters.get(AuditUserComment));
 
         return result;
     }
