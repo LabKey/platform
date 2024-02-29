@@ -99,6 +99,9 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         if (_view != null && null != _view.getPageTemplate())
             getPageConfig().setTemplate(_view.getPageTemplate());
 
+        if (_view.isAppView())
+            getViewContext().setAppView(true);
+
         return _view;
     }
 

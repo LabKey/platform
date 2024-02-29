@@ -1,8 +1,7 @@
 import React, { PureComponent } from 'react';
-import { Button, Modal } from 'react-bootstrap';
 
 import { Ajax } from '@labkey/api';
-import { ToggleIcon } from '@labkey/components';
+import { FormButtons, Modal, ToggleIcon } from '@labkey/components';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput } from './DynamicFields';
@@ -11,11 +10,11 @@ import { AuthConfig, AuthConfigProvider } from './models';
 interface Props {
     authConfig: AuthConfig;
     canEdit: boolean;
-    closeModal: Function;
+    closeModal: () => void;
     configType: string;
     modalType: AuthConfigProvider;
     title?: string; // Used for title override in DB modal
-    updateAuthRowsAfterSave: Function;
+    updateAuthRowsAfterSave?: (config: string, configType: string) => void;
 }
 
 interface State {
@@ -170,98 +169,87 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         const modalTitle = isAddNewConfig ? 'Add ' + title : 'Configure ' + authConfig.description;
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
         const requiredFieldEmpty = emptyRequiredFields.indexOf('description') !== -1;
+        const footer = (
+            <FormButtons sticky={false}>
+                <button className="labkey-button modal__save-button" onClick={closeModal} type="button">
+                    {canEdit ? 'Cancel' : 'Close'}
+                </button>
+
+                <a target="_blank" href={modalType.helpLink} className="modal__help-link" rel="noopener noreferrer">
+                    {`More about ${authConfig.provider} authentication`}
+                </a>
+
+                {canEdit ? (
+                    <button className="labkey-button primary" onClick={this.saveEditedModal} type="button">
+                        {finalizeButtonText}
+                    </button>
+                ) : null}
+            </FormButtons>
+        );
 
         return (
-            <Modal backdrop="static" show={true} onHide={closeModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{modalTitle}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <div className="modal__top">
-                        <span className="bold-text"> Configuration Status </span>
-                        <div className="modal__enable-toggle">
-                            Enabled:&nbsp;
-                            <ToggleIcon active={fieldValues.enabled ? 'on' : 'off'} onClick={this.onToggle} />
-                        </div>
+            <Modal footer={footer} onCancel={closeModal} title={modalTitle}>
+                <div className="modal__top">
+                    <span className="bold-text"> Configuration Status </span>
+                    <div className="modal__enable-toggle">
+                        Enabled:&nbsp;
+                        <ToggleIcon active={fieldValues.enabled ? 'on' : 'off'} onClick={this.onToggle} />
                     </div>
+                </div>
 
-                    <div className="bold-text modal__settings-text"> Settings </div>
+                <div className="bold-text modal__settings-text"> Settings</div>
 
-                    <TextInput
-                        onChange={this.onChange}
-                        value={fieldValues.description}
-                        type="text"
-                        canEdit={canEdit}
-                        requiredFieldEmpty={requiredFieldEmpty}
-                        required={true}
-                        name="description"
-                        caption="Description"
-                    />
+                <TextInput
+                    onChange={this.onChange}
+                    value={fieldValues.description}
+                    type="text"
+                    canEdit={canEdit}
+                    requiredFieldEmpty={requiredFieldEmpty}
+                    required={true}
+                    name="description"
+                    caption="Description"
+                />
 
-                    <DynamicFields
-                        fields={modalType.settingsFields}
-                        fieldValues={fieldValues}
-                        canEdit={canEdit}
-                        emptyRequiredFields={emptyRequiredFields}
-                        modalType={modalType}
-                        authConfig={authConfig}
-                        onChange={this.onChange}
+                <DynamicFields
+                    fields={modalType.settingsFields}
+                    fieldValues={fieldValues}
+                    canEdit={canEdit}
+                    emptyRequiredFields={emptyRequiredFields}
+                    modalType={modalType}
+                    authConfig={authConfig}
+                    onChange={this.onChange}
+                    onFileChange={this.onFileChange}
+                    onFileRemoval={this.onFileRemoval}
+                />
+
+                {modalType.sso && (
+                    <SSOFields
+                        headerLogoUrl={authConfig.headerLogoUrl}
+                        loginLogoUrl={authConfig.loginLogoUrl}
                         onFileChange={this.onFileChange}
-                        onFileRemoval={this.onFileRemoval}
+                        handleDeleteLogo={this.handleDeleteLogo}
+                        canEdit={canEdit}
                     />
+                )}
 
-                    {modalType.sso && (
-                        <SSOFields
-                            headerLogoUrl={authConfig.headerLogoUrl}
-                            loginLogoUrl={authConfig.loginLogoUrl}
-                            onFileChange={this.onFileChange}
-                            handleDeleteLogo={this.handleDeleteLogo}
-                            canEdit={canEdit}
-                        />
-                    )}
-
-                    {modalType.testLink && (
-                        <div className="modal__test-button">
-                            <Button
-                                className="labkey-button"
-                                onClick={() => {
-                                    const testLinkUrl = new URL(modalType.testLink, window.location.origin);
-                                    if (queryString) {
-                                        testLinkUrl.search = new URLSearchParams(queryString).toString();
-                                    }
-                                    window.open(testLinkUrl.href);
-                                }}
-                            >
-                                Test
-                            </Button>
-                        </div>
-                    )}
-
-                    <div className="modal__error-message"> {errorMessage} </div>
-
-                    <div className="modal__bottom">
-                        <div className="modal__bottom-buttons">
-                            <a
-                                target="_blank"
-                                href={modalType.helpLink}
-                                className="modal__help-link"
-                                rel="noopener noreferrer"
-                            >
-                                {`More about ${authConfig.provider} authentication`}
-                            </a>
-
-                            {canEdit ? (
-                                <Button className="labkey-button primary" onClick={() => this.saveEditedModal()}>
-                                    {finalizeButtonText}
-                                </Button>
-                            ) : null}
-                        </div>
-
-                        <Button className="labkey-button modal__save-button" onClick={closeModal}>
-                            {canEdit ? 'Cancel' : 'Close'}
-                        </Button>
+                {modalType.testLink && (
+                    <div className="modal__test-button">
+                        <button
+                            className="labkey-button"
+                            onClick={() => {
+                                const testLinkUrl = new URL(modalType.testLink, window.location.origin);
+                                if (queryString) {
+                                    testLinkUrl.search = new URLSearchParams(queryString).toString();
+                                }
+                                window.open(testLinkUrl.href);
+                            }}
+                        >
+                            Test
+                        </button>
                     </div>
-                </Modal.Body>
+                )}
+
+                <div className="modal__error-message"> {errorMessage} </div>
             </Modal>
         );
     }

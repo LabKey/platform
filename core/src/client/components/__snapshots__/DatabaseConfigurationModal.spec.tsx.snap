@@ -2,287 +2,189 @@
 
 exports[`<DatabaseConfigurationModal/> Editable 1`] = `
 <Modal
-  animation={true}
-  autoFocus={true}
-  backdrop="static"
-  bsClass="modal"
-  dialogComponentClass={[Function]}
-  enforceFocus={true}
-  keyboard={true}
-  manager={
-    ModalManager {
-      "add": [Function],
-      "containers": [],
-      "data": [],
-      "handleContainerOverflow": true,
-      "hideSiblingNodes": true,
-      "isTopModal": [Function],
-      "modals": [],
-      "remove": [Function],
-    }
-  }
-  onHide={[Function]}
-  renderBackdrop={[Function]}
-  restoreFocus={true}
-  show={true}
->
-  <ModalHeader
-    bsClass="modal-header"
-    closeButton={true}
-    closeLabel="Close"
-  >
-    <ModalTitle
-      bsClass="modal-title"
-      componentClass="h4"
+  footer={
+    <Memo
+      sticky={false}
     >
-      Configure Database Authentication
-    </ModalTitle>
-  </ModalHeader>
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
-  >
-    <div
-      className="database-modal__field-row"
-    >
-      <span>
-        Password Strength:
-      </span>
-      <span
-        className="database-modal__field"
-      >
-        <FormControl
-          bsClass="form-control"
-          componentClass="select"
-          disabled={false}
-          name="strength"
-          onChange={[Function]}
-          value=""
-        />
-      </span>
-    </div>
-    <div
-      className="bold-text"
-    >
-       
-       
-    </div>
-    <div>
-      <div
-        dangerouslySetInnerHTML={
-          {
-            "__html": false,
-          }
-        }
-      />
-    </div>
-    <br />
-    <div
-      className="database-modal__field-row"
-    >
-      <span>
-        Password Expiration:
-      </span>
-      <span
-        className="database-modal__field"
-      >
-        <FormControl
-          bsClass="form-control"
-          componentClass="select"
-          name="expiration"
-          onChange={[Function]}
-          placeholder="select"
-          value=""
-        >
-          <option
-            key="Never"
-            value="Never"
-          >
-            Never
-          </option>
-          <option
-            key="FiveSeconds"
-            value="FiveSeconds"
-          >
-            Every five seconds — for testing
-          </option>
-          <option
-            key="ThreeMonths"
-            value="ThreeMonths"
-          >
-            Every three months
-          </option>
-          <option
-            key="SixMonths"
-            value="SixMonths"
-          >
-            Every six months
-          </option>
-          <option
-            key="OneYear"
-            value="OneYear"
-          >
-            Every twelve months
-          </option>
-        </FormControl>
-      </span>
-    </div>
-    <div
-      className="database-modal__bottom"
-    >
-      <div
-        className="modal__bottom-buttons"
-      >
-        <a
-          className="modal__help-link"
-          href={null}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          More about authentication
-        </a>
-        <Button
-          active={false}
-          block={false}
-          bsClass="btn"
-          bsStyle="default"
-          className="labkey-button primary"
-          disabled={false}
-          onClick={[Function]}
-        >
-          Apply
-        </Button>
-      </div>
-      <Button
-        active={false}
-        block={false}
-        bsClass="btn"
-        bsStyle="default"
-        className="labkey-button modal__save-button"
-        disabled={false}
+      <button
+        className="labkey-button"
         onClick={[Function]}
+        type="button"
       >
         Cancel
-      </Button>
-    </div>
-  </ModalBody>
+      </button>
+      <a
+        className="modal__help-link"
+        href={null}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        More about authentication
+      </a>
+      <button
+        className="labkey-button primary"
+        onClick={[Function]}
+        type="button"
+      >
+        Apply
+      </button>
+    </Memo>
+  }
+  onCancel={[Function]}
+  title="Configure Database Authentication"
+>
+  <div
+    className="database-modal__field-row"
+  >
+    <span>
+      Password Strength:
+    </span>
+    <span
+      className="database-modal__field"
+    >
+      <FormControl
+        bsClass="form-control"
+        componentClass="select"
+        disabled={false}
+        name="strength"
+        onChange={[Function]}
+        value=""
+      />
+    </span>
+  </div>
+  <div
+    className="bold-text"
+  />
+  <div>
+    <div
+      dangerouslySetInnerHTML={
+        {
+          "__html": false,
+        }
+      }
+    />
+  </div>
+  <br />
+  <div
+    className="database-modal__field-row"
+  >
+    <span>
+      Password Expiration:
+    </span>
+    <span
+      className="database-modal__field"
+    >
+      <FormControl
+        bsClass="form-control"
+        componentClass="select"
+        name="expiration"
+        onChange={[Function]}
+        placeholder="select"
+        value=""
+      >
+        <option
+          key="Never"
+          value="Never"
+        >
+          Never
+        </option>
+        <option
+          key="FiveSeconds"
+          value="FiveSeconds"
+        >
+          Every five seconds — for testing
+        </option>
+        <option
+          key="ThreeMonths"
+          value="ThreeMonths"
+        >
+          Every three months
+        </option>
+        <option
+          key="SixMonths"
+          value="SixMonths"
+        >
+          Every six months
+        </option>
+        <option
+          key="OneYear"
+          value="OneYear"
+        >
+          Every twelve months
+        </option>
+      </FormControl>
+    </span>
+  </div>
 </Modal>
 `;
 
 exports[`<DatabaseConfigurationModal/> View-only 1`] = `
 <Modal
-  animation={true}
-  autoFocus={true}
-  backdrop="static"
-  bsClass="modal"
-  dialogComponentClass={[Function]}
-  enforceFocus={true}
-  keyboard={true}
-  manager={
-    ModalManager {
-      "add": [Function],
-      "containers": [],
-      "data": [],
-      "handleContainerOverflow": true,
-      "hideSiblingNodes": true,
-      "isTopModal": [Function],
-      "modals": [],
-      "remove": [Function],
-    }
-  }
-  onHide={[Function]}
-  renderBackdrop={[Function]}
-  restoreFocus={true}
-  show={true}
->
-  <ModalHeader
-    bsClass="modal-header"
-    closeButton={true}
-    closeLabel="Close"
-  >
-    <ModalTitle
-      bsClass="modal-title"
-      componentClass="h4"
+  footer={
+    <Memo
+      sticky={false}
     >
-      Configure Database Authentication
-    </ModalTitle>
-  </ModalHeader>
-  <ModalBody
-    bsClass="modal-body"
-    componentClass="div"
-  >
-    <div
-      className="database-modal__field-row"
-    >
-      <span>
-        Password Strength:
-      </span>
-      <span
-        className="database-modal__field"
-      >
-        <FormControl
-          bsClass="form-control"
-          componentClass="select"
-          disabled={true}
-          name="strength"
-          onChange={[Function]}
-          value=""
-        />
-      </span>
-    </div>
-    <div
-      className="bold-text"
-    >
-       
-       
-    </div>
-    <div>
-      <div
-        dangerouslySetInnerHTML={
-          {
-            "__html": false,
-          }
-        }
-      />
-    </div>
-    <br />
-    <div
-      className="database-modal__field-row"
-    >
-      <span>
-        Password Expiration:
-      </span>
-      <span
-        className="database-modal__field"
-      />
-    </div>
-    <div
-      className="database-modal__bottom"
-    >
-      <div
-        className="modal__bottom-buttons"
-      >
-        <a
-          className="modal__help-link"
-          href={null}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          More about authentication
-        </a>
-      </div>
-      <Button
-        active={false}
-        block={false}
-        bsClass="btn"
-        bsStyle="default"
-        className="labkey-button modal__save-button"
-        disabled={false}
+      <button
+        className="labkey-button"
         onClick={[Function]}
+        type="button"
       >
         Close
-      </Button>
-    </div>
-  </ModalBody>
+      </button>
+      <a
+        className="modal__help-link"
+        href={null}
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        More about authentication
+      </a>
+    </Memo>
+  }
+  onCancel={[Function]}
+  title="Configure Database Authentication"
+>
+  <div
+    className="database-modal__field-row"
+  >
+    <span>
+      Password Strength:
+    </span>
+    <span
+      className="database-modal__field"
+    >
+      <FormControl
+        bsClass="form-control"
+        componentClass="select"
+        disabled={true}
+        name="strength"
+        onChange={[Function]}
+        value=""
+      />
+    </span>
+  </div>
+  <div
+    className="bold-text"
+  />
+  <div>
+    <div
+      dangerouslySetInnerHTML={
+        {
+          "__html": false,
+        }
+      }
+    />
+  </div>
+  <br />
+  <div
+    className="database-modal__field-row"
+  >
+    <span>
+      Password Expiration:
+    </span>
+    <span
+      className="database-modal__field"
+    />
+  </div>
 </Modal>
 `;
