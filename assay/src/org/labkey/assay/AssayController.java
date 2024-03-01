@@ -792,6 +792,7 @@ public class AssayController extends SpringActionController
     public static class AssayFileUploadForm extends AbstractFileUploadAction.FileUploadForm
     {
         private Integer _protocolId;
+        private String _auditUserComment;
 
         public Integer getProtocolId()
         {
@@ -802,6 +803,17 @@ public class AssayController extends SpringActionController
         public void setProtocolId(Integer protocolId)
         {
             _protocolId = protocolId;
+        }
+
+        public String getAuditUserComment()
+        {
+            return _auditUserComment;
+        }
+
+        @SuppressWarnings("unused")
+        public void setAuditUserComment(String auditUserComment)
+        {
+            _auditUserComment = auditUserComment;
         }
     }
 
