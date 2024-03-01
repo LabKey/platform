@@ -247,13 +247,9 @@ public class AnalyticsServiceImpl implements AnalyticsService
             return "";
 
         String ga4JS = GOOGLE_TAG_MANAGER_URL + "/gtag/js?id=" + getMeasurementId();
-        String controller = url.getController();
-        String action = url.getAction();
         Boolean sendPageView = true;
-        Boolean isAppController = controller.equalsIgnoreCase("biologics") || controller.equalsIgnoreCase("sampleManager") || controller.equalsIgnoreCase("freezermanager");
-        Boolean isAppAction = action.equalsIgnoreCase("app") || action.equalsIgnoreCase("appDev");
 
-        if (isAppController && isAppAction)
+        if (context.isAppView())
             sendPageView = false;
 
         StringBuilder sb = new StringBuilder();

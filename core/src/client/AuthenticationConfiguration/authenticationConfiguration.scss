@@ -68,36 +68,6 @@
   padding-top: 15px;
 }
 
-.auth-row__delete-modal {
-  height: 150px;
-  margin-top: 15px;
-}
-
-.auth-row__delete-modal__textBox {
-  padding: 0 20px 10px 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.auth-row__delete-modal-bottom {
-  height: 65px;
-}
-
-.auth-row__delete-modal__cancel {
-  margin-left: 10px;
-  vertical-align: middle;
-  position: relative;
-  top: 50%;
-  transform: translateY(-60%);
-}
-
-.auth-row__confirm-delete {
-  float: right;
-  margin-right: 10px;
-  position: relative;
-  top: 50%;
-  transform: translateY(-60%);
-}
-
 .globalAuthConfig-textInput{
   width: 15em;
 }
@@ -112,11 +82,6 @@
 
 .database-modal__field {
   float: right;
-}
-
-.database-modal__bottom {
-  border-top: 1px solid #eee;
-  padding-top: 15px;
 }
 
 .sso-fields__label {

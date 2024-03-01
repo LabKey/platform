@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
-import { Alert, Button, FormControl, Modal } from 'react-bootstrap';
+import { Alert, FormControl } from 'react-bootstrap';
 import { ActionURL, Ajax, Utils } from '@labkey/api';
-import { resolveErrorMessage } from '@labkey/components';
+import { FormButtons, Modal, resolveErrorMessage } from '@labkey/components';
 
 import { DatabasePasswordSettings } from './models';
 
@@ -100,90 +100,79 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         const hasError = error !== undefined || initError !== undefined;
         const allowEdit = canEdit && initError === undefined;
         const strengthText = strength !== '' && passwordRules.find(o => Object.keys(o)[0] === strength)[strength];
+        const footer = (
+            <FormButtons sticky={false}>
+                <button className="labkey-button" onClick={this.props.closeModal} type="button">
+                    {allowEdit ? 'Cancel' : 'Close'}
+                </button>
+
+                <a target="_blank" href={this.state.helpLink} className="modal__help-link" rel="noopener noreferrer">
+                    More about authentication
+                </a>
+
+                {allowEdit && (
+                    <button className="labkey-button primary" onClick={this.saveChanges} type="button">
+                        Apply
+                    </button>
+                )}
+            </FormButtons>
+        );
 
         return (
-            <Modal backdrop="static" show={true} onHide={this.props.closeModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Configure Database Authentication</Modal.Title>
-                </Modal.Header>
+            <Modal footer={footer} onCancel={this.props.closeModal} title="Configure Database Authentication">
+                {hasError && <Alert bsStyle="danger">{error || initError}</Alert>}
 
-                <Modal.Body>
-                    {hasError && <Alert bsStyle="danger">{error || initError}</Alert>}
+                <div className="database-modal__field-row">
+                    <span>Password Strength:</span>
 
-                    <div className="database-modal__field-row">
-                        <span>Password Strength:</span>
+                    <span className="database-modal__field">
+                        <FormControl
+                            componentClass="select"
+                            name="strength"
+                            onChange={this.handleChange}
+                            value={strength}
+                            disabled={!allowEdit}
+                        >
+                            {passwordRules.map(option => (
+                                <option value={Object.keys(option)[0]} key={Object.keys(option)[0]}>
+                                    {Object.keys(option)[0]}
+                                </option>
+                            ))}
+                        </FormControl>
+                    </span>
+                </div>
 
-                        <span className="database-modal__field">
+                {/* this.state.passwordRules values are safe server-generated HTML */}
+                <div className="bold-text">{strength}</div>
+                <div>
+                    <div dangerouslySetInnerHTML={{ __html: strengthText }} />
+                </div>
+
+                <br />
+
+                <div className="database-modal__field-row">
+                    <span>Password Expiration:</span>
+
+                    <span className="database-modal__field">
+                        {allowEdit ? (
                             <FormControl
                                 componentClass="select"
-                                name="strength"
+                                name="expiration"
+                                placeholder="select"
                                 onChange={this.handleChange}
-                                value={strength}
-                                disabled={!allowEdit}
+                                value={expiration}
                             >
-                                {passwordRules.map(option => (
-                                    <option value={Object.keys(option)[0]} key={Object.keys(option)[0]}>
-                                        {Object.keys(option)[0]}
+                                {Object.keys(OPTIONS_MAP).map(option => (
+                                    <option value={option} key={option}>
+                                        {OPTIONS_MAP[option]}
                                     </option>
                                 ))}
                             </FormControl>
-                        </span>
-                    </div>
-
-                    {/* this.state.passwordRules values are safe server-generated HTML */}
-                    <div className="bold-text"> {strength} </div>
-                    <div>
-                        <div dangerouslySetInnerHTML={{ __html: strengthText }} />
-                    </div>
-
-                    <br />
-
-                    <div className="database-modal__field-row">
-                        <span>Password Expiration:</span>
-
-                        <span className="database-modal__field">
-                            {allowEdit ? (
-                                <FormControl
-                                    componentClass="select"
-                                    name="expiration"
-                                    placeholder="select"
-                                    onChange={this.handleChange}
-                                    value={expiration}
-                                >
-                                    {Object.keys(OPTIONS_MAP).map(option => (
-                                        <option value={option} key={option}>
-                                            {OPTIONS_MAP[option]}
-                                        </option>
-                                    ))}
-                                </FormControl>
-                            ) : (
-                                OPTIONS_MAP[expiration]
-                            )}
-                        </span>
-                    </div>
-
-                    <div className="database-modal__bottom">
-                        <div className="modal__bottom-buttons">
-                            <a
-                                target="_blank"
-                                href={this.state.helpLink}
-                                className="modal__help-link"
-                                rel="noopener noreferrer"
-                            >
-                                More about authentication
-                            </a>
-                            {allowEdit && (
-                                <Button className="labkey-button primary" onClick={this.saveChanges}>
-                                    Apply
-                                </Button>
-                            )}
-                        </div>
-
-                        <Button className="labkey-button modal__save-button" onClick={this.props.closeModal}>
-                            {allowEdit ? 'Cancel' : 'Close'}
-                        </Button>
-                    </div>
-                </Modal.Body>
+                        ) : (
+                            OPTIONS_MAP[expiration]
+                        )}
+                    </span>
+                </div>
             </Modal>
         );
     }

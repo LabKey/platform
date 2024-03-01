@@ -109,17 +109,33 @@ public class CPUTimer
     public boolean save()
     {
         if (_stop > _start)
+            _update(_stop - _start);
+        _start = 0;
+        _stop = 0;
+        return true;
+    }
+
+    protected void _update(long elapsed)
+    {
+        _cumulative += elapsed;
+        _min = Math.min(_min, elapsed);
+        _max = Math.max(_max, elapsed);
+        if (_first == 0)
         {
-            long elapsed = (_stop - _start);
-            _cumulative += elapsed;
-            _min = Math.min(_min, elapsed);
-            _max = Math.max(_max, elapsed);
-            if (_first == 0)
+            _first = elapsed;
+        }
+        _last = elapsed;
+        _calls++;
+    }
+
+    public boolean saveTo(CPUTimer accumulator)
+    {
+        if (_stop > _start)
+        {
+            synchronized (accumulator)
             {
-                _first = elapsed;
+                accumulator._update(_stop-_start);
             }
-            _last = elapsed;
-            _calls++;
         }
         _start = 0;
         _stop = 0;

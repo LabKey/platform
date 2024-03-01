@@ -193,6 +193,11 @@ public class ModuleHtmlView extends HtmlView
         return _viewdef.getRequiredPermissionClasses();
     }
 
+    public boolean isAppView()
+    {
+        return _viewdef.isAppView();
+    }
+
     public static class TestCase extends Assert
     {
         @Test

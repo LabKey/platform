@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
-import { Col, Modal, Button } from 'react-bootstrap';
-import { DragDropHandle } from '@labkey/components';
+import { Col } from 'react-bootstrap';
+import { DragDropHandle, Modal } from '@labkey/components';
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
@@ -15,9 +15,9 @@ interface Props {
     index?: string;
     isDragging?: boolean;
     modalType?: AuthConfigProvider;
-    onDelete?: Function;
-    toggleModalOpen?: Function;
-    updateAuthRowsAfterSave?: Function;
+    onDelete?: () => void;
+    toggleModalOpen?: (open: boolean) => void;
+    updateAuthRowsAfterSave?: (config: string, configType: string) => void;
 }
 
 interface State {
@@ -135,38 +135,21 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
 
         const deleteModal = (
             <Modal
-                show={true}
-                onHide={() => {
+                confirmText="Yes, delete"
+                confirmClass="labkey-button primary"
+                onCancel={() => {
                     this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
                     toggleModalOpen(false);
                 }}
+                onConfirm={onDelete}
+                title={`Permanently delete ${authConfig.provider} configuration?`}
             >
-                <Modal.Header closeButton>
-                    <Modal.Title>Permanently delete {authConfig.provider} configuration?</Modal.Title>
-                </Modal.Header>
-                <div className="auth-row__delete-modal">
-                    <div className="auth-row__delete-modal__textBox modal-body">
-                        <p>
-                            Deleting this authentication configuration will remove all settings associated with it. To
-                            enable it again, the authentication configuration will need to be re-configured.
-                        </p>
-                        <p>Deletion cannot be undone.</p>
-                    </div>
-                    <div className="auth-row__delete-modal-bottom">
-                        <Button
-                            className="labkey-button auth-row__delete-modal__cancel"
-                            onClick={() => {
-                                this.onToggleModal('deleteModalOpen', this.state.deleteModalOpen);
-                                toggleModalOpen(false);
-                            }}
-                        >
-                            Cancel
-                        </Button>
-
-                        <Button className="labkey-button primary auth-row__confirm-delete" onClick={onDelete}>
-                            Yes, delete
-                        </Button>
-                    </div>
+                <div className="auth-row__delete-modal__textBox">
+                    <p>
+                        Deleting this authentication configuration will remove all settings associated with it. To
+                        enable it again, the authentication configuration will need to be re-configured.
+                    </p>
+                    <p>Deletion cannot be undone.</p>
                 </div>
             </Modal>
         );
