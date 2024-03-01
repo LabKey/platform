@@ -129,7 +129,6 @@ export class App extends React.Component<any, State> {
             }
         } catch (error) {
             // no-op, file wasn't found or the domain couldn't be inferred so stick to the domain template from the assay protocol
-            this.setState({ isLoadingModel: false, model, message: error });
             return model;
         }
     }
