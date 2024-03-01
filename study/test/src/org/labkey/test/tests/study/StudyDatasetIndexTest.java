@@ -101,13 +101,13 @@ public class StudyDatasetIndexTest extends StudyBaseTest
         viewRawTableMetadata("DEM-1");
         verifyTableIndices("dem_minus_1_", List.of("indexedcolumn", "sharedcolumn"));
 
-        int colNameIndex = 0;
-        int colSizeIndex = 3;
-        if (WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL)
-        {
-            colNameIndex = 3;
-            colSizeIndex = 6;
-        }
+        int colNameIndex = 3;
+        int colSizeIndex = 6;
+//        if (WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL)
+//        {
+//            colNameIndex = 3;
+//            colSizeIndex = 6;
+//        }
 
         // related BUG https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42229
         // Verify size column specified in datasets_metadata
