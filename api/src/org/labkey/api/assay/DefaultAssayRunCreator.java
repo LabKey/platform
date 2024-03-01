@@ -386,7 +386,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         replacedRun.setReplacedByRun(run);
                         replacedRun.save(context.getUser());
                     }
-                    ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId(), null);
+                    ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId(), context.getAuditUserComment());
 
                     transaction.addCommitTask(() -> replacedRun.archiveDataFiles(context.getUser()), DbScope.CommitTaskOption.POSTCOMMIT);
                 }

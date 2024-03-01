@@ -81,6 +81,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<?, String> _outputMaterials;
     private final boolean _allowCrossRunFileInputs;
     private final boolean _allowLookupByAlternateKey;
+    private final String _auditUserComment;
 
     // Lazily created fields
     private Map<String, File> _uploadedData;
@@ -132,6 +133,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         _jobDescription = factory._jobDescription;
         _jobNotificationProvider = factory._jobNotificationProvider;
+        _auditUserComment = factory._auditUserComment;
     }
 
     public static class Factory<ProviderType extends AssayProvider> extends AssayRunUploadContext.Factory<ProviderType, Factory<ProviderType>>
@@ -404,6 +406,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     {
         return _targetStudy;
     }
+
+    @Override
+    public String getAuditUserComment() { return _auditUserComment; }
 
     @Override
     public TransformResult getTransformResult()
