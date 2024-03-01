@@ -116,7 +116,8 @@ export class App extends React.Component<any, State> {
     async resetDataDomainFromFile(model: AssayProtocolModel): Promise<AssayProtocolModel> {
         const { serverContext } = this.state;
         const { path, file } = ActionURL.getParameters();
-        const webdavUrl = getWebDavUrl(serverContext.container.path, path + (path ? '/' : '') + file);
+        const webdavUrl =
+            ActionURL.getBaseURL(true) + getWebDavUrl(serverContext.container.path, path + (path ? '/' : '') + file);
 
         try {
             const response = await inferDomainFromFile(webdavUrl, 3);
