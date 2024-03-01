@@ -103,11 +103,6 @@ public class StudyDatasetIndexTest extends StudyBaseTest
 
         int colNameIndex = 3;
         int colSizeIndex = 6;
-//        if (WebTestHelper.getDatabaseType() == WebTestHelper.DatabaseType.PostgreSQL)
-//        {
-//            colNameIndex = 3;
-//            colSizeIndex = 6;
-//        }
 
         // related BUG https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=42229
         // Verify size column specified in datasets_metadata
