@@ -1027,7 +1027,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         }
                     }
                     run.save(user);
-                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment));
+                    String auditUserComment = configParameters == null ? null : (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
+                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), auditUserComment);
                 }
                 catch (ConversionException e)
                 {
