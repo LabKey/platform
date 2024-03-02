@@ -220,6 +220,11 @@ public class ModuleHtmlViewDefinition
         return null != _viewDef && null != _viewDef.getTitle() ? _viewDef.getTitle() : getTitleFromName(_name);
     }
 
+    public boolean isAppView()
+    {
+        return null != _viewDef && _viewDef.isSetIsAppView() && _viewDef.getIsAppView();
+    }
+
     public int getRequiredPerms()
     {
         return _requiredPerms;
