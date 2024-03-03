@@ -51,7 +51,8 @@
     </label>
     <div class="list-group-item-text"><%=h(flag.getDescription())%></div>
     <% if (flag.isRequiresRestart()) { %>
-    <div>Restart required after toggling feature.</div>
+    <br/>
+    <div class="list-group-item-text labkey-error">A restart is required after toggling this feature.</div>
     <% } %>
 </div>
 <% } %>
