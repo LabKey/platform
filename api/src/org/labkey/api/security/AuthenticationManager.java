@@ -1635,7 +1635,7 @@ public class AuthenticationManager
         public void throttleLogin() throws Exception
         {
             final String[] remoteAddr = {null};
-            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/project/home/begin.view")
+            MockHttpServletRequest req = new MockHttpServletRequest("GET", "/home/project-begin.view")
             {
                 @Override
                 public String getRemoteAddr()

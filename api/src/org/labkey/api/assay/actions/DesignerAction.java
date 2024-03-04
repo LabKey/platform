@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.actions;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.data.ContainerFilter;
@@ -24,8 +25,10 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
@@ -62,6 +65,19 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     @Override
     public ModelAndView getView(DesignerForm form, BindException errors)
     {
+        // Issue 45315: Move selected file to a URL parameter to be used in AssayDesigner.tsx
+        HttpServletRequest request = getViewContext().getRequest();
+        String path = request.getParameter("path");
+        String[] files = request.getParameterValues("file");
+        if (request.getParameter("isRedirect") == null && path != null && files.length == 1)
+        {
+            SimpleMetricsService.get().increment("Assay", "AssayDesigner", "InferDesignFromFileAndImport");
+            ActionURL url = getViewContext().cloneActionURL();
+            url.addParameter("file", files[0]);
+            url.addParameter("isRedirect", true);
+            return HttpView.redirect(url);
+        }
+
         _form = form;
         try
         {
