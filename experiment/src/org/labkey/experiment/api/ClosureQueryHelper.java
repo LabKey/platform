@@ -198,7 +198,7 @@ public class ClosureQueryHelper
         UserSchema schema = Objects.requireNonNull(parentTable.getUserSchema());
 
         // Determine the container scope of the lookup
-        ContainerFilter cf = QueryService.get().getContainerFilterForLookups(schema.getContainer(), schema.getUser());
+        ContainerFilter cf = QueryService.get().getProductContainerFilterForLookups(schema.getContainer(), schema.getUser(), null);
         if (cf == null)
             cf = parentTable.getContainerFilter();
 

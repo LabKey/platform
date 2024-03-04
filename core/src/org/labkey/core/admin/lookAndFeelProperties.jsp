@@ -68,8 +68,8 @@
     <td colspan=2>Security defaults</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">New folders should inherit permissions by default</td>
-    <td><input type="checkbox" name="shouldInherit" size="50"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
+    <td class="labkey-form-label"><label for="shouldInherit">New folders should inherit permissions by default</label></td>
+    <td><input type="checkbox" id="shouldInherit" name="shouldInherit" size="50"<%=checked(SecurityManager.shouldNewSubfoldersInheritPermissions(c))%>></td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>
@@ -98,17 +98,17 @@
     <td colspan=2>Customize the look and feel of <%=h(c.isRoot() ? "your LabKey Server installation" : "the '" + c.getProject().getName() + "' project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">System description (used in emails)</td>
-    <td><input type="text" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=systemDescription%>">System description (used in emails)</label></td>
+    <td><input type="text" id="<%=systemDescription%>" name="<%=systemDescription%>" size="50" value="<%= h(laf.getDescription()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Header short name (appears in every page header and in emails)<%=helpPopup("Header short name", shortNameHelp, 350)%></td>
-    <td><input type="text" name="<%=systemShortName%>" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=systemShortName%>">Header short name (appears in every page header and in emails)</label><%=helpPopup("Header short name", shortNameHelp, 350)%></td>
+    <td><input type="text" id="<%=systemShortName%>" name="<%=systemShortName%>" size="50" value="<%= h(laf.getUnsubstitutedShortName()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Theme</td>
+    <td class="labkey-form-label"><label for="themeName">Theme</label></td>
     <td>
-        <select name="themeName">
+        <select id="themeName" name="themeName">
         <%
             if (!c.isRoot())
             {
@@ -157,28 +157,28 @@
     }
     %>
 <tr>
-    <td class="labkey-form-label">Show LabKey Help menu item</td>
-    <td><input type="checkbox" name="<%=helpMenuEnabled%>" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
+    <td class="labkey-form-label"><label for="<%=helpMenuEnabled%>">Show LabKey Help menu item</label></td>
+    <td><input type="checkbox" id="<%=helpMenuEnabled%>" name="<%=helpMenuEnabled%>" size="50"<%=checked(laf.isHelpMenuEnabled())%>></td>
 </tr>
 <%
     String enableDiscussionHelp = "Some items within LabKey Server, like reports and wiki pages, support discussions " +
             "that are scoped directly to that report or wiki page. Administrators can disable this feature.";
 %>
 <tr>
-    <td class="labkey-form-label">Enable Object-Level Discussions<%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
-    <td><input type="checkbox" name="<%=discussionEnabled%>" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
+    <td class="labkey-form-label"><label for="<%=discussionEnabled%>">Enable Object-Level Discussions</label><%=helpPopup("Enable Discussion", enableDiscussionHelp, true)%></td>
+    <td><input type="checkbox" id="<%=discussionEnabled%>" name="<%=discussionEnabled%>" size="50"<%=checked(laf.isDiscussionEnabled())%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Logo link (specifies page that header logo links to)</td>
-    <td><input type="text" name="<%=logoHref%>" size="50" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
+    <td class="labkey-form-label"><label for="<%=logoHref%>">Logo link (specifies page that header logo links to)</label></td>
+    <td><input type="text" id="<%=logoHref%>" name="<%=logoHref%>" size="50" value="<%=h(laf.getUnsubstitutedLogoHref())%>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Support link (specifies page where users can request support)</td>
-    <td><input type="text" name="<%=reportAProblemPath%>" size="50" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
+    <td class="labkey-form-label"><label for="<%=reportAProblemPath%>">Support link (specifies page where users can request support)</label></td>
+    <td><input type="text" id="<%=reportAProblemPath%>" name="<%=reportAProblemPath%>" size="50" value="<%=h(laf.getUnsubstitutedReportAProblemPath())%>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</td>
-    <td style="vertical-align: top;"><input type="text" name="<%=supportEmail%>" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
+    <td class="labkey-form-label"><label for="<%=supportEmail%>">Support email (shown to users if they don't have permission<br/>to see a page, or are having trouble logging in)</label></td>
+    <td style="vertical-align: top;"><input type="text" id="<%=supportEmail%>" name="<%=supportEmail%>" size="50" value="<%=h(laf.getSupportEmail())%>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -188,13 +188,13 @@
 </tr>
 <tr>
     <td class="labkey-form-label">
-        System email address (<i>from</i> address for system notification emails)<%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
+        <label for="<%=systemEmailAddress%>">System email address (<i>from</i> address for system notification emails)</label><%=helpPopup("System email address", "Requires AdminOperationsPermission to update.", false)%>
     </td>
-    <td><input type="text" name="<%=systemEmailAddress%>" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
+    <td><input type="text" id="<%=systemEmailAddress%>" name="<%=systemEmailAddress%>" size="50" value="<%= h(laf.getSystemEmailAddress()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Organization name (appears in notification emails sent by system)</td>
-    <td><input type="text" name="<%=companyName%>" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=companyName%>">Organization name (appears in notification emails sent by system)</label></td>
+    <td><input type="text" id="<%=companyName%>" name="<%=companyName%>" size="50" value="<%= h(laf.getCompanyName()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -202,30 +202,31 @@
 <%
     }  // End of project/site only settings
 
-    String decimalFormatHelp = "The pattern string for numbers must be compatible with the format that the java class " +
+    String sizingPrefix = "<div style=\"width: 500px;\">";
+    String sizingSuffix = "</div>";
+
+    String decimalFormatHelp = sizingPrefix + "The pattern string for numbers must be compatible with the format that the Java class " +
             "<code>DecimalFormat</code> understands. A valid <code>DecimalFormat</code> is a pattern " +
             "specifying a prefix, numeric part, and suffix. For more information see the " +
-            "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
+            "<a href=\"" + Formats.getDecimalFormatDocumentationURL() + "\" target=\"blank\">documentation</a>. " +
             "The following table has an abbreviated guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
-            "<colgroup><col><col><col><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Symbol<th align=left>Location<th align=left>Localized?<th align=left style=\"width:200px;\">Meaning</tr>" +
             "<tr valign=top class=\"labkey-row\"><td><code>0</code><td>Number<td>Yes<td>Digit</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>#</code><td>Number<td>Yes<td>Digit, zero shows as absent</tr>" +
             "<tr valign=top class=\"labkey-row\"><td><code>.</code><td>Number<td>Yes<td>Decimal separator or monetary decimal separator</tr>" +
             "<tr valign=top class=\"labkey-alternate-row\"><td><code>-</code><td>Number<td>Yes<td>Minus sign</tr>" +
             "<tr valign=top class=\"labkey-row\"><td><code>,</code><td>Number<td>Yes<td>Grouping separator</tr>" +
-            "</table>";
+            "</table>" + sizingSuffix;
 
-    String simpleDateDocHeader = "<br><br>The pattern string must be compatible with the format that the java class " +
+    String simpleDateDocHeader = "<br><br>The pattern string must be compatible with the format that the Java class " +
             "<code>SimpleDateFormat</code> understands. For more information see the " +
-            "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">java&nbsp;documentation</a>. " +
+            "<a href=\"" + DateUtil.getSimpleDateFormatDocumentationURL() + "\" target=\"blank\">documentation</a>. " +
             "The following table has a partial guide to pattern symbols:<br/>" +
             "<table class=\"labkey-data-region-legacy labkey-show-borders\">" +
-            "<colgroup><col><col style=\"width: 100%;\"><col></colgroup>" +
             "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>";
 
-    String dateDocs = "<tr class=\"labkey-frame\"><th align=left>Letter<th align=left>Date or Time Component<th align=left>Examples</tr>" +
+    String dateDocs =
             "<tr class=\"labkey-row\"><td><code>G</code><td>Era designator<td><code>AD</code></tr>" +
             "<tr class=\"labkey-alternate-row\"><td><code>y</code><td>Year<td><code>1996</code>; <code>96</code></tr>" +
             "<tr class=\"labkey-row\"><td><code>M</code><td>Month in year<td><code>July</code>; <code>Jul</code>; <code>07</code></tr>" +
@@ -248,33 +249,33 @@
     String simpleDateFormatDocs = simpleDateDocHeader + dateDocs + "</table>";
     String simpleDateTimeFormatDocs = simpleDateDocHeader + dateDocs + timeDocs + "</table>";
     String simpleTimeFormatDocs = simpleDateDocHeader + timeDocs + "</table>";
-    String dateFormatHelp = "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs;
-    String dateTimeFormatHelp = "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateTimeFormatDocs;
-    String timeFormatHelp = "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + simpleTimeFormatDocs;
+    String dateFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type (see below)." + simpleDateFormatDocs + sizingSuffix;
+    String dateTimeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this format." + simpleDateTimeFormatDocs + sizingSuffix;
+    String timeFormatHelp = sizingPrefix + "This format is applied when displaying a column that is defined with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this format." + simpleTimeFormatDocs + sizingSuffix;
 
-    String dateParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs;
-    String dateTimeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateTimeFormatDocs;
-    String timeParsingHelp = "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleTimeFormatDocs;
+    String dateParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-only data type or annotated with the \"Date\" meta type. Most standard LabKey date columns use date-time data type instead (see below)." + simpleDateFormatDocs + sizingSuffix;
+    String dateTimeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a date-time data type or annotated with the \"DateTime\" meta type. Most standard LabKey date columns use this pattern." + simpleDateTimeFormatDocs + sizingSuffix;
+    String timeParsingHelp = sizingPrefix + "This pattern is attempted first when parsing text input for a column that is designated with a time data type or annotated with the \"Time\" meta type. Most standard LabKey time columns use this pattern." + simpleTimeFormatDocs + sizingSuffix;
 
 %>
 <tr>
     <td colspan=2>Customize date, time, and number display formats (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for dates<%=helpPopup("Date format", dateFormatHelp, true, 300)%></td>
-    <td><input type="text" name="<%=defaultDateFormat%>" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=defaultDateFormat%>">Default display format for dates</label><%=helpPopup("Date format", dateFormatHelp, true)%></td>
+    <td><input type="text" id="<%=defaultDateFormat%>" name="<%=defaultDateFormat%>" size="50" value="<%= h(laf.getDefaultDateFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for date-times<%=helpPopup("Date-time format", dateTimeFormatHelp, true, 300)%></td>
-    <td><input type="text" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=defaultDateTimeFormat%>">Default display format for date-times</label><%=helpPopup("Date-time format", dateTimeFormatHelp, true)%></td>
+    <td><input type="text" id="<%=defaultDateTimeFormat%>" name="<%=defaultDateTimeFormat%>" size="50" value="<%= h(laf.getDefaultDateTimeFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for time-only values<%=helpPopup("Time format", timeFormatHelp, true, 300)%></td>
-    <td><input type="text" name="<%=defaultTimeFormat%>" size="50" value="<%= h(laf.getDefaultTimeFormat()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=defaultTimeFormat%>">Default display format for time-only values</label><%=helpPopup("Time format", timeFormatHelp, true)%></td>
+    <td><input type="text" id="<%=defaultTimeFormat%>" name="<%=defaultTimeFormat%>" size="50" value="<%= h(laf.getDefaultTimeFormat()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Default display format for numbers<%=helpPopup("Number format", decimalFormatHelp, true, 350)%></td>
-    <td><input type="text" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=defaultNumberFormat%>">Default display format for numbers</label><%=helpPopup("Number format", decimalFormatHelp, true)%></td>
+    <td><input type="text" id="<%=defaultNumberFormat%>" name="<%=defaultNumberFormat%>" size="50" value="<%= h(laf.getDefaultNumberFormat()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -303,16 +304,16 @@
     }
 %>
 <tr>
-    <td class="labkey-form-label">Additional parsing pattern for dates<%=helpPopup("Extra date parsing pattern", dateParsingHelp, true, 300)%></td>
-    <td><input type="text" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=extraDateParsingPattern%>">Additional parsing pattern for dates</label><%=helpPopup("Extra date parsing pattern", dateParsingHelp, true)%></td>
+    <td><input type="text" id="<%=extraDateParsingPattern%>" name="<%=extraDateParsingPattern%>" size="50" value="<%= h(laf.getExtraDateParsingPattern()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Additional parsing pattern for date-times<%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
-    <td><input type="text" name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=extraDateTimeParsingPattern%>">Additional parsing pattern for date-times</label><%=helpPopup("Extra date-time parsing pattern", dateTimeParsingHelp, true, 300)%></td>
+    <td><input type="text" id="<%=extraDateTimeParsingPattern%>"  name="<%=extraDateTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraDateTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Additional parsing pattern for times<%=helpPopup("Extra time parsing pattern", timeParsingHelp, true, 300)%></td>
-    <td><input type="text" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=extraTimeParsingPattern%>">Additional parsing pattern for times</label><%=helpPopup("Extra time parsing pattern", timeParsingHelp, true)%></td>
+    <td><input type="text" id="<%=extraTimeParsingPattern%>" name="<%=extraTimeParsingPattern%>" size="50" value="<%= h(laf.getExtraTimeParsingPattern()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -322,8 +323,8 @@
     <td colspan=2>Customize column restrictions (<%=bean.customColumnRestrictionHelpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Restrict charting columns by measure and dimension flags</td>
-    <td><input type="checkbox" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
+    <td class="labkey-form-label"><label for="<%=restrictedColumnsEnabled%>">Restrict charting columns by measure and dimension flags</label></td>
+    <td><input type="checkbox" id="<%=restrictedColumnsEnabled%>" name="<%=restrictedColumnsEnabled%>" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -339,8 +340,8 @@
     <td colspan=2>Provide a custom login page (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Alternative login page<%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
-    <td><input type="text" name="<%=customLogin%>" size="50" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
+    <td class="labkey-form-label"><label for="<%=customLogin%>">Alternative login page</label><%=helpPopup("Custom Login Page", customLoginHelp, true)%></td>
+    <td><input type="text" id="<%=customLogin%>" name="<%=customLogin%>" size="50" value="<%= h(laf.getCustomLogin()) %>"<%=disabled(!hasAdminOpsPerm)%>></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
@@ -359,8 +360,8 @@
     <td colspan=2>Provide a custom site welcome page (<%=bean.welcomeLink%>)</td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Alternative site welcome page<%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
-    <td><input type="text" name="<%=customWelcome%>" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
+    <td class="labkey-form-label"><label for="<%=customWelcome%>">Alternative site welcome page</label><%=helpPopup("Custom Welcome Page", customWelcomeHelp, false)%></td>
+    <td><input type="text" id="<%=customWelcome%>" name="<%=customWelcome%>" size="50" value="<%= h(laf.getCustomWelcome()) %>"></td>
 </tr>
 <tr>
     <td>&nbsp;</td>
