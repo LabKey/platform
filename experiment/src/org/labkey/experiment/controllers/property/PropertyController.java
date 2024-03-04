@@ -1121,10 +1121,7 @@ public class PropertyController extends SpringActionController
                 }
                 else
                 {
-                    throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path. "
-                        + pipelineRoot.getRootPath().getAbsolutePath() + " "
-                        + file.getAbsolutePath()
-                    );
+                    throw new IllegalArgumentException("Unable to find a posted file or the file for the posted id/path.");
                 }
 
                 return getInferDomainResponse(loader, form.getNumLinesToInclude(), form.getDomainKindName());
