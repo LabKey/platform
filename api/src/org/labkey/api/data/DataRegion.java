@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -25,9 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.BoundMap;
@@ -49,10 +46,8 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -64,7 +59,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -76,14 +70,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.visualization.VisualizationUrls;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
@@ -93,7 +80,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -105,10 +91,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
-
-import static org.labkey.api.data.TableViewForm.EXPERIMENTAL_DESERIALIZE_BEANS;
 
 /** Shared across a variety of different views of a TableInfo, such as grid, details, insert, and update. Knows
  * about buttons that might appear in the view, the columns to be shown, etc. */
@@ -2471,113 +2453,13 @@ public class DataRegion extends DisplayElement
     private void renderOldValues(Writer out, Map<String, Object> values) throws IOException
     {
         out.write("<input name=\"" + OLD_VALUES_NAME + "\" type=\"hidden\" value=\"");
-        if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS))
-        {
-            out.write(encodeObject(values).toString());
-        }
-        else
-        {
-            Map<String, Object> oldKeys = new HashMap<>();
-            String versionColumnName = getTable().getVersionColumnName();
-            if (versionColumnName != null)
-                oldKeys.put(versionColumnName, values.get(versionColumnName));
-            getTable().getPkColumnNames().forEach(name -> oldKeys.put(name, values.get(name)));
-            out.write(PageFlowUtil.filter(new JSONObject(oldKeys).toString()));
-        }
+        Map<String, Object> oldKeys = new HashMap<>();
+        String versionColumnName = getTable().getVersionColumnName();
+        if (versionColumnName != null)
+            oldKeys.put(versionColumnName, values.get(versionColumnName));
+        getTable().getPkColumnNames().forEach(name -> oldKeys.put(name, values.get(name)));
+        out.write(PageFlowUtil.filter(new JSONObject(oldKeys).toString()));
         out.write("\">");
-    }
-
-    /**
-     * boolean controlling whether we compress JSON-serialized objects when we render them in HTML forms.
-     */
-    private static final boolean COMPRESS_OBJECT_STREAMS = true;
-
-    private static <T> HtmlString encodeObject(T o) throws IOException
-    {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        final OutputStream osCompressed;
-
-        if (COMPRESS_OBJECT_STREAMS)
-        {
-            osCompressed = new DeflaterOutputStream(byteArrayOutputStream);
-        }
-        else
-        {
-            osCompressed = byteArrayOutputStream;
-        }
-
-        try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
-        {
-            final Map<?, ?> map;
-
-            if (o instanceof Map<?, ?> m)
-            {
-                map = m;
-            }
-            else
-            {
-                @SuppressWarnings("unchecked")
-                ObjectFactory<T> f = ObjectFactory.Registry.getFactory((Class<T>)o.getClass());
-                map = f.toMap(o, new HashMap<>());
-            }
-
-            try
-            {
-                w.write(new JSONObject(map).toString());
-            }
-            catch (Throwable t)
-            {
-                _log.error("Failed to serialize " + o + ". Map: " + map.toString());
-                throw t;
-            }
-        }
-
-        return HtmlString.unsafe(new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET));
-    }
-
-    static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
-    {
-        assert Object.class != cls;
-
-        encoded = StringUtils.trimToNull(encoded);
-        if (null == encoded)
-            return null;
-
-        byte[] buf = Base64.decodeBase64(encoded.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
-        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-        final InputStream isUncompressed;
-
-        if (COMPRESS_OBJECT_STREAMS)
-        {
-            isUncompressed = new InflaterInputStream(byteArrayInputStream);
-        }
-        else
-        {
-            isUncompressed = byteArrayInputStream;
-        }
-        try (InputStream is = isUncompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
-        {
-            JSONObject json = new JSONObject(new JSONTokener(r));
-            Map<String, Object> map = json.toMap();
-
-            if (cls == Map.class || cls == HashMap.class)
-                return (T) map;
-
-            ObjectFactory<T> f = ObjectFactory.Registry.getFactory(cls);
-            T o = f.fromMap(map);
-            if (cls.isAssignableFrom(o.getClass()))
-                return o;
-
-            throw new ClassCastException("Could not create class: " + cls.getName());
-        }
-        catch (IllegalArgumentException x)
-        {
-            throw new IOException(x);
-        }
-        catch (JSONException x)
-        {
-            throw new BadRequestException("Invalid .oldValues parameter value", BadRequestException.HowBad.Malicious);
-        }
     }
 
     // RowMap keys are the ResultSet alias names, which might be completely mangled.  So, create a new map
@@ -3179,71 +3061,6 @@ public class DataRegion extends DisplayElement
                     assertTrue(rs.getFieldMap().containsKey(FieldKey.fromParts("RowId")));
                 }
             }
-        }
-
-        public static final class TestBean
-        {
-            private int i;
-            private String s;
-            private Date d;
-
-            public TestBean(){}
-
-            public TestBean(int i, String s, Date d)
-            {
-                this.i = i;
-                this.s = s;
-                this.d = d;
-            }
-
-            public int getI()
-            {
-                return i;
-            }
-
-            public void setI(int i)
-            {
-                this.i = i;
-            }
-
-            public String getS()
-            {
-                return s;
-            }
-
-            public void setS(String s)
-            {
-                this.s = s;
-            }
-
-            public Date getD()
-            {
-                return d;
-            }
-
-            public void setD(Date d)
-            {
-                this.d = d;
-            }
-        }
-
-        @Test
-        public void testEncodeObject() throws Exception
-        {
-            TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
-            String s = encodeObject(bean).toString();
-
-            TestBean copy = decodeObject(TestBean.class, s);
-            assertNotNull(copy);
-            assertEquals(bean.i, copy.i);
-            assertEquals(bean.s, copy.s);
-            assertEquals(bean.d, copy.d);
-
-            Map<String, Object> map = ((Map<String,Object>)decodeObject(Map.class, s));
-            assertNotNull(map);
-            assertEquals(bean.i, map.get("i"));
-            assertEquals(bean.s, map.get("s"));
-            assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
         }
     }
 }
