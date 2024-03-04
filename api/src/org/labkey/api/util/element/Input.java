@@ -120,25 +120,25 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
     private final String _type;
     private final @Nullable HtmlString _value;
     private final Integer _tabIndex;
-    private final List _styles;
+    private final List<String> _styles;
 
-    protected Input(InputBuilder builder)
+    protected Input(InputBuilder<?> builder)
     {
         _autoComplete = builder._autoComplete;
-        _autoFocus = builder._autoFocus == null ? false : builder._autoFocus;
+        _autoFocus = builder._autoFocus != null && builder._autoFocus;
         _contextContent = builder._contextContent;
         _checked = builder._checked;
         _className = builder._type.equals("checkbox") || builder._type.equals("radio") ? "form-check" : builder._className;
-        _disabled = builder._disabled == null ? false : builder._disabled;
+        _disabled = builder._disabled != null && builder._disabled;
         _dirName = builder._dirName;
-        _forceSmallContext = builder._forceSmallContext == null ? false : builder._forceSmallContext;
+        _forceSmallContext = builder._forceSmallContext != null && builder._forceSmallContext;
         _form = builder._form;
         _formAction = builder._formAction;
         _formEncType = builder._formEncodingType;
         _formMethod = builder._formMethod;
         _formTarget = builder._formTarget;
-        _formNoValidate = builder._formNoValidate == null ? false : builder._formNoValidate;
-        _formGroup = builder._formGroup == null ? false : builder._formGroup;
+        _formNoValidate = builder._formNoValidate != null && builder._formNoValidate;
+        _formGroup = builder._formGroup != null && builder._formGroup;
         _id = builder._id;
         _label = builder._label;
         _labelClassName = builder._labelClassName;
@@ -148,23 +148,23 @@ public class Input extends DisplayElement implements HasHtmlString, SafeToRender
         _max = builder._max;
         _maxLength = builder._maxLength;
         _min = builder._min;
-        _multiple = builder._multiple == null ? false : builder._multiple;
+        _multiple = builder._multiple != null && builder._multiple;
         _name = builder._name;
         _onClick = builder._onClick;
         _onChange = builder._onChange;
         _onFocus = builder._onFocus;
         _onKeyUp = builder._onKeyUp;
         _placeholder = builder._placeholder;
-        _readOnly = builder._readOnly == null ? false : builder._readOnly;
+        _readOnly = builder._readOnly != null && builder._readOnly;
         _regExp = builder._regExp;
-        _required = builder._required == null ? false : builder._required;
+        _required = builder._required != null && builder._required;
         _type = builder._type;
         _size = builder._size;
         _state = builder._state;
         _step = builder._step;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
         _value = builder._value;
-        _needsWrapping = builder._needsWrapping == null ? true : builder._needsWrapping;
+        _needsWrapping = builder._needsWrapping == null || builder._needsWrapping;
         _tabIndex = builder._tabIndex;
         _styles = builder._styles;
     }
