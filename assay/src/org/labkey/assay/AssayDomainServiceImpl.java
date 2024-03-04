@@ -57,6 +57,7 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
@@ -89,7 +90,7 @@ import java.util.Set;
  * Date: Jun 22, 2007
  * Time: 10:01:10 AM
  */
-public class AssayDomainServiceImpl extends DomainEditorServiceBase implements AssayDomainService
+public class AssayDomainServiceImpl extends BaseRemoteService implements AssayDomainService
 {
     public static final Logger LOG = LogManager.getLogger(AssayDomainServiceImpl.class);
 
@@ -608,7 +609,7 @@ public class AssayDomainServiceImpl extends DomainEditorServiceBase implements A
 
     private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider, boolean hasNameChange)
     {
-        GWTDomain<GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
+        GWTDomain<GWTPropertyDescriptor> previous = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)

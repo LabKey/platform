@@ -27,7 +27,6 @@ import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -1207,14 +1206,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Class<? extends Controller> getDesignerAction()
     {
         return DesignerAction.class;
-    }
-
-    @Override
-    public Class<? extends Controller> getDataImportAction()
-    {
-        // default to assay designer, except in the case of tsv where the assay can support inferring the data domain
-        return DesignerAction.class;
-        //return ImportAction.class;
     }
 
     /**
