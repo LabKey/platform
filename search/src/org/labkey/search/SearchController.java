@@ -16,6 +16,7 @@
 
 package org.labkey.search;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.HttpStatus;
@@ -61,7 +62,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderManagement.FolderManagementViewPostAction;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -81,7 +81,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Date;
 import java.time.Duration;
@@ -1187,10 +1186,10 @@ public class SearchController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class SearchSettingsAction extends FolderManagementViewPostAction<SearchSettingsForm>
+    public static class SearchSettingsAction extends FolderManagementViewPostAction<SearchSettingsForm>
     {
         @Override
-        protected HttpView getTabView(SearchSettingsForm form, boolean reshow, BindException errors)
+        protected JspView<SearchSettingsForm> getTabView(SearchSettingsForm form, boolean reshow, BindException errors)
         {
             return new JspView<>("/org/labkey/search/view/fullTextSearch.jsp", form, errors);
         }
@@ -1219,6 +1218,13 @@ public class SearchController extends SpringActionController
         {
             // In this case, must redirect back to view so Container is reloaded (simple reshow will continue to show the old value)
             return getViewContext().getActionURL();
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            super.addNavTrail(root);
+            setHelpTopic("searchAdmin");
         }
     }
 }
