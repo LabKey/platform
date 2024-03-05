@@ -54,7 +54,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "3.25.0-fb-tabs.4",
+    "@labkey/components": "3.25.0-fb-tabs.5",
     "@labkey/themes": "1.3.3"
   },
   "devDependencies": {
