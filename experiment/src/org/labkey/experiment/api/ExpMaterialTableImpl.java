@@ -1039,7 +1039,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         boolean usedMaterialized;
 
         // SELECT FROM
-        if (null != _ss && !getExpSchema().getDbSchema().getScope().isTransactionActive())
+        if (null != _ss && null != _ss.getTinfo() && !getExpSchema().getDbSchema().getScope().isTransactionActive())
         {
             sql.append(getMaterializedSQL());
             usedMaterialized = true;
