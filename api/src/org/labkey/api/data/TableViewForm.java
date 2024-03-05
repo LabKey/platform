@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.DynaBean;
@@ -38,7 +39,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -52,7 +52,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.beans.Introspector;
 import java.io.File;
 import java.sql.SQLException;
@@ -84,8 +83,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
     public static final String DATA_SUBMIT_NAME = ".dataSubmit";
     public static final String BULK_UPDATE_NAME = ".bulkUpdate";
-    // TODO: Remove in 24.4
-    public static final String EXPERIMENTAL_DESERIALIZE_BEANS = "experimental-deserialize-beans-in-forms";
 
     /**
      * Creates a TableViewForm with no underlying dynaclass.
@@ -792,24 +789,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         String oldValues = request.getParameter(DataRegion.OLD_VALUES_NAME);
         if (null != StringUtils.trimToNull(oldValues))
         {
-            if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_DESERIALIZE_BEANS))
-            {
-                try
-                {
-                    String className = getDynaClass().getName();
-                    Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
-                    _oldValues = DataRegion.decodeObject(beanClass, oldValues);
-                    _isDataLoaded = true;
-                }
-                catch (Exception ignored)
-                {
-                }
-            }
-            else
-            {
-                // Just the PK and version values
-                _oldValues = new JSONObject(oldValues).toMap();
-            }
+            // Just the PK and version values
+            _oldValues = new JSONObject(oldValues).toMap();
         }
     }
 

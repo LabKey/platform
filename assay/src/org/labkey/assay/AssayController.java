@@ -25,7 +25,6 @@ import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -87,7 +86,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineService;
@@ -112,10 +110,8 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
 import org.labkey.api.study.publish.StudyPublishService;
-import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -183,7 +179,6 @@ public class AssayController extends SpringActionController
         GetAssayRunAction.class,
         GetAssayRunsAction.class,
         GetProtocolAction.class,
-        ImportAction.class,
         ImportRunApiAction.class,
         PipelineDataCollectorRedirectAction.class,
         ReimportRedirectAction.class,
@@ -195,7 +190,6 @@ public class AssayController extends SpringActionController
         ShowSelectedRunsAction.class,
         TemplateAction.class,
         TransformResultsAction.class,
-        TsvImportAction.class,
         UploadWizardAction.class
     );
 
@@ -723,16 +717,6 @@ public class AssayController extends SpringActionController
         }
     }
 
-    @RequiresPermission(DesignAssayPermission.class)
-    public static class ServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new AssayDomainServiceImpl(getViewContext());
-        }
-    }
-
     @RequiresPermission(AssayReadPermission.class)
     public static class AssayFileDuplicateCheckAction extends MutatingApiAction<SimpleApiJsonForm>
     {
@@ -1181,7 +1165,7 @@ public class AssayController extends SpringActionController
             {
                 return null;
             }
-            ActionURL url = new ActionURL(provider.getDataImportAction(), container);
+            ActionURL url = new ActionURL(provider.getDesignerAction(), container);
             url.addParameter("providerName", provider.getName());
 
             if (path != null)
@@ -1278,17 +1262,6 @@ public class AssayController extends SpringActionController
         public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider, ExpProtocol protocol)
         {
             return provider.getPlateMetadataTemplateURL(container, protocol);
-        }
-    }
-
-    @RequiresPermission(DesignAssayPermission.class)
-    public static class AssayImportServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            SimpleMetricsService.get().increment(AssayModule.NAME, "AssayImportServiceAction", "GWTServiceCreation");
-            return new AssayImportServiceImpl(getViewContext());
         }
     }
 
