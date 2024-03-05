@@ -49,12 +49,19 @@ public class ContextListener implements ServletContextListener
         String headless = "java.awt.headless";
         if (System.getProperty(headless) == null)
             System.setProperty(headless, "true");
-
+        // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
+        // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc. directories
+        // Thus, we want to use catalina.base for our place to find log files. http://www.jguru.com/faq/view.jsp?EID=1121565
+        //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
+        if (LogHelper.getLabKeyLogDir() == null)
+        {
+            // Only set this if the user hasn't overridden it
+            System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
+        }
         // As of log4j2 2.17.2, we must declare languages referenced in log4j2.xml. Our DefaultRolloverStrategy uses rhino.
         System.setProperty("log4j2.Script.enableLanguages", "rhino");
     }
 
-    // NOTE: do not configure a Logger at this point since log4j2 needs to be reconfigured first
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
@@ -65,19 +72,7 @@ public class ContextListener implements ServletContextListener
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
         boolean isEmbedded = "true".equals(servletContextEvent.getServletContext().getInitParameter("embeddedTomcat"));
-        if (!isEmbedded)
-        {
-            // On most installs, catalina.home and catalina.base point to the same directory. However, it's possible
-            // to have multiple instances share the Tomcat binaries but have their own ./logs, ./conf, etc. directories
-            // Thus, we want to use catalina.base for our place to find log files. http://www.jguru.com/faq/view.jsp?EID=1121565
-            //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
-            if (LogHelper.getLabKeyLogDir() == null)
-            {
-                // Only set this if the user hasn't overridden it
-                System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
-            }
-        }
-        else
+        if (isEmbedded)
         {
             // Hack... reload log4j2.xml now that LabKey classes are visible (e.g., rhino)
             Configurator.reconfigure();
@@ -109,21 +104,20 @@ public class ContextListener implements ServletContextListener
 
     public static void callShutdownListeners()
     {
-        Logger _log = LogManager.getLogger(ContextListener.class);
-
         // Make a copy so we use exact same list for shutdownPre() and shutdownStarted()
-        List<ShutdownListener> shutdownListeners = _shutdownListeners;
+        final List<ShutdownListener> shutdownListeners = _shutdownListeners;
+        final Logger log = LogHelper.getLogger(ContextListener.class, "Shutdown listeners");
 
         for (ShutdownListener listener : shutdownListeners)
         {
             try
             {
-                _log.info("Calling " + listener.getName() + " shutdownPre()");
+                log.info("Calling " + listener.getName() + " shutdownPre()");
                 listener.shutdownPre();
             }
             catch (Throwable t)
             {
-                _log.error("Exception during shutdownPre(): ", t);
+                log.error("Exception during shutdownPre(): ", t);
             }
         }
 
@@ -131,12 +125,12 @@ public class ContextListener implements ServletContextListener
         {
             try
             {
-                _log.info("Calling " + listener.getName() + " shutdownStarted()");
+                log.info("Calling " + listener.getName() + " shutdownStarted()");
                 listener.shutdownStarted();
             }
             catch (Throwable t)
             {
-                _log.error("Exception during shutdownStarted(): ", t);
+                log.error("Exception during shutdownStarted(): ", t);
             }
         }
     }
