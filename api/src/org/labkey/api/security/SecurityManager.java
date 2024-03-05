@@ -1461,7 +1461,7 @@ public class SecurityManager
         if (group.isSystemGroup())
             throw new IllegalArgumentException("The system groups cannot be deleted.");
 
-        try (Transaction transaction = core.getScope().beginTransaction())
+        try (Transaction transaction = core.getScope().ensureTransaction())
         {
             // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
             GroupMembershipCache.handleGroupChange(group, group);
@@ -1554,7 +1554,7 @@ public class SecurityManager
             }
             core.getSqlDialect().appendInClauseSql(sql, userIds);
 
-            try (Transaction transaction = core.getScope().beginTransaction())
+            try (Transaction transaction = core.getScope().ensureTransaction())
             {
                 new SqlExecutor(core.getSchema()).execute(sql);
 
