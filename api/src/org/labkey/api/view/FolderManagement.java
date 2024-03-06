@@ -63,6 +63,7 @@ public class FolderManagement
                     root.addChild(c.getName(), c.getStartURL(user));
                     root.addChild("Folder Management");
                 }
+                action.setHelpTopic("customizeFolder");
             }
 
             @Override
