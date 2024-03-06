@@ -19,6 +19,8 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
@@ -215,6 +217,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
             if (consumer != null) { try { consumer.close(); } catch (JMSException ignored) {} }
             if (conn != null) { try { conn.close(); } catch (JMSException ignored) {} }
         }
+        POSITION_CACHE.clear();
         return false;
     }
 
@@ -286,6 +289,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
                 _outboundJobs.set(new ArrayList<>());
             _outboundJobs.get().add(job);
         }
+        POSITION_CACHE.clear();
     }
 
     @Override
@@ -342,12 +346,25 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
     @Override
     public void done(PipelineJob job)
     {
-        // No-op
+        POSITION_CACHE.clear();
     }
+
+
+    // Trade a little latency in updating queue positions for performance. On some servers, this is queried
+    // multiple times a second by a bunch of clients waiting for their import to complete
+    private static final Object SINGLE_KEY = new Object();
+    private final BlockingCache<Object, Map<String, Integer>> POSITION_CACHE = CacheManager.getBlockingCache(1, 15_000, "Pipeline Queue Position",
+            (k, v) -> Collections.unmodifiableMap(loadQueuePositions()));
+
 
     @Override
     @NotNull
     public Map<String, Integer> getQueuePositions()
+    {
+        return POSITION_CACHE.get(SINGLE_KEY);
+    }
+    @NotNull
+    private Map<String, Integer> loadQueuePositions()
     {
         Map<String, Integer> result = new HashMap<>();
 
