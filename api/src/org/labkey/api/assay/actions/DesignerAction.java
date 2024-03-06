@@ -69,7 +69,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         HttpServletRequest request = getViewContext().getRequest();
         String path = request.getParameter("path");
         String[] files = request.getParameterValues("file");
-        if (request.getParameter("isRedirect") == null && path != null && files.length == 1)
+        if (request.getParameter("isRedirect") == null && path != null && files != null && files.length == 1)
         {
             SimpleMetricsService.get().increment("Assay", "AssayDesigner", "InferDesignFromFileAndImport");
             ActionURL url = getViewContext().cloneActionURL();
