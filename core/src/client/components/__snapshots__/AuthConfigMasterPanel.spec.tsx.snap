@@ -729,6 +729,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
         >
           <a
             aria-controls="tabs0-pane-primary"
+            aria-selected={true}
             data-event-key="primary"
             href="#"
             id="tabs0-tab-primary"
@@ -744,6 +745,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
         >
           <a
             aria-controls="tabs0-pane-secondary"
+            aria-selected={false}
             data-event-key="secondary"
             href="#"
             id="tabs0-tab-secondary"
@@ -758,6 +760,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
         className="tab-content"
       >
         <div
+          aria-hidden={false}
           aria-labelledby="tabs0-tab-primary"
           className="tab-pane active"
           id="tabs0-pane-primary"
@@ -1174,6 +1177,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
           </div>
         </div>
         <div
+          aria-hidden={true}
           aria-labelledby="tabs0-tab-secondary"
           className="tab-pane"
           id="tabs0-pane-secondary"
