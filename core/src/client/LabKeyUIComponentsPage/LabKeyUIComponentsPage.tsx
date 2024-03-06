@@ -60,10 +60,10 @@ export class App extends React.Component<any, State> {
 
     renderPanel(title, body) {
         return (
-            <Panel>
-                <Panel.Heading>{title}</Panel.Heading>
-                <Panel.Body>{body}</Panel.Body>
-            </Panel>
+            <div className="panel panel-default">
+                <div className="panel-heading">{title}</div>
+                <div className="panel-body">{body}</div>
+            </div>
         );
     }
 
