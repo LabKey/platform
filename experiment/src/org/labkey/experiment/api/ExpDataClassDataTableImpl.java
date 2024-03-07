@@ -884,15 +884,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             SearchService searchService = SearchService.get();
             if (null != searchService)
             {
+                final var scope = propertiesTable.getSchema().getScope();
                 // Queue indexing after committing
-                step0.setIndexFunction(lsids ->  propertiesTable.getSchema().getScope().addCommitTask(() -> ListUtils.partition(lsids, 100).forEach(sublist ->
+                step0.setIndexFunction(lsids -> scope.addCommitTask(() -> ListUtils.partition(lsids, 100).forEach(sublist ->
                         searchService.defaultTask().addRunnable(SearchService.PRIORITY.group, () ->
-                        {
-                            for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
-                                expData.index(searchService.defaultTask(), this);
-                        })
-                ), DbScope.CommitTaskOption.POSTCOMMIT)
-                );
+                                scope.executeWithRetryReadOnly(tx -> {
+                                            for (ExpDataImpl expData : ExperimentServiceImpl.get().getExpDatasByLSID(sublist))
+                                                expData.index(searchService.defaultTask(), this);
+                                            return (Void)null;
+                                }))
+                ), DbScope.CommitTaskOption.POSTCOMMIT));
             }
             DataIteratorBuilder builder = LoggingDataIterator.wrap(step0);
             return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(builder, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoDataAliasMap()));

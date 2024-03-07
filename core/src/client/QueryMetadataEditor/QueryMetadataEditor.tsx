@@ -392,7 +392,6 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                 {showAlias && (
                     <AliasFieldModal
                         domainFields={domain.fields}
-                        showAlias={true}
                         onHide={this.onHideAliasField}
                         onAdd={this.onAddAliasField}
                     />

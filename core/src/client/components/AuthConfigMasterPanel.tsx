@@ -1,6 +1,5 @@
-import React, { PureComponent } from 'react';
-import { Panel, DropdownButton, MenuItem, Tab, Tabs } from 'react-bootstrap';
-import { LabelHelpTip } from '@labkey/components';
+import React, { PureComponent, ReactNode } from 'react';
+import { DropdownButton, MenuItem, LabelHelpTip, Tab, Tabs } from '@labkey/components';
 
 import { LOGIN_FORM_TIP_TEXT, SSO_TIP_TEXT } from '../AuthenticationConfiguration/constants';
 
@@ -35,24 +34,22 @@ class ViewOnlyAuthConfigRows extends PureComponent<ViewOnlyAuthConfigRowsProps> 
 }
 
 interface PrimaryTabProps {
-    addNewPrimaryDropdown: JSX.Element[];
+    menuItems: ReactNode;
     canEdit: boolean;
-    primaryTabLoginForm: JSX.Element;
-    primaryTabSSO: JSX.Element;
+    primaryTabLoginForm: ReactNode;
+    body: ReactNode;
 }
 
 class PrimaryTab extends PureComponent<PrimaryTabProps> {
     render() {
-        const { addNewPrimaryDropdown, primaryTabLoginForm, primaryTabSSO, canEdit } = this.props;
+        const { menuItems, primaryTabLoginForm, body, canEdit } = this.props;
 
         return (
             <>
                 <div className="configurations__auth-tab">
                     {canEdit && (
                         <div className="configurations__dropdown">
-                            <DropdownButton id="primary-configurations-dropdown" title="Add New Primary Configuration">
-                                {addNewPrimaryDropdown}
-                            </DropdownButton>
+                            <DropdownButton title="Add New Primary Configuration">{menuItems}</DropdownButton>
                         </div>
                     )}
 
@@ -74,7 +71,7 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
                         </LabelHelpTip>
                     </div>
 
-                    {primaryTabSSO}
+                    {body}
                 </div>
             </>
         );
@@ -82,26 +79,26 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
 }
 
 interface SecondaryTabProps {
-    addNewSecondaryDropdown: JSX.Element[];
+    menuItems: ReactNode;
     canEdit: boolean;
-    secondaryTabDuo: JSX.Element;
+    body: ReactNode;
 }
 
 class SecondaryTab extends PureComponent<SecondaryTabProps> {
     render() {
-        const { canEdit, addNewSecondaryDropdown, secondaryTabDuo } = this.props;
+        const { canEdit, menuItems, body } = this.props;
 
         return (
             <div className="configurations__auth-tab">
                 {canEdit && (
                     <div className="configurations__dropdown">
-                        <DropdownButton id="secondary-configurations-dropdown" title="Add New Secondary Configuration">
-                            {addNewSecondaryDropdown}
+                        <DropdownButton title="Add New Secondary Configuration">
+                            {menuItems}
                         </DropdownButton>
                     </div>
                 )}
 
-                {secondaryTabDuo}
+                {body}
             </div>
         );
     }
@@ -218,7 +215,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
             <ViewOnlyAuthConfigRows data={formConfigurations} providers={primaryProviders} />
         );
 
-        const primaryTabSSO = canEdit ? (
+        const primaryTabBody = canEdit ? (
             <DragAndDropPane
                 configType="ssoConfigurations"
                 authConfigs={ssoConfigurations}
@@ -231,7 +228,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
             <ViewOnlyAuthConfigRows data={ssoConfigurations} providers={primaryProviders} />
         );
 
-        const secondaryTabDuo = canEdit ? (
+        const secondaryTabBody = canEdit ? (
             <DragAndDropPane
                 configType="secondaryConfigurations"
                 authConfigs={secondaryConfigurations}
@@ -261,35 +258,35 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
         );
 
         return (
-            <Panel>
-                <Panel.Heading>Configurations</Panel.Heading>
-                <Panel.Body>
+            <div className="panel panel-default">
+                <div className="panel-heading">Configurations</div>
+                <div className="panel-body">
                     <a className="configurations__help-link" href={helpLink}>
                         Get help with authentication
                     </a>
 
                     {addNewModal}
 
-                    <Tabs defaultActiveKey={1} id="tab-panel">
-                        <Tab eventKey={1} title="Primary">
+                    <Tabs>
+                        <Tab eventKey="primary" title="Primary">
                             <PrimaryTab
                                 canEdit={canEdit}
-                                addNewPrimaryDropdown={addNewPrimaryDropdown}
+                                menuItems={addNewPrimaryDropdown}
                                 primaryTabLoginForm={primaryTabLoginForm}
-                                primaryTabSSO={primaryTabSSO}
+                                body={primaryTabBody}
                             />
                         </Tab>
 
-                        <Tab eventKey={2} title="Secondary">
+                        <Tab eventKey="secondary" title="Secondary">
                             <SecondaryTab
                                 canEdit={canEdit}
-                                addNewSecondaryDropdown={addNewSecondaryDropdown}
-                                secondaryTabDuo={secondaryTabDuo}
+                                menuItems={addNewSecondaryDropdown}
+                                body={secondaryTabBody}
                             />
                         </Tab>
                     </Tabs>
-                </Panel.Body>
-            </Panel>
+                </div>
+            </div>
         );
     }
 }

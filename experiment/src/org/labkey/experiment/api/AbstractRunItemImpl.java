@@ -25,6 +25,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -280,9 +281,12 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
 
     protected HashMap<String,ObjectProperty> getObjectProperties(TableInfo ti)
     {
-        HashMap<String,ObjectProperty> ret = new HashMap<>();
-        if (null != ti)
+        if (null == ti)
+            return new HashMap<>();
+        var scope = OntologyManager.getExpSchema().getScope();
+        return scope.executeWithRetryReadOnly(tx ->
         {
+            var ret = new HashMap<String,ObjectProperty>();
             new SqlSelector(ti.getSchema(),"SELECT * FROM " + ti + " WHERE lsid=?",  getLSID()).forEach(rs ->
             {
                 for (ColumnInfo c : ti.getColumns())
@@ -308,7 +312,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
                     ret.put(c.getPropertyURI(), prop);
                 }
             });
-        }
-        return ret;
+            return ret;
+        });
     }
 }
