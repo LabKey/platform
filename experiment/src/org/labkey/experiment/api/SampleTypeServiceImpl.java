@@ -1213,6 +1213,7 @@ public class SampleTypeServiceImpl extends AbstractAuditHandler implements Sampl
     {
         SampleTimelineAuditEvent event = createAuditRecord(container, comment, userComment, sample, metadata);
         event.setInventoryUpdateType(updateType);
+        event.setUserComment(userComment);
         AuditLogService.get().addEvent(user, event);
     }
 
