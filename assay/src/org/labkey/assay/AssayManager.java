@@ -112,11 +112,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-/**
- * User: brittp
- * Date: Jun 22, 2007
- * Time: 4:21:59 PM
- */
 public class AssayManager implements AssayService
 {
     SearchService.SearchCategory ASSAY_CATEGORY = new SearchService.SearchCategory("assay", "Study Assay") {
@@ -361,13 +356,13 @@ public class AssayManager implements AssayService
             // Build up a set of containers so that we can query them all at once
             Set<Container> containers = c.getContainersFor(ContainerType.DataType.protocol);
 
-            List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[containers.size()]));
+            List<? extends ExpProtocol> protocols = ExperimentService.get().getExpProtocols(containers.toArray(new Container[0]));
             List<ExpProtocol> result = new ArrayList<>();
 
             // Filter to just the ones that have an AssayProvider associated with them
             for (ExpProtocol protocol : protocols)
             {
-                AssayProvider p = AssayService.get().getProvider(protocol);
+                AssayProvider p = getProvider(protocol);
                 if (p != null)
                 {
                     // We don't want anyone editing our cached object
@@ -395,7 +390,7 @@ public class AssayManager implements AssayService
         List<ExpProtocol> result = new ArrayList<>();
         for (ExpProtocol p : allProtocols)
         {
-            if (provider.equals(AssayService.get().getProvider(p)))
+            if (provider.equals(getProvider(p)))
             {
                 result.add(p);
             }
@@ -418,7 +413,9 @@ public class AssayManager implements AssayService
         return null;
     }
 
-    public TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf) {
+    @Override
+    public TableInfo getTableInfoForDomainId(User user, Container container, int domainId, @Nullable ContainerFilter cf)
+    {
         for (ExpProtocol protocol : getAssayProtocols(container))
         {
             AssayProvider provider = getProvider(protocol);
@@ -438,7 +435,7 @@ public class AssayManager implements AssayService
     public WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors)
     {
         String name = AssaySchema.ASSAY_LIST_TABLE_NAME;
-        UserSchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer(), null);
+        UserSchema schema = createSchema(context.getUser(), context.getContainer(), null);
         QuerySettings settings = schema.getSettings(context, name, name);
         QueryView queryView;
         if (portalView)
@@ -477,7 +474,7 @@ public class AssayManager implements AssayService
     @Override
     public @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
-        AssayProvider provider = AssayService.get().getProvider(protocol);
+        AssayProvider provider = getProvider(protocol);
         assert provider != null : "Could not find a provider for protocol: " + protocol;
 
         // First find all the containers that have contributed data to this protocol
@@ -499,7 +496,7 @@ public class AssayManager implements AssayService
             Container container = iter.next();
             boolean hasPermission = container.hasPermission(user, InsertPermission.class);
             boolean hasPipeline = PipelineService.get().hasValidPipelineRoot(container);
-            // Issue 16948: Don't show peer or parent containers in the drop down. Users should navigate to them directly
+            // Issue 16948: Don't show peer or parent containers in the drop-down. Users should navigate to them directly
             // if they want to upload there
             boolean isCurrentOrDescendant = container.equals(currentContainer) || container.isDescendant(currentContainer);
             if (!hasPermission || !hasPipeline || !isCurrentOrDescendant)
@@ -624,7 +621,7 @@ public class AssayManager implements AssayService
 
     /**
      * Creates a single document per assay design/folder combo, with some simple assay info (name, description), plus
-     * the names and comments from all of the runs.
+     * the names and comments from all the runs.
      */
     @Override
     public void indexAssays(SearchService.IndexTask task, Container c)
@@ -705,7 +702,7 @@ public class AssayManager implements AssayService
         if (protocol == null)
             return false;
 
-        AssayProvider assayProvider = AssayService.get().getProvider(protocol);
+        AssayProvider assayProvider = getProvider(protocol);
         if (assayProvider == null)
             return false;
 
@@ -934,7 +931,7 @@ public class AssayManager implements AssayService
         if (protocol == null)
             throw new ExperimentException("No protocol found for run");
 
-        ExpExperiment batch = AssayService.get().findBatch(run);
+        ExpExperiment batch = findBatch(run);
         Collection<ObjectProperty> properties = new ArrayList<>(run.getObjectProperties().values());
         if (batch != null)
         {
@@ -949,7 +946,7 @@ public class AssayManager implements AssayService
             throws IOException, ExperimentException
     {
         if (provider == null)
-            provider = AssayService.get().getProvider(protocol);
+            provider = getProvider(protocol);
         if (provider == null)
             throw new ExperimentException("No assay provider found for protocol");
 
@@ -992,11 +989,11 @@ public class AssayManager implements AssayService
             expProtocol = ExperimentService.get().getExpProtocol(protocol.getProtocolId());
         if (expProtocol == null && protocol.getName() != null)
         {
-            AssayProvider provider = AssayService.get().getProvider(protocol.getProviderName());
+            AssayProvider provider = getProvider(protocol.getProviderName());
             if (provider == null)
                 throw new NotFoundException("Assay provider '" + protocol.getProviderName() + "' not found");
 
-            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider);
+            List<ExpProtocol> protocols = getAssayProtocols(c, provider);
             if (protocols.isEmpty())
                 throw new NotFoundException( "No assay protocols for '" + protocol.getName() + "' found in container '" + c.getPath() + "'");
 
