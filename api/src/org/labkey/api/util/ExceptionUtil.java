@@ -1114,8 +1114,8 @@ public class ExceptionUtil
             if (response.isCommitted())
             {
                 PrintWriter out = response.getWriter();
-                out.println("\"'>--></script><script type=\"text/javascript\" nonce=\"" + HttpView.currentPageConfig().getScriptNonce() + "\">");
-                out.println("window.location = '" + url + "';");
+                out.println("\"'>--></script><script type=\"text/javascript\" nonce=\"" + PageFlowUtil.filter(HttpView.currentPageConfig().getScriptNonce()) + "\">");
+                out.println("window.location = '" + PageFlowUtil.filter(url) + "';");
                 out.println("</script>");
             }
         }
