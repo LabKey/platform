@@ -30,6 +30,8 @@ public class PlateSetImpl extends Entity implements PlateSet
     private String _description;
     private String _name;
     private String _plateSetId;
+    private Integer _primaryPlateSetId;
+    private Integer _rootPlateSetId;
     private Integer _rowId;
     private PlateSetType _type;
 
@@ -54,6 +56,36 @@ public class PlateSetImpl extends Entity implements PlateSet
     public Container getContainer()
     {
         return _container;
+    }
+
+    @JsonIgnore
+    public Container getFolder()
+    {
+        return getContainer();
+    }
+
+    // FieldKey for "Container" is overridden in PlateSetTable as "Folder"
+    // This is necessary for deserialization from the database
+    public void setFolder(Container container)
+    {
+        setContainer(container);
+    }
+
+    @Override
+    public String getContainerId()
+    {
+        return _container == null ? null : _container.getId();
+    }
+
+    @Override
+    public String getContainerPath()
+    {
+        return _container == null ? null : _container.getPath();
+    }
+
+    public String getContainerName()
+    {
+        return _container == null ? null : _container.getName();
     }
 
     @Override
@@ -127,6 +159,26 @@ public class PlateSetImpl extends Entity implements PlateSet
         _description = description;
     }
 
+    public Integer getPrimaryPlateSetId()
+    {
+        return _primaryPlateSetId;
+    }
+
+    public void setPrimaryPlateSetId(Integer primaryPlateSetId)
+    {
+        _primaryPlateSetId = primaryPlateSetId;
+    }
+
+    public Integer getRootPlateSetId()
+    {
+        return _rootPlateSetId;
+    }
+
+    public void setRootPlateSetId(Integer rootPlateSetId)
+    {
+        _rootPlateSetId = rootPlateSetId;
+    }
+
     @Override
     public PlateSetType getType()
     {
@@ -136,12 +188,5 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setType(PlateSetType type)
     {
         _type = type;
-    }
-
-    @JsonIgnore
-    @Override
-    public boolean isPrimary()
-    {
-        return _type == PlateSetType.primary;
     }
 }

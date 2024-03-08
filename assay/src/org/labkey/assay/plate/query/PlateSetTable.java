@@ -169,13 +169,24 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
-        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
+        public List<Map<String, Object>> insertRows(
+            User user,
+            Container container,
+            List<Map<String, Object>> rows,
+            BatchValidationException errors,
+            @Nullable Map<Enum, Object> configParameters,
+            Map<String, Object> extraScriptContext
+        )
         {
             return super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        protected Map<String, Object> deleteRow(
+            User user,
+            Container container,
+            Map<String, Object> oldRowMap
+        ) throws QueryUpdateServiceException, SQLException, InvalidKeyException
         {
             // ensure the plate set is empty
             Integer plateSetId = (Integer)oldRowMap.get("RowId");
@@ -189,6 +200,8 @@ public class PlateSetTable extends SimpleUserSchema.SimpleTable<UserSchema>
 
             try (DbScope.Transaction transaction = AssayDbSchema.getInstance().getScope().ensureTransaction())
             {
+                PlateManager.get().beforePlateSetDelete(container, user, (Integer) oldRowMap.get("RowId"));
+
                 Map<String, Object> returnMap = super.deleteRow(user, container, oldRowMap);
 
                 transaction.commit();

@@ -22,6 +22,4 @@ public interface PlateSet
     List<Plate> getPlates(User user);
 
     PlateSetType getType();
-
-    boolean isPrimary();
 }
