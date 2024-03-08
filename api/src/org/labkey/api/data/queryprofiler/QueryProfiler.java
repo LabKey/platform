@@ -454,7 +454,7 @@ public class QueryProfiler
             view = new HtmlView(
                 DOM.DIV(
                     DOM.DIV(copyToClipboardLink("copyToClipboard", "executionPlan")),
-                    DOM.PRE(DOM.at(DOM.Attribute.id, "executionPlan"), sqlWithParameters, fullPlan),
+                    DOM.PRE(DOM.at(DOM.Attribute.id, "executionPlan"), sqlWithParameters, "\n\n", fullPlan),
                     DOM.SCRIPT(HtmlString.unsafe("new Clipboard('#copyToClipboard');"))
                 )
             );
