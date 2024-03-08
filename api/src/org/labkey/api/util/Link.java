@@ -77,6 +77,8 @@ public class Link extends DisplayElement implements HasHtmlString
             if (isBlank(id))
                 id = page.makeId("a_");
             page.addHandler(id, "click", clickEvent);
+            if (isNotEmpty(lb.onMouseOver))
+                page.addHandler(id, "mouseover", lb.onMouseOver);
         }
 
         return A(at(lb.attributes==null ? Collections.emptyMap() : lb.attributes)
