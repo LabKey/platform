@@ -110,7 +110,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class AssayManager implements AssayService
 {
@@ -942,8 +941,13 @@ public class AssayManager implements AssayService
     }
 
     @Override
-    public ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, Container targetStudyContainer)
-            throws IOException, ExperimentException
+    public ParticipantVisitResolver createResolver(
+        User user,
+        ExpRun run,
+        @Nullable ExpProtocol protocol,
+        @Nullable AssayProvider provider,
+        Container targetStudyContainer
+    ) throws IOException, ExperimentException
     {
         if (provider == null)
             provider = getProvider(protocol);
@@ -997,7 +1001,7 @@ public class AssayManager implements AssayService
             if (protocols.isEmpty())
                 throw new NotFoundException( "No assay protocols for '" + protocol.getName() + "' found in container '" + c.getPath() + "'");
 
-            protocols = protocols.stream().filter(p -> protocol.getName().equals(p.getName())).collect(Collectors.toList());
+            protocols = protocols.stream().filter(p -> protocol.getName().equals(p.getName())).toList();
             if (protocols.isEmpty())
                 throw new NotFoundException("Assay protocol '" + protocol.getName() + "' not found");
 
