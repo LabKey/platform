@@ -252,7 +252,7 @@ public class ModuleHtmlView extends HtmlView
                         }
                     }
 
-                    // Log nonce-less script tags
+                    // Log inline event handlers
                     logInlineEvents(viewName, doc);
                 }
             }));
