@@ -32,6 +32,7 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     String href;
     String id;
     String onClick;
+    String onMouseOver;
     Map<String, String> attributes;
     String cssClass;
     String tooltip;
@@ -80,6 +81,13 @@ public abstract class DisplayElementBuilder<T extends DisplayElement & HasHtmlSt
     public BUILDER onClick(String onClick)
     {
         this.onClick = onClick;
+        return getThis();
+    }
+
+    // Currently supported for LinkBuilder only
+    public BUILDER onMouseOver(String onMouseOver)
+    {
+        this.onMouseOver = onMouseOver;
         return getThis();
     }
 

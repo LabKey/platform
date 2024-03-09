@@ -96,10 +96,10 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <label>
                     <%
-                        String onClick = "document.getElementById('replyTo').value = " + q(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) + "; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');";
+                        String handler = "document.getElementById('replyTo').value = " + q(RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE) + "; setElementDisplayByCheckbox('replyToFixedUser', 'replyTo');";
                     %>
                     <labkey:input type='radio' id='replyToCurrentUser' name='replyToCurrentUser' value='true' checked="<%=(replyToCurrentUser)%>" formGroup="false"
-                            onClick="<%=onClick%>" />
+                            onClick="<%=handler%>" />
                     The administrator who generated each notification
                 </label>
             </td>
@@ -108,10 +108,10 @@ function setElementDisplayByCheckbox(checkbox, element)
             <td>
                 <label>
                     <%
-                        onClick = "setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = " + q(!replyToCurrentUser ? bean.getReplyTo() : "") + ";";
+                        handler = "setElementDisplayByCheckbox('replyToFixedUser', 'replyTo'); document.getElementById('replyTo').value = " + q(!replyToCurrentUser ? bean.getReplyTo() : "") + ";";
                     %>
                     <labkey:input type='radio' id='replyToFixedUser' name='replyToCurrentUser' value='false' checked="<%=!replyToCurrentUser%>" formGroup="false"
-                            onClick="<%=onClick%>" />
+                            onClick="<%=handler%>" />
                     A fixed email address:
                 </label>
             </td>
