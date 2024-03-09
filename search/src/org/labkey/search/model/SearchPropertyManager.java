@@ -73,7 +73,7 @@ public class SearchPropertyManager
             File indexParent = FileContentService.get() != null
                     ? FileContentService.get().getSiteDefaultRoot()
                     : FileUtil.getTempDirectory();
-            return new File(indexParent, ".labkey_full_text_index").getPath();
+            return new File(indexParent, "@labkey_full_text_index").getPath();
         }
     }
 
