@@ -4,6 +4,7 @@ ALTER TABLE assay.PlateSet ADD COLUMN PrimaryPlateSetId INT;
 ALTER TABLE assay.PlateSet ADD CONSTRAINT FK_PlateSet_RootPlateSetId FOREIGN KEY (RootPlateSetId) REFERENCES assay.PlateSet(RowId);
 ALTER TABLE assay.PlateSet ADD CONSTRAINT FK_PlateSet_PrimaryPlateSetId FOREIGN KEY (PrimaryPlateSetId) REFERENCES assay.PlateSet(RowId);
 
+-- Update all pre-existing plate sets to type "assay"
 UPDATE assay.PlateSet SET type = 'assay';
 
 ALTER TABLE assay.PlateSet ALTER COLUMN Type SET NOT NULL;
