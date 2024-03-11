@@ -1731,7 +1731,7 @@ boxPlot.render();
         }
 
         config.properties.boundType = config.properties.boundType || 'stddev';
-        if (config.properties.boundType !== 'stddev' && config.properties.boundType !== 'absolute') {
+        if (config.properties.boundType !== 'stddev' && config.properties.boundType !== 'absolute' && config.properties.boundType !== 'meanDev') {
             throw new Error(config.properties.boundType + " boundType is not supported!");
         }
         if (config.properties.boundType === 'stddev') {
@@ -1824,6 +1824,10 @@ boxPlot.render();
             else if (config.properties.boundType === 'absolute') {
                 maxValue = config.properties.upperBound + cushion;
                 minValue = config.properties.lowerBound - cushion;
+            }
+            else if (config.properties.boundType === 'meanDev') {
+                maxValue = mean + config.properties.upperBound + cushion;
+                minValue = mean + config.properties.lowerBound - cushion;
             }
             else if (!config.properties.combined && stddev) {
                 maxValue = mean + ((config.properties.upperBound + cushion) * stddev);
@@ -2282,6 +2286,35 @@ boxPlot.render();
                             aes: {
                                 error: function (row) {
                                     return 0;
+                                },
+                                yLeft: 'upperBound'
+                            }
+                        });
+                        config.layers.push(upperBoundLayer);
+                    }
+                }
+
+                if (config.properties.boundType === 'meanDev') {
+                    if (config.properties.lowerBound) {
+                        const lowerBoundLayer = new LABKEY.vis.Layer({
+                            geom: new LABKEY.vis.Geom.ErrorBar({ size: 1, color: 'red', width: barWidth, dashed: true }),
+                            data: meanStdDevData,
+                            aes: {
+                                error: function (row) {
+                                    return row[config.properties.mean];
+                                },
+                                yLeft: 'lowerBound'
+                            }
+                        });
+                        config.layers.push(lowerBoundLayer);
+                    }
+                    if (config.properties.upperBound) {
+                        const upperBoundLayer = new LABKEY.vis.Layer({
+                            geom: new LABKEY.vis.Geom.ErrorBar({ size: 1, color: 'red', width: barWidth, dashed: true }),
+                            data: meanStdDevData,
+                            aes: {
+                                error: function (row) {
+                                    return row[config.properties.mean];
                                 },
                                 yLeft: 'upperBound'
                             }
