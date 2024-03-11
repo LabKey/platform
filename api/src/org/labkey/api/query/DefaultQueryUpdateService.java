@@ -78,9 +78,13 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 {
     private final TableInfo _dbTable;
     private DomainUpdateHelper _helper = null;
-    /** Map from DbTable column names to QueryTable column names, if they have been aliased */
+    /**
+     * Map from DbTable column names to QueryTable column names, if they have been aliased
+     */
     protected Map<String, String> _columnMapping = Collections.emptyMap();
-    /** Hold onto the ColumnInfos, so we don't have to regenerate them for every row we process */
+    /**
+     * Hold onto the ColumnInfos, so we don't have to regenerate them for every row we process
+     */
     private final Supplier<Map<String, ColumnInfo>> _tableMapSupplier = new CachingSupplier<>(() -> DataIteratorUtil.createTableMap(getQueryTable(), true));
     private final ValidatorContext _validatorContext;
 
@@ -89,7 +93,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         super(queryTable);
         _dbTable = dbTable;
 
-        if( queryTable.getUserSchema() == null )
+        if (queryTable.getUserSchema() == null)
             throw new RuntimeValidationException("User schema not defined for " + queryTable.getName());
 
         _validatorContext = new ValidatorContext(queryTable.getUserSchema().getContainer(), queryTable.getUserSchema().getUser());
@@ -101,7 +105,9 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         _helper = helper;
     }
 
-    /** @param columnMapping Map from DbTable column names to QueryTable column names, if they have been aliased */
+    /**
+     * @param columnMapping Map from DbTable column names to QueryTable column names, if they have been aliased
+     */
     public DefaultQueryUpdateService(TableInfo queryTable, TableInfo dbTable, Map<String, String> columnMapping)
     {
         this(queryTable, dbTable);
@@ -187,7 +193,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             ColumnInfo objectUriCol = getObjectUriColumn();
 
             // Get existing Lsid
-            String lsid = (String)map.get(objectUriCol.getName());
+            String lsid = (String) map.get(objectUriCol.getName());
             if (lsid != null)
                 return lsid;
 
@@ -213,14 +219,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         aliasColumns(_columnMapping, keys);
-        Map<String,Object> row = _select(container, getKeys(keys, container));
+        Map<String, Object> row = _select(container, getKeys(keys, container));
 
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
         //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
         if (null != row)
         {
             if (row instanceof ArrayListMap)
-                ((ArrayListMap<?, ?>)row).getFindMap().remove("_row");
+                ((ArrayListMap<?, ?>) row).getFindMap().remove("_row");
             else
                 row.remove("_row");
         }
@@ -240,7 +246,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         Domain domain = getDomain();
         if (objectUriCol != null && domain != null && !domain.getProperties().isEmpty() && row != null)
         {
-            String lsid = (String)row.get(objectUriCol.getName());
+            String lsid = (String) row.get(objectUriCol.getName());
             if (lsid != null)
             {
                 Map<String, Object> propertyValues = OntologyManager.getProperties(getDomainObjContainer(container), lsid);
@@ -274,8 +280,8 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     private Object[] convertToTypedValues(Object[] keys, List<ColumnInfo> cols)
     {
         Object[] typedParameters = new Object[keys.length];
-        int t=0;
-        for (int i=0 ; i<keys.length ; i++)
+        int t = 0;
+        for (int i = 0; i < keys.length; i++)
         {
             if (i >= cols.size() || keys[i] instanceof Parameter.TypedValue)
             {
@@ -286,7 +292,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             JdbcType type = cols.get(i).getJdbcType();
             if (v instanceof String)
                 v = type.convert(v);
-            Parameter.TypedValue tv = new Parameter.TypedValue(v,type);
+            Parameter.TypedValue tv = new Parameter.TypedValue(v, type);
             typedParameters[t++] = tv;
         }
         return typedParameters;
@@ -307,7 +313,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> _insert(User user, Container c, Map<String, Object> row)
             throws SQLException, ValidationException
     {
-        assert(getQueryTable().supportsInsertOption(InsertOption.INSERT));
+        assert (getQueryTable().supportsInsertOption(InsertOption.INSERT));
 
         ColumnInfo objectUriCol = getObjectUriColumn();
         Domain domain = getDomain();
@@ -342,7 +348,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         return updateRow(user, container, row, oldRow, false, false);

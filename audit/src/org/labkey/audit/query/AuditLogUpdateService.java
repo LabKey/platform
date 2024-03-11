@@ -18,6 +18,7 @@ package org.labkey.audit.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.data.Container;
@@ -108,7 +109,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
     {
         throw new UnsupportedOperationException("Audit records aren't editable");
     }

@@ -389,7 +389,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             // enforce no updates if the plate has been imported in an assay run
             if (oldRow.containsKey("plateId"))
@@ -402,7 +402,7 @@ public class WellTable extends SimpleUserSchema.SimpleTable<PlateSchema>
                         throw new QueryUpdateServiceException(String.format("This %s is used by %d runs and its wells cannot be modified.", plate.isTemplate() ? "Plate template" : "Plate", runsInUse));
                 }
             }
-            return super.updateRow(user, container, row, oldRow);
+            return super.updateRow(user, container, row, oldRow, configParameters);
         }
 
         @Override

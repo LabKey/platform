@@ -58,7 +58,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.ContainerUser;
 
@@ -464,7 +463,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws ValidationException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException
     {
         return _setRow(user, container, row, true);
     }

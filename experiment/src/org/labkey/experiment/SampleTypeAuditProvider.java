@@ -96,7 +96,7 @@ public class SampleTypeAuditProvider extends AbstractAuditTypeProvider implement
                 if (COLUMN_NAME_SAMPLE_TYPE_NAME.equalsIgnoreCase(col.getName()))
                     col.setLabel("Sample Type");
                 else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
-                    col.setLabel("User Comment");
+                    col.setLabel("Reason");
             }
         };
     }

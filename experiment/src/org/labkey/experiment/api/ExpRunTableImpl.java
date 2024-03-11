@@ -918,7 +918,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws ValidationException, QueryUpdateServiceException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws ValidationException, QueryUpdateServiceException
         {
             ExpRunImpl run = getRun(oldRow);
             if (run != null)
@@ -1027,7 +1027,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         }
                     }
                     run.save(user);
-                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
+                    String auditUserComment = configParameters == null ? null : (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment);
+                    ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), auditUserComment);
                 }
                 catch (ConversionException e)
                 {

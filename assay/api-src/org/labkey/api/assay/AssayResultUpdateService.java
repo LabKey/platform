@@ -65,7 +65,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         _schema.getProtocol();
 
@@ -77,7 +77,7 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 
         ExpRun run = getRun(originalRow, user, UpdatePermission.class);
 
-        Map<String, Object> result = super.updateRow(user, container, row, oldRow);
+        Map<String, Object> result = super.updateRow(user, container, row, oldRow, configParameters);
 
         Map<String, Object> updatedValues = getRow(user, container, oldRow);
 
@@ -103,7 +103,8 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
                 appendPropertyIfChanged(sb, col.getLabel(), oldValue, newValue);
             }
         }
-        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
+        String userComment = configParameters == null ? null : (String) configParameters.get(AuditUserComment);
+        ExperimentService.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString(), userComment);
 
         return result;
     }
