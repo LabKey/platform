@@ -853,11 +853,6 @@ public class PlateManager implements PlateService
 
             if (updateExisting)
             {
-                // special case if the plate name changes, we want to remove the cache key with the old name
-                Plate oldPlate = getPlate(container, plateId);
-                if (!oldPlate.getName().equals(plate.getName()))
-                    clearCache(container, oldPlate);
-
                 qus.updateRows(user, container, Collections.singletonList(plateRow), null, errors, null, null);
                 if (errors.hasErrors())
                     throw errors;
@@ -917,66 +912,59 @@ public class PlateManager implements PlateService
                     savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
             }
-
-            // Get existing wells for the plate
-            Map<Pair<Integer, Integer>, PositionImpl> existingPositionMap = new HashMap<>();
-            if (updateExisting)
-            {
-                for (Well existingPosition : plate.getWells())
-                {
-                    existingPositionMap.put(Pair.of(existingPosition.getRow(), existingPosition.getColumn()), (PositionImpl) existingPosition);
-                }
-            }
-
             List<List<Integer>> wellGroupPositions = new LinkedList<>();
-            QueryUpdateService wellQus = getWellUpdateService(container, user);
-            for (int row = 0; row < plate.getRows(); row++)
-            {
-                for (int col = 0; col < plate.getColumns(); col++)
-                {
-                    PositionImpl position;
-                    if (updateExisting)
-                    {
-                        position = existingPositionMap.get(Pair.of(row, col));
-                        assert position != null;
-                        assert position.getRowId() != null && position.getRowId() > 0;
-                        assert position.getLsid() != null;
+            List<Map<String, Object>> insertedRows = Collections.emptyList();
 
-                        Lsid lsid = Lsid.parse(position.getLsid());
-                        String objectId = lsid.getObjectId();
-                        assert objectId.endsWith("-well-" + row + "-" + col);
-                    }
-                    else
+            // create new wells for this plate
+            ObjectFactory<PositionImpl> factory = ObjectFactory.Registry.getFactory(PositionImpl.class);
+            if (!updateExisting)
+            {
+                QueryUpdateService wellQus = getWellUpdateService(container, user);
+                List<Map<String, Object>> wellRows = new ArrayList<>();
+                for (int row = 0; row < plate.getRows(); row++)
+                {
+                    for (int col = 0; col < plate.getColumns(); col++)
                     {
+                        PositionImpl position;
                         position = plate.getPosition(row, col);
-                        assert position.getRowId() == null || position.getRowId() == 0;
+                        if (position.getRowId() != null)
+                            throw new IllegalStateException("Attempting to create a new plate but there are existing wells associated with it.");
 
                         position.setPlateId(plateId);
-                        Map<String, Object> wellRow = ObjectFactory.Registry.getFactory(PositionImpl.class).toMap(position, new ArrayListMap<>());
-                        BatchValidationException wellErrors = new BatchValidationException();
-
-                        List<Map<String, Object>> insertedRows = wellQus.insertRows(user, container, Collections.singletonList(wellRow), wellErrors, null, null);
-                        if (wellErrors.hasErrors())
-                            throw wellErrors;
-
-                        position = ObjectFactory.Registry.getFactory(PositionImpl.class).fromMap(position, insertedRows.get(0));
+                        wellRows.add(factory.toMap(position, new ArrayListMap<>()));
                     }
-
-                    // collect well group positions to save
-                    wellGroupPositions.addAll(getWellGroupPositions(plate, position));
                 }
+                BatchValidationException wellErrors = new BatchValidationException();
+                insertedRows = wellQus.insertRows(user, container, wellRows, wellErrors, null, null);
+                if (wellErrors.hasErrors())
+                    throw wellErrors;
             }
 
-            // delete all existing well group positions for the plate
-            if (updateExisting)
+            // insert/update well to well group mappings
+            if (!plate.getWellGroups().isEmpty())
             {
-                deleteWellGroupPositions(plate);
-            }
+                if (updateExisting)
+                {
+                    for (Well well : plate.getWells())
+                        wellGroupPositions.addAll(getWellGroupPositions(plate, well));
 
-            // save well group positions
-            String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoWellGroupPositions() +
-                    " (wellId, wellGroupId) VALUES (?, ?)";
-            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
+                    // delete all existing well group positions
+                    deleteWellGroupPositions(plate);
+                }
+                else
+                {
+                    for (Map<String, Object> row : insertedRows)
+                    {
+                        PositionImpl position = factory.fromMap(row);
+                        wellGroupPositions.addAll(getWellGroupPositions(plate, position));
+                    }
+                }
+
+                // save well to well group positions
+                String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoWellGroupPositions() +
+                        " (wellId, wellGroupId) VALUES (?, ?)";
+                Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
+            }
 
             final Integer plateRowId = plateId;
             transaction.addCommitTask(() -> {
@@ -1007,7 +995,7 @@ public class PlateManager implements PlateService
     }
 
     // return a list of wellId and wellGroupId pairs
-    private List<List<Integer>> getWellGroupPositions(Plate plate, PositionImpl position)
+    private List<List<Integer>> getWellGroupPositions(Plate plate, Position position)
     {
         List<WellGroup> groups = plate.getWellGroups(position);
         List<List<Integer>> wellGroupPositions = new ArrayList<>(groups.size());
@@ -1016,8 +1004,12 @@ public class PlateManager implements PlateService
         {
             if (group.contains(position))
             {
-                assert position.getRowId() > 0;
-                assert group.getRowId() != null && group.getRowId() > 0;
+                if (position.getRowId() == null)
+                    throw new IllegalArgumentException("The specified well has not been saved to the database.");
+                if (group.getRowId() == null)
+                    throw new IllegalStateException("The well group : " + group.getName() + " has not been saved to the database.");
+//                assert position.getRowId() > 0;
+//                assert group.getRowId() != null && group.getRowId() > 0;
                 Integer wellId = position.getRowId();
                 Integer wellGroupId = group.getRowId();
                 wellGroupPositions.add(List.of(wellId, wellGroupId));
