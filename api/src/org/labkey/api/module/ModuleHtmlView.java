@@ -15,7 +15,7 @@
  */
 package org.labkey.api.module;
 
-import org.apache.logging.log4j.LogManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,8 +24,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JSoupUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ModuleHtmlViewCacheHandler;
@@ -33,22 +35,26 @@ import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
 /**
  * HTML web part based on .html file stored in a module's ./resources/views directory.
- * User: Dave
- * Date: Jan 23, 2009
  */
 public class ModuleHtmlView extends HtmlView
 {
     public static final Path VIEWS_PATH = Path.parse("views");
     public static final Path GENERATED_VIEWS_PATH = Path.parse("views/gen");
 
-    private static final Logger LOG = LogManager.getLogger(ModuleHtmlView.class);
+    private static final Logger LOG = LogHelper.getLogger(ModuleHtmlView.class, "HTML view information");
     private static final ModuleResourceCache<Map<Path, ModuleHtmlViewDefinition>> MODULE_HTML_VIEW_DEFINITION_CACHE = ModuleResourceCaches.create("HTML view definitions", new ModuleHtmlViewCacheHandler(), ResourceRootProvider.getStandard(VIEWS_PATH), ResourceRootProvider.getStandard(GENERATED_VIEWS_PATH), ResourceRootProvider.getAssayProviders(VIEWS_PATH));
 
     private final ModuleHtmlViewDefinition _viewdef;
@@ -216,6 +222,61 @@ public class ModuleHtmlView extends HtmlView
 
             if (null != simpleTest)
                 assertEquals("HTML view definitions from the simpletest module", 10, MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(simpleTest).size());
+        }
+
+        @Test
+        public void testForCspViolations()
+        {
+            // Inspect every module HTML view for nonce-less script tags and inline event handlers
+            ModuleLoader.getInstance().getModules().forEach(module -> MODULE_HTML_VIEW_DEFINITION_CACHE.getResourceMap(module).forEach((key, view) -> {
+                HtmlString html = view.getHtml();
+                String source = "<html><body>" + StringUtils.trimToEmpty(html.toString()) + "</body></html>";
+                Collection<String> errors = new ArrayList<>();
+                Document doc = JSoupUtil.convertHtmlToDocument(source, false, errors);
+                if (null != doc)
+                {
+                    String viewName = "[" + module.getName() + "] " + key;
+
+                    // Log nonce-less script tags
+                    NodeList nl = doc.getElementsByTagName("script");
+
+                    for (int i = 0; i < nl.getLength(); i++)
+                    {
+                        NamedNodeMap attributes = nl.item(i).getAttributes();
+                        Node nonce = attributes.getNamedItem("nonce");
+                        if (null == nonce)
+                        {
+                            Node src = attributes.getNamedItem("src");
+                            if (null == src)
+                                LOG.info(viewName + ": non-src script tag without a nonce!");
+                        }
+                    }
+
+                    // Log inline event handlers
+                    logInlineEvents(viewName, doc);
+                }
+            }));
+        }
+
+        private void logInlineEvents(String viewName, Node node)
+        {
+            NamedNodeMap attributes = node.getAttributes();
+            if (null != attributes)
+            {
+                for (int i = 0; i < attributes.getLength(); i++)
+                {
+                    String nodeName = attributes.item(i).getNodeName();
+                    if (nodeName.startsWith("on"))
+                    {
+                        LOG.info(viewName + ": " + nodeName);
+                    }
+                }
+            }
+            NodeList children = node.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++)
+            {
+                logInlineEvents(viewName, children.item(i));
+            }
         }
     }
 }
