@@ -1085,7 +1085,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
             String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
 
-            Map<Container, List<ExpRun>> expRuns = getRunsForMoveRows(rows, errors);
+            Map<Container, List<ExpRun>> expRuns = getRunsForMoveRows(targetContainer, rows, errors);
             if (!errors.hasErrors() && expRuns != null)
             {
                 for (Container c : expRuns.keySet())
@@ -1106,7 +1106,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return new HashMap<>(allContainerResponse);
         }
 
-        private Map<Container, List<ExpRun>> getRunsForMoveRows(List<Map<String, Object>> rows, BatchValidationException errors)
+        private Map<Container, List<ExpRun>> getRunsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
         {
             Set<Integer> runIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
             if (runIds.isEmpty())
@@ -1129,6 +1129,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             if (expRuns.size() != runIds.size())
             {
                 errors.addRowError(new ValidationException("Unable to find all runs for the move operation."));
+                return null;
+            }
+
+            // Filter out runs already in the target container
+            expRuns = expRuns
+                    .stream().filter(run -> run.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
+            if (expRuns.isEmpty())
+            {
+                errors.addRowError(new ValidationException("All runs are already in the target folder."));
                 return null;
             }
 

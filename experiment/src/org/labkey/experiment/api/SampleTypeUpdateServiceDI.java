@@ -488,7 +488,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditConfigs.AuditBehavior) : null;
         String auditUserComment = configParameters != null ? (String) configParameters.get(AuditConfigs.AuditUserComment) : null;
 
-        Map<Container, List<ExpMaterial>> containerMaterials = getMaterialsForMoveRows(container, rows, errors);
+        Map<Container, List<ExpMaterial>> containerMaterials = getMaterialsForMoveRows(container, targetContainer, rows, errors);
         if (!errors.hasErrors() && containerMaterials != null)
         {
             for (Container c : containerMaterials.keySet())
@@ -510,7 +510,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new HashMap<>(allContainerResponse);
     }
 
-    private Map<Container, List<ExpMaterial>> getMaterialsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+    private Map<Container, List<ExpMaterial>> getMaterialsForMoveRows(Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
     {
         Set<Integer> sampleIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
         if (sampleIds.isEmpty())
@@ -523,6 +523,15 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         if (materials.size() != sampleIds.size())
         {
             errors.addRowError(new ValidationException("Unable to find all samples for the move operation."));
+            return null;
+        }
+
+        // Filter out materials already in the target container
+        materials = materials
+                .stream().filter(material -> material.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
+        if (materials.isEmpty())
+        {
+            errors.addRowError(new ValidationException("All samples are already in the target folder."));
             return null;
         }
 

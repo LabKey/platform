@@ -1111,7 +1111,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
             String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
 
-            Map<Container, List<ExpData>> containerObjects = getDataClassObjectsForMoveRows(rows, errors);
+            Map<Container, List<ExpData>> containerObjects = getDataClassObjectsForMoveRows(targetContainer, rows, errors);
             if (!errors.hasErrors() && containerObjects != null)
             {
                 for (Container c : containerObjects.keySet())
@@ -1133,7 +1133,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
 
 
-        private Map<Container, List<ExpData>> getDataClassObjectsForMoveRows(List<Map<String, Object>> rows, BatchValidationException errors)
+        private Map<Container, List<ExpData>> getDataClassObjectsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
         {
             Set<Integer> dataIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
             if (dataIds.isEmpty())
@@ -1146,6 +1146,15 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             if (dataClassObjects.size() != dataIds.size())
             {
                 errors.addRowError(new ValidationException("Unable to find all sources for the move operation."));
+                return null;
+            }
+
+            // Filter out materials already in the target container
+            dataClassObjects = dataClassObjects
+                    .stream().filter(dataObject -> dataObject.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
+            if (dataClassObjects.isEmpty())
+            {
+                errors.addRowError(new ValidationException("All sources are already in the target folder."));
                 return null;
             }
 
