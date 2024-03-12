@@ -1165,8 +1165,8 @@ public class PlateManager implements PlateService
         final AssayDbSchema schema = AssayDbSchema.getInstance();
         // delete well group positions
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions(), "WGP")
-                    .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell(), "W")
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                    .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
                     .append(" WHERE container = ?)").add(container);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
@@ -1175,7 +1175,7 @@ public class PlateManager implements PlateService
         {
             SQLFragment sql = new SQLFragment("DELETE FROM ")
                     .append(schema.getTableInfoPlateProperty(), "")
-                    .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate(), "P")
+                    .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
                     .append(" WHERE Container = ?)").add(container);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
@@ -1184,9 +1184,9 @@ public class PlateManager implements PlateService
         TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
         if (provisionedTable != null)
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(provisionedTable, "PT")
+            SQLFragment sql = new SQLFragment("DELETE FROM ").append(provisionedTable)
                     .append(" WHERE Lsid IN (")
-                    .append(" SELECT Lsid FROM ").append(schema.getTableInfoWell(), "W")
+                    .append(" SELECT Lsid FROM ").append(schema.getTableInfoWell())
                     .append(" WHERE Container = ?)").add(container);
             new SqlExecutor(schema.getSchema()).execute(sql);
         }
@@ -1198,8 +1198,8 @@ public class PlateManager implements PlateService
 
         // delete empty plate sets in this container
         {
-            SQLFragment emptyPlateSetsSql = new SQLFragment("SELECT RowId FROM ").append(schema.getTableInfoPlateSet(), "PS")
-                    .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate(), "P").append(")")
+            SQLFragment emptyPlateSetsSql = new SQLFragment("SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
+                    .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate()).append(")")
                     .append(" AND Container = ?").add(container);
 
             ArrayList<Integer> emptyPlateSetIds = new SqlSelector(schema.getSchema(), emptyPlateSetsSql).getArrayList(Integer.class);
@@ -1208,21 +1208,21 @@ public class PlateManager implements PlateService
             {
                 final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
 
-                SQLFragment edgeSql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge(), "PSE")
+                SQLFragment edgeSql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
                         .append(" WHERE FromPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect)
                         .append(" OR ToPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect)
                         .append(" OR RootPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect);
                 new SqlExecutor(schema.getSchema()).execute(edgeSql);
 
-                SQLFragment primaryPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet(), "PS")
+                SQLFragment primaryPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
                         .append(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect);
                 new SqlExecutor(schema.getSchema()).execute(primaryPlateSetSql);
 
-                SQLFragment rootPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet(), "PS")
+                SQLFragment rootPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
                         .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect);
                 new SqlExecutor(schema.getSchema()).execute(rootPlateSetSql);
 
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet(), "PS")
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
                         .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, sqlDialect);
                 new SqlExecutor(schema.getSchema()).execute(sql);
             }
@@ -2092,7 +2092,7 @@ public class PlateManager implements PlateService
                 }
             }
 
-            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "PS")
+            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable)
                     .append(" SET archived = ?").add(archive)
                     .append(" WHERE rowId ").appendInClause(plateSetIds, plateSetTable.getSqlDialect());
 
