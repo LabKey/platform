@@ -146,6 +146,7 @@ import static org.labkey.api.exp.api.ExpRunItem.PARENT_IMPORT_ALIAS_MAP_PROP;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.Name;
 import static org.labkey.api.exp.query.ExpDataClassDataTable.Column.QueryableInputs;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 /**
  * User: kevink
@@ -1105,29 +1106,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         @Override
         public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            Map<String, Integer> response = new HashMap<>();
+            Map<String, Integer> allContainerResponse = new HashMap<>();
 
             AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
             String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
 
-            List<? extends ExpData> dataClassObjects = getDataClassObjectsForMoveRows(container, rows, errors);
-            if (!errors.hasErrors())
+            Map<Container, List<ExpData>> containerObjects = getDataClassObjectsForMoveRows(rows, errors);
+            if (!errors.hasErrors() && containerObjects != null)
             {
-                try
+                for (Container c : containerObjects.keySet())
                 {
-                    response = ExperimentService.get().moveDataClassObjects(dataClassObjects, container, targetContainer, user, auditUserComment, auditType);
-                }
-                catch (ExperimentException e)
-                {
-                    throw new QueryUpdateServiceException(e);
+                    try
+                    {
+                        Map<String, Integer> response = ExperimentService.get().moveDataClassObjects(containerObjects.get(c), c, targetContainer, user, auditUserComment, auditType);
+                        incrementCounts(allContainerResponse, response);
+                    }
+                    catch (ExperimentException e)
+                    {
+                        throw new QueryUpdateServiceException(e);
+                    }
                 }
 
                 SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "sources");
             }
-            return new HashMap<>(response);
+            return new HashMap<>(allContainerResponse);
         }
 
-        private List<? extends ExpData> getDataClassObjectsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+
+        private Map<Container, List<ExpData>> getDataClassObjectsForMoveRows(List<Map<String, Object>> rows, BatchValidationException errors)
         {
             Set<Integer> dataIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
             if (dataIds.isEmpty())
@@ -1143,14 +1149,14 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                 return null;
             }
 
-            // verify all sources are from the current container
-            if (dataClassObjects.stream().anyMatch(dataObject -> !dataObject.getContainer().equals(container)))
-            {
-                errors.addRowError(new ValidationException("All sources must be from the current container for the move operation."));
-                return null;
-            }
+            Map<Container, List<ExpData>> containerObjects = new HashMap<>();
+            dataClassObjects.forEach(dataClassObject -> {
+                if (!containerObjects.containsKey(dataClassObject.getContainer()))
+                    containerObjects.put(dataClassObject.getContainer(), new ArrayList<>());
+                containerObjects.get(dataClassObject.getContainer()).add(dataClassObject);
+            });
 
-            return dataClassObjects;
+            return containerObjects;
         }
 
         @Override

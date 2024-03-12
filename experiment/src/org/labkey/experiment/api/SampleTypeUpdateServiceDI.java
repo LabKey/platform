@@ -136,6 +136,7 @@ import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.SampleState;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.StoredAmount;
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.Units;
+import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 /**
  *
@@ -480,7 +481,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
 
     @Override
     public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws BatchValidationException, QueryUpdateServiceException, SQLException
+            throws BatchValidationException, QueryUpdateServiceException
     {
         Map<String, Integer> allContainerResponse = new HashMap<>();
 
@@ -509,14 +510,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         return new HashMap<>(allContainerResponse);
     }
 
-    private void incrementCounts(Map<String, Integer> currentCounts, Map<String, Integer> increments)
-    {
-        increments.keySet().forEach(key -> {
-            Integer currentCount = currentCounts.getOrDefault(key, 0);
-            currentCounts.put(key, currentCount + increments.get(key));
-        });
-    }
-
     private Map<Container, List<ExpMaterial>> getMaterialsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
     {
         Set<Integer> sampleIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
@@ -539,13 +532,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 containerMaterials.put(material.getContainer(), new ArrayList<>());
             containerMaterials.get(material.getContainer()).add(material);
         });
-
-//        // verify all samples are from the source container
-//        if (materials.stream().anyMatch(material -> !material.getContainer().equals(container)))
-//        {
-//            errors.addRowError(new ValidationException("All samples must be from the current container for the move operation."));
-//            return null;
-//        }
 
         // verify allowed moves based on sample statuses
         List<ExpMaterial> invalidStatusSamples = new ArrayList<>();
