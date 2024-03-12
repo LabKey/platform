@@ -196,9 +196,18 @@
       <column columnName="Archived"/>
       <column columnName="Type"/>
       <column columnName="PrimaryPlateSetId">
+        <description>
+          The nearest parent "primary" plate set in this plate set's lineage. When blank it means the plate set does
+          not participate in a lineage (a.k.a. stand-alone plate set).
+        </description>
         <isHidden>true</isHidden>
       </column>
       <column columnName="RootPlateSetId">
+        <description>
+          The root (a.k.a. top-level) plate set that this plate set is derived from. All plate sets in a lineage
+          share the same RootPlateSetId. When blank it means the plate set does not participate in a lineage
+          (a.k.a stand-alone plate set). For top-level "primary" plate sets this will always refer to itself.
+        </description>
         <isHidden>true</isHidden>
       </column>
     </columns>
