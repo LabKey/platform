@@ -15,6 +15,9 @@
  */
 package org.labkey.api.settings;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
@@ -26,18 +29,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.NotFoundException;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-/**
- * User: adam
- * Date: Aug 6, 2008
- * Time: 10:23:38 AM
- */
+import static org.labkey.api.settings.Theme.Overcast;
+import static org.labkey.api.settings.Theme.Seattle;
+
 public enum TemplateResourceHandler
 {
     LOGO
@@ -168,10 +166,9 @@ public enum TemplateResourceHandler
 
     private static String resolveLogoThemeName(Container c)
     {
-        String themeName = PageFlowUtil.resolveThemeName(c);
-        if ("seattle".equalsIgnoreCase(themeName))
-            return "seattle";
-        return "overcast";
+        Theme theme = PageFlowUtil.resolveTheme(c);
+
+        return (Seattle == theme ? theme : Overcast).name();
     }
 
     private Calendar getExpiration()
