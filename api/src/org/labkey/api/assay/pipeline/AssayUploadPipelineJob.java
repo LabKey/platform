@@ -140,6 +140,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
             // Create the basic run
             _run = AssayService.get().createExperimentRun(_context.getName(), getContainer(), _context.getProtocol(), _primaryFile);
             _run.setComments(_context.getComments());
+            _run.setWorkflowTaskId(_context.getWorkflowTask());
             // remember which job created the run so we can show this run on the job details page
             _run.setJobId(PipelineService.get().getJobId(getUser(), getContainer(), getJobGUID()));
 

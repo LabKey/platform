@@ -32,11 +32,6 @@ import org.labkey.assay.query.AssayDbSchema;
 import java.util.List;
 import java.util.Set;
 
-/**
- * User: brittp
- * Date: Nov 1, 2006
- * Time: 4:33:11 PM
- */
 public class PlateSchema extends SimpleUserSchema
 {
     public static final String SCHEMA_NAME = "plate";

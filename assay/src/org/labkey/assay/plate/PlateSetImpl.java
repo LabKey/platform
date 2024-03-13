@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.Entity;
@@ -24,12 +25,15 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PlateSetImpl extends Entity implements PlateSet
 {
-    private Integer _rowId;
-    private String _name;
-    private String _plateSetId;
     private boolean _archived;
     private Container _container;
     private String _description;
+    private String _name;
+    private String _plateSetId;
+    private Integer _primaryPlateSetId;
+    private Integer _rootPlateSetId;
+    private Integer _rowId;
+    private PlateSetType _type;
 
     @Override
     public Integer getRowId()
@@ -52,6 +56,36 @@ public class PlateSetImpl extends Entity implements PlateSet
     public Container getContainer()
     {
         return _container;
+    }
+
+    @JsonIgnore
+    public Container getFolder()
+    {
+        return getContainer();
+    }
+
+    // FieldKey for "Container" is overridden in PlateSetTable as "Folder"
+    // This is necessary for deserialization from the database
+    public void setFolder(Container container)
+    {
+        setContainer(container);
+    }
+
+    @Override
+    public String getContainerId()
+    {
+        return _container == null ? null : _container.getId();
+    }
+
+    @Override
+    public String getContainerPath()
+    {
+        return _container == null ? null : _container.getPath();
+    }
+
+    public String getContainerName()
+    {
+        return _container == null ? null : _container.getName();
     }
 
     @Override
@@ -123,5 +157,36 @@ public class PlateSetImpl extends Entity implements PlateSet
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public Integer getPrimaryPlateSetId()
+    {
+        return _primaryPlateSetId;
+    }
+
+    public void setPrimaryPlateSetId(Integer primaryPlateSetId)
+    {
+        _primaryPlateSetId = primaryPlateSetId;
+    }
+
+    public Integer getRootPlateSetId()
+    {
+        return _rootPlateSetId;
+    }
+
+    public void setRootPlateSetId(Integer rootPlateSetId)
+    {
+        _rootPlateSetId = rootPlateSetId;
+    }
+
+    @Override
+    public PlateSetType getType()
+    {
+        return _type;
+    }
+
+    public void setType(PlateSetType type)
+    {
+        _type = type;
     }
 }
