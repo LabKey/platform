@@ -1119,10 +1119,32 @@ public class PlateManager implements PlateService
 
     public void beforePlateSetDelete(Container container, User user, Integer rowId)
     {
-        // We'll want to consider having a way of stitching up the lineage when deleting plate sets
-        SQLFragment sql = new SQLFragment("DELETE FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateSetEdge(), "PSE")
-                .append("WHERE fromPlateSetId = ? OR toPlateSetId = ? OR RootPlateSetId = ?").addAll(rowId, rowId, rowId);
-        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+        beforePlateSetsDelete(List.of(rowId));
+    }
+
+    private void beforePlateSetsDelete(Collection<Integer> plateSetIds)
+    {
+        requireActiveTransaction();
+
+        if (plateSetIds.isEmpty())
+            return;
+
+        final AssayDbSchema schema = AssayDbSchema.getInstance();
+        final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
+
+        SQLFragment edgeSql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
+                .append(" WHERE FromPlateSetId ").appendInClause(plateSetIds, sqlDialect)
+                .append(" OR ToPlateSetId ").appendInClause(plateSetIds, sqlDialect)
+                .append(" OR RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+        new SqlExecutor(schema.getSchema()).execute(edgeSql);
+
+        SQLFragment primaryPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+                .append(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+        new SqlExecutor(schema.getSchema()).execute(primaryPlateSetSql);
+
+        SQLFragment rootPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+                .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+        new SqlExecutor(schema.getSchema()).execute(rootPlateSetSql);
     }
 
     private void deleteWellGroup(Container container, User user, int wellGroupId) throws Exception
@@ -1206,24 +1228,10 @@ public class PlateManager implements PlateService
 
             if (!emptyPlateSetIds.isEmpty())
             {
-                final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
-
-                SQLFragment edgeSql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
-                        .append(" WHERE FromPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect)
-                        .append(" OR ToPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect)
-                        .append(" OR RootPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect);
-                new SqlExecutor(schema.getSchema()).execute(edgeSql);
-
-                SQLFragment primaryPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
-                        .append(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect);
-                new SqlExecutor(schema.getSchema()).execute(primaryPlateSetSql);
-
-                SQLFragment rootPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
-                        .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(emptyPlateSetIds, sqlDialect);
-                new SqlExecutor(schema.getSchema()).execute(rootPlateSetSql);
+                beforePlateSetsDelete(emptyPlateSetIds);
 
                 SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
-                        .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, sqlDialect);
+                        .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
                 new SqlExecutor(schema.getSchema()).execute(sql);
             }
         }
