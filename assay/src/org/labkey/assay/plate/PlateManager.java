@@ -1184,56 +1184,61 @@ public class PlateManager implements PlateService
     @Override
     public void deleteAllPlateData(Container container)
     {
-        final AssayDbSchema schema = AssayDbSchema.getInstance();
-        // delete well group positions
+        try (DbScope.Transaction tx = ensureTransaction())
         {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
-                    .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
-                    .append(" WHERE container = ?)").add(container);
-            new SqlExecutor(schema.getSchema()).execute(sql);
-        }
-
-        // delete PlateProperty mappings
-        {
-            SQLFragment sql = new SQLFragment("DELETE FROM ")
-                    .append(schema.getTableInfoPlateProperty(), "")
-                    .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
-                    .append(" WHERE Container = ?)").add(container);
-            new SqlExecutor(schema.getSchema()).execute(sql);
-        }
-
-        // delete plate metadata values from the provisioned table
-        TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
-        if (provisionedTable != null)
-        {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(provisionedTable)
-                    .append(" WHERE Lsid IN (")
-                    .append(" SELECT Lsid FROM ").append(schema.getTableInfoWell())
-                    .append(" WHERE Container = ?)").add(container);
-            new SqlExecutor(schema.getSchema()).execute(sql);
-        }
-
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        Table.delete(schema.getTableInfoWell(), filter);
-        Table.delete(schema.getTableInfoWellGroup(), filter);
-        Table.delete(schema.getTableInfoPlate(), filter);
-
-        // delete empty plate sets in this container
-        {
-            SQLFragment emptyPlateSetsSql = new SQLFragment("SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
-                    .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate()).append(")")
-                    .append(" AND Container = ?").add(container);
-
-            ArrayList<Integer> emptyPlateSetIds = new SqlSelector(schema.getSchema(), emptyPlateSetsSql).getArrayList(Integer.class);
-
-            if (!emptyPlateSetIds.isEmpty())
+            final AssayDbSchema schema = AssayDbSchema.getInstance();
+            // delete well group positions
             {
-                beforePlateSetsDelete(emptyPlateSetIds);
-
-                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
-                        .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                        .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
+                        .append(" WHERE container = ?)").add(container);
                 new SqlExecutor(schema.getSchema()).execute(sql);
             }
+
+            // delete PlateProperty mappings
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(schema.getTableInfoPlateProperty(), "")
+                        .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
+                        .append(" WHERE Container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
+
+            // delete plate metadata values from the provisioned table
+            TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
+            if (provisionedTable != null)
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(provisionedTable)
+                        .append(" WHERE Lsid IN (")
+                        .append(" SELECT Lsid FROM ").append(schema.getTableInfoWell())
+                        .append(" WHERE Container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
+
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            Table.delete(schema.getTableInfoWell(), filter);
+            Table.delete(schema.getTableInfoWellGroup(), filter);
+            Table.delete(schema.getTableInfoPlate(), filter);
+
+            // delete empty plate sets in this container
+            {
+                SQLFragment emptyPlateSetsSql = new SQLFragment("SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
+                        .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate()).append(")")
+                        .append(" AND Container = ?").add(container);
+
+                ArrayList<Integer> emptyPlateSetIds = new SqlSelector(schema.getSchema(), emptyPlateSetsSql).getArrayList(Integer.class);
+
+                if (!emptyPlateSetIds.isEmpty())
+                {
+                    beforePlateSetsDelete(emptyPlateSetIds);
+
+                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
+                            .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
+                    new SqlExecutor(schema.getSchema()).execute(sql);
+                }
+            }
+
+            tx.commit();
         }
 
         clearCache(container);
