@@ -529,11 +529,6 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         // Filter out materials already in the target container
         materials = materials
                 .stream().filter(material -> material.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
-        if (materials.isEmpty())
-        {
-            errors.addRowError(new ValidationException("All samples are already in the target folder."));
-            return null;
-        }
 
         Map<Container, List<ExpMaterial>> containerMaterials = new HashMap<>();
         materials.forEach(material -> {

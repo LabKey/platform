@@ -1152,11 +1152,6 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             // Filter out materials already in the target container
             dataClassObjects = dataClassObjects
                     .stream().filter(dataObject -> dataObject.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
-            if (dataClassObjects.isEmpty())
-            {
-                errors.addRowError(new ValidationException("All sources are already in the target folder."));
-                return null;
-            }
 
             Map<Container, List<ExpData>> containerObjects = new HashMap<>();
             dataClassObjects.forEach(dataClassObject -> {

@@ -1135,11 +1135,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             // Filter out runs already in the target container
             expRuns = expRuns
                     .stream().filter(run -> run.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
-            if (expRuns.isEmpty())
-            {
-                errors.addRowError(new ValidationException("All runs are already in the target folder."));
-                return null;
-            }
 
             Map<Container, List<ExpRun>> containerObjects = new HashMap<>();
             expRuns.forEach(run -> {
