@@ -49,10 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: Jul 13, 2007
- */
 public interface AssayService
 {
     String BATCH_COLUMN_NAME = "Batch";
@@ -88,12 +84,12 @@ public interface AssayService
     AssaySchema createSchema(User user, Container container, @Nullable Container targetStudy);
 
     /**
-     * @return all of the assay protocols that are in scope in the given container
+     * @return all the assay protocols that are in scope in the given container
      */
     @NotNull List<ExpProtocol> getAssayProtocols(Container container);
 
     /**
-     * @return all of the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider
+     * @return all the assay protocols that are in scope in the given container, filtered to only include those that are owned by the given provider
      */
     @NotNull List<ExpProtocol> getAssayProtocols(Container container, @Nullable AssayProvider provider);
 
@@ -111,7 +107,7 @@ public interface AssayService
     @NotNull List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView);
 
     @NotNull
-    public Set<ClientDependency> getClientDependenciesForImportButtons();
+    Set<ClientDependency> getClientDependenciesForImportButtons();
 
     /**
      * Creates a batch object but does not save it to the database
@@ -159,7 +155,6 @@ public interface AssayService
      * @param provider             The assay provider.  If null, the provider will be found from the protocol.
      * @param targetStudyContainer The target study.  If null, the ExpRun and ExpBatch properties will be searched.
      * @return The resolver.
-     * @throws ExperimentException
      */
     ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
             throws IOException, ExperimentException;

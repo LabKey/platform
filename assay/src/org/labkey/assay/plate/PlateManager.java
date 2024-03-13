@@ -34,6 +34,8 @@ import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateLayoutHandler;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateSet;
+import org.labkey.api.assay.plate.PlateSetEdge;
+import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.plate.PlateUtils;
 import org.labkey.api.assay.plate.Position;
@@ -50,6 +52,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -58,6 +61,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.Lsid;
@@ -95,10 +99,12 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.plate.model.PlateTypeBean;
 import org.labkey.assay.plate.model.WellBean;
 import org.labkey.assay.plate.model.WellGroupBean;
@@ -845,7 +851,7 @@ public class PlateManager implements PlateService
             if (!updateExisting && plate.getPlateSet() == null)
             {
                 // ensure a plate set for each new plate
-                plate.setPlateSet(ensureDefaultPlateSet(container, user));
+                plate.setPlateSet(createPlateSet(container, user, new PlateSetImpl(), null, null));
             }
             Map<String, Object> plateRow = ObjectFactory.Registry.getFactory(PlateBean.class).toMap(PlateBean.from(plate), new ArrayListMap<>());
             QueryUpdateService qus = getPlateUpdateService(container, user);
@@ -989,23 +995,6 @@ public class PlateManager implements PlateService
         }
     }
 
-    // creates a default plate set in the specified container and returns its ID
-    private PlateSet ensureDefaultPlateSet(Container container, User user) throws Exception
-    {
-        BatchValidationException errors = new BatchValidationException();
-        QueryUpdateService qus = getPlateSetUpdateService(container, user);
-        PlateSetImpl plateSet = new PlateSetImpl();
-        plateSet.beforeInsert(user, container.getId());
-        Map<String, Object> plateSetRow = ObjectFactory.Registry.getFactory(PlateSetImpl.class).toMap(plateSet, new ArrayListMap<>());
-
-        List<Map<String, Object>> insertedRows = qus.insertRows(user, container, Collections.singletonList(plateSetRow), errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
-
-        Integer rowId = (Integer)insertedRows.get(0).get("RowId");
-        return getPlateSet(container, rowId);
-    }
-
     // return a list of wellId and wellGroupId pairs
     private List<List<Integer>> getWellGroupPositions(Plate plate, PositionImpl position)
     {
@@ -1088,10 +1077,7 @@ public class PlateManager implements PlateService
     // Called by the Plate Query Update Service prior to deleting a plate
     public void beforePlateDelete(Container container, Integer plateId)
     {
-        final AssayDbSchema schema = AssayDbSchema.getInstance();
-        DbScope scope = schema.getSchema().getScope();
-        if (!scope.isTransactionActive())
-            throw new IllegalStateException("This method must be called from within a transaction");
+        requireActiveTransaction();
 
         Plate plate = PlateCache.getPlate(container, plateId);
         List<String> lsids = new ArrayList<>();
@@ -1108,11 +1094,12 @@ public class PlateManager implements PlateService
         deleteWellGroupPositions(plate);
 
         // delete PlateProperty mappings
+        AssayDbSchema schema = AssayDbSchema.getInstance();
         SQLFragment sql = new SQLFragment("DELETE FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
+                .append(schema.getTableInfoPlateProperty(), "")
                 .append(" WHERE PlateId = ?")
                 .add(plateId);
-        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+        new SqlExecutor(schema.getSchema()).execute(sql);
 
         // delete any plate metadata values from the provisioned table
         TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
@@ -1123,11 +1110,41 @@ public class PlateManager implements PlateService
                     .append(" SELECT Lsid FROM ").append(AssayDbSchema.getInstance().getTableInfoWell(), "")
                     .append(" WHERE PlateId = ?)")
                     .add(plateId);
-            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
+            new SqlExecutor(schema.getSchema()).execute(sql2);
         }
 
         Table.delete(schema.getTableInfoWell(), plateIdFilter);
         Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
+    }
+
+    public void beforePlateSetDelete(Container container, User user, Integer rowId)
+    {
+        beforePlateSetsDelete(List.of(rowId));
+    }
+
+    private void beforePlateSetsDelete(Collection<Integer> plateSetIds)
+    {
+        requireActiveTransaction();
+
+        if (plateSetIds.isEmpty())
+            return;
+
+        final AssayDbSchema schema = AssayDbSchema.getInstance();
+        final SqlDialect sqlDialect = schema.getSchema().getSqlDialect();
+
+        SQLFragment edgeSql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSetEdge())
+                .append(" WHERE FromPlateSetId ").appendInClause(plateSetIds, sqlDialect)
+                .append(" OR ToPlateSetId ").appendInClause(plateSetIds, sqlDialect)
+                .append(" OR RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+        new SqlExecutor(schema.getSchema()).execute(edgeSql);
+
+        SQLFragment primaryPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+                .append(" SET PrimaryPlateSetId = NULL WHERE PrimaryPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+        new SqlExecutor(schema.getSchema()).execute(primaryPlateSetSql);
+
+        SQLFragment rootPlateSetSql = new SQLFragment("UPDATE ").append(schema.getTableInfoPlateSet())
+                .append(" SET RootPlateSetId = NULL WHERE RootPlateSetId ").appendInClause(plateSetIds, sqlDialect);
+        new SqlExecutor(schema.getSchema()).execute(rootPlateSetSql);
     }
 
     private void deleteWellGroup(Container container, User user, int wellGroupId) throws Exception
@@ -1167,43 +1184,62 @@ public class PlateManager implements PlateService
     @Override
     public void deleteAllPlateData(Container container)
     {
-        final AssayDbSchema schema = AssayDbSchema.getInstance();
-        new SqlExecutor(schema.getScope()).execute("" +
-                "DELETE FROM " + schema.getTableInfoWellGroupPositions() + " WHERE wellId IN " +
-                "(SELECT rowId FROM " + schema.getTableInfoWell() + " WHERE container=?)", container.getId());
-
-        // delete PlateProperty mappings
-        SQLFragment sql = new SQLFragment("DELETE FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "")
-                .append(" WHERE PlateId IN (SELECT RowId FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "AP")
-                .append(" WHERE Container = ? )")
-                .add(container);
-        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
-
-        // delete any plate metadata values from the provisioned table
-        TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
-        if (provisionedTable != null)
+        try (DbScope.Transaction tx = ensureTransaction())
         {
-            SQLFragment sql2 = new SQLFragment("DELETE FROM ").append(provisionedTable, "")
-                    .append(" WHERE Lsid IN (")
-                    .append(" SELECT Lsid FROM ").append(AssayDbSchema.getInstance().getTableInfoWell(), "")
-                    .append(" WHERE Container = ?)")
-                    .add(container);
-            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql2);
+            final AssayDbSchema schema = AssayDbSchema.getInstance();
+            // delete well group positions
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                        .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
+                        .append(" WHERE container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
+
+            // delete PlateProperty mappings
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(schema.getTableInfoPlateProperty(), "")
+                        .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
+                        .append(" WHERE Container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
+
+            // delete plate metadata values from the provisioned table
+            TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
+            if (provisionedTable != null)
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(provisionedTable)
+                        .append(" WHERE Lsid IN (")
+                        .append(" SELECT Lsid FROM ").append(schema.getTableInfoWell())
+                        .append(" WHERE Container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
+
+            SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+            Table.delete(schema.getTableInfoWell(), filter);
+            Table.delete(schema.getTableInfoWellGroup(), filter);
+            Table.delete(schema.getTableInfoPlate(), filter);
+
+            // delete empty plate sets in this container
+            {
+                SQLFragment emptyPlateSetsSql = new SQLFragment("SELECT RowId FROM ").append(schema.getTableInfoPlateSet())
+                        .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(schema.getTableInfoPlate()).append(")")
+                        .append(" AND Container = ?").add(container);
+
+                ArrayList<Integer> emptyPlateSetIds = new SqlSelector(schema.getSchema(), emptyPlateSetsSql).getArrayList(Integer.class);
+
+                if (!emptyPlateSetIds.isEmpty())
+                {
+                    beforePlateSetsDelete(emptyPlateSetIds);
+
+                    SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoPlateSet())
+                            .append(" WHERE RowId ").appendInClause(emptyPlateSetIds, schema.getSchema().getSqlDialect());
+                    new SqlExecutor(schema.getSchema()).execute(sql);
+                }
+            }
+
+            tx.commit();
         }
-
-        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        Table.delete(schema.getTableInfoWell(), filter);
-        Table.delete(schema.getTableInfoWellGroup(), filter);
-        Table.delete(schema.getTableInfoPlate(), filter);
-
-        // delete all empty plate sets in this container
-        SQLFragment sql3 = new SQLFragment("DELETE FROM ")
-                .append(AssayDbSchema.getInstance().getTableInfoPlateSet(), "")
-                .append(" WHERE RowId NOT IN (SELECT DISTINCT PlateSet FROM ").append(AssayDbSchema.getInstance().getTableInfoPlate(), "").append(")")
-                .append(" AND Container = ?")
-                .add(container);
-        new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql3);
 
         clearCache(container);
     }
@@ -1737,7 +1773,7 @@ public class PlateManager implements PlateService
         if (plateId == null)
             throw new IllegalArgumentException("Failed to add plate custom fields. Invalid plateId provided.");
 
-        if (fields == null || fields.size() == 0)
+        if (fields == null || fields.isEmpty())
             throw new IllegalArgumentException("Failed to add plate custom fields. No fields specified.");
 
         Plate plate = requirePlate(container, plateId, "Failed to add plate custom fields.");
@@ -1829,9 +1865,7 @@ public class PlateManager implements PlateService
         for (WellCustomField field : fields)
             field.setValue(properties.get(field.getPropertyURI()));
 
-        return fields.stream()
-                .sorted(Comparator.comparing(PlateCustomField::getName))
-                .collect(Collectors.toList());
+        return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();
     }
 
     public List<PlateCustomField> removeFields(Container container, User user, Integer plateId, List<PlateCustomField> fields)
@@ -1857,7 +1891,7 @@ public class PlateManager implements PlateService
         {
             try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
             {
-                List<String> propertyURIs = fieldsToRemove.stream().map(DomainProperty::getPropertyURI).collect(Collectors.toList());
+                List<String> propertyURIs = fieldsToRemove.stream().map(DomainProperty::getPropertyURI).toList();
                 Set<String> existingProps = plate.getCustomFields().stream().map(PlateCustomField::getPropertyURI).collect(Collectors.toSet());
                 for (DomainProperty dp : fieldsToRemove)
                 {
@@ -1939,7 +1973,13 @@ public class PlateManager implements PlateService
 
     public record CreatePlateSetPlate(String name, Integer plateType) {}
 
-    public PlateSetImpl createPlateSet(Container container, User user, @NotNull PlateSetImpl plateSet, @Nullable List<CreatePlateSetPlate> plates) throws Exception
+    public PlateSetImpl createPlateSet(
+        Container container,
+        User user,
+        @NotNull PlateSetImpl plateSet,
+        @Nullable List<CreatePlateSetPlate> plates,
+        @Nullable Integer parentPlateSetId
+    ) throws Exception
     {
         if (!container.hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("Failed to create plate set. Insufficient permissions.");
@@ -1949,6 +1989,19 @@ public class PlateManager implements PlateService
 
         if (plates != null && plates.size() > MAX_PLATES)
             throw new ValidationException(String.format("Failed to create plate set. Plate sets can have a maximum of %d plates.", MAX_PLATES));
+
+        PlateSetImpl parentPlateSet = null;
+        if (parentPlateSetId != null)
+        {
+            parentPlateSet = (PlateSetImpl) getPlateSet(container, parentPlateSetId);
+            if (parentPlateSet == null)
+                throw new ValidationException(String.format("Failed to create plate set. Parent plate set with rowId (%d) is not available.", parentPlateSetId));
+            if (parentPlateSet.getRootPlateSetId() == null)
+                throw new ValidationException(String.format("Failed to create plate set. Parent plate set with rowId (%d) does not have a root plate set specified.", parentPlateSetId));
+        }
+
+        if (plateSet.getType() == null)
+            plateSet.setType(PlateSetType.assay);
 
         try (DbScope.Transaction tx = ensureTransaction())
         {
@@ -1961,6 +2014,8 @@ public class PlateManager implements PlateService
                 throw errors;
 
             Integer plateSetId = (Integer) rows.get(0).get("RowId");
+
+            savePlateSetHeritage(plateSetId, plateSet.getType(), parentPlateSet);
 
             if (plates != null)
             {
@@ -1980,6 +2035,44 @@ public class PlateManager implements PlateService
         }
 
         return plateSet;
+    }
+
+    private void savePlateSetHeritage(Integer plateSetId, PlateSetType plateSetType, @Nullable PlateSetImpl parentPlateSet)
+    {
+        requireActiveTransaction();
+
+        // Configure rootPlateSetId
+        Integer rootPlateSetId = null;
+        if (PlateSetType.primary.equals(plateSetType))
+            rootPlateSetId = parentPlateSet == null ? plateSetId : parentPlateSet.getRootPlateSetId();
+        else if (PlateSetType.assay.equals(plateSetType))
+            rootPlateSetId = parentPlateSet == null ? null : parentPlateSet.getRootPlateSetId();
+
+        // Configure primaryPlateSetId
+        Integer primaryPlateSetId = null;
+        if (parentPlateSet != null)
+        {
+            if (PlateSetType.primary.equals(parentPlateSet.getType()))
+                primaryPlateSetId = parentPlateSet.getRowId();
+            else if (PlateSetType.assay.equals(parentPlateSet.getType()))
+                primaryPlateSetId = parentPlateSet.getPrimaryPlateSetId(); // could be null
+        }
+
+        // Add lineage edge relating parent to this plate set
+        if (parentPlateSet != null)
+            addPlateSetEdges(List.of(new PlateSetEdge(parentPlateSet.getRowId(), plateSetId, parentPlateSet.getRootPlateSetId())));
+
+        if (rootPlateSetId != null || primaryPlateSetId != null)
+        {
+            SQLFragment sql = new SQLFragment("UPDATE ").append(AssayDbSchema.getInstance().getTableInfoPlateSet()).append(" SET ");
+            if (rootPlateSetId != null)
+                sql = sql.append("RootPlateSetId = ?").add(rootPlateSetId);
+            if (primaryPlateSetId != null)
+                sql = sql.append(rootPlateSetId != null ? ", " : "").append("PrimaryPlateSetId = ?").add(primaryPlateSetId);
+            sql = sql.append(" WHERE RowId = ?").add(plateSetId);
+
+            new SqlExecutor(AssayDbSchema.getInstance().getSchema()).execute(sql);
+        }
     }
 
     public void archivePlateSets(Container container, User user, List<Integer> plateSetIds, boolean archive) throws Exception
@@ -2012,7 +2105,7 @@ public class PlateManager implements PlateService
                 }
             }
 
-            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable, "PS")
+            SQLFragment sql = new SQLFragment("UPDATE ").append(plateSetTable)
                     .append(" SET archived = ?").add(archive)
                     .append(" WHERE rowId ").appendInClause(plateSetIds, plateSetTable.getSqlDialect());
 
@@ -2020,6 +2113,97 @@ public class PlateManager implements PlateService
 
             tx.commit();
         }
+    }
+
+    private void addPlateSetEdges(Collection<PlateSetEdge> edges)
+    {
+        if (edges == null || edges.isEmpty())
+            return;
+
+        List<List<?>> params = new ArrayList<>();
+
+        for (var edge : edges)
+        {
+            // ignore cycles from and to itself
+            if (Objects.equals(edge.getFromPlateSetId(), edge.getToPlateSetId()))
+                continue;
+
+            params.add(Arrays.asList(
+                edge.getFromPlateSetId(),
+                edge.getToPlateSetId(),
+                edge.getRootPlateSetId()
+            ));
+        }
+
+        if (params.isEmpty())
+            return;
+
+        try (DbScope.Transaction tx = ensureTransaction())
+        {
+            String sql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoPlateSetEdge() +
+                    " (fromPlateSetId, toPlateSetId, rootPlateSetId) " +
+                    " VALUES (?, ?, ?) ";
+
+            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), sql, params);
+            tx.commit();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    public PlateSetLineage getPlateSetLineage(Container container, User user, int seedPlateSetId, @Nullable ContainerFilter cf)
+    {
+        ContainerFilter cf_ = cf;
+        if (cf_ == null)
+            cf_ = QueryService.get().getProductContainerFilterForLookups(container, user, ContainerFilter.Type.Current.create(container, user));
+
+        PlateSetImpl seedPlateSet = (PlateSetImpl) getPlateSet(cf_, seedPlateSetId);
+        if (seedPlateSet == null)
+            throw new NotFoundException();
+
+        PlateSetLineage lineage = new PlateSetLineage();
+        lineage.setSeed(seedPlateSetId);
+
+        // stand-alone plate set
+        if (seedPlateSet.getRootPlateSetId() == null)
+        {
+            lineage.setPlateSets(Map.of(seedPlateSetId, seedPlateSet));
+            return lineage;
+        }
+
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RootPlateSetId"), seedPlateSet.getRootPlateSetId());
+        List<PlateSetEdge> edges = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlateSetEdge(), filter, null).getArrayList(PlateSetEdge.class);
+        lineage.setEdges(edges);
+
+        Set<Integer> nodeIds = new HashSet<>();
+        nodeIds.add(seedPlateSetId);
+        nodeIds.add(seedPlateSet.getRootPlateSetId());
+        for (var edge : edges)
+        {
+            nodeIds.add(edge.getFromPlateSetId());
+            nodeIds.add(edge.getToPlateSetId());
+        }
+
+        UserSchema schema = getPlateUserSchema(container, user);
+        TableInfo plateSetTable = schema.getTableOrThrow(PlateSetTable.NAME, cf_);
+        SimpleFilter filterPS = new SimpleFilter();
+        filterPS.addInClause(FieldKey.fromParts("RowId"), nodeIds);
+        List<PlateSetImpl> nodes = new TableSelector(plateSetTable, filterPS, null).getArrayList(PlateSetImpl.class);
+
+        Map<Integer, PlateSet> plateSets = new HashMap<>();
+        for (var node : nodes)
+            plateSets.put(node.getRowId(), node);
+        lineage.setPlateSets(plateSets);
+
+        return lineage;
+    }
+
+    private void requireActiveTransaction()
+    {
+        if (!AssayDbSchema.getInstance().getSchema().getScope().isTransactionActive())
+            throw new IllegalStateException("This method must be called from within a transaction");
     }
 
     public static final class TestCase
@@ -2212,10 +2396,10 @@ public class PlateManager implements PlateService
 
             // Act
             PlateSet plateSet = PlateManager.get().createPlateSet(container, user, plateSetImpl, List.of(
-                    new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId()),
-                    new CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId()),
-                    new CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId())
-            ));
+                new CreatePlateSetPlate("testAccessPlateByIdentifiersFirst", plateType.getRowId()),
+                new CreatePlateSetPlate("testAccessPlateByIdentifiersSecond", plateType.getRowId()),
+                new CreatePlateSetPlate("testAccessPlateByIdentifiersThird", plateType.getRowId())
+            ), null);
 
             // Assert
             assertTrue("Expected plateSet to have been persisted and provided with a rowId", plateSet.getRowId() > 0);
