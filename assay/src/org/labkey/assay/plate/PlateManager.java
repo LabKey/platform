@@ -52,6 +52,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -98,6 +99,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -1076,8 +1078,6 @@ public class PlateManager implements PlateService
         lsids.add(plate.getLSID());
         for (WellGroup wellgroup : plate.getWellGroups())
             lsids.add(wellgroup.getLSID());
-        for (Well well : plate.getWells())
-            lsids.add(well.getLsid());
 
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
@@ -1839,10 +1839,35 @@ public class PlateManager implements PlateService
 
         List<WellCustomField> fields = _getFields(plate.getContainer(), user, plate.getRowId()).stream().map(WellCustomField::new).toList();
 
-        // need to get the well values associated with each custom field
-        Map<String, Object> properties = OntologyManager.getProperties(plate.getContainer(), well.getLsid());
-        for (WellCustomField field : fields)
-            field.setValue(properties.get(field.getPropertyURI()));
+        // merge in any well metadata values
+        if (!fields.isEmpty())
+        {
+            TableInfo wellTable = QueryService.get().getUserSchema(user, plate.getContainer(), PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
+            if (wellTable != null)
+            {
+                Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
+                for (WellCustomField customField : fields)
+                    customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
+
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
+                Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
+                try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+                {
+                    while (r.next())
+                    {
+                        for (Map.Entry<FieldKey, Object> rowEntry : r.getFieldKeyRowMap().entrySet())
+                        {
+                            if (customFieldMap.containsKey(rowEntry.getKey()))
+                                customFieldMap.get(rowEntry.getKey()).setValue(rowEntry.getValue());
+                        }
+                    }
+                }
+                catch (SQLException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            }
+        }
 
         return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();
     }
@@ -2494,12 +2519,12 @@ public class PlateManager implements PlateService
             assertNotNull(qus);
             BatchValidationException errors = new BatchValidationException();
 
-            // verify metadata update works for Property URI as well as field key
+            // add metadata to 2 rows
             WellBean well = wells.get(0);
             List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of(
                     "rowid", well.getRowId(),
-                    fields.get(0).getPropertyURI(), 1.25,       // concentration
-                    fields.get(1).getPropertyURI(), 5.25            // negativeControl
+                    "properties/concentration", 1.25,
+                    "properties/negativeControl", 5.25
             ));
 
             qus.updateRows(user, container, rows, null, errors, null, null);
@@ -2517,38 +2542,35 @@ public class PlateManager implements PlateService
             if (errors.hasErrors())
                 fail(errors.getMessage());
 
-            // Issue 49603 : getSelectSql not generating correct SQL, uncomment when this issue is fixed
-/*
-
-            ColumnInfo colConcentration = wellTable.getColumn("properties/concentration");
-            ColumnInfo colNegControl = wellTable.getColumn("properties/negativeControl");
+            FieldKey fkConcentration = FieldKey.fromParts("properties", "concentration");
+            FieldKey fkNegativeControl = FieldKey.fromParts("properties", "negativeControl");
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkNegativeControl));
 
             // verify plate metadata property updates
-            try (Results r = QueryService.get().select(wellTable, List.of(colConcentration, colNegControl), filter, new Sort("Col")))
+            try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
             {
                 int row = 0;
                 while (r.next())
                 {
                     if (row == 0)
                     {
-                        assertEquals(1.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals(5.25, r.getDouble(colNegControl.getFieldKey()), 0);
+                        assertEquals(1.25, r.getDouble(fkConcentration), 0);
+                        assertEquals(5.25, r.getDouble(fkNegativeControl), 0);
                     }
                     else if (row == 1)
                     {
-                        assertEquals(2.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals(6.25, r.getDouble(colNegControl.getFieldKey()), 0);
+                        assertEquals(2.25, r.getDouble(fkConcentration), 0);
+                        assertEquals(6.25, r.getDouble(fkNegativeControl), 0);
                     }
                     else
                     {
                         // the remainder should be null
-                        assertEquals(0, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals(0, r.getDouble(colNegControl.getFieldKey()), 0);
+                        assertEquals(0, r.getDouble(fkConcentration), 0);
+                        assertEquals(0, r.getDouble(fkNegativeControl), 0);
                     }
                     row++;
                 }
             }
-*/
         }
 
         @Test
@@ -2574,41 +2596,39 @@ public class PlateManager implements PlateService
             Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", null, null, rows);
             assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
-            // issue 49603: uncomment when sql generation problem is fixed
-/*
             TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
-            ColumnInfo colConcentration = wellTable.getColumn("properties/concentration");
-            ColumnInfo colBarcode = wellTable.getColumn("properties/barcode");
+            FieldKey fkConcentration = FieldKey.fromParts("properties", "concentration");
+            FieldKey fkBarcode = FieldKey.fromParts("properties", "barcode");
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkBarcode));
 
             // verify that well data was added
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
             filter.addCondition(FieldKey.fromParts("Row"), 0);
-            try (Results r = QueryService.get().select(wellTable, List.of(colConcentration, colBarcode), filter, new Sort("Col")))
+            try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
             {
                 int row = 0;
                 while (r.next())
                 {
                     if (row == 0)
                     {
-                        assertEquals(2.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals("B1234", r.getString(colBarcode.getFieldKey()));
+                        assertEquals(2.25, r.getDouble(fkConcentration), 0);
+                        assertEquals("B1234", r.getString(fkBarcode));
                     }
                     else if (row == 1)
                     {
-                        assertEquals(1.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals("B5678", r.getString(colBarcode.getFieldKey()));
+                        assertEquals(1.25, r.getDouble(fkConcentration), 0);
+                        assertEquals("B5678", r.getString(fkBarcode));
                     }
                     else
                     {
                         // the remainder should be null
-                        assertEquals(0, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertNull(r.getString(colBarcode.getFieldKey()));
+                        assertEquals(0, r.getDouble(fkConcentration), 0);
+                        assertNull(r.getString(fkBarcode));
                     }
                     row++;
                 }
             }
-*/
         }
     }
 }
