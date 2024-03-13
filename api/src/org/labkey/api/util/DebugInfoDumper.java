@@ -87,6 +87,7 @@ public class DebugInfoDumper
             {
                 LOG.error("Failed to create file " + _threadDumpFile.getAbsolutePath(), e);
             }
+            _threadDumpFile.deleteOnExit();
         }
 
         // Ensure there's a heap dump request file
@@ -104,6 +105,7 @@ public class DebugInfoDumper
             {
                 LOG.error("Failed to create file " + _heapDumpFile.getAbsolutePath(), e);
             }
+            _heapDumpFile.deleteOnExit();
         }
 
         _threadDumpLastModified = _threadDumpFile.lastModified();
