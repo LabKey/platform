@@ -496,7 +496,7 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
                 List<? extends ExpMaterial> materials = containerMaterials.get(c);
                 try
                 {
-                    Map<String, Integer> response = SampleTypeService.get().moveSamples(materials, container, targetContainer, user, auditUserComment, auditType);
+                    Map<String, Integer> response = SampleTypeService.get().moveSamples(materials, c, targetContainer, user, auditUserComment, auditType);
                     incrementCounts(allContainerResponse, response);
                 }
                 catch (ExperimentException e)
