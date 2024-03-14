@@ -16,6 +16,9 @@
 
 package org.labkey.study.controllers;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.FactoryUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -60,7 +63,34 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -200,7 +230,27 @@ import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.CustomParticipantView;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKindProperties;
+import org.labkey.study.model.DatasetManager;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantCategoryImpl;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudySnapshot;
+import org.labkey.study.model.UploadLog;
+import org.labkey.study.model.VisitDataset;
+import org.labkey.study.model.VisitDatasetType;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -221,9 +271,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -245,7 +292,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
@@ -3462,7 +3508,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
         {
             _study = StudyController.getStudyThrowIfNull(container);
 
@@ -3486,7 +3532,7 @@ public class StudyController extends BaseStudyController
             panelHtml.append("      </tr>");
             panelHtml.append("  </table>");
 
-            return panelHtml.toString();
+            return HtmlString.unsafe(panelHtml.toString());
         }
 
         @Override
@@ -3496,7 +3542,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             StringBuilder panelHtml = new StringBuilder();
             panelHtml.append("  <table class=\"lk-fields-table\">");
@@ -3516,7 +3562,7 @@ public class StudyController extends BaseStudyController
             panelHtml.append("      </tr>");
             panelHtml.append("  </table>");
 
-            return panelHtml.toString();
+            return HtmlString.unsafe(panelHtml.toString());
         }
 
         @Override
@@ -3526,7 +3572,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a requires comment panel.");
         }

@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -33,11 +34,11 @@ import java.util.Set;
 public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDataStatesForm> extends FormViewAction<FORM>
 {
     public abstract boolean hasQcStateDefaultsPanel();
-    public abstract String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasDataVisibilityPanel();
-    public abstract String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasRequiresCommentPanel();
-    public abstract String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler);
 
     protected DataStateHandler _dataStateHandler;
 

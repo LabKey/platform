@@ -2579,7 +2579,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
+        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
         {
             CoreQCStateHandler qcStateHandler = (CoreQCStateHandler)qcStateHandlerAbstract;
 
@@ -2595,7 +2595,7 @@ public class CoreController extends SpringActionController
             panelHtml.append("      </tr>");
             panelHtml.append("  </table>");
 
-            return panelHtml.toString();
+            return HtmlString.unsafe(panelHtml.toString());
         }
 
         @Override
@@ -2605,7 +2605,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a data visibility panel.");
         }
@@ -2617,7 +2617,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
         {
             StringBuilder panelHtml = new StringBuilder();
             panelHtml.append("  <table class=\"lk-fields-table\">");
@@ -2636,7 +2636,7 @@ public class CoreController extends SpringActionController
             panelHtml.append("      </tr>");
             panelHtml.append("  </table>");
 
-            return panelHtml.toString();
+            return HtmlString.unsafe(panelHtml.toString());
         }
 
         @Override
