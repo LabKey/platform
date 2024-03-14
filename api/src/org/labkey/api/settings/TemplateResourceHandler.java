@@ -168,7 +168,7 @@ public enum TemplateResourceHandler
     {
         Theme theme = PageFlowUtil.resolveTheme(c);
 
-        return (Seattle == theme ? theme : Overcast).name();
+        return (Seattle == theme ? theme : Overcast).name().toLowerCase();
     }
 
     private Calendar getExpiration()
