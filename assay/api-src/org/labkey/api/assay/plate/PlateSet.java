@@ -20,4 +20,6 @@ public interface PlateSet
     boolean isArchived();
 
     List<Plate> getPlates(User user);
+
+    PlateSetType getType();
 }
