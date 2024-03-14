@@ -95,12 +95,14 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.study.publish.StudyPublishService;
 import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.logging.LogHelper;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.ExpDataIterators;
 import org.labkey.experiment.SampleTypeAuditProvider;
 
@@ -493,6 +495,8 @@ public class SampleTypeUpdateServiceDI extends DefaultQueryUpdateService
         {
             for (Container c : containerMaterials.keySet())
             {
+                if (!c.hasPermission(user, MoveEntitiesPermission.class))
+                    throw new UnauthorizedException("You do not have permission to move samples out of '" + c.getName() + "'.");
                 List<? extends ExpMaterial> materials = containerMaterials.get(c);
                 try
                 {

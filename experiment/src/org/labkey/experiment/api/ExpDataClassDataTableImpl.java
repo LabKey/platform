@@ -118,6 +118,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.experiment.ExpDataIterators;
@@ -1116,6 +1117,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 for (Container c : containerObjects.keySet())
                 {
+                    if (!c.hasPermission(user, MoveEntitiesPermission.class))
+                        throw new UnauthorizedException("You do not have permission to move sources out of '" + c.getName() + "'.");
+
                     try
                     {
                         Map<String, Integer> response = ExperimentService.get().moveDataClassObjects(containerObjects.get(c), c, targetContainer, user, auditUserComment, auditType);

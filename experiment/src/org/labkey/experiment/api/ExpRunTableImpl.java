@@ -60,6 +60,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -1090,6 +1091,9 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             {
                 for (Container c : expRuns.keySet())
                 {
+                    if (!c.hasPermission(user, MoveEntitiesPermission.class))
+                        throw new UnauthorizedException("You do not have permission to move assay runs out of '" + c.getName() + "'.");
+
                     try
                     {
                         Map<String, Integer> response = ExperimentService.get().moveAssayRuns(expRuns.get(c), c, targetContainer, user, auditUserComment, auditType);
