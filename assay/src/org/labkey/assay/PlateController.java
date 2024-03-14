@@ -33,6 +33,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateCustomField;
 import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateSetType;
 import org.labkey.api.assay.plate.PlateType;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.RowMapFactory;
@@ -105,7 +106,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public static class BeginAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -135,7 +136,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
+    public static class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
         public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
@@ -154,7 +155,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class DesignerServiceAction extends GWTServiceAction
+    public static class DesignerServiceAction extends GWTServiceAction
     {
         @Override
         protected BaseRemoteService createService() throws IllegalStateException
@@ -179,7 +180,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class PlateDetailsAction extends SimpleViewAction<RowIdForm>
+    public static class PlateDetailsAction extends SimpleViewAction<RowIdForm>
     {
         @Override
         public ModelAndView getView(RowIdForm form, BindException errors)
@@ -249,7 +250,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({DeletePermission.class, DesignAssayPermission.class})
-    public class DeleteAction extends FormHandlerAction<NameForm>
+    public static class DeleteAction extends FormHandlerAction<NameForm>
     {
         @Override
         public void validateCommand(NameForm target, Errors errors)
@@ -260,7 +261,7 @@ public class PlateController extends SpringActionController
         public boolean handlePost(NameForm form, BindException errors) throws Exception
         {
             Plate template = PlateService.get().getPlate(getContainer(), form.getPlateId());
-            if (template != null)
+            if (template != null && template.getRowId() != null)
                 PlateService.get().deletePlate(getContainer(), getUser(), template.getRowId());
             return true;
         }
@@ -346,7 +347,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class CopyTemplateAction extends FormViewAction<CopyForm>
+    public static class CopyTemplateAction extends FormViewAction<CopyForm>
     {
         @Override
         public void validateCommand(CopyForm form, Errors errors)
@@ -385,7 +386,7 @@ public class PlateController extends SpringActionController
     }
 
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
-    public class HandleCopyAction extends CopyTemplateAction
+    public static class HandleCopyAction extends CopyTemplateAction
     {
         private Plate _plate;
         private Container _destination;
@@ -875,6 +876,8 @@ public class PlateController extends SpringActionController
         private String _description;
         private String _name;
         private List<PlateManager.CreatePlateSetPlate> _plates = new ArrayList<>();
+        private Integer _parentPlateSetId;
+        private PlateSetType _type;
 
         public String getDescription()
         {
@@ -905,6 +908,26 @@ public class PlateController extends SpringActionController
         {
             _plates = plates;
         }
+
+        public Integer getParentPlateSetId()
+        {
+            return _parentPlateSetId;
+        }
+
+        public void setParentPlateSetId(Integer parentPlateSetId)
+        {
+            _parentPlateSetId = parentPlateSetId;
+        }
+
+        public PlateSetType getType()
+        {
+            return _type;
+        }
+
+        public void setType(PlateSetType type)
+        {
+            _type = type;
+        }
     }
 
     @Marshal(Marshaller.Jackson)
@@ -919,8 +942,9 @@ public class PlateController extends SpringActionController
                 PlateSetImpl plateSet = new PlateSetImpl();
                 plateSet.setDescription(form.getDescription());
                 plateSet.setName(form.getName());
+                plateSet.setType(form.getType());
 
-                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlates());
+                plateSet = PlateManager.get().createPlateSet(getContainer(), getUser(), plateSet, form.getPlates(), form.getParentPlateSetId());
                 return success(plateSet);
             }
             catch (Exception e)
@@ -984,6 +1008,55 @@ public class PlateController extends SpringActionController
             }
 
             return null;
+        }
+    }
+
+    public static class PlateSetLineageForm
+    {
+        private ContainerFilter.Type _containerFilter;
+        private int _seed;
+
+        public ContainerFilter.Type getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(ContainerFilter.Type containerFilter)
+        {
+            _containerFilter = containerFilter;
+        }
+
+        public int getSeed()
+        {
+            return _seed;
+        }
+
+        public void setSeed(int seed)
+        {
+            _seed = seed;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class LineageAction extends ReadOnlyApiAction<PlateSetLineageForm>
+    {
+        @Override
+        public void validateForm(PlateSetLineageForm form, Errors errors)
+        {
+            if (form.getSeed() <= 0)
+                errors.reject(ERROR_REQUIRED, "Specifying a \"seed\" Plate Set rowId is required.");
+        }
+
+        @Override
+        public Object execute(PlateSetLineageForm form, BindException errors) throws Exception
+        {
+            ContainerFilter cf = null;
+
+            // if an optional container filter is specified
+            if (form.getContainerFilter() != null)
+                cf = form.getContainerFilter().create(getViewContext());
+
+            return PlateManager.get().getPlateSetLineage(getContainer(), getUser(), form.getSeed(), cf);
         }
     }
 }

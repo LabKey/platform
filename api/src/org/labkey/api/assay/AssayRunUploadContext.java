@@ -151,6 +151,8 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getTargetStudy();
 
+    default String getAuditUserComment() { return null; }
+
     TransformResult getTransformResult();
 
     void setTransformResult(TransformResult result);
@@ -234,6 +236,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<String, File> _uploadedData;
         protected String _jobDescription;
         protected String _jobNotificationProvider;
+        protected String _auditUserComment;
 
         public Factory(
                 @NotNull ExpProtocol protocol,
@@ -394,6 +397,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         public FACTORY setJobNotificationProvider(String jobNotificationProvider)
         {
             _jobNotificationProvider = jobNotificationProvider;
+            return self();
+        }
+
+        public FACTORY setAuditUserComment(String auditUserComment)
+        {
+            _auditUserComment = auditUserComment;
             return self();
         }
 

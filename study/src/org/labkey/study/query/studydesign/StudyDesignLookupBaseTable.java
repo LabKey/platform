@@ -125,13 +125,13 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             if (container.isProject() && !hasPermission(user, AdminPermission.class))
                 throw new QueryUpdateServiceException("Only admins are allowed to update records in this table at the project level.");
 
             validateValues(row);
-            return super.updateRow(user, container, row, oldRow);
+            return super.updateRow(user, container, row, oldRow, configParameters);
         }
 
         @Override

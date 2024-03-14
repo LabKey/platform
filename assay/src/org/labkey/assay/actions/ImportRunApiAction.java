@@ -111,6 +111,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         boolean forceAsync;
         boolean allowCrossRunFileInputs;
         boolean allowLookupByAlternateKey;
+        String auditUserComment;
 
         // TODO: support additional input/output data/materials
         Map<Object, String> inputData = new HashMap<>();
@@ -157,6 +158,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             reRunId = json.has("reRunId") ? json.optInt("reRunId") : null;
             runFilePath = json.optString("runFilePath", null);
             moduleName = json.optString("module", null);
+            auditUserComment  = json.optString("auditUserComment", null);
             JSONArray dataRows = json.optJSONArray(AssayJSONConverter.DATA_ROWS);
             if (dataRows != null)
                 rawData = JsonUtil.toMapList(dataRows);
@@ -186,6 +188,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             jobNotificationProvider = form.getJobNotificationProvider();
             allowCrossRunFileInputs = form.isAllowCrossRunFileInputs();
             allowLookupByAlternateKey = form.isAllowLookupByAlternateKey();
+            auditUserComment = form.getAuditUserComment();
         }
 
         // Import the file at runFilePath if it is available, otherwise AssayRunUploadContextImpl.getUploadedData() will use the multi-part form POSTed file
@@ -236,6 +239,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
                 .setTargetStudy(targetStudy)
                 .setReRunId(reRunId)
                 .setLogger(LOG)
+                .setAuditUserComment(auditUserComment)
                 .setJobDescription(jobDescription)
                 .setJobNotificationProvider(jobNotificationProvider)
                 .setAllowCrossRunFileInputs(allowCrossRunFileInputs)
@@ -366,6 +370,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private boolean _forceAsync;
         private boolean _allowCrossRunFileInputs;
         private boolean _allowLookupByAlternateKey = true;
+        private String _auditUserComment = null;
 
         public JSONObject getJson()
         {
@@ -565,6 +570,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setAllowLookupByAlternateKey(boolean allowLookupByAlternateKey)
         {
             _allowLookupByAlternateKey = allowLookupByAlternateKey;
+        }
+
+        public String getAuditUserComment()
+        {
+            return _auditUserComment;
+        }
+
+        public void setAuditUserComment(String auditUserComment)
+        {
+            _auditUserComment = auditUserComment;
         }
 
         @Override

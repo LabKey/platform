@@ -62,14 +62,14 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         checkSingleUse(container, user, row, oldRow);
 
         try
         {
-            return super.updateRow(user, container, row, oldRow);
+            return super.updateRow(user, container, row, oldRow, configParameters);
         }
         catch (DataIntegrityViolationException e)
         {

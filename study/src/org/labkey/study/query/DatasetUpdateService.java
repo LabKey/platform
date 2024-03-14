@@ -558,7 +558,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException
     {
         // Update will delete old and insert, so covering aliases, like insert, is needed

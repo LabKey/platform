@@ -71,9 +71,9 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        Map<String, Object> updatedRow = super.updateRow(user, container, row, oldRow);
+        Map<String, Object> updatedRow = super.updateRow(user, container, row, oldRow, configParameters);
         try
         {
             BatchValidationException errors = new BatchValidationException();

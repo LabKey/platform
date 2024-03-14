@@ -254,7 +254,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, @Nullable Map<Enum, Object> configParameters) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Integer plateId = (Integer) oldRow.get("RowId");
             Plate plate = PlateManager.get().getPlate(container, plateId);
@@ -281,7 +281,7 @@ public class PlateTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 }
             }
 
-            Map<String, Object> newRow = super.updateRow(user, container, row, oldRow);
+            Map<String, Object> newRow = super.updateRow(user, container, row, oldRow, configParameters);
             PlateManager.get().clearCache(container, plate);
             return newRow;
         }

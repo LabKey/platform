@@ -4016,9 +4016,9 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
         {
-            initContext(dl, errors, auditBehaviorType);
+            initContext(dl, errors, auditBehaviorType, auditUserComment);
 
             TableInfo tInfo = _target;
             QueryUpdateService updateService = _updateService;
@@ -4104,6 +4104,7 @@ public class ExperimentController extends SpringActionController
             }
 
             _auditBehaviorType = form.getAuditBehavior();
+            _auditUserComment = form.getAuditUserComment();
         }
 
         @Override
@@ -4124,9 +4125,9 @@ public class ExperimentController extends SpringActionController
             return renameColumns;
         }
 
-        protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
+        protected void initContext(DataLoader dl, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, @Nullable String auditUserComment) throws IOException
         {
-            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, errors, null, getContainer());
+            _context = createDataIteratorContext(_insertOption, getOptionParamsMap(), auditBehaviorType, auditUserComment, errors, null, getContainer());
 
             if (_context.isCrossFolderImport())
             {
@@ -4151,9 +4152,9 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
         {
-            initContext(dl, errors, auditBehaviorType);
+            initContext(dl, errors, auditBehaviorType, auditUserComment);
             return importData(dl, _target, _updateService, _context, auditEvent, getUser(), getContainer());
         }
 

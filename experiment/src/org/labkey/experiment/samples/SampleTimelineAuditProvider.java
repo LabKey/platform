@@ -124,7 +124,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 }
                 else if (COLUMN_NAME_USER_COMMENT.equalsIgnoreCase(col.getName()))
                 {
-                    col.setLabel("User Comment");
+                    col.setLabel("Reason");
                 }
             }
         };
