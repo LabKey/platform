@@ -1799,7 +1799,7 @@ public class PlateManager implements PlateService
     {
         Domain domain = getPlateMetadataDomain(container, user);
         if (domain == null)
-            throw new IllegalArgumentException("Failed to get plate custom fields. Custom fields domain does not exist. Try creating fields first.");
+            return Collections.emptyList();
 
         SQLFragment sql = new SQLFragment("SELECT PropertyURI FROM ").append(AssayDbSchema.getInstance().getTableInfoPlateProperty(), "PP")
                 .append(" WHERE PlateId = ?").add(plateId);
