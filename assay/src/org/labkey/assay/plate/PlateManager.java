@@ -999,8 +999,6 @@ public class PlateManager implements PlateService
                     throw new IllegalArgumentException("The specified well has not been saved to the database.");
                 if (group.getRowId() == null)
                     throw new IllegalStateException("The well group : " + group.getName() + " has not been saved to the database.");
-//                assert position.getRowId() > 0;
-//                assert group.getRowId() != null && group.getRowId() > 0;
                 Integer wellId = position.getRowId();
                 Integer wellGroupId = group.getRowId();
                 wellGroupPositions.add(List.of(wellId, wellGroupId));
