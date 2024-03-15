@@ -23,7 +23,7 @@ public interface ImportHelperService
 
     interface SequenceNumTranslator
     {
-        Double translateSequenceNum(@Nullable Object seq, @Nullable Object d);
+        Double translateSequenceNum(@Nullable Object seq, @Nullable Object d) throws ValidationException;
     }
 
     interface ParticipantIdTranslator

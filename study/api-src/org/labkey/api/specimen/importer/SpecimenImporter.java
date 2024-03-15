@@ -2305,7 +2305,7 @@ public class SpecimenImporter extends SpecimenTableManager
             }
 
             @Override
-            public Object getValue(Map<String, Object> row)
+            public Object getValue(Map<String, Object> row) throws ValidationException
             {
                 Object s = SpecimenImporter.this.getValue(visitCol, row);
                 Object d = SpecimenImporter.this.getValue(dateCol, row);
