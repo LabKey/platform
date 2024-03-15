@@ -1564,8 +1564,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var plotConfigArr = [], geom, labels, data = this.getMeasureStoreRecords(), me = this;
 
         geom = LABKEY.vis.GenericChartHelper.generateGeom(chartType, chartConfig.geomOptions);
-        if (chartType === 'line_plot' && (chartConfig.geomOptions.hideDataPoints || data.length > this.dataPointLimit)){
-            geom = null;
+        if (chartType === 'line_plot' && data.length > this.dataPointLimit){
+            chartConfig.geomOptions.hideDataPoints = true;
         }
         
         labels = LABKEY.vis.GenericChartHelper.generateLabels(chartConfig.labels);

@@ -1027,6 +1027,11 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         clipRect = (scales.x && LABKEY.Utils.isArray(scales.x.domain)) || (scales.y && LABKEY.Utils.isArray(scales.y.domain));
 
+        // account for line chart hiding points
+        if (chartConfig.geomOptions.hideDataPoints) {
+            geom = null;
+        }
+
         // account for one or many y-measures by ensuring that we have an array of y-measures
         var yMeasures = ensureMeasuresAsArray(chartConfig.measures.y);
 
