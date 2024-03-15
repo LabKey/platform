@@ -771,16 +771,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     // the configuration can be used to make a selectRows request
     getQueryConfig : function(serialize)
     {
-        var sortKey = 'lsid'; // needed to keep expected ordering for legend data
-
-        // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
-        var visitTableName = LABKEY.vis.GenericChartHelper.getStudySubjectInfo().tableName + 'Visit';
-        if (this.measures.x && this.measures.x.fieldKey === visitTableName + '/Visit') {
-            var displayOrderColName = visitTableName + '/Visit/DisplayOrder';
-            var seqNumColName = visitTableName + '/SequenceNum';
-            sortKey = displayOrderColName + ', ' + seqNumColName;
-        }
-
         var config = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
@@ -790,7 +780,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             parameters  : this.parameters,
             requiredVersion : 13.2,
             maxRows: -1,
-            sort: sortKey,
+            sort: LABKEY.vis.GenericChartHelper.getQueryConfigSortKey(this.measures),
             method: 'POST'
         };
 

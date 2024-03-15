@@ -1382,6 +1382,49 @@ LABKEY.vis.GenericChartHelper = new function(){
         return t == 'date';
     };
 
+    var getAllowableTypes = function(field) {
+        var numericTypes = ['int', 'float', 'double', 'INTEGER', 'DOUBLE'],
+                nonNumericTypes = ['string', 'date', 'boolean', 'STRING', 'TEXT', 'DATE', 'BOOLEAN'],
+                numericAndDateTypes = numericTypes.concat(['date','DATE']);
+
+        if (field.altSelectionOnly)
+            return [];
+        else if (field.numericOnly)
+            return numericTypes;
+        else if (field.nonNumericOnly)
+            return nonNumericTypes;
+        else if (field.numericOrDateOnly)
+            return numericAndDateTypes;
+        else
+            return numericTypes.concat(nonNumericTypes);
+    }
+
+    var isMeasureDimensionMatch = function(chartType, field, isMeasure, isDimension) {
+        if ((chartType === 'box_plot' || chartType === 'bar_chart')) {
+            //x-axis does not support 'measure' column types for these plot types
+            if (field.name === 'x' || field.name === 'xSub')
+                return isDimension;
+            else
+                return isMeasure;
+        }
+
+        return (field.numericOnly && isMeasure) || (field.nonNumericOnly && isDimension);
+    }
+
+    var getQueryConfigSortKey = function(measures) {
+        var sortKey = 'lsid'; // needed to keep expected ordering for legend data
+
+        // Issue 38105: For plots with study visit labels on the x-axis, sort by visit display order and then sequenceNum
+        var visitTableName = LABKEY.vis.GenericChartHelper.getStudySubjectInfo().tableName + 'Visit';
+        if (measures.x && measures.x.fieldKey === visitTableName + '/Visit') {
+            var displayOrderColName = visitTableName + '/Visit/DisplayOrder';
+            var seqNumColName = visitTableName + '/SequenceNum';
+            sortKey = displayOrderColName + ', ' + seqNumColName;
+        }
+
+        return sortKey;
+    }
+
     var getStudySubjectInfo = function()
     {
         var studyCtx = LABKEY.getModuleContext("study") || {};
@@ -1715,14 +1758,17 @@ LABKEY.vis.GenericChartHelper = new function(){
         getSelectedMeasureLabel: getSelectedMeasureLabel,
         getTitleFromMeasures: getTitleFromMeasures,
         getMeasureType: getMeasureType,
+        getAllowableTypes: getAllowableTypes,
         getQueryColumns : getQueryColumns,
         getChartTypeBasedWidth : getChartTypeBasedWidth,
         getDistinctYAxisSides : getDistinctYAxisSides,
         getYMeasureAes : getYMeasureAes,
         getDefaultMeasuresLabel: getDefaultMeasuresLabel,
         getStudySubjectInfo: getStudySubjectInfo,
+        getQueryConfigSortKey: getQueryConfigSortKey,
         ensureMeasuresAsArray: ensureMeasuresAsArray,
         isNumericType: isNumericType,
+        isMeasureDimensionMatch: isMeasureDimensionMatch,
         generateLabels: generateLabels,
         generateScales: generateScales,
         generateAes: generateAes,
