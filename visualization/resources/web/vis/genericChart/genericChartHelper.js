@@ -1272,7 +1272,7 @@ LABKEY.vis.GenericChartHelper = new function(){
      */
     var validateResponseHasData = function(measureStore, includeFilterMsg)
     {
-        var dataArray = LABKEY.Utils.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
+        var dataArray = getMeasureStoreRecords(measureStore);
         if (dataArray.length == 0)
         {
             return 'The response returned 0 rows of data. The query may be empty or the applied filters may be too strict.'
@@ -1281,6 +1281,10 @@ LABKEY.vis.GenericChartHelper = new function(){
 
         return null;
     };
+
+    var getMeasureStoreRecords = function(measureStore) {
+        return LABKEY.Utils.isDefined(measureStore) ? measureStore.rows || measureStore.records() : [];
+    }
 
     /**
      * Verifies that the axis measure is actually present and has data. Also checks to make sure that data can be used in a log
@@ -1617,6 +1621,12 @@ LABKEY.vis.GenericChartHelper = new function(){
     };
 
     var renderChartSVG = function(renderTo, queryConfig, chartConfig) {
+        queryChartData(renderTo, queryConfig, function(measureStore) {
+            generateChartSVG(renderTo, chartConfig, measureStore);
+        });
+    };
+
+    var queryChartData = function(renderTo, queryConfig, callback) {
         queryConfig.containerPath = LABKEY.container.path;
 
         if (queryConfig.filterArray && queryConfig.filterArray.length > 0) {
@@ -1637,13 +1647,13 @@ LABKEY.vis.GenericChartHelper = new function(){
         }
 
         queryConfig.success = function(measureStore) {
-            _renderChartSVG(renderTo, chartConfig, measureStore);
+            callback.call(this, measureStore);
         };
 
         LABKEY.Query.MeasureStore.selectRows(queryConfig);
     };
 
-    var _renderChartSVG = function(renderTo, chartConfig, measureStore) {
+    var generateChartSVG = function(renderTo, chartConfig, measureStore) {
         var responseMetaData = measureStore.getResponseMetadata();
 
         // explicitly set the chart width/height if not set in the config
@@ -1796,6 +1806,9 @@ LABKEY.vis.GenericChartHelper = new function(){
         validateXAxis: validateXAxis,
         validateYAxis: validateYAxis,
         renderChartSVG: renderChartSVG,
+        queryChartData: queryChartData,
+        generateChartSVG: generateChartSVG,
+        getMeasureStoreRecords: getMeasureStoreRecords,
         /**
          * Loads all of the required dependencies for a Generic Chart.
          * @param {Function} callback The callback to be executed when all of the visualization dependencies have been loaded.
