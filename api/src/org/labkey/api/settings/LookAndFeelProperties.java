@@ -24,14 +24,27 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.FolderDisplayMode;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SafeToRenderEnum;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.logging.LogHelper;
 
 import java.util.Arrays;
 
-import static org.labkey.api.settings.LookAndFeelProperties.Properties.*;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.applicationMenuDisplayMode;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.companyName;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.customLogin;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.customWelcome;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.dateParsingMode;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.discussionEnabled;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.folderDisplayMode;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.helpMenuEnabled;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.logoHref;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.reportAProblemPath;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.supportEmail;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemDescription;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemEmailAddress;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.systemShortName;
+import static org.labkey.api.settings.LookAndFeelProperties.Properties.themeName;
 
 /**
  * Stores configuration to control basic rendering of the overall page template. May be associated with the full install
@@ -47,7 +60,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
     {
         systemDescription("System description (used in emails)"),
         systemShortName("Header short name (appears in every page header and in emails)"),
-        themeName("Server color schema"),
+        themeName("Server color scheme. Valid values: " + Arrays.toString(Theme.values())),
         folderDisplayMode("Show project and folder navigation. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
         applicationMenuDisplayMode("Show application selection menu. Valid values: " + Arrays.toString(FolderDisplayMode.values())),
         helpMenuEnabled("Show LabKey Help menu item"),
@@ -176,7 +189,7 @@ public class LookAndFeelProperties extends LookAndFeelFolderProperties
 
     public String getThemeName()
     {
-        return lookupStringValue(themeName, PageFlowUtil.DEFAULT_THEME_NAME);
+        return lookupStringValue(themeName, Theme.DEFAULT.name());
     }
 
     public boolean isThemeNameInherited()

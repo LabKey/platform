@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
+<%@ page import="org.labkey.api.settings.Theme" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
@@ -34,7 +35,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.AdminUrlsImpl" %>
-<%@ page import="java.util.Arrays" %>
 <%@ page import="static org.labkey.api.settings.LookAndFeelProperties.Properties.*" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -114,8 +114,9 @@
             {
                 %><option value="" <%=selected(themeNameInherited)%>>Site Default (<%=h(siteThemeName)%>)</option><%
             }
-            for (String name : Arrays.asList("Harvest","Leaf","Madison","Mono","Ocean","Overcast","Seattle","Sky"))
+            for (Theme theme : Theme.values())
             {
+                String name = theme.name();
                 %><option value="<%=h(name)%>" <%=selected(!themeNameInherited && name.equalsIgnoreCase(themeName))%>><%=h(name)%></option><%
             }
         %>
