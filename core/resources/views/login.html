@@ -1,4 +1,4 @@
-<form class="auth-form" name="login" action="javascript:void(0)" method="post">
+<form class="auth-form" name="login" method="post">
     <div class="auth-header">Sign In</div>
     <div class="labkey-error" id="errors"></div>
     <div class="auth-form-body">
@@ -20,6 +20,7 @@
         </div>
         <input type="hidden" name="termsOfUseType" id="termsOfUseType">
         <div class="auth-item auth-credentials-submit">
+            <!-- Note: login.js attaches an authenticateUser() click event to elements with class "loginSubmitButton" -->
             <input type="submit" tabindex="-1" class="loginSubmitButton"/>
             <a tabindex="5" class="labkey-button primary signin-btn"><span>Sign In</span></a>
             <span class="registrationSection" hidden>
