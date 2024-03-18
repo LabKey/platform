@@ -2548,6 +2548,7 @@ public class DbScope
                 getConnection().commit();
                 _caches.clear();
                 CommitTaskOption.POSTCOMMIT.run(this);
+                clearCommitTasks();
             }
             catch (SQLException e)
             {
