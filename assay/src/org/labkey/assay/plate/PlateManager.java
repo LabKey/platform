@@ -876,7 +876,7 @@ public class PlateManager implements PlateService
                 plate.setLsid((String) row.get("Lsid"));
                 plate.setPlateId((String) row.get("PlateId"));
             }
-            savePropertyBag(container, plate.getLSID(), plate.getProperties(), updateExisting);
+            savePropertyBag(container, user, plate.getLSID(), plate.getProperties(), updateExisting);
 
             // delete well groups first
             List<WellGroupImpl> deletedWellGroups = plate.getDeletedWellGroups();
@@ -904,7 +904,7 @@ public class PlateManager implements PlateService
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
-                    savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), true);
+                    savePropertyBag(container, user, wellGroupInstanceLsid, wellgroup.getProperties(), true);
                 }
                 else
                 {
@@ -917,7 +917,7 @@ public class PlateManager implements PlateService
 
                     wellGroupInstanceLsid = (String)insertedRows.get(0).get("Lsid");
                     wellgroup = ObjectFactory.Registry.getFactory(WellGroupImpl.class).fromMap(wellgroup, insertedRows.get(0));
-                    savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), false);
+                    savePropertyBag(container, user, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
             }
             List<List<Integer>> wellGroupPositions = new LinkedList<>();
@@ -1008,7 +1008,13 @@ public class PlateManager implements PlateService
         return wellGroupPositions;
     }
 
-    private void savePropertyBag(Container container, String ownerLsid, Map<String, Object> props, boolean updateExisting) throws SQLException
+    private void savePropertyBag(
+        Container container,
+        User user,
+        String ownerLsid,
+        Map<String, Object> props,
+        boolean updateExisting
+    ) throws SQLException
     {
         // construct the LSID to associate with the property objects
         String classLsid = Lsid.parse(ownerLsid).edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
@@ -1043,7 +1049,7 @@ public class PlateManager implements PlateService
         try
         {
             if (objectProperties.length > 0)
-                OntologyManager.insertProperties(container, ownerLsid, objectProperties);
+                OntologyManager.insertProperties(container, user, ownerLsid, objectProperties);
         }
         catch (ValidationException ve)
         {
