@@ -424,77 +424,13 @@ public class DOM
         width,
         wrap,
 
-        /* ON attributes should be deprecated and go away
-        onabort,
-        onafterprint,
-        onbeforeprint,
-        onbeforeunload,
-        onblur,
-        oncanplay,
-        oncanplaythrough,
-        onchange, */
-        onclick,  /*
-        oncontextmenu,
-        oncopy,
-        oncuechange,
-        oncut,
-        ondblclick,
-        ondrag,
-        ondragend,
-        ondragenter,
-        ondragleave,
-        ondragover,
-        ondragstart,
-        ondrop,
-        ondurationchange,
-        onemptied,
-        onended,
-        onfocus,
-        onhashchange,
-        oninput,
-        oninvalid,
-        onkeydown,
-        onkeypress,
-        onkeyup,
-        onload,
-        onloadeddata,
-        onloadedmetadata,
-        onloadstart,
-        onmousedown,
-        onmousemove, */
+        /* ON attributes are deprecated and will go away */
+        @Deprecated
+        onclick,
+        @Deprecated
         onmouseout,
-        onmouseover, /*
-        onmouseup,
-        onmousewheel,
-        onoffline,
-        ononline,
-        onpagehide,
-        onpageshow,
-        onpaste,
-        onpause,
-        onplay,
-        onplaying,
-        onpopstate,
-        onprogress,
-        onratechange,
-        onreset,
-        onresize,
-        onscroll,
-        onsearch,
-        onseeked,
-        onseeking,
-        onselect,
-        onstalled,
-        onstorage, */
-        onsubmit, /*
-        onsuspend,
-        ontimeupdate,
-        ontoggle,
-        onunload,
-        onvolumechange,
-        onwaiting,
-        onwheel
-        END ON ATTRIBUTES */
+        @Deprecated
+        onmouseover
         ;
 
         Appendable render(Appendable builder, Object value) throws IOException
