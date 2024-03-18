@@ -1719,8 +1719,7 @@ LABKEY.vis.GenericChartHelper = new function(){
     var _renderMessages = function(divId, messages) {
         if (messages && messages.length > 0) {
             var errorDiv = document.createElement('div');
-            errorDiv.setAttribute('style', 'padding: 10px; background-color: #ffe5e5; color: #d83f48; font-weight: bold;');
-            errorDiv.innerHTML = messages.join('<br/>');
+            errorDiv.innerHTML = '<h3 style="color:red;">Error rendering chart:</h3><div>' + messages.join('<br/>') + '</div>';
             document.getElementById(divId).appendChild(errorDiv);
         }
     };

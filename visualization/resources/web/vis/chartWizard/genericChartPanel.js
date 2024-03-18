@@ -1266,7 +1266,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (chartConfig.geomOptions)
                 Ext4.apply(this.options.general, chartConfig.geomOptions);
 
-            if (chartConfig.labels && chartConfig.labels.main)
+            if (chartConfig.labels && LABKEY.Utils.isString(chartConfig.labels.main))
                 this.options.general.label = chartConfig.labels.main;
             else
                 this.options.general.label = this.getDefaultTitle();
@@ -1861,7 +1861,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     border: 1,
                     autoEl: {tag: 'div'},
                     padding: 10,
-                    html: '<h3 style="color:red;">Error rendering chart:</h2>' + validation.message,
+                    html: '<h3 style="color:red;">Error rendering chart:</h3>' + validation.message,
                     autoScroll: true
                 });
                 this.getViewPanel().add(errorDiv);
