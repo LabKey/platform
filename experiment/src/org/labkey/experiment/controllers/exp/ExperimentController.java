@@ -3520,16 +3520,16 @@ public class ExperimentController extends SpringActionController
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
 
-            Set<Integer> notPermittedIds = new HashSet<>();
-            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc
+            Set<Integer> notAllowedIds = new HashSet<>();
+            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc.
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 ExperimentService.get().getObjectReferencers().forEach(referencer ->
-                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
+                        notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
 
             if (SampleStatusService.get().supportsSampleStatus())
-                notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
+                notAllowedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
 
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allMaterials);
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
                 response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, requestIds, getUser(), getContainer()));
@@ -7630,6 +7630,37 @@ public class ExperimentController extends SpringActionController
             _seqType = NameGenerator.EntityCounter.valueOf(seqType);
         }
 
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public static class GetContainersFromSelectionsAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
+    {
+        @Override
+        public void validateForm(CrossFolderSelectionForm form, Errors errors)
+        {
+            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
+            if (!"samples".equalsIgnoreCase(form.getDataType()) && !"exp.data".equalsIgnoreCase(form.getDataType())&& !"assay".equalsIgnoreCase(form.getDataType()))
+                errors.reject(ERROR_REQUIRED, "Data type (samples, exp.data or assay) must be specified.");
+        }
+
+        @Override
+        public Object execute(CrossFolderSelectionForm form, BindException errors)
+        {
+            Collection<Map<String, Object>> result = ExperimentServiceImpl.getContainersForIds(form.getIds(false), form.getDataType());
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            if (result != null)
+            {
+                resp.put("success", true);
+                resp.put("data", result);
+            }
+            else
+                resp.put("success", false);
+
+            return resp;
+        }
     }
 
     @Marshal(Marshaller.Jackson)
