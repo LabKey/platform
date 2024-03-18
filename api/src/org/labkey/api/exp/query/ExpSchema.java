@@ -120,7 +120,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), expSchema, cf);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), expSchema, cf, null);
                 ret.populate(null);
                 return ret;
             }

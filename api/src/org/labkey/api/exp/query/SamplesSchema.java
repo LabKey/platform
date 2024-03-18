@@ -177,10 +177,9 @@ public class SamplesSchema extends AbstractExpSchema
     public ExpMaterialTable createSampleTable(@Nullable ExpSampleType st, ContainerFilter cf)
     {
         if (log.isTraceEnabled())
-        {
             log.trace("CREATE TABLE: " + (null==st ? "null" : st.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
-        }
-        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf);
+
+        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), this, cf, null);
         ret.populate(st);
         return ret;
     }
@@ -210,8 +209,7 @@ public class SamplesSchema extends AbstractExpSchema
 
             private TableInfo createLookupTableInfo()
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null);
-                ret.populate(st);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null, st);
                 ret.setContainerFilter(getLookupContainerFilter());
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())

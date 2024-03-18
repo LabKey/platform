@@ -1341,9 +1341,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        return new ExpMaterialTableImpl(name, schema, cf);
+        return new ExpMaterialTableImpl(name, schema, cf, sampleType);
     }
 
     @Override

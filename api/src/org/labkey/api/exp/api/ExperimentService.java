@@ -574,7 +574,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperimentTable createExperimentTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf);
+    ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType);
 
     ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema, ContainerFilter cf);
 
