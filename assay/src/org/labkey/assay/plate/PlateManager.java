@@ -1178,21 +1178,21 @@ public class PlateManager implements PlateService
         {
             final AssayDbSchema schema = AssayDbSchema.getInstance();
             // delete well group positions
-        {
-            SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
-                    .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
-                    .append(" WHERE container = ?)").add(container);
-            new SqlExecutor(schema.getSchema()).execute(sql);
-        }
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
+                        .append(" WHERE wellId IN (SELECT rowId FROM ").append(schema.getTableInfoWell())
+                        .append(" WHERE container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
 
             // delete PlateProperty mappings
             {
-            SQLFragment sql = new SQLFragment("DELETE FROM ")
-                    .append(schema.getTableInfoPlateProperty(), "")
-                    .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
-                    .append(" WHERE Container = ?)").add(container);
-            new SqlExecutor(schema.getSchema()).execute(sql);
-        }
+                SQLFragment sql = new SQLFragment("DELETE FROM ")
+                        .append(schema.getTableInfoPlateProperty(), "")
+                        .append(" WHERE PlateId IN (SELECT RowId FROM ").append(schema.getTableInfoPlate())
+                        .append(" WHERE Container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
 
             // delete plate metadata values from the provisioned table
             TableInfo provisionedTable = getPlateMetadataTable(container, User.getAdminServiceUser());
@@ -1278,7 +1278,7 @@ public class PlateManager implements PlateService
     private @NotNull QueryUpdateService getPlateUpdateService(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTable(PlateTable.NAME);
+        TableInfo tableInfo = schema.getTableOrThrow(PlateTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for Plates.");
@@ -1289,7 +1289,7 @@ public class PlateManager implements PlateService
     private @NotNull QueryUpdateService getPlateSetUpdateService(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTable(PlateSetTable.NAME);
+        TableInfo tableInfo = schema.getTableOrThrow(PlateSetTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for PlateSets.");
@@ -1300,7 +1300,7 @@ public class PlateManager implements PlateService
     private @NotNull QueryUpdateService getWellGroupUpdateService(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTable(WellGroupTable.NAME);
+        TableInfo tableInfo = schema.getTableOrThrow(WellGroupTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for Well Groups.");
@@ -1308,10 +1308,10 @@ public class PlateManager implements PlateService
         return qus;
     }
 
-    private TableInfo getWellTable(Container container, User user)
+    private @NotNull TableInfo getWellTable(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        return schema.getTable(WellTable.NAME);
+        return schema.getTableOrThrow(WellTable.NAME);
     }
 
     private @NotNull QueryUpdateService getWellUpdateService(Container container, User user)
@@ -1842,7 +1842,7 @@ public class PlateManager implements PlateService
         return fields;
     }
 
-    public List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
+    public @NotNull List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
     {
         Well well = plate.getWell(wellId);
         if (well == null)
@@ -1853,30 +1853,27 @@ public class PlateManager implements PlateService
         // merge in any well metadata values
         if (!fields.isEmpty())
         {
-            TableInfo wellTable = QueryService.get().getUserSchema(user, plate.getContainer(), PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
-            if (wellTable != null)
-            {
-                Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
-                for (WellCustomField customField : fields)
-                    customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
+            Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
+            for (WellCustomField customField : fields)
+                customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
-                Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
-                try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+            TableInfo wellTable = getWellTable(plate.getContainer(), user);
+            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
+            try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+            {
+                while (r.next())
                 {
-                    while (r.next())
+                    for (Map.Entry<FieldKey, Object> rowEntry : r.getFieldKeyRowMap().entrySet())
                     {
-                        for (Map.Entry<FieldKey, Object> rowEntry : r.getFieldKeyRowMap().entrySet())
-                        {
-                            if (customFieldMap.containsKey(rowEntry.getKey()))
-                                customFieldMap.get(rowEntry.getKey()).setValue(rowEntry.getValue());
-                        }
+                        if (customFieldMap.containsKey(rowEntry.getKey()))
+                            customFieldMap.get(rowEntry.getKey()).setValue(rowEntry.getValue());
                     }
                 }
-                catch (SQLException e)
-                {
-                    throw UnexpectedException.wrap(e);
-                }
+            }
+            catch (SQLException e)
+            {
+                throw UnexpectedException.wrap(e);
             }
         }
 

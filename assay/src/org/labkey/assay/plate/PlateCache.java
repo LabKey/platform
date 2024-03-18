@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class PlateCache
 {
@@ -37,7 +36,7 @@ public class PlateCache
 
     private static class PlateLoader implements CacheLoader<String, Plate>
     {
-        private Map<Container, List<Plate>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
+        private final Map<Container, List<Plate>> _containerPlateMap = new HashMap<>();            // internal collection to help un-cache all plates for a container
 
         @Override
         public Plate load(@NotNull String key, @Nullable Object argument)
@@ -170,7 +169,7 @@ public class PlateCache
         }
         return templates.stream()
                 .sorted(Comparator.comparing(Plate::getName))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public static void uncache(Container c)
@@ -191,7 +190,7 @@ public class PlateCache
 
     public static void uncache(Container c, Plate plate)
     {
-        LOG.info(String.format("Un-caching plate \"%s\" for folder %s", plate.getName(), c.getPath()));
+        LOG.info(String.format("Un-caching plate \"%s\" for folder %s", plate.getPlateId(), c.getPath()));
 
         if (plate.getPlateId() == null)
             throw new IllegalArgumentException("Plate cannot be uncached, plateId is null");
@@ -222,9 +221,10 @@ public class PlateCache
             plateId,
             lsid,
         }
-        private Type _type;
-        private Container _container;
-        private Object _identifier;
+
+        private final Type _type;
+        private final Container _container;
+        private final Object _identifier;
 
         PlateCacheKey(String key)
         {
