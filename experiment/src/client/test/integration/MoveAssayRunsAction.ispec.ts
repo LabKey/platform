@@ -1,14 +1,8 @@
 import mock from 'mock-fs';
 import { PermissionRoles } from '@labkey/api';
 import { hookServer, RequestOptions, successfulResponse } from '@labkey/test';
-import {
-    getAssayResults,
-    getAssayRunMovedAuditLogs,
-    importRun,
-    runExists,
-    uploadAssayFile,
-} from './utils';
-import { caseInsensitive } from "@labkey/components";
+import { getAssayResults, getAssayRunMovedAuditLogs, importRun, runExists, uploadAssayFile, } from './utils';
+import { caseInsensitive } from '@labkey/components';
 
 
 const server = hookServer(process.env);
@@ -215,27 +209,54 @@ describe('Move Assay Runs', () => {
             expect(exception).toEqual('Unable to find all runs for the move operation.');
         });
 
-        it('error, run ID not in current project', async () => {
+        it('success, some runs not in current subfolder', async () => {
             // Arrange
-            const { runId } = await importRun(server, assayAId, 'sub1-notmoved-1', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
+            const run1Data = await importRun(server, assayAId, 'top-movetosub1-1', [{"Prop":"ABC"}], topFolderOptions, editorUserOptions);
+            const run2Data = await importRun(server, assayAId, 'top-movetosub1-1', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
                 targetContainerPath: subfolder1Options.containerPath,
                 schemaName: 'assay.General.assayA',
                 queryName: 'Runs',
-                rows: [{ RowId: runId }],
-            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
+                rows: [{ rowId: run1Data.runId}, { rowId: run2Data.runId }],
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
 
             // Assert
-            const {exception, success} = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('All assay runs must be from the current container for the move operation.');
+            const {success, updateCounts} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.runs).toBe(1);
 
-            const runExistsInTop = await runExists(server, runId, topFolderOptions);
-            expect(runExistsInTop).toBe(false);
-            const runExistsInSub1 = await runExists(server, runId, subfolder1Options);
-            expect(runExistsInSub1).toBe(true);
+            const source1ExistsInTop = await runExists(server, run1Data.runId, topFolderOptions);
+            expect(source1ExistsInTop).toBe(false);
+            const source1ExistsInSub1 = await runExists(server, run1Data.runId, subfolder1Options);
+            expect(source1ExistsInSub1).toBe(true);
+            const source2ExistsInSub1 = await runExists(server, run2Data.runId,  subfolder1Options);
+            expect(source2ExistsInSub1).toBe(true);
+        });
+
+        it('success, all runs in target subfolder', async () => {
+            // Arrange
+            const run1Data = await importRun(server, assayAId, 'top-movetosub1-1', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
+            const run2Data = await importRun(server, assayAId, 'top-movetosub1-1', [{"Prop":"ABC"}], subfolder1Options, editorUserOptions);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'assay.General.assayA',
+                queryName: 'Runs',
+                rows: [{ rowId: run1Data.runId}, { rowId: run2Data.runId }],
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success, updateCounts} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.runs).toBeUndefined();
+
+            const source1ExistsSub1 = await runExists(server, run1Data.runId, subfolder1Options);
+            expect(source1ExistsSub1).toBe(true);
+            const source2ExistsInSub1 = await runExists(server, run2Data.runId, subfolder1Options);
+            expect(source2ExistsInSub1).toBe(true);
         });
 
         it('success, move run from parent project to subfolder, no audit logging', async () => {
@@ -254,7 +275,7 @@ describe('Move Assay Runs', () => {
             const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.experiments).toBe(1);
-            expect(updateCounts.experimentRuns).toBe(1);
+            expect(updateCounts.runs).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
@@ -289,7 +310,7 @@ describe('Move Assay Runs', () => {
             const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.experiments).toBe(1);
-            expect(updateCounts.experimentRuns).toBe(1);
+            expect(updateCounts.runs).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
@@ -325,7 +346,7 @@ describe('Move Assay Runs', () => {
             const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.experiments).toBe(1);
-            expect(updateCounts.experimentRuns).toBe(1);
+            expect(updateCounts.runs).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
@@ -361,7 +382,7 @@ describe('Move Assay Runs', () => {
             const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.experiments).toBe(1);
-            expect(updateCounts.experimentRuns).toBe(1);
+            expect(updateCounts.runs).toBe(1);
             expect(updateCounts.expObject).toBe(2);
             expect(updateCounts.expData).toBe(1);
             expect(updateCounts.auditEvents).toBe(2); // one for run loaded, one for adding run to batch
@@ -402,7 +423,7 @@ describe('Move Assay Runs', () => {
             const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.experiments).toBe(2);
-            expect(updateCounts.experimentRuns).toBe(2);
+            expect(updateCounts.runs).toBe(2);
             expect(updateCounts.expObject).toBe(4);
             expect(updateCounts.expData).toBe(2);
             expect(updateCounts.auditEvents).toBe(5); // 2 for run loaded, 2 for adding run to batch, 1 for replace
@@ -476,7 +497,7 @@ describe('Move Assay Runs', () => {
             const {updateCounts, success} = response.body;
             expect(success).toBe(true);
             expect(updateCounts.experiments).toBe(1);
-            expect(updateCounts.experimentRuns).toBe(2);
+            expect(updateCounts.runs).toBe(2);
             expect(updateCounts.expObject).toBe(4);
             expect(updateCounts.expData).toBe(2);
             expect(updateCounts.auditEvents).toBe(4); // 2 for run loaded, 2 for adding run to batch
@@ -527,7 +548,7 @@ describe('Move Assay Runs', () => {
         const {updateCounts, success} = response.body;
         expect(success).toBe(true);
         expect(updateCounts.experiments).toBe(1);
-        expect(updateCounts.experimentRuns).toBe(1);
+        expect(updateCounts.runs).toBe(1);
         expect(updateCounts.expObject).toBe(2);
         expect(updateCounts.expData).toBe(1);
         expect(updateCounts.movedFiles).toBe(1);
@@ -571,7 +592,7 @@ describe('Move Assay Runs', () => {
         const {updateCounts, success} = response.body;
         expect(success).toBe(true);
         expect(updateCounts.experiments).toBe(1);
-        expect(updateCounts.experimentRuns).toBe(1);
+        expect(updateCounts.runs).toBe(1);
         expect(updateCounts.expObject).toBe(2);
         expect(updateCounts.expData).toBe(1);
         expect(updateCounts.movedFiles).toBe(1);

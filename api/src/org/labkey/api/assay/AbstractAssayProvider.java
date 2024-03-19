@@ -1790,7 +1790,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 .append(" WHERE rowid ");
         runsTable.getSchema().getSqlDialect().appendInClauseSql(updateSql, runRowIds);
         int updateRunsCount = new SqlExecutor(runsTable.getSchema()).execute(updateSql);
-        updateCounts.put("experimentRuns", updateCounts.getOrDefault("experimentRuns", 0) + updateRunsCount);
+        // N.B. The name "runs" is used to extract data for creating a notification in the apps, so keep it in sync
+        // with the AssayRunDataType EntityDataType
+        updateCounts.put("runs", updateCounts.getOrDefault("runs", 0) + updateRunsCount);
 
         FileContentService fileContentService = FileContentService.get();
         boolean canMoveFile = fileContentService != null && fileContentService.getFileRoot(sourceContainer) != null;
