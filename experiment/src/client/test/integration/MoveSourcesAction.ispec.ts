@@ -289,34 +289,6 @@ describe('Move Sources', () => {
             expect(exception).toEqual('The target container was not found: BOGUS.');
         });
 
-        it('error, targetContainer cannot equal current for parent project', async () => {
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: PROJECT_NAME,
-                schemaName: 'exp.data',
-                queryName: SOURCE_TYPE_NAME_1,
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
-
-            // Assert
-            const { exception, success } = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('Invalid target container for the move operation: ' + PROJECT_NAME + '.');
-        });
-
-        it('error, targetContainer cannot equal current for subfolder', async () => {
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: subfolder1Options.containerPath,
-                schemaName: 'exp.data',
-                queryName: SOURCE_TYPE_NAME_1,
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
-
-            // Assert
-            const { exception, success } = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('Invalid target container for the move operation: ' + subfolder1Options.containerPath + '.');
-        });
-
         it('error, missing required rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -361,52 +333,6 @@ describe('Move Sources', () => {
             expect(exception).toEqual('Unable to find all sources for the move operation.');
         });
 
-        it('error, source ID not in current parent project', async () => {
-            // Arrange
-            const sourceRowId = await _createSource('sub1-notmoved-1', subfolder1Options);
-
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: subfolder1Options.containerPath,
-                schemaName: 'exp.data',
-                queryName: SOURCE_TYPE_NAME_1,
-                rows: [{ RowId: sourceRowId }],
-            }, { ...topFolderOptions, ...editorUserOptions }).expect(400);
-
-            // Assert
-            const { exception, success } = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('All sources must be from the current container for the move operation.');
-
-            const existsInTop = await _sourceExists(sourceRowId, topFolderOptions);
-            expect(existsInTop).toBe(false);
-            const existsInSub1 = await _sourceExists(sourceRowId, subfolder1Options);
-            expect(existsInSub1).toBe(true);
-        });
-
-        it('error, source ID not in current subfolder', async () => {
-            // Arrange
-            const sourceRowId = await _createSource('top-notmoved-1', topFolderOptions);
-
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: topFolderOptions.containerPath,
-                schemaName: 'exp.data',
-                queryName: SOURCE_TYPE_NAME_1,
-                rows: [{ RowId: sourceRowId }],
-            }, { ...subfolder1Options, ...editorUserOptions }).expect(400);
-
-            // Assert
-            const { exception, success } = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('All sources must be from the current container for the move operation.');
-
-            const existsInTop = await _sourceExists(sourceRowId, topFolderOptions);
-            expect(existsInTop).toBe(true);
-            const existsInSub1 = await _sourceExists(sourceRowId, subfolder1Options);
-            expect(existsInSub1).toBe(false);
-        });
-
         it('error, requires insert perm in targetContainer', async () => {
             // Arrange
             const sourceRowId = await _createSource('sub1-notmoved-2', subfolder1Options);
@@ -428,6 +354,102 @@ describe('Move Sources', () => {
             expect(existsInTop).toBe(false);
             const existsInSub1 = await _sourceExists(sourceRowId, subfolder1Options);
             expect(existsInSub1).toBe(true);
+        });
+
+
+        it('success, source ID not in current parent project', async () => {
+            // Arrange
+            const sourceRowId = await _createSource('sub1-moved-1', subfolder1Options);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
+            }, { ...topFolderOptions, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { success } = response.body;
+            expect(success).toBe(true);
+
+            const existsInTarget = await _sourceExists(sourceRowId, subfolder2Options);
+            expect(existsInTarget).toBe(true);
+            const existsInSub1 = await _sourceExists(sourceRowId, subfolder1Options);
+            expect(existsInSub1).toBe(false);
+        });
+
+        it('success, source ID not in current subfolder', async () => {
+            // Arrange
+            const sourceRowId = await _createSource('top-moved-1', topFolderOptions);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ RowId: sourceRowId }],
+            }, { ...subfolder1Options, ...editorUserOptions }).expect(200);
+
+            // Assert
+            const { success } = response.body;
+            expect(success).toBe(true);
+
+            const existsInTarget = await _sourceExists(sourceRowId, subfolder2Options);
+            expect(existsInTarget).toBe(true);
+            const existsInSub1 = await _sourceExists(sourceRowId, subfolder1Options);
+            expect(existsInSub1).toBe(false);
+        });
+
+
+        it('success, some source IDs not in current subfolder', async () => {
+            // Arrange
+            const sourceRowId1 = await _createSource('top-movedTo1-1', topFolderOptions);
+            const sourceRowId2 = await _createSource('sub1-notMovedTo1-1', subfolder1Options);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ rowId: sourceRowId1}, { rowId: sourceRowId2 }],
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success, updateCounts} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.sources).toBe(1);
+
+            const source1ExistsInTop = await _sourceExists(sourceRowId1, topFolderOptions);
+            expect(source1ExistsInTop).toBe(false);
+            const source1ExistsInSub1 = await _sourceExists(sourceRowId1, subfolder1Options);
+            expect(source1ExistsInSub1).toBe(true);
+            const source2ExistsInSub1 = await _sourceExists(sourceRowId2, subfolder1Options);
+            expect(source2ExistsInSub1).toBe(true);
+        });
+
+        it('success, all source IDs in target subfolder', async () => {
+            // Arrange
+            const sourceRowId1 = await _createSource('sub1-notMoved-1', subfolder1Options);
+            const sourceRowId2 = await _createSource('sub1-notMoved-2', subfolder1Options);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'exp.data',
+                queryName: SOURCE_TYPE_NAME_1,
+                rows: [{ rowId: sourceRowId1}, { rowId: sourceRowId2 }],
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success, updateCounts} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.sources).toBeUndefined();
+
+            const source1ExistsSub1 = await _sourceExists(sourceRowId1, subfolder1Options);
+            expect(source1ExistsSub1).toBe(true);
+            const source2ExistsInSub1 = await _sourceExists(sourceRowId2, subfolder1Options);
+            expect(source2ExistsInSub1).toBe(true);
         });
 
         it('success, move from parent project to subfolder, no audit logging', async () => {

@@ -307,36 +307,6 @@ describe('Move Samples', () => {
             expect(exception).toEqual('The target container was not found: BOGUS.');
         });
 
-        it('error, targetContainer cannot equal current for parent project', async () => {
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: PROJECT_NAME,
-                schemaName: 'samples',
-                queryName: SAMPLE_TYPE_NAME_1,
-                rows: [{}],
-            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
-
-            // Assert
-            const {exception, success} = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('Invalid target container for the move operation: ' + PROJECT_NAME + '.');
-        });
-
-        it('error, targetContainer cannot equal current for subfolder', async () => {
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: subfolder1Options.containerPath,
-                schemaName: 'samples',
-                queryName: SAMPLE_TYPE_NAME_1,
-                rows: [{}],
-            }, {...subfolder1Options, ...editorUserOptions}).expect(400);
-
-            // Assert
-            const {exception, success} = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('Invalid target container for the move operation: ' + subfolder1Options.containerPath + '.');
-        });
-
         it('error, missing required rows param', async () => {
             // Act
             const response = await server.post('query', 'moveRows.api', {
@@ -381,52 +351,6 @@ describe('Move Samples', () => {
             expect(exception).toEqual('Unable to find all samples for the move operation.');
         });
 
-        it('error, sample ID not in current parent project', async () => {
-            // Arrange
-            const sampleRowId = await createSample(server, 'sub1-notmoved-1', subfolder1Options, editorUserOptions);
-
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: subfolder1Options.containerPath,
-                schemaName: 'samples',
-                queryName: SAMPLE_TYPE_NAME_1,
-                rows: [{ rowId: sampleRowId }],
-            }, {...topFolderOptions, ...editorUserOptions}).expect(400);
-
-            // Assert
-            const {exception, success} = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('All samples must be from the current container for the move operation.');
-
-            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
-            expect(sampleExistsInTop).toBe(false);
-            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
-            expect(sampleExistsInSub1).toBe(true);
-        });
-
-        it('error, sample ID not in current subfolder', async () => {
-            // Arrange
-            const sampleRowId = await createSample(server, 'top-notmoved-1', topFolderOptions, editorUserOptions);
-
-            // Act
-            const response = await server.post('query', 'moveRows.api', {
-                targetContainerPath: topFolderOptions.containerPath,
-                schemaName: 'samples',
-                queryName: SAMPLE_TYPE_NAME_1,
-                rows: [{ rowId: sampleRowId }],
-            }, {...subfolder1Options, ...editorUserOptions}).expect(400);
-
-            // Assert
-            const {exception, success} = response.body;
-            expect(success).toBe(false);
-            expect(exception).toEqual('All samples must be from the current container for the move operation.');
-
-            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
-            expect(sampleExistsInTop).toBe(true);
-            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
-            expect(sampleExistsInSub1).toBe(false);
-        });
-
         it('error, requires insert perm in targetContainer', async () => {
             // Arrange
             const sampleRowId = await createSample(server, 'sub1-notmoved-2', subfolder1Options, editorUserOptions);
@@ -448,6 +372,100 @@ describe('Move Samples', () => {
             expect(sampleExistsInTop).toBe(false);
             const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
             expect(sampleExistsInSub1).toBe(true);
+        });
+
+        it('success, sample ID not in current parent project', async () => {
+            // Arrange
+            const sampleRowId = await createSample(server, 'sub1-movedTo2-1', subfolder1Options, editorUserOptions);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'samples',
+                queryName: SAMPLE_TYPE_NAME_1,
+                rows: [{ rowId: sampleRowId }],
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success, updateCounts} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBe(1);
+
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sampleExistsInSub1).toBe(false);
+            const sampleExistsInSub2 = await sampleExists(server, sampleRowId, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sampleExistsInSub2).toBe(true);
+        });
+
+        it('success, sample ID not in current subfolder', async () => {
+            // Arrange
+            const sampleRowId = await createSample(server, 'top-movedTo2-1', topFolderOptions, editorUserOptions);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'samples',
+                queryName: SAMPLE_TYPE_NAME_1,
+                rows: [{ rowId: sampleRowId }],
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success} = response.body;
+            expect(success).toBe(true);
+
+            const sampleExistsInTop = await sampleExists(server, sampleRowId, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sampleExistsInTop).toBe(false);
+            const sampleExistsInSub1 = await sampleExists(server, sampleRowId, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sampleExistsInSub1).toBe(true);
+        });
+
+        it('success, some sample IDs not in current subfolder', async () => {
+            // Arrange
+            const sampleRowId1 = await createSample(server, 'top-movedTo1-1', topFolderOptions, editorUserOptions);
+            const sampleRowId2 = await createSample(server, 'sub1-notMovedTo1-1', subfolder1Options, editorUserOptions);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder2Options.containerPath,
+                schemaName: 'samples',
+                queryName: SAMPLE_TYPE_NAME_1,
+                rows: [{ rowId: sampleRowId1}, { rowId: sampleRowId2 }],
+            }, {...subfolder1Options, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success} = response.body;
+            expect(success).toBe(true);
+
+            const sample1ExistsInTop = await sampleExists(server, sampleRowId1, topFolderOptions, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sample1ExistsInTop).toBe(false);
+            const sample1ExistsInSub1 = await sampleExists(server, sampleRowId1, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sample1ExistsInSub1).toBe(true);
+            const sample2ExistsInSub1 = await sampleExists(server, sampleRowId2, subfolder2Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sample2ExistsInSub1).toBe(true);
+        });
+
+        it('success, all sample IDs in target subfolder', async () => {
+            // Arrange
+            const sampleRowId1 = await createSample(server, 'sub1-notMoved-1', subfolder1Options, editorUserOptions);
+            const sampleRowId2 = await createSample(server, 'sub1-notMoved-2', subfolder1Options, editorUserOptions);
+
+            // Act
+            const response = await server.post('query', 'moveRows.api', {
+                targetContainerPath: subfolder1Options.containerPath,
+                schemaName: 'samples',
+                queryName: SAMPLE_TYPE_NAME_1,
+                rows: [{ rowId: sampleRowId1}, { rowId: sampleRowId2 }],
+            }, {...topFolderOptions, ...editorUserOptions}).expect(200);
+
+            // Assert
+            const {success, updateCounts} = response.body;
+            expect(success).toBe(true);
+            expect(updateCounts.samples).toBeUndefined();
+
+            const sample1ExistsSub1 = await sampleExists(server, sampleRowId1, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sample1ExistsSub1).toBe(true);
+            const sample2ExistsInSub1 = await sampleExists(server, sampleRowId2, subfolder1Options, editorUserOptions, SAMPLE_TYPE_NAME_1);
+            expect(sample2ExistsInSub1).toBe(true);
         });
 
         it('success, move sample from parent project to subfolder, no audit logging', async () => {

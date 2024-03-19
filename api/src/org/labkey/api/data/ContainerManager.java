@@ -2640,8 +2640,9 @@ public class ContainerManager
         if (current.isRoot() || target.isRoot())
             return false;
 
+        // Allow moving to the current container since we now allow the chosen entities to be from different containers
         if (current.equals(target))
-            return false;
+            return true;
 
         boolean moveFromProjectToChild = current.isProject() && target.getParent().equals(current);
         boolean moveFromChildToProject = !current.isProject() && current.getParent().isProject() && current.getParent().equals(target);
