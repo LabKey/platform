@@ -970,6 +970,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetVisualizationAction extends MutatingApiAction<ChartWizardReportForm>
     {
+        private Report report;
         private ReportDescriptor descriptor;
 
         @Override
@@ -981,7 +982,6 @@ public class VisualizationController extends SpringActionController
                 return;
             }
 
-            Report report = null;
             try
             {
                 report = getReport(form);
@@ -1022,12 +1022,16 @@ public class VisualizationController extends SpringActionController
             resp.put("description", vizDescriptor.getReportDescription());
             resp.put("schemaName", vizDescriptor.getProperty(ReportDescriptor.Prop.schemaName));
             resp.put("queryName", vizDescriptor.getProperty(ReportDescriptor.Prop.queryName));
+            resp.put("viewName", vizDescriptor.getProperty(ReportDescriptor.Prop.viewName));
             resp.put("type", vizDescriptor.getReportType());
             resp.put("shared", vizDescriptor.isShared());
             resp.put("ownerId", !vizDescriptor.isShared() ? vizDescriptor.getOwner() : null);
             resp.put("createdBy", vizDescriptor.getCreatedBy());
             resp.put("reportProps", vizDescriptor.getReportProps());
             resp.put("thumbnailURL", ReportUtil.getThumbnailUrl(getContainer(), getReport(form)));
+            resp.put("canEdit", report.canEdit(getUser(), getContainer()));
+            resp.put("canDelete", report.canDelete(getUser(), getContainer()));
+            resp.put("canShare", report.canShare(getUser(), getContainer()));
             return resp;
         }
     }
