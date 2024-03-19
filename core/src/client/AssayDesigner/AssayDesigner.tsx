@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 import React from 'react';
-import { Panel } from 'react-bootstrap';
 import { ActionURL, Security, Utils, getServerContext, PermissionTypes } from '@labkey/api';
 import {
     Alert,
@@ -208,11 +207,11 @@ export class App extends React.Component<any, State> {
                     )}
                     {!hasDesignAssayPerm && (
                         <>
-                            <Panel>
-                                <Panel.Heading>
+                            <div className="panel panel-default">
+                                <div className="panel-heading">
                                     <div className="panel-title">{model.name}</div>
-                                </Panel.Heading>
-                                <Panel.Body>
+                                </div>
+                                <div className="panel-body">
                                     <table>
                                         {this.renderReadOnlyProperty('Provider', model.providerName)}
                                         {this.renderReadOnlyProperty('Description', model.description)}
@@ -247,8 +246,8 @@ export class App extends React.Component<any, State> {
                                         {this.renderReadOnlyProperty('Editable Runs', model.editableRuns)}
                                         {this.renderReadOnlyProperty('Editable Results', model.editableResults)}
                                     </table>
-                                </Panel.Body>
-                            </Panel>
+                                </div>
+                            </div>
                             {model.domains.map((domain, index) => (
                                 <DomainFieldsDisplay key={index} domain={domain} />
                             ))}

@@ -228,10 +228,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     )}
                     {showWarnings && this.renderWarningConfirm()}
                     {domain && domain.instructions && (
-                        <Panel>
-                            <Panel.Heading>Instructions</Panel.Heading>
-                            <Panel.Body>{domain.instructions}</Panel.Body>
-                        </Panel>
+                        <div className="panel panel-default">
+                            <div className="panel-heading">Instructions</div>
+                            <div className="panel-body">{domain.instructions}</div>
+                        </div>
                     )}
                     {domain && (
                         <DomainForm
