@@ -29,7 +29,10 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.study.Dataset;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MimeMap.MimeType;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -132,7 +135,9 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
                     {
                         SortedSet<Integer> categories = userEntry.getValue();       // Set has a NotifyOption in it
                         NotifyOption notifyOption = ReportContentEmailManager.removeNotifyOption(categories);
-                        Map<Integer, List<NotificationInfo>> reportsForUserInitial = notifyOption.getReportsForUserByCategory(reportInfosByCategory, categories, allCategories);
+
+                        Map<Integer, List<NotificationInfo>> reportInfos = checkUserAccess(StudyService.get(), container, user, reportInfosByCategory);
+                        Map<Integer, List<NotificationInfo>> reportsForUserInitial = notifyOption.getReportsForUserByCategory(reportInfos, categories, allCategories);
 
                         if (!reportsForUserInitial.isEmpty())
                         {
@@ -160,6 +165,33 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
             // Don't fail the request because of this error
             ExceptionUtil.logExceptionToMothership(null, e);
         }
+    }
+
+    /**
+     * Issue : 49635 Do an additional access check for dataset notifications so that if study security is configured we don't include datasets
+     * in the report that a user won't have access to.
+     */
+    private Map<Integer, List<NotificationInfo>> checkUserAccess(StudyService studyService, Container container, User user, Map<Integer, List<NotificationInfo>> notificationCategoryMap)
+    {
+        if (studyService != null)
+        {
+            Map<Integer, List<NotificationInfo>> categoryMap = new HashMap<>();
+            for (Map.Entry<Integer, List<NotificationInfo>> entry : notificationCategoryMap.entrySet())
+            {
+                for (NotificationInfo ni : entry.getValue())
+                {
+                    if (ni.getType() == NotificationInfo.Type.dataset)
+                    {
+                        Dataset ds = studyService.getDataset(container, ni.getRowId());
+                        if (ds != null && !ds.hasPermission(user, ReadPermission.class))
+                            continue;
+                    }
+                    categoryMap.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(ni);
+                }
+            }
+            return categoryMap;
+        }
+        return notificationCategoryMap;
     }
 
     private EmailMessage createDigestMessage(EmailService ems, ReportAndDatasetDigestBean form)

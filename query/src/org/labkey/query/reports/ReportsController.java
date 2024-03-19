@@ -3770,6 +3770,8 @@ public class ReportsController extends SpringActionController
 
                     for (Dataset ds : datasetList)
                     {
+                        if (!ds.hasPermission(getUser(), ReadPermission.class))
+                            continue;
                         datasets.add(Map.of("label", ds.getLabel(),
                                 "rowid", ds.getDatasetId(),
                                 "subscribed", getSubscribed(ReportContentEmailManager.NotifyOption.DATASET, ds.getDatasetId())));
