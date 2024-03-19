@@ -52,6 +52,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -98,6 +99,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -859,11 +861,6 @@ public class PlateManager implements PlateService
 
             if (updateExisting)
             {
-                // special case if the plate name changes, we want to remove the cache key with the old name
-                Plate oldPlate = getPlate(container, plateId);
-                if (!oldPlate.getName().equals(plate.getName()))
-                    clearCache(container, oldPlate);
-
                 qus.updateRows(user, container, Collections.singletonList(plateRow), null, errors, null, null);
                 if (errors.hasErrors())
                     throw errors;
@@ -879,7 +876,7 @@ public class PlateManager implements PlateService
                 plate.setLsid((String) row.get("Lsid"));
                 plate.setPlateId((String) row.get("PlateId"));
             }
-            savePropertyBag(container, plate.getLSID(), plate.getProperties(), updateExisting);
+            savePropertyBag(container, user, plate.getLSID(), plate.getProperties(), updateExisting);
 
             // delete well groups first
             List<WellGroupImpl> deletedWellGroups = plate.getDeletedWellGroups();
@@ -907,7 +904,7 @@ public class PlateManager implements PlateService
                     if (wellGroupErrors.hasErrors())
                         throw wellGroupErrors;
 
-                    savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), true);
+                    savePropertyBag(container, user, wellGroupInstanceLsid, wellgroup.getProperties(), true);
                 }
                 else
                 {
@@ -920,69 +917,62 @@ public class PlateManager implements PlateService
 
                     wellGroupInstanceLsid = (String)insertedRows.get(0).get("Lsid");
                     wellgroup = ObjectFactory.Registry.getFactory(WellGroupImpl.class).fromMap(wellgroup, insertedRows.get(0));
-                    savePropertyBag(container, wellGroupInstanceLsid, wellgroup.getProperties(), false);
+                    savePropertyBag(container, user, wellGroupInstanceLsid, wellgroup.getProperties(), false);
                 }
             }
-
-            // Get existing wells for the plate
-            Map<Pair<Integer, Integer>, PositionImpl> existingPositionMap = new HashMap<>();
-            if (updateExisting)
-            {
-                for (Well existingPosition : plate.getWells())
-                {
-                    existingPositionMap.put(Pair.of(existingPosition.getRow(), existingPosition.getColumn()), (PositionImpl) existingPosition);
-                }
-            }
-
             List<List<Integer>> wellGroupPositions = new LinkedList<>();
-            QueryUpdateService wellQus = getWellUpdateService(container, user);
-            for (int row = 0; row < plate.getRows(); row++)
-            {
-                for (int col = 0; col < plate.getColumns(); col++)
-                {
-                    PositionImpl position;
-                    if (updateExisting)
-                    {
-                        position = existingPositionMap.get(Pair.of(row, col));
-                        assert position != null;
-                        assert position.getRowId() != null && position.getRowId() > 0;
-                        assert position.getLsid() != null;
+            List<Map<String, Object>> insertedRows = Collections.emptyList();
 
-                        Lsid lsid = Lsid.parse(position.getLsid());
-                        String objectId = lsid.getObjectId();
-                        assert objectId.endsWith("-well-" + row + "-" + col);
-                    }
-                    else
+            // create new wells for this plate
+            ObjectFactory<PositionImpl> factory = ObjectFactory.Registry.getFactory(PositionImpl.class);
+            if (!updateExisting)
+            {
+                QueryUpdateService wellQus = getWellUpdateService(container, user);
+                List<Map<String, Object>> wellRows = new ArrayList<>();
+                for (int row = 0; row < plate.getRows(); row++)
+                {
+                    for (int col = 0; col < plate.getColumns(); col++)
                     {
+                        PositionImpl position;
                         position = plate.getPosition(row, col);
-                        assert position.getRowId() == null || position.getRowId() == 0;
+                        if (position.getRowId() != null)
+                            throw new IllegalStateException("Attempting to create a new plate but there are existing wells associated with it.");
 
                         position.setPlateId(plateId);
-                        Map<String, Object> wellRow = ObjectFactory.Registry.getFactory(PositionImpl.class).toMap(position, new ArrayListMap<>());
-                        BatchValidationException wellErrors = new BatchValidationException();
-
-                        List<Map<String, Object>> insertedRows = wellQus.insertRows(user, container, Collections.singletonList(wellRow), wellErrors, null, null);
-                        if (wellErrors.hasErrors())
-                            throw wellErrors;
-
-                        position = ObjectFactory.Registry.getFactory(PositionImpl.class).fromMap(position, insertedRows.get(0));
+                        wellRows.add(factory.toMap(position, new ArrayListMap<>()));
                     }
-
-                    // collect well group positions to save
-                    wellGroupPositions.addAll(getWellGroupPositions(plate, position));
                 }
+                BatchValidationException wellErrors = new BatchValidationException();
+                insertedRows = wellQus.insertRows(user, container, wellRows, wellErrors, null, null);
+                if (wellErrors.hasErrors())
+                    throw wellErrors;
             }
 
-            // delete all existing well group positions for the plate
-            if (updateExisting)
+            // insert/update well to well group mappings
+            if (!plate.getWellGroups().isEmpty())
             {
-                deleteWellGroupPositions(plate);
-            }
+                if (updateExisting)
+                {
+                    for (Well well : plate.getWells())
+                        wellGroupPositions.addAll(getWellGroupPositions(plate, well));
 
-            // save well group positions
-            String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoWellGroupPositions() +
-                    " (wellId, wellGroupId) VALUES (?, ?)";
-            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
+                    // delete all existing well group positions
+                    deleteWellGroupPositions(plate);
+                }
+                else
+                {
+                    for (Map<String, Object> row : insertedRows)
+                    {
+                        PositionImpl position = factory.fromMap(row);
+                        wellGroupPositions.addAll(getWellGroupPositions(plate, position));
+                    }
+                }
+
+                // save well to well group positions
+                String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoWellGroupPositions() +
+                        " (wellId, wellGroupId) VALUES (?, ?)";
+                Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
+            }
 
             final Integer plateRowId = plateId;
             transaction.addCommitTask(() -> {
@@ -996,7 +986,7 @@ public class PlateManager implements PlateService
     }
 
     // return a list of wellId and wellGroupId pairs
-    private List<List<Integer>> getWellGroupPositions(Plate plate, PositionImpl position)
+    private List<List<Integer>> getWellGroupPositions(Plate plate, Position position)
     {
         List<WellGroup> groups = plate.getWellGroups(position);
         List<List<Integer>> wellGroupPositions = new ArrayList<>(groups.size());
@@ -1005,8 +995,10 @@ public class PlateManager implements PlateService
         {
             if (group.contains(position))
             {
-                assert position.getRowId() > 0;
-                assert group.getRowId() != null && group.getRowId() > 0;
+                if (position.getRowId() == null)
+                    throw new IllegalArgumentException("The specified well has not been saved to the database.");
+                if (group.getRowId() == null)
+                    throw new IllegalStateException("The well group : " + group.getName() + " has not been saved to the database.");
                 Integer wellId = position.getRowId();
                 Integer wellGroupId = group.getRowId();
                 wellGroupPositions.add(List.of(wellId, wellGroupId));
@@ -1016,7 +1008,13 @@ public class PlateManager implements PlateService
         return wellGroupPositions;
     }
 
-    private void savePropertyBag(Container container, String ownerLsid, Map<String, Object> props, boolean updateExisting) throws SQLException
+    private void savePropertyBag(
+        Container container,
+        User user,
+        String ownerLsid,
+        Map<String, Object> props,
+        boolean updateExisting
+    ) throws SQLException
     {
         // construct the LSID to associate with the property objects
         String classLsid = Lsid.parse(ownerLsid).edit().setObjectId(LSID_CLASS_OBJECT_ID).toString();
@@ -1051,7 +1049,7 @@ public class PlateManager implements PlateService
         try
         {
             if (objectProperties.length > 0)
-                OntologyManager.insertProperties(container, ownerLsid, objectProperties);
+                OntologyManager.insertProperties(container, user, ownerLsid, objectProperties);
         }
         catch (ValidationException ve)
         {
@@ -1084,8 +1082,6 @@ public class PlateManager implements PlateService
         lsids.add(plate.getLSID());
         for (WellGroup wellgroup : plate.getWellGroups())
             lsids.add(wellgroup.getLSID());
-        for (Well well : plate.getWells())
-            lsids.add(well.getLsid());
 
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
@@ -1288,7 +1284,7 @@ public class PlateManager implements PlateService
     private @NotNull QueryUpdateService getPlateUpdateService(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTable(PlateTable.NAME);
+        TableInfo tableInfo = schema.getTableOrThrow(PlateTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for Plates.");
@@ -1299,7 +1295,7 @@ public class PlateManager implements PlateService
     private @NotNull QueryUpdateService getPlateSetUpdateService(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTable(PlateSetTable.NAME);
+        TableInfo tableInfo = schema.getTableOrThrow(PlateSetTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for PlateSets.");
@@ -1310,7 +1306,7 @@ public class PlateManager implements PlateService
     private @NotNull QueryUpdateService getWellGroupUpdateService(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo tableInfo = schema.getTable(WellGroupTable.NAME);
+        TableInfo tableInfo = schema.getTableOrThrow(WellGroupTable.NAME);
         QueryUpdateService qus = tableInfo.getUpdateService();
         if (qus == null)
             throw new IllegalStateException("Unable to resolve QueryUpdateService for Well Groups.");
@@ -1318,10 +1314,10 @@ public class PlateManager implements PlateService
         return qus;
     }
 
-    private TableInfo getWellTable(Container container, User user)
+    private @NotNull TableInfo getWellTable(Container container, User user)
     {
         UserSchema schema = getPlateUserSchema(container, user);
-        return schema.getTable(WellTable.NAME);
+        return schema.getTableOrThrow(WellTable.NAME);
     }
 
     private @NotNull QueryUpdateService getWellUpdateService(Container container, User user)
@@ -1852,7 +1848,7 @@ public class PlateManager implements PlateService
         return fields;
     }
 
-    public List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
+    public @NotNull List<WellCustomField> getWellCustomFields(User user, Plate plate, Integer wellId)
     {
         Well well = plate.getWell(wellId);
         if (well == null)
@@ -1860,10 +1856,32 @@ public class PlateManager implements PlateService
 
         List<WellCustomField> fields = _getFields(plate.getContainer(), user, plate.getRowId()).stream().map(WellCustomField::new).toList();
 
-        // need to get the well values associated with each custom field
-        Map<String, Object> properties = OntologyManager.getProperties(plate.getContainer(), well.getLsid());
-        for (WellCustomField field : fields)
-            field.setValue(properties.get(field.getPropertyURI()));
+        // merge in any well metadata values
+        if (!fields.isEmpty())
+        {
+            Map<FieldKey, WellCustomField> customFieldMap = new HashMap<>();
+            for (WellCustomField customField : fields)
+                customFieldMap.put(FieldKey.fromParts("properties", customField.getName()), customField);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), wellId);
+
+            TableInfo wellTable = getWellTable(plate.getContainer(), user);
+            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(wellTable, customFieldMap.keySet());
+            try (Results r = QueryService.get().select(wellTable, columnMap.values(), filter, null))
+            {
+                while (r.next())
+                {
+                    for (Map.Entry<FieldKey, Object> rowEntry : r.getFieldKeyRowMap().entrySet())
+                    {
+                        if (customFieldMap.containsKey(rowEntry.getKey()))
+                            customFieldMap.get(rowEntry.getKey()).setValue(rowEntry.getValue());
+                    }
+                }
+            }
+            catch (SQLException e)
+            {
+                throw UnexpectedException.wrap(e);
+            }
+        }
 
         return fields.stream().sorted(Comparator.comparing(PlateCustomField::getName)).toList();
     }
@@ -2515,12 +2533,12 @@ public class PlateManager implements PlateService
             assertNotNull(qus);
             BatchValidationException errors = new BatchValidationException();
 
-            // verify metadata update works for Property URI as well as field key
+            // add metadata to 2 rows
             WellBean well = wells.get(0);
             List<Map<String, Object>> rows = List.of(CaseInsensitiveHashMap.of(
                     "rowid", well.getRowId(),
-                    fields.get(0).getPropertyURI(), 1.25,       // concentration
-                    fields.get(1).getPropertyURI(), 5.25            // negativeControl
+                    "properties/concentration", 1.25,
+                    "properties/negativeControl", 5.25
             ));
 
             qus.updateRows(user, container, rows, null, errors, null, null);
@@ -2538,38 +2556,35 @@ public class PlateManager implements PlateService
             if (errors.hasErrors())
                 fail(errors.getMessage());
 
-            // Issue 49603 : getSelectSql not generating correct SQL, uncomment when this issue is fixed
-/*
-
-            ColumnInfo colConcentration = wellTable.getColumn("properties/concentration");
-            ColumnInfo colNegControl = wellTable.getColumn("properties/negativeControl");
+            FieldKey fkConcentration = FieldKey.fromParts("properties", "concentration");
+            FieldKey fkNegativeControl = FieldKey.fromParts("properties", "negativeControl");
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkNegativeControl));
 
             // verify plate metadata property updates
-            try (Results r = QueryService.get().select(wellTable, List.of(colConcentration, colNegControl), filter, new Sort("Col")))
+            try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
             {
                 int row = 0;
                 while (r.next())
                 {
                     if (row == 0)
                     {
-                        assertEquals(1.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals(5.25, r.getDouble(colNegControl.getFieldKey()), 0);
+                        assertEquals(1.25, r.getDouble(fkConcentration), 0);
+                        assertEquals(5.25, r.getDouble(fkNegativeControl), 0);
                     }
                     else if (row == 1)
                     {
-                        assertEquals(2.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals(6.25, r.getDouble(colNegControl.getFieldKey()), 0);
+                        assertEquals(2.25, r.getDouble(fkConcentration), 0);
+                        assertEquals(6.25, r.getDouble(fkNegativeControl), 0);
                     }
                     else
                     {
                         // the remainder should be null
-                        assertEquals(0, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals(0, r.getDouble(colNegControl.getFieldKey()), 0);
+                        assertEquals(0, r.getDouble(fkConcentration), 0);
+                        assertEquals(0, r.getDouble(fkNegativeControl), 0);
                     }
                     row++;
                 }
             }
-*/
         }
 
         @Test
@@ -2595,41 +2610,39 @@ public class PlateManager implements PlateService
             Plate plate = PlateManager.get().createAndSavePlate(container, user, plateType, "hit selection plate", null, null, rows);
             assertEquals("Expected 2 plate custom fields", 2, plate.getCustomFields().size());
 
-            // issue 49603: uncomment when sql generation problem is fixed
-/*
             TableInfo wellTable = QueryService.get().getUserSchema(user, container, PlateSchema.SCHEMA_NAME).getTable(WellTable.NAME);
-            ColumnInfo colConcentration = wellTable.getColumn("properties/concentration");
-            ColumnInfo colBarcode = wellTable.getColumn("properties/barcode");
+            FieldKey fkConcentration = FieldKey.fromParts("properties", "concentration");
+            FieldKey fkBarcode = FieldKey.fromParts("properties", "barcode");
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(wellTable, List.of(fkConcentration, fkBarcode));
 
             // verify that well data was added
             SimpleFilter filter = SimpleFilter.createContainerFilter(container);
             filter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
             filter.addCondition(FieldKey.fromParts("Row"), 0);
-            try (Results r = QueryService.get().select(wellTable, List.of(colConcentration, colBarcode), filter, new Sort("Col")))
+            try (Results r = QueryService.get().select(wellTable, columns.values(), filter, new Sort("Col")))
             {
                 int row = 0;
                 while (r.next())
                 {
                     if (row == 0)
                     {
-                        assertEquals(2.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals("B1234", r.getString(colBarcode.getFieldKey()));
+                        assertEquals(2.25, r.getDouble(fkConcentration), 0);
+                        assertEquals("B1234", r.getString(fkBarcode));
                     }
                     else if (row == 1)
                     {
-                        assertEquals(1.25, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertEquals("B5678", r.getString(colBarcode.getFieldKey()));
+                        assertEquals(1.25, r.getDouble(fkConcentration), 0);
+                        assertEquals("B5678", r.getString(fkBarcode));
                     }
                     else
                     {
                         // the remainder should be null
-                        assertEquals(0, r.getDouble(colConcentration.getFieldKey()), 0);
-                        assertNull(r.getString(colBarcode.getFieldKey()));
+                        assertEquals(0, r.getDouble(fkConcentration), 0);
+                        assertNull(r.getString(fkBarcode));
                     }
                     row++;
                 }
             }
-*/
         }
     }
 }
