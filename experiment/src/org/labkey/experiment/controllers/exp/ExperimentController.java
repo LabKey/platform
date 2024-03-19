@@ -7634,7 +7634,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class GetContainersFromSelectionsAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
+    public static class GetSelectedContainersAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
     {
         @Override
         public void validateForm(CrossFolderSelectionForm form, Errors errors)
@@ -7672,7 +7672,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
-            if (!"sample".equalsIgnoreCase(form.getDataType()) && !"data".equalsIgnoreCase(form.getDataType())&& !"assayrun".equalsIgnoreCase(form.getDataType()))
+            if (!"samples".equalsIgnoreCase(form.getDataType()) && !"exp.data".equalsIgnoreCase(form.getDataType())&& !"assay".equalsIgnoreCase(form.getDataType()))
                 errors.reject(ERROR_REQUIRED, "Data type (sample, data or assayrun) must be specified.");
         }
 
