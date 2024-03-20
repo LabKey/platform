@@ -7645,37 +7645,6 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public static class GetSelectedContainersAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
-    {
-        @Override
-        public void validateForm(CrossFolderSelectionForm form, Errors errors)
-        {
-            if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
-                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
-            if (!"samples".equalsIgnoreCase(form.getDataType()) && !"exp.data".equalsIgnoreCase(form.getDataType())&& !"assay".equalsIgnoreCase(form.getDataType()))
-                errors.reject(ERROR_REQUIRED, "Data type (samples, exp.data or assay) must be specified.");
-        }
-
-        @Override
-        public Object execute(CrossFolderSelectionForm form, BindException errors)
-        {
-            Collection<Map<String, Object>> result = ExperimentServiceImpl.get().getContainersForIds(form.getIds(false), form.getDataType());
-
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            if (result != null)
-            {
-                resp.put("success", true);
-                resp.put("data", result);
-            }
-            else
-                resp.put("success", false);
-
-            return resp;
-        }
-    }
-
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
     public static class GetCrossFolderDataSelectionAction extends ReadOnlyApiAction<CrossFolderSelectionForm>
     {
         @Override

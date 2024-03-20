@@ -9098,23 +9098,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
             return null;
     }
 
-    public Collection<Map<String, Object>> getContainersForIds(Collection<Integer> rowIds, String schemaName)
-    {
-        TableInfo tableInfo = getTableInfo(schemaName);
-        if (tableInfo == null)
-            return null;
-
-        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
-        SqlDialect dialect = expSchema.getSqlDialect();
-
-        SQLFragment selectionSql = new SQLFragment()
-                .append(" SELECT RowId, Container FROM ")
-                .append(tableInfo, "t")
-                .append("\nWHERE RowId ");
-        dialect.appendInClauseSql(selectionSql, rowIds);
-        return new SqlSelector(expSchema, selectionSql).getMapCollection();
-    }
-
+    @Override
     @Nullable
     public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull String schemaName, @Nullable Class<? extends Permission> permissionClass)
     {
