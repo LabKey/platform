@@ -1,7 +1,7 @@
 import React, { FC, memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActionURL, Ajax, getServerContext, Utils } from '@labkey/api';
 import { AssayPicker, AssayPickerSelectionModel, AssayPickerTabs, GENERAL_ASSAY_PROVIDER_NAME, App as LabKeyApp } from '@labkey/components';
-import { Button, Panel } from 'react-bootstrap';
+import { Button } from 'react-bootstrap';
 
 import './AssayTypeSelect.scss';
 
@@ -75,13 +75,13 @@ export const App: FC<any> = memo(props => {
 
     return (
         <>
-            <Panel className={'assay-type-select-panel lk-border-theme-light'}>
-                <div> {/* Div needed to break css child selector rule */}
-                    <Panel.Heading className={'bg-primary assay-type-select-hdr'}>
+            <div className="panel panel-default assay-type-select-panel lk-border-theme-light">
+                <div> {/* Div needed to break css child selector rule, which is a real code smell */}
+                    <div className="panel-heading bg-primary assay-type-select-hdr">
                         <div>Choose Assay Type</div>
-                    </Panel.Heading>
+                    </div>
                 </div>
-                <Panel.Body>
+                <div className="panel-body">
                     <AssayPicker
                         defaultTab={tab}
                         hasPremium={LabKeyApp.hasPremiumModule()}
@@ -89,8 +89,8 @@ export const App: FC<any> = memo(props => {
                         showContainerSelect
                         showImport
                     />
-                </Panel.Body>
-            </Panel>
+                </div>
+            </div>
             <div className={'assay-type-select-panel assay-type-select-btns'}>
                 <Button onClick={onCancel}>Cancel</Button>
                 <Button

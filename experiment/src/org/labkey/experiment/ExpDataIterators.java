@@ -2930,4 +2930,12 @@ public class ExpDataIterators
             return LoggingDataIterator.wrap(new MultiDataTypeCrossProjectDataIterator(pre, context, _container, _user, _isCrossType, _isCrossFolder, _dataType, _isSamples));
         }
     }
+
+    public static void incrementCounts(Map<String, Integer> currentCounts, Map<String, Integer> increments)
+    {
+        increments.keySet().forEach(key -> {
+            Integer currentCount = currentCounts.getOrDefault(key, 0);
+            currentCounts.put(key, currentCount + increments.get(key));
+        });
+    }
 }
