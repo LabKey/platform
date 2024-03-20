@@ -87,8 +87,12 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         return QueryService.get().metadataLastModified();
     }
 
-    @Override
-    public ApiResponse execute(Form form, BindException errors)
+    @Override public ApiResponse execute(Form form, BindException errors)
+    {
+        return _execute(form, false);
+    }
+
+    protected ApiResponse _execute(Form form, boolean compressed)
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -223,6 +227,13 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
         Map<FieldKey, Map<String, Object>> columnMetadata;
 
+        Map<String,Object> templateColumn = null;
+        if (compressed)
+        {
+            templateColumn = JsonWriter.getTemplateColProps(tinfo);
+            resp.put("templateColumn", templateColumn);
+        }
+
         //if the caller asked us to chase a foreign key, do that.  Note that any call to get a lookup table can throw a
         // QueryParseException, so we wrap all FK accesses in a try/catch.
         try
@@ -270,7 +281,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 
             //now the native columns plus any additional fields requested. Use a copy of the values
             // in the reference columnMetadata map, as it may get additional entries later when the view columns are serialized
-            columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, false, form.isIncludeSuggestedQueryColumns());
+            columnMetadata = JsonWriter.getNativeColProps(tinfo, fields, fk, templateColumn, false, form.isIncludeSuggestedQueryColumns());
             resp.put("columns", new ArrayList<>(columnMetadata.values()));
 
             // table indices
@@ -316,7 +327,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         {
             //now the columns in the user's default view for this query
             QueryView qview = new QueryView(schema, settings, null);
-            resp.put("defaultView", getDefaultViewProps(qview));
+            resp.put("defaultView", getDefaultViewProps(qview, templateColumn));
 
             List<Map<String, Object>> viewInfos = new ArrayList<>();
             Map<String, CustomView> allViews = queryDef.getCustomViews(getUser(), getViewContext().getRequest(), true, false);
@@ -331,11 +342,11 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 {
                     if (cv.getName() == null)
                         hasDefault = true;
-                    viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, columnMetadata));
+                    viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, compressed, columnMetadata));
                 }
 
                 if (!hasDefault)
-                    viewInfos.add(CustomViewUtil.toMap(queryDef.createCustomView(getUser(), null), getUser(), true, columnMetadata));
+                    viewInfos.add(CustomViewUtil.toMap(queryDef.createCustomView(getUser(), null), getUser(), true, compressed, columnMetadata));
             }
             else
             {
@@ -348,7 +359,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                     if (null == cv && (viewName == null || form.isInitializeMissingView()))
                         cv = queryDef.createCustomView(getUser(), viewName);
                     if (null != cv)
-                        viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, columnMetadata));
+                        viewInfos.add(CustomViewUtil.toMap(cv, getUser(), true, compressed, columnMetadata));
                 }
             }
 
@@ -424,20 +435,20 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         return resp;
     }
 
-    protected Map<String,Object> getDefaultViewProps(QueryView view)
+    protected Map<String,Object> getDefaultViewProps(QueryView view, Map<String,Object> columnTemplate)
     {
         Map<String,Object> defViewProps = new HashMap<>();
-        defViewProps.put("columns", getDefViewColProps(view));
+        defViewProps.put("columns", getDefViewColProps(view, columnTemplate));
         return defViewProps;
     }
 
-    protected List<Map<String,Object>> getDefViewColProps(QueryView view)
+    protected List<Map<String,Object>> getDefViewColProps(QueryView view, Map<String,Object> columnTemplate)
     {
         List<Map<String,Object>> colProps = new ArrayList<>();
         for (DisplayColumn dc : view.getDisplayColumns())
         {
             if (dc.isQueryColumn() && null != dc.getColumnInfo())
-                colProps.add(JsonWriter.getMetaData(dc, null, true, true, false));
+                colProps.add(JsonWriter.getMetaData(dc, null, columnTemplate, true, true, false));
         }
         return colProps;
     }

@@ -262,6 +262,7 @@ public class QueryController extends SpringActionController
         ValidateQueriesAction.class,
         GetSchemaQueryTreeAction.class,
         GetQueryDetailsAction.class,
+        GetQueryDetails2Action.class,
         ViewQuerySourceAction.class
     );
 
@@ -6874,7 +6875,7 @@ public class QueryController extends SpringActionController
                             if (useQueryDetailColumns)
                             {
                                 columns = JsonWriter
-                                    .getNativeColProps(table, Collections.emptyList(), null, false, false)
+                                    .getNativeColProps(table, Collections.emptyList(), null, null, false, false)
                                     .values();
                             }
                             else
