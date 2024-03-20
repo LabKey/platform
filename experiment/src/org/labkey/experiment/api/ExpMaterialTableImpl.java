@@ -115,11 +115,10 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         MATERIAL_ALT_UPDATE_KEYS = Set.of(Column.LSID.name());
     }
 
-    public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
+    public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
+        super(ExpSchema.TableType.Materials.name(), ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId"), NullResult));
-        setName(ExpSchema.TableType.Materials.name());
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
@@ -145,15 +144,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (result == null)
         {
             if ("CpasType".equalsIgnoreCase(name))
-                return createColumn("SampleSet", Column.SampleSet);
-
-            if ("Property".equalsIgnoreCase(name))
-                return createPropertyColumn("Property");
-
-            if (Column.QueryableInputs.name().equalsIgnoreCase(name))
-            {
+                result = createColumn(Column.SampleSet.name(), Column.SampleSet);
+            else if (Column.Property.name().equalsIgnoreCase(name))
+                result = createPropertyColumn(Column.Property.name());
+            else if (Column.QueryableInputs.name().equalsIgnoreCase(name))
                 result = createColumn(Column.QueryableInputs.name(), Column.QueryableInputs);
-            }
         }
         return result;
     }
