@@ -1708,7 +1708,7 @@ public class AssayController extends SpringActionController
 
             }
 
-            return success(Map.of("allowed", permittedIds, "notAllowed", notPermittedIds));
+            return success(Map.of("allowed", permittedIds.stream().map(id -> Map.of("RowId", id)).toList(), "notAllowed", notPermittedIds));
 
         }
     }
