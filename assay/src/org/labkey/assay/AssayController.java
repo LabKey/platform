@@ -103,7 +103,10 @@ import org.labkey.api.security.ElevatedUser;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AssayReadPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -1679,23 +1682,26 @@ public class AssayController extends SpringActionController
         @Override
         public Object execute(AssayRunOperationConfirmationForm form, BindException errors) throws Exception
         {
-            Collection<Integer> permittedIds = form.getIds(false);
+            Collection<Integer> allowedIds = form.getIds(false);
 
-            Set<Integer> notPermittedIds = new HashSet<>();
+            Set<Integer> notAllowedIds = new HashSet<>();
+            ExperimentService service = ExperimentService.get();
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), allowedIds, "assay", form.getDataOperation().getPermissionClass());
+            List<Map<String, Object>> notPermitted = notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList();
             if (form.getDataOperation() == AssayRunOperations.Delete)
             {
-                List<? extends ExpRun> allRuns = ExperimentService.get().getExpRuns(permittedIds);
+                List<? extends ExpRun> allRuns = service.getExpRuns(allowedIds);
 
-                ExperimentService.get().getObjectReferencers().forEach(referencer ->
-                        notPermittedIds.addAll(referencer.getItemsWithReferences(permittedIds, "assay")));
-                permittedIds.removeAll(notPermittedIds);
+                service.getObjectReferencers().forEach(referencer ->
+                        notAllowedIds.addAll(referencer.getItemsWithReferences(allowedIds, "assay")));
+                allowedIds.removeAll(notAllowedIds);
 
                 List<Map<String, Object>> allowedRows = new ArrayList<>();
                 List<Map<String, Object>> notAllowedRows = new ArrayList<>();
 
                 allRuns.forEach((dataObject) -> {
                     Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "ContainerPath", dataObject.getContainer().getPath());
-                    if (permittedIds.contains(dataObject.getRowId()))
+                    if (allowedIds.contains(dataObject.getRowId()))
                         allowedRows.add(rowMap);
                     else
                         notAllowedRows.add(rowMap);
@@ -1704,29 +1710,41 @@ public class AssayController extends SpringActionController
                 Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
                 partitionedIds.put("allowed", allowedRows);
                 partitionedIds.put("notAllowed", notAllowedRows);
+                partitionedIds.put("notPermitted", notPermitted);
                 return success(partitionedIds);
 
             }
 
-            return success(Map.of("allowed", permittedIds.stream().map(id -> Map.of("RowId", id)).toList(), "notAllowed", notPermittedIds));
+            return success(Map.of(
+                "allowed", allowedIds.stream().map(id -> Map.of("RowId", id)).toList(),
+                "notAllowed", notAllowedIds,
+                "notPermitted", notPermitted
+            ));
 
         }
     }
 
     public enum AssayRunOperations {
-        Delete("deleting"),
-        Move("moving");
+        Delete("deleting", DeletePermission.class),
+        Move("moving", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
+        private final Class<? extends Permission> _permissionClass;
 
-        AssayRunOperations(String description)
+        AssayRunOperations(String description, Class<? extends Permission> permissionClass)
         {
             _description = description;
+            _permissionClass = permissionClass;
         }
 
         public String getDescription()
         {
             return _description;
+        }
+
+        public Class<? extends Permission> getPermissionClass()
+        {
+            return _permissionClass;
         }
     }
 

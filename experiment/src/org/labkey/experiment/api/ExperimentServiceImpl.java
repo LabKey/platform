@@ -199,6 +199,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
@@ -9084,22 +9085,22 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         return count;
     }
 
-    private static TableInfo getTableInfo(String dataType)
+    private static TableInfo getTableInfo(String schemaName)
     {
         // 'samples' | 'exp.data' | 'assay'
-        if (SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(dataType))
+        if (SamplesSchema.SCHEMA_NAME.equalsIgnoreCase(schemaName))
             return ExperimentService.get().getTinfoMaterial();
-        else if ("exp.data".equalsIgnoreCase(dataType))
+        else if ("exp.data".equalsIgnoreCase(schemaName))
             return  ExperimentService.get().getTinfoData();
-        else if (AssaySchema.NAME.equalsIgnoreCase(dataType))
+        else if (AssaySchema.NAME.equalsIgnoreCase(schemaName))
             return ExperimentService.get().getTinfoExperimentRun();
         else
             return null;
     }
 
-    public static Collection<Map<String, Object>> getContainersForIds(Collection<Integer> rowIds, String dataType)
+    public Collection<Map<String, Object>> getContainersForIds(Collection<Integer> rowIds, String schemaName)
     {
-        TableInfo tableInfo = getTableInfo(dataType);
+        TableInfo tableInfo = getTableInfo(schemaName);
         if (tableInfo == null)
             return null;
 
@@ -9113,6 +9114,62 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
         dialect.appendInClauseSql(selectionSql, rowIds);
         return new SqlSelector(expSchema, selectionSql).getMapCollection();
     }
+
+    @Nullable
+    public Collection<Integer> getIdsNotPermitted(@NotNull User user, @NotNull Collection<Integer> rowIds, @NotNull String schemaName, @Nullable Class<? extends Permission> permissionClass)
+    {
+        if (permissionClass == null)
+            return null;
+
+        // get the set of containers involved and find the ones the user does not have requisite permissions to
+        List<Container> containers = getUniqueContainers(rowIds, schemaName);
+        if (containers == null)
+            return null;
+
+        List<Container> notPermittedContainers = containers.stream().filter(container -> !container.hasPermission(user, permissionClass)).toList();
+        if (notPermittedContainers.isEmpty())
+            return Collections.emptyList();
+
+        // select the data where the containers are in the notPermitted set
+        TableInfo tableInfo = getTableInfo(schemaName);
+        if (tableInfo == null)
+            return null;
+
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        SQLFragment notPermittedIdsSql = new SQLFragment()
+                .append(" SELECT RowId FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE Container  ");
+        dialect.appendInClauseSql(notPermittedIdsSql, notPermittedContainers.stream().map(Container::getEntityId).toList());
+        notPermittedIdsSql
+                .append("\nAND RowId ");
+        dialect.appendInClauseSql(notPermittedIdsSql, rowIds);
+        return new SqlSelector(expSchema, notPermittedIdsSql).getArrayList(Integer.class);
+    }
+
+    public static List<Container> getUniqueContainers(Collection<Integer> rowIds, String schemaName)
+    {
+        DbSchema expSchema = DbSchema.get("exp", DbSchemaType.Module);
+        SqlDialect dialect = expSchema.getSqlDialect();
+
+        TableInfo tableInfo = getTableInfo(schemaName);
+        if (tableInfo == null)
+            return null;
+
+        SQLFragment containerSql = new SQLFragment()
+                .append(" SELECT c.EntityId FROM\n")
+                .append("  (SELECT DISTINCT container FROM ")
+                .append(tableInfo, "t")
+                .append("\nWHERE RowId ");
+        dialect.appendInClauseSql(containerSql, rowIds);
+        containerSql.append(") t1\n")
+                .append("  JOIN core.containers c ON t1.container = c.entityId");
+        List<String> containerIds = new SqlSelector(expSchema, containerSql).getArrayList(String.class);
+        return containerIds.stream().map(ContainerManager::getForId).toList();
+    }
+
 
     public static Pair<Integer, Integer> getCurrentAndCrossFolderDataCount(Collection<Integer> rowIds, String dataType, Container container)
     {
