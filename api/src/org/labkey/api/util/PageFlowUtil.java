@@ -1518,7 +1518,7 @@ public class PageFlowUtil
 
             String id = null;
             if (onClickScript == null)
-                onClickScript = "return false";
+                onClickScript = popupShowScript;
 
             if (!inlineScript)
             {
@@ -1526,7 +1526,7 @@ public class PageFlowUtil
                 id = config.makeId("helpPopup");
                 config.addHandler(id, "click", onClickScript);
             }
-            return DOM.createHtml(A(id(id).at(href,'#',tabindex,"-1",title,helpText).at(inlineScript, onclick, onClickScript), linkHtml));
+            return DOM.createHtml(A(id(id).at(tabindex,"-1", title, helpText, style, "pointer: help").at(inlineScript, onclick, onClickScript), linkHtml));
         }
 
         private HtmlString htmlPopup()
@@ -1550,7 +1550,7 @@ public class PageFlowUtil
                     config.addHandler(id, "click", onClickScript);
                 }
             }
-            return DOM.createHtml(A(id(id).cl("_helpPopup").at(href,'#',tabindex,"-1")
+            return DOM.createHtml(A(id(id).cl("_helpPopup").at(tabindex,"-1", style, "cursor: help")
                 .at(inlineScript, onclick, null==onClickScript ? popupShowScript : onClickScript)
                 .at(inlineScript, onmouseout, popupHideScript)
                 .at(inlineScript, onmouseover, popupShowScript)
