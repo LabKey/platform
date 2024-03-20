@@ -68,6 +68,8 @@
                 }
             }, this)
         });
+
+        return false;
     }
 
     function setSubmitting(isSubmitting, errors) {
