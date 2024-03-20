@@ -153,7 +153,7 @@ public class SamplesSchema extends AbstractExpSchema
     }
 
     @Override
-    public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
+    public @NotNull QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
         QueryView queryView = super.createView(context, settings, errors);
 
@@ -179,8 +179,8 @@ public class SamplesSchema extends AbstractExpSchema
         if (log.isTraceEnabled())
             log.trace("CREATE TABLE: " + (null==st ? "null" : st.getName()) + " schema=" + System.identityHashCode(this), new Throwable());
 
-        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(this, cf, null);
-        ret.populate(st);
+        ExpMaterialTable ret = ExperimentService.get().createMaterialTable(this, cf, st);
+        ret.populate();
         return ret;
     }
 
@@ -209,8 +209,8 @@ public class SamplesSchema extends AbstractExpSchema
 
             private TableInfo createLookupTableInfo()
             {
-                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(SamplesSchema.this, getLookupContainerFilter(), null);
-                ret.populate(st);
+                ExpMaterialTable ret = ExperimentService.get().createMaterialTable(SamplesSchema.this, getLookupContainerFilter(), st);
+                ret.populate();
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
                 {

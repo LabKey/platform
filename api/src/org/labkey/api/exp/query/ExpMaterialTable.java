@@ -16,9 +16,7 @@
 
 package org.labkey.api.exp.query;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.UpdateableTableInfo;
-import org.labkey.api.exp.api.ExpSampleType;
 
 public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
@@ -63,6 +61,4 @@ public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, Upd
         StoredAmount,
         Units,
     }
-
-    void populate(@Nullable ExpSampleType st);
 }

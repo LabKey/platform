@@ -532,6 +532,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             setPublicSchemaName(SamplesSchema.SCHEMA_NAME);
             setName(st.getName());
+
+            String description = _ss.getDescription();
+            if (StringUtils.isEmpty(description))
+                description = "Contains one row per sample in the " + _ss.getName() + " sample type";
+            setDescription(description);
+
             if (canUserAccessPhi())
             {
                 ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
@@ -548,33 +554,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     protected void populateColumns()
     {
-        populate(null);
-    }
-
-    @Override
-    public final void populate(@Nullable ExpSampleType st)
-    {
-        populateColumns(st);
-        markPopulated();
-    }
-
-    protected void populateColumns(@Nullable ExpSampleType st)
-    {
-        if (st != null)
-        {
-            if (st.getDescription() != null)
-            {
-                setDescription(st.getDescription());
-            }
-            else
-            {
-                setDescription("Contains one row per sample in the " + st.getName() + " sample type");
-            }
-
-            if (!"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
-                setSampleType(st);
-        }
-
+        var st = getSampleType();
         var rowIdCol = addColumn(Column.RowId);
         addColumn(Column.MaterialSourceId);
         addColumn(Column.SourceProtocolApplication);

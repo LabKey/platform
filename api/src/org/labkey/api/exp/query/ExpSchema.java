@@ -121,8 +121,7 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo createTable(ExpSchema expSchema, String queryName, ContainerFilter cf)
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(expSchema, cf, null);
-                ret.populate(null);
-                return ret;
+                return expSchema.setupTable(ret);
             }
         },
         MaterialInputs
