@@ -25,8 +25,6 @@ import java.util.Set;
 
 public interface ExpMaterialTable extends ExpTable<ExpMaterialTable.Column>, UpdateableTableInfo
 {
-    public static final String USE_MATERIALIZED_SAMPLETYPE = "org.labkey.api.exp.query.ExpMaterialTable$useMaterializedSampleType";
-
     void setMaterials(Set<ExpMaterial> predecessorMaterials);
 
     enum Column

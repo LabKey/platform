@@ -18,6 +18,17 @@ if(!LABKEY.vis){
 	LABKEY.vis = {};
 }
 
+if (!LABKEY.vis.PlotProperties) {
+    LABKEY.vis.PlotProperties = {};
+    if (!LABKEY.vis.PlotProperties.BoundType) {
+        LABKEY.vis.PlotProperties.BoundType = {
+            Absolute: 'absolute',
+            MeanDeviation: 'meanDev',
+            StandardDeviation: 'stddev'
+        }
+    }
+}
+
 LABKEY.vis.makeLine = function(x1, y1, x2, y2){
     //Generates a path between two coordinates.
     return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;

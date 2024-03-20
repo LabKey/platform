@@ -55,11 +55,9 @@ public class ContextListener implements ServletContextListener
         //PipelineBootstrapConfig.ensureLogHomeSet(System.getProperty("catalina.base") + "/logs");
         if (LogHelper.getLabKeyLogDir() == null)
         {
-            // Only set this if the user hasn't overridden it
+            // Set this only if the user hasn't overridden it
             System.setProperty(LogHelper.LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
         }
-        // As of log4j2 2.17.2, we must declare languages referenced in log4j2.xml. Our DefaultRolloverStrategy uses rhino.
-        System.setProperty("log4j2.Script.enableLanguages", "rhino");
     }
 
     private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
@@ -74,7 +72,7 @@ public class ContextListener implements ServletContextListener
         boolean isEmbedded = "true".equals(servletContextEvent.getServletContext().getInitParameter("embeddedTomcat"));
         if (isEmbedded)
         {
-            // Hack... reload log4j2.xml now that LabKey classes are visible (e.g., rhino)
+            // Hack... reload log4j2.xml now that LabKey classes are visible. Not sure if this is needed.
             Configurator.reconfigure();
         }
 

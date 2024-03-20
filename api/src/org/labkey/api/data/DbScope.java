@@ -1772,6 +1772,10 @@ public class DbScope
                     exception = new ConfigurationException(message);
                 }
             }
+            else
+            {
+                LOG.info("No other connections to database \"" + databaseName + "\" with the application name \"" + _applicationName + "\" were detected");
+            }
         }
         catch (Exception e)
         {

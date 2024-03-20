@@ -15,6 +15,11 @@
  */
 package org.labkey.api.util;
 
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -64,6 +69,7 @@ import org.labkey.api.settings.CustomLabelService;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
+import org.labkey.api.settings.Theme;
 import org.labkey.api.stats.AnalyticsProvider;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.util.Button.ButtonBuilder;
@@ -92,11 +98,6 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -1893,31 +1894,24 @@ public class PageFlowUtil
         return "ext-3.4.1";
     }
 
-    public static String DEFAULT_THEME_NAME = "Seattle";
-
-    public static String resolveThemeName(Container c)
+    public static @NotNull String resolveThemeName(Container c)
     {
-        String themeName = DEFAULT_THEME_NAME;
+        return resolveTheme(c).name().toLowerCase();
+    }
+
+    public static @NotNull Theme resolveTheme(Container c)
+    {
+        Theme theme = Theme.DEFAULT;
 
         if (c != null)
         {
-            themeName = LookAndFeelProperties.getInstance(c).getThemeName();
-
-            // TODO: This needs to be refactored to allow themes by convention
-            if (!"seattle".equalsIgnoreCase(themeName) &&
-                    !"sky".equalsIgnoreCase(themeName) &&
-                    !"overcast".equalsIgnoreCase(themeName) &&
-                    !"harvest".equalsIgnoreCase(themeName) &&
-                    !"leaf".equalsIgnoreCase(themeName) &&
-                    !"ocean".equalsIgnoreCase(themeName) &&
-                    !"mono".equalsIgnoreCase(themeName) &&
-                    !"madison".equalsIgnoreCase(themeName))
-                return "overcast";
+            theme = Theme.getTheme(LookAndFeelProperties.getInstance(c).getThemeName());
+            if (null == theme)
+                theme = Theme.Overcast;
         }
 
-        return themeName.toLowerCase();
+        return theme;
     }
-
 
     /**
      * Return URL for static webapp resources.

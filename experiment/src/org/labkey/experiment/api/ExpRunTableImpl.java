@@ -60,6 +60,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.column.BuiltInColumnTypes;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
@@ -87,6 +88,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.query.ExpMaterialTable.Column.RowId;
+import static org.labkey.experiment.ExpDataIterators.incrementCounts;
 
 public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements ExpRunTable
 {
@@ -1079,29 +1081,36 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         @Override
         public Map<String, Object> moveRows(User user, Container container, Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            Map<String, Integer> response = new HashMap<>();
+            Map<String, Integer> allContainerResponse = new HashMap<>();
 
             AuditBehaviorType auditType = configParameters != null ? (AuditBehaviorType) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior) : null;
             String auditUserComment = configParameters != null ? (String) configParameters.get(DetailedAuditLogDataIterator.AuditConfigs.AuditUserComment) : null;
 
-            List<? extends ExpRun> expRuns = getRunsForMoveRows(container, rows, errors);
-            if (!errors.hasErrors())
+            Map<Container, List<ExpRun>> expRuns = getRunsForMoveRows(targetContainer, rows, errors);
+            if (!errors.hasErrors() && expRuns != null)
             {
-                try
+                for (Container c : expRuns.keySet())
                 {
-                    response = ExperimentService.get().moveAssayRuns(expRuns, container, targetContainer, user, auditUserComment, auditType);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    throw new BatchValidationException(new ValidationException(e.getMessage()));
+                    if (!c.hasPermission(user, MoveEntitiesPermission.class))
+                        throw new UnauthorizedException("You do not have permission to move assay runs out of '" + c.getName() + "'.");
+
+                    try
+                    {
+                        Map<String, Integer> response = ExperimentService.get().moveAssayRuns(expRuns.get(c), c, targetContainer, user, auditUserComment, auditType);
+                        incrementCounts(allContainerResponse, response);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        throw new BatchValidationException(new ValidationException(e.getMessage()));
+                    }
                 }
                 SimpleMetricsService.get().increment(ExperimentService.MODULE_NAME, "moveEntities", "assayRuns");
             }
 
-            return new HashMap<>(response);
+            return new HashMap<>(allContainerResponse);
         }
 
-        private List<? extends ExpRun> getRunsForMoveRows(Container container, List<Map<String, Object>> rows, BatchValidationException errors)
+        private Map<Container, List<ExpRun>> getRunsForMoveRows(Container targetContainer, List<Map<String, Object>> rows, BatchValidationException errors)
         {
             Set<Integer> runIds = rows.stream().map(row -> (Integer) row.get(RowId.toString())).collect(Collectors.toSet());
             if (runIds.isEmpty())
@@ -1117,7 +1126,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 if (run != null)
                     addReplacesRuns(run, runIdsCascadeMove);
             }
-            if (runIdsCascadeMove.size() > 0)
+            if (!runIdsCascadeMove.isEmpty())
                 runIds.addAll(runIdsCascadeMove);
 
             List<? extends ExpRun> expRuns = ExperimentService.get().getExpRuns(runIds);
@@ -1127,16 +1136,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return null;
             }
 
-            // verify all runs are from the current container
-            if (expRuns.stream().anyMatch(run -> !run.getContainer().equals(container)))
-            {
-                errors.addRowError(new ValidationException("All assay runs must be from the current container for the move operation."));
-                return null;
-            }
+            // Filter out runs already in the target container
+            expRuns = expRuns
+                    .stream().filter(run -> run.getContainer().getEntityId() != targetContainer.getEntityId()).toList();
+
+            Map<Container, List<ExpRun>> containerObjects = new HashMap<>();
+            expRuns.forEach(run -> {
+                if (!containerObjects.containsKey(run.getContainer()))
+                    containerObjects.put(run.getContainer(), new ArrayList<>());
+                containerObjects.get(run.getContainer()).add(run);
+            });
 
             // verify allowed moves based on assay QC statuses ?
 
-            return expRuns;
+            return containerObjects;
         }
 
         private void addReplacesRuns(ExpRun run, Set<Integer> runIds)

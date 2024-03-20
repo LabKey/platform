@@ -1,4 +1,4 @@
-<form class="auth-form register-form" name="register" action="javascript:void(0)">
+<form class="auth-form register-form" name="register">
     <div id="registration-header" class="auth-header">Register for a New Account</div>
     <div class="labkey-error" id="errors"></div>
     <div id="registration-content" class="auth-form-body">
@@ -18,6 +18,7 @@
         <input id="kaptchaText" name="kaptchaText" type="text" class="input-block" tabindex="3" autofocus>
 
         <div class="auth-item">
+            <!-- Note: register.js attaches a registerUser() click event to elements with class "register-btn" -->
             <input type="submit" tab-index="-1" class="register-submit-button"/><a class="labkey-button primary register-btn"><span>Register</span></a>
         </div>
     </div>
