@@ -395,19 +395,17 @@ public class PlateManager implements PlateService
         if (se != null)
             count += (int) se.getRowCount();
 
-        List<Integer> runIds = getRunIdsUsingPlateInResults(c, user, plate);
-        if (runIds != null)
-            count += runIds.size();
+        count += getRunIdsUsingPlateInResults(c, user, plate).size();
 
         return count;
     }
 
-    private List<Integer> getRunIdsUsingPlateInResults(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
+    private @NotNull List<Integer> getRunIdsUsingPlateInResults(@NotNull Container c, @NotNull User user, @NotNull Plate plate)
     {
         // first, get the list of GPAT protocols in the container
         AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
         if (provider == null)
-            return null;
+            return Collections.emptyList();
 
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, provider)
                 .stream().filter(provider::isPlateMetadataEnabled).toList();
