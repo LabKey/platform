@@ -474,6 +474,8 @@ public class ReportViewProvider implements DataViewProvider
                     throw new ValidationException(e.getMessage());
                 }
             }
+            else
+                throw new ValidationException("Report not found: " + id + ".");
         }
     }
 }

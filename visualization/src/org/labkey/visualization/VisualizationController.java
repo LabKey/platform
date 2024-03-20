@@ -1016,6 +1016,7 @@ public class VisualizationController extends SpringActionController
         {
             VisualizationReportDescriptor vizDescriptor = (VisualizationReportDescriptor) descriptor;
             ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("id", vizDescriptor.getEntityId());
             resp.put("reportId", vizDescriptor.getReportId());
             resp.put("name", vizDescriptor.getReportName());
             resp.put("visualizationConfig", vizDescriptor.getJSON());
