@@ -16,6 +16,10 @@
 
 package org.labkey.core;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -105,7 +109,6 @@ import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -126,8 +129,8 @@ import org.labkey.api.usageMetrics.SimpleMetricsService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.PageFlowUtil.Content;
@@ -137,10 +140,8 @@ import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.element.CsrfInput;
 import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -177,10 +178,6 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2579,23 +2576,23 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
+        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandlerAbstract)
         {
             CoreQCStateHandler qcStateHandler = (CoreQCStateHandler)qcStateHandlerAbstract;
 
-            StringBuilder panelHtml = new StringBuilder();
-            panelHtml.append("  <table class=\"lk-fields-table\">");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
-            panelHtml.append("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
-            panelHtml.append("      </tr>");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Default QC state:</th>");
+            HtmlStringBuilder panelHtml = HtmlStringBuilder.of();
+            panelHtml.unsafeAppend("  <table class=\"lk-fields-table\">");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
+            panelHtml.unsafeAppend("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <th align=\"right\" width=\"300px\">Default QC state:</th>");
             panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultQCState", qcStateHandler.getDefaultQCState(container)));
-            panelHtml.append("      </tr>");
-            panelHtml.append("  </table>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("  </table>");
 
-            return panelHtml.toString();
+            return panelHtml.getHtmlString();
         }
 
         @Override
@@ -2605,7 +2602,7 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a data visibility panel.");
         }
@@ -2617,26 +2614,26 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
         {
-            StringBuilder panelHtml = new StringBuilder();
-            panelHtml.append("  <table class=\"lk-fields-table\">");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <td colspan=\"2\">This setting determines whether a comment is required when updating an assay run QC state.");
-            panelHtml.append("      </tr>");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Require Comment on QC State Change:</th>");
-            panelHtml.append("          <td>");
-            panelHtml.append("              <select name=\"requireCommentOnQCStateChange\">");
-            panelHtml.append("                  <option value=\"false\">No</option>");
+            HtmlStringBuilder panelHtml = HtmlStringBuilder.of();
+            panelHtml.unsafeAppend("  <table class=\"lk-fields-table\">");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <td colspan=\"2\">This setting determines whether a comment is required when updating an assay run QC state.");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <th align=\"right\" width=\"300px\">Require Comment on QC State Change:</th>");
+            panelHtml.unsafeAppend("          <td>");
+            panelHtml.unsafeAppend("              <select name=\"requireCommentOnQCStateChange\">");
+            panelHtml.unsafeAppend("                  <option value=\"false\">No</option>");
             String selectedText = (qcStateHandler.isRequireCommentOnQCStateChange(container)) ? " selected" : "";
-            panelHtml.append("                  <option value=\"true\"").append(selectedText).append(">Yes</option>");
-            panelHtml.append("              </select>");
-            panelHtml.append("          </td>");
-            panelHtml.append("      </tr>");
-            panelHtml.append("  </table>");
+            panelHtml.unsafeAppend("                  <option value=\"true\"").append(selectedText).unsafeAppend(">Yes</option>");
+            panelHtml.unsafeAppend("              </select>");
+            panelHtml.unsafeAppend("          </td>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("  </table>");
 
-            return panelHtml.toString();
+            return panelHtml.getHtmlString();
         }
 
         @Override
