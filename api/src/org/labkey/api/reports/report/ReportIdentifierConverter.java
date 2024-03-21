@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.Converter;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.reports.ReportService;
 
 /*
@@ -31,7 +32,10 @@ public class ReportIdentifierConverter implements Converter
     {
         if (null == value || value.equals("null") || !type.equals(ReportIdentifier.class))
             return null;
-        var ret =  ReportService.get().getReportIdentifier(value.toString(), null, null);
+        String s = value.toString();
+        if (StringUtils.isBlank(s))
+            return null;
+        var ret =  ReportService.get().getReportIdentifier(s, null, null);
         if (null == ret)
             throw new ConversionException("This does not look like a report identifier");
         return ret;
