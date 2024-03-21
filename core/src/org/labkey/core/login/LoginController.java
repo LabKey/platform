@@ -707,6 +707,7 @@ public class LoginController extends SpringActionController
 
             response.put("full", passwordRule.getFullRuleHtml().toString());
             response.put("summary", passwordRule.getSummaryRuleHtml().toString());
+            response.put("shouldShowPasswordGuidance", passwordRule.shouldShowPasswordGuidance());
             return response;
         }
     }

@@ -111,7 +111,7 @@
         {
     %>
             <labkey:panel title="<%=defaultStatesPanelTitle%>">
-                <%= unsafe(manageAction.getQcStateDefaultsPanel(container, qcStateHandler)) %>
+                <%= manageAction.getQcStateDefaultsPanel(container, qcStateHandler) %>
             </labkey:panel>
     <%
         }
@@ -119,7 +119,7 @@
         {
     %>
             <labkey:panel title="Data visibility">
-                <%= unsafe(manageAction.getDataVisibilityPanel(container, qcStateHandler)) %>
+                <%= manageAction.getDataVisibilityPanel(container, qcStateHandler) %>
             </labkey:panel>
     <%
         }
@@ -127,7 +127,7 @@
         {
     %>
             <labkey:panel title="QC State Comments">
-                <%= unsafe(manageAction.getRequiresCommentPanel(container, qcStateHandler)) %>
+                <%= manageAction.getRequiresCommentPanel(container, qcStateHandler) %>
             </labkey:panel>
     <%
         }
