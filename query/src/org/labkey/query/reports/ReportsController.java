@@ -127,6 +127,7 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
+import org.labkey.api.util.ErrorView;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
@@ -1159,6 +1160,8 @@ public class ReportsController extends SpringActionController
         @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                throw new NotFoundException();
             Report report = form.getReport(getViewContext());
             if (null != report)
             {
