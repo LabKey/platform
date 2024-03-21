@@ -953,8 +953,6 @@ public class Table
 
         SQLFragment setSQL = new SQLFragment();
         SQLFragment whereSQL = new SQLFragment();
-        ArrayList<Object> parametersSet = new ArrayList<>();
-        ArrayList<Object> parametersWhere = new ArrayList<>();
         String comma = "";
 
         // UNDONE -- rowVersion
@@ -1005,7 +1003,7 @@ public class Table
             whereSQL.append(whereAND);
             whereSQL.appendIdentifier(col.getSelectName());
             whereSQL.append("=?");
-            parametersWhere.add(keys.get(col.getName()));
+            whereSQL.add(keys.get(col.getName()));
             whereAND = " AND ";
         }
 
@@ -1072,9 +1070,9 @@ public class Table
 
                 setSQL.append("=?");
                 if (value instanceof Parameter.JdbcParameterValue)
-                    parametersSet.add(value);
+                    setSQL.add(value);
                 else
-                    parametersSet.add(new Parameter.TypedValue(value, column.getJdbcType()));
+                    setSQL.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
 
             comma = ", ";
@@ -1088,9 +1086,6 @@ public class Table
                     .append("UPDATE " + table.getSelectName() + "\n\t")
                     .append("SET ").append(setSQL).append("\n\t")
                     .append(whereSQL);
-
-            updateSQL.addAll(parametersSet);
-            updateSQL.addAll(parametersWhere);
 
             try
             {
