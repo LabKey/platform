@@ -1083,7 +1083,7 @@ public class Table
         {
             // UNDONE: reselect
             SQLFragment updateSQL = new SQLFragment()
-                    .append("UPDATE " + table.getSelectName() + "\n\t")
+                    .append("UPDATE ").append(table.getSQLName()).append("\n\t")
                     .append("SET ").append(setSQL).append("\n\t")
                     .append(whereSQL);
 
