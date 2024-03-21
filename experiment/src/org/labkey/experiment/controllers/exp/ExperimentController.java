@@ -201,7 +201,6 @@ import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -3472,14 +3471,20 @@ public class ExperimentController extends SpringActionController
         public Object execute(DataOperationConfirmationForm form, BindException errors)
         {
             Collection<Integer> requestIds = form.getIds(false);
-            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(requestIds);
+            ExperimentServiceImpl service = ExperimentServiceImpl.get();
+            List<ExpDataImpl> allData = service.getExpDatas(requestIds);
 
-            Set<Integer> notPermittedIds = new HashSet<>();
+            Set<Integer> notAllowedIds = new HashSet<>();
             if (form.getDataOperation() == ExpDataImpl.DataOperations.Delete)
-                ExperimentService.get().getObjectReferencers().forEach(referencer ->
-                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
+                service.getObjectReferencers().forEach(referencer ->
+                        notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "exp.data")));
 
-            return success(ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allData));
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allData);
+
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, "exp.data", form.getDataOperation().getPermissionClass());
+            response.put("notPermitted", notPermittedIds == null ? Collections.emptyList(): notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+
+            return success(response);
         }
     }
 
@@ -3520,16 +3525,21 @@ public class ExperimentController extends SpringActionController
             ExperimentServiceImpl service = ExperimentServiceImpl.get();
             List<? extends ExpMaterial> allMaterials = service.getExpMaterials(requestIds);
 
-            Set<Integer> notPermittedIds = new HashSet<>();
-            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc
+            Set<Integer> notAllowedIds = new HashSet<>();
+            // We prevent deletion if a sample is used as a parent, has assay data, is used in a job, etc.
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
-                ExperimentService.get().getObjectReferencers().forEach(referencer ->
-                        notPermittedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
+                service.getObjectReferencers().forEach(referencer ->
+                        notAllowedIds.addAll(referencer.getItemsWithReferences(requestIds, "samples")));
 
             if (SampleStatusService.get().supportsSampleStatus())
-                notPermittedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
+                notAllowedIds.addAll(service.findIdsNotPermittedForOperation(allMaterials, form.getSampleOperation()));
 
-            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notPermittedIds, allMaterials);
+            Map<String, Collection<Map<String, Object>>> response = ExperimentServiceImpl.partitionRequestedOperationObjects(requestIds, notAllowedIds, allMaterials);
+
+            Collection<Integer> notPermittedIds = service.getIdsNotPermitted(getUser(), requestIds, SamplesSchema.SCHEMA_NAME, form.getSampleOperation().getPermissionClass());
+
+            response.put("notPermitted", notPermittedIds == null ? Collections.emptyList() : notPermittedIds.stream().map(id -> Map.of("RowId", (Object) id)).toList());
+
             if (form.getSampleOperation() == SampleTypeService.SampleOperations.Delete)
                 // String 'associatedDatasets' must be synced to its handling in confirmDelete.js, confirmDelete()
                 response.put("associatedDatasets", ExperimentServiceImpl.includeLinkedToStudyText(allMaterials, requestIds, getUser(), getContainer()));
@@ -4016,7 +4026,15 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
+        protected int importData(
+            DataLoader dl,
+            FileStream file,
+            String originalName,
+            BatchValidationException errors,
+            @Nullable AuditBehaviorType auditBehaviorType,
+            TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent,
+            @Nullable String auditUserComment
+        ) throws IOException
         {
             initContext(dl, errors, auditBehaviorType, auditUserComment);
 
@@ -4024,10 +4042,9 @@ public class ExperimentController extends SpringActionController
             QueryUpdateService updateService = _updateService;
             if (getOptionParamValue(Params.crossTypeImport))
             {
-                tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
+                tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()), null);
                 updateService = tInfo.getUpdateService();
             }
-
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
@@ -7641,7 +7658,7 @@ public class ExperimentController extends SpringActionController
         {
             if (form.getDataRegionSelectionKey() == null && form.getRowIds() == null)
                 errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey.");
-            if (!"sample".equalsIgnoreCase(form.getDataType()) && !"data".equalsIgnoreCase(form.getDataType())&& !"assayrun".equalsIgnoreCase(form.getDataType()))
+            if (!"samples".equalsIgnoreCase(form.getDataType()) && !"exp.data".equalsIgnoreCase(form.getDataType())&& !"assay".equalsIgnoreCase(form.getDataType()))
                 errors.reject(ERROR_REQUIRED, "Data type (sample, data or assayrun) must be specified.");
         }
 

@@ -4,9 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.login = LABKEY.login || {};
-
-LABKEY.login.PasswordGauge = new function() {
+LABKEY.PasswordGauge = new function() {
 
     let _passwordId;            // the element ID for the password text box to listen on
     let _emailId;               // the element ID for the email text box

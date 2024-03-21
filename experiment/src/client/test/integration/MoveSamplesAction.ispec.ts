@@ -353,7 +353,7 @@ describe('Move Samples', () => {
 
         it('error, requires insert perm in targetContainer', async () => {
             // Arrange
-            const sampleRowId = await createSample(server, 'sub1-notmoved-2', subfolder1Options, editorUserOptions);
+            const sampleRowId = await createSample(server, 'sub1-notmoved-3', subfolder1Options, editorUserOptions);
 
             // Act
             const response = await server.post('query', 'moveRows.api', {
