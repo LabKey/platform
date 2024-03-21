@@ -2197,8 +2197,8 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
     public PlateSetLineage getPlateSetLineage(Container container, User user, int seedPlateSetId, @Nullable ContainerFilter cf)
     {
-        ContainerFilter cf_ = ensureContainerFilterForLineage(container, user, cf);
-        PlateSetImpl seedPlateSet = (PlateSetImpl) getPlateSet(cf_, seedPlateSetId);
+        cf = ensureContainerFilterForLineage(container, user, cf);
+        PlateSetImpl seedPlateSet = (PlateSetImpl) getPlateSet(cf, seedPlateSetId);
         if (seedPlateSet == null)
             throw new NotFoundException();
 
@@ -2226,7 +2226,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
 
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo plateSetTable = schema.getTableOrThrow(PlateSetTable.NAME, cf_);
+        TableInfo plateSetTable = schema.getTableOrThrow(PlateSetTable.NAME, cf);
         SimpleFilter filterPS = new SimpleFilter();
         filterPS.addInClause(FieldKey.fromParts("RowId"), nodeIds);
         List<PlateSetImpl> nodes = new TableSelector(plateSetTable, filterPS, null).getArrayList(PlateSetImpl.class);
@@ -2411,13 +2411,13 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         if (provider == null)
             return plateSetAssays;
 
-        ContainerFilter cf_ = ensureContainerFilterForLineage(container, user, cf);
+        cf = ensureContainerFilterForLineage(container, user, cf);
         PlateSetLineage lineage = getPlateSetLineage(container, user, plateSetId, cf);
         Map<Integer, List<Integer>> protocolPlateSets = new HashMap<>();
         Map<Integer, PlateSet> plateSets = lineage.getPlateSetAndDescendents(plateSetId);
         plateSetAssays.setPlateSets(plateSets);
         UserSchema schema = getPlateUserSchema(container, user);
-        TableInfo plateTable = schema.getTableOrThrow(PlateTable.NAME, cf_);
+        TableInfo plateTable = schema.getTableOrThrow(PlateTable.NAME, cf);
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(container, provider)
                 .stream().filter(provider::isPlateMetadataEnabled).toList();
 

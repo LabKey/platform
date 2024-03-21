@@ -1,5 +1,6 @@
 package org.labkey.assay.plate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.labkey.api.assay.plate.PlateSet;
 import org.labkey.api.assay.plate.PlateSetEdge;
@@ -70,6 +71,7 @@ public class PlateSetLineage
      * @param plateSetId the plateSetId to return with descendents
      * @return Map<Integer, PlateSet>
      */
+    @JsonIgnore
     public Map<Integer, PlateSet> getPlateSetAndDescendents(Integer plateSetId) {
         Map<Integer, PlateSet> allPlateSets = new HashMap<>();
         allPlateSets.put(plateSetId, _plateSets.get(plateSetId));
