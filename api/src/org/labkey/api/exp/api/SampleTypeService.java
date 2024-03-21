@@ -29,10 +29,17 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.lists.permissions.ManagePicklistsPermission;
 import org.labkey.api.qc.DataState;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.SampleWorkflowJobPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
@@ -57,30 +64,37 @@ public interface SampleTypeService
     }
 
     enum SampleOperations {
-        EditMetadata("editing metadata"),
-        EditLineage("editing lineage"),
-        AddToStorage("adding to storage"),
-        UpdateStorageMetadata("updating storage metadata"),
-        RemoveFromStorage("removing from storage"),
-        AddToPicklist("adding to a picklist"),
-        Delete("deleting"),
-        AddToWorkflow("adding to a workflow"),
-        RemoveFromWorkflow("removing from a workflow"),
-        AddAssayData("addition of associated assay data"),
-        LinkToStudy("linking to study"),
-        RecallFromStudy("recalling from a study"),
-        Move("moving to a different project");
+        EditMetadata("editing metadata", UpdatePermission.class),
+        EditLineage("editing lineage", UpdatePermission.class),
+        AddToStorage("adding to storage", null),
+        UpdateStorageMetadata("updating storage metadata", null),
+        RemoveFromStorage("removing from storage", null),
+        AddToPicklist("adding to a picklist", ManagePicklistsPermission.class),
+        Delete("deleting", DeletePermission.class),
+        AddToWorkflow("adding to a workflow", SampleWorkflowJobPermission.class),
+        RemoveFromWorkflow("removing from a workflow", SampleWorkflowJobPermission.class),
+        AddAssayData("addition of associated assay data", InsertPermission.class),
+        LinkToStudy("linking to study", InsertPermission.class),
+        RecallFromStudy("recalling from a study", DeletePermission.class),
+        Move("moving to a different project", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
+        private final Class<? extends Permission> _permissionClass;
 
-        SampleOperations(String description)
+        SampleOperations(String description, Class<? extends Permission> permissionClass)
         {
             _description = description;
+            _permissionClass = permissionClass;
         }
 
         public String getDescription()
         {
             return _description;
+        }
+
+        public Class<? extends Permission> getPermissionClass()
+        {
+            return _permissionClass;
         }
     }
 
