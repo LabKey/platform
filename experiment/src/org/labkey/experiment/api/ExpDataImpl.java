@@ -63,7 +63,11 @@ import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DataClassReadPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.MediaReadPermission;
+import org.labkey.api.security.permissions.MoveEntitiesPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Link.LinkBuilder;
@@ -105,20 +109,27 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     private static final Logger LOG = LogManager.getLogger(ExpDataImpl.class);
 
     public enum DataOperations {
-        EditLineage("editing lineage"),
-        Delete("deleting"),
-        Move("moving");
+        EditLineage("editing lineage", UpdatePermission.class),
+        Delete("deleting", DeletePermission.class),
+        Move("moving", MoveEntitiesPermission.class);
 
         private final String _description; // used as a suffix in messaging users about what is not allowed
+        private final Class<? extends Permission> _permissionClass;
 
-        DataOperations(String description)
+        DataOperations(String description, Class<? extends Permission> permissionClass)
         {
             _description = description;
+            _permissionClass = permissionClass;
         }
 
         public String getDescription()
         {
             return _description;
+        }
+
+        public Class<? extends Permission> getPermissionClass()
+        {
+            return _permissionClass;
         }
     }
 
