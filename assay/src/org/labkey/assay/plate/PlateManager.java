@@ -115,6 +115,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.AssayManager;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.model.PlateBean;
+import org.labkey.assay.plate.model.PlateSetAssays;
 import org.labkey.assay.plate.model.PlateSetLineage;
 import org.labkey.assay.plate.model.PlateTypeBean;
 import org.labkey.assay.plate.model.WellBean;
@@ -2186,12 +2187,17 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
         }
     }
 
+    private ContainerFilter ensureContainerFilterForLineage(Container container, User user, @Nullable ContainerFilter cf)
+    {
+        if (cf != null)
+            return cf;
+
+        return QueryService.get().getProductContainerFilterForLookups(container, user, ContainerFilter.Type.Current.create(container, user));
+    }
+
     public PlateSetLineage getPlateSetLineage(Container container, User user, int seedPlateSetId, @Nullable ContainerFilter cf)
     {
-        ContainerFilter cf_ = cf;
-        if (cf_ == null)
-            cf_ = QueryService.get().getProductContainerFilterForLookups(container, user, ContainerFilter.Type.Current.create(container, user));
-
+        ContainerFilter cf_ = ensureContainerFilterForLineage(container, user, cf);
         PlateSetImpl seedPlateSet = (PlateSetImpl) getPlateSet(cf_, seedPlateSetId);
         if (seedPlateSet == null)
             throw new NotFoundException();
@@ -2390,6 +2396,55 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
             return;
 
         deleteHits(run.getProtocol().getRowId(), List.of((Integer) resultRow.get("RowId")));
+    }
+
+    /**
+     * Returns a PlateSetAssays model for all plate enabled GPAT assays for a given container and containerFilter that
+     * have data associated with a given plateSetId or its descendents.
+     */
+    public PlateSetAssays getPlateSetAssays(Container container, User user, int plateSetId, @Nullable ContainerFilter cf)
+    {
+        PlateSetAssays plateSetAssays = new PlateSetAssays();
+        // Get the list of GPAT protocols in the container
+        AssayProvider provider = AssayService.get().getProvider(TsvAssayProvider.NAME);
+
+        if (provider == null)
+            return plateSetAssays;
+
+        ContainerFilter cf_ = ensureContainerFilterForLineage(container, user, cf);
+        PlateSetLineage lineage = getPlateSetLineage(container, user, plateSetId, cf);
+        Map<Integer, List<Integer>> protocolPlateSets = new HashMap<>();
+        Map<Integer, PlateSet> plateSets = lineage.getPlateSetAndDescendents(plateSetId);
+        plateSetAssays.setPlateSets(plateSets);
+        UserSchema schema = getPlateUserSchema(container, user);
+        TableInfo plateTable = schema.getTableOrThrow(PlateTable.NAME, cf_);
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(container, provider)
+                .stream().filter(provider::isPlateMetadataEnabled).toList();
+
+        for (ExpProtocol protocol : protocols)
+        {
+            AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+            TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
+
+            if (assayDataTable != null)
+            {
+                // Query for the distinct set of plate sets that have data in
+                SQLFragment sql = new SQLFragment("SELECT DISTINCT pt.plateset FROM ")
+                        .append(assayDataTable, "ad")
+                        .append(" JOIN ")
+                        .append(plateTable, "pt")
+                        .append(" ON ad.plate = pt.rowId WHERE pt.plateset ")
+                        .appendInClause(plateSets.keySet(), assayDataTable.getSqlDialect());
+                ArrayList<Integer> plateSetRowIds = new SqlSelector(ExperimentService.get().getSchema(), sql).getArrayList(Integer.class);
+
+                if (!plateSetRowIds.isEmpty())
+                    protocolPlateSets.put(protocol.getRowId(), plateSetRowIds);
+            }
+        }
+
+        plateSetAssays.setProtocolPlateSets(protocolPlateSets);
+
+        return plateSetAssays;
     }
 
     private void requireActiveTransaction()
