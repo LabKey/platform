@@ -2428,7 +2428,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (assayDataTable != null)
             {
-                // Query for the distinct set of plate sets that have data in
+                // Query for the distinct set of plate sets that have data in their results domain for the given assay
                 SQLFragment sql = new SQLFragment("SELECT DISTINCT pt.plateset FROM ")
                         .append(assayDataTable, "ad")
                         .append(" JOIN ")
