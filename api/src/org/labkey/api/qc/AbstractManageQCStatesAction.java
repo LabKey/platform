@@ -22,6 +22,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -33,11 +35,11 @@ import java.util.Set;
 public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDataStatesForm> extends FormViewAction<FORM>
 {
     public abstract boolean hasQcStateDefaultsPanel();
-    public abstract String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasDataVisibilityPanel();
-    public abstract String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler);
     public abstract boolean hasRequiresCommentPanel();
-    public abstract String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler);
+    public abstract HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler);
 
     protected DataStateHandler _dataStateHandler;
 
@@ -172,23 +174,23 @@ public abstract class AbstractManageQCStatesAction<FORM extends AbstractManageDa
             return new ActionURL(defaultActionClass, getContainer());
     }
 
-    protected String getQcStateHtml(Container container, DataStateHandler qcStateHandler, String selectName, Integer qcStateId)
+    protected HtmlString getQcStateHtml(Container container, DataStateHandler qcStateHandler, String selectName, Integer qcStateId)
     {
-        StringBuilder qcStateHtml = new StringBuilder();
-        qcStateHtml.append("          <td>");
-        qcStateHtml.append("              <select name=\"").append(selectName).append("\">");
-        qcStateHtml.append("                  <option value=\"\">[none]</option>");
+        HtmlStringBuilder qcStateHtml = HtmlStringBuilder.of();
+        qcStateHtml.unsafeAppend("          <td>");
+        qcStateHtml.unsafeAppend("              <select name=\"").append(selectName).unsafeAppend("\">");
+        qcStateHtml.unsafeAppend("                  <option value=\"\">[none]</option>");
         for (Object stateObj : qcStateHandler.getStates(container))
         {
             DataState state = (DataState) stateObj;
             boolean selected = (qcStateId != null) && (qcStateId == state.getRowId());
             String selectedText = (selected) ? " selected" : "";
-            qcStateHtml.append("              <option value=\"").append(state.getRowId()).append("\"").append(selectedText).append(">").append(state.getLabel()).append("</option>");
+            qcStateHtml.unsafeAppend("              <option value=\"").append(state.getRowId()).unsafeAppend("\"").append(selectedText).unsafeAppend(">").append(state.getLabel()).unsafeAppend("</option>");
         }
-        qcStateHtml.append("              </select>");
-        qcStateHtml.append("          </td>");
+        qcStateHtml.unsafeAppend("              </select>");
+        qcStateHtml.unsafeAppend("          </td>");
 
-        return qcStateHtml.toString();
+        return qcStateHtml.getHtmlString();
     }
 
 }

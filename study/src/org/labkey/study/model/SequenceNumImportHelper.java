@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.dataiterator.DataIterator;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyUtils;
 import org.labkey.api.study.TimepointType;
@@ -152,7 +153,7 @@ public class SequenceNumImportHelper implements SequenceNumTranslator
     }
 
     @Override
-    public Double translateSequenceNum(@Nullable Object seq, @Nullable Object d)
+    public Double translateSequenceNum(@Nullable Object seq, @Nullable Object d) throws ValidationException
     {
         Double sequencenum;
         Date date = null;
@@ -177,6 +178,11 @@ translateToDouble:
                 sequencenum = parseDouble((String)seq);
                 if (null != sequencenum)
                     break translateToDouble;
+                if (!_translateMap.containsKey(seq) && !_translateMap.isEmpty())
+                {
+                    // issue : 49375 return an appropriate error message if we can't match on a visit map label
+                    throw new ValidationException("Visit : " + seq + " does not exist in the visit map");
+                }
                 sequencenum = parseDouble(_translateMap.get(seq));
                 if (null != sequencenum)
                     break translateToDouble;
@@ -276,7 +282,7 @@ translateToDouble:
         }
 
         @Test
-        public void testVisitBasedNonDemographic()
+        public void testVisitBasedNonDemographic() throws ValidationException
         {
             CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             map.put("Enrollment",1.0000);
@@ -307,7 +313,7 @@ translateToDouble:
         }
 
         @Test
-        public void testVisitBasedDemographic()
+        public void testVisitBasedDemographic() throws ValidationException
         {
             CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             map.put("Enrollment",1.0000);
@@ -328,7 +334,7 @@ translateToDouble:
 
         // this test does not run stand-alone because of StudyManager.sequenceNumFromDate(date)
         @Test
-        public void testDateBasedNotDemographic()
+        public void testDateBasedNotDemographic() throws ValidationException
         {
             CaseInsensitiveHashMap<Double> map = new CaseInsensitiveHashMap<>();
             SequenceNumImportHelper h = new SequenceNumImportHelper(

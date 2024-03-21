@@ -16,6 +16,9 @@
 
 package org.labkey.study.controllers;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.FactoryUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -60,7 +63,34 @@ import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.audit.TransactionAuditProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.compliance.ComplianceService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnHeaderType;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.ResultsFactory;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -200,7 +230,27 @@ import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
 import org.labkey.study.importer.SchemaTsvReader;
 import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.model.*;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.CohortManager;
+import org.labkey.study.model.CustomParticipantView;
+import org.labkey.study.model.DatasetDefinition;
+import org.labkey.study.model.DatasetDomainKindProperties;
+import org.labkey.study.model.DatasetManager;
+import org.labkey.study.model.DatasetReorderer;
+import org.labkey.study.model.DateDatasetDomainKind;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantCategoryImpl;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudySnapshot;
+import org.labkey.study.model.UploadLog;
+import org.labkey.study.model.VisitDataset;
+import org.labkey.study.model.VisitDatasetType;
+import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.MasterPatientIndexUpdateTask;
 import org.labkey.study.pipeline.StudyPipeline;
@@ -221,9 +271,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -245,7 +292,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import static org.labkey.api.util.PageFlowUtil.filter;
 import static org.labkey.study.model.QCStateSet.PUBLIC_STATES_LABEL;
 import static org.labkey.study.model.QCStateSet.getQCStateFilteredURL;
 import static org.labkey.study.model.QCStateSet.getQCUrlFilterKey;
@@ -3462,31 +3508,31 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getQcStateDefaultsPanel(Container container, DataStateHandler qcStateHandler)
         {
             _study = StudyController.getStudyThrowIfNull(container);
 
-            StringBuilder panelHtml = new StringBuilder();
-            panelHtml.append("  <table class=\"lk-fields-table\">");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
-            panelHtml.append("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
-            panelHtml.append("      </tr>");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Pipeline imported datasets:</th>");
+            HtmlStringBuilder panelHtml = HtmlStringBuilder.of();
+            panelHtml.unsafeAppend("  <table class=\"lk-fields-table\">");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <td colspan=\"2\">These settings allow different default QC states depending on data source.");
+            panelHtml.unsafeAppend("              If set, all imported data without an explicit QC state will have the selected state automatically assigned.</td>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <th align=\"right\" width=\"300px\">Pipeline imported datasets:</th>");
             panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPipelineQCState", _study.getDefaultPipelineQCState()));
-            panelHtml.append("      </tr>");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Data linked to this study:</th>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <th align=\"right\" width=\"300px\">Data linked to this study:</th>");
             panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultPublishDataQCState", _study.getDefaultPublishDataQCState()));
-            panelHtml.append("      </tr>");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Directly inserted/updated dataset data:</th>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <th align=\"right\" width=\"300px\">Directly inserted/updated dataset data:</th>");
             panelHtml.append(getQcStateHtml(container, qcStateHandler, "defaultDirectEntryQCState", _study.getDefaultDirectEntryQCState()));
-            panelHtml.append("      </tr>");
-            panelHtml.append("  </table>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("  </table>");
 
-            return panelHtml.toString();
+            return panelHtml.getHtmlString();
         }
 
         @Override
@@ -3496,27 +3542,27 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getDataVisibilityPanel(Container container, DataStateHandler qcStateHandler)
         {
-            StringBuilder panelHtml = new StringBuilder();
-            panelHtml.append("  <table class=\"lk-fields-table\">");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <td colspan=\"2\">This setting determines whether users see non-public data by default.");
-            panelHtml.append("              Users can always explicitly choose to see data in any QC state.</td>");
-            panelHtml.append("      </tr>");
-            panelHtml.append("      <tr>");
-            panelHtml.append("          <th align=\"right\" width=\"300px\">Default visibility:</th>");
-            panelHtml.append("          <td>");
-            panelHtml.append("              <select name=\"showPrivateDataByDefault\">");
-            panelHtml.append("                  <option value=\"false\">Public data</option>");
+            HtmlStringBuilder panelHtml = HtmlStringBuilder.of();
+            panelHtml.unsafeAppend("  <table class=\"lk-fields-table\">");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <td colspan=\"2\">This setting determines whether users see non-public data by default.");
+            panelHtml.unsafeAppend("              Users can always explicitly choose to see data in any QC state.</td>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("      <tr>");
+            panelHtml.unsafeAppend("          <th align=\"right\" width=\"300px\">Default visibility:</th>");
+            panelHtml.unsafeAppend("          <td>");
+            panelHtml.unsafeAppend("              <select name=\"showPrivateDataByDefault\">");
+            panelHtml.unsafeAppend("                  <option value=\"false\">Public data</option>");
             String selectedText = (_study.isShowPrivateDataByDefault()) ? " selected" : "";
-            panelHtml.append("                  <option value=\"true\"").append(selectedText).append(">All data</option>");
-            panelHtml.append("              </select>");
-            panelHtml.append("          </td>");
-            panelHtml.append("      </tr>");
-            panelHtml.append("  </table>");
+            panelHtml.unsafeAppend("                  <option value=\"true\"").append(selectedText).unsafeAppend(">All data</option>");
+            panelHtml.unsafeAppend("              </select>");
+            panelHtml.unsafeAppend("          </td>");
+            panelHtml.unsafeAppend("      </tr>");
+            panelHtml.unsafeAppend("  </table>");
 
-            return panelHtml.toString();
+            return panelHtml.getHtmlString();
         }
 
         @Override
@@ -3526,7 +3572,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public String getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
+        public HtmlString getRequiresCommentPanel(Container container, DataStateHandler qcStateHandler)
         {
             throw new IllegalStateException("This action does not support a requires comment panel.");
         }
