@@ -50,12 +50,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-/**
- * User: kevink
- * Date: 10/20/15
- */
 public class ParentChildView extends VBox
 {
     public ParentChildView(ExpRunItem output, ViewContext context)
@@ -127,8 +122,7 @@ public class ParentChildView extends VBox
             }
         }
 
-        final List<Integer> rowIds = data.stream().map(ExpData::getRowId).collect(Collectors.toList());
-
+        final List<Integer> rowIds = data.stream().map(ExpData::getRowId).toList();
         final ExpDataClass dataClass = classId == null ? null : ExperimentServiceImpl.get().getDataClass(classId);
 
         UserSchema schema = new ExpSchema(getUser(), getContainer());
@@ -136,13 +130,13 @@ public class ParentChildView extends VBox
         if (dataClass == null)
         {
             settings = schema.getSettings(getViewContext(), dataRegionName, ExpSchema.TableType.Data.toString());
-            settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts("rowId"), rowIds, CompareType.IN));
+            settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId), rowIds, CompareType.IN));
         }
         else
         {
             schema = schema.getUserSchema(ExpSchema.NestedSchemas.data.toString());
             settings = schema.getSettings(getViewContext(), dataRegionName, dataClass.getName());
-            settings.getBaseFilter().addClause(new SimpleFilter.InClause(FieldKey.fromParts("rowId"), rowIds));
+            settings.getBaseFilter().addInClause(FieldKey.fromParts(ExpDataTable.Column.RowId), rowIds);
         }
 
         QueryView queryView = new QueryView(schema, settings, null);
@@ -222,15 +216,17 @@ public class ParentChildView extends VBox
             settings = schema.getSettings(getViewContext(), dataRegionName, st.getName());
         }
 
+        final List<Integer> rowIds = materials.stream().map(ExpMaterial::getRowId).toList();
+        settings.getBaseFilter().addInClause(FieldKey.fromParts(ExpMaterialTable.Column.RowId), rowIds);
+
         QueryView queryView = new QueryView(schema, settings, null)
         {
             @Override
             protected TableInfo createTable()
             {
                 // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view
-                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(ExpSchema.TableType.Materials.toString(), getSchema(), ContainerFilter.EVERYTHING);
-                table.setMaterials(materials);
-                table.populate(st);
+                ExpMaterialTable table = ExperimentServiceImpl.get().createMaterialTable(getSchema(), ContainerFilter.EVERYTHING, st);
+                table.populate();
 
                 List<FieldKey> defaultVisibleColumns = new ArrayList<>();
                 if (st == null)

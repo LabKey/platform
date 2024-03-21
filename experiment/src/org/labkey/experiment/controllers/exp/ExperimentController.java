@@ -201,7 +201,6 @@ import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
 import org.labkey.experiment.api.ExpExperimentImpl;
 import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpMaterialTableImpl;
 import org.labkey.experiment.api.ExpProtocolApplicationImpl;
 import org.labkey.experiment.api.ExpProtocolImpl;
 import org.labkey.experiment.api.ExpRunImpl;
@@ -4016,7 +4015,15 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType, TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent, @Nullable String auditUserComment) throws IOException
+        protected int importData(
+            DataLoader dl,
+            FileStream file,
+            String originalName,
+            BatchValidationException errors,
+            @Nullable AuditBehaviorType auditBehaviorType,
+            TransactionAuditProvider.@Nullable TransactionAuditEvent auditEvent,
+            @Nullable String auditUserComment
+        ) throws IOException
         {
             initContext(dl, errors, auditBehaviorType, auditUserComment);
 
@@ -4024,10 +4031,9 @@ public class ExperimentController extends SpringActionController
             QueryUpdateService updateService = _updateService;
             if (getOptionParamValue(Params.crossTypeImport))
             {
-                tInfo = new ExpMaterialTableImpl(ExpSchema.TableType.Materials.name(), new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()));
+                tInfo = ExperimentService.get().createMaterialTable(new SamplesSchema(getUser(), getContainer()), ContainerFilter.current(getContainer()), null);
                 updateService = tInfo.getUpdateService();
             }
-
 
             int count = importData(dl, tInfo, updateService, _context, auditEvent, getUser(), getContainer());
 
