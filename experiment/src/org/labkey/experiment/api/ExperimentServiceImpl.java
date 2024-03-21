@@ -1425,9 +1425,9 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpMaterialTable createMaterialTable(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        return new ExpMaterialTableImpl(name, schema, cf);
+        return new ExpMaterialTableImpl(schema, cf, sampleType);
     }
 
     @Override
@@ -2882,7 +2882,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
+    public @NotNull SQLFragment generateExperimentTreeSQL(SQLFragment lsidsFrag, ExpLineageOptions options)
     {
         SQLFragment sqlf = new SQLFragment();
         Pair<String,String> tokens = getRunGraphCommonTableExpressions(sqlf, lsidsFrag, options);
@@ -6697,7 +6697,7 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
 
     public void savePropertyCollection(Map<String, ObjectProperty> propMap, String ownerLSID, Container container, boolean clearExisting) throws SQLException
     {
-        if (propMap.size() == 0)
+        if (propMap.isEmpty())
             return;
         ObjectProperty[] props = propMap.values().toArray(new ObjectProperty[0]);
         // Todo - make this more efficient - don't delete all the old ones if they're the same
@@ -6753,9 +6753,14 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     /** @return all the Data objects from this run */
-    private List<ExpData> ensureSimpleExperimentRunParameters(Collection<? extends ExpMaterial> inputMaterials,
-                                                     Collection<? extends ExpData> inputDatas, Collection<ExpMaterial> outputMaterials,
-                                                     Collection<ExpData> outputDatas, Collection<ExpData> transformedDatas, User user)
+    private @NotNull List<ExpData> ensureSimpleExperimentRunParameters(
+        Collection<? extends ExpMaterial> inputMaterials,
+        Collection<? extends ExpData> inputDatas,
+        Collection<ExpMaterial> outputMaterials,
+        Collection<ExpData> outputDatas,
+        Collection<ExpData> transformedDatas,
+        User user
+    )
     {
         // Save all the input and output objects to make sure they've been inserted
         try
@@ -6792,24 +6797,35 @@ public class ExperimentServiceImpl implements ExperimentService, ObjectReference
     }
 
     @Override
-    public ExpRun saveSimpleExperimentRun(ExpRun run, Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
+    public ExpRun saveSimpleExperimentRun(
+        ExpRun run,
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas, 
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas, 
+        Map<ExpData, String> transformedDatas, 
+        ViewBackgroundInfo info, 
+        Logger log, 
+        boolean loadDataFiles
+    ) throws ExperimentException
     {
         return saveSimpleExperimentRun(run, inputMaterials, inputDatas, outputMaterials, outputDatas, transformedDatas, info, log, loadDataFiles, null, null);
     }
 
     @Override
-    public ExpRun saveSimpleExperimentRun(ExpRun baseRun,
-                                          Map<? extends ExpMaterial, String> inputMaterials,
-                                          Map<? extends ExpData, String> inputDatas,
-                                          Map<ExpMaterial, String> outputMaterials,
-                                          Map<ExpData, String> outputDatas,
-                                          Map<ExpData, String> transformedDatas,
-                                          ViewBackgroundInfo info,
-                                          @NotNull Logger log,
-                                          boolean loadDataFiles,
-                                          @Nullable Set<String> runInputLsids,
-                                          @Nullable Set<Pair<String, String>> finalOutputLsids)
-            throws ExperimentException
+    public ExpRun saveSimpleExperimentRun(
+        ExpRun baseRun,
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas,
+        Map<ExpData, String> transformedDatas,
+        ViewBackgroundInfo info,
+        @NotNull Logger log,
+        boolean loadDataFiles,
+        @Nullable Set<String> runInputLsids,
+        @Nullable Set<Pair<String, String>> finalOutputLsids
+    ) throws ExperimentException
     {
         ExpRunImpl run = (ExpRunImpl)baseRun;
 

@@ -73,7 +73,6 @@ import org.labkey.api.security.permissions.MoveEntitiesPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
@@ -112,20 +111,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     public static final Set<String> MATERIAL_ALT_MERGE_KEYS;
     public static final Set<String> MATERIAL_ALT_UPDATE_KEYS;
     static {
-        MATERIAL_ALT_MERGE_KEYS = new HashSet<>(Arrays.asList(Column.MaterialSourceId.name(), Column.Name.name()));
-        MATERIAL_ALT_UPDATE_KEYS = new HashSet<>(Arrays.asList(Column.LSID.name()));
+        MATERIAL_ALT_MERGE_KEYS = Set.of(Column.MaterialSourceId.name(), Column.Name.name());
+        MATERIAL_ALT_UPDATE_KEYS = Set.of(Column.LSID.name());
     }
 
-    public ExpMaterialTableImpl(String name, UserSchema schema, ContainerFilter cf)
+    public ExpMaterialTableImpl(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType)
     {
-        super(name, ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
+        super(ExpSchema.TableType.Materials.name(), ExperimentServiceImpl.get().getTinfoMaterial(), schema, cf);
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowMaterialAction.class, schema.getContainer()), Collections.singletonMap("rowId", "rowId"), NullResult));
-        setName(ExpSchema.TableType.Materials.name());
         setPublicSchemaName(ExpSchema.SCHEMA_NAME);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
         addAllowablePermission(MoveEntitiesPermission.class);
         setAllowedInsertOption(QueryUpdateService.InsertOption.MERGE);
+        setSampleType(sampleType);
     }
 
     public Set<String> getUniqueIdFields()
@@ -145,15 +144,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (result == null)
         {
             if ("CpasType".equalsIgnoreCase(name))
-                return createColumn("SampleSet", Column.SampleSet);
-
-            if ("Property".equalsIgnoreCase(name))
-                return createPropertyColumn("Property");
-
-            if (Column.QueryableInputs.name().equalsIgnoreCase(name))
-            {
+                result = createColumn(Column.SampleSet.name(), Column.SampleSet);
+            else if (Column.Property.name().equalsIgnoreCase(name))
+                result = createPropertyColumn(Column.Property.name());
+            else if (Column.QueryableInputs.name().equalsIgnoreCase(name))
                 result = createColumn(Column.QueryableInputs.name(), Column.QueryableInputs);
-            }
         }
         return result;
     }
@@ -174,10 +169,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // Special case sample auditing to help build a useful timeline view
             return SampleTypeServiceImpl.get();
         }
-        else
-        {
-            return super.getAuditHandler(auditBehaviorType);
-        }
+
+        return super.getAuditHandler(auditBehaviorType);
     }
 
     @Override
@@ -523,15 +516,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return ret;
     }
 
-    @Deprecated
-    public void setSampleType(ExpSampleType st, boolean filter)
-    {
-        assert( null == st || filter);
-        setSampleType(st);
-    }
-
-    @Override
-    public void setSampleType(ExpSampleType st)
+    private void setSampleType(@Nullable ExpSampleType st)
     {
         checkLocked();
         if (_ss != null)
@@ -547,6 +532,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         {
             setPublicSchemaName(SamplesSchema.SCHEMA_NAME);
             setName(st.getName());
+
+            String description = _ss.getDescription();
+            if (StringUtils.isEmpty(description))
+                description = "Contains one row per sample in the " + _ss.getName() + " sample type";
+            setDescription(description);
+
             if (canUserAccessPhi())
             {
                 ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportSamplesURL(getContainer(), _ss.getName());
@@ -561,59 +552,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     }
 
     @Override
-    public void setMaterials(Set<ExpMaterial> materials)
-    {
-        checkLocked();
-        if (materials.isEmpty())
-        {
-            addCondition(new SQLFragment("1 = 2"));
-        }
-        else
-        {
-            SQLFragment sql = new SQLFragment();
-            sql.append("RowId IN (");
-            String separator = "";
-            for (ExpMaterial material : materials)
-            {
-                sql.append(separator);
-                separator = ", ";
-                sql.appendValue(material.getRowId());
-            }
-            sql.append(")");
-            addCondition(sql);
-        }
-    }
-
-    @Override
     protected void populateColumns()
     {
-        populate(null);
-    }
-
-    @Override
-    public final void populate(@Nullable ExpSampleType st)
-    {
-        populateColumns(st);
-        _populated = true;
-    }
-
-    protected void populateColumns(@Nullable ExpSampleType st)
-    {
-        if (st != null)
-        {
-            if (st.getDescription() != null)
-            {
-                setDescription(st.getDescription());
-            }
-            else
-            {
-                setDescription("Contains one row per sample in the " + st.getName() + " sample type");
-            }
-
-            if (!"urn:lsid:labkey.com:SampleSource:Default".equals(st.getDomain().getTypeURI()))
-                setSampleType(st);
-        }
-
+        var st = getSampleType();
         var rowIdCol = addColumn(Column.RowId);
         addColumn(Column.MaterialSourceId);
         addColumn(Column.SourceProtocolApplication);
@@ -657,7 +598,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             {
                 // Be sure that we can resolve the sample type if it's defined in a separate container.
                 // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
-                // Issue 37982: Sample Type: Link to precursor sample type does not resolve correctly if sample has parents in current sample type and a sample type in the parent container
+                // Issue 37982: Sample Type: Link to precursor sample type does not resolve correctly if sample has
+                // parents in current sample type and a sample type in the parent container
                 Set<Container> containers = new HashSet<>();
                 if (null != st)
                     containers.add(st.getContainer());
@@ -817,7 +759,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         if (InventoryService.get() != null && (st == null || !st.isMedia()))
             defaultCols.addAll(InventoryService.get().addInventoryStatusColumns(st == null ? null : st.getMetricUnit(), this, getContainer(), _userSchema.getUser()));
 
-
         addVocabularyDomains();
         addColumn(Column.Properties);
 
@@ -864,7 +805,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     private ContainerFilter getSampleStatusLookupContainerFilter()
     {
         // The default lookup container filter is Current, but we want to have the default be CurrentPlusProjectAndShared
-        // for the sample status lookup since in the app project context we want to share status definitions accross
+        // for the sample status lookup since in the app project context we want to share status definitions across
         // a given project instead of creating duplicate statuses in each subfolder project.
         ContainerFilter.Type type = QueryService.get().getContainerFilterTypeForLookups(getContainer());
         type = type == null ? ContainerFilter.Type.CurrentPlusProjectAndShared : type;
@@ -883,7 +824,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             return currentDescription;
 
         StringBuilder sb = new StringBuilder();
-        if (currentDescription != null && !currentDescription.isEmpty()) {
+        if (currentDescription != null && !currentDescription.isEmpty())
+        {
             sb.append(currentDescription);
             if (!currentDescription.endsWith("."))
                 sb.append(".");
@@ -965,7 +907,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
                 }
 
-                //fix for Issue 38341: domain designer advanced settings 'show in default view' setting is not respected
+                // Issue 38341: domain designer advanced settings 'show in default view' setting is not respected
                 if (!propColumn.isHidden())
                 {
                     visibleColumns.add(propColumn.getFieldKey());
@@ -997,7 +939,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setDefaultVisibleColumns(visibleColumns);
     }
 
-
     // These are mostly fields that are wrapped by fields with different names (see createColumn())
     // we could handle each case separately, but this is easier
     static final Set<FieldKey> wrappedFieldKeys = Set.of(
@@ -1009,8 +950,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             new FieldKey(null, "CpasType"));            // SampleSet
     static final Set<FieldKey> ALL_COLUMNS = Set.of();
 
-
-    @NotNull Set<FieldKey> computeInnerSelectedColumns(Set<FieldKey> selectedColumns)
+    private @NotNull Set<FieldKey> computeInnerSelectedColumns(Set<FieldKey> selectedColumns)
     {
         if (null == selectedColumns)
             return ALL_COLUMNS;
@@ -1066,12 +1006,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return sql;
     }
 
-
     static final BlockingCache<String,MaterializedQueryHelper> _materializedQueries = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "materialized sample types", null);
     static final Map<String, AtomicLong> _invalidationCounters = Collections.synchronizedMap(new HashMap<>());
     static final AtomicBoolean initializedListeners = new AtomicBoolean(false);
-
-
 
     // used by SampleTypeServiceImpl.refreshSampleTypeMaterializedView()
     public static void refreshMaterializedView(final String lsid, boolean schemaChange)
@@ -1108,7 +1045,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-
     private static AtomicLong getInvalidateCounter(String lsid)
     {
         if (!initializedListeners.getAndSet(true))
@@ -1119,7 +1055,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 new AtomicLong(System.currentTimeMillis())
         );
     }
-
 
     /* SELECT and JOIN, does not include WHERE, same as getJoinSQL() */
     private SQLFragment getMaterializedSQL()
@@ -1149,7 +1084,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return new SQLFragment("SELECT * FROM ").append(mqh.getFromSql("_cached_view_"));
     }
 
-
     /* SELECT and JOIN, does not include WHERE */
     private SQLFragment getJoinSQL(Set<FieldKey> selectedColumns)
     {
@@ -1167,7 +1101,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         selectedColumns = computeInnerSelectedColumns(selectedColumns);
 
         SQLFragment sql = new SQLFragment();
-        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null==_ss ? "" : _ss.getName()) + ")>", getSqlDialect());
+        sql.appendComment("<ExpMaterialTableImpl.getJoinSQL(" + (null == _ss ? "" : _ss.getName()) + ")>", getSqlDialect());
         sql.append("SELECT ");
         String comma = "";
         for (String materialCol : materialCols)
@@ -1259,7 +1193,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return new SampleTypeUpdateServiceDI(this, _ss);
     }
 
-
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
@@ -1269,24 +1202,22 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             // Don't allow insert/update on exp.Materials without a sample type.
             if (perm == DeletePermission.class || perm == ReadPermission.class)
                 return getContainer().hasPermission(user, perm);
-            else
-                return false;
+            return false;
         }
-        else
-        {
-            if (_ss.isMedia() && perm == ReadPermission.class)
-                return getContainer().hasPermission(user, MediaReadPermission.class);
-            return super.hasPermission(user, perm);
-        }
-    }
 
+        if (_ss.isMedia() && perm == ReadPermission.class)
+            return getContainer().hasPermission(user, MediaReadPermission.class);
+
+        return super.hasPermission(user, perm);
+    }
 
     @NotNull
     @Override
     public Map<String, Pair<IndexType, List<ColumnInfo>>> getUniqueIndices()
     {
         // Rewrite the "idx_material_ak" unique index over "Folder", "SampleSet", "Name" to just "Name"
-        // Issue 25397: Don't include the "idx_material_ak" index if the "Name" column hasn't been added to the table.  Some FKs to ExpMaterialTable don't include the "Name" column (e.g. NabBaseTable.Specimen)
+        // Issue 25397: Don't include the "idx_material_ak" index if the "Name" column hasn't been added to the table.
+        // Some FKs to ExpMaterialTable don't include the "Name" column (e.g. NabBaseTable.Specimen)
         Map<String, Pair<IndexType, List<ColumnInfo>>> ret = new HashMap<>(super.getUniqueIndices());
         if (getColumn("Name") != null)
             ret.put("idx_material_ak", Pair.of(IndexType.Unique, Arrays.asList(getColumn("Name"))));
@@ -1379,7 +1310,6 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-
     static final Set<String> excludeFromDetailedAuditField;
     static
     {
@@ -1405,27 +1335,25 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
     @Override
     public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
+        // respect any metadata overrides
         if (getRawImportTemplates() != null)
-            // respect any metadata overrides
             return super.getImportTemplates(ctx);
-        else
+
+        List<Pair<String, String>> templates = new ArrayList<>();
+        ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
+        url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
+        try
         {
-            List<Pair<String, String>> templates = new ArrayList<>();
-            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
-            url.addParameter("headerType", ColumnHeaderType.DisplayFieldKey.name());
-            try
+            if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
             {
-                if (getSampleType() != null && !getSampleType().getImportAliasMap().isEmpty())
-                {
-                    for (String aliasKey : getSampleType().getImportAliasMap().keySet())
-                        url.addParameter("includeColumn", aliasKey);
-                }
+                for (String aliasKey : getSampleType().getImportAliasMap().keySet())
+                    url.addParameter("includeColumn", aliasKey);
             }
-            catch (IOException e)
-            {}
-            templates.add(Pair.of("Download Template", url.toString()));
-            return templates;
         }
+        catch (IOException e)
+        {}
+        templates.add(Pair.of("Download Template", url.toString()));
+        return templates;
     }
 
     @Override

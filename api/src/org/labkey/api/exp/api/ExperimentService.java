@@ -152,7 +152,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpObject findObjectFromLSID(String lsid);
 
     @Nullable
-    ExpRun getExpRun(int rowid);
+    ExpRun getExpRun(int rowId);
 
     List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
 
@@ -183,12 +183,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void syncRunEdges(Collection<ExpRun> runs);
 
-    ExpData getExpData(int rowid);
+    ExpData getExpData(int rowId);
 
     ExpData getExpData(String lsid);
 
     @NotNull
-    List<? extends ExpData> getExpDatas(int... rowid);
+    List<? extends ExpData> getExpDatas(int... rowIds);
 
     @NotNull
     List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
@@ -339,10 +339,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpMaterial createExpMaterial(Container container, String lsid, String name);
 
     @Nullable
-    ExpMaterial getExpMaterial(int rowid);
+    ExpMaterial getExpMaterial(int rowId);
 
     @Nullable
-    ExpMaterial getExpMaterial(int rowid, ContainerFilter containerFilter);
+    ExpMaterial getExpMaterial(int rowId, ContainerFilter containerFilter);
 
     /**
      * Get material by rowId in this, project, or shared container and within the provided sample type.
@@ -506,7 +506,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     }
 
     /**
-     * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
+     * Find all child and grandchild samples that are direct descendants of <code>start</code> ExpData,
      * ignoring any sample children derived from ExpData children.
      */
     Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
@@ -587,7 +587,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpExperimentTable createExperimentTable(String name, UserSchema schema, ContainerFilter cf);
 
-    ExpMaterialTable createMaterialTable(String name, UserSchema schema, ContainerFilter cf);
+    ExpMaterialTable createMaterialTable(UserSchema schema, ContainerFilter cf, @Nullable ExpSampleType sampleType);
 
     ExpMaterialInputTable createMaterialInputTable(String name, ExpSchema expSchema, ContainerFilter cf);
 
@@ -793,20 +793,31 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param log             output log target
      * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
      */
-    ExpRun saveSimpleExperimentRun(ExpRun run, Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+    ExpRun saveSimpleExperimentRun(
+        ExpRun run,
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas,
+        Map<ExpData, String> transformedDatas,
+        ViewBackgroundInfo info,
+        Logger log,
+        boolean loadDataFiles
+    ) throws ExperimentException;
 
-    ExpRun saveSimpleExperimentRun(ExpRun run,
-                                   Map<? extends ExpMaterial, String> inputMaterials,
-                                   Map<? extends ExpData, String> inputDatas,
-                                   Map<ExpMaterial, String> outputMaterials,
-                                   Map<ExpData, String> outputDatas,
-                                   Map<ExpData, String> transformedDatas,
-                                   ViewBackgroundInfo info,
-                                   Logger log,
-                                   boolean loadDataFiles,
-                                   @Nullable Set<String> runInputLsids,
-                                   @Nullable Set<Pair<String, String>> finalOutputLsids)
-            throws ExperimentException;
+    ExpRun saveSimpleExperimentRun(
+        ExpRun run,
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas,
+        Map<ExpData, String> transformedDatas,
+        ViewBackgroundInfo info,
+        Logger log,
+        boolean loadDataFiles,
+        @Nullable Set<String> runInputLsids,
+        @Nullable Set<Pair<String, String>> finalOutputLsids
+    ) throws ExperimentException;
 
     /**
      * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
@@ -820,10 +831,14 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException;
 
-    ExpRun derive(Map<? extends ExpMaterial, String> inputMaterials, Map<? extends ExpData, String> inputDatas,
-                  Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas,
-                  ViewBackgroundInfo info, Logger log)
-            throws ExperimentException, ValidationException;
+    ExpRun derive(
+        Map<? extends ExpMaterial, String> inputMaterials,
+        Map<? extends ExpData, String> inputDatas,
+        Map<ExpMaterial, String> outputMaterials,
+        Map<ExpData, String> outputDatas,
+        ViewBackgroundInfo info,
+        Logger log
+    ) throws ExperimentException, ValidationException;
 
     void deriveSamplesBulk(List<? extends SimpleRunRecord> runRecords, ViewBackgroundInfo info, Logger log) throws ExperimentException, ValidationException;
 
