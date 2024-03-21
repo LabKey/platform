@@ -152,7 +152,7 @@
 </labkey:form>
 <labkey:script>
     LABKEY.Utils.onReady(function() {
-        LABKEY.login.PasswordGauge.createComponent('strengthGuidance', <%=q(firstPasswordId)%>, 'email', <%=q(bean.email)%>);
+        LABKEY.PasswordGauge.createComponent('strengthGuidance', <%=q(firstPasswordId)%>, 'email', <%=q(bean.email)%>);
     });
 
 </labkey:script>

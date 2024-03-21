@@ -1143,6 +1143,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 Object o = call.call();
                 return o;
             }
+            catch (ValidationException e)
+            {
+                addRowError(e.getMessage());
+                return null;
+            }
             catch (Exception x)
             {
                 throw new RuntimeException(x);
