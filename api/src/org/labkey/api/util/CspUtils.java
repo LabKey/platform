@@ -6,13 +6,13 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.Collection;
+import java.util.function.Consumer;
 
 public class CspUtils
 {
-    public static void collectCspViolations(Document doc, String name, Collection<String> violations)
+    public static void enumerateCspViolations(Document doc, Consumer<String> consumer)
     {
-        // Collect nonce-less script tags
+        // Enumerate nonce-less script tags
         NodeList nl = doc.getElementsByTagName("script");
 
         for (int i = 0; i < nl.getLength(); i++)
@@ -23,14 +23,14 @@ public class CspUtils
             {
                 Node src = attributes.getNamedItem("src");
                 if (null == src)
-                    violations.add(name + ": non-src script tag without a nonce!");
+                    consumer.accept("non-src script tag without a nonce");
             }
         }
 
-        // Collect inline event handlers
-        logInlineEvents(doc, name, violations);
+        // Enumerate inline event handlers
+        enumerateInlineEvents(doc, consumer);
 
-        // Collect javascript: hrefs in <a> tags
+        // Enumerate javascript: hrefs in <a> tags
         nl = doc.getElementsByTagName("a");
 
         for (int i = 0; i < nl.getLength(); i++)
@@ -42,12 +42,12 @@ public class CspUtils
                 String href = hrefNode.getTextContent();
                 if (StringUtils.startsWithIgnoreCase(href, "javascript:"))
                 {
-                    violations.add(name + ": <a> tag with href=" + href);
+                    consumer.accept("<a> tag with href=" + href);
                 }
             }
         }
 
-        // Collect javascript: actions in <form> tags
+        // Enumerate javascript: actions in <form> tags
         nl = doc.getElementsByTagName("form");
 
         for (int i = 0; i < nl.getLength(); i++)
@@ -59,13 +59,13 @@ public class CspUtils
                 String action = actionNode.getTextContent();
                 if (StringUtils.startsWithIgnoreCase(action, "javascript:"))
                 {
-                    violations.add(name + ": <form> tag with action=" + action);
+                    consumer.accept("<form> tag with action=" + action);
                 }
             }
         }
     }
 
-    private static void logInlineEvents(Node node, String name, Collection<String> violations)
+    private static void enumerateInlineEvents(Node node, Consumer<String> consumer)
     {
         NamedNodeMap attributes = node.getAttributes();
         if (null != attributes)
@@ -75,14 +75,14 @@ public class CspUtils
                 String nodeName = attributes.item(i).getNodeName();
                 if (nodeName.startsWith("on"))
                 {
-                    violations.add(name + ": " + nodeName);
+                    consumer.accept(nodeName);
                 }
             }
         }
         NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++)
         {
-            logInlineEvents(children.item(i), name, violations);
+            enumerateInlineEvents(children.item(i), consumer);
         }
     }
 }

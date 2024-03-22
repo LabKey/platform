@@ -236,8 +236,7 @@ public class ModuleHtmlView extends HtmlView
                 Document doc = JSoupUtil.convertHtmlToDocument(source, false, errors);
                 if (null != doc)
                 {
-                    String viewName = "[" + module.getName() + "] " + key;
-                    CspUtils.collectCspViolations(doc, viewName, violations);
+                    CspUtils.enumerateCspViolations(doc, message -> violations.add("[" + module.getName() + "] " + key + ": " + message));
                 }
             }));
 

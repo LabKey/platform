@@ -16,11 +16,13 @@ import org.w3c.dom.Document;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 public class WikiValidationProvider implements SiteValidationProvider
 {
     private static final Logger LOG = LogHelper.getLogger(WikiValidationProvider.class, "Wiki rendering exceptions");
+
     @Override
     public String getName()
     {
@@ -43,40 +45,41 @@ public class WikiValidationProvider implements SiteValidationProvider
     @Override
     public SiteValidationResultList runValidation(Container c, User u)
     {
+        SiteValidationResultList list = new SiteValidationResultList();
         WikiManager mgr = WikiManager.get();
         Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
-        Collection<String> violations = new LinkedList<>();
+        Map<String, String> nameTitleMap = WikiSelectManager.getNameTitleMap(c);
 
         for (WikiTree tree : trees)
         {
             Wiki wiki = WikiSelectManager.getWiki(c, tree.getRowId());
             if (null != wiki)
             {
-                String name = wiki.getName(); // TODO: Add title and link
+                String title = nameTitleMap.get(wiki.getName());
                 try
                 {
                     FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
                     Collection<String> errors = new LinkedList<>();
                     Document doc = JSoupUtil.convertHtmlToDocument(html.getHtml().toString(), false, errors);
-                    errors.forEach(error -> {
-                        violations.add(name + ": error while converting HTML to Document, \"" + error + "\"");
-                    });
+                    errors.forEach(error -> addResult(list, wiki, title, "error while converting HTML to Document, \"" + error + "\""));
                     if (null != doc)
                     {
-                        CspUtils.collectCspViolations(doc, name, violations);
+                        CspUtils.enumerateCspViolations(doc, message -> addResult(list, wiki, title, message));
                     }
                 }
                 catch (Exception e)
                 {
-                    violations.add(name + ": exception while rendering, \"" + e.getMessage() + "\"");
-                    LOG.error("Exception while rendering " + name, e);
+                    addResult(list, wiki, title, "exception while rendering, \"" + e.getMessage() + "\"");
+                    LOG.error("Exception while rendering \"" + title + "\" (" + wiki.getName() + ")", e);
                 }
             }
         }
 
-        SiteValidationResultList list = new SiteValidationResultList();
-        violations.forEach(list::addWarn);
-
         return list;
+    }
+
+    private void addResult(SiteValidationResultList list, Wiki wiki, String title, String message)
+    {
+        list.addWarn(title + " (" + wiki.getName() + "): " + message, wiki.getPageURL());
     }
 }
