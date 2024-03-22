@@ -54,6 +54,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -94,6 +95,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         Date.class,
         Integer.class,
         Double.class,
+        Time.class, // Time should be tried after Integer and Double since 11 and 11.20 will resolve as time
         Boolean.class,
         String.class
     };
