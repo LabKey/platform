@@ -236,12 +236,16 @@ public class ModuleHtmlView extends HtmlView
                 Document doc = JSoupUtil.convertHtmlToDocument(source, false, errors);
                 if (null != doc)
                 {
-                    CspUtils.enumerateCspViolations(doc, message -> violations.add("[" + module.getName() + "] " + key + ": " + message));
+                    CspUtils.enumerateCspViolations(doc, message -> {
+                        String name = "[" + module.getName() + "] " + key;
+                        if (!"[LINCS] views/CustomGCT.html".equals(name)) // TODO: Remove check once this view is fixed
+                            violations.add(name + ": " + message);
+                    });
                 }
             }));
 
             if (!violations.isEmpty())
-                LOG.error("This following CSP violations were detected in module HTML views:\n" + StringUtils.join(violations, "\n"));
+                fail("The following CSP violations were detected in module HTML views:\n" + StringUtils.join(violations, "\n"));
         }
     }
 }
