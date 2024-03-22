@@ -178,7 +178,7 @@ translateToDouble:
                 sequencenum = parseDouble((String)seq);
                 if (null != sequencenum)
                     break translateToDouble;
-                if (!_translateMap.containsKey(seq) && !_translateMap.isEmpty())
+                if (_timetype.isVisitBased() && !_translateMap.containsKey(seq) && !_translateMap.isEmpty())
                 {
                     // issue : 49375 return an appropriate error message if we can't match on a visit map label
                     throw new ValidationException("Visit : " + seq + " does not exist in the visit map");

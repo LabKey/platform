@@ -232,8 +232,8 @@ public abstract class StudyManualTest extends StudyTest
 
         String errorRow = "\tbadvisitd\t1/1/2006\t\ttext\t";
         importDataPage.setText(_tsv + "\n" + errorRow);
-        importDataPage.submitExpectingErrorContaining(getConversionErrorMessage("badvisitd", "SequenceNum", BigDecimal.class));
-        assertTextPresent(getConversionErrorMessage("text", "DateField", Timestamp.class));
+        importDataPage.submitExpectingErrorContaining("Visit : badvisitd does not exist in the visit map");
+        assertTextPresent("Visit : badvisitd does not exist in the visit map");
 
         importDataPage.setText(_tsv).submit();
         assertTextPresent("1234", "2006-02-01", "1.2", "aliasedData");

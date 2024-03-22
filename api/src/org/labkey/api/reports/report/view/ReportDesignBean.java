@@ -25,6 +25,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
@@ -207,7 +208,12 @@ public class ReportDesignBean<R extends Report> extends ReportForm
     {
         R report = null;
         if (null != getReportId())
-            report = (R)getReportId().getReport(cu);
+        {
+            report = (R) getReportId().getReport(cu);
+            // if reportId is provided, don't fall through if not found
+            if (null == report)
+                throw new NotFoundException("Report not found");
+        }
         if (report == null)
             report = (R)ReportService.get().createReportInstance(getReportType());
 
