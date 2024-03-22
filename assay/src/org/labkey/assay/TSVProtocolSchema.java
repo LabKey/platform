@@ -32,7 +32,9 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RemappingDisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
@@ -40,6 +42,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
@@ -49,6 +52,9 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.plate.query.PlateSchema;
+import org.labkey.assay.plate.query.WellTable;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -57,10 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * User: jeckels
- * Date: 10/19/12
- */
 public class TSVProtocolSchema extends AssayProtocolSchema
 {
     public static final String PLATE_DATA_TABLE = "PlateData";
@@ -90,11 +92,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
     @Override
     public TableInfo createProviderTable(String name, ContainerFilter cf)
     {
-        if (name.equalsIgnoreCase(EXCLUSION_REPORT_TABLE_NAME))
-        {
+        if (EXCLUSION_REPORT_TABLE_NAME.equalsIgnoreCase(name))
             return createExclusionReportTable(cf);
-        }
-        else if (name.equalsIgnoreCase(PLATE_DATA_TABLE))
+        else if (PLATE_DATA_TABLE.equalsIgnoreCase(name))
         {
             TableInfo plateTable = createPlateDataTable(cf);
             if (plateTable != null)
@@ -201,11 +201,27 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     BaseColumnInfo col = new AliasedColumn("Well", wellLsidCol);
                     col.setFk(QueryForeignKey
                             .from(getUserSchema(), getContainerFilter())
-                            .schema("plate").table("well").key("Lsid")
+                            .schema(PlateSchema.SCHEMA_NAME).table(WellTable.NAME).key("Lsid")
                     );
                     col.setUserEditable(false);
                     col.setCalculated(true);
                     addColumn(col);
+                }
+
+                // Join to assay.hit to display hit selections
+                {
+                    SqlDialect dialect = getSchema().getSqlDialect();
+                    SQLFragment plateHitsSQL = new SQLFragment("(CASE WHEN (SELECT ResultId FROM ")
+                            .append(AssayDbSchema.getInstance().getTableInfoHit(), "h")
+                            .append(" WHERE h.ResultId = ").append(ExprColumn.STR_TABLE_ALIAS + ".RowId")
+                            .append(" AND h.RunId = ").append(ExprColumn.STR_TABLE_ALIAS + ".DataId").append(")")
+                            .append(" IS NULL THEN ").append(dialect.getBooleanFALSE())
+                            .append(" ELSE ").append(dialect.getBooleanTRUE()).append(" END")
+                            .append(")");
+
+                    ExprColumn plateHitsColumn = new ExprColumn(this, "Hit", plateHitsSQL, JdbcType.BOOLEAN);
+                    plateHitsColumn.setLabel("Hit Selection");
+                    addColumn(plateHitsColumn);
                 }
             }
         }
@@ -226,7 +242,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         return null;
     }
 
-    private class _AssayPlateDataTable extends FilteredTable<AssayProtocolSchema>
+    private static class _AssayPlateDataTable extends FilteredTable<AssayProtocolSchema>
     {
         public _AssayPlateDataTable(@NotNull Domain domain, @NotNull AssayProtocolSchema userSchema, @Nullable ContainerFilter containerFilter)
         {

@@ -232,4 +232,14 @@
       <column columnName="RootPlateSetId"/>
     </columns>
   </table>
+  <table tableName="Hit" tableDbType="TABLE">
+    <description>Contains one row per hit assay result.</description>
+    <columns>
+      <column columnName="Container"/>
+      <column columnName="ProtocolId"/>
+      <column columnName="ResultId"/>
+      <column columnName="RunId"/>
+      <column columnName="WellLsid"/>
+    </columns>
+  </table>
 </tables>

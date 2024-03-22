@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.labkey.api.assay.AssayListener;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayService;
@@ -46,9 +47,11 @@ import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.ObjectFactory;
@@ -72,8 +75,10 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -97,13 +102,17 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.assay.AssayManager;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.plate.model.PlateBean;
 import org.labkey.assay.plate.model.PlateSetLineage;
@@ -143,7 +152,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.labkey.api.assay.plate.PlateSet.MAX_PLATES;
 
-public class PlateManager implements PlateService
+public class PlateManager implements PlateService, AssayListener, ExperimentListener
 {
     private static final Logger LOG = LogManager.getLogger(PlateManager.class);
     private static final String LSID_CLASS_OBJECT_ID = "objectType";
@@ -1181,6 +1190,14 @@ public class PlateManager implements PlateService
         try (DbScope.Transaction tx = ensureTransaction())
         {
             final AssayDbSchema schema = AssayDbSchema.getInstance();
+            // delete plate hits
+            {
+                SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoHit())
+                        .append(" WHERE wellLsid IN (SELECT lsid FROM ").append(schema.getTableInfoWell())
+                        .append(" WHERE container = ?)").add(container);
+                new SqlExecutor(schema.getSchema()).execute(sql);
+            }
+
             // delete well group positions
             {
                 SQLFragment sql = new SQLFragment("DELETE FROM ").append(schema.getTableInfoWellGroupPositions())
@@ -2214,6 +2231,153 @@ public class PlateManager implements PlateService
         lineage.setPlateSets(plateSets);
 
         return lineage;
+    }
+
+    private Collection<Integer> getResultRowsIds(@Nullable List<Integer> resultRowIds, @Nullable String resultSelectionKey)
+    {
+        if (resultRowIds != null && !resultRowIds.isEmpty())
+            return resultRowIds;
+        if (StringUtils.trimToNull(resultSelectionKey) != null)
+        {
+            ViewContext viewContext = HttpView.currentContext();
+            if (viewContext == null)
+                throw new IllegalStateException("Unable to resolve ViewContext for assay result hits.");
+
+            return DataRegionSelection.getSelectedIntegers(viewContext, resultSelectionKey, false);
+        }
+
+        return Collections.emptyList();
+    }
+
+    public void markHits(
+        Container container,
+        User user,
+        int protocolId,
+        boolean markAsHit,
+        @Nullable List<Integer> resultRowIds,
+        @Nullable String resultSelectionKey
+    ) throws SQLException, ValidationException
+    {
+        boolean hasRowIdResults = resultRowIds != null && !resultRowIds.isEmpty();
+        boolean hasSelectionKey = StringUtils.trimToNull(resultSelectionKey) != null;
+
+        if (!hasRowIdResults && !hasSelectionKey)
+            throw new ValidationException("Failed to mark hits. You must specify either \"resultRowIds\" or \"resultSelectionKey\".");
+        if (hasRowIdResults && hasSelectionKey)
+            throw new ValidationException("Failed to mark hits. You can specify either \"resultRowIds\" or \"resultSelectionKey\" but not both.");
+
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
+        if (protocol == null)
+            throw new ValidationException(String.format("Failed to mark hits. Protocol not found for protocol ID (%d).", protocolId));
+        if (!protocol.getContainer().hasPermission(user, ReadPermission.class))
+            throw new UnauthorizedException("Failed to mark hits. You do not have permissions to read this assay protocol.");
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+            throw new ValidationException(String.format("Failed to mark hits. Assay provider not found for protocol \"%s\" (%d).", protocol.getName(), protocolId));
+        if (!provider.isPlateMetadataEnabled(protocol))
+            throw new ValidationException(String.format("Failed to mark hits. Assay \"%s\" does not support plate metadata.", protocol.getName()));
+
+        Collection<Integer> rowIds = getResultRowsIds(resultRowIds, resultSelectionKey);
+        if (rowIds.isEmpty())
+            return;
+
+        try (var tx = ensureTransaction())
+        {
+            TableInfo hitTable = AssayDbSchema.getInstance().getTableInfoHit();
+
+            if (markAsHit)
+            {
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
+                    filter.addCondition(FieldKey.fromParts("ProtocolId"), protocol.getRowId());
+
+                    Set<Integer> preexistingHits = new HashSet<>(new TableSelector(hitTable, Collections.singleton("ResultId")).getArrayList(Integer.class));
+                    rowIds.removeAll(preexistingHits);
+                }
+
+                if (!rowIds.isEmpty())
+                {
+                    ContainerFilter cf = getPlateContainerFilter(protocol, container, user);
+                    AssayProtocolSchema schema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
+                    TableInfo resultsTable = schema.createDataTable(cf, false);
+                    if (resultsTable == null)
+                        throw new ValidationException(String.format("Failed to mark hits. Unable to resolve results table for assay \"%s\".", protocol.getName()));
+
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, CompareType.IN);
+                    TableSelector selector = new TableSelector(resultsTable, PageFlowUtil.set("DataId", "Plate", "RowId", "WellLsid"), filter, null);
+
+                    List<List<?>> newHits = new LinkedList<>();
+                    for (var row : selector.getMapCollection())
+                    {
+                        Integer resultId = (Integer) row.get("RowId");
+                        String wellLsid = (String) row.get("WellLsid");
+                        if (wellLsid == null)
+                            throw new ValidationException(String.format("Failed to mark hits. \"%s\" result (Row Id %d) is not related to a plate well. Only plate well related results can be marked as hits.", protocol.getName(), resultId));
+                        Plate plate = getPlate(cf, (Integer) row.get("Plate"));
+                        if (plate == null)
+                            throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
+                        if (!plate.getContainer().hasPermission(user, UpdatePermission.class))
+                            throw new UnauthorizedException(String.format("Failed to mark hits. You do not have permissions to update hits in %s.", container.getPath()));
+
+                        newHits.add(List.of(plate.getContainer().getEntityId(), protocolId, resultId, row.get("DataId"), row.get("WellLsid")));
+                    }
+
+                    SQLFragment insertSql = new SQLFragment("INSERT INTO ").append(hitTable)
+                            .append(" (Container, ProtocolId, ResultId, RunId, WellLsid) VALUES (?, ?, ?, ?, ?) ");
+
+                    Table.batchExecute(hitTable.getSchema(), insertSql.getSQL(), newHits);
+                }
+            }
+            else
+            {
+                deleteHits(protocolId, rowIds);
+            }
+
+            tx.commit();
+        }
+    }
+
+    private void deleteHits(SimpleFilter filter)
+    {
+        Table.delete(AssayDbSchema.getInstance().getTableInfoHit(), filter);
+    }
+
+    private void deleteHits(FieldKey fieldKey, Collection<? extends ExpObject> objects)
+    {
+        if (objects == null || objects.isEmpty())
+            return;
+
+        deleteHits(new SimpleFilter(fieldKey, objects.stream().map(ExpObject::getRowId).toList(), CompareType.IN));
+    }
+
+    private void deleteHits(int protocolId, Collection<Integer> resultIds)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ProtocolId"), protocolId);
+        filter.addCondition(FieldKey.fromParts("ResultId"), resultIds, CompareType.IN);
+        deleteHits(filter);
+    }
+
+    @Override
+    public void beforeProtocolsDeleted(Container c, User user, List<? extends ExpProtocol> protocols)
+    {
+        deleteHits(FieldKey.fromParts("ProtocolId"), protocols);
+    }
+
+    @Override
+    public void beforeRunDelete(ExpProtocol protocol, ExpRun run, User user)
+    {
+        deleteHits(FieldKey.fromParts("RunId"), List.of(run));
+    }
+
+    @Override
+    public void beforeResultDelete(Container container, User user, ExpRun run, Map<String, Object> resultRow)
+    {
+        AssayProvider provider = AssayManager.get().getProvider(run);
+        if (provider == null || !provider.isPlateMetadataEnabled(run.getProtocol()))
+            return;
+
+        deleteHits(run.getProtocol().getRowId(), List.of((Integer) resultRow.get("RowId")));
     }
 
     private void requireActiveTransaction()
