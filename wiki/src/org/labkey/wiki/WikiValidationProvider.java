@@ -1,5 +1,6 @@
 package org.labkey.wiki;
 
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.sitevalidation.SiteValidationProvider;
 import org.labkey.api.admin.sitevalidation.SiteValidationResultList;
@@ -7,6 +8,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CspUtils;
 import org.labkey.api.util.JSoupUtil;
+import org.labkey.api.util.logging.LogHelper;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiTree;
@@ -16,8 +18,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
 
-public class WikiCspValidationProvider implements SiteValidationProvider
+public class WikiValidationProvider implements SiteValidationProvider
 {
+    private static final Logger LOG = LogHelper.getLogger(WikiValidationProvider.class, "Wiki rendering exceptions");
     @Override
     public String getName()
     {
@@ -27,7 +30,7 @@ public class WikiCspValidationProvider implements SiteValidationProvider
     @Override
     public String getDescription()
     {
-        return "Detects various strict CSP violations in wiki HTML";
+        return "Detect wiki rendering and CSP violation issues";
     }
 
     @Override
@@ -49,12 +52,24 @@ public class WikiCspValidationProvider implements SiteValidationProvider
             Wiki wiki = WikiSelectManager.getWiki(c, tree.getRowId());
             if (null != wiki)
             {
-                FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
-                Collection<String> errors = new LinkedList<>();
-                Document doc = JSoupUtil.convertHtmlToDocument(html.getHtml().toString(), false, errors);
-                if (null != doc)
+                String name = wiki.getName(); // TODO: Add title and link
+                try
                 {
-                    CspUtils.collectCspViolations(doc, wiki.getName(), violations);
+                    FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
+                    Collection<String> errors = new LinkedList<>();
+                    Document doc = JSoupUtil.convertHtmlToDocument(html.getHtml().toString(), false, errors);
+                    errors.forEach(error -> {
+                        violations.add(name + ": error while converting HTML to Document, \"" + error + "\"");
+                    });
+                    if (null != doc)
+                    {
+                        CspUtils.collectCspViolations(doc, name, violations);
+                    }
+                }
+                catch (Exception e)
+                {
+                    violations.add(name + ": exception while rendering, \"" + e.getMessage() + "\"");
+                    LOG.error("Exception while rendering " + name, e);
                 }
             }
         }
