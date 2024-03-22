@@ -1318,7 +1318,7 @@ public class XarExporter
                         if (null == value.getFloatValue())
                             continue;
                         break;
-                    case DATE: case DATE_TIME:
+                    case DATE: case DATE_TIME: case TIME:
                         if (null == value.getDateTimeValue())
                             continue;
                         break;
@@ -1333,6 +1333,7 @@ public class XarExporter
                 {
                     case DATE:
                     case DATE_TIME:
+                    case TIME:
                         simpleValue.setValueType(SimpleTypeNames.DATE_TIME);
                         simpleValue.setStringValue(DateUtil.formatDateTime(value.getDateTimeValue(), AbstractParameter.SIMPLE_FORMAT_PATTERN));
                         break;

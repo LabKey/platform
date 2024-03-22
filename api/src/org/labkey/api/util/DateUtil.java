@@ -80,8 +80,8 @@ public class DateUtil
     private static final String ISO_DATE_SHORT_TIME_FORMAT_STRING = ISO_DATE_FORMAT_STRING + " " + ISO_SHORT_TIME_FORMAT_STRING;
     private static final String ISO_TIME_FORMAT_STRING = "HH:mm:ss";
     private static final String ISO_LONG_TIME_FORMAT_STRING = "HH:mm:ss.SSS";
-    private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss a", "hh:mm a"};
-    private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss", "HH:mm"};
+    private static final String[] SIMPLE_TIME_FORMATS_WITH_AMPM = {"hh:mm:ss.SSS a", "hh:mm:ss a", "hh:mm a"};
+    private static final String[] SIMPLE_TIME_FORMATS_NO_AMPM = {"HH:mm:ss.SSS", "HH:mm:ss", "HH:mm"};
     private static final String[] EXCEL_TIME_FORMATS = {"hh:mm:ss aa", "hh:mm aa", "HH:mm:ss", "HH:mm"};
 
     /**
@@ -1056,8 +1056,9 @@ validNum:       {
             }
         }
 
-        int timezoneDiffSec = ZonedDateTime.now().getOffset().getTotalSeconds();
-        return new Time(DateUtil.parseTime(s, strict) - 1000 * timezoneDiffSec);
+        long time = DateUtil.parseTime(s, strict);
+        int timezoneDiffSec = TimeZone.getDefault().getOffset(time);
+        return new Time(time - 1000 * timezoneDiffSec);
     }
 
     public static String getStandardDateFormatString()
