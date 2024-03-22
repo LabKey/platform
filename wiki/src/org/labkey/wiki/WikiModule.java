@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.announcements.CommSchema;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
@@ -53,8 +54,6 @@ import java.util.Set;
 
 /**
  * Provides a simple wiki with multiple rendering engine options.
- * User: migra
- * Date: Jul 18, 2005
  */
 public class WikiModule extends CodeOnlyModule implements SearchService.DocumentProvider
 {
@@ -79,6 +78,12 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         WikiService.setInstance(WikiManager.get());
 
         AttachmentService.get().registerAttachmentType(WikiType.get());
+
+        SiteValidationService svc = SiteValidationService.get();
+        if (null != svc)
+        {
+            svc.registerProvider(getName(), new WikiCspValidationProvider());
+        }
     }
 
     @Override
