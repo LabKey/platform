@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -910,9 +909,14 @@ public class ConnectionWrapper implements java.sql.Connection
         super.finalize();
     }
 
-    public void configureToDisableJdbcCaching(SQLFragment sql) throws SQLException
+    public Closer getRunOnClose()
     {
-        _runOnClose = _scope.getSqlDialect().configureToDisableJdbcCaching(this, _scope, sql);
+        return _runOnClose;
+    }
+
+    public void setRunOnClose(Closer runOnClose)
+    {
+        _runOnClose = runOnClose;
     }
 
     @Override
