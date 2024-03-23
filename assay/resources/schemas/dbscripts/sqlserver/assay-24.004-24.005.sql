@@ -1,11 +1,11 @@
 CREATE TABLE assay.Hit
 (
-    RowId SERIAL,
+    RowId INT IDENTITY(1,1),
     Container ENTITYID NOT NULL,
     ProtocolId INT NOT NULL,
     ResultId INT NOT NULL,
     RunId INT NOT NULL,
-    WellLsid VARCHAR(200) NOT NULL,
+    WellLsid NVARCHAR(200) NOT NULL,
 
     CONSTRAINT PK_Hit PRIMARY KEY (RowId),
     CONSTRAINT FK_Hit_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
