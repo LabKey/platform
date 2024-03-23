@@ -238,6 +238,7 @@
       <column columnName="Container"/>
       <column columnName="ProtocolId"/>
       <column columnName="ResultId"/>
+      <column columnName="RowId"/>
       <column columnName="RunId"/>
       <column columnName="WellLsid"/>
     </columns>

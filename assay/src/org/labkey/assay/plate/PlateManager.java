@@ -2236,7 +2236,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
     private Collection<Integer> getResultRowsIds(@Nullable List<Integer> resultRowIds, @Nullable String resultSelectionKey)
     {
         if (resultRowIds != null && !resultRowIds.isEmpty())
-            return resultRowIds;
+            return new ArrayList<>(new HashSet<>(resultRowIds));
         if (StringUtils.trimToNull(resultSelectionKey) != null)
         {
             ViewContext viewContext = HttpView.currentContext();
@@ -2288,6 +2288,7 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
 
             if (markAsHit)
             {
+                // Exclude preexisting hits
                 {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResultId"), rowIds, CompareType.IN);
                     filter.addCondition(FieldKey.fromParts("ProtocolId"), protocol.getRowId());
@@ -2305,22 +2306,33 @@ public class PlateManager implements PlateService, AssayListener, ExperimentList
                         throw new ValidationException(String.format("Failed to mark hits. Unable to resolve results table for assay \"%s\".", protocol.getName()));
 
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("RowId"), rowIds, CompareType.IN);
-                    TableSelector selector = new TableSelector(resultsTable, PageFlowUtil.set("DataId", "Plate", "RowId", "WellLsid"), filter, null);
+                    TableSelector selector = new TableSelector(resultsTable, PageFlowUtil.set("Plate", "RowId", "Run", "WellLsid"), filter, null);
 
                     List<List<?>> newHits = new LinkedList<>();
+                    Map<Integer, GUID> validatedPlates = new HashMap<>();
                     for (var row : selector.getMapCollection())
                     {
                         Integer resultId = (Integer) row.get("RowId");
                         String wellLsid = (String) row.get("WellLsid");
                         if (wellLsid == null)
                             throw new ValidationException(String.format("Failed to mark hits. \"%s\" result (Row Id %d) is not related to a plate well. Only plate well related results can be marked as hits.", protocol.getName(), resultId));
-                        Plate plate = getPlate(cf, (Integer) row.get("Plate"));
-                        if (plate == null)
-                            throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
-                        if (!plate.getContainer().hasPermission(user, UpdatePermission.class))
-                            throw new UnauthorizedException(String.format("Failed to mark hits. You do not have permissions to update hits in %s.", container.getPath()));
 
-                        newHits.add(List.of(plate.getContainer().getEntityId(), protocolId, resultId, row.get("DataId"), row.get("WellLsid")));
+                        Integer plateId = (Integer) row.get("Plate");
+                        if (plateId == null)
+                            throw new ValidationException(String.format("Failed to mark hits. \"%s\" result (Row Id %d) is not related to a plate. Only plate related results can be marked as hits.", protocol.getName(), resultId));
+
+                        // locally cache plate/container validations
+                        if (!validatedPlates.containsKey(plateId))
+                        {
+                            Plate plate = getPlate(cf, plateId);
+                            if (plate == null)
+                                throw new ValidationException(String.format("Failed to mark hits. Unable to resolve plate for \"%s\" result (Row Id %d)", protocol.getName(), resultId));
+                            if (!plate.getContainer().hasPermission(user, UpdatePermission.class))
+                                throw new UnauthorizedException(String.format("Failed to mark hits. You do not have permissions to update hits in %s.", container.getPath()));
+                            validatedPlates.put(plateId, plate.getContainer().getEntityId());
+                        }
+
+                        newHits.add(List.of(validatedPlates.get(plateId), protocolId, resultId, row.get("Run"), row.get("WellLsid")));
                     }
 
                     SQLFragment insertSql = new SQLFragment("INSERT INTO ").append(hitTable)

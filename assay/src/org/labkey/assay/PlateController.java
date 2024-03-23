@@ -1062,7 +1062,7 @@ public class PlateController extends SpringActionController
     public static class HitForm
     {
         private int _assayProtocolId;
-        private boolean _markAsHit;
+        private Boolean _markAsHit;
         private List<Integer> _resultRowIds;
         private String _resultSelectionKey;
 
@@ -1076,12 +1076,12 @@ public class PlateController extends SpringActionController
             _assayProtocolId = assayProtocolId;
         }
 
-        public boolean isMarkAsHit()
+        public Boolean isMarkAsHit()
         {
             return _markAsHit;
         }
 
-        public void setMarkAsHit(boolean markAsHit)
+        public void setMarkAsHit(Boolean markAsHit)
         {
             _markAsHit = markAsHit;
         }
@@ -1111,6 +1111,13 @@ public class PlateController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public static class HitAction extends MutatingApiAction<HitForm>
     {
+        @Override
+        public void validateForm(HitForm form, Errors errors)
+        {
+            if (form.isMarkAsHit() == null)
+                errors.reject(ERROR_REQUIRED, "Specifying \"markAsHit\" is required.");
+        }
+
         @Override
         public Object execute(HitForm form, BindException errors) throws Exception
         {
