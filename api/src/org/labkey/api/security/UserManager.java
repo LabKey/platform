@@ -118,13 +118,6 @@ public class UserManager
 
     public static final Comparator<User> USER_DISPLAY_NAME_COMPARATOR = Comparator.comparing(User::getFriendlyName, String.CASE_INSENSITIVE_ORDER);
 
-    public static void ensureSessionTracked(HttpSession s)
-    {
-        if (s != null)
-        {
-            _activeSessions.put(s.getId(), s);
-        }
-    }
 
     /**
      * Listener for user account related notifications. Typically registered during a module's startup via a call to
@@ -506,14 +499,25 @@ public class UserManager
     /** In minutes */
     private static final AtomicLong _totalSessionDuration = new AtomicLong();
 
-    private static final Map<String, HttpSession> _activeSessions = Collections.synchronizedMap(new HashMap<>());
+    private static final Set<String> _activeSessions = Collections.synchronizedSet(new HashSet<>());
+
+    public static void ensureSessionTracked(HttpSession s)
+    {
+        if (s != null)
+        {
+            User user = SecurityManager.getSessionUser(s);
+            assert null != user;
+            assert !user.isGuest();
+            _activeSessions.add(s.getId());
+        }
+    }
 
     public static class SessionListener implements HttpSessionListener
     {
         @Override
         public void sessionCreated(HttpSessionEvent event)
         {
-            _activeSessions.put(event.getSession().getId(), event.getSession());
+            // We don't do anything with guest users, and we can rely on AuthFilter to call ensureSessionTracked().
         }
 
         @Override
@@ -535,18 +539,7 @@ public class UserManager
 
     public static int getActiveUserSessionCount()
     {
-        int users = 0;
-        synchronized (_activeSessions)
-        {
-            for (HttpSession session : _activeSessions.values())
-            {
-                if (!AuthenticatedRequest.isGuestSession(session))
-                {
-                    users++;
-                }
-            }
-        }
-        return users;
+        return _activeSessions.size();
     }
 
     public static Integer getAverageSessionDuration()
