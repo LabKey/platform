@@ -100,6 +100,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.labkey.api.security.SecurityManager.USER_ID_KEY;
 import static org.labkey.api.security.permissions.AbstractActionPermissionTest.APPLICATION_ADMIN_EMAIL;
 import static org.labkey.api.security.permissions.AbstractActionPermissionTest.SITE_ADMIN_EMAIL;
 
@@ -505,10 +506,9 @@ public class UserManager
     {
         if (s != null)
         {
-            User user = SecurityManager.getSessionUser(s);
-            assert null != user;
-            assert !user.isGuest();
-            _activeSessions.add(s.getId());
+            Integer userId = (Integer)s.getAttribute(USER_ID_KEY);
+            if (null != userId && 0 != userId)
+               _activeSessions.add(s.getId());
         }
     }
 
