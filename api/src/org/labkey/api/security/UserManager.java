@@ -507,7 +507,7 @@ public class UserManager
         if (s != null)
         {
             Integer userId = (Integer)s.getAttribute(USER_ID_KEY);
-            if (null != userId && 0 != userId)
+            if (null != userId && getGuestUser().getUserId() != userId)
                _activeSessions.add(s.getId());
         }
     }
