@@ -1216,8 +1216,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {
                     var f = queryConfig.filterArray[i];
                     var type = LABKEY.Filter.getFilterTypeForURLSuffix(f.type);
-                    var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
-                    filters.push(LABKEY.Filter.create(f.name, value, type));
+                    if (type !== undefined) {
+                        var value = type.isMultiValued() ? f.value : (Ext4.isArray(f.value) ? f.value[0]: f.value);
+                        filters.push(LABKEY.Filter.create(f.name, value, type));
+                    }
                 }
                 this.userFilters = filters;
             }
