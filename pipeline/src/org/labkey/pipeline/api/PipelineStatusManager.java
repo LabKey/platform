@@ -235,7 +235,7 @@ public class PipelineStatusManager
             else if (PipelineJob.TaskStatus.complete.matches(status))
             {
                 // Make sure the Enterprise Pipeline recognizes this as a completed
-                // job, even if did it not have a TaskPipeline.
+                // job, even if it did not have a TaskPipeline.
                 job.setActiveTaskId(null, false);
 
                 // Notify if this is not a split job

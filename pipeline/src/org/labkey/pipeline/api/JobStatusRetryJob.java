@@ -31,16 +31,15 @@ public class JobStatusRetryJob implements org.quartz.Job
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
 
-            // Get configured quartz Trigger from subclass
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withSchedule(SimpleScheduleBuilder.repeatMinutelyForever())
                     .startAt(DateBuilder.futureDate(60, DateBuilder.IntervalUnit.SECOND))
                     .build();
 
-            // Quartz Job that sends the digest
+            // Quartz Job that triggers the deferred updates
             JobDetail job = JobBuilder.newJob(JobStatusRetryJob.class).build();
 
-            // Schedule trigger to execute the message digest job on the configured schedule
+            // Schedule trigger to execute the updates
             scheduler.scheduleJob(job, trigger);
         }
         catch (SchedulerException e)
@@ -53,16 +52,20 @@ public class JobStatusRetryJob implements org.quartz.Job
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
     {
         // Attempt the updates to the DB rows again in the hopes that the DB is back online
-        synchronized (_queuedUpdates)
+        if (!_queuedUpdates.isEmpty())
         {
-            if (!_queuedUpdates.isEmpty())
+            Map<String, Runnable> todo;
+            synchronized (_queuedUpdates)
             {
                 // Copy so we can iterate and modify the map
-                for (Map.Entry<String, Runnable> entry : new HashMap<>(_queuedUpdates).entrySet())
-                {
-                    _queuedUpdates.remove(entry.getKey());
-                    entry.getValue().run();
-                }
+                todo = new HashMap<>(_queuedUpdates);
+            }
+
+            for (Map.Entry<String, Runnable> entry : todo.entrySet())
+            {
+                _queuedUpdates.remove(entry.getKey());
+                // Retry the update
+                entry.getValue().run();
             }
         }
     }
