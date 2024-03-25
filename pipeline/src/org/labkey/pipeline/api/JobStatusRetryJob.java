@@ -52,11 +52,12 @@ public class JobStatusRetryJob implements org.quartz.Job
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException
     {
+        // Attempt the updates to the DB rows again in the hopes that the DB is back online
         synchronized (_queuedUpdates)
         {
             if (!_queuedUpdates.isEmpty())
             {
-                // Copy so we we can iterate and modify the map
+                // Copy so we can iterate and modify the map
                 for (Map.Entry<String, Runnable> entry : new HashMap<>(_queuedUpdates).entrySet())
                 {
                     _queuedUpdates.remove(entry.getKey());

@@ -246,6 +246,7 @@ public class PipelineStatusManager
         }
         catch (ConfigurationException e)
         {
+            // Issue 49822: Pipeline does not show a job as failed if DB fails
             JobStatusRetryJob.queue(job.getJobGUID(), () -> setStatusFile(job, user, status, info, allowInsert));
             throw e;
         }
@@ -423,6 +424,7 @@ public class PipelineStatusManager
         }
         catch (ConfigurationException e)
         {
+            // Issue 49822: Pipeline does not show a job as failed if DB fails
             JobStatusRetryJob.queue(sf.getJobId(), () -> updateStatusFile(sf, fields));
             throw e;
         }
