@@ -91,6 +91,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             Domain runDomain = provider.getRunDomain(protocol);
             Domain resultDomain = provider.getResultsDomain(protocol);
+            // The run level plate template value is to support the legacy JSON plate metadata feature
             DomainProperty templateProperty = runDomain.getPropertyByName(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
             DomainProperty wellLocationProperty = resultDomain.getPropertyByName(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME);
             Lsid plateLsid = null;

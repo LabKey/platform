@@ -68,7 +68,8 @@ public class AssayRunDomainKind extends AssayDomainKind
             {
                 if (provider.isPlateMetadataEnabled(protocol))
                 {
-                    mandatoryNames.add(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
+                    if (!AssayPlateMetadataService.isBiologicsFolder(domain.getContainer()))
+                        mandatoryNames.add(AssayPlateMetadataService.PLATE_TEMPLATE_COLUMN_NAME);
                     mandatoryNames.add(AssayPlateMetadataService.PLATE_SET_COLUMN_NAME);
                 }
             }

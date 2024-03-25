@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -41,6 +42,14 @@ public interface AssayPlateMetadataService
     static boolean isExperimentalAppPlateEnabled()
     {
         return ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_APP_PLATE_SUPPORT);
+    }
+
+    static boolean isBiologicsFolder(Container container)
+    {
+        if (container.getProject() != null)
+            return "Biologics".equals(ContainerManager.getFolderTypeName(container.getProject()));
+
+        return false;
     }
 
     @Nullable
