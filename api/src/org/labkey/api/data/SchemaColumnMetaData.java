@@ -24,6 +24,7 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -120,9 +121,21 @@ public class SchemaColumnMetaData
                 }
 
                 if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
-                    colInfo = new VirtualColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
+                {
+                    if (xmlColumn.isSetQueryExpr())
+                    {
+                        String sql = xmlColumn.getQueryExpr();
+                        colInfo = QueryService.get().createQueryColumn(tinfo, FieldKey.fromParts(xmlColumn.getColumnName()), sql, null);
+                    }
+                    else
+                    {
+                        colInfo = new VirtualColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
+                    }
+                }
                 else
+                {
                     colInfo = new BaseColumnInfo(FieldKey.fromParts(xmlColumn.getColumnName()), tinfo);
+                }
                 colInfo.setNullable(true);
                 loadFromXml(xmlColumn, colInfo, false);
                 addColumn(colInfo);

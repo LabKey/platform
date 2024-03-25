@@ -264,6 +264,7 @@ public interface QueryService
     SelectBuilder getSelectBuilder(TableInfo table);
     SelectBuilder getSelectBuilder(QuerySchema schema, String sql);
 
+    BaseColumnInfo createQueryColumn(TableInfo table, FieldKey key, String labKeySql, JdbcType type);
 
     void addCompareType(CompareType type);
 
